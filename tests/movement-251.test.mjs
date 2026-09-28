@@ -168,3 +168,30 @@ test('movement 251 closes seamlessly in ten seconds with readable timing', () =>
   assert.ok(box.max.y > box.min.y);
   disposeModel(model.root);
 });
+
+test('p96: movement 251 casting has smooth broad bands, ears round the jaw pivots and an eye lug for the rope eye', () => {
+  const model = createMovementModel(movement);
+  const { casting, pins, ring } = model.root.userData.blocks;
+  const find = (role) => { let hit = null; model.root.traverse((o) => { if (o.userData.role === role) hit = o; }); return hit; };
+  // Ears: casting material all round each pivot pin (pin r 4.4 px, ear r 10.5 px).
+  casting.geometry.computeBoundingBox();
+  const position = casting.geometry.attributes.position;
+  for (const pin of pins) {
+    const c = pin.position;
+    let reach = 0;
+    for (let i = 0; i < position.count; i += 1) {
+      const d = Math.hypot(position.getX(i) - c.x, position.getY(i) - c.y);
+      if (d < 0.6) reach = Math.max(reach, d);
+    }
+    assert.ok(reach > 10 * 0.05, `ear round pin at ${c.x.toFixed(3)} reaches ${reach}`);
+  }
+  // The eye lug stands on the crossbar and the ring's lower bow passes
+  // through its bore (bore r 2.35 px round the tube's r 2 px).
+  const lug = find('rope-eye-lug-on-crossbar');
+  assert.ok(lug, 'eye lug present');
+  model.root.updateMatrixWorld(true);
+  const lugBox = new THREE.Box3().setFromObject(lug), ringBox = new THREE.Box3().setFromObject(ring);
+  assert.ok(ringBox.min.y < lugBox.max.y && ringBox.min.y > lugBox.min.y, 'ring bow inside the lug height');
+  assert.ok(lugBox.max.x - lugBox.min.x < 0.2, 'lug is thin across the ring plane');
+  disposeModel(model.root);
+});

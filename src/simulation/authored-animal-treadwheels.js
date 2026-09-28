@@ -737,18 +737,70 @@ export function createAuthoredAnimalTreadwheelMovement(movement) {
   // 0.06 chord bars (they lay in the bars' faces and z-fought); the bars
   // cover its rim where they cross it, as they did from the default view.
   const bossHalfDepth = 0.025;
-  const bossProfile = [[0.12, -bossHalfDepth], [bossOuter, -bossHalfDepth], [bossOuter, bossHalfDepth], [0.12, bossHalfDepth], [0.12, -bossHalfDepth]]
-    .map(([r, y]) => new THREE.Vector2(r, y));
+  // p96: the bosses are solid discs and the output axle is one overhung
+  // stub standing out of the near (camera-side) boss, which is Brown's
+  // hatched section. A through axle would impale the horse, whose back
+  // straddles the wheel axis (the cage is carried by the stub alone).
   blocks.axleBosses = [-1, 1].map((side) => {
-    const boss = new THREE.Mesh(new THREE.LatheGeometry(bossProfile, 64), blocks.axle.material);
+    const boss = new THREE.Mesh(new THREE.CylinderGeometry(bossOuter, bossOuter, 2 * bossHalfDepth, 64), blocks.axle.material);
     boss.rotation.x = Math.PI / 2;
     boss.position.z = side * wheelWidth / 2;
     boss.userData.role = 'axle-boss-joining-output-axle-to-lattice-bars';
     blocks.wheelRotor.add(boss);
     return boss;
   });
+  const axleRadius = blocks.axle.geometry.parameters.radiusTop;
+  const axleOuterZ = blocks.axle.geometry.parameters.height / 2;
+  // The stub's inner end cap is buried 0.01 inside the near boss.
+  const stubInnerZ = wheelWidth / 2 - bossHalfDepth + 0.01;
+  blocks.axle.geometry.dispose();
+  blocks.axle.geometry = new THREE.CylinderGeometry(axleRadius, axleRadius, axleOuterZ - stubInnerZ, 30);
+  blocks.axle.position.z = (axleOuterZ + stubInnerZ) / 2;
+  blocks.axle.userData.role = 'overhung-output-axle-stub-rigid-with-treadwheel';
+  model.root.userData.axleStub = {innerZ: stubInnerZ, outerZ: axleOuterZ, radius: axleRadius};
+  // p96: each tread is one channel extrusion: the board and two end cheeks
+  // rising to the riveted band, in place of a board, two narrower bracket
+  // blocks and their lips. The cheek ends sit 0.005 inside the bands.
+  const boardHalfThickness = blocks.treadBoards[0].geometry.parameters.height / 2;
+  const boardWidth = blocks.treadBoards[0].geometry.parameters.width;
+  const { innerTreadRadius } = model.root.userData.geometry;
+  const bandInnerZ = Math.min(...blocks.faceRims.map((band) => {
+    band.geometry.computeBoundingBox();
+    const box = band.geometry.boundingBox;
+    return Math.min(Math.abs(box.min.z), Math.abs(box.max.z));
+  }));
+  const cheekOuterZ = bandInnerZ + 0.005;
+  const cheekInnerZ = cheekOuterZ - 0.185;
+  const cheekTopRadius = 2.055;
+  // Shape x is the axial coordinate, shape y the board's local y, which
+  // points toward the axis (local y = innerTreadRadius - r).
+  const yAt = (radius) => innerTreadRadius - radius;
+  const channel = new THREE.Shape([
+    [-cheekOuterZ, yAt(innerTreadRadius - boardHalfThickness)],
+    [cheekOuterZ, yAt(innerTreadRadius - boardHalfThickness)],
+    [cheekOuterZ, yAt(cheekTopRadius)],
+    [cheekInnerZ, yAt(cheekTopRadius)],
+    [cheekInnerZ, yAt(innerTreadRadius + boardHalfThickness)],
+    [-cheekInnerZ, yAt(innerTreadRadius + boardHalfThickness)],
+    [-cheekInnerZ, yAt(cheekTopRadius)],
+    [-cheekOuterZ, yAt(cheekTopRadius)],
+  ].map(([x, y]) => new THREE.Vector2(x, y)));
+  const channelGeometry = new THREE.ExtrudeGeometry(channel, { depth: boardWidth, bevelEnabled: false })
+    .translate(0, 0, -boardWidth / 2)
+    .rotateY(Math.PI / 2);
+  for (const tread of blocks.treadBoards) {
+    tread.geometry.dispose();
+    tread.geometry = channelGeometry;
+    tread.userData.role = 'internal-tread-board-with-end-cheeks-to-riveted-bands';
+  }
+  for (const mount of blocks.treadMounts) {
+    mount.removeFromParent();
+    mount.geometry.dispose();
+  }
+  blocks.treadMounts = [];
+  model.root.userData.treadChannel = { cheekInnerZ, cheekOuterZ, cheekTopRadius, boardWidth };
   const rimMaterial = blocks.faceRims[0].material;
-  for (const part of [...blocks.treadBoards, ...blocks.treadMounts]) {
+  for (const part of blocks.treadBoards) {
     part.material = rimMaterial;
   }
   return model;

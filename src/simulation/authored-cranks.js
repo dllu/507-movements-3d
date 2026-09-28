@@ -4,6 +4,7 @@ import {boredHorizontalPlate} from './bored-horizontal-plate.js';
 import {turnedClutchGeometry} from './clutch-section-geometry.js';
 import {slottedSectorToothProfiles} from './slotted-sector-teeth.js';
 import * as THREE from 'three';
+import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {
   CircularArcCurve3,
   PALETTE,
@@ -6682,9 +6683,21 @@ function twinObliqueRodTogglePressMotion() {
   const lowerDiskOffset = -.048;
   const platenHeight = 0.58;
   const platenDepth = 2.28;
-  const upperShaftRadius = 0.19;
+  // Pass 97: Brown draws the spindle continuing down the axis between the
+  // crossed bars into the lower disk (the "piston" through the middle). It
+  // is the upper rotor's own shaft: it turns with the upper disk and the
+  // non-rotating lower disk, pedestal and platen slide on it through a
+  // plain bore. Brown's rod is about 42 px across (radius 0.34); the bars'
+  // oblique centre lines pass 0.415 from the axis at the open limit, so the
+  // radius is held to 0.25 to keep the square bars clear.
+  const upperShaftRadius = 0.25;
+  const centralRodBoreClearance = 0.006;
+  const centralRodMinimumEngagement = 0.2;
+  const lowerDiskTopLocalY = lowerDiskOffset + lowerDiskDepth / 2;
+  const centralRodBottomLocalOpenY = lowerDiskTopLocalY - platenStroke
+    - centralRodMinimumEngagement;
   const upperShaftTopY = topFrameY + 0.95;
-  const upperShaftBottomY = upperLinkY - 0.18;
+  const upperShaftBottomY = openLowerDiskY + centralRodBottomLocalOpenY;
   const upperShaftLength = upperShaftTopY - upperShaftBottomY;
   const upperShaftCenterY = (
     upperShaftTopY + upperShaftBottomY
@@ -6729,6 +6742,14 @@ function twinObliqueRodTogglePressMotion() {
     roughness: 0.7,
   });
   const indexMaterial = matte(PALETTE.white, { roughness: 0.46 });
+  // Pass 97: the lower assembly read blue on blue on blue. The bars are the
+  // accent gold, the lower disk and pedestal stay driven blue and the platen
+  // with its guide ears takes the project's timber brass (Brown hatches it
+  // with wood grain), so each neighbour contrasts.
+  const platenMaterial = matte(PALETTE.brass, {
+    metalness: 0.2,
+    roughness: 0.55,
+  });
 
   const upperInput = new THREE.Group();
   upperInput.userData.axis = Y_AXIS.clone();
@@ -6823,6 +6844,7 @@ function twinObliqueRodTogglePressMotion() {
   upperShaft.position.y = upperShaftCenterY;
   upperShaft.userData.role =
     'vertical-shaft-rotating-without-axial-translation';
+  upperShaft.userData.centralGuideRod = true;
   upperRotor.add(upperShaft);
 
   const handleStart = new THREE.Vector3(
@@ -6912,7 +6934,7 @@ function twinObliqueRodTogglePressMotion() {
     'guided-nonrotating-lower-disk-and-platen';
 
   const lowerDisk = new THREE.Mesh(
-    toggleSocketDisk({radius:upperDiskRadius,depth:lowerDiskDepth,offset:linkHoleRadius,ballRadius:rodJointRadius,openingRadius:.30,sign:-1,offsetY:-lowerDiskOffset}),
+    toggleSocketDisk({radius:upperDiskRadius,depth:lowerDiskDepth,offset:linkHoleRadius,ballRadius:rodJointRadius,openingRadius:.30,sign:-1,offsetY:-lowerDiskOffset,boreRadius:upperShaftRadius + centralRodBoreClearance}),
     drivenMaterial,
   );
   lowerDisk.userData.role = 'lower-nonrotating-link-hole-disk';
@@ -6942,33 +6964,135 @@ function twinObliqueRodTogglePressMotion() {
     return socket;
   });
 
+  // The pedestal is turned, bored for the central rod like the disk above.
+  const centralBoreRadius = upperShaftRadius + centralRodBoreClearance;
+  const pedestalBottomY = lowerPlatenTopLocalY - 0.01;
+  const pedestalTopY = lowerDiskOffset - lowerDiskDepth / 2 + 0.01;
+  // Its bore is 0.003 wider so the ends it sinks into the disk and platen
+  // leave no coincident bore walls.
+  const pedestalBoreRadius = centralBoreRadius + 0.003;
   const lowerDiskPedestal = new THREE.Mesh(
-    new THREE.CylinderGeometry(
-      upperDiskRadius * 0.72,
-      upperDiskRadius * 0.92,
-      Math.max(0.02, lowerDiskToPlatenCenter - platenHeight / 2 + lowerDiskOffset - lowerDiskDepth / 2 + .02),
-      64,
-    ),
+    turnedClutchGeometry([
+      [pedestalBottomY, pedestalBoreRadius],
+      [pedestalBottomY, upperDiskRadius * 0.92],
+      [pedestalTopY, upperDiskRadius * 0.72],
+      [pedestalTopY, pedestalBoreRadius],
+    ], { angularSegments: 96 }).rotateX(-Math.PI / 2),
     drivenMaterial,
   );
-  lowerDiskPedestal.position.y = (
-    lowerPlatenTopLocalY + lowerDiskOffset - lowerDiskDepth / 2
-  ) / 2;
   lowerDiskPedestal.userData.role =
     'rigid-pedestal-between-lower-disk-and-platen';
   lowerAssembly.add(lowerDiskPedestal);
 
-  const platen = new THREE.Mesh(
-    new THREE.BoxGeometry(
-      platenHalfWidth * 2,
-      platenHeight,
-      platenDepth,
-    ),
-    drivenMaterial,
-  );
+  // The platen takes the rod's lower end in a blind bore: a bored top slab
+  // over a plain block, one closed solid (the two shared faces are left out
+  // and the bore gets a floor), so the pressing face stays whole.
+  const platenBoreDepth = lowerPlatenTopLocalY - centralRodBottomLocalOpenY
+    + 0.02;
+  const platenGeometry = (() => {
+    const w = platenHalfWidth, d = platenDepth / 2, top = platenHeight / 2;
+    const bottomOfSlab = top - platenBoreDepth;
+    const dropFaces = (geometry, y, sign) => {
+      const flat = geometry.index ? geometry.toNonIndexed() : geometry;
+      const position = flat.attributes.position, normal = flat.attributes.normal;
+      const keep = [];
+      for (let i = 0; i < position.count; i += 3) {
+        const onPlane = [0, 1, 2].every((k) => Math.abs(position.getY(i + k) - y) < 1e-5);
+        if (!(onPlane && normal.getY(i) * sign > 0.5)) keep.push(i, i + 1, i + 2);
+      }
+      const out = new THREE.BufferGeometry();
+      for (const name of ['position', 'normal', 'uv']) {
+        const src = flat.attributes[name];
+        const data = new Float32Array(keep.length * src.itemSize);
+        keep.forEach((v, j) => { for (let c = 0; c < src.itemSize; c += 1) data[j * src.itemSize + c] = src.array[v * src.itemSize + c]; });
+        out.setAttribute(name, new THREE.BufferAttribute(data, src.itemSize));
+      }
+      return out;
+    };
+    const slab = boredHorizontalPlate({
+      // Wound so that (x, -z) runs anticlockwise: ExtrudeGeometry only
+      // re-winds the holes of an anticlockwise outline, and a clockwise one
+      // left the bore walls facing into the metal.
+      outline: [[-w, d], [w, d], [w, -d], [-w, -d]],
+      holes: [{ x: 0, z: 0, radius: centralBoreRadius }],
+      depth: platenBoreDepth,
+    }).translate(0, top - platenBoreDepth / 2, 0);
+    const block = new THREE.BoxGeometry(2 * w, platenHeight - platenBoreDepth, 2 * d)
+      .translate(0, (bottomOfSlab - top) / 2, 0);
+    const bored = dropFaces(slab, bottomOfSlab, -1);
+    // The floor is a fan on the bore wall's own bottom ring, so the solid
+    // closes edge to edge.
+    const ring = new Map();
+    const position = bored.attributes.position;
+    for (let i = 0; i < position.count; i += 1) {
+      const x = position.getX(i), y = position.getY(i), z = position.getZ(i);
+      if (Math.abs(y - bottomOfSlab) < 1e-5
+        && Math.abs(Math.hypot(x, z) - centralBoreRadius) < 1e-6) {
+        ring.set(`${x.toFixed(7)},${z.toFixed(7)}`, [x, z]);
+      }
+    }
+    const rim = [...ring.values()].sort((p, q) => Math.atan2(p[1], p[0]) - Math.atan2(q[1], q[0]));
+    const floorPositions = [];
+    rim.forEach((point, i) => {
+      const next = rim[(i + 1) % rim.length];
+      floorPositions.push(0, bottomOfSlab, 0, next[0], bottomOfSlab, next[1], point[0], bottomOfSlab, point[1]);
+    });
+    const floor = new THREE.BufferGeometry();
+    floor.setAttribute('position', new THREE.Float32BufferAttribute(floorPositions, 3));
+    floor.setAttribute('normal', new THREE.Float32BufferAttribute(floorPositions.map((_, i) => (i % 3 === 1 ? 1 : 0)), 3));
+    floor.setAttribute('uv', new THREE.Float32BufferAttribute(new Array(floorPositions.length / 3 * 2).fill(0), 2));
+    return mergeGeometries([bored, dropFaces(block, bottomOfSlab, 1), floor]);
+  })();
+  platenGeometry.userData = {
+    width: platenHalfWidth * 2,
+    height: platenHeight,
+    depth: platenDepth,
+    boreRadius: centralBoreRadius,
+    boreDepth: platenBoreDepth,
+  };
+  const platen = new THREE.Mesh(platenGeometry, platenMaterial);
   platen.position.y = lowerPlatenCenterLocalY;
   platen.userData.role = 'flat-guided-press-platen';
   lowerAssembly.add(platen);
+
+  // Pass 96: the platen was unguided, hanging from the lower disc in front of
+  // the round columns. Each end now carries one guide ear (as 133 does): a
+  // single extrusion, the platen's own height, running back from its back
+  // face and bored to wrap its column with 0.004 running clearance. The ear
+  // ends in an arc concentric with the column.
+  const earColumnZ = frameBackZ - 0.36;
+  const earColumnRadius = 0.225;
+  const earBore = earColumnRadius + 0.004;
+  const earOuter = earBore + 0.08;
+  const platenGuideEars = [-1, 1].map((sideSign) => {
+    const cx = sideSign * columnHalfSpan;
+    const frontZ = -platenDepth / 2;
+    // The inner side tapers from the collar back along the platen's back
+    // face, so the ear joins the platen over 0.55 rather than a sliver.
+    const innerX = sideSign * (platenHalfWidth - 0.55);
+    const outline = new THREE.Shape();
+    outline.moveTo(innerX, frontZ);
+    outline.lineTo(cx + sideSign * earOuter, frontZ);
+    outline.lineTo(cx + sideSign * earOuter, earColumnZ);
+    outline.absarc(cx, earColumnZ, earOuter, sideSign > 0 ? 0 : Math.PI, sideSign > 0 ? -Math.PI : 0, sideSign > 0);
+    outline.lineTo(innerX, frontZ);
+    const bore = new THREE.Path();
+    bore.absarc(cx, earColumnZ, earBore, 0, Math.PI * 2, false);
+    outline.holes.push(bore);
+    const geometry = new THREE.ExtrudeGeometry(outline, {
+      depth: platenHeight,
+      bevelEnabled: false,
+      curveSegments: 48,
+    });
+    // Shape (x, z) extruded along +z; turn it so the extrusion runs down y.
+    geometry.rotateX(Math.PI / 2);
+    geometry.translate(0, lowerPlatenTopLocalY, 0);
+    const ear = new THREE.Mesh(geometry, platenMaterial);
+    ear.userData.side = sideSign < 0 ? 'left' : 'right';
+    ear.userData.role = 'platen-guide-ear-wrapping-round-column';
+    lowerAssembly.add(ear);
+    return ear;
+  });
 
   const platenFrontBand = new THREE.Mesh(
     new THREE.BoxGeometry(
@@ -7012,7 +7136,7 @@ function twinObliqueRodTogglePressMotion() {
       ),
       new THREE.Vector3(lowerX, openLowerDiskY, 0),
       {
-        color: PALETTE.driven,
+        color: PALETTE.accent,
         depth: rodThickness,
         jointRadius: rodJointRadius,
         thickness: rodThickness,
@@ -7057,11 +7181,13 @@ function twinObliqueRodTogglePressMotion() {
   const topFrameRails = [-0.14, 0.105, 0.31].map((offsetY, index) => {
     const rail = new THREE.Mesh(
       boredHorizontalPlate({
+        // (x, -z) anticlockwise so the shaft bore's wall faces the bore
+        // (pass 97; the clockwise order left it inverted).
         outline: [
-          [-(columnHalfSpan + .31 - index * .09), -(frameDepth - index * .18) / 2],
-          [columnHalfSpan + .31 - index * .09, -(frameDepth - index * .18) / 2],
-          [columnHalfSpan + .31 - index * .09, (frameDepth - index * .18) / 2],
           [-(columnHalfSpan + .31 - index * .09), (frameDepth - index * .18) / 2],
+          [columnHalfSpan + .31 - index * .09, (frameDepth - index * .18) / 2],
+          [columnHalfSpan + .31 - index * .09, -(frameDepth - index * .18) / 2],
+          [-(columnHalfSpan + .31 - index * .09), -(frameDepth - index * .18) / 2],
         ],
         holes: [{x:0, z:-frameBackZ * .52, radius:upperShaftRadius + .02}],
         depth:[.26,.25,.18][index],
@@ -7086,7 +7212,7 @@ function twinObliqueRodTogglePressMotion() {
 
   const upperBearingCollar = new THREE.Mesh(
     boredHorizontalPlate({
-      outline:Array.from({length:128},(_,i)=>[.55*Math.cos(i*Math.PI/64),.55*Math.sin(i*Math.PI/64)]),
+      outline:Array.from({length:128},(_,i)=>[.55*Math.cos(i*Math.PI/64),-.55*Math.sin(i*Math.PI/64)]),
       holes:[{x:0,z:0,radius:upperShaftRadius+.02}],depth:.25,
     }),
     frameMaterial,
@@ -7399,7 +7525,7 @@ function twinObliqueRodTogglePressMotion() {
   upperRotationIndex.visible = false;
   platenMotionIndex.visible = false;
   for (const detail of [workpiece, platenFrontBand, upperBellRim, ...upperDiskRims, ...lowerDiskRims]) detail.visible = false;
-  root.userData.reconstructionNote = 'The upper disk stays at a fixed height while the two rods straighten and lower the platen. Joint details and depth are reconstructed.';
+  root.userData.reconstructionNote = 'The upper disk stays at a fixed height while the two rods straighten and lower the platen. The upper spindle continues down the axis between the bars as the central rod on which the bored lower disk, pedestal and platen slide (rod radius 0.25 against about 0.34 drawn, held down for bar clearance). Joint details and depth are reconstructed.';
   root.userData.blocks = {
     bed,
     cameraFitGuides,
@@ -7433,6 +7559,10 @@ function twinObliqueRodTogglePressMotion() {
   root.userData.geometry = {
     axis: Y_AXIS.clone(),
     bedTopY,
+    centralBoreRadius,
+    centralRodBoreClearance,
+    centralRodBottomLocalOpenY,
+    centralRodMinimumEngagement,
     closedDiskSeparation,
     closedLowerDiskY,
     columnHalfSpan,
@@ -7450,6 +7580,7 @@ function twinObliqueRodTogglePressMotion() {
     linkLength,
     lowerDiskDepth,
     lowerDiskToPlatenCenter,
+    lowerDiskTopLocalY,
     lowerPlatenBottomLocalY,
     lowerPlatenCenterLocalY,
     lowerPlatenTopLocalY,

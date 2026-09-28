@@ -222,7 +222,11 @@ function centrifugalMineDrumCheckHooks(movement) {
     (normalAngularSpeed + tripAngularSpeed) * runawayDuration / 2;
   const readyFlangeAngle = -(normalAccelerationTravel + runawayTravel);
   const runawayStartAngle = readyFlangeAngle + normalAccelerationTravel;
-  const hookPivotRadius = 2;
+  // p96: Brown's hook pivots stand well inside flange B, at about 0.73 of
+  // its radius (they straddled its rim at 2.0); the bars are lengthened by
+  // the same 0.28, which also brings them to Brown's 0.6 of A's radius.
+  const hookInset = 0.28;
+  const hookPivotRadius = 2 - hookInset;
   // Brown's long straight hook bars (about 0.57 of A's radius) lean 14
   // degrees forward of radial and end in a forward barb. Stud D is caught in
   // the crook between the bar's forward face and the barb.
@@ -231,8 +235,8 @@ function centrifugalMineDrumCheckHooks(movement) {
   const hookLean = THREE.MathUtils.degToRad(14);
   const hookBarDirection = new THREE.Vector2(Math.cos(hookLean), Math.sin(hookLean));
   const hookForwardNormal = new THREE.Vector2(-Math.sin(hookLean), Math.cos(hookLean));
-  const hookBarLength = 2.86;
-  const hookContactAlong = 2.25;
+  const hookBarLength = 2.86 + hookInset;
+  const hookContactAlong = 2.25 + hookInset;
   // The outer bar carries a 2 degree backward set at the stud contact, so the
   // contact is a real outline vertex whose normal bisects the two faces.
   const hookSet = THREE.MathUtils.degToRad(2);
@@ -252,11 +256,11 @@ function centrifugalMineDrumCheckHooks(movement) {
   // Its inner edge stands just clear of the seated stud, so stud D rests in
   // the crook against both the bar face and the barb.
   const hookBarbOutline = [
-    barPoint(2.53, -hookBarRadius),
-    barPoint(2.96, -hookBarRadius),
-    barPoint(2.75, 1.0),
-    barPoint(2.695, hookBarRadius),
-    barPoint(2.53, hookBarRadius),
+    barPoint(2.53 + hookInset, -hookBarRadius),
+    barPoint(2.96 + hookInset, -hookBarRadius),
+    barPoint(2.75 + hookInset, 1.0),
+    barPoint(2.695 + hookInset, hookBarRadius),
+    barPoint(2.53 + hookInset, hookBarRadius),
   ];
   const hookContactIndex = 1;
   const hookContactLocal = hookCenterline[hookContactIndex];
@@ -503,7 +507,9 @@ function centrifugalMineDrumCheckHooks(movement) {
   // Brown crops both strands below the frame disc. Rather than ending in
   // mid-air, they run on down the shaft to a return sheave beyond the crop,
   // so the travelling rope is one endless loop with no loose ends.
-  const ropeStrandLength = 8.6;
+  // p96: the sheave hangs 30 below the drum (it was 8.6, where the top and
+  // below preset views saw it), out of every preset view.
+  const ropeStrandLength = 30;
   const ropeMaterial = matte(PALETTE.rope, { roughness: 0.9 });
   // One continuous laid rope: up the left strand, over the drum top, down
   // the right strand and back round the return sheave. Brown hatches it as a
@@ -534,7 +540,8 @@ function centrifugalMineDrumCheckHooks(movement) {
   const hoistingRope = makeLaidRopeMesh(ropePath, ropeMaterial, {
     radius: ropeRadius,
     closed: true,
-    tubularSegments: 256,
+    // About as dense per unit length as the old 8.6 loop's 256.
+    tubularSegments: 768,
     radialSegments: 10,
   });
   // The return sheave matches the drum and turns with the rope; a plain
@@ -929,6 +936,7 @@ function centrifugalMineDrumCheckHooks(movement) {
     flangeIndex,
     frameRim,
     hookPivots,
+    returnSheave,
     hooks,
     ropeDrum,
     ropeDrumBody,

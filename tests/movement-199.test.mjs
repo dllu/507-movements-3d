@@ -571,7 +571,8 @@ test('movement 199 rendered transforms keep the pinion fixed, four lantern pins 
   [...blocks.topRackTeeth, ...blocks.bottomRackTeeth].forEach((tooth) => {
     rackToothBounds.expandByObject(tooth);
   });
-  assert.ok(rackToothBounds.max.z > frameBodyBounds.max.z);
+  // Pass 96: the teeth are merged into the frame's one extrusion.
+  assert.ok(Math.abs(rackToothBounds.max.z - frameBodyBounds.max.z) < 1e-6);
   assert.ok(rackToothBounds.min.y > frameBodyBounds.min.y);
   assert.ok(rackToothBounds.max.y < frameBodyBounds.max.y);
   disposeModel(model.root);
@@ -618,7 +619,8 @@ test('movement 199 fills a real 3D envelope as the reviewed queue advances throu
     }
   });
   // The rollers are plain discs and the white indices are hidden, as drawn.
-  assert.ok(visibleMeshCount >= 39);
+  // The ten tooth witnesses are hidden inside the merged rack extrusion.
+  assert.ok(visibleMeshCount >= 29);
   assert.equal(installedPinCount, 4);
   assert.equal(fixedGuideRollerCount, 4);
   assert.equal(oversizedEntryToothCount, 2);

@@ -7,21 +7,24 @@ const d=create({id:240}).root.userData,g=d.geometry,stops=stop240Definitions(g.s
 // Each stop is a flat plate in the wheel's plane, so its whole outline (not
 // only the toe circle) must clear the teeth. Only outline points that can
 // reach the tip circle are tested against the wheel, and every tooth vertex
-// against the plate.
+// against the plate. p96: stop C's serrated edge (two teeth) is also
+// checked whole between samples, since it drops fast off the tip.
 const bodies=[d.blocks.hookGravityStopBody,d.blocks.straightGravityStopBody,d.blocks.springPawlStopBody].map(m=>{const polygons=m.geometry.userData.plate.polygons;assert.equal(polygons.length,1,'each stop is one plate');return polygons[0][0].map(([x,y])=>({x,y}));});
 const wheelOutline=g.localProfilePoints.filter((p,i,a)=>!i||p.distanceTo(a[i-1])>1e-9);
 const signed=(ring,px,py)=>{let best=Infinity,inside=false;for(let i=0,j=ring.length-1;i<ring.length;j=i++){const a=ring[j],b=ring[i],dx=b.x-a.x,dy=b.y-a.y,l=dx*dx+dy*dy;if(l<1e-18)continue;const u=Math.max(0,Math.min(1,((px-a.x)*dx+(py-a.y)*dy)/l));best=Math.min(best,Math.hypot(px-a.x-u*dx,py-a.y-u*dy));if((a.y>py)!==(b.y>py)&&px<(b.x-a.x)*(py-a.y)/(b.y-a.y)+a.x)inside=!inside;}return inside?-best:best;};
+// C's serrated edge reaches farther from its turning centre than its toe.
+const reach=stops.map((stop,i)=>stop.hole?Math.max(...bodies[i].map(p=>Math.hypot(p.x,p.y)))+.05:stop.armLength+.5);
 export function bodyGap240(stop,lift,wheelAngle){
  const ring=bodies[stop.index],a=stop.liftSign*lift,ca=Math.cos(a),sa=Math.sin(a),cw=Math.cos(wheelAngle),sw=Math.sin(wheelAngle),R=g.wheelOuterRadius+.02;let gap=Infinity;
  for(const p of ring){const x=stop.pivot.x+ca*p.x-sa*p.y,y=stop.pivot.y+sa*p.x+ca*p.y;if(x*x+y*y>R*R)continue;gap=Math.min(gap,signed(wheelOutline,x*cw+y*sw,-x*sw+y*cw));}
- for(const q of wheelOutline){const x=q.x*cw-q.y*sw-stop.pivot.x,y=q.x*sw+q.y*cw-stop.pivot.y;if(x*x+y*y>(stop.armLength+.5)**2)continue;gap=Math.min(gap,signed(ring,ca*x+sa*y,-sa*x+ca*y));}
+ for(const q of wheelOutline){const x=q.x*cw-q.y*sw-stop.pivot.x,y=q.x*sw+q.y*cw-stop.pivot.y;if(x*x+y*y>reach[stop.index]**2)continue;gap=Math.min(gap,signed(ring,ca*x+sa*y,-sa*x+ca*y));}
  return gap;
 }
 const paths=stops.map(stop=>{let costs=new Float64Array(width).fill(Infinity);costs[0]=0;const parents=[];
  for(let i=1;i<=N;i++){const next=new Float64Array(width).fill(Infinity),back=new Int16Array(width).fill(-1);
   for(let j=0;j<width;j++){if(i===N&&j)continue;const lift=j*step,gap=Math.min(stop240Contact(stop,lift,g.toothPitch*wheelAt(i/N),g.localProfilePoints).normalClearance,bodyGap240(stop,lift,g.toothPitch*wheelAt(i/N)));if(gap<(i===N?-1e-10:.00035))continue;
    for(let k=Math.max(0,j-limit);k<=Math.min(width-1,j+limit);k++){if(!Number.isFinite(costs[k]))continue;let clear=true;
-    for(const f of[.25,.5,.75])if(stop240Contact(stop,(k+(j-k)*f)*step,g.toothPitch*wheelAt((i-1+f)/N),g.localProfilePoints).normalClearance<-.0001){clear=false;break;}
+    for(const f of[.25,.5,.75]){const l=(k+(j-k)*f)*step,w=g.toothPitch*wheelAt((i-1+f)/N);if(stop240Contact(stop,l,w,g.localProfilePoints).normalClearance<-.0001||(stop.hole&&bodyGap240(stop,l,w)<.0001)){clear=false;break;}}
     if(!clear)continue;const cost=costs[k]+lift*lift+.5*((j-k)*step)**2;if(cost<next[j]){next[j]=cost;back[j]=k;}
    }
   }if(!next.some(Number.isFinite))throw Error(`${stop.key}: no path ${i/N}`);costs=next;parents.push(back);

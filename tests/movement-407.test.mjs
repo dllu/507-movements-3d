@@ -94,8 +94,8 @@ test('movement 407 is one elastic arch bar, one slotted base and locked slide, o
     'base-fulcrum-piece-maintaining-tangency-to-jamb',
     'single-inextensible-elastic-wood-arch-bar-fixed-at-left-springing',
     'pencil-secured-at-elastic-bar-and-cord-connection',
-    'selected-left-half-of-pointed-arch',
   ]) assert.ok(roles.includes(role), role);
+  assert.ok(!roles.includes('selected-left-half-of-pointed-arch'), 'no undrawn floating target curve');
   assert.ok(!roles.includes('mirrored-right-half-completing-pointed-arch'), 'source presentation removes the undrawn mirrored half');
   for (const role of ['upper-working-edge-tangent-to-jamb-and-meeting-apex', 'white-slide-position-index',
     'given-left-springing-point', 'given-pointed-arch-apex']) {
@@ -308,8 +308,9 @@ test('movement 407 update binds the dynamic ribbon, tip pencil, and both cord en
       1e-13, 'tip collar and cord endpoint');
     const pencilPoint = blocks.pencil.children.find(({ userData }) =>
       userData.role === 'pencil-point-on-drawing-board');
-    near(pencilPoint.getWorldPosition(new THREE.Vector3()).z,
-      -0.248, 0, 'pencil tip on board');
+    near(pencilPoint.getWorldPosition(new THREE.Vector3()).z
+      - pencilPoint.geometry.parameters.radius,
+      -0.19, 1e-12, 'pencil point ends in the bar and jamb back plane');
     assert.equal(data.contacts.slideInHorizontalSlot.locked, true);
     near(data.contacts.barAtFixedClamp.positionResidual, 0, 0,
       'rendered clamp position');

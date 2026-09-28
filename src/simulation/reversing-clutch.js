@@ -33,7 +33,7 @@ export function makeReversingClutch() {
     innerDistance: 0.68, outerDistance: 0.97, pitchConeAngle: Math.PI / 4,
     shaftRadius: 0.055, looseBore: 0.060, slidingBore: 0.057, verticalShaftRadius: 0.045,
     crownRadius: 0.26, keyHalfWidth: 0.016, keywayTop: 0.074,
-    featherHalfWidth: 0.01599, featherBottom: 0.052, featherTop: 0.072, featherHalfLength: 0.53,
+    featherHalfWidth: 0.01599, featherBottom: 0.052, featherTop: 0.072, featherHalfLength: 0.45,
     grooveLeft: -0.08, grooveRight: 0.08, grooveRadius: 0.13, collarRadius: 0.185,
     shoeClearance: 0.00001, shoeHeight: 0.035, shoeBackZ: 0.140, shoeFrontZ: 0.165,
     leverZ: 0.210, leverDepth: 0.028, pivotRadius: 0.027, pivotBore: 0.028,
@@ -92,9 +92,12 @@ export function makeReversingClutch() {
   const verticalShaft = rotor(new THREE.Vector3(0, 1, 0));
   const verticalShaftBody = turned([[r.z * scale, 0], [r.z * scale, p.verticalShaftRadius], [1.34, p.verticalShaftRadius], [1.34, 0]], PALETTE.ink);
   verticalShaft.userData.rotor.add(verticalShaftBody);
-  const sliding = rotor(), leftProfile = [[-p.centralFaceDistance, p.slidingBore], [-p.centralFaceDistance, p.crownRadius], [-0.24, p.crownRadius]];
+  // The shortened halves keep the collar and groove; the taper to the collar
+  // starts nearer the centre.
+  const taperStart = -0.20, taperEnd = -0.09;
+  const sliding = rotor(), leftProfile = [[-p.centralFaceDistance, p.slidingBore], [-p.centralFaceDistance, p.crownRadius], [taperStart, p.crownRadius]];
   for (let i = 1; i <= 16; i += 1) {
-    const u = i / 16; leftProfile.push([-0.24 + 0.15 * u, p.crownRadius + (p.collarRadius - p.crownRadius) * u * u * (3 - 2 * u)]);
+    const u = i / 16; leftProfile.push([taperStart + (taperEnd - taperStart) * u, p.crownRadius + (p.collarRadius - p.crownRadius) * u * u * (3 - 2 * u)]);
   }
   leftProfile.push([p.grooveLeft, p.collarRadius], [p.grooveLeft, p.slidingBore]);
   const rightProfile = [...leftProfile].reverse().map(([x, radius]) => [-x, radius]);

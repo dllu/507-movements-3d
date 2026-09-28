@@ -459,3 +459,21 @@ test('movement 361 closes its rigid orientations while movement 507 remains the 
   disposeModel(model361.root);
   disposeModel(model507.root);
 });
+
+test('361 lever stud is centred on the right upright face (pass 96)', () => {
+  const model = createMovementModel(catalog.movements[360]);
+  model.root.updateMatrixWorld(true);
+  const byRole = (role) => {
+    let found = null;
+    model.root.traverse((object) => { if (!found && object.userData?.role === role) found = object; });
+    assert.ok(found, role);
+    return new THREE.Box3().setFromObject(found);
+  };
+  const post = byRole('right-two-bearing-upright');
+  const stud = byRole('fixed-operating-lever-pivot');
+  const studCenterX = (stud.min.x + stud.max.x) / 2;
+  near(studCenterX, (post.min.x + post.max.x) / 2, 1e-3, 'stud on upright centre line');
+  assert.ok(stud.min.x >= post.min.x && stud.max.x <= post.max.x, 'stud foot within the upright face');
+  assert.ok(stud.min.z < post.max.z, 'stud foot sunk into the upright face');
+  disposeModel(model.root);
+});

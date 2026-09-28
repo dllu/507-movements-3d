@@ -1847,7 +1847,21 @@ test('movement 28 varies a perpendicular brush-wheel ratio at exact face contact
     schedule.cycleDuration,
     'the displayed loop uses the model\'s exact floating-point cycle period',
   );
-  assert.deepEqual(geometry.contactRadii, [0.97, 1.24, 0.55]);
+  assert.deepEqual(geometry.contactRadii, [0.97, 1.24, 0.66]);
+  const fixedShaftPosition = rollerShaft.position.clone();
+  roller.traverse((part) => {
+    const positions = part.geometry?.attributes.position;
+    if (!positions || part.geometry.type === 'BoxGeometry') return;
+    const inverse = new THREE.Matrix4().copy(roller.matrixWorld).invert();
+    roller.updateMatrixWorld(true);
+    let minimum = Infinity;
+    for (let i = 0; i < positions.count; i += 1) {
+      const point = new THREE.Vector3().fromBufferAttribute(positions, i)
+        .applyMatrix4(part.matrixWorld).applyMatrix4(inverse);
+      minimum = Math.min(minimum, Math.hypot(point.x, point.y));
+    }
+    assert.ok(minimum > 0.11, 'the sliding wheel and its hub are bored for the fixed shaft');
+  });
   assert.ok(Math.abs(geometry.diskAxis.dot(geometry.rollerAxis)) < 1e-12);
   assert.ok(Z_AXIS.clone().applyQuaternion(disk.quaternion).normalize().distanceTo(Y_AXIS) < 1e-12);
   assert.ok(Z_AXIS.clone().applyQuaternion(roller.quaternion).normalize().distanceTo(X_AXIS) < 1e-12);
@@ -1894,7 +1908,7 @@ test('movement 28 varies a perpendicular brush-wheel ratio at exact face contact
       'the input shaft remains centered through the movable upper wheel');
     ratios.push(state.gearRatio);
   }
-  // Settings run plate radius 0.97, outward to 1.24, then inward to 0.55.
+  // Settings run plate radius 0.97, outward to 1.24, then inward to 0.66.
   assert.ok(ratios[2] > ratios[0] && ratios[0] > ratios[1],
     'moving outward continuously reduces the lower disk speed');
 
@@ -1911,11 +1925,16 @@ test('movement 28 varies a perpendicular brush-wheel ratio at exact face contact
     assert.equal(state.gearRatio, 0);
     assert.equal(state.rollerAngularSpeed, 0);
     assert.equal(state.diskAngularSpeed, 0);
-    assert.ok(state.liftClearance > 0);
-    assert.ok(Math.abs(contact.diskSurfacePoint.distanceTo(contact.rollerSurfacePoint)
-      - state.liftClearance) < 1e-12,
-    'the stopped upper wheel lifts clear before sliding to a new radius');
+    assert.equal(state.liftClearance, 0);
+    assert.ok(contact.diskSurfacePoint.distanceTo(contact.rollerSurfacePoint) < 1e-12,
+      'the stopped upper wheel stays on the disk while it slides to a new radius');
     assert.ok(Math.abs(rollerShaft.position.y - roller.position.y) < 1e-12);
+    assert.ok(rollerShaft.position.distanceTo(fixedShaftPosition) < 1e-12,
+      'only the wheel slides; its shaft stays in its bearings');
+    const shaftHalf = rollerShaft.userData.length / 2;
+    assert.ok(roller.position.x - 0.14 > rollerShaft.position.x - shaftHalf
+      && roller.position.x + 0.14 < rollerShaft.position.x + shaftHalf,
+    'the sliding wheel stays on its shaft');
   }
 
   const cumulativeDriven = [
@@ -2946,6 +2965,9 @@ test('movement 38 follows the source three-sector ratios and fixed-center constr
   assert.equal(model.root.userData.mechanism, 'three-stepped-sector-gear-ratios');
   assert.equal(centerLink.userData.fixedCenterLink, true);
   assert.equal(collars.length, 2);
+  assert.ok(collars.every((collar) => collar === centerLink),
+    'the collars are the eyes of the one flat link extrusion');
+  assert.equal(centerLink.geometry.type, 'ExtrudeGeometry');
   for (const part of [driver, driven, driverShaft, drivenShaft]) {
     assert.ok(part.userData.axis.distanceTo(Z_AXIS) < 1e-12);
   }
@@ -3514,13 +3536,18 @@ test('movement 46 winds an articulated chain between a fusee and a fixed-arbor s
   assert.equal(model.root.userData.mechanism, 'articulated-chain-in-machined-fusee-with-fixed-spring-arbor');
   assert.equal(chain.userData.articulatedChain, true);
   assert.equal(chain.userData.links.length, g.linkCount);
-  assert.equal(fusee.userData.machinedHelicalGroove, true);
+  assert.equal(fusee.userData.steppedTiers, true);
+  assert.equal(fusee.userData.tierCount, 3);
   assert.equal(spring.geometry.userData.constantLengthRibbon, true);
   for (const member of [barrelShaft, fuseeShaft, fusee, springBox]) {
     assert.ok(member.userData.axis.distanceTo(Y_AXIS) < 1e-12);
   }
-  assert.ok(Math.abs(model.root.userData.fuseeState.barrelTurns - 3) < 1e-9,
-    'the source pose shows the terminal course and three lower chain courses');
+  {
+    const state = model.root.userData.fuseeState;
+    const wrapLeft = 2 * Math.PI * g.grooveTurns * (1 - state.progress);
+    assert.ok(Math.abs(wrapLeft - 5.0) < 1e-9 && state.fuseeRadius === g.fuseeBottomRadius,
+      'the source pose leaves about one wrap on the lowest tier, as the plate draws');
+  }
   assertReadableTiming(model.root.userData.animationTiming);
   for (const progress of [0, 0.1, 0.25, 0.5, 0.75, 0.9, 1]) {
     const time = (Math.acos(1 - 2 * progress) - g.sourcePhase) / g.cycleRate;
@@ -3591,7 +3618,9 @@ test('movement 48 uses the rebuilt long jaw clutch and rack-generated loose gear
     assert.equal(body.geometry.userData.module, g.module);
   }
   assert.ok(g.shaftRadius < g.boreRadius);
-  assert.ok(Math.abs(pinion.position.y - g.pinionPitchRadius - g.gearPitchRadius) < 1e-12);
+  // The pinion meshes on the viewer's side, 60° down from the gear's top.
+  assert.ok(Math.abs(Math.hypot(pinion.position.y, pinion.position.z) - g.pinionPitchRadius - g.gearPitchRadius) < 1e-12);
+  assert.ok(Math.abs(Math.atan2(pinion.position.z, pinion.position.y) - g.pinionTilt) < 1e-12 && pinion.position.z > 0);
   for (let pose = 0; pose <= 64; pose += 1) {
     model.update(g.cycleDuration * pose / 64, 0);
     const state = model.root.userData.clutchState;
@@ -3677,6 +3706,8 @@ test('movement 52 wires its loaded pin clutch and translating output to the deri
     assert.ok(Math.abs(b.driver.userData.rotor.rotation.z - state.driverAngle) < 1e-12);
     assert.ok(Math.abs(b.output.userData.rotor.rotation.z - state.outputAngle) < 1e-12);
     assert.ok(Math.abs(b.output.position.x - state.outputFaceX) < 1e-12);
+    assert.ok(Math.abs(b.spindle.userData.rotor.rotation.z - state.outputAngle) < 1e-12);
+    assert.ok(Math.abs(b.spindle.position.x - p.retractedFaceX) < 1e-12, 'only the disk slides; the shaft stays put');
     assert.ok(Math.abs(b.lever.rotation.z - state.leverAngle) < 1e-12);
     assert.ok(Math.abs(b.shoe.position.x - state.followerX) < 1e-12);
     assert.ok(Math.abs(b.shoe.position.y - state.followerY) < 1e-12);
@@ -4036,7 +4067,7 @@ test('movement 73 lets carried spring B index A one tooth while fixed spring C p
   for (let sample = 0; sample <= 1440; sample += 1) {
     const state = u.stateAtTime(period * sample / 1440);
     stages.add(state.stage);
-    maximumStopError = Math.max(maximumStopError, state.stopContact.contactError);
+    if (state.stopContactEngaged) maximumStopError = Math.max(maximumStopError, state.stopContact.contactError);
     if (!state.indexing) assert.equal(state.drivenAngularSpeed, 0);
     else assert.ok(state.drivenAngularSpeed < 0, 'A advances clockwise with B');
   }
@@ -4064,8 +4095,24 @@ test('movement 73 lets carried spring B index A one tooth while fixed spring C p
       new THREE.Vector3(state.stopContact.center.x, state.stopContact.center.y, 0)) < 1e-9);
     assert.equal(u.contacts.catchTooth.engaged, state.catchToothContactEngaged);
     assert.equal(u.contacts.springPress.engaged, state.strongSpringPressEngaged);
-    assert.equal(u.contacts.strongStop.engaged, true);
+    assert.equal(u.contacts.strongStop.engaged, state.stopContactEngaged);
   }
+  // Pass 96: C bends as one leaf from its block (propped by B's nib), and
+  // its end drops back into the seat over a tenth of a second instead of
+  // jumping there. Its end never jumps and never enters A.
+  let previous = u.stateAtTime(0).stopContact.center.clone(), dropping = 0, webMoved = 0;
+  for (let sample = 1; sample <= 4000; sample += 1) {
+    const state = u.stateAtTime(period * sample / 4000), center = state.stopContact.center;
+    assert.ok(center.distanceTo(previous) < 0.02, `C's end jumps at ${sample}`);
+    previous = center.clone();
+    if (state.stopMode === 'dropping-into-seat') dropping += 1;
+    const relaxed = u.stateAtTime(0).strongCurve.getPoint(0.4), bent = state.strongCurve.getPoint(0.4);
+    webMoved = Math.max(webMoved, relaxed.distanceTo(bent));
+    const local = new THREE.Vector2(center.x, center.y).rotateAround(new THREE.Vector2(), -state.drivenAngle);
+    assert.ok(local.length() > geometry.ratchetRootRadius, 'C stays outside A');
+  }
+  assert.ok(dropping >= 30, 'the drop lasts several frames');
+  assert.ok(webMoved > 0.005 && webMoved < 0.06, `the whole leaf takes part, gently (${webMoved})`);
   disposeModel(model.root);
 });
 
@@ -28445,7 +28492,7 @@ test('movement 129 winds one continuous rope differentially and lifts the load b
       geometry.lowerPulleyAxis
     ) - geometry.hangerFrontOffset
   ) < roundoff,
-  'the engraved load hanger remains visibly mounted on the sheave front');
+  'the two-cheek clevis is centred on the sheave plane');
   const hookBounds = new THREE.Box3().setFromObject(loadHook);
   const baseBounds = new THREE.Box3().setFromObject(baseRail);
   assert.ok(hookBounds.min.y < baseBounds.min.y,
@@ -29766,10 +29813,50 @@ test('movement 132 straightens two equal oblique rods to drive one guided platen
   assert.equal(lowerDisk.geometry.userData.outerRadius,
     geometry.upperDiskRadius);
   assert.equal(lowerDisk.geometry.userData.depth, geometry.lowerDiskDepth);
-  assert.equal(platen.geometry.parameters.width,
+  assert.equal(platen.geometry.userData.width,
     geometry.platenHalfWidth * 2);
-  assert.equal(platen.geometry.parameters.height, geometry.platenHeight);
-  assert.equal(platen.geometry.parameters.depth, geometry.platenDepth);
+  assert.equal(platen.geometry.userData.height, geometry.platenHeight);
+  assert.equal(platen.geometry.userData.depth, geometry.platenDepth);
+  // Pass 97: the central rod (the upper rotor's spindle) runs down the axis
+  // through bores in the lower disk and pedestal into a blind bore in the
+  // platen, and stays engaged over the whole stroke.
+  assert.equal(upperShaft.userData.centralGuideRod, true);
+  assert.equal(lowerDisk.geometry.userData.boreRadius,
+    geometry.upperShaftRadius + geometry.centralRodBoreClearance);
+  assert.equal(platen.geometry.userData.boreRadius,
+    geometry.centralBoreRadius);
+  assert.ok(geometry.centralRodBoreClearance > 0
+    && geometry.centralRodBoreClearance < 0.01);
+  const rodBottomAtOpen = geometry.upperShaftBottomY - geometry.openLowerDiskY;
+  assert.ok(Math.abs(rodBottomAtOpen - geometry.centralRodBottomLocalOpenY)
+    < 1e-12);
+  assert.ok(geometry.lowerPlatenTopLocalY - platen.geometry.userData.boreDepth
+    < rodBottomAtOpen - 0.01, 'the rod end clears the blind bore floor');
+  assert.ok(geometry.lowerDiskTopLocalY
+    - (geometry.upperShaftBottomY - geometry.closedLowerDiskY)
+    >= geometry.centralRodMinimumEngagement - 1e-12,
+  'the rod stays engaged in the lower disk at full press');
+  {
+    // Square bars (half-diagonal) must clear the rod over the stroke.
+    const barHalfDiagonal = geometry.rodThickness / Math.SQRT2;
+    let minimumBarRodGap = Infinity;
+    for (let sample = 0; sample <= 720; sample += 1) {
+      const state = model.root.userData.stateAtTime(
+        geometry.cyclePeriod * sample / 720,
+      );
+      state.upperJointPoints.forEach((upperPoint, index) => {
+        const lowerPoint = state.lowerJointPoints[index];
+        for (let k = 0; k <= 200; k += 1) {
+          const point = upperPoint.clone().lerp(lowerPoint, k / 200);
+          minimumBarRodGap = Math.min(minimumBarRodGap,
+            Math.hypot(point.x, point.z) - barHalfDiagonal
+              - geometry.upperShaftRadius);
+        }
+      });
+    }
+    assert.ok(minimumBarRodGap > 0.03,
+      `bars clear the central rod (${minimumBarRodGap})`);
+  }
   assert.equal(
     geometry.workpieceHeight,
     geometry.closedLowerDiskY + geometry.lowerPlatenBottomLocalY
@@ -30237,8 +30324,7 @@ test('movement 133 raises one guided platen through an exact six-to-one pinion-s
     pitchContactMarker,
     platen,
     platenBody,
-    platenBracketLeft,
-    platenBracketRight,
+    platenHanger,
     platenMotionIndex,
     platenWristPin,
     sectorAssembly,
@@ -30290,8 +30376,22 @@ test('movement 133 raises one guided platen through an exact six-to-one pinion-s
   assert.ok(sectorTeeth.every((tooth) => tooth.parent === sectorRotor));
   assert.ok(sectorSpokes.every((spoke) => spoke.parent === sectorRotor));
   assert.equal(platenBody.parent, platen);
-  assert.equal(platenBracketLeft.parent, platen);
-  assert.equal(platenBracketRight.parent, platen);
+  assert.equal(platenHanger.parent, platen);
+  // p97: one hanger lug whose boss is concentric with the wrist pin.
+  {
+    const box = new THREE.Box3().setFromBufferAttribute(platenHanger.geometry.attributes.position);
+    const bossRadius = platenHanger.userData.bossRadius;
+    assert.ok(Math.abs(box.min.y + bossRadius) < 1e-3, 'boss bottom is an arc about the pin');
+    const position = platenHanger.geometry.attributes.position;
+    for (let i = 0; i < position.count; i += 1) {
+      if (position.getY(i) < -0.01) {
+        assert.ok(Math.abs(Math.hypot(position.getX(i), position.getY(i)) - bossRadius) < 1e-6, 'boss is concentric with the pin');
+      }
+    }
+    assert.ok(Math.abs(box.min.x + box.max.x) < 1e-9, 'lug is symmetric about the pin');
+    assert.ok(platenWristPin.position.x === 0 && platenWristPin.position.y === 0);
+    assert.ok(box.max.y > platenBody.position.y - platenBody.geometry.parameters.height / 2, 'lug runs into the platen');
+  }
   assert.equal(platenWristPin.parent, platen);
   assert.equal(platenMotionIndex.parent, platen);
   assert.equal(connectingRod.parent, model.root);
@@ -30801,449 +30901,107 @@ test('movement 133 raises one guided platen through an exact six-to-one pinion-s
   disposeModel(model.root);
 });
 
-test('movement 134 carries one rope smoothly through one full drum wrap at prescribed pitch speed with a separated helical wrap', () => {
+test('movement 134 winds one rope once round an eight-beam cage as an octagon, with no solid core', () => {
   const model = createMovementModel(catalog.movements[133]);
-  const {
-    cameraEnvelope,
-    contactBed,
-    drum,
-    drumRotationIndex,
-    drumRotor,
-    frontFlange,
-    frontInnerOutline,
-    frontOuterOutline,
-    hub,
-    hubFaceRing,
-    inputShaft,
-    pedestal,
-    pedestalFoot,
-    pitchContactMarker,
-    rearBearing,
-    rearFlange,
-    rimSeparators,
-    rope,
-    ropeMarkers,
-    ropeMesh,
-    shaftFace,
-    spokes,
-  } = model.root.userData.blocks;
-  const geometry = model.root.userData.geometry;
-  const ropeCurve = rope.userData.curve;
-
-  assert.equal(model.root.userData.fidelity, 'authored');
-  assert.equal(
-    model.root.userData.mechanism,
-    'single-rope-one-turn-drum-linear-drive',
-  );
+  const u = model.root.userData;
+  const { beams, drum, drumRotor, frontRim, hub, rearFlange, rope, ropeMesh, spokes } = u.blocks;
+  const g = u.geometry;
+  assert.equal(u.fidelity, 'authored');
+  assert.equal(u.mechanism, 'single-rope-one-turn-octagonal-cage-linear-drive');
   assert.ok(drum.userData.axis.distanceTo(Z_AXIS) < 1e-12);
-  assert.equal(drum.userData.rotor, drumRotor);
-  assert.equal(drumRotor.parent, drum);
-  assert.equal(contactBed.parent, drumRotor);
-  assert.equal(frontFlange.parent, drumRotor);
-  assert.equal(rearFlange.parent, drumRotor);
-  assert.equal(hub.parent, drumRotor);
-  assert.equal(hubFaceRing.parent, drumRotor);
-  assert.equal(inputShaft.parent, drumRotor);
-  assert.equal(shaftFace.parent, drumRotor);
-  assert.equal(frontOuterOutline.parent, drumRotor);
-  assert.equal(frontInnerOutline.parent, drumRotor);
-  assert.equal(drumRotationIndex.parent, drumRotor);
-  assert.ok(spokes.every((spoke) => spoke.parent === drumRotor));
-  // Brown's rim joints are not painted as face strips: presentation detaches them.
-  assert.ok(rimSeparators.every(
-    (separator) => separator.parent === null
-  ));
-  assert.equal(rope.parent, model.root);
-  assert.equal(ropeMesh.parent, rope);
-  assert.ok(ropeMarkers.every((marker) => marker.parent === null),
-    'the rope beads are tracked but not drawn: Brown draws a plain rope');
-
-  assert.equal(geometry.sourceScale, 0.01);
-  assert.equal(geometry.sourceRasterDrumCenter.x, 253);
-  assert.equal(geometry.sourceRasterDrumCenter.y, 231);
-  assert.equal(geometry.sourceRasterDrumOuterRadius, 181);
-  assert.equal(geometry.sourceRasterRimInnerRadius, 151);
-  assert.equal(geometry.sourceRasterRopeCenterY, 404);
-  assert.equal(geometry.sourceRasterRopeLeftX, 20);
-  assert.equal(geometry.sourceRasterRopeRightX, 486);
-  assert.equal(geometry.sourceRasterHubOuterRadius, 43);
-  assert.equal(geometry.sourceRasterShaftHoleRadius, 25);
-  assert.equal(geometry.sourceRasterRimSeparatorCount, 8);
-  assert.equal(geometry.sourceRasterSpokeCount, 4);
-  assert.equal(
-    geometry.drumFlangeOuterRadius,
-    geometry.sourceRasterDrumOuterRadius * geometry.sourceScale,
-  );
-  assert.equal(
-    geometry.drumRimInnerRadius,
-    geometry.sourceRasterRimInnerRadius * geometry.sourceScale,
-  );
-  assert.equal(
-    geometry.ropePitchRadius,
-    (geometry.sourceRasterRopeCenterY
-      - geometry.sourceRasterDrumCenter.y) * geometry.sourceScale,
-  );
-  assert.equal(
-    geometry.leftRopeEndX,
-    (geometry.sourceRasterRopeLeftX
-      - geometry.sourceRasterDrumCenter.x) * geometry.sourceScale,
-  );
-  assert.equal(
-    geometry.rightRopeEndX,
-    (geometry.sourceRasterRopeRightX
-      - geometry.sourceRasterDrumCenter.x) * geometry.sourceScale,
-  );
-  assert.equal(geometry.leftFreeSpanLength, -geometry.leftRopeEndX * Math.hypot(1, geometry.axialSlope));
-  assert.equal(geometry.rightFreeSpanLength, geometry.rightRopeEndX * Math.hypot(1, geometry.axialSlope));
-  assert.equal(
-    geometry.hubOuterRadius,
-    geometry.sourceRasterHubOuterRadius * geometry.sourceScale,
-  );
-  assert.equal(
-    geometry.shaftHoleRadius,
-    geometry.sourceRasterShaftHoleRadius * geometry.sourceScale,
-  );
-  assert.equal(geometry.wrapTurns, 1);
-  assert.equal(geometry.wrapSweep, Math.PI * 2);
-  assert.equal(
-    geometry.wrappedLength,
-    Math.hypot(geometry.wrapSweep * geometry.ropePitchRadius, geometry.axialLead),
-  );
-  assert.equal(
-    geometry.nominalVisibleRopeLength,
-    geometry.leftFreeSpanLength
-      + geometry.wrappedLength + geometry.rightFreeSpanLength,
-  );
-  assert.equal(ropeCurve.getLength(), geometry.nominalVisibleRopeLength);
-  assert.deepEqual(ropeCurve.segmentLengths, [
-    geometry.leftFreeSpanLength,
-    geometry.wrappedLength,
-    geometry.rightFreeSpanLength,
-  ]);
-  assert.deepEqual(ropeCurve.transitionDistances, [
-    geometry.leftFreeSpanLength,
-    geometry.leftFreeSpanLength + geometry.wrappedLength,
-  ]);
-  assert.equal(geometry.linearTravelPerDrumRadian,
-    geometry.ropePitchRadius);
-  assert.equal(geometry.ropeLinearSpeed,
-    geometry.ropePitchRadius * geometry.drumAngularSpeed);
-  assert.equal(geometry.drumRotationPeriod,
-    Math.PI * 2 / geometry.drumAngularSpeed);
-  assert.equal(contactBed.userData.contactRadius,
-    geometry.drumContactBedRadius);
-  assert.equal(contactBed.geometry.parameters.options.depth,
-    geometry.drumWidth);
-  assert.equal(frontFlange.geometry.parameters.options.depth,
-    geometry.flangeDepth);
-  assert.equal(rearFlange.geometry.parameters.options.depth,
-    geometry.flangeDepth);
-  assert.equal(inputShaft.geometry.parameters.radiusTop,
-    geometry.shaftHoleRadius);
-  assert.equal(spokes.length, geometry.sourceRasterSpokeCount);
-  assert.equal(rimSeparators.length,
-    geometry.sourceRasterRimSeparatorCount);
-  assert.equal(ropeMarkers.length, geometry.ropeMarkerCount);
-  assert.deepEqual(
-    ropeMarkers.map((marker) => marker.userData.materialOffset),
-    geometry.materialMarkerOffsets,
-  );
-  assert.equal(rope.userData.ropeCount, 1);
-  assert.equal(rope.userData.wrapTurns, 1);
-  assert.equal(rope.userData.physicalCable, true);
-  assert.equal(rope.userData.mechanismString, true);
-  assert.equal(rope.userData.closed, false);
-
-  const physicalRopes = [];
-  const selectorBelts = [];
-  const drums = [];
-  model.root.traverse((object) => {
-    if (object.userData.physicalCable) physicalRopes.push(object);
-    if (object.userData.selectorBelt) selectorBelts.push(object);
-    if (object.userData.role === 'single-fixed-axis-rope-driving-drum') {
-      drums.push(object);
-    }
-  });
-  assert.deepEqual(physicalRopes, [rope],
-    'the engraving and caption contain exactly one physical rope');
-  assert.deepEqual(selectorBelts, []);
-  assert.deepEqual(drums, [drum]);
-
-  const bottomPoint = new THREE.Vector3(
-    0,
-    -geometry.ropePitchRadius,
-    -geometry.axialLead / 2,
-  );
-  for (const transitionDistance of ropeCurve.transitionDistances) {
-    assert.ok(ropeCurve.getPointAtDistance(
-      transitionDistance
-    ).distanceTo(ropeCurve.wrap.getPoint(transitionDistance === ropeCurve.transitionDistances[0] ? 0 : 1)) < 1e-14);
-    const beforeTangent = ropeCurve.getTangentAtDistance(
-      transitionDistance - 1e-8
-    );
-    const exactTangent = ropeCurve.getTangentAtDistance(
-      transitionDistance
-    );
-    const afterTangent = ropeCurve.getTangentAtDistance(
-      transitionDistance + 1e-8
-    );
-    assert.ok(beforeTangent.dot(exactTangent) > 1 - 2e-16);
-    assert.ok(exactTangent.dot(afterTangent) > 1 - 2e-16);
-    assert.ok(exactTangent.distanceTo(new THREE.Vector3(1,0,geometry.axialSlope).normalize()) < 1e-14,
-      'both free-to-wrap joins have the same rightward tangent');
-  }
-  assert.ok(ropeCurve.getPointAtDistance(0).distanceTo(new THREE.Vector3(
-    geometry.leftRopeEndX,
-    -geometry.ropePitchRadius,
-    -geometry.axialLead / 2 + geometry.leftRopeEndX * geometry.axialSlope,
-  )) < 2e-16);
-  assert.ok(ropeCurve.getPointAtDistance(
-    geometry.nominalVisibleRopeLength
-  ).distanceTo(new THREE.Vector3(
-    geometry.rightRopeEndX,
-    -geometry.ropePitchRadius,
-    geometry.axialLead / 2 + geometry.rightRopeEndX * geometry.axialSlope,
-  )) < 2e-15);
-
-  const sourceState = model.root.userData.stateAtTime(0);
-  assert.equal(sourceState.drumAngle, 0);
-  assert.equal(sourceState.angularSpeed, geometry.drumAngularSpeed);
-  assert.equal(sourceState.angularAcceleration, 0);
-  assert.equal(sourceState.ropeTravel, 0);
-  assert.equal(sourceState.linearSpeed, geometry.ropeLinearSpeed);
-  assert.equal(sourceState.linearAcceleration, 0);
-  assert.equal(sourceState.linearTravelPerDrumRadian,
-    geometry.ropePitchRadius);
-  assert.equal(sourceState.ropeCount, 1);
-  assert.equal(sourceState.wrapTurns, 1);
-  assert.equal(sourceState.wrapSweep, Math.PI * 2);
-  assert.equal(sourceState.ropeLength, geometry.nominalVisibleRopeLength);
-  assert.equal(sourceState.ropeLengthError, 0);
-  assert.equal(sourceState.velocityDiscontinuous, false);
-  assert.equal(
-    sourceState.stage,
-    'drum-turns-counterclockwise-rope-travels-right',
-  );
-  assert.ok(sourceState.bottomContactPoint.distanceTo(bottomPoint) < 2e-16);
-  assert.ok(sourceState.freeRopeVelocity.distanceTo(
-    new THREE.Vector3(1,0,geometry.axialSlope).normalize().multiplyScalar(geometry.ropeLinearSpeed)
-  ) < 2e-16);
-  assert.ok(sourceState.noSlipVelocityError.length() > 0);
-  assert.ok(sourceState.drumSurfaceVelocity.distanceTo(
-    sourceState.freeRopeVelocity
-  ) < .02);
-
-  const arbitraryState = model.root.userData.stateAtDrumKinematics({
-    angularAcceleration: -0.31,
-    angularSpeed: -1.17,
-    drumAngle: 2.4,
-  });
-  assert.equal(arbitraryState.ropeTravel,
-    geometry.ropePitchRadius * 2.4);
-  assert.equal(arbitraryState.linearSpeed,
-    geometry.ropePitchRadius * -1.17);
-  assert.equal(arbitraryState.linearAcceleration,
-    geometry.ropePitchRadius * -0.31);
-  assert.ok(arbitraryState.noSlipVelocityError.length() > 0);
-  assert.ok(Math.abs(
-    arbitraryState.freeRopeAcceleration.length()
-      - Math.abs(arbitraryState.linearAcceleration)
-  ) < 2e-16);
-  assert.equal(
-    arbitraryState.stage,
-    'drum-turns-clockwise-rope-travels-left',
-  );
-
-  for (let sample = 0; sample <= 7200; sample += 1) {
-    const angle = Math.PI * 2 * sample / 7200;
-    const contact = model.root.userData.wrappedContactStateAtAngle(
-      angle,
-      geometry.drumAngularSpeed,
-    );
-    assert.ok(Math.abs(
-      contact.radial.length() - geometry.ropePitchRadius
-    ) < 5e-16);
-    assert.ok(contact.noSlipVelocityError.length() > 0);
-    assert.ok(contact.surfaceVelocity.distanceTo(
-      contact.ropeVelocity
-    ) < .02);
-    assert.ok(Math.abs(
-      contact.surfaceVelocity.length() - geometry.ropeLinearSpeed
-    ) < 5e-16);
-  }
-
-  const transitionTimeStep = 0.000001;
-  for (const transitionDistance of ropeCurve.transitionDistances) {
-    const crossingTime = transitionDistance / geometry.ropeLinearSpeed;
-    const before = model.root.userData.ropeMaterialPointAtTime(
-      crossingTime - transitionTimeStep,
-      0,
-    );
-    const exact = model.root.userData.ropeMaterialPointAtTime(
-      crossingTime,
-      0,
-    );
-    const after = model.root.userData.ropeMaterialPointAtTime(
-      crossingTime + transitionTimeStep,
-      0,
-    );
-    const numericalVelocity = after.clone().sub(before).divideScalar(
-      transitionTimeStep * 2
-    );
-    assert.ok(exact.distanceTo(ropeCurve.getPointAtDistance(transitionDistance)) < 2e-15);
-    assert.ok(numericalVelocity.distanceTo(
-      new THREE.Vector3(1,0,geometry.axialSlope).normalize().multiplyScalar(geometry.ropeLinearSpeed)
-    ) < 8e-7,
-    'a material marker crosses each straight/wrap boundary without a jerk');
-    assert.ok(Math.abs(
-      before.distanceTo(exact) - geometry.ropeLinearSpeed * transitionTimeStep
-    ) < 2e-12);
-    assert.ok(Math.abs(
-      exact.distanceTo(after) - geometry.ropeLinearSpeed * transitionTimeStep
-    ) < 2e-12);
-  }
-
-  const sampleCount = 18000;
-  let maximumNoSlipError = 0;
-  let maximumRopeLengthError = 0;
-  let maximumTravelStepError = 0;
-  let previousTravel;
-  for (let sample = 0; sample <= sampleCount; sample += 1) {
-    const time = geometry.drumRotationPeriod * sample / sampleCount;
-    const state = model.root.userData.stateAtTime(time);
-    maximumNoSlipError = Math.max(
-      maximumNoSlipError,
-      state.noSlipVelocityError.length(),
-    );
-    maximumRopeLengthError = Math.max(
-      maximumRopeLengthError,
-      Math.abs(state.ropeLengthError),
-    );
-    if (previousTravel !== undefined) {
-      const exactTravelStep = geometry.ropeLinearSpeed
-        * geometry.drumRotationPeriod / sampleCount;
-      maximumTravelStepError = Math.max(
-        maximumTravelStepError,
-        Math.abs(state.ropeTravel - previousTravel - exactTravelStep),
-      );
-    }
-    previousTravel = state.ropeTravel;
-    assert.equal(state.angularSpeed, geometry.drumAngularSpeed);
-    assert.equal(state.angularAcceleration, 0);
-    assert.equal(state.linearSpeed, geometry.ropeLinearSpeed);
-    assert.equal(state.linearAcceleration, 0);
-    assert.equal(state.velocityDiscontinuous, false);
-  }
-  assert.ok(maximumNoSlipError > .01 && maximumNoSlipError < .02);
-  assert.equal(maximumRopeLengthError, 0);
-  assert.ok(maximumTravelStepError < 6e-15);
-
-  const oneTurnState = model.root.userData.stateAtTime(
-    geometry.drumRotationPeriod
-  );
-  assert.equal(oneTurnState.drumAngle, Math.PI * 2);
-  assert.equal(oneTurnState.ropeTravel, geometry.ropePitchRadius * Math.PI * 2);
-  assert.equal(oneTurnState.rotationPhase, 0);
-
+  assert.equal(beams.length, 8);
+  assert.equal(spokes.length, 8, 'four traced spokes on each end wheel');
+  assert.ok([...beams, ...spokes, frontRim, rearFlange, hub].every((part) => part.parent === drumRotor));
+  // Brown's measurements: outer circle, inner circle, ground-line rope.
+  assert.equal(g.flangeOuterRadius, 1.81);
+  assert.equal(g.rimInnerRadius, 1.51);
+  assert.ok(Math.abs(g.ropeVertexRadius - 1.73) < 1e-12);
+  assert.ok(Math.abs(g.beamNoseCenterRadius + g.bendRadius - g.ropeVertexRadius) < 1e-12);
+  // The cage is open: only the eight beams occupy the annulus under the rope
+  // between the end wheels.
   model.root.updateMatrixWorld(true);
-  const worldPosition = (object) => object.getWorldPosition(
-    new THREE.Vector3(),
-  );
-  const fixedBlocks = [
-    cameraEnvelope,
-    drum,
-    pedestal,
-    pedestalFoot,
-    pitchContactMarker,
-    rearBearing,
-    rope,
-  ];
-  const fixedPositions = fixedBlocks.map(worldPosition);
-  let drumIndexTrace = 0;
-  let previousDrumIndex;
-  for (const turnFraction of [0, 0.13, 0.28, 0.47, 0.68, 0.84, 1]) {
-    const time = geometry.drumRotationPeriod * turnFraction;
-    const state = model.root.userData.stateAtTime(time);
-    model.update(time, 0.016);
-    model.root.updateMatrixWorld(true);
-    assert.equal(drumRotor.rotation.x, 0);
-    assert.equal(drumRotor.rotation.y, 0);
-    assert.equal(drumRotor.rotation.z, state.drumAngle);
-    assert.equal(drum.userData.angularSpeed, state.angularSpeed);
-    assert.equal(drum.userData.angularAcceleration,
-      state.angularAcceleration);
-    assert.equal(rope.userData.materialTravel, state.ropeTravel);
-    ropeMarkers.forEach((marker, index) => {
-      const distance = model.root.userData.materialDistanceAtTime(
-        time,
-        geometry.materialMarkerOffsets[index],
-      );
-      assert.equal(marker.userData.materialDistance, distance);
-      assert.ok(marker.position.distanceTo(
-        ropeCurve.getPointAtDistance(distance)
-      ) < 2e-16);
-      assert.ok(marker.userData.velocity.distanceTo(
-        model.root.userData.ropeMaterialVelocityAtDistance(
-          distance,
-          state.angularSpeed,
-        )
-      ) < 2e-16);
-      assert.equal(
-        marker.visible,
-        distance > geometry.markerEndFadeLength
-          && distance < geometry.nominalVisibleRopeLength
-            - geometry.markerEndFadeLength,
-      );
-    });
-    assert.ok(
-      model.root.userData.contacts.drumRopeWrap.noSlipVelocityError.length()
-        < .02,
-    );
-    assert.equal(
-      model.root.userData.contacts.drumRopeWrap.ropeCount,
-      1,
-    );
-    assert.equal(
-      model.root.userData.contacts.drumRopeWrap.wrapTurns,
-      1,
-    );
-    assert.equal(
-      model.root.userData.contacts.fixedDrumBearing.centerTranslation,
-      0,
-    );
-    assert.equal(
-      model.root.userData.contacts.fixedDrumBearing.axisError,
-      0,
-    );
-    const drumIndex = worldPosition(drumRotationIndex);
-    if (previousDrumIndex) {
-      drumIndexTrace += drumIndex.distanceTo(previousDrumIndex);
-    }
-    previousDrumIndex = drumIndex;
+  const box = (o) => new THREE.Box3().setFromObject(o);
+  drumRotor.traverse((object) => {
+    if (!object.isMesh || beams.includes(object)) return;
+    const b = box(object);
+    const inside = b.max.z > -g.drumWidth / 2 + 1e-6 && b.min.z < g.drumWidth / 2 - 1e-6;
+    if (inside) assert.ok(Math.max(b.max.x, b.max.y) < g.frontRimOuterRadius, `${object.userData.role} fills the cage`);
+  });
+  for (const spoke of spokes) {
+    for (const p of spoke.geometry.parameters.shapes.getPoints(64)) assert.ok(p.length() <= g.frontRimOuterRadius - .009, 'spoke ends inside its rim');
   }
-  assert.ok(drumIndexTrace > 5.5,
-    'the white face index makes one complete drum revolution legible');
-  fixedBlocks.forEach((object, index) => {
-    assert.ok(worldPosition(object).distanceTo(fixedPositions[index]) < 2e-16,
-      'the drum axis, bearing, support, and visible rope path remain fixed');
+  for (const beam of beams) {
+    const b = beam.geometry.boundingBox ?? (beam.geometry.computeBoundingBox(), beam.geometry.boundingBox);
+    assert.ok(b.min.z < g.rearZ + g.ringDepth / 2 && b.max.z > g.frontZ + g.ringDepth / 2 + .01, 'beam joins both end wheels and stands proud of the front rim');
+  }
+  const noses = (drumAngle) => Array.from({ length: 8 }, (_, k) => {
+    const a = -Math.PI / 2 + k * Math.PI / 4 + drumAngle;
+    return new THREE.Vector2(g.beamNoseCenterRadius * Math.cos(a), g.beamNoseCenterRadius * Math.sin(a));
   });
-
-  assert.equal(cameraEnvelope.material.opacity, 0);
-  assert.equal(cameraEnvelope.material.transparent, true);
-  assert.equal(cameraEnvelope.castShadow, false);
-  assert.equal(cameraEnvelope.receiveShadow, false);
-  assert.equal(pitchContactMarker.castShadow, false);
-  assert.equal(pitchContactMarker.receiveShadow, false);
-  assert.equal(model.root.userData.materialsIgnoreSceneFog, true);
+  const segmentDistance = (p, a, b) => {
+    const ab = b.clone().sub(a), t = THREE.MathUtils.clamp(p.clone().sub(a).dot(ab) / ab.lengthSq(), 0, 1);
+    return p.distanceTo(a.clone().addScaledVector(ab, t));
+  };
+  let minimumSpeed = Infinity, maximumSpeed = -Infinity, previous = null;
+  for (let i = 0; i <= 256; i += 1) {
+    const time = g.drumRotationPeriod * i / 256;
+    const state = u.stateAtTime(time);
+    const { points } = state.path;
+    const flat = points.map((p) => new THREE.Vector2(p.x, p.y));
+    // Octagon: the rope touches every nose, bends only round noses, and never
+    // cuts one.
+    const centers = noses(state.drumAngle);
+    for (let k = 1; k < flat.length; k += 1) {
+      for (const c of centers) assert.ok(segmentDistance(c, flat[k - 1], flat[k]) > g.bendRadius - 2e-3, 'rope cuts a beam nose');
+    }
+    for (const c of centers) assert.ok(flat.some((p) => Math.abs(p.distanceTo(c) - g.bendRadius) < 1e-9), 'rope rides every beam');
+    // Between the end wheels and clear of its own other pass.
+    for (const p of points.slice(1, -1)) assert.ok(Math.abs(p.z) + g.ropeRadius < g.drumWidth / 2);
+    const exitSpan = new THREE.Line3(points.at(-2), points.at(-1));
+    const entrySpan = new THREE.Line3(points[0], points[1]);
+    const near = new THREE.Vector3();
+    for (const p of points.slice(1, Math.floor(points.length / 3))) assert.ok(p.distanceTo(exitSpan.closestPointToPoint(p, true, near)) > 2 * g.ropeRadius);
+    for (const p of points.slice(-Math.floor(points.length / 3), -1)) assert.ok(p.distanceTo(entrySpan.closestPointToPoint(p, true, near)) > 2 * g.ropeRadius);
+    // The guides stay put on Brown's ground line; each span tilts a little.
+    assert.ok(points[0].equals(g.leftGuide) && points.at(-1).equals(g.rightGuide));
+    assert.ok(Math.abs(state.leftSpanAngle) < THREE.MathUtils.degToRad(2.5));
+    const speed = u.feedSpeedsAtTime(time);
+    assert.ok(Math.abs(speed.left - speed.right) < .03 * speed.left, 'both spans move at nearly the same pulsing rate');
+    minimumSpeed = Math.min(minimumSpeed, speed.left); maximumSpeed = Math.max(maximumSpeed, speed.left);
+    if (previous) {
+      assert.ok(state.leftFeed - previous.leftFeed > 0, 'rope is always drawn in');
+      assert.ok(state.leftFeed - previous.leftFeed < 1.3 * g.drumAngularSpeed * g.drumRotationPeriod / 256 * 1.73, 'no feed jump at a beam change');
+      assert.ok(Math.abs(state.ropeLength - previous.ropeLength) < .01);
+    }
+    previous = state;
+  }
+  // Non-uniform take-up: the octagon's effective radius runs from r cos 22.5 deg to r.
+  const mean = u.stateAtTime(0).meanTravelPerDrumRadian * g.drumAngularSpeed;
+  assert.ok(minimumSpeed < .97 * mean && maximumSpeed > 1.02 * mean, `speed ${minimumSpeed}..${maximumSpeed} about ${mean}`);
+  // One turn draws eight pitch lengths, a whole number of lays, so the loop
+  // is seamless; playback reuses the rope buffers.
+  assert.ok(Math.abs(u.stateAtTime(g.drumRotationPeriod).leftFeed - u.stateAtTime(0).leftFeed - g.turnLength) < 1e-9);
+  const lays = g.turnLength / g.lay;
+  assert.ok(Math.abs(lays - Math.round(lays)) < 1e-9);
+  model.update(0);
+  const start = Float32Array.from(ropeMesh.geometry.attributes.position.array);
+  const buffer = ropeMesh.geometry.attributes.position.array;
+  model.update(1.3);
+  model.update(g.drumRotationPeriod);
+  assert.equal(ropeMesh.geometry.attributes.position.array, buffer, 'playback must reuse rope geometry');
+  let seam = 0;
+  for (let i = 0; i < start.length; i += 1) seam = Math.max(seam, Math.abs(start[i] - buffer[i]));
+  assert.ok(seam < 2e-4, `loop seam ${seam}`);
+  // One brown laid rope, no markers, reels or stands.
+  const ropes = [];
+  model.root.traverse((object) => { if (object.userData.physicalCable) ropes.push(object); });
+  assert.deepEqual(ropes, [rope]);
+  assert.equal(ropeMesh.material.color.getHex(), 0x7a4f2e);
   model.root.traverse((object) => {
-    const materials = Array.isArray(object.material)
-      ? object.material
-      : object.material
-        ? [object.material]
-        : [];
-    for (const material of materials) assert.equal(material.fog, false);
+    assert.ok(!/reel|marker|index/.test(object.userData.role ?? ''), object.userData.role);
+    if (object.material) assert.equal(object.material.fog, false);
   });
-
+  assert.ok(u.hideGround && u.supportsRestart && u.materialsIgnoreSceneFog);
   disposeModel(model.root);
 });
 
@@ -32082,8 +31840,10 @@ test('movement 136 drives a spring-held axial rod from sixteen shaped rim teeth'
 
   assert.equal(wheelBody.geometry.parameters.radiusTop,
     geometry.wheelOuterRadius);
-  assert.equal(wheelBody.geometry.parameters.height,
-    geometry.baseThickness);
+  // Pass 96: the base's front face sits 0.003 below the rim's valley floor.
+  assert.ok(Math.abs(wheelBody.geometry.parameters.height
+    - (geometry.baseThickness - 0.003)) < 1e-12);
+  assert.ok(Math.abs(wheelBody.position.x + 0.0015) < 1e-12);
   assert.equal(inputShaft.geometry.parameters.radiusTop,
     geometry.shaftRadius);
   assert.equal(inputShaft.geometry.parameters.height,
@@ -32104,8 +31864,9 @@ test('movement 136 drives a spring-held axial rod from sixteen shaped rim teeth'
     toothedRim.geometry.attributes.position.count,
     geometry.toothCount * 128 * 18,
   );
+  // The rim's walls run 0.003 down into the base (pass 96).
   assert.ok(Math.abs(
-    toothedRim.geometry.boundingBox.min.x - geometry.baseFrontX
+    toothedRim.geometry.boundingBox.min.x - (geometry.baseFrontX - 0.003)
   ) < 2e-6);
   assert.ok(Math.abs(
     toothedRim.geometry.boundingBox.max.x - geometry.maximumFaceX
@@ -36904,10 +36665,12 @@ test('movement 144 amplifies one short right-hand stroke through four exact lazy
     geometry.minimumCellWidth > geometry.jointRingOuterRadius * 2,
     'adjacent moving joint rings remain separate at maximum folding',
   );
+  // p96: Brown dots the links behind the post, so the post stands in front
+  // of the whole linkage, including the input clevis's front cap.
   assert.ok(
-    geometry.pedestalFrontZ + geometry.pedestalDepth / 2
-      < geometry.rearLinkPlaneZ - geometry.linkDepth / 2,
-    'the fixed pedestal remains behind the rear crossed-bar plane',
+    geometry.pedestalFrontZ - geometry.pedestalDepth / 2
+      > geometry.frontLinkPlaneZ + geometry.linkDepth / 2 + 0.35,
+    'the fixed post stands in front of the front crossed-bar plane',
   );
   assert.equal(intermediateJointPins.length, 4);
   assert.equal(movingCrossCenterPins.length, 2);
@@ -37307,7 +37070,7 @@ test('movement 144 amplifies one short right-hand stroke through four exact lazy
   assert.equal(cameraEnvelope.userData.cameraFramingEnvelope, true);
   assert.equal(cameraEnvelope.geometry.parameters.width, 9.45);
   assert.equal(cameraEnvelope.geometry.parameters.height, 4.72);
-  assert.equal(cameraEnvelope.geometry.parameters.depth, 1.55);
+  assert.equal(cameraEnvelope.geometry.parameters.depth, 1.95);
   assert.equal(cameraEnvelope.material.opacity, 0);
   assert.equal(cameraEnvelope.material.transparent, true);
   assert.equal(cameraEnvelope.material.colorWrite, false);
@@ -37427,6 +37190,18 @@ test('movement 145 closes one tied rod and rocking beam around a continuously ro
     beamCenterHub,
     ...beamEndHubs,
   ]) assert.equal(beamPart.parent, beamRotor);
+  {
+    // p96: both beam ends are arcs concentric with their pins; the pivot end
+    // has radius 0.36 (the beam's half-width) about the pivot.
+    const position = beamBody.geometry.getAttribute('position');
+    let maxX = -Infinity;
+    for (let i = 0; i < position.count; i++) {
+      const x = position.getX(i), y = position.getY(i);
+      maxX = Math.max(maxX, x);
+      if (x > 0) assert.ok(Math.hypot(x, y) < .36 + 1e-6, 'pivot end inside its concentric arc');
+    }
+    assert.ok(Math.abs(maxX - .36) < 1e-3, 'pivot end reaches the arc');
+  }
   for (const standardPart of [
     sliderWristPin,
     standardFoot,

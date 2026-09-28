@@ -22,6 +22,27 @@ test('126 retains measured pins and constructs closed curved lever and pulley ha
  }finally{disposeObject3D(v.root);}
 });
 
+// Pass 97: every eye and boss is concentric with its pin (the traced eye
+// circles sat up to 2.4 px off their pins).
+test('126 eyes and the pivot boss are concentric with their pins',()=>{
+ const v=makeBellCrankGeometry(),u=v.root.userData;
+ try{
+  for(const[part,pin]of [['inputEye','inputPin'],['outputEye','outputPin'],['pivotBoss','pivotPin']]){
+   const g=u.parts[part].geometry;g.computeBoundingBox();
+   const c=[(g.boundingBox.min.x+g.boundingBox.max.x)/2,(g.boundingBox.min.y+g.boundingBox.max.y)/2];
+   const s=u.source.circles[pin].center,p=[(s[0]-u.source.axis[0])/100,(u.source.axis[1]-s[1])/100];
+   assert(Math.hypot(c[0]-p[0],c[1]-p[1])<2e-4,`${part} off its pin by ${Math.hypot(c[0]-p[0],c[1]-p[1])}`);
+   // The bore/inset is centred on the same pin: the ring is uniformly wide.
+   const pos=g.attributes.position,radii=[];
+   for(let i=0;i<pos.count;i++){const r=Math.hypot(pos.getX(i)-p[0],pos.getY(i)-p[1]);radii.push(r);}
+   const inner=Math.min(...radii),outer=Math.max(...radii);
+   const expectOuter=u.source.circles[part==='pivotBoss'?'pivotEye':part].radius/100;
+   assert(Math.abs(outer-expectOuter)<1e-3,part);
+   assert(inner>.07,part);
+  }
+ }finally{disposeObject3D(v.root);}
+});
+
 test('126 initializes both finite cords at their actual visible endpoints with one input actuator',()=>{
  const v=makeMujocoBellCrank(mujoco),p=v.physics,u=v.root.userData;
  try{

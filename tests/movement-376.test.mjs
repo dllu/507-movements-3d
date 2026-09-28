@@ -119,9 +119,9 @@ test('movement 376 is one internal animal treadwheel with a rigid cage, sixteen 
   assert.deepEqual(belts, []);
   for (const role of [
     'horizontal-axis-cage-wheel-turned-by-animal-weight',
-    'cross-width-internal-tread-board-rigid-with-wheel',
+    'internal-tread-board-with-end-cheeks-to-riveted-bands',
     'animal-held-at-one-side-while-walking-up-moving-interior',
-    'horizontal-output-axle-rigid-with-treadwheel',
+    'overhung-output-axle-stub-rigid-with-treadwheel',
   ]) assert.ok(roles.includes(role), role);
   disposeModel(model.root);
 });
@@ -449,4 +449,27 @@ test('376 axle bosses sit 0.005 inside both faces of the chord bars', () => {
       assert.ok(Math.abs(bar.max.z - boss.max.z - 0.005) < 1e-4, `${boss.max.z} ${bar.max.z}`);
     }
   }
+});
+
+test('376 output axle is one overhung stub from the near boss, clear of the horse (p96)', () => {
+  const model = createMovementModel(catalog.movements[375]);
+  const { blocks, axleStub } = model.root.userData;
+  for (let i = 0; i <= 16; i += 1) {
+    model.update(i / 4);
+    model.root.updateMatrixWorld(true);
+    const axle = new THREE.Box3().setFromObject(blocks.axle);
+    const [rear, near] = blocks.axleBosses.map((boss) => new THREE.Box3().setFromObject(boss));
+    assert.ok(axle.min.z > near.min.z && axle.min.z < near.max.z, 'stub starts inside the near boss');
+    assert.ok(axle.max.z > near.max.z + 0.4, 'stub stands out of the near boss');
+    assert.ok(rear.max.z < 0, 'rear boss is on the far face');
+    model.root.traverse((object) => {
+      if (!object.isMesh || !object.visible) return;
+      let role = '';
+      for (let o = object; o && !role; o = o.parent) role = o.userData.role ?? '';
+      if (!/horse|animal|hoof|tail|ear|eye|muzzle|leg/.test(role)) return;
+      const box = new THREE.Box3().setFromObject(object);
+      assert.ok(box.max.z < axleStub.innerZ - 0.1, `${role} clear of the stub`);
+    });
+  }
+  disposeModel(model.root);
 });

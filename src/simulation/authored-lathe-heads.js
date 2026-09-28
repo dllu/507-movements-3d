@@ -340,6 +340,17 @@ function latheTailstockScrewFeed(movement) {
     const guide = new THREE.Mesh(plate(profile, -0.08, 0.08).rotateY(Math.PI / 2), frameMaterial);
     guide.position.x = x; guide.userData.role = 'bored-keyed-quill-bearing-land'; frame.add(guide); return guide;
   });
+  // Brown's cutaway opens only the barrel's front wall, on the camera plane;
+  // the rear wall stays solid between the rails, cheeks and bearing lands.
+  const rearWallSpans = [
+    [housingMinimumX + 0.09, -1.58], [-1.42, 0.57], [0.73, housingMaximumX - 0.09],
+  ].filter(([left, right]) => right > left);
+  const barrelRearWall = new THREE.Mesh(
+    plate(polygonClipping.union(...rearWallSpans.map(([left, right]) => rectangle(left, -0.44, right, 0.44))), -0.53, -0.44),
+    frameMaterial,
+  );
+  barrelRearWall.userData.role = 'fixed-solid-rear-wall-of-quill-barrel';
+  frame.add(barrelRearWall);
 
   const baseLeft = sourcePointToModel(sourceRasterBaseLeft);
   const baseRight = sourcePointToModel(sourceRasterBaseRight);
@@ -505,15 +516,18 @@ function latheTailstockScrewFeed(movement) {
   quill.add(quillSleeve);
   const quillRings = [];
   for (const x of [quillNose.x, quillRearX]) {
-    const ring = new THREE.Mesh(
-      new THREE.TorusGeometry(0.33, 0.045, 9, 44),
+    const endRing = new THREE.Mesh(
+      // A collar seated on the sleeve's outside (bore = sleeve radius), not a
+      // torus sunk into its wall, so the ring's and the sleeve's cut faces
+      // don't overlap on the section plane; outer radius as before.
+      ring(0.33, 0.375, -0.045, 0.045, 128),
       drivenMaterial,
     );
-    ring.rotation.y = Math.PI / 2;
-    ring.position.x = x;
-    ring.userData.role = 'sliding-quill-end-ring';
-    quillRings.push(ring);
-    quill.add(ring);
+    endRing.rotation.y = Math.PI / 2;
+    endRing.position.x = x;
+    endRing.userData.role = 'sliding-quill-end-ring';
+    quillRings.push(endRing);
+    quill.add(endRing);
   }
   const centerShankLength = quillNose.x - (centerTip.x + 0.52);
   const centerShank = cylinderAlongX(0.18, centerShankLength,

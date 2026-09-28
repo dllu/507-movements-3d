@@ -33,8 +33,8 @@ test('191 and 196 baked envelopes are smooth: no per-pose stair-step zigzags',()
  const zigzags=outline=>{const o=outline.slice(0,-1),turn=i=>{const a=o[(i+o.length-1)%o.length],p=o[i],c=o[(i+1)%o.length],x=[p[0]-a[0],p[1]-a[1]],y=[c[0]-p[0],c[1]-p[1]];return Math.atan2(x[0]*y[1]-x[1]*y[0],x[0]*y[0]+x[1]*y[1]);};let count=0;for(let i=0;i<o.length;i++){const t=turn(i),n=turn((i+1)%o.length);if(Math.abs(t)>.09&&Math.abs(n)>.09&&Math.sign(t)!==Math.sign(n))count++;}return count;};
  const b196=create(196).root.userData.blocks,b191=create(191).root.userData.blocks;
  assert.equal(zigzags(b196.wheelBody.geometry.userData.outline),0);
- // 191: only the eased corners of each scroll's single radial seam step remain.
- for(const body of[b191.drivenBody,b191.driverBody])assert.ok(zigzags(body.geometry.userData.outline)<=3);
+ // 191: the seam step is one straight wall topped by a filleted square tooth (p96): no jogs left.
+ for(const body of[b191.drivenBody,b191.driverBody])assert.equal(zigzags(body.geometry.userData.outline),0);
  for(const body of[b196.wheelBody,b191.drivenBody,b191.driverBody])assert.ok(body.geometry.index,'welded smooth-shaded extrusion');
 });
 test('201 finite follower fits its slot at every sampled input pose',()=>{

@@ -90,13 +90,28 @@ function makeSlottedRocker({
   const rocker = new THREE.Group();
   rocker.userData.role =
     'bottom-pivoted-rocker-carrying-one-open-crescent-cam-slot';
-  const slotBody = new THREE.Mesh(plate(crescent.body,.40,.64),rockerMaterial);
-  slotBody.userData.role='finite-open-crescent-channel-walls';rocker.add(slotBody);
+  // Brown's lower neck is a broad S: it leaves the foot eye as a waisted
+  // stem about 0.24 wide and flares on both sides into the crescent's lower
+  // end, with no line between them. It is one smooth spline outline on each
+  // side (traced in the plate's upright rest pose, then turned back by the
+  // rest lean into the rocker's frame), extruded with the crescent walls as
+  // one piece.
+  const lean = crescent.parameters.restLean, cosLean = Math.cos(lean), sinLean = Math.sin(lean);
+  const neckEdge = (points) => new THREE.CatmullRomCurve3(points.map(([x, y]) => new THREE.Vector3(
+    x * cosLean + y * sinLean, -x * sinLean + y * cosLean, 0)), false, 'centripetal')
+    .getPoints(64).map(({x, y}) => [x, y]);
+  const neckLeft = neckEdge([[-0.21, 0], [-0.145, 0.25], [-0.10, 0.50], [-0.105, 0.70], [-0.13, 0.84], [-0.20, 0.978], [-0.30, 1.075], [-0.36, 1.20]]);
+  const neckRight = neckEdge([[0.21, 0], [0.16, 0.25], [0.12, 0.50], [0.155, 0.70], [0.21, 0.80], [0.30, 0.87]]);
+  const neck = polygonClipping.union(poly([...neckRight, ...neckLeft.reverse()]), poly(circle([0, 0], 0.22, 64)));
+  const rockerBody = polygonClipping.difference(
+    polygonClipping.union(crescent.body, neck),
+    crescent.pocket, poly(circle([0, 0], 0.144, 64)));
+  const slotBody = new THREE.Mesh(plate(rockerBody,.40,.64),rockerMaterial);
+  slotBody.userData.role='finite-open-crescent-channel-walls-and-s-neck-to-foot-pivot';rocker.add(slotBody);
   const slot=new THREE.Group();slot.userData.role='open-crescent-slot-void';rocker.add(slot);
-  const lowerArm=new THREE.Mesh(plate(crescent.lower,.40,.64),rockerMaterial);
-  lowerArm.userData.role='rocker-lower-arm-to-fixed-pivot';
+  const lowerArm=slotBody;
   const upperArm=new THREE.Mesh(plate(crescent.upper,.40,.64),rockerMaterial);
-  upperArm.userData.role='rocker-upper-arm-to-output-joint';rocker.add(lowerArm,upperArm);
+  upperArm.userData.role='rocker-upper-arm-to-output-joint';rocker.add(upperArm);
   // Let the bearing caps and rim stand proud of the arm's coincident surfaces.
   const pivotHub = new THREE.Mesh(boredCylinderGeometry(.235,.147,.28),darkMaterial);pivotHub.rotation.x=Math.PI/2;
   pivotHub.position.z = 0.52;
@@ -222,6 +237,7 @@ function intermittentShuttleDrive(movement) {
   connectingRod.userData.role =
     'finite-link-from-rocker-top-to-horizontal-shuttle-slide';
   root.add(markShadows(connectingRod));
+  const sliderPlaneZ = 0.60;
   const outputSlider = new THREE.Group();
   outputSlider.userData.role =
     'intermittently-reciprocating-horizontal-shuttle-carriage';
@@ -248,8 +264,12 @@ function intermittentShuttleDrive(movement) {
     poly(circle([0, 0], 0.1515, 96)),
   ), -0.139, 0.139), outputMaterial);
   shuttleLug.userData.role = 'shuttle-bar-lug-carrying-link-pin';
-  const sliderJoint = cylinderAlongZ(0.15, 0.58, darkMaterial, 28);
-  sliderJoint.position.z = 0.28;
+  // The bar and its lug run directly behind the link (bar z 0.46-0.74, link
+  // 0.75-0.85), so the pin passes from the lug's bore straight into the
+  // link's eye with no bare length between them (it was 0.29 with the bar
+  // at z 0.32). Nothing else shares the bar's height band.
+  const sliderJoint = cylinderAlongZ(0.15, 0.43, darkMaterial, 28);
+  sliderJoint.position.z = 0.675 - sliderPlaneZ;
   sliderJoint.userData.role = 'output-rod-to-slider-pin';
   const outputIndex = new THREE.Mesh(
     new THREE.BoxGeometry(0.11, 0.32, 0.06),
@@ -406,7 +426,7 @@ function intermittentShuttleDrive(movement) {
     outputSlider.position.set(
       state.sliderJointWorld.x,
       state.sliderJointWorld.y,
-      0.32,
+      sliderPlaneZ,
     );
     connectingRod.userData.setEndpoints(
       new THREE.Vector3(state.topJointWorld.x, state.topJointWorld.y, 0.80),

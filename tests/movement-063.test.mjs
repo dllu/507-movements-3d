@@ -59,7 +59,8 @@ test('movement 63 is framed face on, with the pins working only in the drop\'s p
   assert.ok(isSeeThrough(pawlBody), 'the pawl is see-through');
   assert.ok(!isSeeThrough(driver.userData.rotor.children.find((child) => child.userData.driverDisk)), 'the disk is opaque');
   const [springBack, springFront] = zRange(springLeaf);
-  assert.ok(springBack > z.dropFront - 1e-9 && springFront < z.pawlBack, 'the spring lies on the drop tail');
+  assert.ok(springBack > z.dropBack + 1e-3 && springFront < z.dropFront - 1e-3,
+    'p96: the spring is a flat strip in the drop\'s own plane, inside its thickness');
   assert.ok(zRange(star)[1] > z.starFront - 1e-9);
 });
 
@@ -186,22 +187,40 @@ test('movement 63 draws every part whole and solid, with no dashed outline or un
   assert.ok(dropBody.geometry.boundingBox.max.x > (878 - hx) * k - 1e-6);
 });
 
-test('movement 63 carries the stop pin and the spring clamp on one fixed bracket behind the drop', () => {
+test('movement 63 p96: no bracket; the stop pin and spring stud are plain studs, the spring runs into the tail', () => {
   const model = build();
-  const { geometry } = model.root.userData;
+  const { geometry, blocks } = model.root.userData;
   const byRole = (role) => model.root.children.find((child) => child.userData.role === role);
-  const bracket = byRole('fixed-bracket-carrying-stop-pin-and-spring-clamp');
+  assert.equal(byRole('fixed-bracket-carrying-stop-pin-and-spring-clamp'), undefined, 'no bracket bar');
+  assert.equal(byRole('fixed-clamp-block-holding-leaf-spring-end'), undefined, 'no box clamp');
   const pin = byRole('fixed-drop-stop-pin');
-  const clamp = byRole('fixed-clamp-block-holding-leaf-spring-end');
-  assert.ok(bracket && pin && clamp, 'bracket, stop pin and clamp exist');
-  const [bracketBack, bracketFront] = zRange(bracket);
-  const [pinBack] = zRange(pin);
-  const [clampBack] = zRange(clamp);
-  assert.ok(bracketFront < geometry.z.dropBack - 0.02, 'the bracket lies behind the drop\'s plane');
-  assert.ok(pinBack < bracketFront && pinBack > bracketBack, 'the stop pin is set into the bracket');
-  assert.ok(clampBack < bracketFront && clampBack > bracketBack, 'the clamp is set into the bracket');
-  // The pin stands at the bracket's round end, concentric with it.
-  const box = new THREE.Box3().setFromObject(bracket);
-  assert.ok(box.containsPoint(new THREE.Vector3(pin.position.x, pin.position.y, (bracketBack + bracketFront) / 2)));
-  assert.ok(box.containsPoint(new THREE.Vector3(clamp.position.x, clamp.position.y, (bracketBack + bracketFront) / 2)));
+  const stud = byRole('fixed-round-stud-holding-leaf-spring-end');
+  assert.ok(pin && stud);
+  const shaftBack = zRange(blocks.starShaft)[0];
+  for (const part of [pin, stud]) {
+    assert.equal(part.geometry.type, 'CylinderGeometry', 'a plain round stud');
+    assert.ok(Math.abs(zRange(part)[0] - shaftBack) < 1e-6, 'it runs back to the shafts\' back plane');
+  }
+  assert.equal(stud.geometry.parameters.radiusTop, pin.geometry.parameters.radiusTop, 'both studs match');
+  const [springBack, springFront] = zRange(blocks.springLeaf);
+  assert.ok(zRange(stud)[1] > springFront, 'the stud grips the whole spring width');
+  // The spring's moving end lies inside the drop's tail outline at every pose.
+  const dropBody = blocks.drop.userData.rotor.children.find((child) => child.userData.springDropBody);
+  const raycaster = new THREE.Raycaster();
+  for (const time of [0, 0.4, 0.9, 1.7, 2.6]) {
+    model.update(time, 0);
+    model.root.updateMatrixWorld(true);
+    const end = blocks.springLeaf.userData.curve.getPoint(1);
+    raycaster.set(new THREE.Vector3(end.x, end.y, 5), new THREE.Vector3(0, 0, -1));
+    assert.ok(raycaster.intersectObject(dropBody, false).length > 0, `t=${time}: the spring end is in the tail`);
+    // The strip never touches the stop pin.
+    const curve = blocks.springLeaf.userData.curve;
+    let gap = Infinity;
+    for (let i = 0; i <= 64; i += 1) {
+      const p = curve.getPoint(i / 64);
+      gap = Math.min(gap, Math.hypot(p.x - pin.position.x, p.y - pin.position.y));
+    }
+    assert.ok(gap > pin.geometry.parameters.radiusTop + 0.02, 'the spring clears the stop pin');
+  }
+  assert.ok(springBack > geometry.z.dropBack);
 });

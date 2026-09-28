@@ -717,7 +717,7 @@ function lePautePinWheelEscapement(movement) {
     roughness: 0.68,
   });
 
-  // Escape wheel: rim, five broad spokes and a hub with eight bolt heads.
+  // Escape wheel: rim, five broad spokes and a hub with seven bolt heads.
   const escapeWheel = new THREE.Group();
   escapeWheel.position.set(wheelCenter.x, wheelCenter.y, 0);
   escapeWheel.userData.axis = Z_AXIS.clone();
@@ -779,8 +779,9 @@ function lePautePinWheelEscapement(movement) {
   wheelRotor.add(wheelHub);
   const hubBoltMeshes = [];
   const hubBoltRadius = sourceRasterHubBoltCircleRadius * sourceScale;
-  for (let boltIndex = 0; boltIndex < 8; boltIndex += 1) {
-    const angle = Math.PI / 8 + boltIndex * FULL_TURN / 8;
+  // Brown draws seven bolt heads, one at the top of the hub.
+  for (let boltIndex = 0; boltIndex < 7; boltIndex += 1) {
+    const angle = Math.PI / 2 + boltIndex * FULL_TURN / 7;
     const bolt = cylinderAlongZ(0.075, 0.08, darkMaterial, 18);
     bolt.position.set(
       Math.cos(angle) * hubBoltRadius,

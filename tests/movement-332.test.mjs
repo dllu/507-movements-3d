@@ -532,3 +532,27 @@ test('movement 332 closes exactly and leaves movement 507 as the next draft', ()
   disposeModel(model507.root);
   disposeModel(model.root);
 });
+
+test('movement 332 p96: slim crossbar behind the E cap and a web boss at the left-link pin', () => {
+  const model = createMovementModel(catalog.movements[331]);
+  model.update(0);
+  model.root.updateMatrixWorld(true);
+  const find = (role) => {
+    let found = null;
+    model.root.traverse((object) => { if (object.userData.role === role) found = object; });
+    return found;
+  };
+  const cap = new THREE.Box3().setFromObject(find('source-transverse-crosshead-E-with-rounded-cap'));
+  const bar = new THREE.Box3().setFromObject(find('round-transverse-crossbar-from-cap-E-to-piston-rod'));
+  const rod = new THREE.Box3().setFromObject(find('piston-rod-rigidly-carried-by-crosshead-E'));
+  assert.ok(cap.max.z - cap.min.z < 0.2, 'the drawn cap is only the crosshead end');
+  assert.ok(bar.max.y - bar.min.y < 0.25, 'the crossbar is slim');
+  assert.ok(bar.min.z <= rod.min.z && bar.max.z >= cap.min.z, 'the crossbar joins cap and rod');
+  const boss = find('side-lever-web-boss-at-left-link-pin');
+  const pin = find('common-pin-side-lever-to-left-link');
+  assert.ok(boss.getWorldPosition(new THREE.Vector3()).setZ(0)
+    .distanceTo(pin.getWorldPosition(new THREE.Vector3()).setZ(0)) < 1e-9, 'boss concentric with the pin');
+  assert.ok(boss.geometry.parameters.radiusTop > 1.5 * pin.geometry.parameters.radiusTop);
+  const web = new THREE.Box3().setFromObject(find('side-lever-raised-centre-web'));
+  assert.ok(new THREE.Box3().setFromObject(boss).max.z > web.max.z, 'the boss stands proud of the web');
+});

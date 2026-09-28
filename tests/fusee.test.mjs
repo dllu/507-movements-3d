@@ -4,7 +4,7 @@ import test from 'node:test';
 import * as THREE from 'three';
 import { createMovementModel } from '../src/simulation/registry.js';
 import { makeFuseeMotion, fuseeParameters } from '../src/simulation/fusee-motion.js';
-import { groovedFuseeGeometry } from '../src/simulation/fusee-geometry.js';
+import { steppedFuseeGeometry } from '../src/simulation/fusee-geometry.js';
 import { fuseeSpringGeometry } from '../src/simulation/fusee-spring.js';
 
 const catalog = JSON.parse(await readFile(new URL('../src/data/movements.json', import.meta.url)));
@@ -57,15 +57,15 @@ test('046 fixes every rigid chain pitch and both rotating attachments throughout
     if (previous) {
       assert.ok(state.barrelTurns > previous.barrelTurns);
       assert.ok(state.fuseeLength < previous.fuseeLength);
-      assert.ok(state.fuseeRadius > previous.fuseeRadius);
+      assert.ok(state.fuseeRadius >= previous.fuseeRadius - 1e-12, 'the contact never steps back up a tier');
     }
     previous = state;
   }
 });
 
-test('046 machined ledges and deforming ribbon remain closed with outward shading', () => {
+test('046 stepped tiers and deforming ribbon remain closed with outward shading', () => {
   const motion = makeFuseeMotion();
-  const body = groovedFuseeGeometry(fuseeParameters);
+  const body = steppedFuseeGeometry(fuseeParameters);
   assertClosedOutward(body);
   const ribbon = fuseeSpringGeometry(motion.stateAtProgress(0, false).barrelAngle);
   for (const progress of [0, 0.25, 0.5, 0.75, 1]) {
@@ -180,11 +180,12 @@ test('046 adjacent articulated leaves remain in separate axial slabs', () => {
   console.log('046 neighboring plate separation', { poses: 129, checked, minimum });
 });
 
-test('046 chain surfaces clear the actual fusee triangles at the helical groove and its exits', () => {
+test('046 chain surfaces clear the actual fusee triangles on the tiers and their climbs', () => {
   const model = createMovementModel(catalog.movements[45]);
   const { chain, fusee, springBox } = model.root.userData.blocks;
   const data = chain.userData, motion = model.root.userData.motion;
-  const geometry = fusee.userData.body.geometry, p = geometry.attributes.position;
+  const geometry = fusee.userData.body.geometry;
+  const p = (geometry.index ? geometry.toNonIndexed() : geometry).attributes.position;
   const bucketCount = 512, buckets = Array.from({ length: bucketCount }, () => []);
   const bucketFor = (point) => Math.floor(THREE.MathUtils.euclideanModulo(Math.atan2(point.y, point.x), 2 * Math.PI)
     / (2 * Math.PI) * bucketCount) % bucketCount;
@@ -256,6 +257,45 @@ test('046 chain surfaces clear the actual fusee triangles at the helical groove 
   assert.ok(minimumBarrel > 0);
   assert.ok(minimum < 0.003, 'the winding chain stays close to the working riser');
   console.log('046 chain / actual fusee triangles', { poses: 129, rays: checked, minimum, minimumBarrel });
+});
+
+test('046 p96: the chain is seated on the stepped tiers, backed by a riser or lobe, and never hovers', () => {
+  const p = fuseeParameters, motion = makeFuseeMotion();
+  const body = steppedFuseeGeometry(p).userData;
+  let seated = 0, riser = 0, total = 0;
+  for (let sample = 0; sample <= 96; sample += 1) {
+    const state = motion.stateAtProgress(sample / 96);
+    const onFusee = state.barrelLength + state.spanLength;
+    state.pins.forEach((pin, index) => {
+      if (state.stations[index] <= onFusee + 1e-9) return;
+      const x = pin.x - p.fuseeCenterX, y = -pin.z, radius = Math.hypot(x, y);
+      total += 1;
+      const easing = state.stations[index] < onFusee + state.settle;
+      const phi = Math.atan2(y, x) - state.fuseeAngle;
+      const tier = p.tierChainHeights.findIndex((height) => Math.abs(pin.y - height) < 1e-9);
+      if (easing) {
+        // Leaving the fusee: eased off its path towards the span, clear of it.
+        const band = body.tops.findIndex((top, k) => pin.y - 0.037 <= top && pin.y - 0.037 >= body.bottoms[k]);
+        if (band >= 0) assert.ok(radius - 0.017 > body.outlineRadiusAt(band, phi) - 1e-9, 'the easing chain clears the body');
+      } else if (tier >= 0) {
+        // Level on its shelf: pin ends 0.002 above the shelf of the tier below.
+        seated += 1;
+        assert.ok(Math.abs(pin.y - 0.037 - p.tierShelves[tier] - 0.002) < 1e-9, 'the chain sits on its shelf');
+        const backing = body.outlineRadiusAt(tier, phi);
+        assert.ok(Math.abs(radius - p.riserGap - backing) < 1e-6 || Math.abs(radius - p.lobeGap - backing) < 2e-3,
+          'a seated pin is backed by its riser, or by the climbing lobe at a constant gap');
+      } else {
+        // Running down (or easing off) a riser: on a tier's chain radius.
+        riser += 1;
+        assert.ok(p.tierChainRadii.some((r) => Math.abs(radius - r) < 1e-9), 'a descending pin runs on a riser');
+        const band = body.tops.findIndex((top, k) => pin.y <= top && pin.y >= body.bottoms[k]);
+        const backing = body.outlineRadiusAt(band, phi);
+        assert.ok(radius - 0.017 > backing, 'the descending chain clears the tier beside it');
+      }
+    });
+  }
+  assert.ok(seated > 0.75 * total, `most of the wound chain lies level on the tiers (${seated}/${total})`);
+  console.log('046 tier seating', { poses: 97, pins: total, seated, onRisers: riser });
 });
 
 // Closest distance between nondegenerate finite segments, including

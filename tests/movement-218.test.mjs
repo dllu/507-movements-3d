@@ -353,10 +353,11 @@ test('movement 218 catch, hook, wheel, and visible axial layers stay disjoint', 
       );
     }
   }
-  assert.ok(minimumCatchClearance > geometry.notchReliefClearance - 0.00011);
-  // The hook sits just inside F's rim in Brown's shallow notch, so it passes
-  // the notch corner closer than the former deep slot (0.021 vs 0.028).
-  assert.ok(minimumPlainRimClearance > 0.02);
+  // p96: after the lift at e, G's lug rides F's plain rim (0.0005 clear)
+  // for the whole dwell instead of hovering about 20 degrees clear.
+  assert.ok(minimumCatchClearance > 0.0004);
+  assert.ok(minimumPlainRimClearance > 0.0004);
+  assert.ok(minimumPlainRimClearance < 0.002);
   assert.ok(minimumTripClearance > -1e-12);
 
   const clearances = model.root.userData.solidClearanceAtInputTravel(
@@ -421,7 +422,9 @@ test('movement 218 runtime exposes release and dwell while 262 stays authored', 
   assert.equal(model.root.userData.contacts.catchToNotch, null);
   near(blocks.outputRotor.userData.angularSpeed, 0, 0,
     'F is visibly stopped during e-to-C return');
-  assert.ok(model.root.userData.kinematics.catchSolidClearance > 0.16);
+  // p96: G's lug grazes F's rim through the dwell rather than hovering.
+  assert.ok(model.root.userData.kinematics.catchSolidClearance > 0.0004);
+  assert.ok(model.root.userData.kinematics.catchSolidClearance < 0.002);
   model.update(canonicalTimes.nextCReengagement);
   assert.equal(blocks.catchContactMarker.visible, false);
   assert.ok(model.root.userData.contacts.catchToNotch);

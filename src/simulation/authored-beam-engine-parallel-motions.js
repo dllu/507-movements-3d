@@ -856,18 +856,30 @@ function singleActingBeamRackParallelMotion(movement) {
   rollerStand.position.set(rollerCenterA.x, rollerCenterA.y, 0);
   rollerStand.userData.fixed = true;
   rollerStand.userData.role = 'fixed-stand-for-backing-roller-A';
-  const rollerShaft = cylinderAlongZ(0.30 * rollerRadius, 1.02,
-    darkMaterial, 32);
-  rollerShaft.position.z = -0.04;
+  // Brown draws no support for A. Its fixed axle runs back from the roller
+  // into a small bored pillow block standing on the bed's top face, behind
+  // the roller and inside its silhouette: the block's top is a half-round
+  // concentric with the axle (p96; the old flat plate topped out below the
+  // axle, which hung on a bare stub).
+  const rollerBlockHalfWidth = 0.52 * rollerRadius;
+  const rollerBlockBack = -0.46;
+  const rollerBlockFront = -0.13;
+  const rollerShaftBack = rollerBlockBack + 0.04;
+  const rollerShaftFront = 0.47;
+  const rollerShaft = cylinderAlongZ(0.30 * rollerRadius,
+    rollerShaftFront - rollerShaftBack, darkMaterial, 32);
+  rollerShaft.position.z = (rollerShaftFront + rollerShaftBack) / 2;
   rollerShaft.userData.fixed = true;
   rollerShaft.userData.role = 'fixed-axis-of-backing-roller-A';
-  const rollerPost = new THREE.Mesh(
-    new THREE.BoxGeometry(0.30, 2.3 * sourceScale, 0.55),
-    frameMaterial,
-  );
-  rollerPost.position.set(0, -rollerRadius - 1.15 * sourceScale, -0.52);
+  const rollerBlockBottom = bedTop - rollerCenterA.y - 0.02;
+  const rollerPost = new THREE.Mesh(plate(clip.union(
+    poly(circle([0, 0], rollerBlockHalfWidth, 64)),
+    poly([[-rollerBlockHalfWidth, rollerBlockBottom],
+      [rollerBlockHalfWidth, rollerBlockBottom],
+      [rollerBlockHalfWidth, 0], [-rollerBlockHalfWidth, 0]]),
+  ), rollerBlockBack, rollerBlockFront), frameMaterial);
   rollerPost.userData.fixed = true;
-  rollerPost.userData.role = 'fixed-pedestal-under-roller-A';
+  rollerPost.userData.role = 'fixed-pillow-block-under-roller-A-axle';
   rollerStand.add(rollerShaft, rollerPost);
   fixedFrame.add(rollerStand);
   root.add(fixedFrame);
@@ -1733,7 +1745,7 @@ function stationaryBeamEngineParallelMotion(movement) {
   // framing behind the mechanism, hidden behind its boss in the plate view.
   fixedFrame.add(
     pinWallBracket({ x: 0, y: 0, pinRadius: 0.38 * s, zPin: pivotOShaftLow, zWall: -0.55,
-      flange: 0.6, role: 'fixed-wall-bracket-of-beam-shaft-O', beyondPlateCrop: true }),
+      flange: 0.42, round: true, role: 'fixed-wall-bracket-of-beam-shaft-O', beyondPlateCrop: true }),
     pinWallBracket({ x: fixedRadiusPivotF.x, y: fixedRadiusPivotF.y, pinRadius: fixedPinRadius, zPin: pivotFShaftLow,
       zWall: -0.55, flange: 0.16, role: 'fixed-wall-bracket-of-radius-pin-F', beyondPlateCrop: true }),
     // F's small flange is carried at the head of a plain column standing on

@@ -7,7 +7,7 @@
     },
     {
       "file": "src/simulation/authored-expanding-pulleys.js",
-      "sha256": "ac16d1e9b80c185dccc963199f44986ea68ca30332feb98c6c65f933c8c18c85"
+      "sha256": "0d6af3db5585ead99ae424439f555e55745cd007d41800936f119b894e62ad6e"
     },
     {
       "file": "src/simulation/authored-scroll-gears.js",
@@ -61,7 +61,7 @@
     {
       "id": 224,
       "poses": 17,
-      "tested": 7672168,
+      "tested": 7982044,
       "inside": 0,
       "maxPenetration": 0,
       "maxWorkingGap": 0.0009197893286935693,

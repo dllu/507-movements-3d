@@ -117,10 +117,16 @@ export function correctCaryPump(root) {
   // the goose-neck. Pass 93: it looped down in an S below the casing before.
   const hugAt=deg=>{const a=deg*Math.PI/180,r=caryWallRadius(a,g.pistonLength)+.30+.32;return new THREE.Vector3(r*Math.cos(a),r*Math.sin(a),0);};
   let side=0;for(let deg=-60;deg<=60;deg+=.5)side=Math.max(side,hugAt(deg).x);
+  // Pass 96: from M the pipe leaves radially only as far as the casing's
+  // outer face, turns right along the lower wall and joins the hugging run
+  // at -34 degrees. Its underside now dips at most 0.13 below the casing's
+  // bottom near M (forced: port M sits at -60 degrees and the pipe is 0.68
+  // across); running radially out to r 2.35 it sagged 0.41 below it.
   const curve=new THREE.CatmullRomCurve3([
     new THREE.Vector3(...rot([1.72,0]),0),
-    new THREE.Vector3(...rot([2.35,0]),0),
-    ...[-48,-36,-24,-12].map(hugAt),
+    new THREE.Vector3(.95,-1.645,0),
+    new THREE.Vector3(1.45,-1.62,0),
+    ...[-34,-24,-14,-5].map(hugAt),
     new THREE.Vector3(side,.35,0),new THREE.Vector3(side,1.55,0),
     new THREE.Vector3(side+.22,2.38,0),new THREE.Vector3(side+.80,2.38,0),new THREE.Vector3(side+1.0,1.55,0),
   ],false,'centripetal');

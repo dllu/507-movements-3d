@@ -11,34 +11,35 @@ const polygon = shape => {
   const p = shape.extractPoints(64);
   return [p.shape, ...p.holes].map(r => r.map(v => [v.x, v.y]));
 };
-test('134 traced spokes join hub and rim; bored support clears the shaft', () => {
+test('134 cage: spokes join hub and rims, beams join both end wheels, support clears the shaft', () => {
   const model = createMovementModel(movement);
   const { blocks: b, geometry: d } = model.root.userData;
   try {
     model.root.updateMatrixWorld(true);
-    const spoke = polygon(b.spokes[0].geometry.parameters.shapes);
-    for (const part of [b.hub, b.contactBed]) {
-      assert(clip.intersection(spoke, polygon(part.geometry.parameters.shapes)).length > 0,
-        'spoke must intersect both castings in frontal projection');
-      assert(box(part).intersectsBox(box(b.spokes[0])), 'castings must overlap in depth');
+    for (const spoke of b.spokes) {
+      const rim = spoke.userData.end === 'front' ? b.frontRim : b.rearFlange;
+      const shape = polygon(spoke.geometry.parameters.shapes);
+      for (const part of [b.hub, rim]) {
+        assert.ok(clip.intersection(shape, polygon(part.geometry.parameters.shapes)).length > 0, 'spoke meets hub and rim');
+        assert.ok(box(part).intersectsBox(box(spoke)), 'overlap in depth');
+      }
+      // Spoke faces sit inside the rim faces: no coincident planes.
+      assert.ok(box(spoke).max.z < box(rim).max.z - .004 && box(spoke).min.z > box(rim).min.z + .004);
     }
-    for (const p of b.spokes[0].geometry.parameters.shapes.getPoints(128)) {
-      assert(p.length() < d.drumContactBedRadius - .05, 'spoke must stay beneath rope bed');
+    for (const beam of b.beams) {
+      assert.ok(box(beam).intersectsBox(box(b.rearFlange)) && box(beam).intersectsBox(box(b.frontRim)));
+      assert.ok(box(beam).max.z > box(b.frontRim).max.z + .01, 'beam end face stands proud of the rim');
     }
+    const beamShape = b.beams[0].geometry.parameters.shapes.getPoints(32);
+    assert.ok(Math.min(...beamShape.map(p => p.x)) > d.rimInnerRadius, 'beam foot sits in the rim, off its bore');
+    assert.ok(Math.abs(Math.max(...beamShape.map(p => p.x)) - d.beamTopRadius) < 1e-9);
     assert.equal(b.hub.geometry.parameters.shapes.holes.length, 1);
+    assert.ok(box(b.hub).max.z > box(b.frontRim).max.z + .02, 'hub ring stands proud');
     const bore = b.rearBearing.geometry.parameters.shapes.holes[0].getPoints(128);
-    assert(bore.every(p => p.length() > d.shaftHoleRadius));
-    assert((d.shaftHoleRadius + .003) * Math.cos(Math.PI / 48) > d.shaftHoleRadius);
-    assert(box(b.rearBearing).max.z < box(b.hub).min.z);
-    assert(box(b.inputShaft).min.z < box(b.rearBearing).min.z);
-    assert(box(b.inputShaft).max.z > box(b.rearBearing).max.z);
-    assert(box(b.pedestal).max.y < -d.shaftHoleRadius);
-    assert(box(b.pedestal).intersectsBox(box(b.rearBearing)));
-    assert(box(b.pedestal).intersectsBox(box(b.pedestalFoot)));
-    assert.equal(b.frontOuterOutline.visible, false);
-    for (const plate of b.rimSeparators) {
-      assert(box(plate).min.z < box(b.frontFlange).max.z, 'divider must join rim face');
-      assert(box(plate).max.z > box(b.frontFlange).max.z + .002, 'divider face must avoid z-fighting');
-    }
+    assert.ok(bore.every(p => p.length() > d.shaftRadius));
+    assert.ok(box(b.rearBearing).max.z < box(b.hub).min.z);
+    assert.ok(box(b.inputShaft).min.z < box(b.rearBearing).min.z);
+    assert.ok(box(b.pedestal).max.y < -d.shaftRadius);
+    assert.ok(box(b.pedestal).intersectsBox(box(b.rearBearing)) && box(b.pedestal).intersectsBox(box(b.pedestalFoot)));
   } finally { disposeObject3D(model.root); }
 });

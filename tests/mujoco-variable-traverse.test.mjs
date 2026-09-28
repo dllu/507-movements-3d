@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
+import {PALETTE} from '../src/simulation/primitives.js';
 import loadMujoco from '@mujoco/mujoco';
 import {makeVariableTraverseGeometry} from '../src/simulation/mujoco-variable-traverse/geometry.js';
 import {makeMujocoVariableTraverse} from '../src/simulation/mujoco-variable-traverse/visual.js';
@@ -17,6 +18,8 @@ test('122 restores the unequal rods and closed source hardware with clear shaft 
   assert.deepEqual(Object.keys(u.parts).filter(n=>/Guide|Pillar|Foot|Bearing|BackBar|Post|Clip|Strap|TieBar/.test(n)),[]);assert(u.hideGround);assert(u.profile.upperRodLength-u.profile.lowerRodLength>.2);
   for(const[n,m]of Object.entries(u.parts)){const r=inspectWeightedClutchSolid(m.geometry);assert(r.volume>0,n);assert.equal(r.components,1,n);assert.equal(r.unmatchedEdges+r.degenerate+r.wrongNormals+r.nonfinite,0,n);}
   for(const n of ['upper','lower']){const shaft=u.parts[n+'Shaft'].geometry,rod=u.parts[n+'Rod'].geometry;shaft.computeBoundingBox();rod.computeBoundingBox();assert(rod.boundingBox.min.z-shaft.boundingBox.max.z>.009);}
+  // p96: the rods are steel grey, apart from the gear face each crosses.
+  for(const n of ['upperRod','upperRodEye','lowerRod','lowerRodEye']){const c=u.parts[n].material.color.getHex();assert.equal(c,new THREE.Color(PALETTE.muted).getHex(),n);for(const g of ['upper','lower'])assert.notEqual(c,u.parts[g+'Gear'].material.color.getHex(),n);}
  }finally{disposeObject3D(v.root);}
 });
 

@@ -1,4 +1,5 @@
 import {correctHammerWorkingParts} from './hammer-working-parts.js';
+import {turned} from './finite-plate-geometry.js';
 import {
   capsule,
   circle,
@@ -915,6 +916,19 @@ function steamHammer(movement) {
     valveKinematics,
   };
   correctHammerWorkingParts(root, 470);
+  // Pass 96: the cylinder heads are dark steel grey, not ink black (the
+  // flat black top read as an open hole from above), and the closed upper
+  // head has a small chamfer round its top edge.
+  {
+    const headMaterial = matte(0x4c5457, { metalness: 0.42, roughness: 0.40 });
+    headMaterial.fog = false;
+    const [lowerHead, upperHead] = root.userData.blocks.workingCaps;
+    const r = upperHead.geometry.parameters.radiusTop;
+    upperHead.geometry.dispose();
+    upperHead.geometry = turned([[-0.04, 0], [-0.04, r], [0.015, r],
+      [0.04, r - 0.025], [0.04, 0]], 96).rotateX(-Math.PI / 2);
+    for (const head of [lowerHead, upperHead]) head.material = headMaterial;
+  }
   buildArchedCastStandard(pressFrame, frameMaterial, groundY, {
     cylinderOuterRadius,
     crossbarTopY: cylinderInnerBottomY - 0.08,

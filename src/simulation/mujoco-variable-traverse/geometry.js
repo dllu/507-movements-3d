@@ -35,8 +35,9 @@ export function makeVariableTraverseGeometry({upperTeeth=29,lowerTeeth=23,crankS
   const far=toLocal(b),eye=source.circles[n+'Eye'].radius/100,endRadius=source.circles[endName==='topPin'?'topEye':'bottomEye'].radius/100;
   f[n+'RodEnd']=far;f[n+'RodLength']=L/100;
   const shape=clip.difference(clip.union(poly(quad.map(toLocal)),poly(circle([0,0],eye,128)),poly(circle(far,endRadius,128))),poly(circle([0,0],source.circles[n+'Crank'].radius/100+.0015,96)),poly(circle(far,source.circles[endName].radius/100+.0015,96)));
-  add(n+'Rod',plate(shape,.26,.38),n+'Rod',color);
-  add(n+'RodEye',ring(source.circles[n+'Crank'].radius/100+.0015,eye,.38,.42,128),n+'Rod',color);
+  // p96: steel-grey rods read apart from the gear face they cross.
+  add(n+'Rod',plate(shape,.26,.38),n+'Rod',PALETTE.muted);
+  add(n+'RodEye',ring(source.circles[n+'Crank'].radius/100+.0015,eye,.38,.42,128),n+'Rod',PALETTE.muted);
  }
  // The vertical link is a straight bar of uniform width whose round ends are
  // concentric with its two pins (radius of the drawn pin eyes).

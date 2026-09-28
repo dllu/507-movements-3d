@@ -8,7 +8,7 @@
     },
     {
       "file": "src/simulation/authored-linkages.js",
-      "sha256": "55e8d4995f6394eea9d4c12b1339762017f93607ee69d17ce19069093491b937"
+      "sha256": "7aded412f201b4d6f10d244b8ec776115a324e77c93b54bafc182deb73e7a228"
     },
     {
       "file": "src/simulation/bored-scissor-link.js",
@@ -27,7 +27,7 @@
     "poses": 65,
     "parts": 32,
     "pairs": 394,
-    "checks": 1996712,
+    "checks": 3004472,
     "failingPairs": 0
   },
   "failures": {}

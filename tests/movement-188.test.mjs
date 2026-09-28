@@ -217,3 +217,23 @@ test('188 motion is smooth (C1) and paced for reading', () => {
     }
   });
 });
+
+test('p96: movement 188 rod crown and handle outlines are finely sampled smooth curves', () => {
+  const model = createMovementModel(movement);
+  const find = (role) => { let hit = null; model.root.traverse((o) => { if (o.userData.role === role) hit = o; }); return hit; };
+  for (const role of ['eccentric-rod-with-crown-open-bottom-gab-and-tail', 'loop-handle-hub-diagonal-loop-limb-notched-head-and-pin-toe-arm']) {
+    const mesh = find(role);
+    const position = mesh.geometry.attributes.position;
+    // Front-face outline points: consecutive boundary turns along the crown
+    // stay small when the curve is sampled finely.
+    const pts = new Map();
+    let zMax = -Infinity;
+    for (let i = 0; i < position.count; i += 1) zMax = Math.max(zMax, position.getZ(i));
+    for (let i = 0; i < position.count; i += 1) {
+      if (Math.abs(position.getZ(i) - zMax) > 1e-6) continue;
+      pts.set(`${position.getX(i).toFixed(5)},${position.getY(i).toFixed(5)}`, true);
+    }
+    assert.ok(pts.size > 300, `${role} outline has ${pts.size} points`);
+  }
+  disposeObject3D(model.root);
+});

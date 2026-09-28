@@ -333,11 +333,14 @@ function horizontalOvershotWaterWheel(movement) {
   hubRing.position.y = 0.11;
   hubRing.userData.role = 'horizontal-wheel-central-bucket-support-ring';
   rotor.add(hubRing);
+  // Pass 96: Brown's shaft hangs from the overhead bearing and ends at the
+  // runner: it stops 0.02 below the hub (it ran on 0.28 into an undrawn
+  // lower bearing and pedestal, which are hidden below).
   const shaft = new THREE.Mesh(
-    new THREE.CylinderGeometry(shaftRadius, shaftRadius, 4.70, 64),
+    new THREE.CylinderGeometry(shaftRadius, shaftRadius, 4.44, 64),
     darkMaterial,
   );
-  shaft.position.y = 1.95;
+  shaft.position.y = 2.08;
   shaft.userData.role = 'rotating-vertical-output-shaft';
   rotor.add(shaft);
   const rotationMarker = new THREE.Mesh(
@@ -676,6 +679,7 @@ function horizontalOvershotWaterWheel(movement) {
   // painted contact point or runner index.
   for (const unpainted of [contactMarker, splashBasin, foundation, ...dischargeMarkers]) unpainted.visible = false;
   const lowerPedestal=new THREE.Mesh(horizontalRing(.194,.34,-.59,-.40),frameMaterial);lowerPedestal.userData.role='fixed-lower-bearing-pedestal';root.add(lowerPedestal);
+  lowerBearing.visible = false; lowerPedestal.visible = false;
 
   const update = (time) => {
     const state = stateAtTime(time);

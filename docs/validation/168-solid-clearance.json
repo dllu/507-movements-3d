@@ -32,7 +32,7 @@
     },
     {
       "file": "src/simulation/variable-radius-crank.js",
-      "sha256": "e10ba4f8f5f30f38dc7cddb820b239e93bad80e8b05a48ef0d0f2ea7fa95f43d"
+      "sha256": "f6106656b934857d1ab525d9f4037013d5349f08ecd1dc4f55023b0abac40ab3"
     },
     {
       "file": "src/simulation/variable-radius-crank-motion.js",

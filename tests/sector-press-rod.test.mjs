@@ -23,7 +23,7 @@ test('133 bored rod eyes stay on their pins with axial clearance and retention',
    assert(Math.hypot(grip.x-nearestX, grip.y)>q.width/2+gripRadius,'crank grip must clear rod shank');
    for(const x of [0,q.length])assert(Math.hypot(grip.x-x,grip.y)>q.eyeRadius+gripRadius,'crank grip must clear rod eyes');
    }
-   for(const part of [b.platenBracketLeft,b.platenBracketRight,b.sectorRim,b.pinionBody])assert(box(part).max.z<rb.min.z,'rod must pass in front of adjacent bodies');
+   for(const part of [b.platenHanger,b.sectorRim,b.pinionBody])assert(box(part).max.z<rb.min.z,'rod must pass in front of adjacent bodies');
   }
  }finally{disposeObject3D(v.root);}
 });

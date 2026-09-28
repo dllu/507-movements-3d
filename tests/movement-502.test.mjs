@@ -299,8 +299,7 @@ test('movement 502 runs continuously through carrier revolutions, fits its orbit
     // Precise: the actual surfaces, not per-mesh boxes of rotated parts.
     swept.union(new THREE.Box3().setFromObject(model.root, true));
   }
-  // sweptBounds records the carrier's full turn; the default view frames
-  // Brown's upright pose whole plus the inner orbit, so B leaves it briefly.
+  // sweptBounds records the carrier's full turn.
   assert.ok(model.root.userData.sweptBounds.containsBox(swept));
   model.update(0);
   model.root.updateMatrixWorld(true);
@@ -312,11 +311,9 @@ test('movement 502 runs continuously through carrier revolutions, fits its orbit
   });
   const fit = model.root.userData.cameraFitBounds;
   assert.ok(fit.containsBox(pose));
-  // Tighter than the whole orbit, but it still holds A, D and F's full orbit
-  // about A (compound centre radius plus F's tips).
-  assert.ok(fit.getSize(new THREE.Vector3()).y < 0.9 * (swept.max.y - swept.min.y));
-  const innerReach = model.root.userData.geometry.compoundCenterRadius + 0.95;
-  for (const axis of ['x', 'y']) assert.ok(fit.min[axis] <= -innerReach && fit.max[axis] >= innerReach, axis);
+  // Pass 96: the default view fits the carrier's whole swept orbit, so B
+  // never leaves the frame.
+  assert.ok(fit.containsBox(swept), JSON.stringify([swept.min, swept.max]));
   assert.ok(Number.isFinite(swept.min.x));
   assert.ok(Number.isFinite(swept.max.z));
 

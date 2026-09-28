@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
+import {PALETTE} from '../src/simulation/primitives.js';
 import loadMujoco from '@mujoco/mujoco';
 import {makeCascadedTraverseGeometry} from '../src/simulation/mujoco-cascaded-traverse/geometry.js';
 import {makeMujocoCascadedTraverse} from '../src/simulation/mujoco-cascaded-traverse/visual.js';
@@ -16,6 +17,8 @@ test('125 preserves measured crank pins and constructs closed source hardware',(
   for(const n of ['left','middle','right']){const pixel=u.source.circles[n+'Crank'].center,p=f.position[n+'Rod'];assert(Math.hypot(p[0]-(pixel[0]-262.5)/100,p[1]-(262.5-pixel[1])/100)<1e-12);}
   for(const[n,m]of Object.entries(u.parts)){const r=inspectWeightedClutchSolid(m.geometry);assert(r.volume>0,n);assert.equal(r.components,1,n);assert.equal(r.unmatchedEdges+r.degenerate+r.wrongNormals+r.nonfinite,0,n);}
   for(const n of ['left','middle','right']){const shaft=u.parts[n+'Shaft'].geometry,rod=u.parts[n+'Rod'].geometry;shaft.computeBoundingBox();rod.computeBoundingBox();assert(rod.boundingBox.min.z-shaft.boundingBox.max.z>.009);}
+  // p96: every rod is steel grey, apart from the gear face it crosses.
+  for(const n of ['leftRod','middleRod','rightRod','transferRod'])for(const m of [n,n+'Eye']){const c=u.parts[m].material.color.getHex();assert.equal(c,new THREE.Color(PALETTE.muted).getHex(),m);for(const g of ['left','middle','right'])assert.notEqual(c,u.parts[g+'Gear'].material.color.getHex(),m);}
  }finally{disposeObject3D(v.root);}
 });
 

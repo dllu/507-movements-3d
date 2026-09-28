@@ -6,7 +6,7 @@ import {
   markShadows,
   matte,
 } from './primitives.js';
-import {WaterStream,ballisticPath,collectWaterStreams,guidedPath,joinPaths} from './water-stream.js';
+import {WaterStream,collectWaterStreams,guidedPath} from './water-stream.js';
 
 const FULL_TURN = Math.PI * 2;
 
@@ -453,7 +453,6 @@ function warrenCentralDischargeTurbine(movement) {
     root.add(sheet);
     return sheet;
   });
-  const armAngles = [0, 1, 2, 3].map((k) => Math.PI / 4 + k * Math.PI / 2);
   const runnerSheets = Array.from({length: runnerBucketCount}, (_, index) => {
     const passage = sourcePoseBucketOffset + (index + 0.5) * runnerBucketPitch;
     const along = guidedPath(new THREE.CatmullRomCurve3(Array.from({length: 11}, (_, k) => {
@@ -461,18 +460,7 @@ function warrenCentralDischargeTurbine(movement) {
       return polarPoint(THREE.MathUtils.lerp(runnerInnerRadius, runnerOuterRadius, s),
         bucketAngleAt(passage, s), sheetHeight);
     }), false, 'centripetal'), {speed: flowSpeed, samples: 20});
-    const n = along.points.length;
-    const eyeAngle = bucketAngleAt(passage, 0);
-    // Over a support arm the water would land on it, so that passage's
-    // sheet ends at the eye; elsewhere it drops through the open eye.
-    const overArm = armAngles.some((a) => Math.abs(Math.atan2(Math.sin(eyeAngle - a), Math.cos(eyeAngle - a))) < 0.2);
-    // Thrown inward so it falls clear through the open eye.
-    const exit = along.points[n - 1].clone().setY(0).normalize().multiplyScalar(-1.9)
-      .addScaledVector(along.points[n - 1].clone().sub(along.points[n - 2]).setY(0).normalize(), 0.4);
-    exit.y = 0;
-    const path = overArm ? along : joinPaths(along, ballisticPath({
-      origin: along.points[n - 1], velocity: exit, endY: -1.0, samples: 10,
-    }));
+    const path = along;
     const sheet = new WaterStream(path, {
       width: 0.2, thickness: 0.05, widthAxis: 'horizontal', widthExponent: 0.5,
       section: (i, u, [a, b]) => {
@@ -480,12 +468,37 @@ function warrenCentralDischargeTurbine(movement) {
         const r = Math.hypot(p.x, p.z);
         return [r < runnerInnerRadius - 0.01 ? a : clearHalfWidth(bucketAngleAtRadius, runnerBucketCount, 0.064, r), b];
       },
-      fadeOut: overArm ? 0.12 : 0.3, cyclePeriod: cycleDuration, streakRate: 1.4, opacity: 0.3,
+      fadeOut: 0.02, cyclePeriod: cycleDuration, streakRate: 1.4, opacity: 0.3,
     });
     sheet.userData.role = `water-sheet-through-runner-bucket-passage-${index + 1}`;
     runner.add(sheet);
     return sheet;
   });
+  // Pass 96: the water leaving the runner's inner edge falls through the open
+  // eye as ONE continuous annular curtain: a surface of revolution that turns
+  // inward and down from the passages' exit (inside the inner discharge
+  // rings before it drops past the lower one, and outside the support arms
+  // at their depth), fading out as it falls clear.
+  const dischargeCurtain = (() => {
+    const profile = [[1.86, 0.17], [1.76, 0.15], [1.66, 0.08], [1.58, -0.03], [1.50, -0.20],
+      [1.44, -0.40], [1.40, -0.65], [1.37, -0.95], [1.35, -1.25]];
+    const geometry = new THREE.LatheGeometry(profile.map(([r, y]) => new THREE.Vector2(r, y)), 160);
+    const count = geometry.attributes.position.count, colors = new Float32Array(count * 4);
+    const colour = new THREE.Color(PALETTE.fluid);
+    for (let i = 0; i < count; i += 1) {
+      const y = geometry.attributes.position.getY(i);
+      const fade = THREE.MathUtils.clamp((y + 1.25) / 0.9, 0, 1);
+      colors.set([colour.r, colour.g, colour.b, 0.34 * fade], i * 4);
+    }
+    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 4));
+    const material = new THREE.MeshStandardMaterial({ color: 0xffffff, vertexColors: true, transparent: true,
+      roughness: 0.32, side: THREE.DoubleSide, depthWrite: false });
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.userData.role = 'continuous-annular-discharge-curtain-through-open-eye';
+    mesh.renderOrder = 2;
+    root.add(mesh);
+    return mesh;
+  })();
   const updateWater = collectWaterStreams(root);
   const flowMarkers = [];
   const markersPerPath = 3;
@@ -554,6 +567,7 @@ function warrenCentralDischargeTurbine(movement) {
       runnerBackplate,
       guideFloor,
       centralDischarge,
+      dischargeCurtain,
       fixedGuideAssembly,
       flowSheets,
       runnerSheets,

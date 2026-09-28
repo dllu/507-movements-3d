@@ -407,13 +407,20 @@ function diaphragmForcePump(movement) {
     'curved-hand-lever-rocking-about-fixed-left-pivot');
   lever.position.copy(leverPivot);
   root.add(lever);
-  const leverCurve = new THREE.CatmullRomCurve3([
-    new THREE.Vector3(-2.55, -0.58, 0),
-    new THREE.Vector3(-1.75, -0.47, 0),
-    new THREE.Vector3(-0.85, -0.16, 0),
-    new THREE.Vector3(0, 0, 0),
-    new THREE.Vector3(leverPinRadius, 0, 0),
-  ], false, 'centripetal');
+  // Pass 96: Brown's lever is one smooth curve, convex upward, from the grip
+  // through the fulcrum to the rod pin: a single circular arc through the
+  // grip, the pivot and the pin (it was a spline with an S inflection).
+  const leverCurve = (() => {
+    const grip = new THREE.Vector2(-2.55, -0.58), pin = new THREE.Vector2(leverPinRadius, 0);
+    const cx = pin.x / 2;
+    const cy = (grip.x ** 2 - 2 * grip.x * cx + grip.y ** 2) / (2 * grip.y);
+    const radius = Math.hypot(cx, cy);
+    const a0 = Math.atan2(grip.y - cy, grip.x - cx), a1 = Math.atan2(pin.y - cy, pin.x - cx);
+    return new THREE.CatmullRomCurve3(Array.from({ length: 49 }, (_, i) => {
+      const a = a0 + (a1 - a0) * i / 48;
+      return new THREE.Vector3(cx + radius * Math.cos(a), cy + radius * Math.sin(a), 0);
+    }), false, 'centripetal');
+  })();
   const leverBody = new THREE.Mesh(
     new THREE.TubeGeometry(leverCurve, 84, 0.115, 18, false),
     leverMaterial,

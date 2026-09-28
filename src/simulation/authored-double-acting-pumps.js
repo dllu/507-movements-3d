@@ -595,6 +595,9 @@ function doubleActingPump(movement) {
   // gland notch and rod bore printed pale rectangles on it, seen through the
   // cylinder water.
   backPlate.receiveShadow = false;
+  // Pass 96: tagged so the render-time shadow policy (shadow-policy.js) does
+  // not switch its shadow receiving back on (the pale rectangles returned).
+  backPlate.userData.noShadow = true;
   for (const water of [passageWater, upperChamberWater, lowerChamberWater]) { water.castShadow = false; water.receiveShadow = false; }
   root.userData.blocks = { ...(root.userData.blocks ?? {}), passageWater, upperChamberWater, lowerChamberWater, seatLips };
   update(0);

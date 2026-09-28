@@ -276,7 +276,8 @@ function singleLiftCounterweightedGasometer(movement) {
   const waterMaterial = matte(PALETTE.fluid, {opacity: 0.42, roughness: 0.2, transparent: true, side: THREE.DoubleSide});
   waterMaterial.depthWrite = false;
   const pulleyMaterial = matte(PALETTE.accent, {metalness: 0.2, roughness: 0.45});
-  const bandMaterial = matte(PALETTE.ink, {metalness: 0.05, roughness: 0.7});
+  // Pass 96: the bands are the shared rope/belt brown (they were near-black ink).
+  const bandMaterial = matte(PALETTE.belt, {metalness: 0.05, roughness: 0.7});
   const weightMaterial = matte(PALETTE.driver, {metalness: 0.24, roughness: 0.43});
 
   const pit = buildPit(root, masonry, {pitRadius, groundY, floorY, slabHalf: 4.3, channelHeight: 0.32, pipes: pipeXs, pipeOuter});

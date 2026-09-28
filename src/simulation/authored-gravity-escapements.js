@@ -95,6 +95,31 @@ function polygonShape(points) {
   return shape;
 }
 
+// A locking leg as one flat outline: two straight flanks tapering from the
+// root edge (at rootX, half-width rootHalfWidth) tangent into a round tip of
+// tipRadius centred at tipCenterX on the leg's axis. The hardened tip is
+// part of the leg, so no separate stud stands proud of its faces.
+function taperedRoundTipLegShape(rootX, rootHalfWidth, tipCenterX, tipRadius,
+  segments = 24) {
+  const a = rootX - tipCenterX;
+  const b = rootHalfWidth;
+  const reach = Math.hypot(a, b);
+  const base = Math.atan2(b, a);
+  const spread = Math.acos(tipRadius / reach);
+  const tangentAngle = [base - spread, base + spread]
+    .find((angle) => Math.sin(angle) > 0 && Math.cos(angle) > -0.5);
+  const points = [new THREE.Vector2(rootX, -rootHalfWidth)];
+  for (let index = 0; index <= segments; index += 1) {
+    const angle = -tangentAngle + 2 * tangentAngle * index / segments;
+    points.push(new THREE.Vector2(
+      tipCenterX + tipRadius * Math.cos(angle),
+      tipRadius * Math.sin(angle),
+    ));
+  }
+  points.push(new THREE.Vector2(rootX, rootHalfWidth));
+  return polygonShape(points);
+}
+
 // Working plates are declared in their owner's frame as unions of straight
 // bands, discs and polygons over a z slab. Their production outlines are
 // the blanks minus every other body's swept envelope, baked offline by
@@ -1219,9 +1244,12 @@ function mudgeGravityEscapement(movement) {
   const leftPallet = makeGravityPallet(-1);
   const rightPallet = makeGravityPallet(1);
   // Brown's small circle above the two arbors C: the fixed suspension stud
-  // of the (undrawn) pendulum, seen end-on. It runs back to the same rear
-  // plane as the pallet arbors, so it reads as one of the frame's pivots.
-  const suspensionPinRearZ = -0.62;
+  // of the (undrawn) pendulum, seen end-on. It is a short stud spanning
+  // exactly the depth of the two arbor hubs beside it, so it reads as a
+  // third pivot end, not a long bar laid across the eyes.
+  const suspensionPinRearZ = palletPlaneZ
+    + leftPallet.arborHub.position.z
+    - leftPallet.arborHub.geometry.parameters.height / 2;
   const suspensionPinFrontZ = palletPlaneZ
     + leftPallet.arborHub.position.z
     + leftPallet.arborHub.geometry.parameters.height / 2;
@@ -1682,7 +1710,11 @@ function singleThreeLeggedGravityEscapement(movement) {
   const beatCollarHalfWidth = 0.17;
   const beatContactClearance = beatCollarHalfWidth + beatPinRadius;
   const palletPlaneOffset = 0.27;
-  const pendulumPlaneZ = 0.80;
+  // Brown dashes the rod: it hangs behind the whole escapement. The escape
+  // arbor runs back to its bearing on the frame at the wheel centre, where
+  // the rod passes, so the rod's plane lies just behind that bearing and the
+  // pivot block; the beat pins reach back to it below the wheel and fly.
+  const pendulumPlaneZ = -1.0;
   const lockingWheelDepth = 0.26;
   const lockingLegPitch = FULL_TURN / 3;
   const leftLockAngle = 5 * Math.PI / 6;
@@ -2203,10 +2235,10 @@ function singleThreeLeggedGravityEscapement(movement) {
   wheelBearingBracket.userData.role = 'single-wheel-bearing-bracket';
   fixedFrame.add(wheelBearingBracket);
   // Brown's suspension block stands on the pivot block. It is one solid
-  // cock reaching forward to just behind the pendulum's eye, so the
+  // cock reaching back to just in front of the pendulum's eye, so the
   // suspension stud is only a short pin through the eye.
-  const suspensionBlockFrontZ = pendulumPlaneZ - 0.08 - 0.03;
-  const suspensionBlockRearZ = -0.76 - 0.09;
+  const suspensionBlockFrontZ = -0.76 + 0.06;
+  const suspensionBlockRearZ = pendulumPlaneZ + 0.08 + 0.03;
   const suspensionBlockBottom = pivotBlockTop - 0.02;
   const suspensionBlockTop = pendulumPivot.y + 0.30;
   const suspensionBracket = new THREE.Mesh(
@@ -2234,8 +2266,8 @@ function singleThreeLeggedGravityEscapement(movement) {
     fixedFrame.add(bearing);
     return bearing;
   });
-  const suspensionStudFrontZ = pendulumPlaneZ + 0.08 + 0.04;
-  const suspensionStudRearZ = suspensionBlockFrontZ - 0.04;
+  const suspensionStudFrontZ = suspensionBlockRearZ + 0.04;
+  const suspensionStudRearZ = pendulumPlaneZ - 0.08 - 0.04;
   const suspensionStud = cylinderAlongZ(0.13,
     suspensionStudFrontZ - suspensionStudRearZ, darkMaterial, 30);
   suspensionStud.position.set(pendulumPivot.x, pendulumPivot.y,
@@ -2257,13 +2289,10 @@ function singleThreeLeggedGravityEscapement(movement) {
   const lockingLegTipMeshes = [];
   for (let legIndex = 0; legIndex < 3; legIndex += 1) {
     const angle = legIndex * lockingLegPitch;
-    const legShape = polygonShape([
-      new THREE.Vector2(0.18, -0.12),
-      new THREE.Vector2(lockingLegRadius - 0.17, -0.085),
-      new THREE.Vector2(lockingLegRadius, 0),
-      new THREE.Vector2(lockingLegRadius - 0.17, 0.085),
-      new THREE.Vector2(0.18, 0.12),
-    ]);
+    // One straight taper ending in the round locking tip (the old separate
+    // hardened tip, r 0.08 about R - 0.025, is now the leg's own end).
+    const legShape = taperedRoundTipLegShape(0.18, 0.12,
+      lockingLegRadius - 0.025, 0.080);
     const leg = new THREE.Mesh(
       centeredExtrusion(legShape, lockingWheelDepth, 0.007),
       wheelMaterial,
@@ -2273,17 +2302,7 @@ function singleThreeLeggedGravityEscapement(movement) {
     leg.userData.role = `locking-leg-${legIndex + 1}-of-3`;
     wheelRotor.add(leg);
     lockingLegMeshes.push(leg);
-    const tip = cylinderAlongZ(0.080, lockingWheelDepth + 0.055,
-      darkMaterial, 20);
-    tip.position.set(
-      Math.cos(angle) * (lockingLegRadius - 0.025),
-      Math.sin(angle) * (lockingLegRadius - 0.025),
-      0,
-    );
-    tip.userData.index = legIndex;
-    tip.userData.role = `hardened-locking-tip-${legIndex + 1}`;
-    wheelRotor.add(tip);
-    lockingLegTipMeshes.push(tip);
+    lockingLegTipMeshes.push(leg);
   }
   // The hub stays inside the leg slab so both pallet planes pass clear.
   const wheelHub = cylinderAlongZ(0.255, lockingWheelDepth + 0.06,
@@ -2300,7 +2319,10 @@ function singleThreeLeggedGravityEscapement(movement) {
   const liftingPinMeshes = [];
   for (let pinIndex = 0; pinIndex < 3; pinIndex += 1) {
     const angle = pinIndex * lockingLegPitch + liftingPinPhaseOffset;
-    const pin = cylinderAlongZ(0.074, 1.06, pinMaterial, 24);
+    // Each pin spans the wheel and both lift pads, ending just past the
+    // pads' outer faces.
+    const pin = cylinderAlongZ(0.074, 2 * (palletPlaneOffset + 0.07 + 0.02),
+      pinMaterial, 24);
     pin.position.set(
       Math.cos(angle) * liftingPinRadius,
       Math.sin(angle) * liftingPinRadius,
@@ -2524,16 +2546,21 @@ function singleThreeLeggedGravityEscapement(movement) {
 
     const beatPoint = beatPinLocalPoint(side);
     const targetLocalZ = pendulumPlaneZ - side * palletPlaneOffset;
+    // The pin is set into the arm's eye (ending inside its far face) and
+    // reaches just past the collar's far face.
+    const beatReach = Math.sign(targetLocalZ);
+    const beatPinNearZ = -beatReach * (armHalfDepth - 0.02);
+    const beatPinFarZ = targetLocalZ + beatReach * 0.12;
     const beatPin = cylinderAlongZ(
       beatPinRadius,
-      Math.abs(targetLocalZ) + 0.24,
+      Math.abs(beatPinFarZ - beatPinNearZ),
       darkMaterial,
       24,
     );
     beatPin.position.set(
       beatPoint.x,
       beatPoint.y,
-      targetLocalZ / 2,
+      (beatPinNearZ + beatPinFarZ) / 2,
     );
     beatPin.userData.label = side > 0 ? 'right beat pin' : 'left beat pin';
     beatPin.userData.role = `${sideName}-pendulum-beat-pin`;
@@ -2545,7 +2572,7 @@ function singleThreeLeggedGravityEscapement(movement) {
     beatPinWitness.position.set(
       beatPoint.x,
       beatPoint.y,
-      targetLocalZ + 0.09,
+      targetLocalZ,
     );
     beatPinWitness.userData.role = `${sideName}-beat-pin-tip-witness`;
     group.add(beatPinWitness);
@@ -2595,7 +2622,7 @@ function singleThreeLeggedGravityEscapement(movement) {
   );
   pendulumAssembly.userData.axis = Z_AXIS.clone();
   pendulumAssembly.userData.role =
-    'free-pendulum-in-front-of-three-legged-wheel';
+    'free-pendulum-behind-three-legged-wheel';
   root.add(pendulumAssembly);
   const pendulumLength = pendulumPivot.y - beatPinWorldY + 1.18;
   const pendulumRod = beamBetween(
@@ -3096,7 +3123,11 @@ function doubleThreeLeggedGravityEscapement(movement) {
   const frontWheelPlaneZ = 0.54;
   const leftPalletPlaneZ = -0.11;
   const rightPalletPlaneZ = 0.11;
-  const pendulumPlaneZ = 0.92;
+  // The rod must pass the common arbor at the wheel centre, and behind the
+  // wheels the long fly (half-span larger than the beat pins' distance from
+  // the arbor) sweeps the beat pins' path, so the rod hangs just in front of
+  // the arbor's front end.
+  const pendulumPlaneZ = 0.80;
   const lockingWheelDepth = 0.20;
   const lockingLegPitch = FULL_TURN / 3;
   const rearWheelPhaseOffset = FULL_TURN / 6;
@@ -3700,13 +3731,11 @@ function doubleThreeLeggedGravityEscapement(movement) {
     const tips = [];
     for (let legIndex = 0; legIndex < 3; legIndex += 1) {
       const angle = legIndex * lockingLegPitch;
-      const legShape = polygonShape([
-        new THREE.Vector2(0.20, -0.105),
-        new THREE.Vector2(lockingLegRadius - 0.18, -0.075),
-        new THREE.Vector2(lockingLegRadius, 0),
-        new THREE.Vector2(lockingLegRadius - 0.18, 0.075),
-        new THREE.Vector2(0.20, 0.105),
-      ]);
+      // One straight taper ending in the round locking tip (the old
+      // separate hardened tip, r 0.075 about R - 0.022, is now the leg's
+      // own end), with flat faces and no lengthwise ridge.
+      const legShape = taperedRoundTipLegShape(0.20, 0.105,
+        lockingLegRadius - 0.022, 0.075);
       const leg = new THREE.Mesh(
         centeredExtrusion(legShape, lockingWheelDepth, 0.006),
         material,
@@ -3717,18 +3746,7 @@ function doubleThreeLeggedGravityEscapement(movement) {
       leg.userData.role = `${name}-locking-leg-${symbols[legIndex]}`;
       group.add(leg);
       legs.push(leg);
-      const tip = cylinderAlongZ(0.075,
-        lockingWheelDepth + 0.045, darkMaterial, 20);
-      tip.position.set(
-        Math.cos(angle) * (lockingLegRadius - 0.022),
-        Math.sin(angle) * (lockingLegRadius - 0.022),
-        0,
-      );
-      tip.userData.index = legIndex;
-      tip.userData.label = symbols[legIndex];
-      tip.userData.role = `${name}-hardened-tip-${symbols[legIndex]}`;
-      group.add(tip);
-      tips.push(tip);
+      tips.push(leg);
     }
     const hub = cylinderAlongZ(0.235, lockingWheelDepth + 0.06,
       material, 34);
@@ -3765,7 +3783,7 @@ function doubleThreeLeggedGravityEscapement(movement) {
   });
   // Slender enough that each fallen pallet's late lift face swings clear
   // of it between the wheels.
-  const wheelShaftFrontZ = 0.72;
+  const wheelShaftFrontZ = frontWheelPlaneZ + lockingWheelDepth / 2 + 0.05;
   const wheelShaftRearZ = -1.36;
   const wheelShaft = cylinderAlongZ(0.055,
     wheelShaftFrontZ - wheelShaftRearZ, darkMaterial, 28);
@@ -3938,16 +3956,20 @@ function doubleThreeLeggedGravityEscapement(movement) {
 
     const beatPoint = beatPinLocalPoint(side);
     const beatTargetLocalZ = pendulumPlaneZ - planeZ;
+    // Set into the arm (ending inside its back face) and reaching just past
+    // the rod's front face.
+    const beatPinNearZ = -(palletPlateHalfDepth - 0.02);
+    const beatPinFarZ = beatTargetLocalZ + 0.11;
     const beatPin = cylinderAlongZ(
       beatPinRadius,
-      Math.abs(beatTargetLocalZ) + 0.22,
+      beatPinFarZ - beatPinNearZ,
       darkMaterial,
       24,
     );
     beatPin.position.set(
       beatPoint.x,
       beatPoint.y,
-      beatTargetLocalZ / 2,
+      (beatPinNearZ + beatPinFarZ) / 2,
     );
     beatPin.userData.role = `${sideName}-pendulum-impulse-pin`;
     group.add(beatPin);
@@ -4470,15 +4492,18 @@ function bloxamGravityEscapement(movement) {
   const palletWheelPlaneZ = 0.28;
   const leftArmPlaneZ = -0.055;
   const rightArmPlaneZ = 0.055;
-  // Brown dashes the pendulum behind the wheels, but fork pins E and F sit
+  // Brown dashes the pendulum behind the wheels, but fork pieces E and F sit
   // 0.48 and 0.59 from the arbor, inside the large wheel's spokes (0.19 to
-  // 1.62), so pins reaching a pendulum behind that wheel would cross its
-  // spokes. The rod therefore hangs just in front of the small wheel's arbor
-  // end and is drawn see-through, so the small wheel and pallets read
-  // through it as they do on the plate.
-  const pendulumPlaneZ = 0.55;
+  // 1.62), so anything reaching a pendulum behind that wheel would cross its
+  // turning spokes. Between the wheels the rod would cross the common arbor
+  // (the rod swings at most 0.18 either side of it). The rod therefore hangs
+  // just in front of the arbor's front end and is drawn see-through, so the
+  // small wheel and pallets read through it as they do on the plate.
   const outerWheelDepth = 0.20;
   const palletWheelDepth = 0.18;
+  const pendulumRodHalfDepth = 0.07;
+  const pendulumPlaneZ = palletWheelPlaneZ + palletWheelDepth / 2 + 0.05
+    + 0.02 + pendulumRodHalfDepth;
 
   const sourceImageWidth = 525;
   const sourceImageHeight = 525;
@@ -5293,7 +5318,10 @@ function bloxamGravityEscapement(movement) {
   palletWheelPhaseWitness.userData.role = 'white-small-wheel-phase-witness';
   palletWheel.add(palletWheelPhaseWitness);
   const commonShaftFrontZ = palletWheelPlaneZ + palletWheelDepth / 2 + 0.05;
-  const commonShaftRearZ = backFrameZ - 0.12;
+  // Brown draws no frame (the presentation removes it), so the arbor ends
+  // just behind the large wheel's hub instead of running on to a bearing.
+  const commonShaftRearZ = outerWheelPlaneZ - (outerWheelDepth + 0.06) / 2
+    - 0.05;
   const commonWheelShaft = cylinderAlongZ(0.074,
     commonShaftFrontZ - commonShaftRearZ, darkMaterial, 28);
   commonWheelShaft.position.z = (commonShaftFrontZ + commonShaftRearZ) / 2;
@@ -5435,9 +5463,11 @@ function bloxamGravityEscapement(movement) {
     palletFace.userData.planeRadiatesFromArmAxis = true;
     plateRegistry.add({
       key: `${sideKey}-pallet-face-stem`,
-      material: darkMaterial,
+      material,
       owner: group,
-      primitives: [plateDisc(faceBack, 0.075)],
+      // As wide as the crosspiece's round end, in the arm's own metal, so
+      // the arm reads as running on to its pallet face, not a wire hook.
+      primitives: [plateDisc(faceBack, 0.19 / 2 - 0.015)],
       role: `${sideName}-pallet-face-stem`,
       // Sunk to the arm's mid-plane: the stem is set into the arm.
       z0: 0,
@@ -5518,17 +5548,29 @@ function bloxamGravityEscapement(movement) {
       z1: -armHalfDepth,
     });
 
-    // Each fork pin stands from inside its arm to just past the
-    // pendulum rod's front face.
+    // Brown draws E and F as small oblong slots on the arms: each is a flat
+    // tab of the arm's own metal, seen end-on, standing from inside the arm
+    // to just past the pendulum rod's front face. Its rounded ends reach
+    // forkPinRadius either side of the old pin centre, so the face bearing
+    // on the rod is exactly where the round pin's was.
     const forkTargetLocalZ = pendulumPlaneZ - planeZ;
     const forkPinRearZ = -armHalfDepth + 0.02;
-    const forkPinFrontZ = forkTargetLocalZ + 0.07 + 0.03;
-    const forkPin = cylinderAlongZ(
-      forkPinRadius,
-      forkPinFrontZ - forkPinRearZ,
-      darkMaterial,
-      24,
-    );
+    const forkPinFrontZ = forkTargetLocalZ + pendulumRodHalfDepth + 0.03;
+    const forkTabHalfHeight = 0.045;
+    const forkTabShape = new THREE.Shape();
+    const forkTabCentreReach = forkPinRadius - forkTabHalfHeight;
+    forkTabShape.absarc(forkTabCentreReach, 0, forkTabHalfHeight,
+      -Math.PI / 2, Math.PI / 2, false);
+    forkTabShape.absarc(-forkTabCentreReach, 0, forkTabHalfHeight,
+      Math.PI / 2, 3 * Math.PI / 2, false);
+    const forkTabGeometry = new THREE.ExtrudeGeometry(forkTabShape, {
+      bevelEnabled: false,
+      curveSegments: 16,
+      depth: forkPinFrontZ - forkPinRearZ,
+      steps: 1,
+    });
+    forkTabGeometry.translate(0, 0, -(forkPinFrontZ - forkPinRearZ) / 2);
+    const forkPin = new THREE.Mesh(forkTabGeometry, material);
     forkPin.position.set(forkLocal.x, forkLocal.y,
       (forkPinFrontZ + forkPinRearZ) / 2);
     forkPin.userData.letter = forkLetter;
@@ -5608,10 +5650,10 @@ function bloxamGravityEscapement(movement) {
   const pendulumRodGeometry = new THREE.ExtrudeGeometry(pendulumTopShape, {
     bevelEnabled: false,
     curveSegments: 40,
-    depth: 0.14,
+    depth: 2 * pendulumRodHalfDepth,
     steps: 1,
   });
-  pendulumRodGeometry.translate(0, 0, -0.07);
+  pendulumRodGeometry.translate(0, 0, -pendulumRodHalfDepth);
   const pendulumRod = new THREE.Mesh(pendulumRodGeometry, pendulumMaterial);
   pendulumRod.userData.role = 'bloxam-pendulum-rod';
   pendulumAssembly.add(pendulumRod);

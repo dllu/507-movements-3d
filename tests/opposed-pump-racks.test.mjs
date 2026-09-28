@@ -62,3 +62,23 @@ test('127 finite tooth profiles do not overlap across 721 poses, and detect a wr
   assert(leverBox.max.z < -d.depth/2);
  }finally{disposeObject3D(v.root);}
 });
+
+// Pass 97: each ball sits on its handle rod's axis, centred on the rod's end.
+test('127 lever balls are centred on the rod axis at the rod ends',()=>{
+ const v=makeOpposedPumpRacks(),u=v.root.userData,d=u.geometry;
+ try{
+  const knobs=[],beams=[];
+  u.blocks.leverGroup.children.forEach(o=>{if(o.name==='leverKnob')knobs.push(o);else beams.push(o.children[0]);});
+  assert.equal(knobs.length,2);
+  for(const knob of knobs){
+   const beam=beams.find(b=>Math.sign(b.position.x)===Math.sign(knob.position.x));
+   const axis=new THREE.Vector3(1,0,0).applyQuaternion(beam.quaternion);
+   const end=beam.position.clone().addScaledVector(axis,beam.scale.x/2);
+   assert(end.distanceTo(knob.position)<1e-12,'ball centre at the rod end, on its axis');
+   assert(Math.abs(knob.position.z-d.leverTipZ)<1e-12);
+  }
+  // The balls clear the racks and gear at every pose (they swing up behind the racks).
+  for(let i=0;i<=240;i++){v.update(i*d.period/240);v.root.updateMatrixWorld(true);
+   for(const knob of knobs)assert(knob.getWorldPosition(new THREE.Vector3()).z+d.knobRadius< -d.depth/2);}
+ }finally{disposeObject3D(v.root);}
+});

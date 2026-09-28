@@ -28,7 +28,7 @@ function centeredExtrusion(shape, depth, bevel = 0.01) {
 
 // The backstop (ratchet, pawls and pins) is presented as a similar figure
 // shrunk about the wheel axis so it stays hidden behind the rim.
-const BACKSTOP_PRESENTATION_SCALE = 0.93;
+const BACKSTOP_PRESENTATION_SCALE = 0.8;
 
 function cylinderAlongZ(radius, length, material, segments = 40) {
   const cylinder = new THREE.Mesh(

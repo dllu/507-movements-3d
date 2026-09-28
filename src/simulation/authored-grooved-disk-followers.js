@@ -413,8 +413,12 @@ function groovedDiskFollower(movement) {
     ),
     poly(circle([0, 0], diskHubRadius, 48)),
   );
-  const rearArm = new THREE.Mesh(plate(rearArmOutline, -0.32, -0.18),
-    driverMaterial);
+  // A deeper shade, standing 0.02 off the disk's back face on its shaft,
+  // so from behind it reads as a separate crank and not a hairline.
+  const rearArmMaterial = driverMaterial.clone();
+  rearArmMaterial.color.multiplyScalar(0.72);
+  const rearArm = new THREE.Mesh(plate(rearArmOutline, -0.34, -0.20),
+    rearArmMaterial);
   rearArm.userData.role = 'rear-hand-crank-arm-keyed-on-disk-shaft';
   diskRotor.add(rearArm);
   // A plain round handle on the arm's end, clear in front of the frame.

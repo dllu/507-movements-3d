@@ -652,10 +652,18 @@ test('movement 196 is fully three-dimensional as the review queue advances throu
   assert.ok(size.x > 5.1);
   assert.ok(size.y > 3.5);
   // p93: wheel A's shaft is trimmed to its hub and strap, and the pedestal
-  // stands in the arm's plane; pinion B's axle still reaches back.
-  assert.ok(size.z > 1.15);
-  assert.ok(physicalBounds.min.z < -0.65);
+  // stands in the arm's plane. p96: pinion B's axle ends just proud of its
+  // hub; no undrawn bearing, stay or flange runs back behind it.
+  assert.ok(size.z > 0.75);
+  assert.ok(physicalBounds.min.z > -0.3 && physicalBounds.min.z < -0.2);
   assert.ok(physicalBounds.max.z > 0.5);
+  const axle = blocks.pinionShaft.userData.rotor.children[0];
+  assert.equal(axle.userData.role, 'pinion-B-axle-ending-at-its-hub-faces');
+  assert.ok(Math.abs(axle.geometry.parameters.height - 0.5) < 1e-9);
+  model.root.traverse((object) => {
+    assert.ok(!/stay-from-pinion-B|framing-flange|framing-wall/.test(object.userData.role ?? ''), object.userData.role);
+    if (object.userData.role === 'fixed-bearing-at-pinion-B') assert.equal(object.visible, false);
+  });
   let meshCount = 0;
   let irregularWheelToothCount = 0;
   model.root.traverse((object) => {

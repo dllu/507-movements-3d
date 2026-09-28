@@ -18,21 +18,31 @@ export function unpainted(geometry, color) {
 export function makeJawClutch() {
   const root = new THREE.Group(), motion = makeJawClutchMotion(), p = motion.parameters;
   const shaftRadius = 0.15, boreRadius = 0.161, keyHalfWidth = 0.028, keywayTop = 0.193;
-  // Brown's pinion is about half the loose gear's pitch diameter.
-  const gearTeeth = 32, pinionTeeth = 16, module = 0.05875, gearDepth = 0.23;
+  // Measured on the plate: the loose gear is about 9.4 shaft diameters
+  // across (2.6 times the clutch body) with fine teeth, and the pinion's
+  // edge-on boss spans about a fifth of that. A fine 64:16 pair at a small
+  // module keeps the involute mesh.
+  const gearTeeth = 64, pinionTeeth = 16, module = 0.042, gearDepth = 0.23;
   // Faces of the loose gear; its hub, the pinion hubs and the input jaw body
   // butt against them.
   const gearFace = gearDepth / 2;
   const gearPitchRadius = gearTeeth * module / 2, pinionPitchRadius = pinionTeeth * module / 2;
   const sourcePhase = 0.93, jawPhase = 0.24 * motion.pitch;
-  const pinionY = gearPitchRadius + pinionPitchRadius;
-  const pinionMeshPhase = (gearTeeth / 4 + pinionTeeth / 4 + 0.5) % 1 * 2 * Math.PI / pinionTeeth;
+  // Brown draws the pinion's outline inside the gear's, so it meshes on the
+  // viewer's side of the gear, about 60° down from its top.
+  const pinionTilt = THREE.MathUtils.degToRad(60), centerDistance = gearPitchRadius + pinionPitchRadius;
+  const pinionY = centerDistance * Math.cos(pinionTilt), pinionZ = centerDistance * Math.sin(pinionTilt);
+  // Swinging the line of centres by the tilt about the gear (local +angle)
+  // turns the pinion's mesh phase by tilt × (1 + gear/pinion).
+  const pinionMeshPhase = (gearTeeth / 4 + pinionTeeth / 4 + 0.5) % 1 * 2 * Math.PI / pinionTeeth
+    + pinionTilt * (1 + gearTeeth / pinionTeeth);
   const rotor = () => {
     const group = new THREE.Group(), member = new THREE.Group(); group.add(member);
     group.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), new THREE.Vector3(1, 0, 0));
     group.userData = { rotor: member, axis: new THREE.Vector3(1, 0, 0) }; return group;
   };
-  const input = rotor(), output = rotor(), shaft = rotor(), pinion = rotor(); pinion.position.y = pinionY;
+  const input = rotor(), output = rotor(), shaft = rotor(), pinion = rotor(); pinion.position.set(0, pinionY, pinionZ);
+  input.userData.teeth = gearTeeth; pinion.userData.teeth = pinionTeeth;
   const solidMaterial = () => new THREE.MeshStandardMaterial({ vertexColors: true, metalness: 0.17, roughness: 0.61 });
   const turned = (profile, color, options = {}) => new THREE.Mesh(turnedClutchGeometry(profile, { color, ...options }), solidMaterial());
   const inputProfile = [[gearFace, boreRadius], [gearFace, 0.54], [0.69, 0.54], [0.69, 0.54],
@@ -138,11 +148,11 @@ export function makeJawClutch() {
       lever, leverBody, follower, followerPin, pivotPin, rod, rodBody, handlePin },
     geometry: { ...p, sourcePhase, jawPhase, inputProfile, outputProfile, shaftRadius, boreRadius, keyHalfWidth, keywayTop,
       keyLeft, keyRight, keyBottom, keyTop, featherHalfWidth, pinionTeeth, gearTeeth, module, gearDepth,
-      gearPitchRadius, pinionPitchRadius, pinionY, pinionMeshPhase, handleLength, leverBackZ, leverDepth,
+      gearPitchRadius, pinionPitchRadius, pinionY, pinionZ, pinionTilt, pinionMeshPhase, handleLength, leverBackZ, leverDepth,
       cycleMeaning: 'align-insert-positive-drive-withdraw-and-coast' } };
   // Frame Brown's plate: the measured swept box of the mechanism with the
   // rod to his crop. The rod's short run past it stays out of the fit.
-  root.userData.cameraFitBounds = new THREE.Box3(new THREE.Vector3(-0.56, -1.83, -0.99875), new THREE.Vector3(3.99, 1.93875, 0.99875));
+  root.userData.cameraFitBounds = new THREE.Box3(new THREE.Vector3(-0.56, -1.83, -1.40), new THREE.Vector3(3.99, 1.40, 1.84));
   update(0); markShadows(root);
   return { root, update, cameraDirection: new THREE.Vector3(0.03, 0.06, 10) };
 }

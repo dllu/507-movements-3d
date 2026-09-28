@@ -541,3 +541,34 @@ test('movement 329 closes exactly and leaves movement 507 as the next draft', ()
   disposeModel(model507.root);
   disposeModel(model.root);
 });
+
+test('movement 329 p96: each leg top is a half-round inside its bearing boss', () => {
+  const model = createMovementModel(catalog.movements[328]);
+  model.update(0);
+  model.root.updateMatrixWorld(true);
+  const find = (role) => {
+    let found = null;
+    model.root.traverse((object) => { if (object.userData.role === role) found = object; });
+    return found;
+  };
+  for (const side of ['left', 'right']) {
+    const leg = find(`${side}-A-frame-support-leg`);
+    const boss = find(`${side}-fixed-annulus-D-bearing-boss`);
+    const centre = boss.getWorldPosition(new THREE.Vector3());
+    const radius = boss.geometry.parameters.radiusTop;
+    const bossBox = new THREE.Box3().setFromObject(boss);
+    const position = leg.geometry.attributes.position;
+    const point = new THREE.Vector3();
+    let inside = 0;
+    for (let i = 0; i < position.count; i += 1) {
+      point.fromBufferAttribute(position, i).applyMatrix4(leg.matrixWorld);
+      if (point.y > centre.y - 0.25) {
+        assert.ok(Math.hypot(point.x - centre.x, point.y - centre.y) < radius + 1e-6,
+          `${side} leg top stays inside the boss`);
+        assert.ok(point.z >= bossBox.min.z && point.z <= bossBox.max.z, `${side} leg within the boss depth`);
+        inside += 1;
+      }
+    }
+    assert.ok(inside > 0);
+  }
+});

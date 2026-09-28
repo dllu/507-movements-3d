@@ -3,7 +3,6 @@ import {bandInvoluteGear,involute} from './band-epicyclic-geometry.js';
 import {boredLatheGeometry} from './bored-lathe-geometry.js';
 import generated from './generated-irregular-gear-profiles.js';
 import {boredPlanarLinkGeometry} from './bored-planar-link.js';
-import {supportMaterial} from './back-plate-support.js';
 import {smoothExtrudeGeometry} from './smooth-extrusion.js';
 const replace=(mesh,geometry)=>{mesh.geometry.dispose();mesh.geometry=geometry;};
 const boreHub=(mesh,bore)=>{const p=mesh.geometry.parameters;replace(mesh,boredLatheGeometry([{radial:Math.max(p.radiusTop,bore+.025),axial:-p.height/2},{radial:Math.max(p.radiusBottom,bore+.025),axial:p.height/2}],bore,64));};
@@ -60,16 +59,13 @@ export function correctIrregularGearFamily(root,id,update){
   const pivot=new THREE.Mesh(new THREE.CylinderGeometry(.073,.073,pinHigh-pinLow,48),link.material);pivot.rotation.x=Math.PI/2;pivot.position.set(g.carrierPivot.x,g.carrierPivot.y,(pinLow+pinHigh)/2);pivot.userData.role='fixed-pin-through-bored-carrier-eye';root.add(pivot);b.carrierPivotPin=pivot;
   replace(b.carrierBearing,boredLatheGeometry([{radial:.23,axial:-.12},{radial:.23,axial:.12}],.075,64).rotateX(Math.PI/2));b.carrierBearing.position.z=.205;b.carrierBearing.userData.role='fixed-stand-eye-at-carrier-arm-pivot';
   b.carrierStandard.userData.setEndpoints(new THREE.Vector3(g.carrierPivot.x,-1.7,.205),new THREE.Vector3(g.carrierPivot.x,g.carrierPivot.y-.20,.205));
-  // Pinion B's fixed axis is carried, not a bare stub: a bored bearing boss
-  // round the axle's rear end, on a stay running straight back to a round
-  // flange on the framing wall behind (both hidden behind the pinion in the
-  // plate's view). The old loose ring on the axle becomes that boss.
-  {const frame=supportMaterial();frame.fog=false;const axle=b.pinion.position,zWall=-1.6;
-   const boss=[];root.traverse(o=>{if(o.userData.role==='fixed-bearing-at-pinion-B')boss.push(o);});
-   for(const o of boss){replace(o,boredLatheGeometry([{radial:.2,axial:-.42},{radial:.2,axial:-.08}],.095,64).rotateX(Math.PI/2));o.material=frame;o.position.set(axle.x,axle.y,-.28);o.rotation.set(0,0,0);}
-   const stay=new THREE.Mesh(new THREE.BoxGeometry(.24,.24,-zWall-.701),frame);stay.position.set(axle.x,axle.y,(zWall-.701)/2);stay.userData.role='fixed-stay-from-pinion-B-bearing-to-framing-wall';
-   const flange=new THREE.Mesh(new THREE.CylinderGeometry(.2,.2,.08,48).rotateX(Math.PI/2),frame);flange.position.set(axle.x,axle.y,zWall-.04);flange.userData.role='fixed-framing-flange-behind-pinion-B';
-   for(const o of[stay,flange]){o.castShadow=o.receiveShadow=true;root.add(o);}b.pinionBearingStay=stay;}
+  // p96: Brown draws no bearing, stay or wall behind pinion B (the old ones
+  // ran back to a framing wall that does not exist and floated in space).
+  // As with wheel A's shaft (p93), B's axle ends just proud of its hub on
+  // both faces; the fixed axis needs no drawn support.
+  root.traverse(o=>{if(o.userData.role==='fixed-bearing-at-pinion-B')o.visible=false;});
+  {const axle=b.pinionShaft.userData.rotor.children.find(o=>o.isMesh&&o.geometry.type==='CylinderGeometry'),hub=.229+.021,r=axle.geometry.parameters.radiusTop;
+   replace(axle,new THREE.CylinderGeometry(r,r,2*hub,48));axle.position.z=-b.pinionShaft.position.z;axle.userData.role='pinion-B-axle-ending-at-its-hub-faces';}
   root.userData.reconstructionNote='A uniform fixed-axis pinion rolls against an inferred two-lobed pitch curve and rocks the carrying arm. The mating teeth are reconstructed around that motion; historical dimensions and load response are unspecified.';
  }else{
   root.userData.profileGenerationBlank=[b.drivenBody,...b.drivenTeeth].map(mesh=>({outline:mesh.geometry.parameters.shapes.extractPoints(64).shape.map(p=>[p.x,p.y]),buffer:mesh.geometry.parameters.options.bevelSize??0}));

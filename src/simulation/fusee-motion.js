@@ -1,19 +1,93 @@
 import * as THREE from 'three';
 
+// Brown's fusee is a stack of flat turned tiers (plate 46: three working
+// tiers over a base flange). The chain wraps each tier level, seated on the
+// shelf of the tier below and against its own riser, and climbs to the next
+// tier once per turn: a short spiral lobe on the tier carries it outward over
+// the shelf, then it runs down the next riser. Each tier's transition window
+// is staggered round the axis so no lobe lies under another turn's descent.
+const tierChainRadii = [0.62, 0.85, 1.08];
+const tierHeight = 0.26;
+const tierTop = 0.34;
+const chainSeat = 0.039; // chain centre above its shelf (pins reach 0.037)
+const riserGap = 0.0195; // chain centre line outside its riser
+const tierShelves = tierChainRadii.map((_, k) => tierTop - tierHeight * (k + 1));
+const tierChainHeights = tierShelves.map((shelf) => shelf + chainSeat);
+const riseAngle = 1.1;
+const descentAngle = 1.25;
+const firstTransition = 3.8;
+const transitionAdvance = 2 * Math.PI - 1.4;
+const lastTierArc = 4.0;
+const transitionStarts = [firstTransition, firstTransition + transitionAdvance];
+const wrapAngle = transitionStarts.at(-1) + riseAngle + descentAngle + lastTierArc;
+
 export const fuseeParameters = Object.freeze({
   barrelRadius: 1.0,
   barrelCenterX: -1.38,
   fuseeCenterX: 1.38,
-  fuseeTopRadius: 0.50,
-  fuseeBottomRadius: 1.08,
-  fuseeZTop: 0.32,
-  fuseeZBottom: -0.32,
-  grooveTurns: 3,
-  barrelChainPitch: 0.205,
-  barrelChainZTop: 0.40,
+  fuseeTopRadius: tierChainRadii[0],
+  fuseeBottomRadius: tierChainRadii.at(-1),
+  fuseeZTop: tierChainHeights[0],
+  fuseeZBottom: tierChainHeights.at(-1),
+  grooveTurns: wrapAngle / (2 * Math.PI),
+  tierChainRadii: Object.freeze(tierChainRadii),
+  tierChainHeights: Object.freeze(tierChainHeights),
+  tierShelves: Object.freeze(tierShelves),
+  tierHeight,
+  tierTop,
+  chainSeat,
+  riserGap,
+  lobeGap: 0.0235,
+  baseRadius: 1.28,
+  baseBottom: tierShelves.at(-1) - 0.16,
+  riseAngle,
+  descentAngle,
+  transitionStarts: Object.freeze(transitionStarts),
+  barrelChainPitch: 0.24,
+  barrelChainZTop: 0.487,
   reserveBarrelTurns: 1,
   nominalLinkPitch: 0.08,
+  contactSettleLength: 0.45,
 });
+
+// The descent is two parabolas (constant edgewise curvature, the least for a
+// given drop), so the chain's pins tilt as little as possible in their bores.
+const descentStep = (t) => (t < 0.5 ? 2 * t * t : 1 - 2 * (1 - t) * (1 - t));
+const descentSlope = (t) => (t < 0.5 ? 4 * t : 4 * (1 - t));
+
+// Chain centre line on the fusee as a function of the wrapped angle theta
+// (0 at the top free end, wrapAngle at the anchored bottom end), with
+// derivatives with respect to theta.
+export function fuseeTierPath(parameters = fuseeParameters) {
+  const p = parameters;
+  const radii = p.tierChainRadii, heights = p.tierChainHeights;
+  const at = (theta) => {
+    let radius = radii[0], height = heights[0], dRadius = 0, dHeight = 0, tier = 0;
+    let phase = 'level';
+    for (let k = 0; k < p.transitionStarts.length; k += 1) {
+      const start = p.transitionStarts[k];
+      if (theta < start) break;
+      const rise = (theta - start) / p.riseAngle;
+      const fall = (theta - start - p.riseAngle) / p.descentAngle;
+      const deltaR = radii[k + 1] - radii[k], deltaZ = heights[k + 1] - heights[k];
+      if (rise < 1) {
+        radius = radii[k] + deltaR * (1 - Math.cos(Math.PI * rise)) / 2;
+        dRadius = deltaR * Math.PI * Math.sin(Math.PI * rise) / (2 * p.riseAngle);
+        height = heights[k]; dHeight = 0; tier = k; phase = 'rise';
+      } else if (fall < 1) {
+        radius = radii[k + 1]; dRadius = 0;
+        height = heights[k] + deltaZ * descentStep(fall);
+        dHeight = deltaZ * descentSlope(fall) / p.descentAngle;
+        tier = k; phase = 'descent';
+      } else {
+        radius = radii[k + 1]; height = heights[k + 1]; dRadius = 0; dHeight = 0;
+        tier = k + 1; phase = 'level';
+      }
+    }
+    return { radius, height, dRadius, dHeight, tier, phase };
+  };
+  return { at, wrapAngle: 2 * Math.PI * p.grooveTurns };
+}
 
 // Stations are measured along a barrel helix, the straight span, and the
 // remaining fusee helix. Chord walking then enforces the actual fixed link
@@ -23,13 +97,15 @@ export function makeFuseeMotion(parameters = fuseeParameters) {
   const fullTurn = 2 * Math.PI;
   const grooveAngle = fullTurn * p.grooveTurns;
   const centerDistance = p.fuseeCenterX - p.barrelCenterX;
-  const radiusChange = p.fuseeBottomRadius - p.fuseeTopRadius;
-  const height = p.fuseeZTop - p.fuseeZBottom;
   const barrelLengthPerTurn = Math.hypot(fullTurn * p.barrelRadius, p.barrelChainPitch);
-  const radiusAt = (u) => p.fuseeTopRadius + radiusChange * u;
-  const heightAt = (u) => p.fuseeZTop - height * u;
-  const speedAt = (u) => Math.hypot(radiusChange, height, grooveAngle * radiusAt(u));
-  const sampleCount = 4096;
+  const tierPath = fuseeTierPath(p);
+  const radiusAt = (u) => tierPath.at(grooveAngle * u).radius;
+  const heightAt = (u) => tierPath.at(grooveAngle * u).height;
+  const speedAt = (u) => {
+    const point = tierPath.at(grooveAngle * THREE.MathUtils.clamp(u, 0, 1));
+    return grooveAngle * Math.hypot(point.dRadius, point.dHeight, point.radius);
+  };
+  const sampleCount = 16384;
   const lengths = new Float64Array(sampleCount + 1);
   for (let i = 1; i <= sampleCount; i += 1) {
     lengths[i] = lengths[i - 1] + (speedAt((i - 1) / sampleCount)
@@ -61,12 +137,28 @@ export function makeFuseeMotion(parameters = fuseeParameters) {
     const fuseeAngle = contactAngle - grooveAngle * progress;
     const barrelContact = new THREE.Vector3(p.barrelCenterX + normalX * p.barrelRadius,
       p.barrelChainZTop - barrelTurns * p.barrelChainPitch, normalZ * p.barrelRadius);
-    const fuseeContact = new THREE.Vector3(p.fuseeCenterX + normalX * fuseeRadius,
-      heightAt(progress), normalZ * fuseeRadius);
-    const barrelLength = barrelTurns * barrelLengthPerTurn;
-    const spanLength = barrelContact.distanceTo(fuseeContact);
     const fuseeStartLength = lengthAt(progress);
     const fuseeLength = lengths[sampleCount] - fuseeStartLength;
+    // The chain is free to slide up and down a riser, so near the point where
+    // it leaves the fusee it eases from the tier path onto the straight span:
+    // over the last settle length it is lifted (or lowered) by a parabola
+    // whose slope at the contact matches the span. No joint then kinks
+    // edgewise at the contact.
+    const settle = Math.min(p.contactSettleLength, fuseeLength / 2);
+    const tierPoint = tierPath.at(grooveAngle * progress);
+    const pathSlope = settle > 0 ? grooveAngle * tierPoint.dHeight / speedAt(progress) : 0;
+    const fuseeContact = new THREE.Vector3(p.fuseeCenterX + normalX * fuseeRadius,
+      tierPoint.height, normalZ * fuseeRadius);
+    let lift = 0;
+    for (let iteration = 0; iteration < 4 && settle > 0; iteration += 1) {
+      const lifted = fuseeContact.clone().setY(tierPoint.height + lift);
+      const run = barrelContact.distanceTo(lifted);
+      const spanSlope = (lifted.y - barrelContact.y) / run;
+      lift = (pathSlope - spanSlope) * settle / 2;
+    }
+    fuseeContact.y = tierPoint.height + lift;
+    const barrelLength = barrelTurns * barrelLengthPerTurn;
+    const spanLength = barrelContact.distanceTo(fuseeContact);
     const length = barrelLength + spanLength + fuseeLength;
     const at = (station, target = new THREE.Vector3()) => {
       if (station < barrelLength && barrelTurns > 0) {
@@ -78,12 +170,18 @@ export function makeFuseeMotion(parameters = fuseeParameters) {
       if (station < barrelLength + spanLength) {
         return target.copy(barrelContact).lerp(fuseeContact, (station - barrelLength) / spanLength);
       }
-      const u = progressAtLength(fuseeStartLength + station - barrelLength - spanLength);
+      const along = station - barrelLength - spanLength;
+      const u = progressAtLength(fuseeStartLength + along);
       const angle = fuseeAngle + grooveAngle * u, radius = radiusAt(u);
-      return target.set(p.fuseeCenterX + radius * Math.cos(angle), heightAt(u), -radius * Math.sin(angle));
+      const eased = along < settle ? lift * (1 - along / settle) ** 2 : 0;
+      const point = tierPath.at(grooveAngle * u);
+      // Never below the seat the chain is running down to.
+      const seat = p.tierChainHeights[point.phase === 'descent' ? point.tier + 1 : point.tier];
+      const height = Math.max(point.height + eased, Math.min(point.height, seat));
+      return target.set(p.fuseeCenterX + radius * Math.cos(angle), height, -radius * Math.sin(angle));
     };
     return { at, length, barrelLength, spanLength, fuseeLength, barrelAngle, fuseeAngle,
-      barrelContact, fuseeContact, contactAngle, progress, barrelTurns, fuseeRadius };
+      barrelContact, fuseeContact, contactAngle, progress, barrelTurns, fuseeRadius, contactLift: lift, settle };
   };
   const referencePath = pathFor(0, p.reserveBarrelTurns);
   const linkCount = Math.round(referencePath.length / p.nominalLinkPitch);
@@ -123,6 +221,6 @@ export function makeFuseeMotion(parameters = fuseeParameters) {
     if (retain) walked = walk(path, linkPitch, true);
     return { ...path, ...walked, linkPitch, linkCount, totalChainLength };
   };
-  return { parameters: p, stateAtProgress, pathFor, lengthAt, radiusAt, heightAt,
+  return { parameters: p, tierPath, stateAtProgress, pathFor, lengthAt, radiusAt, heightAt,
     fullFuseeLength: lengths[sampleCount], barrelLengthPerTurn, totalChainLength, linkPitch, linkCount };
 }

@@ -2529,10 +2529,12 @@ function sidewaysBalanceWheelCrownEscapement(movement) {
   balanceAssembly.add(balanceWitness);
   verge.add(balanceAssembly);
 
-  // A slim ring at C, so the pallet blades read beside it end-on.
+  // A slim ring at C, so the pallet blades read beside it end-on. Its bore
+  // (0.1) grips the 0.11 staff, so no sliver of the blade roots shows
+  // between them.
   const staffCollars = [2.35].map((x, index) => {
     const collar = new THREE.Mesh(
-      new THREE.TorusGeometry(0.15, 0.04, 10, 32),
+      new THREE.TorusGeometry(0.14, 0.04, 12, 40),
       matte(PALETTE.frame, { metalness: 0.14, roughness: 0.68 }),
     );
     collar.rotation.y = Math.PI / 2;

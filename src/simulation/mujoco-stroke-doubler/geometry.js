@@ -28,7 +28,9 @@ export function makeStrokeDoublerGeometry({samples=96,cutterSteps=2048,amplitude
  // rounded '( )' forms are oval openings through that web, so the rack and
  // web are one extrusion with three capsule-shaped holes.
  const lx=local([29,350])[0],rx=local([518,350])[0],shape=new THREE.Shape();
- shape.moveTo(lx,baseTop);shape.lineTo(lx,under-.07);shape.quadraticCurveTo(lx,-rootY,lx+.26,-rootY);shape.lineTo(rx-.28,-rootY);shape.quadraticCurveTo(rx,-rootY,rx,under-.09);shape.lineTo(rx,baseTop);shape.closePath();
+ // Both upper corners are the same circular arc, as Brown draws them
+ // (p96: the left had been a flattened curve that read as square).
+ const endRadius=.16;shape.moveTo(lx,baseTop);shape.lineTo(lx,-rootY-endRadius);shape.absarc(lx+endRadius,-rootY-endRadius,endRadius,Math.PI,Math.PI/2,true);shape.lineTo(rx-endRadius,-rootY);shape.absarc(rx-endRadius,-rootY-endRadius,endRadius,Math.PI/2,0,true);shape.lineTo(rx,baseTop);shape.closePath();
  const lowerTeeth=Array.from({length:20},(_,i)=>poly(tooth.map(([x,y])=>[x+s.origins.lower+i*pitch,-y])));
  const radius=(under-baseTop)/2*.8,cy=(under+baseTop)/2,openings=[[77,167],[196,319],[350,443]].map(([a,b])=>{const x0=local([a,340])[0],x1=local([b,340])[0];return capsule([x0+radius,cy],[x1-radius,cy],radius,48);});
  add('lowerRack',plate(clip.difference(clip.union(poly(shape.getPoints(24).map(p=>[p.x,p.y])),...lowerTeeth),...openings),-.12,.12),'fixed',PALETTE.frame);

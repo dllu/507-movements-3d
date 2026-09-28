@@ -679,5 +679,17 @@ function carryShaftInOverheadFrame(root) {
 
 export function createAuthoredEdgeRunnerMovement(movement) {
   if (movement.id !== 375) return null;
-  return finishRunnerTread(pairedEdgeRunnerMill(movement), 375);
+  const model = pairedEdgeRunnerMill(movement);
+  // p96: the pan's centre boss is a blind socket, not a through-hole
+  // showing the background under the shaft: a floor 0.06 thick closes the
+  // bore, its top 0.002 below the shaft's foot (a footstep bearing).
+  const { pan, verticalShaft } = model.root.userData.blocks;
+  model.root.updateMatrixWorld(true);
+  const shaftFoot = new THREE.Box3().setFromObject(verticalShaft).min.y;
+  const socketFloor = shaftFoot - 0.002;
+  const profile = [[.60, -1.06], [.78, -1.40], [1.92, -1.40], [2.10, -1.06], [2.20, -1.06], [1.98, -1.76],
+    [0, -1.76], [0, socketFloor], [.52, socketFloor], [.52, -1.06], [.60, -1.06]];
+  pan.geometry.dispose();
+  pan.geometry = new THREE.LatheGeometry(profile.reverse().map(([r, y]) => new THREE.Vector2(r, y)), 96);
+  return finishRunnerTread(model, 375);
 }

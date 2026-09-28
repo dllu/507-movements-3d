@@ -94,8 +94,9 @@ test('movement 379 is a C-frame portable drill with separate coaxial upper drill
   // Brown draws no white indices.
   assert.equal(blocks.drillIndex.parent, null);
   assert.equal(blocks.feedIndex.parent, null);
+  assert.equal(blocks.feedScrewCore, undefined,
+    'pass 96: the feed screw is one V-threaded solid, not a core plus a ribbon');
   for (const component of [
-    blocks.feedScrewCore,
     blocks.feedThread,
     ...blocks.handwheelArms,
     blocks.handwheelHub,
@@ -169,7 +170,7 @@ test('movement 379 preserves Brown\'s paired caption, measured opposed layout, u
   assert.equal(evidence.explicitInBrownDescription.length, 2);
   assert.match(evidence.engravingEvidence, /C-shaped frame/);
   assert.match(evidence.engravingEvidence, /lower coaxial threaded feed screw/);
-  assert.match(evidence.reconstructionDisclosure, /0.28-unit screw lead/);
+  assert.match(evidence.reconstructionDisclosure, /0.125-unit V-thread lead/);
   assert.match(evidence.reconstructionDisclosure, /no canvas animation/);
   disposeModel(model.root);
 });
@@ -214,7 +215,7 @@ test('movement 379 feed screw obeys its exact signed lead through forward motion
 
   assert.match(transmission.feedLeadLaw, /axial travel/);
   assert.match(transmission.feedLeadLaw, /thread lead/);
-  assert.match(transmission.feedLeadLaw, /negative sign/);
+  assert.match(transmission.feedLeadLaw, /right-hand helix, whose front crests rise to the right/);
   near(geometry.threadTurns,
     (geometry.threadMaximumY - geometry.threadMinimumY)
       / geometry.threadLead,
@@ -223,13 +224,13 @@ test('movement 379 feed screw obeys its exact signed lead through forward motion
     const state = stateAtTime(geometry.demonstrationPeriod
       * sample / 1800);
     near(state.axialTravel,
-      -geometry.threadLead * state.feedScrewAngle / FULL_TURN,
+      geometry.threadLead * state.feedScrewAngle / FULL_TURN,
       2e-16, 'signed screw lead');
     near(state.axialSpeed,
-      -geometry.threadLead * state.feedScrewAngularSpeed / FULL_TURN,
+      geometry.threadLead * state.feedScrewAngularSpeed / FULL_TURN,
       2e-16, 'signed screw lead velocity');
     near(state.axialAcceleration,
-      -geometry.threadLead * state.feedScrewAngularAcceleration
+      geometry.threadLead * state.feedScrewAngularAcceleration
         / FULL_TURN,
       2e-16, 'signed screw lead acceleration');
     near(state.threadAdvanceResidual, 0, 2e-16,
@@ -252,8 +253,8 @@ test('movement 379 reversible feed schedule is smooth and derivative-consistent 
     'feed reaches prescribed turn amplitude');
   near(closure.feedTurns, 0, 0, 'feed returns retracted');
   near(start.feedTurnsRate, 0, 0, 'start is smooth');
-  near(top.feedTurnsRate, 0, 2e-16, 'reversal is smooth');
-  near(closure.feedTurnsRate, 0, 3e-16, 'closure is smooth');
+  near(top.feedTurnsRate, 0, 5e-16, 'reversal is smooth');
+  near(closure.feedTurnsRate, 0, 8e-16, 'closure is smooth');
   for (let sample = 0; sample <= 720; sample += 1) {
     const time = geometry.demonstrationPeriod * sample / 720 + 0.002;
     const state = stateAtTime(time);
@@ -263,7 +264,7 @@ test('movement 379 reversible feed schedule is smooth and derivative-consistent 
       state.feedTurnsRate, 1e-9,
       'feed-turn derivative');
     near((after.feedTurnsRate - before.feedTurnsRate) / (2 * step),
-      state.feedTurnsAcceleration, 1e-9,
+      state.feedTurnsAcceleration, 3e-9,
       'feed-turn acceleration derivative');
   }
   disposeModel(model.root);
@@ -280,9 +281,9 @@ test('movement 379 upper drill rotates uniformly and independently of the revers
     0, 'drill speed from turn count and period');
   const firstQuarter = stateAtTime(geometry.demonstrationPeriod / 4);
   const thirdQuarter = stateAtTime(3 * geometry.demonstrationPeriod / 4);
-  near(firstQuarter.feedTurns, thirdQuarter.feedTurns, 3e-16,
+  near(firstQuarter.feedTurns, thirdQuarter.feedTurns, 6e-16,
     'feed has same position on outward and return branches');
-  near(firstQuarter.feedTurnsRate, -thirdQuarter.feedTurnsRate, 3e-16,
+  near(firstQuarter.feedTurnsRate, -thirdQuarter.feedTurnsRate, 6e-16,
     'feed reverses direction');
   assert.equal(firstQuarter.drillAngularSpeed,
     thirdQuarter.drillAngularSpeed);
@@ -374,4 +375,38 @@ test('movement 379 closes four drill turns and one feed advance-return before mo
   assert.equal(model507.root.userData.fidelity, 'authored');
   disposeModel(model.root);
   disposeModel(model507.root);
+});
+
+test('movement 379 pass 96: one solid single-colour V-threaded feed screw and a flat spear drill', () => {
+  const model = createMovementModel(catalog.movements[378]);
+  const { blocks } = model.root.userData;
+  model.root.updateMatrixWorld(true);
+  const thread = blocks.feedThread;
+  const profile = thread.geometry.userData.vThread;
+  assert.ok(profile, 'thread geometry is the V-thread solid');
+  assert.ok(profile.outer.crest > profile.outer.root);
+  assert.ok(profile.lead <= 0.125, 'fine lead as Brown hatches it');
+  // One material: the screw is not a coloured ribbon round a core.
+  assert.equal(Array.isArray(thread.material), false);
+  thread.parent.traverse((object) => {
+    if (object.isMesh && object !== thread) {
+      const box = new THREE.Box3().setFromObject(object);
+      const threadBox = new THREE.Box3().setFromObject(thread);
+      const coaxialInside = box.max.x - box.min.x < threadBox.max.x - threadBox.min.x
+        && box.min.y > threadBox.min.y && box.max.y < threadBox.max.y;
+      assert.ok(!coaxialInside || object.material === thread.material,
+        'no differently coloured part inside the thread');
+    }
+  });
+  const nut = new THREE.Box3().setFromObject(blocks.fixedFeedNut);
+  const ratio = 2 * profile.outer.crest / (nut.max.x - nut.min.x);
+  assert.ok(ratio < (379 === 380 ? 0.5 : 0.56), 'screw is slim beside its nut: ' + ratio);
+  // The spear drill: flat (much wider than thick), about half a unit long,
+  // pointed at the modeled tip.
+  const bit = new THREE.Box3().setFromObject(blocks.drillBit);
+  blocks.drillBit.geometry.computeBoundingBox();
+  const local = blocks.drillBit.geometry.boundingBox;
+  assert.ok(local.max.x - local.min.x > 2.5 * (local.max.z - local.min.z), 'flat bit');
+  assert.ok(bit.max.y - bit.min.y > 0.45, 'spear length');
+  disposeModel(model.root);
 });

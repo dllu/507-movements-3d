@@ -342,6 +342,13 @@ function fuseeCarriageTraverse(movement) {
   const railTopZ = frameZ - wheelRadius;
   const supportX = 1.12;
   const crankRadius = 1.3;
+  // Pass 96: Brown's plan runs the shaft on from the fusee's large end
+  // through two bearing blocks on a bracket to the crank. At the plate's
+  // 0.0097 per pixel (fusee large diameter 177 px) the blocks stand 21 px
+  // and 90 px and the crank 132 px beyond the large end face.
+  const crankBearingYs = [1.9, 2.56];
+  const crankHubY = 2.97;
+  const shaftBottomY = -0.32;
   // The rendered cycle starts mid-stroke, where Brown draws the band
   // crossing the middle of the fusee and both remote anchors lie off-plate.
   const contactPhase = Math.PI / 2;
@@ -448,11 +455,12 @@ function fuseeCarriageTraverse(movement) {
     carriage.add(support);
   }
 
-  const fuseeShaft = cylinderAlongY(0.065, 2.44, darkMaterial, 24);
-  fuseeShaft.position.y = 0.90; // Ends below the crank hub.
+  // The shaft runs from its small-end bearing into the crank hub.
+  const fuseeShaft = cylinderAlongY(0.065, crankHubY - shaftBottomY, darkMaterial, 24);
+  fuseeShaft.position.y = (crankHubY + shaftBottomY) / 2;
   fuseeShaft.userData.role = 'vertical-fusee-and-crank-shaft';
   carriage.add(fuseeShaft);
-  for (const y of [-0.25, 2.02]) {
+  for (const y of [-0.25, ...crankBearingYs]) {
     const bearing = ringAroundY(0.15, 0.052, frameMaterial, 28);
     bearing.position.y = y;
     bearing.userData.role = 'carriage-mounted-fusee-shaft-bearing';
@@ -512,14 +520,14 @@ function fuseeCarriageTraverse(movement) {
   fuseeRotor.add(spinIndicator);
 
   const crankHub = cylinderAlongY(0.12, 0.12, darkMaterial, 24);
-  crankHub.position.y = 2.19;
+  crankHub.position.y = crankHubY;
   crankHub.userData.role = 'fusee-crank-hub';
   // Pass 92: Brown's crank is a flat arm carrying the usual turned handle
   // (a slim neck swelling to a bulb, about 0.32 of the crank radius long).
   // The arm is one extrusion whose ends are arcs concentric with the handle
   // and the shaft, so the handle's foot stands inside the arm's end with a
   // margin all round; its top lies 0.005 under the hub's top face.
-  const crankArmTopY = 2.245;
+  const crankArmTopY = crankHubY + 0.055;
   const crankArm = new THREE.Mesh(
     crankArmGeometry({ handleX: -crankRadius, handleEndRadius: 0.075,
       hubEndRadius: 0.075, bottomY: crankArmTopY - 0.10, topY: crankArmTopY }),
@@ -870,6 +878,10 @@ function fuseeCarriageTraverse(movement) {
       smallRadius,
       trackHalfLength,
       anchorHalfSpan,
+      crankBearingYs: [...crankBearingYs],
+      crankHubY,
+      crankRadius,
+      shaftBottomY,
       wheelRadius,
     },
     historicalTrial: {

@@ -44,12 +44,12 @@ export function correctGyroscopeParts(root,id) {
       for(const fixed of[b.ringBody,...b.bearingHousings,b.pillar,b.supportCup,b.pintle,b.curvedNeck])pair(moving,fixed);
     }
     d.cameraDirection=new THREE.Vector3(1,3.4,12);
-    d.sweptBounds=new THREE.Box3(new THREE.Vector3(-4.75,-2.48,-4.75),new THREE.Vector3(4.75,3.55,4.75));
+    d.sweptBounds=new THREE.Box3(new THREE.Vector3(-5.0,-2.48,-5.0),new THREE.Vector3(5.0,3.55,5.0));
     // Pass 94: frame Brown's pose, not the whole sweep. The box is the
     // phase-0 pillar, ring and disk (the plate's pose), so the opening view
     // matches the plate's size and placement; as the ring precesses round
     // the pillar it leaves this box and may pass beyond the frame edge.
-    d.cameraFitBounds=new THREE.Box3(new THREE.Vector3(-1.3,-2.40,-2.2),new THREE.Vector3(4.25,3.50,0.0));
+    d.cameraFitBounds=new THREE.Box3(new THREE.Vector3(-1.3,-2.40,-2.2),new THREE.Vector3(4.52,3.50,0.0));
     d.cameraFramingScope='Brown\'s phase-0 pose (pillar, ring A and disk C); the precession sweep runs past the frame.';
     d.minimumDisplayCycleSeconds=12;
     d.reconstructionNote='The disk and ring follow ideal steady horizontal precession, with twelve rotor turns per precession. Masses and dimensions are inferred. Nutation, release transients, bearing friction and stability under disturbance are not simulated.';

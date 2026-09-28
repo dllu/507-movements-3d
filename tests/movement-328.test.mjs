@@ -602,3 +602,22 @@ test('movement 328 p92: the crosshead ends are round about their rod-joint pins'
   assert.ok(endRadius > 1.3 * pinRadius, `pin margin ${endRadius / pinRadius}`);
   disposeModel(model.root);
 });
+
+test('movement 328 p96: forward end bosses carry the rod-joint pins to the rod plane', () => {
+  const model = createMovementModel(catalog.movements[327]);
+  model.update(0);
+  model.root.updateMatrixWorld(true);
+  const find = (role) => {
+    let found = null;
+    model.root.traverse((object) => { if (object.userData.role === role) found = object; });
+    return found;
+  };
+  for (const side of ['left', 'right']) {
+    const boss = new THREE.Box3().setFromObject(find(`${side}-crosshead-forward-end-boss`));
+    const bar = new THREE.Box3().setFromObject(find('horizontal-crosshead-rigid-span'));
+    const eye = new THREE.Box3().setFromObject(find(`${side}-equal-obliquity-connecting-rod-crosshead-eye-body`));
+    assert.ok(boss.min.z < bar.max.z, `${side} boss rooted in the crosshead`);
+    const gap = eye.min.z - boss.max.z;
+    assert.ok(gap > 0 && gap < 0.02, `${side} boss ends a running clearance behind the rod eye (${gap})`);
+  }
+});

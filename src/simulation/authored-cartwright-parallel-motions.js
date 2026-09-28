@@ -726,10 +726,24 @@ function CartwrightParallelMotion(movement) {
   const pistonBoss=new THREE.Mesh(new THREE.CylinderGeometry(.14,.14,.30,48),drivenMaterial);
   pistonBoss.position.set(0,-.13,crossheadPlaneZ);
   pistonBoss.userData.role='crosshead-boss-attaching-piston-rod-B';
+  // Each round end carries a forward boss, coaxial with its joint pin, up
+  // to a running clearance behind the rod eye, so the pin is not a long
+  // bare stub between the crosshead and the rod plane (p96).
+  const endBossLow = crossheadPlaneZ + 0.09 - 0.005;
+  const endBossHigh = rodPlaneZ - 0.07 - 0.012;
+  const crossheadEndBosses = [-1, 1].map((side) => {
+    const boss = cylinderAlongZ(0.9 * crossheadEndRadius,
+      endBossHigh - endBossLow, drivenMaterial, 48);
+    boss.position.set(side * crossheadHalf, 0, (endBossLow + endBossHigh) / 2);
+    boss.userData.role =
+      `${side < 0 ? 'left' : 'right'}-crosshead-forward-end-boss`;
+    return boss;
+  });
   crosshead.add(
     pistonBoss,
     pistonRod,
     crossheadBar,
+    ...crossheadEndBosses,
     ...crossheadPins,
     leftWristAnchor,
     rightWristAnchor,

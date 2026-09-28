@@ -6542,9 +6542,18 @@ function reuleauxCarrierDiskValveMotion() {
   const railHalfSpacing = profileWidth / 2 + runningClearance;
 
   const carrierDiskDepth = 0.24;
-  const camDepth = 0.36;
-  const followerDepth = 0.44;
-  const linerDepth = 0.47;
+  // Pass 97: the yoke and tappet are as deep as the hexagonal rod nuts
+  // (across flats) so the nuts seat on the yoke instead of overhanging it.
+  // The yoke is centred on the rod axis; its faces sit 0.01 proud of the nut
+  // flats so no faces coincide. The tappet runs from just in front of the
+  // carrier disk to 0.06 behind the yoke's front face.
+  const rodAxisZ = 0.4;
+  const nutAcrossFlats = 40 * sourceScale * Math.sqrt(3);
+  const followerDepth = nutAcrossFlats + 0.02;
+  const linerDepth = followerDepth + 0.03;
+  const camBackZ = -0.2;
+  const camFrontZ = rodAxisZ + followerDepth / 2 - 0.06;
+  const camDepth = camFrontZ - camBackZ;
   const linerThickness = 0.08;
   const innerCornerRadius = 0.15;
   const outerCornerRadius = 0.26;
@@ -6662,17 +6671,20 @@ function reuleauxCarrierDiskValveMotion() {
     new THREE.ExtrudeGeometry(profileShape, {depth: camDepth, bevelEnabled: false, curveSegments: 96}).translate(0, 0, -camDepth / 2),
     tappetMaterial,
   );
-  camBody.position.z = -0.02;
+  camBody.position.z = (camBackZ + camFrontZ) / 2;
   camBody.userData.role = 'true-three-arc-reuleaux-triangle-tappet';
   inputRotor.add(camBody);
 
+  const fastenerBackZ = -0.24;
+  const fastenerFrontZ = camFrontZ + 0.085;
   const fastenerBoss = cylinderAlongZ(
     fastenerBossRadius,
-    .485,
+    fastenerFrontZ - fastenerBackZ,
     tappetMaterial,
     40,
   );
-  fastenerBoss.position.set(fastenerOffset.x, fastenerOffset.y, .0025);
+  fastenerBoss.position.set(fastenerOffset.x, fastenerOffset.y,
+    (fastenerBackZ + fastenerFrontZ) / 2);
   fastenerBoss.userData.role = 'round-tappet-fastener-at-engraved-position';
   inputRotor.add(fastenerBoss);
 
@@ -6687,7 +6699,7 @@ function reuleauxCarrierDiskValveMotion() {
   fastenerSquare.position.set(
     fastenerOffset.x,
     fastenerOffset.y,
-    camDepth / 2 + 0.065,
+    fastenerFrontZ,
   );
   fastenerSquare.userData.role = 'square-fastener-index-rigid-with-tappet';
   inputRotor.add(fastenerSquare);
@@ -6718,7 +6730,7 @@ function reuleauxCarrierDiskValveMotion() {
     ),
     drivenMaterial,
   );
-  followerBody.position.z = 0.2;
+  followerBody.position.z = rodAxisZ;
   followerBody.userData.role = 'one-piece-positive-return-valve-frame';
   follower.add(followerBody);
 
@@ -6733,7 +6745,7 @@ function reuleauxCarrierDiskValveMotion() {
   lowerRailLiner.position.set(
     0,
     -railHalfSpacing - linerThickness / 2,
-    0.2,
+    rodAxisZ,
   );
   lowerRailLiner.userData.role = 'lower-horizontal-positive-return-rail';
   lowerRailLiner.userData.side = 'lower';
@@ -7528,22 +7540,22 @@ function toothedAxialFaceCamSpringFollower() {
         secondAngle,
       );
       const rootInnerFirst = point(
-        baseFrontX,
+        baseFrontX - 0.003,
         rimInnerRadius,
         firstAngle,
       );
       const rootInnerSecond = point(
-        baseFrontX,
+        baseFrontX - 0.003,
         rimInnerRadius,
         secondAngle,
       );
       const rootOuterFirst = point(
-        baseFrontX,
+        baseFrontX - 0.003,
         wheelOuterRadius,
         firstAngle,
       );
       const rootOuterSecond = point(
-        baseFrontX,
+        baseFrontX - 0.003,
         wheelOuterRadius,
         secondAngle,
       );
@@ -7587,12 +7599,17 @@ function toothedAxialFaceCamSpringFollower() {
   input.userData.rotor = inputRotor;
   input.userData.role = 'continuous-shaft-and-sixteen-tooth-axial-cam-wheel';
 
+  // Pass 96: the base's front face stops 0.003 short of the rim's valley
+  // floor (which lies at baseFrontX) so the two no longer z-fight; the rim's
+  // walls run down into the base by the same amount.
+  const baseRecess = 0.003;
   const wheelBody = cylinderAlongX(
     wheelOuterRadius,
-    baseThickness,
+    baseThickness - baseRecess,
     driverMaterial,
     80,
   );
+  wheelBody.position.x = -baseRecess / 2;
   wheelBody.userData.role = 'edge-on-circular-base-of-axial-cam-wheel';
   inputRotor.add(wheelBody);
 

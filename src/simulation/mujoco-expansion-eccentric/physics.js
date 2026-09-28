@@ -10,8 +10,10 @@ export function makeExpansionEccentricPhysics(mujoco, {timestep=.0005,period=8,s
     return `<mesh name="cam${i}" vertex="${vec(vertices)}"/>`;
   }).join('');
   const geoms=profile.map((_,i)=>`<geom type="mesh" mesh="cam${i}" contype="1" conaffinity="2"/>`).join('');
+  // Pass 97: the rollers carry the inertia of solid iron disks (mass .3,
+  // axial inertia about m r^2 / 2) so their spin stays steady between contacts.
   const rollers=[['upper',-3.67,1.10+spread*scale,.31],['lower',-3.69,-1.02-spread*scale,.32]].map(([name,x,y,r])=>
-    `<body name="${name}" pos="${x} ${y} 0"><joint type="hinge" axis="0 0 1" damping=".0001"/><inertial pos="0 0 0" mass=".1" diaginertia=".003 .003 .005"/><geom type="sphere" size="${r}" contype="2" conaffinity="1"/></body>`).join('');
+    `<body name="${name}" pos="${x} ${y} 0"><joint type="hinge" axis="0 0 1" damping=".0001"/><inertial pos="0 0 0" mass=".3" diaginertia=".01 .01 .015"/><geom type="sphere" size="${r}" contype="2" conaffinity="1"/></body>`).join('');
   const xml=`<mujoco model="137 shaped expansion eccentric prototype"><compiler angle="radian" inertiafromgeom="false"/>
 <option timestep="${timestep}" gravity="0 -9.81 0" integrator="implicitfast" iterations="100" tolerance="1e-10"><flag multiccd="disable"/></option>
 <default><geom condim="3" friction=".5 .001 .0001" solref=".003 1" solimp=".99 .999 .001"/></default>

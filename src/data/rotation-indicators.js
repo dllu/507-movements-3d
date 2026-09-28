@@ -34,6 +34,8 @@ export default {
   // or a raised spiral; the disks and hubs take the cue.
   98: ['disk', '(front|rear)Hub'],
   99: ['disk', '(front|rear)Hub'],
+  // 113: the table's two plain support rollers (turned by rolling contact).
+  113: ['leftRoller', 'rightRoller'],
   117: ['upperRoller', 'lowerRoller'],
   // 124: the spindle's drum; the drill bit is edge-on in the plate's view.
   124: ['drum', '(back|front)Flange', 'frontLand', 'frontHub'],
@@ -90,7 +92,7 @@ export default {
   262: ['thin-roller-C-touching-cone-at-large-end-side-edge', 'eccentric-conical-friction-body-B', 'round-large-end-boss-round-screw-D'],
   263: ['thin-roller-C-touching-cone-at-large-end-side-edge', 'eccentric-conical-friction-body-B', 'round-large-end-boss-round-screw-D'],
   265: ['concave-generator-horn-shaped-friction-drum', 'cone-drum-hub-rigid-with-input-shaft',
-    'thin-friction-roller-disk', 'round-friction-tread-touching-cone', 'roller-hub-sliding-on-guide-shaft'],
+    'thin-friction-roller-disk', 'roller-hub-sliding-on-guide-shaft'],
   268: ['fixed-center-rod-support-roller'],
   270: ['wide-belt-pulley-rim-and-working-tread', 'lower-return-sheave-web', 'assembled-view-pulley-front-face'],
   271: ['left-pulley-wheel-with-hub-bore', 'left-pulley-hub-face'],

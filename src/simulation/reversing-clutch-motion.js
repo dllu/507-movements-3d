@@ -4,7 +4,10 @@ const slope = (x) => 6 * x * (1 - x);
 
 export function reversingClutchMotion() {
   const p = { inputAngularSpeed: 1.05, teeth: 40, jawCount: 12, jawHeight: 0.09,
-    gearFaceDistance: 0.70, centralFaceDistance: 0.46, stroke: 0.11,
+    // p96: the jaws sit on short hubs projecting past the bevels' small
+    // ends, as Brown draws. Only the face gap enters the motion, so the
+    // shifted pair (0.56, 0.32) keeps the previous (0.70, 0.46) kinematics.
+    gearFaceDistance: 0.56, centralFaceDistance: 0.32, stroke: 0.11,
     contactAxialGap: 0.00016, entryOverlap: 0.012, waitingGap: 0.002,
     pivotX: 0.12, pivotY: -0.44, leverLength: 0.445, handleLength: 0.39,
     rodLength: 0.50, inertia: 0.015, loadDeceleration: 2.6 };

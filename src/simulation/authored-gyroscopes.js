@@ -116,7 +116,16 @@ function singleSupportSteadyPrecessionGyroscope(movement) {
   const sourceRingRadiusPixels =
     (sourceRingRightRaster.x - sourceRingLeftRaster.x) / 2;
 
-  const supportToCenter = sourceSupportToCenterPixels * sourceScale;
+  // Pass 96: ring A's baked band runs out to radius 1.93 (see
+  // scripts/generate-gyroscope-rings.py), so centring it at the 182 px
+  // rotor span put its near edge over the pillar's bearing cup. Brown leaves
+  // a 40 px gap from pintle F to the ring's near edge (ringLeft - pivot);
+  // the ring and rotor are placed so that gap is kept.
+  const ringOuterRadius = 1.93;
+  const sourcePintleToRingGapPixels =
+    sourceRingLeftRaster.x - sourceSupportPivotRaster.x;
+  const supportToCenter =
+    sourcePintleToRingGapPixels * sourceScale + ringOuterRadius;
   const ringRadius = sourceRingRadiusPixels * sourceScale;
   const diskRadius = sourceDiskRadiusPixels * sourceScale;
   const supportPivot = new THREE.Vector3(0, 1.22, 0);
@@ -316,16 +325,27 @@ function singleSupportSteadyPrecessionGyroscope(movement) {
   pintleCap.userData.role = 'upper-cap-of-moving-pintle-F';
   precessionAssembly.add(pintleCap);
 
-  const neckEndX = supportToCenter - ringRadius;
+  // Neck F (pass 96): one round S-neck as Brown draws it. It rises out of
+  // the pintle's cap, arches over ring A's near band and comes down onto
+  // the top of the left spindle bearing, which is fixed in the ring (the
+  // band itself is bored for the spindle at that crossing). Both ends are
+  // buried, in the cap and in the bearing, so the tube needs no end caps
+  // and nothing hangs below the ring.
+  const neckRadius = 0.05;
+  const neckEndX = supportToCenter - bearingOffset;
+  const neckEndY = 0.12;
   const neckCurve = new THREE.CatmullRomCurve3([
-    new THREE.Vector3(0, pintleLength * 0.78, 0),
-    new THREE.Vector3(neckEndX * 0.19, 0.34, 0),
-    new THREE.Vector3(neckEndX * 0.58, 0.3, 0),
-    new THREE.Vector3(neckEndX * 0.73, 0.09, 0),
-    new THREE.Vector3(neckEndX, 0, 0),
-  ]);
+    new THREE.Vector3(0, pintleLength + 0.01, 0),
+    new THREE.Vector3(0, pintleLength + 0.1, 0),
+    new THREE.Vector3(0.05, pintleLength + 0.21, 0),
+    new THREE.Vector3(neckEndX * 0.42, pintleLength + 0.27, 0),
+    new THREE.Vector3(neckEndX * 0.8, pintleLength + 0.2, 0),
+    new THREE.Vector3(neckEndX, 0.36, 0),
+    new THREE.Vector3(neckEndX, 0.24, 0),
+    new THREE.Vector3(neckEndX, neckEndY, 0),
+  ], false, 'centripetal');
   const curvedNeck = new THREE.Mesh(
-    new THREE.TubeGeometry(neckCurve, 48, 0.105, 12, false),
+    new THREE.TubeGeometry(neckCurve, 128, neckRadius, 24, false),
     drivenMaterial,
   );
   curvedNeck.userData.role =
@@ -677,6 +697,7 @@ function singleSupportSteadyPrecessionGyroscope(movement) {
     pintleRadius,
     precessionAngularSpeed,
     precessionCyclePeriod,
+    ringOuterRadius,
     ringRadius,
     ringTubeRadius,
     sourceDiskBottomRaster: sourceDiskBottomRaster.clone(),
@@ -689,6 +710,8 @@ function singleSupportSteadyPrecessionGyroscope(movement) {
     sourceRingRadiusPixels,
     sourceRingRightRaster: sourceRingRightRaster.clone(),
     sourceRotorCenterRaster: sourceRotorCenterRaster.clone(),
+    neckRadius,
+    sourcePintleToRingGapPixels,
     sourceScale,
     sourceSupportPivotRaster: sourceSupportPivotRaster.clone(),
     sourceSupportToCenterPixels,

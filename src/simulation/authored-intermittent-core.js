@@ -1983,10 +1983,13 @@ function snapActionStarCounter() {
   pawl.userData.role = 'broad-hooked-pawl-on-drop';
   drop.userData.rotor.add(pawl);
 
-  // The leaf spring, broken off at the plate's left edge, carries the drop
-  // by its tail; it bends as an end-loaded cantilever, so its end turns with
-  // the drop about the hinge.
-  const springPlaneZ = z.dropFront + 0.02;
+  // The leaf spring carries the drop by its tail and bends as an end-loaded
+  // cantilever, so its end turns with the drop about the hinge. p96: it is
+  // one thin flat strip extruded in the drop's own plane (Brown's double
+  // line, seen edge-on), centred in the drop's thickness; its end runs into
+  // the tail, which is slotted to take it, so the joint is solid.
+  const springPlaneZ = (z.dropBack + z.dropFront) / 2;
+  const springHalfDepth = 0.055, springHalfWidth = 0.016;
   const springRelaxed = Array.from({ length: 33 }, (_, index) => {
     const point = toWorld([
       L.springClamp[0] + (L.springEnd[0] - L.springClamp[0]) * index / 32,
@@ -1999,54 +2002,38 @@ function snapActionStarCounter() {
     toWorld(mechanism.rotateAboutHinge(L.springEnd, delta)),
   );
   const springLeaf = makeDynamicLeafSpring(springCurveAt(0), {
-    // One straight flat strip of constant section, Brown's proportion.
-    band: { halfWidthAt: () => 0.035 },
+    band: { halfWidthAt: () => springHalfWidth },
     color: PALETTE.muted,
     planeZ: springPlaneZ,
-    radius: 0.019,
+    radius: springHalfDepth,
     tubularSegments: 48,
   });
   springLeaf.userData.flexibleLeafSpring = true;
   springLeaf.userData.role = 'flat-leaf-spring-carrying-drop';
 
-  // Brown's fixed stop pin under the tail. Brown draws it and the striker as
-  // open circles; the model shows plain dark-steel pins. The one straight
-  // flat leaf spring ends in a small clamp block in its own plane (Brown
-  // breaks the spring off at the plate edge; the clamp gives it a real, held
-  // end without a second parallel bar). Brown draws no support for the stop
-  // pin; p95: one plain flat bracket behind the drop's plane carries both
-  // fixed points, so the pin reads as a stud on the spring's fixed mounting
-  // instead of standing free. Its ends are round, concentric with the pin
-  // and the clamp; the drop never reaches its plane.
+  // Fixed points. Brown draws the stop pin under the tail as an open circle
+  // and breaks the spring off at the plate's edge, with no support for
+  // either. p96 (replacing p95's dark bracket bar): no bracket. The stop pin
+  // is a plain dark-steel stud and the spring's held end is gripped in a
+  // second stud of the same size; each runs straight back, end-on to the default
+  // view, to the same back plane as the two shafts, so all four fixed
+  // parts read as mounted in one (omitted) back plate.
   const steelPinMaterial = matte(PALETTE.frame, { metalness: 0.25, roughness: 0.5 });
   const frameMaterial = matte(PALETTE.frame, { metalness: 0.1, roughness: 0.7 });
-  const bracketFront = z.dropBack - 0.05, bracketBack = bracketFront - 0.08;
-  const stopPin = cylinder(L.stopPinRadius * k, bracketFront - 0.01, z.dropFront + 0.03, steelPinMaterial, 28);
+  const backPlane = z.diskBack - 0.1;
+  const stopPin = cylinder(L.stopPinRadius * k, backPlane, z.dropFront + 0.03, steelPinMaterial, 28);
   const stopPoint = toWorld(mechanism.stopPin), clampPoint = toWorld(L.springClamp);
   stopPin.position.x = stopPoint.x;
   stopPin.position.y = stopPoint.y;
   stopPin.userData.fixed = true;
   stopPin.userData.role = 'fixed-drop-stop-pin';
-  const clampFront = springPlaneZ + 0.05;
-  const clampBlock = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, clampFront - (bracketFront - 0.01)), frameMaterial);
-  clampBlock.position.set(clampPoint.x, clampPoint.y, (clampFront + bracketFront - 0.01) / 2);
-  clampBlock.userData.fixed = true;
-  clampBlock.userData.role = 'fixed-clamp-block-holding-leaf-spring-end';
-  const bracketHalfWidth = L.stopPinRadius * k + 0.035;
-  const bracketAxis = new THREE.Vector2().subVectors(clampPoint, stopPoint);
-  const bracketLength = bracketAxis.length();
-  const bracketShape = new THREE.Shape();
-  bracketShape.absarc(0, 0, bracketHalfWidth, Math.PI / 2, Math.PI * 3 / 2, false);
-  bracketShape.absarc(bracketLength, 0, bracketHalfWidth, -Math.PI / 2, Math.PI / 2, false);
-  bracketShape.closePath();
-  const stopBracket = slab(bracketShape, bracketBack, bracketFront, frameMaterial);
-  stopBracket.position.x = stopPoint.x;
-  stopBracket.position.y = stopPoint.y;
-  stopBracket.rotation.z = Math.atan2(bracketAxis.y, bracketAxis.x);
-  stopBracket.userData.fixed = true;
-  stopBracket.userData.role = 'fixed-bracket-carrying-stop-pin-and-spring-clamp';
-
-  root.add(stopBracket, clampBlock, stopPin, star, driver, drop, springLeaf);
+  // The spring's held end is gripped in a second stud of the same size.
+  const clampBoss = cylinder(L.stopPinRadius * k, backPlane, springPlaneZ + springHalfDepth + 0.02,
+    steelPinMaterial, 28);
+  clampBoss.position.set(clampPoint.x, clampPoint.y, clampBoss.position.z);
+  clampBoss.userData.fixed = true;
+  clampBoss.userData.role = 'fixed-round-stud-holding-leaf-spring-end';
+  root.add(clampBoss, stopPin, star, driver, drop, springLeaf);
 
   // The steady contact solution for one pin event, baked offline.
   const fingerprint = snapCounterMotionFingerprint();
@@ -2115,7 +2102,7 @@ function snapActionStarCounter() {
     star,
     starShaft,
     stopPin,
-    stopBracket,
+    clampBoss,
     striker,
   };
   root.userData.geometry = {
@@ -2128,7 +2115,7 @@ function snapActionStarCounter() {
   };
   root.userData.snapCounter = { fingerprint, mechanism, motion, toWorld };
   root.userData.stateAtTime = stateAtTime;
-  root.userData.reconstructionNote = 'Follows Brown\'s plate and Sam Gallagher\'s reconstruction: the spring carries the drop, which swings about the spring\'s virtual hinge; the broad hooked pawl hangs on the drop\'s screw and the striker stops it rising. The pins strike only the drop\'s broad pointed leg (Brown\'s dashed wedge) and lift the whole drop; the pawl rides with it, its nose sliding out of its space and over the next point into the next space; when the pin escapes past the leg\'s tip the spring throws the drop down and the pawl turns the star one point. The motion is a baked quasi-static planar contact solution with finite fall speeds; the pawl works flush with the star, in front of the pins\' ends. The stop pin and the spring\'s clamp stand on one plain fixed bracket behind the drop\'s plane (undrawn; added so the pin is not a free-standing stud).';
+  root.userData.reconstructionNote = 'Follows Brown\'s plate and Sam Gallagher\'s reconstruction: the spring carries the drop, which swings about the spring\'s virtual hinge; the broad hooked pawl hangs on the drop\'s screw and the striker stops it rising. The pins strike only the drop\'s broad pointed leg (Brown\'s dashed wedge) and lift the whole drop; the pawl rides with it, its nose sliding out of its space and over the next point into the next space; when the pin escapes past the leg\'s tip the spring throws the drop down and the pawl turns the star one point. The motion is a baked quasi-static planar contact solution with finite fall speeds; the pawl works flush with the star, in front of the pins\' ends. The stop pin and the stud gripping the spring\'s end are plain fixed studs running straight back to the shafts\' back plane (the back plate itself is omitted, as for the shafts).';
 
   const update = (time) => {
     const state = stateAtTime(time);
@@ -2851,16 +2838,30 @@ function internalGuardTappetStudIndex() {
   return finished;
 }
 
-// A leaf clamped part-way along its length: the relaxed centreline plus a
-// cantilever deflection (3v^2 - v^3) / 2 of the free end beyond clampFraction
-// (v runs 0..1 over that free end). Used for C, whose shallow tip is the
-// flexible part while its deep pressing web stays put.
-class ClampedTipLeafCurve extends THREE.Curve {
-  constructor(relaxedPoints, tipDisplacement, clampFraction) {
+// Movement 73's strong spring C: a leaf clamped at its block and propped
+// part-way along by B's nib, its thin end lifted by A's teeth. Small-
+// deflection Euler-Bernoulli shape of a clamped beam with a simple support at
+// x = a and a point load at its free end x = L (overhang b = L - a); the deep
+// web (span) is k times stiffer than the thin end:
+//   0 <= x <= a:  y = (b / 4ak) x^2 (x - a)        (the web bows back a little)
+//   x = a + e:    y = (ab/4k) e + b e^2/2 - e^3/6  (the end lifts)
+// normalised so the end moves by exactly tipDisplacement. Slope is
+// continuous at the prop, and the whole leaf takes part, most of all its
+// free end. Arc lengths are in units of L.
+class ProppedLeafCurve extends THREE.Curve {
+  constructor(relaxedPoints, tipDisplacement, propFraction, stiffness = 4) {
     super();
     this.relaxedPoints = relaxedPoints;
     this.tipDisplacement = tipDisplacement.clone();
-    this.clampFraction = clampFraction;
+    this.propFraction = propFraction;
+    this.stiffness = stiffness;
+  }
+
+  static shape(u, a, k = 1) {
+    const b = 1 - a, end = a * b * b / (4 * k) + b * b * b / 3;
+    if (u <= a) return b / (4 * a * k) * u * u * (u - a) / end;
+    const e = u - a;
+    return (a * b / (4 * k) * e + b * e * e / 2 - e * e * e / 6) / end;
   }
 
   getPoint(t, target = new THREE.Vector3()) {
@@ -2869,8 +2870,7 @@ class ClampedTipLeafCurve extends THREE.Curve {
     const scaled = u * last;
     const index = Math.min(Math.floor(scaled), last - 1);
     target.lerpVectors(this.relaxedPoints[index], this.relaxedPoints[index + 1], scaled - index);
-    const v = THREE.MathUtils.clamp((u - this.clampFraction) / (1 - this.clampFraction), 0, 1);
-    return target.addScaledVector(this.tipDisplacement, v * v * (3 - v) / 2);
+    return target.addScaledVector(this.tipDisplacement, ProppedLeafCurve.shape(u, this.propFraction, this.stiffness));
   }
 }
 
@@ -3231,10 +3231,22 @@ function springPressedRatchetIndex() {
   const relaxedStrongPoints = strongEven.points;
   const webEndFraction = polylineLength(webPoints) / strongEven.total;
   const webTaper = 0.004;
-  const strongCurveAt = (tipCenter) => new ClampedTipLeafCurve(
+  // C bends as one leaf from its block: B's nib props its web where it
+  // bears on it, and A's tooth lifts its end (ProppedLeafCurve). With the
+  // end seated (no lift) C keeps its relaxed shape.
+  const strongPropFraction = (psi, nibRadius) => {
+    const angle = psi + nibAngle(nibRadius) / 2, radius = nibRadius + nibHalfWidth;
+    const contact = new THREE.Vector3(Math.cos(angle) * radius, Math.sin(angle) * radius, 0);
+    let best = 0;
+    relaxedStrongPoints.forEach((point, index) => {
+      if (point.distanceToSquared(contact) < relaxedStrongPoints[best].distanceToSquared(contact)) best = index;
+    });
+    return THREE.MathUtils.clamp(best / (relaxedStrongPoints.length - 1), 0.35, webEndFraction);
+  };
+  const strongCurveAt = (tipCenter, propFraction = webEndFraction) => new ProppedLeafCurve(
     relaxedStrongPoints,
     new THREE.Vector3(tipCenter.x - stopCenter3.x, tipCenter.y - stopCenter3.y, 0),
-    webEndFraction,
+    propFraction,
   );
   const strongZRangeAt = (u) => {
     const f = smoothStep01((u - webEndFraction) / webTaper);
@@ -3400,6 +3412,30 @@ function springPressedRatchetIndex() {
   // out; C's thin end rides over the tooth and drops in behind it.
   const driverAngularSpeed = 0.72;
   const driverCyclePeriod = fullTurn / driverAngularSpeed;
+  // A's crest leaves C's end a little before the index ends; C's end then
+  // springs back down into its seat over strongDropDuration (a released leaf
+  // accelerates: cosine ease) instead of jumping there in one frame. The
+  // straight drop is checked clear of A, which turns on to its stop meanwhile.
+  const strongDropDuration = 0.1;
+  const seatRadius = restStopContact.center.length();
+  let strongDropEvent = toothPitch;
+  for (let k = 0; k <= 4000; k += 1) {
+    const event = toothPitch * (0.8 + 0.2 * k / 4000);
+    if (stopContactAtDrivenAngle(-event).center.length() > seatRadius + 1e-3) strongDropEvent = event;
+  }
+  const strongDropCenter = stopContactAtDrivenAngle(-strongDropEvent).center.clone();
+  // The end slides down A's front face where that face leans over the
+  // straight drop.
+  const strongDropClear = (center, drivenAngle) => {
+    const local = center.clone().rotateAround(new THREE.Vector2(), -drivenAngle);
+    const closest = closestRatchetProfilePoint(local);
+    if (pointInsideRatchet(local)) throw new RangeError('movement 73 C cannot drop into its seat');
+    if (closest.distance >= stopPadRadius) return center;
+    return closest.point.clone().add(local.sub(closest.point).setLength(stopPadRadius)).rotateAround(new THREE.Vector2(), drivenAngle);
+  };
+  const strongDropAt = (sinceDrop, drivenAngle) => strongDropClear(
+    restStopContact.center.clone().lerp(strongDropCenter, Math.cos(Math.PI / 2 * sinceDrop / strongDropDuration)), drivenAngle);
+  for (let k = 1; k < 64; k += 1) strongDropAt(strongDropDuration * k / 64, -Math.min(toothPitch, strongDropEvent + driverAngularSpeed * strongDropDuration * k / 64));
   // Brown draws B at rest with its clamp near the top of D and its end at
   // the right.
   const initialFrontAngle = THREE.MathUtils.degToRad(10);
@@ -3431,8 +3467,16 @@ function springPressedRatchetIndex() {
     const nibRadius = nibRadiusAt(psi);
     const driverAngle = front - catchTipAngle;
     const catchCurveLocal = catchCurveLocalAt(nibRadius);
-    const stopContact = stopContactAtDrivenAngle(drivenAngle);
-    const strongCurve = strongCurveAt(stopContact.center);
+    // When A's crest passes, C's end springs back down into its seat over
+    // strongDropDuration (a released leaf accelerates: cosine ease), rather
+    // than jumping there in one frame.
+    const travelled = driving ? eventAngle : toothPitch + driveEndPsi + fullTurn - psi;
+    const sinceDrop = (travelled - strongDropEvent) / driverAngularSpeed;
+    const falling = sinceDrop >= 0 && sinceDrop < strongDropDuration;
+    const stopContact = falling
+      ? { ...restStopContact, center: strongDropAt(sinceDrop, drivenAngle) }
+      : stopContactAtDrivenAngle(drivenAngle);
+    const strongCurve = strongCurveAt(stopContact.center, strongPropFraction(psi, nibRadius));
     const pressing = psi < pressStartPsi;
     const activeToothIndex = THREE.MathUtils.euclideanModulo(completedIndexes + 1, toothCount);
     const crest = ratchet.userData.toothFaces[activeToothIndex].outer.clone()
@@ -3459,8 +3503,8 @@ function springPressedRatchetIndex() {
       ratchetTeethAdvanced: -drivenAngle / toothPitch,
       stage,
       stopContact,
-      stopContactEngaged: true,
-      stopMode: indexing ? 'riding-next-tooth' : 'holding-ratchet',
+      stopContactEngaged: !falling,
+      stopMode: indexing ? 'riding-next-tooth' : falling ? 'dropping-into-seat' : 'holding-ratchet',
       strongCurve,
       strongSpringPressEngaged: pressing,
     };

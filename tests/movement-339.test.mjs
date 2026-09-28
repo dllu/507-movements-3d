@@ -453,6 +453,31 @@ test('movement 339 renderer binds O, P, B, A, C, F and all spatial layers', () =
   model.root.traverse((object) => drawnRoles.push(object.userData.role ?? ''));
   assert.equal(drawnRoles.some((role) => /engine-bed|piston-guide-rail|piston-head|arch-member/.test(role)), false,
     'the parallel motion alone guides C: Brown draws no bed, guide rails or exposed piston');
+  // p96: the cylinder is a closed solid, with a piston on the rod that stays
+  // inside the barrel between its covers over the whole stroke.
+  {
+    const find = (role) => {
+      let found = null;
+      model.root.traverse((object) => { if (object.userData.role === role) found = object; });
+      return found;
+    };
+    const barrel = find('fixed-cylinder-barrel-below-cover');
+    const bottom = find('fixed-cylinder-bottom-cover-flange');
+    const cover = find('fixed-cylinder-cover-flange');
+    const piston = find('piston-disk-on-rod-enclosed-in-cylinder');
+    assert.ok(barrel && bottom && cover && piston);
+    for (let i = 0; i <= 32; i += 1) {
+      model.update(geometry.cyclePeriod * i / 32);
+      model.root.updateMatrixWorld(true);
+      const p = new THREE.Box3().setFromObject(piston);
+      assert.ok(p.max.y < new THREE.Box3().setFromObject(cover).min.y, `piston below the cover at ${i}`);
+      assert.ok(p.min.y > new THREE.Box3().setFromObject(bottom).max.y, `piston above the bottom at ${i}`);
+    }
+    model.update(0);
+    const b = new THREE.Box3().setFromObject(bottom);
+    const r = new THREE.Box3().setFromObject(barrel);
+    assert.ok(b.max.y > r.min.y && b.max.x >= r.max.x, 'the bottom cover closes the barrel');
+  }
   const bounds = new THREE.Box3().setFromObject(model.root);
   const size = bounds.getSize(new THREE.Vector3());
   assert.ok(size.x > 5.8);

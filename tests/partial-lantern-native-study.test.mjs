@@ -17,7 +17,7 @@ test('199 native convex prisms retain the full finite rack tooth area and origin
    for(const p of cell)assert.ok(tooth.outline.includes(p),'cell vertex belongs to the visible outline');
   }
  }
- assert.equal(count,888);assert.equal(partialLantern199Pins.length,4);
+ assert.equal(count,1782);assert.equal(partialLantern199Pins.length,4);
  const d=create({id:199}).root.userData,s=d.stateAtInputTravel(0);
  s.lanternPinCenters.forEach((p,i)=>assert.ok(p.distanceTo({x:partialLantern199Pins[i][0],y:partialLantern199Pins[i][1]})<1e-12));
  assert.equal(profile.pinRadius,d.geometry.lanternPinRadius);

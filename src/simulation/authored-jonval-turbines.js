@@ -567,7 +567,9 @@ function jonvalTurbine(movement) {
   // back half and the trunk water is its back half with a flat cut face.
   const chuteRise = Math.tan(0.45);
   const chuteX0 = annulusOuterRadius + 0.35;
-  const chuteZ = -0.45, chuteLift = 0.155, chuteSpeed = 2.6;
+  // Pass 96: a thin flat sheet (half-thickness 0.07, lying 0.015 above the
+  // chute floor) rather than a thick rounded rod.
+  const chuteZ = -0.45, chuteLift = 0.085, chuteSpeed = 2.6;
   const chuteSurface = (x) => new THREE.Vector3(x, 1.16 + (x - chuteX0) * chuteRise + chuteLift, chuteZ);
   // Pass 90: the trunk stands full to just under the pipe's floor at the
   // wall; the sheet runs down the floor, over the bore's lip on the trunk's
@@ -580,7 +582,7 @@ function jonvalTurbine(movement) {
     guidedPath([chuteSurface(chuteX0 + 3.45), chuteSurface(lipX)], {speed: chuteSpeed, samples: 24}),
     ballisticPath({origin: chuteSurface(lipX), velocity: downPipe.multiplyScalar(chuteSpeed), endY: trunkWaterLevel + 0.02, samples: 12}),
   ), {
-    width: 0.45, thickness: 0.15, widthAxis: new THREE.Vector3(0, 0, 1), widthExponent: 0,
+    width: 0.45, thickness: 0.07, widthAxis: new THREE.Vector3(0, 0, 1), widthExponent: 0, radialSegments: 24,
     cyclePeriod: cycleDuration, streakRate: 1.1, opacity: 0.5,
   });
   chuteStream.userData.role = 'water-running-down-chute-into-trunk-b';

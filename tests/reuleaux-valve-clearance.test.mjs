@@ -38,3 +38,22 @@ test('135 working cam mesh clears the yoke and its shaft stays behind the carrie
     assert(model.root.userData.hideGround && model.root.userData.supportsRestart);
   } finally { disposeObject3D(model.root); }
 });
+test('135 yoke and tappet are as deep as the rod nuts and centred on the rod axis (pass 97)', () => {
+  const model = createMovementModel(movement);
+  try {
+    model.root.updateMatrixWorld(true);
+    const { blocks: b } = model.root.userData;
+    const find = role => { let hit; model.root.traverse(o => { if (!hit && o.isMesh && o.userData.role === role) hit = o; }); return hit; };
+    const yoke = box(find('one-piece-positive-return-valve-frame'));
+    const nut = box(find('hex-nut-valve-rod-yoke-attachment'));
+    const rod = box(find('upper-valve-rod-rigid-with-yoke'));
+    const cam = box(b.camBody);
+    const mid = bx => (bx.min.z + bx.max.z) / 2;
+    assert(Math.abs(mid(yoke) - mid(nut)) < 1e-6 && Math.abs(mid(rod) - mid(nut)) < 1e-6, `yoke, nut and rod share one axis: ${[mid(yoke), mid(nut), mid(rod)]}`);
+    const proud = [nut.min.z - yoke.min.z, yoke.max.z - nut.max.z];
+    assert(proud.every(d => d > .005 && d < .03), `yoke faces sit just proud of the nut flats: ${proud}`);
+    assert(cam.max.z - cam.min.z > .9 * (nut.max.z - nut.min.z), 'tappet is about as deep as the nuts');
+    assert(cam.max.z < yoke.max.z && cam.min.z > box(b.carrierDisk).max.z);
+    assert(box(b.fastenerBoss).max.z > cam.max.z, 'fastener boss stands proud of the tappet face');
+  } finally { disposeObject3D(model.root); }
+});

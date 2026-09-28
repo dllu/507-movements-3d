@@ -1,11 +1,15 @@
 import json,time,os
-from shapely.geometry import Polygon
+from shapely.geometry import Polygon,Point
 from shapely.ops import unary_union
 from shapely.affinity import affine_transform
 import math
 from shapely.geometry import Polygon as _P
 rows=json.load(open('/dev/shm/irregular-profile-input.json'))
 EASE=.002
+# 191's reset step (p96): corner fillet of each squared step tooth, and how
+# far below that fillet the wall-face relief stops.
+FILLET=.05
+WALL_TOP=.05
 # The opening leaves residual micro-scallops of about 1e-5 in concave roots
 # (the cutter's own corner arcs). A 1e-4 Douglas-Peucker pass keeps outline
 # vertices only where the true curve bends; it moves the outline at most
@@ -67,6 +71,53 @@ for row in rows:
   pitch=row['rack']['pitch']
   driven=hob_scroll(row['rack'],'driven',-pitch/4,backlash)
   driver=hob_scroll(row['rack'],'driver',pitch/4,backlash)
+  # Brown's step (p96): the radial wall is the flank of a full-width,
+  # flat-topped tooth.  The clipped hob poses just past the seam (on the
+  # extrapolated spiral, where no mate exists) chamfer that tooth's top
+  # corner and leave a narrow pointed tip, so restore the square corner:
+  # an annular sector on the high side of the seam ray, from the pitch
+  # circle out to the tip circle, 0.3 pitch wide at the tip, unioned in
+  # before the reset relief is swept from the mate.
+  def square_step_tooth(gear,name):
+   import numpy as np
+   rack=row['rack'];phi=np.array(rack['phis']);pts=np.array(rack[name]);add=rack['addendum']
+   at=lambda x:np.array([np.interp(x,phi,pts[:,0]),np.interp(x,phi,pts[:,1])])
+   p0,p1=at(0),at(2*math.pi);high=0 if np.hypot(*p0)>np.hypot(*p1) else 2*math.pi
+   ph=at(high);r=np.hypot(*ph);ray=math.atan2(ph[1],ph[0])
+   step=.01 if high==0 else -.01;q=at(high+step);sense=np.sign(((math.atan2(q[1],q[0])-ray+math.pi)%(2*math.pi))-math.pi)
+   # The sector ends mid-way along the tooth's existing flat top and its
+   # outer edge continues that top's own line (fitted in radius against
+   # angle), so the two merge without a step or a sliver.  Its inner edge
+   # runs down to the low rim, so the whole wall is one straight radial line.
+   # (The wall stands 0.003 inside the seam ray, clear of the mate's wall
+   # where the two coincide at the reset.)
+   span=sense*.3*pitch/(r+add);angles=np.linspace(ray+sense*.003/r,ray+span,24)
+   rel=lambda x,y:sense*(((math.atan2(y,x)-ray+math.pi)%(2*math.pi))-math.pi)
+   window=[(rel(x,y),math.hypot(x,y)) for x,y in gear.exterior.coords if 0<rel(x,y)<abs(span)*1.6]
+   tip=max(q for _,q in window);top=[(a,q) for a,q in window if q>tip-.004 and a>abs(span)*.6]
+   slope,level=np.polyfit([a for a,_ in top],[q for _,q in top],1) if len(top)>2 else (0,tip)
+   outer=lambda a:level+slope*sense*(a-ray);tip=outer(ray);low=min(math.hypot(x,y) for x,y in gear.exterior.coords if abs(rel(x,y))<.02)+.002
+   sector=[(low*math.cos(a),low*math.sin(a)) for a in angles[:2]]+[(outer(a)*math.cos(a),outer(a)*math.sin(a)) for a in angles[::-1]]
+   # The corner itself is a small fillet (radius FILLET, tangent to the wall
+   # and the top).
+   u=np.array([math.cos(angles[0]),math.sin(angles[0])]);tv=sense*np.array([-u[1],u[0]]);corner=tip*u
+   centre=corner-FILLET*u+FILLET*tv
+   box=Polygon([tuple(corner+.001*u-.001*tv),tuple(corner-FILLET*u-.001*tv),tuple(centre),tuple(corner+FILLET*tv+.001*u)])
+   sector=Polygon(sector).buffer(0).difference(box.difference(Point(*centre).buffer(FILLET,resolution=32)))
+   merged=gear.union(sector)
+   # The relievable strip: the wall face itself, 0.04 deep on the high
+   # side, from the low rim up to WALL_TOP below the fillet.
+   depth=sense*.04/r;wa=np.linspace(ray,ray+depth,8)
+   strip=Polygon([(.5*math.cos(a),.5*math.sin(a)) for a in wa]+[((tip-FILLET-WALL_TOP)*math.cos(a),(tip-FILLET-WALL_TOP)*math.sin(a)) for a in wa[::-1]]).buffer(0)
+   # And everything between the seam ray and that inset wall goes, so the
+   # face is one straight line from the rim to the fillet.
+   # (It starts at the top of the low side's rim beside the wall, so no
+   # slot opens at the wall's foot.)
+   foot=max([math.hypot(x,y) for x,y in gear.exterior.coords if -.008/r<rel(x,y)<-.001/r and math.hypot(x,y)<r-add]+[low])
+   ta=np.linspace(ray,angles[0],4)
+   trim=Polygon([(foot*math.cos(a),foot*math.sin(a)) for a in ta]+[((tip+.01)*math.cos(a),(tip+.01)*math.sin(a)) for a in ta[::-1]]).buffer(0)
+   return max(getattr(merged,'geoms',[merged]),key=lambda g:g.area),strip,trim
+  driven,drivenWall,drivenTrim=square_step_tooth(driven,'driven');driver,driverWall,driverTrim=square_step_tooth(driver,'driver')
   # The reset needs Brown's stepped relief: around the seam the high end of
   # each scroll swings past the other's step.  Cut the swept mate (plus a
   # small clearance) from each gear's low-side shelf only, the region just
@@ -91,6 +142,18 @@ for row in rows:
   sweep=unary_union([affine_transform(driven,invert(q)) for q in near]).buffer(clearance,resolution=4)
   driver=driver.difference(sweep.intersection(seam_shelf('driver',1.6)))
   driver=max(getattr(driver,'geoms',[driver]),key=lambda g:g.area)
+  # Last, each step's squared corner brushes the other's wall as the steps
+  # pass in the reset: ease each wall face (not the corner) by the other's
+  # sweep, a shallow concave relief of about 0.02 near the wall's base.
+  drivenBefore=driven
+  sweep=unary_union([affine_transform(driver,q) for q in near]).buffer(clearance,resolution=4)
+  driven=driven.difference(sweep.intersection(drivenWall))
+  driven=max(getattr(driven,'geoms',[driven]),key=lambda g:g.area)
+  sweep=unary_union([affine_transform(drivenBefore,invert(q)) for q in near]).buffer(clearance,resolution=4)
+  driver=driver.difference(sweep.intersection(driverWall))
+  driver=max(getattr(driver,'geoms',[driver]),key=lambda g:g.area)
+  driven=max(getattr(g:=driven.difference(drivenTrim),'geoms',[g]),key=lambda g:g.area)
+  driver=max(getattr(g:=driver.difference(driverTrim),'geoms',[g]),key=lambda g:g.area)
   driven=ease(driven).simplify(SMOOTH_TOLERANCE,preserve_topology=True)
   driver=ease(driver).simplify(SMOOTH_TOLERANCE,preserve_topology=True)
   areas=[];gaps=[]

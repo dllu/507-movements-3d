@@ -411,6 +411,12 @@ function deadbeat289(movement) {
       { center: [0, 0], radius: 9 * s, z0: -0.3, z1: 0.22, role: 'escape-wheel-arbor' },
       { center: a, radius: 9 * s, z0: -0.3, z1: 0.2, role: 'anchor-arbor-a' },
     ],
+    // Brown's double circle at the wheel's centre: a turned hub boss (twice
+    // the arbor's radius) standing on the wheel's face round the arbor. It
+    // is round and concentric, so it stands with the arbor.
+    extras: (root, materials) => [
+      arborMesh([0, 0], 18 * s, 0.08, 0.14, materials.wheel, 'escape-wheel-hub-boss'),
+    ],
     fit: fitBox(map, [60, 20, 460, 505]),
     plotView: [-3.6, -1.2, 3.6, 3.2],
     mechanism: 'The pendulum rocks anchor H-L-K about a. A tooth of wheel A rests on a locking face that is an arc about a, so the wheel stands dead still while the pallet slides; as the pallet withdraws the tooth slides over the short impulse face c-e or d-b, pushing the anchor, and drops to the other pallet.',
@@ -747,12 +753,15 @@ function free291(movement) {
   const studI = P(336, 172.4);
   const tipOffset = [springTip[0] - O[0], springTip[1] - O[1]];
   const tailReach = (tune.tailReach ?? 16) * s;
-  const tailHalf = 0.25;
   const halfThick = 1 * s;
-  // The stud is a slim tail; it meets the spring's underside (lifting) or
-  // top (bending it down) with its edge, offset c from its centre line.
-  const edge = 7 * s * Math.sin(tailHalf) * (tailReach - tipOffset[0]) / (tailReach - 7 * s);
-  const c = halfThick + edge + 1 * s;
+  // The stud is a short stout bar on the arbor's collet, twice the passing
+  // spring's thickness across, with a round end at the old tip radius. It
+  // meets the spring's underside (lifting) or top (bending it down) with its
+  // straight flank, offset c from its centre line.
+  const studHalf = (tune.studHalf ?? 2) * s;
+  const colletRadius = 7 * s;
+  const edge = studHalf;
+  const c = halfThick + edge + (tune.studClear ?? 0.25) * s;
   const tauUp = Math.atan2(tipOffset[1] - c, tipOffset[0]);
   const tauDown = Math.atan2(tipOffset[1] + c, tipOffset[0]);
   const slipAngle = Math.acos(Math.min(1, tipOffset[0] / tailReach));
@@ -801,6 +810,16 @@ function free291(movement) {
   const dx = tune.dx ?? 181;
   const stopD = [P(dx, 201.5), P(dx + 11, 201.5), P(dx + 11, tune.stopBottom ?? 215), P(dx, tune.stopBottom ?? 215)];
   const localB = (points) => points.map(([x, y]) => [x - b[0], y - b[1]]);
+  // Stud a: the collet (concentric with the arbor) and the stout stud in one
+  // outline, the stud's end a semicircle ending on tailReach.
+  const studAngle = tailAngle0 + lead;
+  const studJoin = Math.asin(studHalf / colletRadius);
+  const studEnd = tailReach - studHalf;
+  const studOutline = joinPath(
+    arcPoints([0, 0], colletRadius, studAngle + studJoin, studAngle - studJoin + TAU, 72),
+    arcPoints([0, 0], studHalf, studAngle - Math.PI / 2, studAngle + Math.PI / 2, 24)
+      .map(([x, y]) => [x + studEnd * Math.cos(studAngle), y + studEnd * Math.sin(studAngle)]),
+  );
   const balance = new THREE.Group();
   balance.name = 'balance-a';
   balance.position.set(O[0], O[1], 0);
@@ -856,9 +875,12 @@ function free291(movement) {
       materials.rocker.add(plateMesh(localB([P(133, 178), P(137, 178), P(137, 192.5), P(133, 192.5)]), [], frontZ[0], springZ[0] - 0.015, detentMaterial, 'hook-k-post'));
       materials.rocker.add(plateMesh(localB([P(133, 178), P(146, 178), P(146, 181.8), P(133, 181.8)]), [], frontZ[0], springZ[1] + 0.02, detentMaterial, 'hook-k-lip'));
       balance.add(
-        plateMesh(roller, [circlePoints([0, 0], 5 * s, 32)], wheelZ[0], wheelZ[1], balanceMaterial, 'balance-impulse-roller-with-notch-g'),
-        plateMesh(joinPath(arcPoints([0, 0], 7 * s, tailAngle0 + lead + tailHalf, tailAngle0 + lead - tailHalf + TAU, 40), [polar([0, 0], tailReach, tailAngle0 + lead)]),
-          [circlePoints([0, 0], 5 * s, 32)], frontZ[0], frontZ[1], balanceMaterial, 'discharging-stud-a'),
+        // Roller and collet are fast on the arbor: their bores fit it (the
+        // arbor mesh is turned 0.006 under its nominal 5 px radius).
+        plateMesh(roller, [circlePoints([0, 0], 5 * s - 0.006, 64)], wheelZ[0], wheelZ[1], balanceMaterial, 'balance-impulse-roller-with-notch-g'),
+        // Steel, so the stud reads against the blue roller behind it.
+        plateMesh(studOutline, [circlePoints([0, 0], 5 * s - 0.006, 64)], frontZ[0], frontZ[1],
+          matte(PALETTE.muted, { metalness: 0.3, roughness: 0.45 }), 'discharging-stud-a'),
       );
       root.add(balance);
       const dir = [springEnd[0] - springTip[0], springEnd[1] - springTip[1]];

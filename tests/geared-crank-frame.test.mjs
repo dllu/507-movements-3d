@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {Vector3} from 'three';
-import {gearedCrankState,gearedCrankSource as g,grooveRadius,sourcePoint} from '../src/simulation/geared-crank-source.js';
+import {gearedCrankState,gearedCrankSource as g,grooveRadius,sourcePoint,crankEye0} from '../src/simulation/geared-crank-source.js';
 import {makeGearedCrankFrame,gearedCrankGroove as G} from '../src/simulation/geared-crank-frame.js';
 import {solidSurface} from './helpers/solid-surface.mjs';
 test('148 lever pin starts at the drawn pin and runs once round the gear groove per turn',()=>{
@@ -45,4 +45,26 @@ test('148 groove band stays inside the large gear rim',()=>{
  let crest=0;for(let i=0;i<4096;i++)crest=Math.max(crest,grooveRadius(2*Math.PI*i/4096));
  // The rim's bore (inner edge of the toothed band) is 3.64 in geared-crank.js.
  assert.ok(crest+G.bandHalfWidth<3.64-.12,`outer groove wall reaches ${crest+G.bandHalfWidth}`);
+});
+test('148 short link joins the lever pin to a crank on the large gear axle, which swings to and fro',()=>{
+ const v=makeGearedCrankFrame();
+ try{
+  const {parts,blocks}=v.root.userData,link=parts['crank-link'],crank=parts['axle-crank'];
+  assert.equal(parts['groove-pin-head'],undefined);
+  assert.equal(link.parent,blocks.link);assert.equal(crank.parent,blocks.crank);
+  let low=Infinity,high=-Infinity;
+  for(let i=0;i<=256;i++){
+   const s=v.update(8*i/256);
+   // Link ends sit on the crank pin and the lever pin at every pose.
+   const pinEnd=new Vector3(s.pin.distanceTo(s.eye),0,0).applyMatrix4(link.matrixWorld),eyeEnd=new Vector3().applyMatrix4(link.matrixWorld);
+   assert.ok(Math.hypot(pinEnd.x-s.pin.x,pinEnd.y-s.pin.y)<1e-9);assert.ok(Math.hypot(eyeEnd.x-s.eye.x,eyeEnd.y-s.eye.y)<1e-9);
+   // The eye rides with the crank: its crank-frame position never changes.
+   const local=new Vector3(s.eye.x,s.eye.y,0).applyMatrix4(crank.matrixWorld.clone().invert()),first=crankEye0;
+   assert.ok(Math.hypot(local.x-first.x,local.y-first.y)<1e-9);
+   assert.ok(Math.abs(Math.hypot(s.eye.x,s.eye.y)-1.75)<1e-9,'the eye stays on the crank circle');
+   assert.ok(Math.abs(Math.hypot(s.pin.x-s.eye.x,s.pin.y-s.eye.y)-1.75)<1e-9,'the link keeps its length');
+   low=Math.min(low,s.crankAngle);high=Math.max(high,s.crankAngle);
+  }
+  assert.ok(high-low>.8,'the crank swings');
+ }finally{v.dispose();}
 });

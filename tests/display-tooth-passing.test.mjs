@@ -13,7 +13,7 @@ const catalog = JSON.parse(await readFile(new URL('../src/data/movements.json', 
 // The fine-tooth gear demonstrations play slowly enough to follow the teeth:
 // at most MAX_DISPLAY_TOOTH_PASSING_RATE teeth a second pass the mesh.
 test('fine-tooth gear demonstrations cap the displayed tooth-passing rate', () => {
-  assert.deepEqual([...FINE_TOOTH_PASSING_RATES.keys()], [24, 25, 26, 41, 42, 43, 44, 53]);
+  assert.deepEqual([...FINE_TOOTH_PASSING_RATES.keys()], [24, 25, 26, 41, 42, 43, 44, 48, 53]);
   for (const [id, rate] of FINE_TOOTH_PASSING_RATES) {
     const timing = createMovementModel(catalog.movements[id - 1]).root.userData.animationTiming;
     assert.equal(timing.toothPassingRate, rate);
@@ -33,7 +33,7 @@ test('the tooth cap leaves other gear movements to the general timing rules', ()
 // Tooth counts behind the authored rates: the fastest toothed rotor's teeth
 // times its turns per authored second.
 test('fine-tooth rates agree with the factories\' tooth counts', () => {
-  const expectedTeeth = { 24: 30, 25: 36, 26: 28, 41: 28, 42: 40, 43: 44, 44: 36, 53: 40 };
+  const expectedTeeth = { 24: 30, 25: 36, 26: 28, 41: 28, 42: 40, 43: 44, 44: 36, 48: 16, 53: 40 };
   for (const [id, rate] of FINE_TOOTH_PASSING_RATES) {
     const model = createMovementModel(catalog.movements[id - 1]);
     const counts = [];

@@ -719,3 +719,28 @@ test('movement 191 seam step is Brown\'s shallow shoulder, about 0.13 of the cen
   assert.ok(g.maximumDriverRadius - g.minimumDriverRadius < 2.5 * (g.addendum + g.dedendum));
   disposeModel(model.root);
 });
+
+test('movement 191 step tooth is full-width and flat-topped on a straight radial wall (p96)', () => {
+  const model = createMovementModel(catalog.movements[190]);
+  const { blocks, geometry: g } = model.root.userData;
+  for (const body of [blocks.drivenBody, blocks.driverBody]) {
+    const outline = body.geometry.userData.outline;
+    const radius = (p) => Math.hypot(p[0], p[1]);
+    const tip = Math.max(...outline.map(radius));
+    // The wall: points hugging the seam ray (|x| < 0.004 in the baked frame,
+    // whose seam lies on the y axis) over most of the step height.
+    const wall = outline.filter((p) => Math.abs(p[0]) < 0.004 && radius(p) > tip - 0.6);
+    const span = Math.max(...wall.map(radius)) - Math.min(...wall.map(radius));
+    assert.ok(span > 0.38, `straight wall spans ${span}`);
+    // The step tooth: its top (within 0.006 of the tip) starts inside the
+    // 0.05 corner fillet and is over a quarter pitch wide; 0.05 below the
+    // tip the wall is still straight (the old hobbed chamfer was 0.02 in).
+    const top = outline.filter((p) => radius(p) > tip - 0.006 && Math.abs(p[0]) < 0.2);
+    const xs = top.map((p) => Math.abs(p[0]));
+    assert.ok(Math.min(...xs) < 0.035, `top starts ${Math.min(...xs)}`);
+    assert.ok(Math.max(...xs) - Math.min(...xs) > 0.28 * g.circularPitch, `top width ${Math.max(...xs) - Math.min(...xs)}`);
+    const shoulder = outline.filter((p) => Math.abs(radius(p) - (tip - 0.05)) < 0.004 && Math.abs(p[0]) < 0.05);
+    assert.ok(shoulder.length > 0 && Math.min(...shoulder.map((p) => Math.abs(p[0]))) < 0.006, 'square shoulder');
+  }
+  disposeModel(model.root);
+});

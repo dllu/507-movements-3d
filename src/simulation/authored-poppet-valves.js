@@ -287,7 +287,20 @@ function rockShaftToeAndPoppetLifter(movement) {
       workingRegion: support.workingRegion,
     };
   };
-  const stateAtTime = (time) => stateAtCyclePhase(time / cyclePeriod);
+  // Brown draws the toe just touching the lifter, so time zero is the
+  // instant of first contact on the lift stroke (the cycle-phase schedule
+  // itself still starts at the low dwell's end).
+  let contactLo = 0;
+  let contactHi = liftEndPhase;
+  for (let iteration = 0; iteration < 60; iteration += 1) {
+    const middle = (contactLo + contactHi) / 2;
+    const toe = inputMotionAtCyclePhase(middle).toeAngle;
+    if ((toe - contactStartToeAngle) * (highToeAngle - lowToeAngle) < 0) contactLo = middle;
+    else contactHi = middle;
+  }
+  // A hair past first contact, so the seam pose is robustly in contact.
+  const sourcePosePhase = contactHi + 1e-6;
+  const stateAtTime = (time) => stateAtCyclePhase(time / cyclePeriod + sourcePosePhase);
 
   const driverMaterial = matte(PALETTE.driver, {
     metalness: 0.13,

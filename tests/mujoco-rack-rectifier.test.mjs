@@ -13,6 +13,9 @@ test('116 uses closed source-proportioned hardware with separate pinions and six
  const v=makeRackRectifierGeometry(),u=v.root.userData;
  try{
   assert.equal(Object.keys(u.parts).length,14);
+  // p96: the end stems are near-equal round rods, as drawn (Brown's 0.195 and
+  // 0.166 radii); the right one no longer steps down to a thin rod.
+  {const r=n=>{const b=new THREE.Box3().setFromBufferAttribute(u.parts[n].geometry.attributes.position);return (b.max.y-b.min.y)/2;};assert(r('leftStub')/r('rightStub')<1.2,'stem radii '+r('leftStub')+' '+r('rightStub'));}
   // Pass 93: each end stem is one turned solid; the shaft is one piece; no run-on boxes.
   assert.deepEqual(Object.keys(u.parts).filter(n=>/stubExtension|shaftTail/.test(n)),[]);
   // p60 support policy: Brown draws no stands, guides or back bars here.

@@ -200,7 +200,9 @@ test('movement 73 keeps B’s nib off C while C presses it through a tooth', () 
   assert.ok(minimum > 0, `B’s nib never enters C’s web (closest ${minimum})`);
   indexGaps.sort((a, b) => a - b);
   const median = indexGaps[Math.floor(indexGaps.length / 2)];
-  assert.ok(Math.abs(median - geometry.pressGap) < 0.001,
+  // Pass 96: C now bends as a propped leaf, so its web eases up to about
+  // 0.0035 further off the nib than the relaxed press gap.
+  assert.ok(Math.abs(median - geometry.pressGap) < 0.004,
     `C bears on the back of B’s nib while it carries the tooth (median gap ${median})`);
 
   // C's press is what makes B catch: the relaxed nib clears A's crests, and

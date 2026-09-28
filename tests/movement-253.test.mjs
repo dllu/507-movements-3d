@@ -480,3 +480,18 @@ test('movement 253 hooks have Brown\'s bored eye bosses and seat stud D in the c
   }
   disposeModel(model.root);
 });
+
+test('p96: movement 253 hook pivots stand well inside flange B and the return sheave is out of every preset view', () => {
+  const model = createMovementModel(catalog.movements[252]);
+  const { hookPivots, returnSheave } = model.root.userData.blocks;
+  const { arrestFlangeRadius } = model.root.userData.geometry;
+  const { eyeRadius } = model.root.userData.workingHooks;
+  for (const pivot of hookPivots) {
+    const r = Math.hypot(pivot.position.x, pivot.position.y);
+    assert.ok(r / arrestFlangeRadius > 0.68 && r / arrestFlangeRadius < 0.78, `pivot at ${(r / arrestFlangeRadius).toFixed(3)} R`);
+    assert.ok(r + eyeRadius < arrestFlangeRadius - 0.1, 'eye boss inside the flange rim');
+  }
+  // 30 below the drum: beyond the top (70 deg) and below (-55 deg) views.
+  assert.ok(returnSheave.position.y <= -30 + 1e-9);
+  disposeModel(model.root);
+});

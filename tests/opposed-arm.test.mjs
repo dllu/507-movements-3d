@@ -10,7 +10,7 @@ const dispose=model=>model.root.traverse(x=>{x.geometry?.dispose();x.material?.d
 
 test('079 follows the engraved joints and 33-tooth axial face ratchet',()=>{
  const model=makeOpposedArmDrive(),u=model.root.userData,p=u.geometry;
- assert.equal(Object.keys(u.parts).length,37);assert.equal(p.teeth,33);assert.equal(u.hideGround,true);assert.equal(u.fidelity,'authored');
+ assert.equal(Object.keys(u.parts).length,42);assert.equal(p.teeth,33);assert.equal(u.hideGround,true);assert.equal(u.fidelity,'authored');
  near(p.innerRadius,338.90038109631433/400.22693572590316);
  const source=point=>[(point[0]-406.29814582227056)/400.22693572590316,(777.9249240149841-point[1])/400.22693572590316];
  for(const [key,pixel]of [['upper',[657.1801948051948,524.5487012987013]],['lower',[654.8850364963504,1041.6770072992701]]]){
@@ -20,6 +20,25 @@ test('079 follows the engraved joints and 33-tooth axial face ratchet',()=>{
  const wheel=u.parts.wheelBody.geometry.userData.faceRatchet;
  assert.ok(wheel.crest>wheel.valley&&wheel.valley>wheel.web&&wheel.web>wheel.back);assert.equal(wheel.teeth,33);
  assert.match(u.idealConstraints,/falls under gravity onto the crown teeth/);dispose(model);
+});
+
+test('079 p96: B ends in an eye with an open hook, and spacers close every pin gap',()=>{
+ const model=makeOpposedArmDrive(),u=model.root.userData,p=u.geometry;
+ const box=new THREE.Box3().setFromBufferAttribute(u.parts.sliderB.geometry.attributes.position);
+ assert.ok(box.max.x<.30&&box.max.x>.26,'the hook reaches right of the eye');
+ // A ray along +x from inside the hook's mouth meets no material: the hook is open to the right.
+ const ray=new THREE.Raycaster(new THREE.Vector3(.215,0,.38),new THREE.Vector3(1,0,0));
+ assert.equal(ray.intersectObject(new THREE.Mesh(u.parts.sliderB.geometry,new THREE.MeshBasicMaterial({side:THREE.DoubleSide})),false).length,0,'the hook is open to the right');
+ const back=new THREE.Raycaster(new THREE.Vector3(.215,0,.38),new THREE.Vector3(-1,0,0));
+ assert.ok(back.intersectObject(new THREE.Mesh(u.parts.sliderB.geometry,new THREE.MeshBasicMaterial({side:THREE.DoubleSide})),false)[0].distance>.04,'the hook has a real throat');
+ const span=name=>{const b=new THREE.Box3().setFromBufferAttribute(u.parts[name].geometry.attributes.position);return[b.min.z,b.max.z];};
+ for(const key of ['upper','lower']){
+  const [lo,hi]=span(key+'RodPinSpacer');near(lo,p.arms[key].armHigh,1e-6);near(hi,p.arms[key].rodLow,1e-6);
+ }
+ const stack=[span('sliderRearPinCap'),span('upperConnectingRod'),span('lowerConnectingRod'),span('sliderB'),
+  ...[0,1,2].map(i=>span('sliderPinSpacer'+i))].sort((a,b)=>a[0]-b[0]);
+ for(let i=1;i<stack.length;i++)assert.ok(stack[i][0]<=stack[i-1][1]+1e-6,'no bare pin between the parts on B\'s pin');
+ dispose(model);
 });
 
 test('079 all rendered components have closed oriented triangle surfaces',()=>{

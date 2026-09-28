@@ -12,6 +12,18 @@ test('131 source-traced assembly has one slotted body, two web pockets and finit
  try{
   assert.equal(u.bodyRings.length,5);assert.equal(d.distance*100,155);assert.equal(d.diskRadius*200,223);assert.equal(d.crankRadius*100,90);
   assert.equal(b.toothMeshes.length,9);assert.equal(d.period,4);
+  // Pass 97: the web is a symmetric three-spoke sector. Its two windows
+  // mirror about the bisector (x = 0 in the sector frame), and the side bars,
+  // middle spoke and rim band all keep one width.
+  const windows=u.bodyRings.filter(r=>Math.max(...r.map(q=>q[1]))<-.2&&Math.min(...r.map(q=>q[1]))>-1.1);
+  assert.equal(windows.length,2);
+  const ringDistance=(r,s)=>Math.min(...r.map(q=>Math.min(...s.slice(0,-1).map((a,j)=>distance(q,a,s[j+1]))))) ;
+  const mirrored=windows[0].map(([x,y])=>[-x,y]);
+  assert(ringDistance(mirrored,windows[1])<2e-3&&ringDistance(windows[1],mirrored)<2e-3,'windows mirror about the bisector');
+  const middleSpoke=ringDistance(windows[0],windows[1]);
+  const sideBars=windows.map(w=>ringDistance(w,u.bodyRings[0]));
+  assert(Math.abs(middleSpoke-.19)<2e-3,`middle spoke ${middleSpoke}`);
+  for(const bar of sideBars)assert(bar>.17&&bar<.192,`side bar / rim band ${bar}`);
   const rawRack=b.rackTeeth.map(t=>t.geometry.parameters.shapes.getPoints().map(q=>q.toArray()));
   let maxGap=0;
   for(let i=0;i<=720;i++){

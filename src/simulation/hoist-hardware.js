@@ -6,14 +6,14 @@ import { PALETTE, makeBeam, makePulley, makeShaft, markShadows, matte } from './
 // rope never needs to pass through the rotating wheel to reach its attachment.
 export function makeHoistBlock({ radius, color, ropeRadius = 0.032, width = 0.24,
   upperEyeZ = null, upperEyeScale = 1, lowerEyeZ = null, lowerEyeScale = 1,
-  pinBecketZ = null, lowerHook = false, lowerHookScale = 1 }) {
+  pinBecketZ = null, lowerHook = false, lowerHookScale = 1, pinRadius = 0.065, bore = 0.072 }) {
   const block = makePulley({ radius: radius - ropeRadius, width,
-    hubLength: Math.min(width * 1.45, width + 0.13), color, spokes: 0, bore: 0.072 });
+    hubLength: Math.min(width * 1.45, width + 0.13), color, spokes: 0, bore });
   const frame = new THREE.Group();
   const cheekZ = width / 2 + 0.105;
   const pinMin = Math.min(-cheekZ - 0.055, pinBecketZ === null ? 0 : pinBecketZ - 0.04);
   const pinMax = Math.max(cheekZ + 0.055, pinBecketZ === null ? 0 : pinBecketZ + 0.04);
-  const pin = makeShaft({ radius: 0.065, length: pinMax - pinMin });
+  const pin = makeShaft({ radius: pinRadius, length: pinMax - pinMin });
   pin.position.z = (pinMax + pinMin) / 2;
   frame.add(pin);
   const strap = (from, to) => frame.add(makeBeam(from, to,

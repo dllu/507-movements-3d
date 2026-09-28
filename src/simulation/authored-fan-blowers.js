@@ -46,14 +46,28 @@ function voluteSidePlateGeometry(depth, inletRadius) {
 }
 
 function bladeGeometry(depth) {
-  const shape = new THREE.Shape();
-  shape.moveTo(0.48, -0.16);
-  shape.bezierCurveTo(1.02, -0.15, 1.43, -0.45, 1.66, -0.93);
-  shape.bezierCurveTo(1.94, -1.52, 2.34, -1.98, 2.9, -2.18);
-  shape.lineTo(3.05, -1.82);
-  shape.bezierCurveTo(2.59, -1.53, 2.31, -1.08, 2.08, -0.5);
-  shape.bezierCurveTo(1.84, 0.1, 1.26, 0.36, 0.57, 0.24);
-  shape.closePath();
+  // Pass 96: Brown's blade curves one way: a circular-arc centreline from
+  // the hub to the tip, bowed (sagitta 0.34) toward the side leading in the
+  // counter-clockwise turn, of constant width with a square tip (it was an
+  // S-curve with an inflection at mid-length).
+  const root = new THREE.Vector2(0.50, 0.04), tip = new THREE.Vector2(2.97, -2.0);
+  const sagitta = 0.34, halfWidth = 0.18, samples = 48;
+  const chord = tip.clone().sub(root), length = chord.length();
+  const normal = new THREE.Vector2(chord.y, -chord.x).normalize();
+  // CCW tangent at the chord's middle is (-y, x); bow toward it.
+  const middle = root.clone().add(tip).multiplyScalar(0.5);
+  if (normal.dot(new THREE.Vector2(-middle.y, middle.x)) < 0) normal.negate();
+  const radius = (length * length / 4 + sagitta * sagitta) / (2 * sagitta);
+  const center = middle.clone().addScaledVector(normal, sagitta - radius);
+  const a0 = Math.atan2(root.y - center.y, root.x - center.x);
+  let a1 = Math.atan2(tip.y - center.y, tip.x - center.x);
+  if (a1 - a0 > Math.PI) a1 -= 2 * Math.PI;
+  if (a0 - a1 > Math.PI) a1 += 2 * Math.PI;
+  const side = (offset) => Array.from({ length: samples + 1 }, (_, i) => {
+    const a = a0 + (a1 - a0) * i / samples;
+    return new THREE.Vector2(center.x + (radius + offset) * Math.cos(a), center.y + (radius + offset) * Math.sin(a));
+  });
+  const shape = new THREE.Shape([...side(halfWidth), ...side(-halfWidth).reverse()]);
   return centeredExtrusion(shape, depth, 0.025);
 }
 

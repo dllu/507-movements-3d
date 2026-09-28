@@ -13,7 +13,7 @@
     "src/simulation/mujoco/simulation.js": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
   },
   "visualSourcesAtBake": {
-    "src/simulation/mujoco-cascaded-traverse/geometry.js": "4a0258baf04607c0e522a94aceb22a57ef30163ac5eab0269a433fc7407e1338"
+    "src/simulation/mujoco-cascaded-traverse/geometry.js": "a06e95329ab7711799523333e38699fcc8229d65145dc2f353ad38e8227cd26c"
   },
   "physicsXmlSha256": {
     "default": "43ec05edb902731d5a94fa5f59324287dfe11132e67c64bf43f9c6408c58aead"
@@ -89,5 +89,5 @@
   },
   "extras": [],
   "removed": [],
-  "bakeSeconds": 1203.6873081741332
+  "bakeSeconds": 1293.9811143112183
 }

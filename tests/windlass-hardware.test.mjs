@@ -44,7 +44,18 @@ test('129 winding anchors rotate rigidly with the shaft and adjacent coils remai
    return [Math.min(...values),Math.max(...values)];
   };
   const sheaveFront=axialRange(u.blocks.lowerPulleyContactTread)[1];
-  for(const hanger of [u.blocks.loadHanger,u.blocks.loadHangerOutline])assert(axialRange(hanger)[0]>sheaveFront,'stationary hanger clears rotating sheave face');
+  // Pass 96: a symmetric two-cheek clevis: cheeks clear both sheave faces, the
+  // bridge passes under the rim, and the axle runs through both cheeks.
+  const [sheaveBack]=axialRange(u.blocks.lowerPulleyContactTread),[clevisBack,clevisFront]=axialRange(u.blocks.loadHanger),hanger=u.blocks.loadHanger.userData;
+  const centre=(sheaveBack+sheaveFront)/2,halfWidth=(sheaveFront-sheaveBack)/2;
+  assert(Math.abs((clevisBack+clevisFront)/2-centre)<1e-6,'clevis is symmetric about the sheave plane');
+  assert(Math.abs(clevisFront-centre-hanger.cheekOuter)<1e-6&&hanger.cheekInner-halfWidth>.02,'cheeks clear both sheave faces');
+  const rim=Math.max(...u.blocks.lowerPulleyContactTread.geometry.userData.profile.map(p=>p[0]));
+  assert(-hanger.bridgeTop>rim+.03,'bridge passes under the sheave rim');
+  let axleMesh;u.blocks.lowerAxle.traverse(o=>{if(o.isMesh)axleMesh=o;});const [axleBack,axleFront]=axialRange(axleMesh);
+  assert(axleFront-centre>hanger.cheekOuter&&axleBack-centre<-hanger.cheekOuter,'axle passes through both cheeks');
+  assert.equal(u.blocks.loadHangerOutline.visible,false);
+  assert.notEqual(u.blocks.loadHanger.material.color.getHex(),u.blocks.lowerPulleyContactTread.material.color.getHex(),'block contrasts with the sheave');
   for(let i=0;i<=60;i++){
    const a=-d.shaftAngleAmplitude+2*d.shaftAngleAmplitude*i/60,s=u.ropeGeometryAtShaftAngle(a);
    for(const [name,end]of [['largeHelix',0],['smallHelix',1]]){

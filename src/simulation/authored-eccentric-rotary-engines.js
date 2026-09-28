@@ -100,6 +100,13 @@ function eccentricRotaryEngine(movement) {
     inlet: polygonClipping.difference(rect(channelInner, 5, channelOuter, neckTop + 0.2), bore),
     eduction: polygonClipping.difference(rect(-channelOuter, 5, -channelInner, neckTop + 0.2), bore),
   };
+  // p96: the neck steam stops 0.8 below the open mouths, so from above the
+  // ports read open instead of capped with pale plugs.
+  const steamNeckTop = neckTop - 0.8;
+  const steamChannels = {
+    inlet: polygonClipping.difference(rect(channelInner, 5, channelOuter, steamNeckTop), bore),
+    eduction: polygonClipping.difference(rect(-channelOuter, 5, -channelInner, steamNeckTop), bore),
+  };
   const slot = rect(-slotHalfWidth, 5, slotHalfWidth, slotTop);
   const cavity = polygonClipping.union(bore, channels.inlet, channels.eduction, slot);
   const casing = sectionPlate(polygonClipping.difference(outline, cavity), zBack, 0, frameMaterial,
@@ -178,8 +185,8 @@ function eccentricRotaryEngine(movement) {
     setSteamRegions([
       { mesh: steam.live, region: live, pressure: state.livePressure },
       { mesh: steam.swept, region: swept, pressure: 0 },
-      { mesh: steam.inlet, region: channels.inlet, pressure: 1 },
-      { mesh: steam.eduction, region: channels.eduction, pressure: 0 },
+      { mesh: steam.inlet, region: steamChannels.inlet, pressure: 1 },
+      { mesh: steam.eduction, region: steamChannels.eduction, pressure: 0 },
     ]);
     report.pieces = pieces.length;
   };

@@ -13,7 +13,7 @@
     "src/simulation/mujoco/simulation.js": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
   },
   "visualSourcesAtBake": {
-    "src/simulation/mujoco-variable-traverse/geometry.js": "64f8b312635801f230f6f6af3bc53bf92f30d1bdceaacea7115b95c323371e0f"
+    "src/simulation/mujoco-variable-traverse/geometry.js": "1c04b14be1365f30e25c3d86a0e24491323f65df75a7521484b1141171ad73a7"
   },
   "physicsXmlSha256": {
     "default": "253c3434e24acfb7d99a24d3af454b8daf40ccea6950ea8a2dbbcb013c760aea"
@@ -81,5 +81,5 @@
   },
   "extras": [],
   "removed": [],
-  "bakeSeconds": 49.68101497888565
+  "bakeSeconds": 51.81973311901093
 }

@@ -81,7 +81,7 @@ function filletedPolyline(points, fillet) {
     const corner = points[i];
     const inDir = corner.clone().sub(points[i - 1]);
     const outDir = points[i + 1].clone().sub(corner);
-    const r = Math.min(fillet, inDir.length() / 2, outDir.length() / 2);
+    const r = Math.min(Array.isArray(fillet) ? fillet[i - 1] : fillet, inDir.length() / 2, outDir.length() / 2);
     const enter = corner.clone().addScaledVector(inDir.normalize(), -r);
     const leave = corner.clone().addScaledVector(outDir.normalize(), r);
     path.add(new THREE.LineCurve3(from, enter));
@@ -218,9 +218,12 @@ function straightenSourceRisers(root) {
       [handleOuterX, handleStubY, handleHalfWidth],
       [handleSunkX, handleStubY, handleHalfWidth],
     ].map(([x, y, z]) => new THREE.Vector3(side * x, y, z));
-    const curve = filletedPolyline(points, 0.16);
+    // Pass 96: generous bends (0.25 at the stubs, 0.34 at the top, four
+    // times the rod radius) so the loop reads as smooth bent round rod, as
+    // in the user's pass-87 sketch, not square-cornered wire.
+    const curve = filletedPolyline(points, [0.25, 0.34, 0.34, 0.25]);
     handle.geometry.dispose();
-    handle.geometry = cappedTubeGeometry(curve, 0.085, 160);
+    handle.geometry = cappedTubeGeometry(curve, 0.085, 320, 24);
   });
   d.geometry.boilerHandleLoop = {
     stubY: handleStubY, topY: handleTopY, outerX: handleOuterX,

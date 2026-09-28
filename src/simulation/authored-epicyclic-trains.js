@@ -3942,14 +3942,40 @@ function twentyFiveThousandToOneEpicyclic(movement) {
   };
 }
 
+// Pass 96: 502, 504, 505 and 507 carry wheels or an arm round a fixed axis,
+// so their default view is fitted to the whole swept envelope (the carried
+// parts' orbit), not to a partial box that let B, the left train, arm D or
+// the E/F wheels leave the square frame at mid-cycle. 502, 504 and 507
+// already record that envelope as sweptBounds; 505's is sampled over one
+// full carrier turn.
+function fitSweptEnvelope(model) {
+  const d = model.root.userData;
+  let swept = d.sweptBounds?.clone();
+  if (!swept) {
+    const turn = 2 * d.canonicalTimes.carrierHalfTurn;
+    swept = new THREE.Box3();
+    for (let i = 0; i <= 96; i += 1) {
+      model.update(turn * i / 96);
+      model.root.updateMatrixWorld(true);
+      model.root.traverseVisible((o) => { if (o.isMesh) swept.union(new THREE.Box3().setFromObject(o, true)); });
+    }
+    model.update(0);
+    model.root.updateMatrixWorld(true);
+    swept.expandByScalar(0.05);
+    d.sweptBounds = swept.clone();
+  }
+  d.cameraFitBounds = swept;
+  return model;
+}
+
 export function createAuthoredEpicyclicTrainMovement(movement) {
-  if (movement.id === 502) return compoundOutputEpicyclic(movement);
+  if (movement.id === 502) return fitSweptEnvelope(compoundOutputEpicyclic(movement));
   if (movement.id === 503) return bevelDifferentialEpicyclic(movement);
-  if (movement.id === 504) return fergusonMechanicalParadox(movement);
-  if (movement.id === 505) return fixedAnnulusSimplePlanetary(movement);
+  if (movement.id === 504) return fitSweptEnvelope(fergusonMechanicalParadox(movement));
+  if (movement.id === 505) return fitSweptEnvelope(fixedAnnulusSimplePlanetary(movement));
   if (movement.id === 506) {
     return dualEndDrivenCompoundBevelDifferential(movement);
   }
-  if (movement.id === 507) return twentyFiveThousandToOneEpicyclic(movement);
+  if (movement.id === 507) return fitSweptEnvelope(twentyFiveThousandToOneEpicyclic(movement));
   return null;
 }

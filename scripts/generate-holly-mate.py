@@ -28,6 +28,7 @@ CD = 8.0
 CASING = 5.333333
 PISTON_TIP = CASING - 0.025   # 0.009 model units inside the bore: the tips seal the pockets
 SAMPLES = 2048
+ARM_W = 1.44                  # pass 96: constant piston-arm width (source units)
 TIP, ROOT = R + LOBE, R - LOBE
 
 # Tips: round lobes centred on the pitch circle, kept above it; the roots are
@@ -37,21 +38,18 @@ pitch_disc = Point(0, 0).buffer(R, resolution=512)
 def lobes(offset_deg):
     return unary_union([Point(R * math.cos(math.radians(offset_deg) + j * BETA), R * math.sin(math.radians(offset_deg) + j * BETA)).buffer(LOBE, resolution=64) for j in range(N)]).difference(pitch_disc)
 def piston(angle_deg):
-    # A broad rounded lobe (Brown's long piston) whose tip is an arc
-    # concentric with the rotor, just inside the bore.
-    half_base, half_tip = math.radians(17), math.radians(5)
-    base_r = ROOT - 0.4
-    pts = [(base_r * math.cos(-half_base), base_r * math.sin(-half_base))]
-    shoulder = R + 0.55
-    pts += [(shoulder * math.cos(-half_base * 0.75), shoulder * math.sin(-half_base * 0.75))]
-    pts += [(PISTON_TIP * math.cos(a), PISTON_TIP * math.sin(a)) for a in [-half_tip + 2 * half_tip * k / 24 for k in range(25)]]
-    pts += [(shoulder * math.cos(half_base * 0.75), shoulder * math.sin(half_base * 0.75))]
-    pts += [(base_r * math.cos(half_base), base_r * math.sin(half_base))]
-    hull = Polygon(pts).convex_hull
-    p = hull.buffer(-0.16, resolution=48).buffer(0.16, resolution=48)
-    # Tip arc exactly concentric (a band cut from the hull at the tip).
-    p = p.union(hull.intersection(Point(0, 0).buffer(PISTON_TIP, resolution=512).difference(Point(0, 0).buffer(PISTON_TIP - 0.25, resolution=512))))
-    p = p.intersection(Point(0, 0).buffer(PISTON_TIP, resolution=512))
+    # Pass 96: Brown's long piston is a broad, parallel-sided arm (width
+    # ARM_W, about 0.36 of the pitch radius) that ends square in a face
+    # concentric with the bore, just inside it; its corners are lightly
+    # rounded and it meets the pitch disc in concave fillets.
+    base_r = ROOT - 0.6
+    arm = box(base_r, -ARM_W / 2, PISTON_TIP + 0.5, ARM_W / 2)
+    arm = arm.intersection(Point(0, 0).buffer(PISTON_TIP, resolution=1024))
+    arm = arm.buffer(-0.10, resolution=48).buffer(0.10, resolution=48)
+    # Tip face exactly concentric (a band cut from the arm at the tip).
+    band = box(base_r, -ARM_W / 2 + 0.10, PISTON_TIP + 0.5, ARM_W / 2 - 0.10).intersection(
+        Point(0, 0).buffer(PISTON_TIP, resolution=1024).difference(Point(0, 0).buffer(PISTON_TIP - 0.25, resolution=1024)))
+    p = arm.union(band)
     return rotate(p, angle_deg, origin=(0, 0))
 
 pistons_left = unary_union([piston(90), piston(270)])
@@ -89,8 +87,8 @@ left_rotor = largest(unary_union([pitch_disc, caps_left]).difference(sweep_into_
 # Round off the thin horns left where a recess meets a root, and the small
 # corners where a lobe meets its neighbouring root.
 left_rotor = largest(left_rotor.buffer(-0.07, resolution=32).buffer(0.07, resolution=32))
-# Packing-strip slots in the piston tips (0.20 wide, 0.32 deep).
-slot_w, slot_d = 0.20, 0.32
+# Packing-strip slots in the piston tips (pass 96: Brown's packing boxes, 0.46 wide, 0.56 deep).
+slot_w, slot_d = 0.46, 0.56
 def slot(angle_deg, grow=0.0):
     b = box(PISTON_TIP - slot_d - grow, -slot_w / 2 - grow, PISTON_TIP + 0.2, slot_w / 2 + grow)
     return rotate(b, angle_deg, origin=(0, 0))

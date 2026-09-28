@@ -8,7 +8,9 @@ import { PALETTE, matte } from './primitives.js';
 // A bracket carrying a fixed pin from behind: the pin's own shank runs back
 // to a small square flange bolted to the framing (or wall) behind the
 // mechanism. `zPin` is the pin's current back face; the shank fills the gap.
-export function pinWallBracket({ x, y, pinRadius, zPin, zWall, flange = 0.42, material, role, beyondPlateCrop = false }) {
+// `round` ends the shank in a round flange concentric with the pin instead
+// of a square plate (a square plate with no wall read as floating).
+export function pinWallBracket({ x, y, pinRadius, zPin, zWall, flange = 0.42, material, role, beyondPlateCrop = false, round = false }) {
   const group = new THREE.Group();
   group.userData.role = role;
   // Hidden supports may be kept out of a plate-framing fit.
@@ -22,7 +24,10 @@ export function pinWallBracket({ x, y, pinRadius, zPin, zWall, flange = 0.42, ma
     shank.userData.role = `${role}-shank`;
     group.add(shank);
   }
-  const plate = new THREE.Mesh(new THREE.BoxGeometry(flange, flange, 0.08), mat);
+  const plate = new THREE.Mesh(round
+    ? new THREE.CylinderGeometry(flange / 2, flange / 2, 0.08, 48)
+    : new THREE.BoxGeometry(flange, flange, 0.08), mat);
+  if (round) plate.rotation.x = Math.PI / 2;
   plate.position.set(x, y, zWall - 0.04);
   plate.userData.role = `${role}-flange`;
   group.add(plate);

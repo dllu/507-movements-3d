@@ -771,22 +771,26 @@ function ropeSteering(movement) {
     // round the axle and cut square at the break; they lie just behind the
     // sheave, the fixed axle pin standing on them.
     const bracketLength = 1.1, bracketHalf = 0.18;
+    // Pass 96: the bracket is whole: it ends in a small foot flange (0.07
+    // thick, 0.60 across) by which it bolts to the ship, instead of a square
+    // break that read as a part cut off in rotated views.
     const outline = polygonClipping.union(
       poly([[0, -bracketHalf], [bracketLength, -bracketHalf], [bracketLength, bracketHalf], [0, bracketHalf]]),
       poly(circle([0, 0], bracketHalf, 48)),
+      poly([[bracketLength, -0.30], [bracketLength + 0.07, -0.30], [bracketLength + 0.07, 0.30], [bracketLength, 0.30]]),
     );
     for (const [guide, angle, name] of [[b.upperGuide, THREE.MathUtils.degToRad(53.5), 'upper'], [b.lowerGuide, THREE.MathUtils.degToRad(-45), 'lower']]) {
       const bracket = new THREE.Mesh(plate(outline, -0.34, -0.18), b.shaftBearings[0].material);
       bracket.rotation.z = angle;
-      bracket.userData.role = `${name}-guide-sheave-bracket-broken-off-as-drawn`;
+      bracket.userData.role = `${name}-guide-sheave-bracket-with-foot-flange`;
       guide.fixed.add(bracket);
       guide.bracket = bracket;
     }
     // The rudder stock runs on down out of the plan (never into a deck).
     // The frame takes in Brown's broken-off brackets.
-    root.userData.cameraFitBounds.min.set(-3.97, -3.47, -3.48);
-    root.userData.cameraFitBounds.max.y = 3.66;
-    root.userData.groundFloorY = -3.47;
+    root.userData.cameraFitBounds.min.set(-3.97, -3.60, -3.48);
+    root.userData.cameraFitBounds.max.y = 3.79;
+    root.userData.groundFloorY = -3.60;
   }
   root.userData.minimumDisplayCycleSeconds=cycleDuration;
   markShadows(root);

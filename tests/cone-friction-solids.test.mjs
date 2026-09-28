@@ -55,15 +55,16 @@ for(const id of[262,263])test(`${id}: finite cone, thread/nut, footed standard E
 test('265: finite roller and hub clear their guide and remain on the cone',()=>{
  const m=make(265);try{
   const b=m.root.userData.blocks,g=m.root.userData.geometry,cache=new Map();
-  const cone=solidSurface(b.coneBody.geometry),tread=solidSurface(b.rollerTread.geometry);
+  // The round tread is the crown of the one lathed roller disk.
+  const cone=solidSurface(b.coneBody.geometry),tread=solidSurface(b.rollerBody.geometry);
   for(let i=0;i<=64;i++){
    m.update(i*8/64);m.root.updateMatrixWorld(true);
-   for(const part of[b.rollerBody,b.rollerTread,b.rollerHub])assertClear(b.coneBody,part,cache,`265 roller/cone at ${i}`);
+   for(const part of[b.rollerBody,b.rollerHub])assertClear(b.coneBody,part,cache,`265 roller/cone at ${i}`);
    // The roller axle keeps Brown's fixed slope.
    for(const part of[b.rollerBody,b.rollerHub])openBore(part,b.roller.getWorldPosition(new THREE.Vector3()),m.root.userData.kinematics.rollerAxis,.057*.88);
    const point=m.root.localToWorld(m.root.userData.kinematics.contactPoint.clone());
    assert.ok(cone.distance(b.coneBody.worldToLocal(point.clone()))<.001);
-   assert.ok(tread.distance(b.rollerTread.worldToLocal(point.clone()))<.002);
+   assert.ok(tread.distance(b.rollerBody.worldToLocal(point.clone()))<.002);
   }
   assert.equal(b.baseRail,undefined,'invented frame still constructed');
  }finally{disposeMovementModel(m);}

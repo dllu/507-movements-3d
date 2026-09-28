@@ -374,16 +374,16 @@ function harrisonGoingBarrel(movement) {
   // the end of winding and then, B turns only the winding lag plus G's
   // recovery advance (5/24 of a turn), so the small drum (0.2, just
   // outside the bored barrel arbor) lifts the weight 0.26 above its plate
-  // height. The weight's top hangs 0.34 below G's tips at the plate pose
-  // (Brown: 0.19 below his slightly smaller G) and stays 0.08 clear of them
-  // at the top of its travel.
+  // height. The weight's top hangs 0.47 below G's tips at the plate pose
+  // (Brown: 0.19 below his slightly smaller G) and stays 0.20 clear of them
+  // at the top of its travel, so G's teeth never seem to touch it.
   const ropeDrumPitchRadius = 0.20;
   // The drum is on B's arbor behind the wheels, as Brown's cord leaves B
   // behind them; the cord hangs from its tangent in that plane (it used to
   // loop round the arbor in front of ratchet B and hang across its face).
   const ropePlaneZ = -1.0;
   const weightHalfHeight = 0.45;
-  const greatWheelTipClearanceY = -3.12;
+  const greatWheelTipClearanceY = -3.24;
   // B is wound back past the plate pose by the recoil of the larger ratchet
   // and the overrun that lets R drop behind its tooth (see the backlash).
   const windingOvershootAngle = FULL_TURN * (1 - windingStartPhase)

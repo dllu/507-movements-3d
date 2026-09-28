@@ -86,18 +86,28 @@ export function spiralWheelGeometry({
       }
     }
   }
+  // Build each axial station's tooth outline with its features aligned:
+  // root, rising flank, tip and falling flank get fixed point counts, and the
+  // flank points sit at fixed radius levels found at sub-sample precision.
+  // Neighbouring stations then join flank to flank, so the slightly twisted
+  // flanks are smooth ruled strips instead of grid stair-steps.
+  const profiles = alignedToothProfiles(radii, axialSteps, angularSteps, pitch);
+  const profileCount = profiles[0].length;
   const positions = [];
   const indices = [];
-  const circumferenceSteps = angularSteps * teeth;
-  const stride = circumferenceSteps + 1;
+  const stride = profileCount * teeth + 1;
   for (let axial = 0; axial <= axialSteps; axial += 1) {
     const z = -depth / 2 + depth * axial / axialSteps;
-    for (let angular = 0; angular <= circumferenceSteps; angular += 1) {
-      const angle = -pitch / 2 + pitch * angular / angularSteps;
-      const radius = radii[axial * (angularSteps + 1) + angular % angularSteps];
-      positions.push(radius * Math.cos(angle), radius * Math.sin(angle), z);
+    for (let tooth = 0; tooth <= teeth; tooth += 1) {
+      for (let k = 0; k < profileCount; k += 1) {
+        if (tooth === teeth && k > 0) break;
+        const { theta, radius } = profiles[axial][k];
+        const angle = theta + pitch * tooth;
+        positions.push(radius * Math.cos(angle), radius * Math.sin(angle), z);
+      }
     }
   }
+  const circumferenceSteps = stride - 1;
   for (let axial = 0; axial < axialSteps; axial += 1) {
     for (let angular = 0; angular < circumferenceSteps; angular += 1) {
       const a = axial * stride + angular;
@@ -120,6 +130,91 @@ export function spiralWheelGeometry({
     depth, pitch, radii: Array.from(radii), rootRadius: Math.min(...radii), outerRadius };
   cache.set(key, geometry);
   return geometry.clone();
+}
+
+/** One tooth pitch per sampled station as feature-aligned (theta, radius)
+ * points from -pitch/2 (inclusive) to +pitch/2 (exclusive). The sampled cut
+ * quantizes each flank to whole angular columns, which steps by a column
+ * between stations. Each flank level is therefore smoothed across the
+ * stations and then offset onto the material-removal side, so the twisted
+ * flank is a smooth surface that never stands proud of the exact cut. */
+function alignedToothProfiles(radii, axialSteps, angularSteps, pitch) {
+  const levels = 10, rootPoints = 12, tipPoints = 16;
+  const thetaAt = (i) => -pitch / 2 + pitch * i / angularSteps;
+  const stations = [];
+  for (let axial = 0; axial <= axialSteps; axial += 1) {
+    const row = Array.from({ length: angularSteps + 1 }, (_, i) => radii[axial * (angularSteps + 1) + i]);
+    const root = Math.min(...row), tip = Math.max(...row);
+    const levelRadius = (k) => root + (tip - root) * (0.002 + 0.996 * k / levels);
+    const crossing = (r, rising) => {
+      if (rising) {
+        for (let i = 1; i <= angularSteps; i += 1) {
+          if (row[i] >= r) return thetaAt(i - 1) + (thetaAt(i) - thetaAt(i - 1)) * (r - row[i - 1]) / (row[i] - row[i - 1]);
+        }
+      } else {
+        for (let i = angularSteps - 1; i >= 0; i -= 1) {
+          if (row[i] >= r) return thetaAt(i + 1) + (thetaAt(i) - thetaAt(i + 1)) * (r - row[i + 1]) / (row[i] - row[i + 1]);
+        }
+      }
+      throw new Error('spiral wheel tooth has no flank');
+    };
+    const radiusAt = (theta) => {
+      const x = (theta + pitch / 2) / pitch * angularSteps;
+      const i = THREE.MathUtils.clamp(Math.floor(x), 0, angularSteps - 1);
+      return THREE.MathUtils.lerp(row[i], row[i + 1], x - i);
+    };
+    const rise = [], fall = [], radius = [];
+    for (let k = 0; k <= levels; k += 1) {
+      radius.push(levelRadius(k));
+      rise.push(crossing(levelRadius(k), true));
+      fall.push(crossing(levelRadius(k), false));
+    }
+    stations.push({ radiusAt, rise, fall, radius });
+  }
+  // Smooth each level across the stations (5-station moving average), then
+  // shift it to the conservative side: the rising flank may only move
+  // towards +theta and the falling flank towards -theta.
+  const smoothLevel = (values, conservativeSign) => {
+    const smooth = values.map((_, a) => {
+      let sum = 0, weight = 0;
+      for (let d = -2; d <= 2; d += 1) {
+        const b = THREE.MathUtils.clamp(a + d, 0, values.length - 1);
+        const w = 3 - Math.abs(d);
+        sum += w * values[b]; weight += w;
+      }
+      return sum / weight;
+    });
+    let shift = 0;
+    for (let a = 0; a < values.length; a += 1) shift = Math.max(shift, conservativeSign * (values[a] - smooth[a]));
+    return smooth.map((v) => v + conservativeSign * shift);
+  };
+  for (let k = 0; k <= levels; k += 1) {
+    const rise = smoothLevel(stations.map((s) => s.rise[k]), 1);
+    const fall = smoothLevel(stations.map((s) => s.fall[k]), -1);
+    stations.forEach((s, a) => { s.rise[k] = rise[a]; s.fall[k] = fall[a]; });
+  }
+  return stations.map(({ radiusAt, rise, fall, radius }) => {
+    for (let k = 1; k <= levels; k += 1) {
+      rise[k] = Math.max(rise[k], rise[k - 1]);
+      fall[k] = Math.min(fall[k], fall[k - 1]);
+    }
+    const points = [];
+    const span = (from, to, count) => {
+      for (let j = 0; j < count; j += 1) {
+        const theta = from + (to - from) * j / count;
+        points.push({ theta, radius: Math.min(radiusAt(theta), radius[0]) });
+      }
+    };
+    const tipSpan = (from, to, count) => {
+      for (let j = 0; j < count; j += 1) points.push({ theta: from + (to - from) * j / count, radius: radius[levels] });
+    };
+    span(-pitch / 2, rise[0], rootPoints);
+    for (let k = 0; k < levels; k += 1) points.push({ theta: rise[k], radius: radius[k] });
+    tipSpan(rise[levels], fall[levels], tipPoints);
+    for (let k = levels; k > 0; k -= 1) points.push({ theta: fall[k], radius: radius[k] });
+    span(fall[0], pitch / 2, rootPoints);
+    return points;
+  });
 }
 
 /** Material test for the flat rib in disk-local polar coordinates. */

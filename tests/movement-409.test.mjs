@@ -412,3 +412,20 @@ test('movement 409 legs are round-ended bars with straight tapers, no bulb bosse
   }
   disposeModel(model.root);
 });
+
+test('409 pivot stack is closed: collar on washer, head on collar, axle ends inside the head (p96)', () => {
+  const model = createMovementModel(catalog.movements[408]);
+  model.update(0);
+  model.root.updateMatrixWorld(true);
+  const boxes = {};
+  model.root.traverse((object) => {
+    if (object.isMesh && object.visible && object.userData.role) boxes[object.userData.role] = new THREE.Box3().setFromObject(object);
+  });
+  const washer = boxes['pivot-slide-outer-retaining-washer'];
+  const collar = boxes['set-screw-collar-locking-pivot-position-in-both-slots'];
+  const head = boxes['visible-set-screw-head-clamping-selected-proportion'];
+  const axle = boxes['common-pivot-axis-allowing-relative-leg-rotation'];
+  assert.ok(collar.min.z < washer.max.z && collar.min.z > washer.max.z - 0.02, 'collar seats on the washer');
+  assert.ok(head.min.z < collar.max.z && head.min.z > collar.max.z - 0.02, 'head seats on the collar');
+  assert.ok(axle.max.z > head.min.z && axle.max.z < head.max.z, 'axle ends inside the head');
+});

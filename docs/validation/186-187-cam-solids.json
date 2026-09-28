@@ -17,11 +17,11 @@
     },
     {
       "file": "src/simulation/gab-disengager-187.js",
-      "sha256": "e11e8696f770e7649d436829abe4bcce1f179839bfc51b5c237af33c36e6263e"
+      "sha256": "d5bbd2bc5d732076729a850d7296373bc6d940210efe9e4f0f7ec1f288e3a5cc"
     },
     {
       "file": "src/simulation/gab-disengager-188.js",
-      "sha256": "26b1d904a9a24aa1d14224455dd10e5e6553357e91becd04a20f1d4c407210c7"
+      "sha256": "6f189faaaec47585f47e7a21c19350ac4db3b4f8e7b46111b0ab1e2df92f5ff7"
     },
     {
       "file": "src/simulation/gab-disengager-189.js",
@@ -48,7 +48,7 @@
       "bodies": 3,
       "meshes": 22,
       "pairs": 131,
-      "queries": 3284340,
+      "queries": 4141932,
       "intersections": {}
     },
     {
@@ -57,7 +57,7 @@
       "bodies": 4,
       "meshes": 28,
       "pairs": 228,
-      "queries": 7118056,
+      "queries": 8971012,
       "intersections": {}
     },
     {

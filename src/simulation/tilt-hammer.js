@@ -4,14 +4,8 @@ import{makeTiltHammerMotion}from'./tilt-hammer-motion.js';
 import{turnedClutchGeometry}from'./clutch-section-geometry.js';
 import{matte,markShadows}from'./primitives.js';
 
-// Brown ends the bloom's tail in a jagged break line; the traced contour kept that zigzag, which extrudes
-// into stepped layers. Model the whole bar with a plain cut end by dropping the break-line vertices
-// between the tail's upper and lower edges.
-function finishedWorkpiece(d){
-  const[outer,...holes]=d.polygons[0];
-  const lower=outer.findIndex((q,i)=>i>0&&q[0]>-2.46&&q[1]<1.345);
-  return{...d,polygons:[[[outer[0],...outer.slice(lower)],...holes],...d.polygons.slice(1)]};
-}
+// The bloom (workpiece) outline is baked in the profile: its tail ends in a plain
+// cut, and its dip is the striker's seat (scripts/seat-tilt-hammer-striker.mjs).
 
 export function makeFourLobeTiltHammer(){
   const motion=makeTiltHammerMotion(profile),p=motion.parameters,root=new THREE.Group();
@@ -28,7 +22,7 @@ export function makeFourLobeTiltHammer(){
   for(const descriptor of profile.parts){
     const d=descriptor.shape;let geometry;
     if(d.kind==='turned')geometry=turnedClutchGeometry(d.profile,d);
-    else if(d.kind==='plate')geometry=plate(descriptor.name==='workpiece'?finishedWorkpiece(d):d);
+    else if(d.kind==='plate')geometry=plate(d);
     else{
       const ring=[];
       for(let lobe=0;lobe<4;lobe++)for(let i=0;i<=d.segments;i++){
@@ -52,6 +46,6 @@ export function makeFourLobeTiltHammer(){
     hideGround:true,cameraFov:8,fullCameraDirection:new THREE.Vector3(0,0,10),
     shadowCameraHalfExtent:6,shadowBias:-.00012,shadowNormalBias:.005,
     animationTiming:{authoredCyclePeriod:p.period},minimumDisplayCycleSeconds:3,
-    idealConstraints:'A regulated clockwise cam lifts the hammer through its rounded nose. Contact force determines release at the lobe tip, then gravity brings the striker onto a fixed workpiece. The rear pivot pin is fixed; bearing friction and workpiece deformation are omitted. Pickup and landing impacts are inelastic.'};
+    idealConstraints:'A regulated clockwise cam lifts the hammer through its rounded nose. Contact force determines release at the lobe tip, then gravity drops the striker into its seat in the fixed workpiece. The rear pivot pin is fixed; bearing friction and workpiece deformation are omitted. Pickup and landing impacts are inelastic.'};
   update(0);markShadows(root);return{root,update,motion,cameraDirection:new THREE.Vector3(0,0,10)};
 }

@@ -26,6 +26,12 @@ const PX = 0.017; // model units per plate pixel (525 px engraving)
 const PIN_RASTER = [394, 322];
 const R = ([x, y]) => new THREE.Vector2((x - PIN_RASTER[0]) * PX, (PIN_RASTER[1] - y) * PX);
 const ring = (points) => points.map((p) => R(p).toArray());
+// A centripetal Catmull-Rom run through traced raster points, sampled finely
+// so hand-traced curves (crown, arch, head) render as smooth arcs, not chords.
+const smoothRun = (points, samples) => {
+  const curve = new THREE.CatmullRomCurve3(points.map(([x, y]) => new THREE.Vector3(x, y, 0)), false, 'centripetal');
+  return curve.getPoints(samples).map((v) => [v.x, v.y]);
+};
 const GAP = 0.002;
 
 const PERIOD = 16;
@@ -264,9 +270,11 @@ export function loopHandlePinCamGabDisengager() {
   const rod = new THREE.Group();
   rod.userData.role = 'eccentric-rod-rigid-body';
   const rodOutline = poly(ring([
-    [-300, 297], [332, 297], [338, 285], [348, 272], [365, 262], [385, 258], [405, 258], [425, 263],
-    [440, 274], [450, 290], [458, 302], [470, 309], [500, 312], [514, 315], [520, 322], [517, 331],
-    [508, 335], [-300, 335],
+    [-300, 297],
+    ...smoothRun([[332, 297], [338, 285], [348, 272], [365, 262], [385, 258], [405, 258], [425, 263],
+      [440, 274], [450, 290], [458, 302], [470, 309], [500, 312], [514, 315], [520, 322], [517, 331],
+      [508, 335]], 240),
+    [-300, 335],
   ]));
   const gabCenter = R(PIN_RASTER);
   const gab = polygonClipping.union(
@@ -320,9 +328,11 @@ export function loopHandlePinCamGabDisengager() {
     hub.push([p.x, p.y]);
   }
   const arch = poly([
-    [265, 274], [292, 268], [312, 263], [328, 254], [342, 240], [356, 232], [372, 229], [384, 232],
-    [393, 245], [401, 262], [386, 266], [381, 256], [375, 244], [366, 242], [355, 252], [343, 268],
-    [333, 283], [325, 291], [300, 282],
+    ...smoothRun([[265, 274], [292, 268], [312, 263], [328, 254], [342, 240], [356, 232], [372, 229], [384, 232],
+      [393, 245], [401, 262]], 160),
+    ...smoothRun([[386, 266], [381, 256], [375, 244], [366, 242], [355, 252], [343, 268],
+      [333, 283], [325, 291]], 120),
+    [300, 282],
   ].map((p) => H(p).toArray()));
   const toeCenter = toeCenterRest.clone().sub(pivot);
   const legTop = H([388, 248]);
@@ -333,8 +343,9 @@ export function loopHandlePinCamGabDisengager() {
   // the inner edge at y 177.5, the head widens below it and closes on the
   // diagonal's centreline, so limb, notch and diagonal are one extrusion.
   const head = poly([
-    [204, 177.5], [222, 177.5], [222, 170], [238, 170], [237.6, 185], [236, 200], [233.5, 215], [231, 229], [231, 246],
-    [215, 230], [214.5, 220], [214.5, 208], [213.5, 199], [211, 191], [207.5, 184],
+    [204, 177.5], [222, 177.5], [222, 170],
+    ...smoothRun([[238, 170], [237.6, 185], [236, 200], [233.5, 215], [231, 229], [231, 246]], 80),
+    ...smoothRun([[215, 230], [214.5, 220], [214.5, 208], [213.5, 199], [211, 191], [207.5, 184]], 60),
   ].map((p) => H(p).toArray()));
   const handleShape = polygonClipping.difference(
     polygonClipping.union(bar, head, poly(hub), arch, leg, poly(circle(toeCenter.toArray(), toeRadius, 96))),

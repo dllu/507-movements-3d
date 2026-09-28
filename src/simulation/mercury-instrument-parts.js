@@ -34,10 +34,10 @@ function retainingClip(xs, radius, y, material) {
 // The scale board stands behind the glass leg it reads: a deeper board
 // with a round groove in which that leg lies, so the board is carried by
 // the tube (and the tube by the board) without bands or clips.
-function grooveScaleBoard(board, legX, glassRadius, side = 1) {
+function grooveScaleBoard(board, legX, glassRadius, side = 1, clearance = .02) {
   board.updateMatrixWorld(true);
   const box = new THREE.Box3().setFromObject(board);
-  const grooveRadius = glassRadius + .02;
+  const grooveRadius = glassRadius + clearance;
   // side 1: the board runs out to the right of the leg; -1: to its left.
   const left = side > 0 ? legX - glassRadius - .14 : box.min.x;
   const right = side > 0 ? box.max.x : legX + glassRadius + .14;
@@ -129,7 +129,19 @@ export function correctMercuryInstrument(root, id, update) {
       tab.position.set(1.12, y, -.40); tab.userData.role = 'clip-tab-to-scale-board'; root.add(tab);
     }
     grooveScaleBoard(b.scaleBoard, g.legCenterX, g.glassOuterRadius);
-    if (b.leftZeroBoard) grooveScaleBoard(b.leftZeroBoard, -g.legCenterX, g.glassOuterRadius, -1);
+    if (b.leftZeroBoard) {
+      // Pass 96: the small zero tag is clipped to the pressure leg: its
+      // groove fits the glass closely and a thin ivory band from its top
+      // edge wraps the front of the tube, so it is visibly held by the leg.
+      // The band stands above the zero level, where the pressure leg's
+      // mercury (only ever depressed) never reaches.
+      grooveScaleBoard(b.leftZeroBoard, -g.legCenterX, g.glassOuterRadius, -1, .004);
+      const tag = new THREE.Box3().setFromObject(b.leftZeroBoard);
+      const band = new THREE.Mesh(wall(g.glassOuterRadius + .004, g.glassOuterRadius + .028, -.03, .03), b.leftZeroBoard.material);
+      band.position.set(-g.legCenterX, tag.max.y - .03, 0);
+      band.userData.role = 'pressure-leg-zero-mark-tag-band';
+      root.add(band); b.leftZeroBand = band;
+    }
   } else {
     replace(b.glassLongLeg, wall(bore, g.glassOuterRadius, -.5, .5));
     replace(b.glassShortLower, wall(bore, g.glassOuterRadius, g.bendTangentY, -3.65));

@@ -267,7 +267,7 @@ function groovedCamWoolComberRollerMotion(movementId) {
   const backwardEndPhase = 0.11;
   const forwardEndPhase = 0.55;
   const liftRiseEndPhase = forwardEndPhase + 0.025;
-  const liftFallStartPhase = 0.93;
+  const liftFallStartPhase = outputPlateFocus ? 0.95 : 0.93;
   const backwardAngle = -FULL_TURN * indexFraction;
   const forwardAngleFromD = FULL_TURN * 2 * indexFraction;
   const netOutputAdvance = FULL_TURN * indexFraction;
@@ -363,7 +363,34 @@ function groovedCamWoolComberRollerMotion(movementId) {
     };
   };
 
+  // p96 (218): once the rear projection has raised G out of the notch at e,
+  // G does not hang in the air: as the caption says, it "is passing over the
+  // plain surface between the two notches". Its lug's round tip rests on F's
+  // rim (0.0005 running clearance) from lift to drop, so the dwell lift is
+  // the angle at which the tip circle clears the rim, not a free 0.35 park.
+  // (217 keeps its own law.)
+  const catchRideRadius = notchWheelOuterRadius + catchHookRadius + 0.0005;
+  const catchHookRadiusAtLift = (lift) => catchPivotLocal.clone()
+    .add(rotate2(catchLinkLocal, -lift)).length();
+  let catchRideFraction = 1;
+  if (outputPlateFocus) {
+    let low = 0, high = catchLiftAngle;
+    for (let iteration = 0; iteration < 60; iteration += 1) {
+      const middle = (low + high) / 2;
+      if (catchHookRadiusAtLift(middle) < catchRideRadius) low = middle;
+      else high = middle;
+    }
+    catchRideFraction = high / catchLiftAngle;
+  }
   const catchLiftLawAtPhase = (phase) => {
+    const law = catchLiftShapeAtPhase(phase);
+    return {
+      derivative: law.derivative * catchRideFraction,
+      fraction: law.fraction * catchRideFraction,
+      secondDerivative: law.secondDerivative * catchRideFraction,
+    };
+  };
+  const catchLiftShapeAtPhase = (phase) => {
     if (phase <= forwardEndPhase) {
       return { fraction: 0, derivative: 0, secondDerivative: 0 };
     }

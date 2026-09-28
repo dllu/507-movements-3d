@@ -4,8 +4,8 @@
   "format": "mujoco-loop",
   "version": 1,
   "asset": "src/simulation/baked/assets/mujoco-126.json.gz",
-  "bytes": 308508,
-  "assetSha256": "66ae2e728947c97b21609035a97d83873ace8a86d201b48930e67270e7d3b4a3",
+  "bytes": 308666,
+  "assetSha256": "58cf05b6a573bd4ac02cb636ce33bf2687e3366c50e52d5deb1429be32206f5a",
   "motionSources": {
     "src/simulation/mujoco-bell-crank/cord-path.js": "81035664772ab1a1c4520b573da89e8c1e5251c1cae832332ac97000e4d2b196",
     "src/simulation/mujoco-bell-crank/ends.js": "4f28fb7085f0eabeeba8be5b4f41f4cae8be890fdeec17250ad92673025a20bd",
@@ -16,13 +16,13 @@
     "src/simulation/mujoco/simulation.js": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
   },
   "visualSourcesAtBake": {
-    "src/simulation/mujoco-bell-crank/geometry.js": "7b8d1d62d2cbff2bc19bc9f67d03f9a20a797e52b3cb8475ac567ac66a956f51"
+    "src/simulation/mujoco-bell-crank/geometry.js": "32e94a23e0e830922f481c69ef1e5c1e60d41fa668774622d92626e8c4da8349"
   },
   "physicsXmlSha256": {
     "default": "1e6827c48e7c44ce18fc1deb6c6ccd27d106197a6a3cdf3064a52477358bdc08"
   },
   "fullXmlSha256": {
-    "default": "8bb25ba0b319205b387cea5239e5bfc84fca2e957a36a64e4b07573cf35e1429"
+    "default": "0e4b0c524dfb4c15ba107f02dccbf205ff576b97a7f9af9cf604129589314077"
   },
   "config": {
     "sampleRate": 60,
@@ -48,26 +48,26 @@
         "duration": 12,
         "samples": 750,
         "dt": 0.016,
-        "startTime": 100,
+        "startTime": 92,
         "periods": 3,
         "drivePeriod": 4
       },
       "closure": {
-        "rawSeamPixels": 0.23262631039696338,
-        "maximumCorrectionPixels": 0.23262631039696338,
-        "maximumRotationCorrection": 0.0030917188290814153,
+        "rawSeamPixels": 0.1713935023876261,
+        "maximumCorrectionPixels": 0.15555848353693855,
+        "maximumRotationCorrection": 0.00678149605056881,
         "wraps": []
       },
-      "roundTripPixels": 0.2330272356575172,
+      "roundTripPixels": 0.15617289785647143,
       "seam": {
-        "seamStepPixels": 1.3943910350265252,
-        "interiorStepPixels": 1.504990588051688,
-        "seamSecondPixels": 0.4129528326888172,
-        "interiorSecondPixels": 0.8337659891457684
+        "seamStepPixels": 1.4483844846915659,
+        "interiorStepPixels": 1.4899071560669255,
+        "seamSecondPixels": 0.4522390494130849,
+        "interiorSecondPixels": 0.7591685047507375
       }
     }
   },
   "extras": [],
   "removed": [],
-  "bakeSeconds": 131.8797511949539
+  "bakeSeconds": 116.34932458305359
 }

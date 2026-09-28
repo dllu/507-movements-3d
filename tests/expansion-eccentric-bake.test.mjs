@@ -20,6 +20,17 @@ test('137 baked source provenance and loop position/velocity are checked',()=>{
   assert(Math.max(...a.map((x,k)=>Math.abs(x-c[k])))<.0003);
  }
  assert(b.object.geometries.every(g=>g.type==='BufferGeometry'));
+ // Pass 97: one steady-state cycle only, starting at the engraved cam pose;
+ // both rollers turn from the first frame.
+ assert.equal(b.loopStart,0);assert(Math.abs(b.loopEnd-b.period)<1e-6);
+ assert(Math.abs(b.motion[0][1])<.002);
+ assert(b.source.steadyStateStart>=16);
+ assert(b.source.kinematic.minimumLowerGapPixels>0&&b.source.kinematic.maximumLowerGapPixels<1.35);
+ assert(b.source.kinematic.maximumUpperSimulatedSlipPixelsPerSecond<1);
+ for(let t=0;t<b.period;t+=.25){
+  const a=sampleBakedMotion(b,t),c=sampleBakedMotion(b,t+.1);
+  for(const k of [2,3])assert(c[k]-a[k]<-.1,`roller ${k} stalls at ${t}s`);
+ }
 });
 test('137 interpolated playback clears the cam and keeps the rod pin connected',()=>{
  const v=makeBakedRigidMovement(b,{}),profile=expansionEccentricProfile(b.source.options.samples),tip=new THREE.Vector3();

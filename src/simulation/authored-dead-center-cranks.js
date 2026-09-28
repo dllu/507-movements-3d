@@ -484,10 +484,9 @@ function brownellDeadCenterCrank(movement) {
   slideBody.userData.role =
     'rigid-slide-A-with-two-parallel-traverse-guide-slots';
   tangentSlide.add(slideBody);
-  const slideStop = new THREE.Mesh(new THREE.BoxGeometry(.12,.18,.29),inkMaterial);
-  slideStop.position.set(slideHalfLength+.06,crankRadius,.25);
-  slideStop.userData.role='faceplate-stop-for-spring-returned-slide';
-  faceplate.add(slideStop);
+  // p96: no stop block at the slide's end; Brown draws none. Spring B's
+  // free position sets the slide's rest (zero deflection at zero advance)
+  // and the slot ends bound its travel.
   const wristBoss = cylinderAlongZ(0.145, 0.26, drivenMaterial, 38);
   wristBoss.position.z = 0.06;
   wristBoss.userData.role = 'wrist-boss-rigidly-fixed-to-slide-A';
@@ -736,7 +735,7 @@ function brownellDeadCenterCrank(movement) {
       voluteSpring,
       wheelBearing,
       wheelStand,
-      faceDisc, treadleBeam, treadlePivotBoss, slideStop, slideBody, wristPin, wristBoss, pitmanBar, rearJointBoss,
+      faceDisc, treadleBeam, treadlePivotBoss, slideBody, wristPin, wristBoss, pitmanBar, rearJointBoss,
       wheelShaft, treadleShaft, treadleBearing, hub,
     },
     constraintResiduals: {

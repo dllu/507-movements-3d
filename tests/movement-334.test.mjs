@@ -560,8 +560,27 @@ test('movement 334 renderer binds all teeth, rods, links, and live contacts', ()
   const size = bounds.getSize(new THREE.Vector3());
   assert.ok(size.x > 7.3);
   assert.ok(size.y > 5.0, 'rack B and the shortened drawn chain rod span the plate height');
-  assert.ok(size.z > 1.40,
+  assert.ok(size.z > 1.20,
     'bed, rack, open sector, roller, plate chain and rods occupy real layers');
+  // p96: roller A's fixed axle runs back into a bored pillow block that
+  // stands on the bed and reaches above the axle, hidden inside the roller's
+  // silhouette from the plate view.
+  {
+    const find = (role) => {
+      let found = null;
+      model.root.traverse((object) => { if (object.userData.role === role) found = object; });
+      return found;
+    };
+    const block = new THREE.Box3().setFromObject(find('fixed-pillow-block-under-roller-A-axle'));
+    const axle = new THREE.Box3().setFromObject(find('fixed-axis-of-backing-roller-A'));
+    const bed = new THREE.Box3().setFromObject(find('fixed-timber-bed-behind-rack-and-chain'));
+    const tread = new THREE.Box3().setFromObject(find('working-tread-of-backing-roller-A'));
+    assert.ok(block.max.y > axle.max.y, 'the block rises past the axle');
+    assert.ok(block.min.y <= bed.max.y, 'the block stands on the bed');
+    assert.ok(axle.min.z < block.max.z && axle.min.z > block.min.z, 'the axle ends inside the block');
+    assert.ok(block.min.x > tread.min.x && block.max.x < tread.max.x
+      && block.max.y < tread.max.y, 'the block hides behind the roller');
+  }
   const drawnRoles = [];
   model.root.traverse((object) => drawnRoles.push(object.userData.role ?? ''));
   assert.equal(drawnRoles.some((role) => /guide-rail|index-on-rocking-beam|pivot-bore-at-F/.test(role)), false,

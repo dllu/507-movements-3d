@@ -82,8 +82,9 @@ export function makeOpposedScrewNuts(){
  inputMark.position.set(-1.42/scale-.0002,.055/scale,0);worm.add(inputMark);
  inputMark.userData.visualIndicator=true;
  const frame=body('frame'),inputY=f.distance*scale;
- add('upper-bearing',ring(.237,.535,1.18,1.34).translate(0,inputY,0),frame,'frame');
- add('upper-bearing-sleeve',ring(journal*scale+.004,.235,1.15,1.36).translate(0,inputY,0),frame,'accent');
+ // Pass 96: the bearing is bored to a close running fit on the journal; the
+ // 0.0006-thick brass sleeve read as a hairline arc round the shaft end.
+ add('upper-bearing',ring(journal*scale+.0015,.535,1.18,1.34).translate(0,inputY,0),frame,'frame');
  const screw=body('screw');screw.rotation.y=Math.PI/2;
  add('continuous-screw-core',disk(.135,-3.60,3.49,96),screw,'driven');
  const pitch=opposedScrewDimensions.pitch;

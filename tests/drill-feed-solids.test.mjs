@@ -21,11 +21,11 @@ function clear(mesh,points,moving,surface){
 for(const id of [379,380])test(`${id} closed feed threads pass through the actual nut and bored frame throughout advance and return`,()=>{
  const {root,update}=createMovementModel(catalog[id-1]),b=root.userData.blocks;
  const points=surfacePoints(b.feedThread.geometry).filter((_,i)=>i%8===0);
- const targets=[b.nutThread,b.cFrame].map(o=>[o,solidSurface(o.geometry)]);
+ const targets=[b.fixedFeedNut,b.cFrame].map(o=>[o,solidSurface(o.geometry)]);
  let closest=Infinity,queries=0;
  for(let i=0;i<=32;i++){
   update(i*4/32);root.updateMatrixWorld(true);
-  for(const [mesh,surface]of targets){const result=clear(mesh,points,b.feedThread,surface);queries+=result.queries;if(mesh===b.nutThread)closest=Math.min(closest,result.closest);}
+  for(const [mesh,surface]of targets){const result=clear(mesh,points,b.feedThread,surface);queries+=result.queries;if(mesh===b.fixedFeedNut)closest=Math.min(closest,result.closest);}
  }
  assert.ok(queries>1000);assert.ok(closest>.002&&closest<.004);
  assert.equal(b.feedThread.geometry.type,'BufferGeometry');
@@ -33,13 +33,14 @@ for(const id of [379,380])test(`${id} closed feed threads pass through the actua
 
 test('380 inner spindle passes through the complete hollow sleeve, handle and thrust collar while the thrust rings capture it',()=>{
  const {root,update}=createMovementModel(catalog[379]),b=root.userData.blocks;
- const targets=[b.hollowSleeve,b.feedHandleHub,b.feedHandleBar,b.thrustCollar,b.sleeveNeck,b.lowerSleeveNeck].map(o=>[o,solidSurface(o.geometry)]);
+ const targets=[b.hollowSleeve,b.feedHandleHub,b.feedHandleBar,b.thrustCollar].map(o=>[o,solidSurface(o.geometry)]);
  const points=surfacePoints(b.drillSpindle.geometry);
  for(let i=0;i<=64;i++){
   update(i*4/64);root.updateMatrixWorld(true);
   for(const [mesh,surface]of targets)clear(mesh,points,b.drillSpindle,surface);
-  const collar=bounds(b.thrustCollar),low=bounds(b.thrustRings[0]),high=bounds(b.thrustRings[1]);
-  assert.ok(collar.min.y-low.max.y>.009&&collar.min.y-low.max.y<.011);
+  // Pass 96: the chuck is the lower thrust face, 0.005 under the collar.
+  const collar=bounds(b.thrustCollar),low=bounds(b.drillChuck),high=bounds(b.thrustRings[0]);
+  assert.ok(collar.min.y-low.max.y>.004&&collar.min.y-low.max.y<.006);
   assert.ok(high.min.y-collar.max.y>.009&&high.min.y-collar.max.y<.011);
  }
 });

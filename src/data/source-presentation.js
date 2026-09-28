@@ -94,8 +94,8 @@ export default {
     note: 'Front elevation of the press: the round columns on their plinths under the stepped head, the flared upper disk with its hand lever, the crossed toggle bars and the platen drawn in front of the columns, with the bed block on the ground. No guides are drawn at the platen ends, and none are shown (p60 support policy); the platen hangs from the lower disk.',
   },
   134: {
-    remove: ['rear-fixed-pedestal-supporting-drum-axis', 'fixed-foot-of-drum-bearing-pedestal', 'fixed-bearing-behind-drum-hub', 'one-of-eight-source-rim-separator-plates'],
-    note: 'Front elevation of the spoked rope drum with a plain rim, the rope running off along the ground line; no pedestal or bearing is drawn, and Brown\'s rim-segment joints (painted face strips here) are not drawn as marks.',
+    remove: ['rear-fixed-pedestal-supporting-drum-axis', 'fixed-foot-of-drum-bearing-pedestal', 'fixed-bearing-behind-drum-hub'],
+    note: 'Front elevation of the rope cage: two spoked end wheels with a large hub ring, joined by eight beams parallel to the axis whose ends are Brown\'s eight radial blocks. The rope is wound once round the beams, so it lies on an octagon of straight chords inside the rear flange\'s outer circle, and runs off along the ground line; the cage turns uniformly, so the rope moves at a rate that pulses eight times a turn. No pedestal or bearing is drawn.',
   },
   139: {
     remove: ['bearing-post', 'base', 'roller-post-\\d'],
@@ -127,8 +127,8 @@ export default {
     note: 'Nearly end-on view down the camshaft: the hatched shaft end in front of the sliding cam series, the rocking lever on its right-hand fulcrum and the valve rod; no base, posts, guides or index marks are drawn, and none are shown (p60 support policy).',
   },
   151: {
-    remove: ['guide-(?:back|upper|lower)-\\d', 'guide-post-\\d-.*', 'rear-base', 'upper-bearing-(?:arm|rear-tie|post)', 'input-shaft-rotation-mark'],
-    note: 'The opposite-hand screw shaft carried by its two guided nuts and the upper worm shaft end-on in its bearing ring; no base, posts, upright or index mark are drawn.',
+    remove: ['guide-(?:back|upper|lower)-\\d', 'guide-post-\\d-.*', 'rear-base', 'upper-bearing-(?:arm|rear-tie|post)', 'input-shaft-rotation-mark', 'nut-guide-tongue-\\d'],
+    note: 'The opposite-hand screw shaft carried by its two nuts and the upper worm shaft end-on in its bearing ring; no base, posts, upright, nut guides or index mark are drawn.',
   },
   152: {
     remove: ['(?:horizontal-stud|vertical-stud|pencil)-white-motion-index'],
@@ -451,7 +451,7 @@ export default {
   },
   310: {
     remove: ['pendulum-bob', 'single-wheel-bearing-bracket', '(?:.*-)?white-.*witness', '(?:.*-)?beat-pin-tip-witness'],
-    note: 'Front elevation of the lyre-shaped gravity legs under the T crossbar, the three-legged wheel with its fly and stops D, E; the pendulum rod runs out of the bottom of the plate with no bob, and no wheel bracket or index marks are drawn.',
+    note: 'Front elevation of the lyre-shaped gravity legs under the T crossbar, the three-legged wheel with its fly and stops D, E; as Brown dashes it, the pendulum rod hangs behind the whole escapement, just behind the pivot block and arbor end, with the beat pins reaching back to it from the arms; it runs out of the bottom of the plate with no bob, and no wheel bracket or index marks are drawn.',
   },
   311: {
     remove: ['pendulum-bob', 'double-wheel-bearing-bracket', '(?:.*-)?white-.*witness', '(?:.*-)?beat-pin-tip-witness'],
@@ -459,7 +459,7 @@ export default {
   },
   312: {
     remove: ['fixed-bloxam-support-frame', 'bloxam-pendulum-bob', '(left-A-E|right-B-F)-anti-double-impulse-reinforcement-wire', 'documented-point-two-inch-primitive-diameter-ring', '(?:.*-)?white-.*witness'],
-    note: 'Front elevation of the two wheels and the gravity arms hung from C with fork pins E, F; the trapezoid outline is the arms themselves, and no separate support frame is drawn. Brown dashes the pendulum behind the wheels; here it hangs from the stud at C, see-through and just in front of the wheel because the fork pins sit inside the spokes, and no bob is drawn.',
+    note: 'Front elevation of the two wheels and the gravity arms hung from C; E and F are flat oblong tabs of the arm metal, as Brown\u2019s slots, and the trapezoid outline is the arms themselves, with no separate support frame drawn. Brown dashes the pendulum behind the wheels; here it hangs from the stud at C in front of the wheels, just in front of the arbor end and see-through, because E and F sit inside the large wheel\u2019s spokes, and no bob is drawn.',
   },
   315: {
     remove: ['fixed-bearing-bridge-post', 'fixed-upper-spindle-bearing', 'nonphysical-wrist-orbit-reference-circle', 'white-crank-rotation-index', 'white-spindle-rotation-index', 'white-pendulum-orientation-index'],
@@ -727,7 +727,7 @@ export default {
     note: 'The straightedge, square, thread and pencil describing the parabola on a plain drawing board (the pencil point, focus pin, straightedge and stock stand on it); no bordered board, directrix edge stripe, base chord, dashed axis, blade graduations or given points are drawn.',
   },
   407: {
-    remove: ['fixed-drawing-board-presentational-support-not-source-hardware', 'fixed-drawing-board-border', 'mirrored-right-jamb-reference-for-complete-arch', 'mirrored-right-half-completing-pointed-arch', 'given-right-springing-point', 'given-left-springing-point', 'given-pointed-arch-apex', 'white-upper-edge-of-horizontal-bar-on-springing-line', 'white-slide-position-index', 'upper-working-edge-tangent-to-jamb-and-meeting-apex'],
+    remove: ['fixed-drawing-board-presentational-support-not-source-hardware', 'fixed-drawing-board-border', 'mirrored-right-jamb-reference-for-complete-arch', 'given-right-springing-point', 'given-left-springing-point', 'given-pointed-arch-apex', 'white-upper-edge-of-horizontal-bar-on-springing-line', 'white-slide-position-index', 'upper-working-edge-tangent-to-jamb-and-meeting-apex'],
     note: 'The slotted bar, elastic bar, cord and the half-arch it draws; no drawing board, mirrored half, construction points, edge lines or slide index are drawn.',
   },
   408: {

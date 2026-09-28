@@ -20,12 +20,16 @@ export function makeBellCrankGeometry({amplitude=.5,cordSegments=64,outputSegmen
   outlines.push(poly([...Array.from({length:129},(_,i)=>side('left',i/128)),...Array.from({length:129},(_,i)=>side('right',1-i/128))].map(xy)));
  }
  const eyes=['input','pivot','output'];
- const silhouette=clip.union(...outlines,...eyes.map(n=>poly(circle(xy(source.circles[n+'Eye'].center),source.circles[n+'Eye'].radius/100,192))));
+ // Pass 97: every eye, boss and inset is concentric with its pin. The traced
+ // eye circles sit up to 2.4 px off their pins in Brown's hand drawing; only
+ // their radii are kept.
+ const eyeCircle=(n,radius=source.circles[n+'Eye'].radius)=>poly(circle(xy(source.circles[n+'Pin'].center),radius/100,192));
+ const silhouette=clip.union(...outlines,...eyes.map(n=>eyeCircle(n)));
  const bores=eyes.map(n=>poly(circle(xy(source.circles[n+'Pin'].center),source.circles[n+'Pin'].radius/100+(n==='pivot'?.0015:0),128)));
  add('lever',plate(clip.difference(silhouette,...bores),.18,.30),'bell',PALETTE.brass);
- const pivot=xy(source.circles.pivotPin.center),inset=xy(source.circles.pivotInset.center);
- add('pivotBoss',plate(clip.difference(poly(circle(xy(source.circles.pivotEye.center),source.circles.pivotEye.radius/100,192)),poly(circle(inset,source.circles.pivotInset.radius/100,128))),.30,.35),'bell',PALETTE.brass);
- for(const n of ['input','output'])add(n+'Eye',plate(clip.difference(poly(circle(xy(source.circles[n+'Eye'].center),source.circles[n+'Eye'].radius/100,192)),poly(circle(xy(source.circles[n+'Pin'].center),source.circles[n+'Pin'].radius/100,128))),.30,.35),'bell',PALETTE.brass);
+ const pivot=xy(source.circles.pivotPin.center);
+ add('pivotBoss',plate(clip.difference(eyeCircle('pivot'),poly(circle(pivot,source.circles.pivotInset.radius/100,128))),.30,.35),'bell',PALETTE.brass);
+ for(const n of ['input','output'])add(n+'Eye',plate(clip.difference(eyeCircle(n),poly(circle(xy(source.circles[n+'Pin'].center),source.circles[n+'Pin'].radius/100,128))),.30,.35),'bell',PALETTE.brass);
  for(const n of ['input','output'])add(n+'Pin',translated(disk(source.circles[n+'Pin'].radius/100,-.12,.37,128),local(source.circles[n+'Pin'].center)), 'bell',PALETTE.ink);
  add('pivotPin',translated(disk(source.circles.pivotPin.radius/100,-.18,.37,128),[...pivot,0]),'fixed',PALETTE.ink);
  const outer=source.circles.pulleyRim.radius/100,insetRadius=source.circles.pulleyInset.radius/100,shaft=source.circles.pulleyShaft.radius/100,hub=source.circles.pulleyHub.radius/100;

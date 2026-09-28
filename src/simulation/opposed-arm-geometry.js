@@ -115,6 +115,9 @@ export function makeOpposedArmGeometry({phase=.04480311998100515,crest=.035,pivo
   attach(key+'RodPin',disk(.032,armLow-.012,rodHigh+.003,96),armFamily,PALETTE.muted,[...J,0]);
   attach(key+'RodPinRearCap',disk(.046,armLow-.025,armLow-.012,96),armFamily,PALETTE.muted,[...J,0]);
   attach(key+'RodPinFrontCap',disk(.046,rodHigh+.003,rodHigh+.016,96),armFamily,PALETTE.muted,[...J,0]);
+  // p96: a spacer collar on the pin fills the axial gap between the arm's eye
+  // and the rod's eye, so the joint does not show a length of bare pin.
+  attach(key+'RodPinSpacer',ring(.0325,.052,armHigh,rodLow,96),armFamily,PALETTE.muted,[...J,0]);
   const rodShape=clip.difference(clip.union(capsule([0,0],[a.rodLength,0],.0215,64),poly(circle([0,0],.082,128)),
    poly(circle([a.rodLength,0],.108,128))),poly(circle([0,0],.035,96)),poly(circle([a.rodLength,0],.035,96)));
   attach(key+'ConnectingRod',plate(rodShape,rodLow,rodHigh),rodFamily,PALETTE.muted);
@@ -142,12 +145,28 @@ export function makeOpposedArmGeometry({phase=.04480311998100515,crest=.035,pivo
   attach(key+'PawlJournal',axisGeometry(plate(journal,-.029,.029)),key,PALETTE.brass);
   a.pawlContour=trimmed;a.pawlTip=[0,-p.pawl.length];
  }
- const B=p.sourceSlider,sliderShape=clip.difference(clip.union(poly(circle([0,0],.127,128)),
-  poly([[.05,-.081],[.297,-.081],[.297,.081],[.05,.081]])),poly(circle([0,0],.035,96)));
+ // p96: Brown draws B as an eye with an open hook facing right (in place of
+ // the old plain rectangular tab): a ring arc concentric with its own centre,
+ // opened over the right-hand sector, with round tips,
+ // joined to the eye by a solid neck.
+ const hookCenter=[.215,0],hookOuter=.085,hookInner=.045,hookOpen=.95,hookTip=(hookOuter+hookInner)/2;
+ const hookArc=clip.difference(poly(circle(hookCenter,hookOuter,128)),poly(circle(hookCenter,hookInner,96)),
+  poly([hookCenter,[hookCenter[0]+.3*Math.cos(hookOpen),.3*Math.sin(hookOpen)],[hookCenter[0]+.3,.3],
+   [hookCenter[0]+.3,-.3],[hookCenter[0]+.3*Math.cos(hookOpen),-.3*Math.sin(hookOpen)]]));
+ const hookTips=[1,-1].map(sign=>poly(circle([hookCenter[0]+hookTip*Math.cos(hookOpen),sign*hookTip*Math.sin(hookOpen)],
+  (hookOuter-hookInner)/2,48)));
+ const hookNeck=poly([[.09,-.05],[hookCenter[0]-hookInner-.004,-.05],[hookCenter[0]-hookInner-.004,.05],[.09,.05]]);
+ const B=p.sourceSlider,sliderShape=clip.difference(clip.union(poly(circle([0,0],.127,128)),hookNeck,hookArc,...hookTips),
+  poly(circle([0,0],.035,96)));
  attach('sliderB',plate(sliderShape,.358,.403),'slider',PALETTE.driver);
  attach('sliderJointPin',disk(.032,.248,.415,96),'slider',PALETTE.muted);
  attach('sliderRearPinCap',disk(.047,.235,.248,96),'slider',PALETTE.muted);
  attach('sliderFrontPinCap',disk(.047,.415,.430,96),'slider',PALETTE.muted);
+ // p96: spacer collars close the gaps between the rod eyes and B on its pin.
+ const rodSpans=['upper','lower'].map(key=>[p.arms[key].rodLow,p.arms[key].rodHigh]).sort((a,b)=>a[0]-b[0]);
+ [[.248,rodSpans[0][0]],[rodSpans[0][1],rodSpans[1][0]],[rodSpans[1][1],.358]].forEach(([lo,hi],index)=>{
+  if(hi-lo>1e-4)attach('sliderPinSpacer'+index,ring(.0325,.052,lo,hi,96),'slider',PALETTE.muted);
+ });
 
  // Two independent fixed-length rods meet the same horizontal slider. Retain
  // the small measured source asymmetry instead of changing the rod lengths.

@@ -500,7 +500,11 @@ function equalDiameterCam(movement) {
   // The cam's inked edge is the plate's outline of the solid cam, not a
   // separate dark band, so no outline tube is added.
 
-  const camHub = cylinderAlongZ(0.62, camDepth * 1.22, driverMaterial, 48);
+  // Brown's hub ring reads as a distinct boss: stand it 0.10 proud of each
+  // cam face in a deeper shade of the cam's colour.
+  const hubMaterial = driverMaterial.clone();
+  hubMaterial.color.multiplyScalar(0.78);
+  const camHub = cylinderAlongZ(0.62, camDepth + 0.2, hubMaterial, 48);
   camHub.userData.role = 'cam-hub-fixed-to-input-shaft';
   const camShaft = cylinderAlongZ(0.21, 0.71 - camBearingZ + 0.04, darkMaterial, 36);
   camShaft.position.z = (0.71 + camBearingZ - 0.04) / 2;

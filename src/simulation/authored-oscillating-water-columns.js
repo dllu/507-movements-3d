@@ -412,6 +412,20 @@ function dectolOscillatingColumn(movement) {
   nozzleWater.position.set(0, (channelFloorY + skin + chamberFloorY) / 2,
     -(upperInner - skin) / 2);
   root.add(nozzleWater);
+  // Pass 96: the conduit water and the water in the upper box are ONE body
+  // (one L-shaped extrusion), so no seam shows where the conduit turns down
+  // into the box; the separate box piece is kept hidden for bookkeeping.
+  {
+    const x0 = channelLeftX, x1 = -(upperInner - skin), x2 = upperInner - skin;
+    const yFloor = channelFloorY + skin, yBox = chamberFloorY + skin;
+    const outline = new THREE.Shape([[x0, yFloor], [x1, yFloor], [x1, yBox], [x2, yBox],
+      [x2, reservoirWaterY], [x0, reservoirWaterY]].map(([x, y]) => new THREE.Vector2(x, y)));
+    reservoirWater.geometry.dispose();
+    reservoirWater.geometry = new THREE.ExtrudeGeometry(outline, { depth: upperInner - skin, bevelEnabled: false, curveSegments: 1 })
+      .translate(0, 0, -(upperInner - skin));
+    reservoirWater.position.set(0, 0, 0);
+    nozzleWater.visible = false;
+  }
 
   // Unit-length tapered stream hanging from the orifice; its length follows
   // the top of the cone or raised column below it.

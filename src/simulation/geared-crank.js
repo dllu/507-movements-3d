@@ -53,9 +53,9 @@ export function makeGearedCrank(){
  parts['rocker-pivot'].geometry.dispose();parts['rocker-pivot'].geometry=disk(.16,-.70,.58,64).translate(pivot.x,pivot.y,0);
  const update=time=>{const state=v.update(time);blocks.pinion.rotation.z=Math.PI*time;root.updateMatrixWorld(true);root.userData.state=state;};
  const bounds=new THREE.Box3();for(let i=0;i<=128;i++){update(8*i/128);bounds.union(new THREE.Box3().setFromObject(root,true));}bounds.expandByScalar(.03);
- Object.assign(root.userData,{mechanism:'spur-geared-oblong-groove-rocking-lever',fidelity:'authored',simulationBackend:'analytic',reconstructionStatus:'rebuilt',supportsRestart:true,cameraFitBounds:bounds,sampledMotionBounds:{min:bounds.min.toArray(),max:bounds.max.toArray()},
+ Object.assign(root.userData,{mechanism:'spur-geared-oblong-groove-lever-and-axle-crank',fidelity:'authored',simulationBackend:'analytic',reconstructionStatus:'rebuilt',supportsRestart:true,cameraFitBounds:bounds,sampledMotionBounds:{min:bounds.min.toArray(),max:bounds.max.toArray()},
   animationTiming:{authoredCyclePeriod:8,displayCycleDuration:8,playbackTimeScale:1},
-  reconstructionNote:'The oblong is a groove on the large gear\'s face. The pin on the long lever runs round it as the gears turn, so the lever, pivoted on the right-hand bracket, rocks back and forth; the short arm and eye are carried by the lever. Groove depth, walls, rear supports and axial depths are reconstructed.'});
+  reconstructionNote:'The oblong is a groove on the large gear\'s face. The pin on the long lever runs round it as the gears turn, so the lever, pivoted on the right-hand bracket, rocks back and forth. Brown\'s short arm is a link from that pin to the eye of a crank pivoted on the large gear\'s axle, which the lever swings to and fro ("alternate circular motion of the crank attached to the larger gear"). The crank arm, its place on the axle and the link and crank lengths (1.75, lengthened so the link reaches the pin\'s whole swing) are reconstructed, as are groove depth, walls, rear supports and axial depths.'});
  markShadows(root);update(0);
  return {root,update,reset:()=>update(0),focus:bounds.getCenter(new THREE.Vector3()),cameraDirection:new THREE.Vector3(.05,.03,15),dispose:v.dispose};
 }

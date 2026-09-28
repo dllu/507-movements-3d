@@ -67,11 +67,25 @@ test('240 selection, free-run and drop stay continuous and clear across all thre
  }previous=s;}console.log({minimumWorkingCircleGap:minimum,maxAngularStep:maxStep});
 });
 test('240 finite pivot and hub bores clear their actual shafts',()=>{
- const m=create({id:240}),d=m.root.userData,b=d.blocks,p=d.workingParts,a=audit(),shafts=[b.hookGravityStopPivot,b.straightGravityStopPivot,b.springPawlStopPivot],bodies=[b.hookGravityStopBody,b.straightGravityStopBody,b.springPawlStopBody];
+ const m=create({id:240}),d=m.root.userData,b=d.blocks,p=d.workingParts,a=audit(),shafts=[b.hookGravityStopPivot,b.straightGravityStopPivot],bodies=[b.hookGravityStopBody,b.straightGravityStopBody];
+ // p96: C has no pin; its drawn hole is plain and it rides on its S-spring.
+ assert.equal(b.springPawlStopPivot.parent,null);assert.equal(p.collars.length,2);
  for(let i=0;i<=16;i++){m.update((i/16-d.geometry.initialCycleCoordinate)*6);m.root.updateMatrixWorld(true);shafts.forEach((s,j)=>{a.check(shaftMesh(s),p.collars[j],'stop collar',true);a.check(shaftMesh(s),bodies[j],'stop pivot',true);});a.check(shaftMesh(b.wheelShaft),b.wheel.userData.hub,'wheel hub',true);}
  console.log(a.report());
 });
 test('240 keeps stable scene buffers and source comparison display settings',()=>{
  const m=create({id:240}),d=m.root.userData,meshes=[];m.root.traverse(o=>{if(o.isMesh)meshes.push(o);});const buffers=meshes.map(o=>o.geometry.attributes.position.array);for(let i=0;i<=32;i++)m.update(i/32*6);
  meshes.forEach((o,i)=>{assert.equal(o.geometry.attributes.position.array,buffers[i]);assert.ok(o.castShadow);for(const mat of[].concat(o.material))assert.equal(mat.fog,false);});assert.equal(d.hideGround,true);assert.ok(m.cameraDirection.z>15);assert.ok(d.minimumDisplayCycleSeconds>=12);assert.equal(d.transmission.sourceIsComparisonPlate,true);
+});
+test('240 stop C is one broad block whose top edge sits in two tooth spaces',()=>{
+ const m=create({id:240}),d=m.root.userData,b=d.blocks,c=d.workingParts.stops[2],g=d.geometry;
+ const polygons=b.springPawlStopBody.geometry.userData.plate.polygons;assert.equal(polygons.length,1);
+ m.update(0);m.root.updateMatrixWorld(true);
+ // At the dwell C's outline reaches below the tip circle in two separate
+ // tooth spaces (its own two teeth), one pitch apart.
+ const v=new THREE.Vector3(),angles=[];
+ for(const[x,y]of polygons[0][0]){v.set(x,y,0).applyMatrix4(b.springPawlStopBody.matrixWorld);const r=Math.hypot(v.x,v.y);if(r<g.wheelOuterRadius-.1)angles.push(Math.atan2(v.y,v.x));}
+ const sorted=angles.sort((a,b)=>a-b),groups=[[sorted[0]]];for(const a of sorted.slice(1))(a-groups.at(-1).at(-1)>.05?groups.push([a]):groups.at(-1).push(a));
+ assert.equal(groups.length,2,'two teeth');const mid=groups.map(q=>(q[0]+q.at(-1))/2);assert.ok(Math.abs(Math.abs(mid[1]-mid[0])-g.toothPitch)<.08,`teeth ${mid}`);
+ assert.ok(c.hole&&c.pivot.distanceTo(c.hole)>1);
 });

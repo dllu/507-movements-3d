@@ -571,8 +571,23 @@ function directActionEngineParallelMotion(movement) {
   // Brown's cover is a thin flange barely wider than the barrel.
   const cylinderCover = verticalBored(5.9, pistonBore, -27.5, -26.5,
     'fixed-cylinder-cover-flange');
-  const cylinderBody = verticalBored(5.3, 4.9 * sourceScale, -33.2, -27.5,
-    'fixed-broken-off-cylinder-body');
+  // Brown breaks the barrel off below the cover; the whole cylinder is
+  // shown: the barrel runs on past the piston's lowest stroke and is closed
+  // by a bottom cover flange like the top one (p96), so it is no open tube.
+  const cylinderBottomLow = -38.0;
+  const cylinderBottomHigh = -36.9;
+  const cylinderBody = verticalBored(5.3, 4.9 * sourceScale, -37.0, -27.5,
+    'fixed-cylinder-barrel-below-cover');
+  const cylinderBottomCover = new THREE.Mesh(
+    new THREE.CylinderGeometry(5.9 * sourceScale, 5.9 * sourceScale,
+      (cylinderBottomHigh - cylinderBottomLow) * sourceScale, 64),
+    frameMaterial,
+  );
+  cylinderBottomCover.position.set(pistonLineX,
+    (cylinderBottomLow + cylinderBottomHigh) / 2 * sourceScale, crossheadPlaneZ);
+  cylinderBottomCover.userData.fixed = true;
+  cylinderBottomCover.userData.role = 'fixed-cylinder-bottom-cover-flange';
+  fixedFrame.add(cylinderBottomCover);
   const cylinderCrown = cylinderCover;
 
   const radiusBearing = cylinderAlongZ(0.57 * sourceScale,
@@ -607,7 +622,10 @@ function directActionEngineParallelMotion(movement) {
   );
   pistonCrosshead.position.z = crossheadPlaneZ;
   pistonCrosshead.userData.role = 'piston-crosshead-centered-at-C';
-  const pistonRodLength = 14.5 * sourceScale;
+  // The rod runs on through the gland to a piston head that stays inside
+  // the barrel over the whole stroke (its top clears the cover at the top
+  // of the stroke, its bottom clears the bottom cover at the bottom).
+  const pistonRodLength = 18.5 * sourceScale;
   const pistonRod = new THREE.Mesh(
     new THREE.CylinderGeometry(pistonRodRadius, pistonRodRadius,
       pistonRodLength, 28),
@@ -615,12 +633,22 @@ function directActionEngineParallelMotion(movement) {
   );
   pistonRod.position.set(0, -pistonRodLength / 2, crossheadPlaneZ);
   pistonRod.userData.role = 'round-piston-rod-below-C-into-stuffing-box';
+  const pistonHeadThickness = 0.9 * sourceScale;
+  const pistonHead = new THREE.Mesh(
+    new THREE.CylinderGeometry(4.9 * sourceScale - 0.008,
+      4.9 * sourceScale - 0.008, pistonHeadThickness, 64),
+    blueMaterial,
+  );
+  pistonHead.position.set(0, -pistonRodLength + pistonHeadThickness / 2,
+    crossheadPlaneZ);
+  pistonHead.userData.role = 'piston-disk-on-rod-enclosed-in-cylinder';
   const pointCAnchor = new THREE.Object3D();
   pointCAnchor.position.z = crossheadPlaneZ;
   pointCAnchor.userData.role = 'analytic-piston-and-bar-point-C';
   pistonOutput.add(
     pistonCrosshead,
     pistonRod,
+    pistonHead,
     pointCAnchor,
   );
   root.add(pistonOutput);
@@ -994,7 +1022,8 @@ function directActionEngineParallelMotion(movement) {
   update(0);
   fitPistonGuide(root, update, cyclePeriod);
   // Brown's view: slot box D at the left, crank pedestal at the top and the
-  // cylinder broken off just below its cover.
+  // cylinder cut by the frame just below its cover (the whole barrel, piston
+  // and bottom cover are modelled beyond the frame).
   root.userData.cameraFitBounds = new THREE.Box3(
     new THREE.Vector3(-19.5 * sourceScale, -31.0 * sourceScale, -0.9),
     new THREE.Vector3(9.5 * sourceScale, 4.6 * sourceScale, 0.6),

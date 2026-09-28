@@ -1,4 +1,5 @@
 import {boredCylinderGeometry, fitPistonGuide} from './piston-guide-parts.js';
+import {boredLatheGeometry} from './bored-lathe-geometry.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -229,22 +230,31 @@ function traversingRollerConeDrive(movement) {
     radialSegments: 72,
   });
   rollerBody.geometry.dispose();
-  rollerBody.geometry = boredCylinderGeometry(rollerBodyRadius, .061, rollerWidth);
+  // One lathed disk, as Brown draws it: flat faces, and a crowned rim whose
+  // middle is the round tread (radius rollerTreadTubeRadius about a circle
+  // of radius rollerBodyRadius) that touches the drum, run out on straight
+  // tangents to the faces. No separate bead.
+  const crownHalfAngle = THREE.MathUtils.degToRad(50);
+  const crownProfile = [];
+  const faceHalf = rollerWidth / 2;
+  const arcEnd = {
+    radial: rollerBodyRadius + rollerTreadTubeRadius * Math.cos(crownHalfAngle),
+    axial: rollerTreadTubeRadius * Math.sin(crownHalfAngle),
+  };
+  const faceEdgeRadius = arcEnd.radial
+    - (faceHalf - arcEnd.axial) * Math.tan(crownHalfAngle);
+  crownProfile.push({axial: -faceHalf, radial: faceEdgeRadius});
+  for (let step = -10; step <= 10; step += 1) {
+    const angle = crownHalfAngle * step / 10;
+    crownProfile.push({
+      axial: rollerTreadTubeRadius * Math.sin(angle),
+      radial: rollerBodyRadius + rollerTreadTubeRadius * Math.cos(angle),
+    });
+  }
+  crownProfile.push({axial: faceHalf, radial: faceEdgeRadius});
+  rollerBody.geometry = boredLatheGeometry(crownProfile, .061, 96);
   rollerBody.userData.role = 'thin-friction-roller-disk';
   rollerRotor.add(rollerBody);
-  const rollerTread = new THREE.Mesh(
-    new THREE.TorusGeometry(
-      rollerBodyRadius,
-      rollerTreadTubeRadius,
-      // The drum touches the tread up to ~12 degrees off its lowest point.
-      20,
-      88,
-    ),
-    // The rounded tread is the roller's own edge, not an ink rim.
-    rollerMaterial,
-  );
-  rollerTread.userData.role = 'round-friction-tread-touching-cone';
-  rollerRotor.add(rollerTread);
   const rollerHub = cylinderAlongLocalZ({
     depth: rollerWidth + 0.18,
     material: inkMaterial,
@@ -397,7 +407,6 @@ function traversingRollerConeDrive(movement) {
     rollerHub,
     rollerIndices,
     rollerRotor,
-    rollerTread,
   };
   root.userData.canonicalTimes = {
     cycleClosure: traversePeriod,

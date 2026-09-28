@@ -3723,7 +3723,7 @@ function eccentricCircularGuideVariableSpeedShaper({reference = false} = {}) {
     // its rim and bore sit 1 cm inside theirs, so no faces z-fight.
     const backing = new THREE.Mesh(centeredExtrusion(
       diskWithOffsetHoleShape(outerDiskRadius - .01, shaftOffset, shaftOpeningRadius + .01), .12, 0),
-      matte(PALETTE.ink));
+      outerPlate.material.clone());
     backing.position.set(fixedDiskCenter.x, fixedDiskCenter.y, -.62);
     backing.userData.role = 'integral-rear-web-of-fixed-guide';
     root.add(backing);root.userData.blocks.guideBacking = backing;

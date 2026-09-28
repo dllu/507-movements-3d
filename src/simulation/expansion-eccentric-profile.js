@@ -13,7 +13,11 @@ import { expansionEccentricOutline as trace } from '../data/expansion-eccentric-
 // swings the rollers through 39 pixels a turn (the earlier smoothed cam gave
 // 28); the traced outline's sharper dimples, which no two-roller fork can
 // follow, are not kept. Design: pass-51 lane m3-mujoco-cams.
-export const expansionEccentricSpread = 4;
+// Pass 97: 4.05 pixels (was 4). At 4 the fork pinched the cam by 0.03 px once
+// a turn, which stalled the cam for a moment in the simulation and flung the
+// lower roller up to four times its rolling speed. At 4.05 the lower roller
+// runs 0.06..1.33 px clear of the cam while the upper roller bears on it.
+export const expansionEccentricSpread = 4.05;
 export const expansionEccentricCoefficients = [
   77.720491,
   13.305481,

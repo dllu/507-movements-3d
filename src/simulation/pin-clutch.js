@@ -27,11 +27,13 @@ export function makePinClutch() {
   const motion = pinClutchMotion(), p = { ...motion.parameters,
     driverRadius: 1, outputRadius: 1.10, driverThickness: 0.40,
     shaftRadius: 0.10, driverBore: 0.103, driverHubRadius: 0.26,
+    outputBore: 0.103, keyHalfWidth: 0.020, keyBottom: 0.085, keyTop: 0.125,
+    keywayHalfWidth: 0.026, keywayTop: 0.131,
     grooveLeft: 0.54, grooveRight: 0.73, grooveRadius: 0.16, collarRadius: 0.30,
     shoeClearance: 0.00001, shoeHeight: 0.085, shoeBackZ: 0.205, shoeFrontZ: 0.270,
     leverZ: 0.335, leverDepth: 0.050, pivotRadius: 0.045, pivotBore: 0.046,
     followerRadius: 0.030, followerBore: 0.031 };
-  const root = new THREE.Group(), driver = rotorFrame(), output = rotorFrame();
+  const root = new THREE.Group(), driver = rotorFrame(), output = rotorFrame(), spindle = rotorFrame();
   const driverBody = turned([[-0.55, p.driverBore], [-0.55, p.driverHubRadius], [-0.20, p.driverHubRadius],
     [-0.20, p.driverRadius], [0.20, p.driverRadius], [0.20, p.driverBore]], PALETTE.driver);
   const studs = [-1, 1].map((side) => {
@@ -41,17 +43,34 @@ export function makePinClutch() {
   });
   driver.userData.rotor.add(driverBody, ...studs);
   const diskShape = polygon(0, 0, p.outputRadius, 256, new THREE.Shape());
-  diskShape.holes.push(polygon(0, 0, p.shaftRadius, 128));
+  // The disk and its hub slide on a feather key fixed in the shaft: a round
+  // bore with a keyway on +y.
+  const bore = new THREE.Path(), boreAngle = Math.acos(p.keywayHalfWidth / p.outputBore);
+  for (let i = 0; i <= 128; i += 1) {
+    const angle = Math.PI - boreAngle + (Math.PI + 2 * boreAngle) * i / 128;
+    const x = p.outputBore * Math.cos(angle), y = p.outputBore * Math.sin(angle);
+    if (i === 0) bore.moveTo(x, y); else bore.lineTo(x, y);
+  }
+  bore.lineTo(p.keywayHalfWidth, p.keywayTop); bore.lineTo(-p.keywayHalfWidth, p.keywayTop); bore.closePath();
+  diskShape.holes.push(bore);
   for (const side of [-1, 1]) diskShape.holes.push(polygon(0, side * p.studCircleRadius, p.holeRadius, p.holeSegments));
   const outputDisk = plate(diskShape, p.outputThickness, PALETTE.driven); outputDisk.position.z = p.outputThickness / 2;
-  const outputHub = turned([[p.outputThickness, p.shaftRadius], [p.outputThickness, 0.28], [p.grooveLeft, 0.28],
+  const outputHub = turned([[p.outputThickness, p.outputBore], [p.outputThickness, 0.28], [p.grooveLeft, 0.28],
     [p.grooveLeft, p.grooveRadius], [p.grooveRight, p.grooveRadius], [p.grooveRight, p.collarRadius],
-    [0.82, p.collarRadius], [0.82, p.shaftRadius]], PALETTE.driven);
+    [0.82, p.collarRadius], [0.82, p.outputBore]], PALETTE.driven,
+  { boreRadius: p.outputBore, keyHalfWidth: p.keywayHalfWidth, keywayTop: p.keywayTop });
   const shaft = turned([[-1.9, 0], [-1.9, p.shaftRadius], [2.30, p.shaftRadius], [2.30, 0]], PALETTE.ink);
   const knob = turned([[1.55, p.shaftRadius], [1.55, 0.15], [1.73, 0.27], [2.06, 0.27], [2.22, 0.15], [2.22, p.shaftRadius]], PALETTE.driven);
-  output.userData.rotor.add(outputDisk, outputHub, shaft, knob);
-  // The common shaft and right disk slide together. The left disk is loose
-  // on its sleeve; the two studs provide the only coupling to the output.
+  // Only the right disk and its grooved hub slide, on a feather key fixed in
+  // the shaft (as in 47 and 48). The shaft and its end barrel stay axially
+  // fixed at the retracted station. The left disk is loose on its sleeve; the
+  // two studs provide the only coupling to the output.
+  const keyStart = p.studTipX - p.maximumInsertion - 0.04, keyEnd = p.retractedFaceX + 0.82 + 0.04;
+  const feather = new THREE.Mesh(new THREE.BoxGeometry(2 * p.keyHalfWidth, p.keyTop - p.keyBottom, keyEnd - keyStart),
+    matte(PALETTE.ink)); // shaft-coloured, as in 48
+  feather.position.set(0, (p.keyBottom + p.keyTop) / 2, (keyStart + keyEnd) / 2 - p.retractedFaceX);
+  output.userData.rotor.add(outputDisk, outputHub);
+  spindle.userData.rotor.add(shaft, knob, feather); spindle.position.x = p.retractedFaceX;
   const lever = new THREE.Group(), outline = new THREE.Shape();
   outline.moveTo(-0.13, 0); outline.quadraticCurveTo(-0.13, 0.07, -0.085, 0.15);
   outline.lineTo(-0.063, p.leverLength); outline.absarc(0, p.leverLength, 0.063, Math.PI, 0, true);
@@ -87,22 +106,24 @@ export function makePinClutch() {
     turned([[a, 0], [a, 0.075], [b, 0.075], [b, 0]], PALETTE.brass));
   // Brown draws the fixed fulcrum only as a capped pin, with no bracket; it
   // ends as a plain stub (p62: the undrawn wall flange is removed).
-  pivot.add(pivotPin, ...pivotCaps); root.add(driver, output, lever, shoe, pivot);
+  pivot.add(pivotPin, ...pivotCaps); root.add(driver, output, spindle, lever, shoe, pivot);
   const update = (time) => {
     const state = motion.stateAtTime(time);
     driver.userData.rotor.rotation.z = state.driverAngle;
     output.position.x = state.outputFaceX; output.userData.rotor.rotation.z = state.outputAngle;
+    spindle.userData.rotor.rotation.z = state.outputAngle;
     lever.rotation.z = state.leverAngle; shoe.position.x = state.followerX; shoe.position.y = state.followerY;
     root.userData.kinematics = state;
   };
   root.userData = { fidelity: 'authored', mechanism: 'two-stud-clutch-with-loaded-hole-walls-and-bell-crank',
     cameraFov: 17, hideGround: true, fullCameraDirection: new THREE.Vector3(5, 3, 8),
-    geometry: { ...p, handleEnd, handleHalfWidth }, blocks: { driver, output, lever, shoe, pivot },
-    parts: { driverBody, studs, outputDisk, outputHub, shaft, knob, leverBody, grip, followerPin, followerCap, followerBackCap, pivotPin, pivotCaps },
+    geometry: { ...p, handleEnd, handleHalfWidth, keyStart, keyEnd }, blocks: { driver, output, spindle, lever, shoe, pivot },
+    parts: { driverBody, studs, outputDisk, outputHub, shaft, knob, feather, leverBody, grip, followerPin, followerCap, followerBackCap, pivotPin, pivotCaps },
     stateAtTime: motion.stateAtTime };
-  // Frame Brown's plate: the measured swept box with the handle to his break.
+  // Frame Brown's plate: the measured swept box (the shaft no longer slides)
+  // with the handle to his break.
   // Its run on to the grip stays out of the fit.
-  root.userData.cameraFitBounds = new THREE.Box3(new THREE.Vector3(-1.56, -1.1415, -1.1), new THREE.Vector3(3.26, 1.1, 1.1));
+  root.userData.cameraFitBounds = new THREE.Box3(new THREE.Vector3(-0.94, -1.1415, -1.1), new THREE.Vector3(3.26, 1.1, 1.1));
   update(0); markShadows(root);
   return { root, update, cameraDirection: new THREE.Vector3(0, 0, 10) };
 }

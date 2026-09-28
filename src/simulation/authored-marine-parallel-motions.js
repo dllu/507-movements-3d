@@ -672,7 +672,10 @@ function sideLeverRockshaftParallelMotion(movement) {
     ...leverBores.map((bore) => poly(circle([bore.x, bore.y], bore.radius, 64))),
   );
   const sideLeverBody = new THREE.Mesh(plate(clip.union(leverOutline,
-    clip.difference(poly(circle([sideLeverMidRadius, 0], 0.34 * s, 48)),
+    // M's boss bridges the slot: a round boss twice pin M's radius,
+    // concentric with M, reaching well past both slot edges (p96; 0.34 was
+    // hidden under the rod eye, so M read as sitting on the slot's edge).
+    clip.difference(poly(circle([sideLeverMidRadius, 0], 0.46 * s, 64)),
       poly(circle([sideLeverMidRadius, 0], 0.001, 8))))
     , leverPlaneZ - leverHalfDepth, leverPlaneZ + leverHalfDepth),
   leverMaterial);
@@ -773,18 +776,29 @@ function sideLeverRockshaftParallelMotion(movement) {
   crossheadShape.absarc(0, 0.65 * sourceScale, 0.34 * sourceScale,
     0, Math.PI, false);
   crossheadShape.closePath();
-  const crossheadLow = cylinderAxisZ - 0.25;
+  // Brown's capped block is only the outer end of the crosshead. Behind it
+  // a slim round crossbar runs back to the piston rod (p96; a 1.07-deep
+  // block of the cap's section read as a slab in rotated views).
   const crossheadHigh = 0.30;
+  const crossheadCapLow = crossheadHigh - 0.18;
   const crossheadGeometry = new THREE.ExtrudeGeometry(crossheadShape, {
     bevelEnabled: false,
     curveSegments: 16,
-    depth: crossheadHigh - crossheadLow,
+    depth: crossheadHigh - crossheadCapLow,
   });
-  crossheadGeometry.translate(0, 0, crossheadLow);
+  crossheadGeometry.translate(0, 0, crossheadCapLow);
   const crossheadHousing = new THREE.Mesh(crossheadGeometry, outputMaterial);
   crossheadHousing.userData.role =
-    'orange-transverse-crosshead-joining-piston-rod-to-side-rod-at-S';
-  const pistonRodTop = -0.70 * s;
+    'orange-transverse-crosshead-end-cap-at-S';
+  const crossbarRadius = 0.29 * s;
+  const crossbarLow = cylinderAxisZ - crossbarRadius;
+  const crossbarHigh = crossheadCapLow + 0.02;
+  const crossheadBar = cylinderAlongZ(crossbarRadius,
+    crossbarHigh - crossbarLow, outputMaterial, 40);
+  crossheadBar.position.set(0, 0, (crossbarLow + crossbarHigh) / 2);
+  crossheadBar.userData.role =
+    'orange-round-transverse-crossbar-from-cap-S-to-piston-rod';
+  const pistonRodTop = 0;
   const pistonRodBottom = -7.6 * s;
   const pistonRod = new THREE.Mesh(
     new THREE.CylinderGeometry(pistonRodRadius, pistonRodRadius,
@@ -801,6 +815,7 @@ function sideLeverRockshaftParallelMotion(movement) {
   pistonHeadAnchor.userData.role = 'analytic-hidden-piston-rod-end';
   output.add(
     crossheadHousing,
+    crossheadBar,
     pistonRod,
     crossheadAnchor,
     pistonHeadAnchor,
@@ -1579,7 +1594,14 @@ function sideLeverMarineParallelMotion(movement) {
     rightAnchor: leverAnchor(sideLeverRadius,
       'analytic-eight-unit-side-lever-pin'),
   };
-  sideLever.add(leverBody, leverRib, sideLeverParts.midAnchor,
+  // Brown rings the left link's pin on the centre line: a round boss on the
+  // web, concentric with the pin, so the pin does not sit on the web's
+  // edge (p96).
+  const ribPinBoss = cylinderAlongZ(0.42 * s, 0.06, blueMaterial, 48);
+  ribPinBoss.position.set(sideLeverMidRadius, 0,
+    leverPlaneZ + leverHalfDepth + 0.03 - 0.005);
+  ribPinBoss.userData.role = 'side-lever-web-boss-at-left-link-pin';
+  sideLever.add(leverBody, leverRib, ribPinBoss, sideLeverParts.midAnchor,
     sideLeverParts.rightAnchor, sideLeverParts.hiddenInputAnchor);
   root.add(sideLever);
 
@@ -1653,19 +1675,29 @@ function sideLeverMarineParallelMotion(movement) {
   // Brown draws the side-lever engine's crosshead E end-on: the capped
   // block is the end of a transverse crosshead that runs back from the link
   // plane to the piston rod on the vessel's axis (the rod lies behind the
-  // right link in the plate). It is one extrusion of that drawn end outline.
-  const crossheadLow = vesselAxisZ - 0.5 * s;
+  // right link in the plate). The drawn capped outline is only its outer
+  // end; behind it a slim round crossbar runs back to the rod (p96; a
+  // 1.32-deep block of the cap's section read as a slab in rotated views).
   const crossheadHigh = 0.29;
+  const crossheadCapLow = crossheadHigh - 0.18;
   const housingGeometry = new THREE.ExtrudeGeometry(housingShape, {
     bevelEnabled: false,
     curveSegments: 16,
-    depth: crossheadHigh - crossheadLow,
+    depth: crossheadHigh - crossheadCapLow,
   });
-  housingGeometry.translate(0, 0, crossheadLow);
+  housingGeometry.translate(0, 0, crossheadCapLow);
   housingGeometry.deleteAttribute('uv');
   const crossheadHousing = new THREE.Mesh(housingGeometry, outputMaterial);
   crossheadHousing.userData.role = 'source-transverse-crosshead-E-with-rounded-cap';
-  const pistonRodTop = -0.55 * s;
+  const crossbarRadius = 0.29 * s;
+  const crossbarLow = vesselAxisZ - crossbarRadius;
+  const crossbarHigh = crossheadCapLow + 0.02;
+  const crossheadBar = cylinderAlongZ(crossbarRadius,
+    crossbarHigh - crossbarLow, outputMaterial, 40);
+  crossheadBar.position.set(0, 0, (crossbarLow + crossbarHigh) / 2);
+  crossheadBar.userData.role =
+    'round-transverse-crossbar-from-cap-E-to-piston-rod';
+  const pistonRodTop = 0;
   const pistonRodBottom = -6.45 * s;
   const pistonRod = new THREE.Mesh(new THREE.CylinderGeometry(pistonRodRadius,
     pistonRodRadius, pistonRodTop - pistonRodBottom, 24), outputMaterial);
@@ -1676,7 +1708,7 @@ function sideLeverMarineParallelMotion(movement) {
   const pistonAnchor = new THREE.Object3D();
   pistonAnchor.position.set(0, pistonRodBottom, vesselAxisZ);
   pistonAnchor.userData.role = 'analytic-hidden-piston-rod-end';
-  crossheadOutput.add(crossheadHousing, pistonRod, crossheadAnchor,
+  crossheadOutput.add(crossheadHousing, crossheadBar, pistonRod, crossheadAnchor,
     pistonAnchor);
   const outputParts = {
     anchor: crossheadAnchor,

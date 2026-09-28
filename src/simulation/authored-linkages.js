@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { smoothShadeExtrusion } from './smooth-extrusion.js';
 import { makeBoredScissorLink } from './bored-scissor-link.js';
 import { groundBlock } from './ground-block.js';
+import { makeSeeThrough } from './see-through-part.js';
 import { plate, poly, circle, polygonClipping as clip } from './finite-plate-geometry.js';
 import {
   PALETTE,
@@ -169,8 +170,12 @@ function lazyTongsRectilinearAmplifier() {
     + handleRingTubeRadius;
   const minimumCriticalRingClearance = minimumCellWidth
     - fixedBearingOuterRadius - handleRingOuterRadius;
-  const pedestalFrontZ = -0.72;
-  const pedestalDepth = 0.54;
+  // Brown dots the tongs' links where they pass behind the post, so the post
+  // stands in front of the whole linkage, on its own plane: its back face
+  // clears the input clevis's front cap (z 0.695) and the pin rings. The
+  // name is kept for the post's centre depth.
+  const pedestalDepth = 0.30;
+  const pedestalFrontZ = 0.74 + pedestalDepth / 2;
   const fixedBaseY = -(sourceBaseY - sourceFixedCenterPivot.y)
     * sourceScale;
   const pedestalWidth = (sourcePedestalRightX - sourcePedestalLeftX)
@@ -651,8 +656,16 @@ function lazyTongsRectilinearAmplifier() {
   // ahead of it. Only this pin is fixed; the two crossing links turn on it.
   const fixedShaft = fixedCenterPin.userData.blocks.shaft;
   fixedShaft.geometry.dispose();
-  fixedShaft.geometry = new THREE.CylinderGeometry(pinRadius, pinRadius, 1.45, 28);
-  fixedShaft.position.z = pinSpan / 2 - 1.45 / 2;
+  // The pin runs from behind the rear link plane forward through both link
+  // planes into the post, and its retaining ring and cap sit on the post's
+  // front face, where Brown draws the pin head.
+  const postFrontFaceZ = pedestalFrontZ + pedestalDepth / 2;
+  const fixedShaftBack = -pinSpan / 2;
+  const fixedShaftFront = postFrontFaceZ + 0.012;
+  fixedShaft.geometry = new THREE.CylinderGeometry(pinRadius, pinRadius, fixedShaftFront - fixedShaftBack, 28);
+  fixedShaft.position.z = (fixedShaftFront + fixedShaftBack) / 2;
+  fixedCenterPin.userData.blocks.frontRing.position.z = postFrontFaceZ + 0.018;
+  fixedCenterPin.userData.blocks.frontCap.position.z = postFrontFaceZ + 0.025;
 
   // The engraving has one plain, narrow pedestal, without lateral braces.
   for (const extra of [leftGusset, rightGusset, bearingBlock, fixedBearingRing]) extra.visible = false;
@@ -661,6 +674,9 @@ function lazyTongsRectilinearAmplifier() {
   // rather than ending the post in the air.
   baseFoot.geometry = new THREE.BoxGeometry(pedestalWidth * 3.4, 0.10, pedestalDepth + 0.5);
   baseFoot.position.y = fixedBaseY - .05;
+  // The post is the foreground part that hides the tongs, so it takes the
+  // shared see-through style and the pinned joint and links read through it.
+  makeSeeThrough(pedestal);
 
   const linkageGroup = new THREE.Group();
   linkageGroup.userData.role = 'ten-member-four-bay-lazy-tongs-linkage';
@@ -802,7 +818,7 @@ function lazyTongsRectilinearAmplifier() {
   rightInputAssembly.userData.stroke = inputStroke;
 
   const cameraEnvelope = new THREE.Mesh(
-    new THREE.BoxGeometry(9.45, 4.72, 1.55),
+    new THREE.BoxGeometry(9.45, 4.72, 1.95),
     new THREE.MeshBasicMaterial({
       color: PALETTE.paper,
       colorWrite: false,
@@ -811,7 +827,7 @@ function lazyTongsRectilinearAmplifier() {
       transparent: true,
     }),
   );
-  cameraEnvelope.position.set(-1.56, -0.48, -0.08);
+  cameraEnvelope.position.set(-1.56, -0.48, 0.12);
   cameraEnvelope.userData.cameraFramingEnvelope = true;
   cameraEnvelope.userData.role = 'invisible-full-lazy-tongs-motion-envelope';
 
@@ -1851,14 +1867,25 @@ function rockingBeamTieRodFlywheelMotion() {
   beamAssembly.add(beamRotor);
   beamAssembly.userData.rotor = beamRotor;
   // Brown draws a one-armed beam: a rounded left end concentric with the
-  // upright rod's pin, widening (about 1.4x) to a squared right end that
-  // carries the fixed (hatched) shaft. The left end is a semicircle of radius
-  // 0.26, 1.3x the pin's 0.199 retaining ring, so the ring sits inside it.
-  // The kinematic pivot and 13-unit arm are unchanged.
+  // upright rod's pin, widening (about 1.4x) to the right end that carries
+  // the fixed (hatched) shaft, where Brown breaks the bar off just past the
+  // shaft's boss. Both ends are circular arcs concentric with their pins
+  // (radius 0.26 at the rod pin, 1.3x its 0.199 retaining ring; 0.36 at the
+  // pivot, the beam's full half-width), joined by the two common tangents.
+  // The right end lies inside the former square end (x 0.40), so no swept
+  // clearance changes. The kinematic pivot and 13-unit arm are unchanged.
+  const beamOutline = (() => {
+    const [r0, r1, d] = [.26, .36, beamRadius];
+    // Common external tangent of circle (-d, r0) and circle (0, r1).
+    const alpha = Math.acos((r1 - r0) / d);
+    const pts = [
+      ...arcSamples([0, 0], r1, -alpha, alpha),
+      ...arcSamples([-d, 0], r0, alpha, Math.PI * 2 - alpha),
+    ];
+    return poly(pts);
+  })();
   const beamBody = new THREE.Mesh(
-    plate(clip.difference(clip.union(
-      poly([[-beamRadius,.26],[.40,.36],[.40,-.36],[-beamRadius,-.26]]),
-      poly(circle([-beamRadius,0],.26,96))),
+    plate(clip.difference(beamOutline,
       ...[-beamRadius,0].map(x => poly(circle([x,0],.108,64)))),
     -beamDepth / 2, beamDepth / 2),
     driverMaterial,

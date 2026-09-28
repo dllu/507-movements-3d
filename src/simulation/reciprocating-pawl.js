@@ -9,10 +9,10 @@ export function makeReciprocatingPawlRatchet(){
   for(const name of ['wheel','bar','movingPawl','holdingPawl','rod','fixed']){
     blocks[name]=new THREE.Group();root.add(blocks[name]);
   }
-  // Brown crops rod C just below the wheel. It runs on straight past his
-  // crop by ROD_RUN_ON and ends in the same rounded end (p62), so the rod is
-  // whole when the view is turned; its bottom run lies outside the fit.
-  const ROD_RUN_ON=1;
+  // Rod C ends in its rounded end just below the wheel, where Brown draws
+  // it (a whole pull link, not a broken-off rod). p96: the old run-on of 1
+  // unit made it three times too long and ran it out of the default frame.
+  const ROD_RUN_ON=0;
   for(const descriptor of profile.parts){
     const d=descriptor.name==='rodBody'?{...descriptor.shape,polygons:descriptor.shape.polygons.map(rings=>rings.map(
       (ring,index)=>index?ring:ring.map(([x,y])=>[x,y<-.5?y-ROD_RUN_ON:y])))}:descriptor.shape;let geometry;
@@ -38,7 +38,7 @@ export function makeReciprocatingPawlRatchet(){
   root.userData={parts,families,blocks,profile,motion,geometry:p,mass:profile.mass,stateAtTime:motion.atTime,
     mechanism:'reciprocating-rod-vibrating-pawl-ratchet-index',fidelity:'authored',reconstructionStatus:'rebuilt',
     hideGround:true,cameraFov:8,
-    // Brown's plate framing: the swept mechanism with rod C to his crop.
+    // Brown's plate framing: the swept mechanism with rod C to its drawn end.
     cameraFitBounds:new THREE.Box3(new THREE.Vector3(-1.1018,-1.5175,-.24),new THREE.Vector3(1.0314,1.0278,.173)),fullCameraDirection:new THREE.Vector3(0,0,10),
     shadowCameraHalfExtent:2.5,shadowBias:-.00003,shadowNormalBias:.005,
     animationTiming:{authoredCyclePeriod:p.period},minimumDisplayCycleSeconds:p.period,

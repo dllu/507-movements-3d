@@ -20,6 +20,9 @@ export function makeCascadedTraverseGeometry({middleShift=.5,addendum=.8,dedendu
  for(const[n,p]of Object.entries(position)){blocks[n]=new THREE.Group();blocks[n].position.set(...p,0);root.add(blocks[n]);}
  const add=(name,g,family,color)=>{const mesh=new THREE.Mesh(g,matte(color,{metalness:.15,roughness:.6}));mesh.name=name;blocks[family].add(mesh);parts[name]=mesh;families[name]=family;return mesh;},translated=(g,p)=>g.translate(...p,0);
  const colors={left:PALETTE.driven,middle:PALETTE.brass,right:PALETTE.driver,transfer:PALETTE.driven};
+ // p96: the connecting rods are steel grey, so a rod crossing the face of
+ // its own gear still reads apart from the crank (they shared its colour).
+ const rodColor=PALETTE.muted;
  for(const n of ['left','middle','right']){
   const shaft=source.circles[n+'Shaft'].radius/100,hub=source.circles[n+'Hub'].radius/100;
   const g=roundedRackGear({teeth:teeth[n],module,depth:.18,boreRadius:shaft,addendum,dedendum,profileShift:n==='middle'?middleShift:-middleShift,pressureAngle,tipRadius:tipRadius*module,samples,cutterSteps});g.rotateZ(phases[n]);g.translate(0,0,-.09);
@@ -32,7 +35,7 @@ export function makeCascadedTraverseGeometry({middleShift=.5,addendum=.8,dedendu
   const quad=[...edgeOffsets.map(t=>a.map((v,i)=>v+t*normal[i])),...[...edgeOffsets].reverse().map(t=>b.map((v,i)=>v+t*normal[i]))],far=toLocal(b),eye=source.circles[n==='transferRod'?'lowerCenterEye':n.replace('Rod','Eye')].radius/100;
   const z=n==='leftRod'||n==='transferRod'?.44:.08,endRadius=source.circles[to].radius/100+.045;
   const shape=clip.difference(clip.union(poly(quad.map(toLocal)),poly(circle([0,0],eye,128)),poly(circle(far,endRadius,128))),poly(circle([0,0],source.circles[from].radius/100+.0015,96)),poly(circle(far,source.circles[to].radius/100+.0015,96)));
-  add(n,plate(shape,z,z+.10),n,colors[n.replace('Rod','')]);add(n+'Eye',ring(source.circles[from].radius/100+.0015,eye,z+.10,z+.14,128),n,colors[n.replace('Rod','')]);f.rodEnds[n]=far;
+  add(n,plate(shape,z,z+.10),n,rodColor);add(n+'Eye',ring(source.circles[from].radius/100+.0015,eye,z+.10,z+.14,128),n,rodColor);f.rodEnds[n]=far;
  }
  const paths={lower:new THREE.Shape(),upper:new THREE.Shape()},lo=paths.lower,hi=paths.upper;
  lo.moveTo(205,201);lo.bezierCurveTo(203,194,208,189,216,188);lo.bezierCurveTo(251,180,306,186,338,192);lo.bezierCurveTo(356,192,356,214,338,216);lo.bezierCurveTo(299,220,248,219,216,214);lo.bezierCurveTo(208,214,204,210,205,201);

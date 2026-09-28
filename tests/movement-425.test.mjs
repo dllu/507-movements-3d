@@ -83,3 +83,21 @@ test('movement 425 steam keeps its own per-frame normals after the load-time nor
   }
   disposeObject3D(model.root);
 });
+
+test('425 neck steam stops below the open mouths (p96)', async () => {
+  const THREE = await import('three');
+  const model = createMovementModel(catalog.movements[424]);
+  for (const t of [0, 0.3, 0.7]) {
+    model.update(t * 4);
+    model.root.updateMatrixWorld(true);
+    const { steam, casing } = model.root.userData.blocks;
+    const mouth = 10.4 * model.root.scale.y;
+    for (const neck of [steam.inlet, steam.eduction]) {
+      if (!neck.visible || !neck.geometry.attributes.position?.count) continue;
+      const top = new THREE.Box3().setFromObject(neck).max.y;
+      assert.ok(top < mouth - 0.7 * model.root.scale.y, `${neck.userData.role} ${top} below ${mouth}`);
+    }
+    assert.ok(casing);
+  }
+  disposeObject3D(model.root);
+});

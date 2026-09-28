@@ -298,7 +298,11 @@ function oscillatingDrumRatchet(movement) {
   const flywheelRadius = 1.34;
   const ratchetToothCount = drumContact.toothCount;
   const ratchetToothPitch = FULL_TURN / ratchetToothCount;
-  const counterweightNominalFreeLength = 1.55;
+  // p96: Brown's left cord runs on below the ball as a hand-pull tail about
+  // 2/3 of its upper run; the ball rides 0.88 above the cord's end (it was
+  // 0.28) at unchanged heights.
+  const counterweightTailBelowBall = 0.88;
+  const counterweightNominalFreeLength = 1.55 + counterweightTailBelowBall - 0.28;
   const cordZ = 0.67;
   // Both cords lie on their sectors' rims in the beam's plane; the drive
   // cord crosses forward to the drum's groove along its vertical run.
@@ -399,7 +403,7 @@ function oscillatingDrumRatchet(movement) {
       beamAngle,
       beamAngularSpeed,
       carrierCatching,
-      counterweightCenterY: counterweightCord.tailY + 0.28,
+      counterweightCenterY: counterweightCord.tailY + counterweightTailBelowBall,
       counterweightCord,
       cycleTime,
       driveCord,

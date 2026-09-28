@@ -96,22 +96,75 @@ function crossedSlotHole(halfLength, halfWidth) {
   return hole;
 }
 
-function crossedSlotDiskGeometry(radius, halfLength, halfWidth, depth) {
+function crossedSlotDiskGeometry(radius, halfLength, halfWidth, depth, floorDepth = 0) {
+  // One closed solid: the front plate carries the cross-shaped opening (the
+  // union of the two square-ended slots) and, when floorDepth > 0, a plain
+  // back plate closes the slots as grooves. The front plate's back cap is
+  // dropped, so no pair of faces is coincident where the two meet.
+  const floorTop = -depth / 2 + floorDepth;
   const shape = new THREE.Shape();
   shape.absarc(0, 0, radius, 0, FULL_TURN, false);
   shape.holes.push(crossedSlotHole(halfLength, halfWidth));
-  const geometry = centeredExtrusion(shape, depth, 0);
+  let geometry = centeredExtrusion(shape, depth - floorDepth, 0);
+  geometry.translate(0, 0, (depth / 2 + floorTop) / 2);
+  if (floorDepth > 0) {
+    const ring = geometry;
+    const keep = [];
+    const position = ring.attributes.position;
+    for (let vertex = 0; vertex + 2 < position.count; vertex += 3) {
+      const onBack = [0, 1, 2].every((k) => Math.abs(position.getZ(vertex + k) - floorTop) < 1e-6);
+      if (!onBack) keep.push(vertex);
+    }
+    // The union's surface: the plate's walls and front cap, the back plate's
+    // rim and back cap (its front cap is interior) and the cross-shaped groove
+    // floor, whose corners are the hole walls' own vertices.
+    const back = new THREE.Shape();
+    back.absarc(0, 0, radius, 0, FULL_TURN, false);
+    const backGeometry = centeredExtrusion(back, floorDepth, 0);
+    backGeometry.translate(0, 0, -depth / 2 + floorDepth / 2);
+    const backPosition = backGeometry.attributes.position;
+    const backVertices = Array.from({ length: backPosition.count / 3 }, (_, index) => index * 3)
+      .filter((vertex) => ![0, 1, 2].every((k) => Math.abs(backPosition.getZ(vertex + k) - floorTop) < 1e-6));
+    const positions = [];
+    const normals = [];
+    for (const [source, vertices] of [[ring, keep], [backGeometry, backVertices]]) {
+      const p = source.attributes.position, n = source.attributes.normal;
+      for (const vertex of vertices) for (let k = 0; k < 3; k += 1) {
+        positions.push(p.getX(vertex + k), p.getY(vertex + k), p.getZ(vertex + k));
+        normals.push(n.getX(vertex + k), n.getY(vertex + k), n.getZ(vertex + k));
+      }
+    }
+    const bodyVertexCount = positions.length / 3;
+    const floorOutline = crossedSlotHole(halfLength, halfWidth).getPoints();
+    if (floorOutline.length > 1 && floorOutline[0].equals(floorOutline.at(-1))) floorOutline.pop();
+    const floorContour = THREE.ShapeUtils.isClockWise(floorOutline) ? floorOutline.slice().reverse() : floorOutline;
+    for (const triangle of THREE.ShapeUtils.triangulateShape(floorContour, [])) {
+      for (const index of triangle) {
+        positions.push(floorContour[index].x, floorContour[index].y, floorTop);
+        normals.push(0, 0, 1);
+      }
+    }
+    ring.dispose();
+    backGeometry.dispose();
+    geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
+    geometry.addGroup(0, bodyVertexCount, 0);
+    geometry.addGroup(bodyVertexCount, positions.length / 3 - bodyVertexCount, 1);
+  }
   // The cap triangulation bridges the cross-shaped hole to the rim with
   // near-degenerate slivers whose computed normals are noise; they showed as
   // a lone seam line across the flat faces. Cap triangles are exactly flat.
   const position = geometry.attributes.position, normal = geometry.attributes.normal;
   for (let vertex = 0; vertex + 2 < position.count; vertex += 3) {
     const z = position.getZ(vertex);
-    if (Math.abs(Math.abs(z) - depth / 2) > 1e-6
-      || position.getZ(vertex + 1) !== z || position.getZ(vertex + 2) !== z) continue;
-    for (let k = 0; k < 3; k += 1) normal.setXYZ(vertex + k, 0, 0, Math.sign(z));
+    if (position.getZ(vertex + 1) !== z || position.getZ(vertex + 2) !== z) continue;
+    const sign = Math.abs(z - depth / 2) < 1e-6 || Math.abs(z - floorTop) < 1e-6 ? 1 : -1;
+    for (let k = 0; k < 3; k += 1) normal.setXYZ(vertex + k, 0, 0, sign);
   }
   normal.needsUpdate = true;
+  geometry.computeBoundingBox();
+  geometry.computeBoundingSphere();
   return geometry;
 }
 
@@ -694,16 +747,23 @@ function snyderDoubleStrokeSlotDrive(movement) {
   diskAssembly.userData.axis = Z_AXIS.clone();
   diskAssembly.userData.role =
     'rotating-disk-A-with-two-perpendicular-through-slots-a-a';
+  // The slot bottoms are the back plate of disk A's own solid (p96): one
+  // closed body, no separate recess plates or wall strips.
+  const slotFloorDepth = 0.03;
+  const slotFloorMaterial = diskMaterial.clone();
+  slotFloorMaterial.color.multiplyScalar(0.8);
   const slottedDisk = new THREE.Mesh(
     crossedSlotDiskGeometry(
       diskRadius,
       slotHalfLength,
       slotHalfWidth,
       diskDepth,
+      slotFloorDepth,
     ),
-    diskMaterial,
+    [diskMaterial, slotFloorMaterial],
   );
-  slottedDisk.userData.actualThroughSlots = true;
+  slottedDisk.userData.actualThroughSlots = false;
+  slottedDisk.userData.slotFloorZ = -diskDepth / 2 + slotFloorDepth;
   slottedDisk.userData.role =
     'disk-A-actual-crossed-through-slot-body';
   const diskRim = new THREE.Mesh(
@@ -716,44 +776,8 @@ function snyderDoubleStrokeSlotDrive(movement) {
   diskRim.visible = false;
   diskRim.userData.retiredInkOutline = true;
 
-  const slotFloors = [0, Math.PI / 2].map((angle, index) => {
-    // A plain slot bottom in the disk's own material, its edges let into
-    // the slot walls: the slots read as grooves in A rather than openings
-    // onto a flat bright floor.
-    const floor = new THREE.Mesh(
-      new THREE.BoxGeometry(
-        slotHalfLength * 2 + 0.02,
-        slotHalfWidth * 2 + 0.02,
-        0.025,
-      ),
-      diskMaterial,
-    );
-    floor.rotation.z = angle;
-    floor.position.z = -diskDepth / 2 + 0.016;
-    floor.userData.role =
-      `dark-recess-behind-through-slot-${index + 1}`;
-    floor.visible = true;
-    diskAssembly.add(floor);
-    return floor;
-  });
+  const slotFloors = [];
   const slotEdges = [];
-  for (const angle of [0, Math.PI / 2]) for (const side of [-1, 1]) {
-    const edge = new THREE.Group();
-    edge.rotation.z = angle;
-    edge.userData.role = 'cross-slot-machined-edge';
-    // Black lining strips over the slot walls read as outlines (and
-    // z-fought into a ladder); the walls are the disk's own faces.
-    edge.visible = false;
-    for (const direction of [-1, 1]) {
-      const strip = new THREE.Mesh(new THREE.BoxGeometry(
-        slotHalfLength - slotHalfWidth, 0.024, diskDepth + 0.025), edgeMaterial);
-      strip.position.set(direction * (slotHalfLength + slotHalfWidth) / 2,
-        side * (slotHalfWidth + 0.012), 0.004);
-      edge.add(strip);
-    }
-    diskAssembly.add(edge);
-    slotEdges.push(edge);
-  }
   const inputShaft = cylinderAlongZ(0.15, 0.86, edgeMaterial, 36);
   inputShaft.position.z = -0.53;
   inputShaft.userData.role = 'central-input-shaft-behind-crossed-slots';

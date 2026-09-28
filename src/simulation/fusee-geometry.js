@@ -1,136 +1,131 @@
 import * as THREE from 'three';
+import { fuseeTierPath } from './fusee-motion.js';
 
-// Cut a spiral ledge along the same conical helix as the chain pins.
-// Patches are clipped at the real top/bottom planes before triangulation,
-// leaving a continuous groove and its open ends instead of a raised wire.
-export function groovedFuseeGeometry(parameters, {
-  angularSegments = 512, grooveHalfWidth = 0.096,
-  floorOffset = -0.021, topRadius = 0.555, bottomRadius = 1.18,
-  bodyTop = parameters.fuseeZTop + 0.05,
-  bodyBottom = parameters.fuseeZBottom - 0.05,
-} = {}) {
-  const p = parameters, height = p.fuseeZTop - p.fuseeZBottom;
-  const radiusChange = p.fuseeBottomRadius - p.fuseeTopRadius;
-  const grooveAngle = 2 * Math.PI * p.grooveTurns;
-  const halfProgress = grooveHalfWidth / height;
-  const ends = [(p.fuseeZTop - bodyTop) / height, (p.fuseeZTop - bodyBottom) / height];
-  const ceilingSlope = (bottomRadius - topRadius) / (ends[1] - ends[0]);
-  const ceiling = (u) => topRadius + ceilingSlope * (u - ends[0]);
-  const positions = [], normals = [], capEdges = [[], []];
-  const pointAt = (v) => {
-    const r = v.r;
-    return new THREE.Vector3(r * Math.cos(v.theta), r * Math.sin(v.theta), p.fuseeZTop - height * v.u);
-  };
-  const normalAt = (v, wallSign, atCeiling) => {
-    const r = v.r;
-    if (!wallSign) {
-      if (atCeiling) return new THREE.Vector3(Math.cos(v.theta), Math.sin(v.theta), ceilingSlope / height).normalize();
-      const slope = radiusChange / (grooveAngle * r);
-      return new THREE.Vector3(Math.cos(v.theta) + slope * Math.sin(v.theta),
-        Math.sin(v.theta) - slope * Math.cos(v.theta), 0).normalize();
+// Brown's stepped fusee as one closed turned solid: flat cylindrical tiers of
+// decreasing radius over a base flange. The chain sits on each tier's shelf
+// against the riser above it. Where the chain climbs to the next tier, the
+// tier carries a short spiral lobe that follows the chain outward over the
+// shelf (a constant gap inside the chain line) and ends in a radial step once
+// the chain has dropped below the shelf.
+export function steppedFuseeGeometry(parameters, { angularSegments = 1440 } = {}) {
+  const p = parameters;
+  const path = fuseeTierPath(p);
+  const tierCount = p.tierChainRadii.length;
+  const risers = p.tierChainRadii.map((radius) => radius - p.riserGap);
+  const fullTurn = 2 * Math.PI;
+  const lobeEnds = p.transitionStarts.map((start, k) => {
+    // Hold the lobe until the descending chain's top is below the shelf.
+    const drop = p.tierChainHeights[k] - p.tierShelves[k] + 0.037 + 0.002;
+    let low = 0, high = 1;
+    for (let i = 0; i < 60; i += 1) {
+      const middle = (low + high) / 2;
+      const height = path.at(start + p.riseAngle + middle * p.descentAngle).height;
+      if (p.tierChainHeights[k] - height < drop) low = middle; else high = middle;
     }
-    return new THREE.Vector3(Math.sin(v.theta) / (grooveAngle * r),
-      -Math.cos(v.theta) / (grooveAngle * r), -1 / height).multiplyScalar(wallSign).normalize();
+    return start + p.riseAngle + high * p.descentAngle;
+  });
+  // Plan outline of tier k at local angle phi (0..2pi).
+  const lobeRadiusAt = (k, phi) => {
+    if (k >= p.transitionStarts.length) return risers[k];
+    const start = p.transitionStarts[k], end = lobeEnds[k];
+    const relative = THREE.MathUtils.euclideanModulo(phi - start, fullTurn);
+    if (relative > end - start) return risers[k];
+    const chain = path.at(start + relative).radius;
+    return Math.max(risers[k], chain - p.lobeGap);
   };
+  // Every outline shares one angle list, so shelves are simple strips between
+  // neighbouring outlines. Each lobe ends in a (very nearly) radial step
+  // between two listed angles a small fraction of a segment apart.
+  const step = fullTurn / angularSegments;
+  const dropAngles = lobeEnds.map((end) => THREE.MathUtils.euclideanModulo(end, fullTurn));
+  const angles = [];
+  for (let i = 0; i < angularSegments; i += 1) {
+    const phi = step * i;
+    if (dropAngles.some((drop) => Math.abs(THREE.MathUtils.euclideanModulo(phi - drop + step / 2, fullTurn) - step / 2) < 0.45 * step
+      || Math.abs(THREE.MathUtils.euclideanModulo(phi - drop - 0.3 * step + step / 2, fullTurn) - step / 2) < 0.45 * step)) continue;
+    angles.push(phi);
+  }
+  for (const drop of dropAngles) angles.push(drop, THREE.MathUtils.euclideanModulo(drop + 0.3 * step, fullTurn));
+  angles.sort((a, b) => a - b);
+  const outlines = [];
+  for (let k = 0; k <= tierCount; k += 1) {
+    const corners = new Set();
+    if (k < lobeEnds.length) {
+      corners.add(dropAngles[k]);
+      corners.add(THREE.MathUtils.euclideanModulo(dropAngles[k] + 0.3 * step, fullTurn));
+    }
+    outlines.push(angles.map((phi) => {
+      const radius = k < tierCount ? lobeRadiusAt(k, phi) : p.baseRadius;
+      return { phi, radius, corner: corners.has(phi),
+        xy: new THREE.Vector2(radius * Math.cos(phi), radius * Math.sin(phi)) };
+    }));
+  }
+  const tops = [p.tierTop, ...p.tierShelves];
+  const bottoms = [...p.tierShelves, p.baseBottom];
+
+  const positions = [], normals = [];
   const emit = (a, b, c, na, nb, nc) => {
+    // Orient by the stored (single-precision) coordinates, so near-straight
+    // cap slivers keep the winding their normals claim after rounding.
+    for (const v of [a, b, c]) v.set(Math.fround(v.x), Math.fround(v.y), Math.fround(v.z));
     const cross = new THREE.Vector3().crossVectors(b.clone().sub(a), c.clone().sub(a));
     if (cross.lengthSq() < 1e-24) return;
     if (cross.dot(na.clone().add(nb).add(nc)) < 0) { [b, c] = [c, b]; [nb, nc] = [nc, nb]; }
     for (const v of [a, b, c]) positions.push(v.x, v.y, v.z);
     for (const n of [na, nb, nc]) normals.push(n.x, n.y, n.z);
   };
-  const clip = (polygon, limit, keepAbove, coordinate = (v) => v.u) => {
-    const output = [];
-    for (let i = 0; i < polygon.length; i += 1) {
-      const a = polygon[i], b = polygon[(i + 1) % polygon.length];
-      const va = coordinate(a), vb = coordinate(b);
-      const insideA = keepAbove ? va >= limit : va <= limit;
-      const insideB = keepAbove ? vb >= limit : vb <= limit;
-      if (insideA) output.push(a);
-      if (insideA !== insideB) {
-        const fraction = (limit - va) / (vb - va);
-        output.push({ u: THREE.MathUtils.lerp(a.u, b.u, fraction), theta: THREE.MathUtils.lerp(a.theta, b.theta, fraction),
-          r: THREE.MathUtils.lerp(a.r, b.r, fraction) });
-      }
+  // Side walls: smooth radial shading along the turned faces, flat on the
+  // lobe's radial step.
+  outlines.forEach((outline, k) => {
+    const count = outline.length;
+    const wallNormal = (i, j) => {
+      const a = outline[i].xy, b = outline[j].xy;
+      return new THREE.Vector3(b.y - a.y, a.x - b.x, 0).normalize();
+    };
+    for (let i = 0; i < count; i += 1) {
+      const j = (i + 1) % count;
+      const a = outline[i], b = outline[j];
+      const face = wallNormal(i, j);
+      const stepFace = a.corner && b.corner;
+      const vertexNormal = (index) => {
+        const point = outline[index];
+        if (stepFace || point.corner) return face;
+        const previous = (index - 1 + count) % count, next = (index + 1) % count;
+        return wallNormal(previous, index).add(wallNormal(index, next)).normalize();
+      };
+      const na = vertexNormal(i), nb = vertexNormal(j);
+      const a0 = new THREE.Vector3(a.xy.x, a.xy.y, bottoms[k]), a1 = new THREE.Vector3(a.xy.x, a.xy.y, tops[k]);
+      const b0 = new THREE.Vector3(b.xy.x, b.xy.y, bottoms[k]), b1 = new THREE.Vector3(b.xy.x, b.xy.y, tops[k]);
+      emit(a0, b0, b1, na, nb, nb);
+      emit(a0, b1, a1, na, nb, na);
     }
-    return output;
+  });
+  const up = new THREE.Vector3(0, 0, 1), down = new THREE.Vector3(0, 0, -1);
+  const at = (point, z) => new THREE.Vector3(point.xy.x, point.xy.y, z);
+  const disk = (outline, z, normal) => {
+    const center = new THREE.Vector3(0, 0, z);
+    outline.forEach((point, i) => {
+      emit(center.clone(), at(point, z), at(outline[(i + 1) % outline.length], z), normal, normal, normal);
+    });
   };
-  const emitPatch = (polygon, wallSign, atCeiling = false) => {
-    if (polygon.length < 3) return;
-    const points = polygon.map(pointAt), ns = polygon.map((v) => normalAt(v, wallSign, atCeiling));
-    for (let i = 1; i + 1 < points.length; i += 1) emit(points[0], points[i], points[i + 1], ns[0], ns[i], ns[i + 1]);
-    for (let i = 0; i < polygon.length; i += 1) {
-      const next = (i + 1) % polygon.length;
-      for (const end of [0, 1]) {
-        if (Math.abs(polygon[i].u - ends[end]) < 1e-12 && Math.abs(polygon[next].u - ends[end]) < 1e-12
-          && points[i].distanceToSquared(points[next]) > 1e-20) {
-          capEdges[end].push([points[i], points[next]]);
-        }
-      }
-    }
+  const shelf = (inner, outer, z) => {
+    inner.forEach((point, i) => {
+      const j = (i + 1) % inner.length;
+      emit(at(point, z), at(outer[i], z), at(outer[j], z), up, up, up);
+      emit(at(point, z), at(outer[j], z), at(inner[j], z), up, up, up);
+    });
   };
-  const patch = (corners, wallSign = 0) => {
-    const polygon = clip(clip(corners, ends[0], true), ends[1], false);
-    if (polygon.length < 3) return;
-    const difference = (v) => v.r - ceiling(v.u);
-    emitPatch(clip(polygon, 0, false, difference), wallSign);
-    if (!wallSign && polygon.some((v) => difference(v) > 1e-12)) {
-      emitPatch(clip(polygon, 0, true, difference).map((v) => ({ ...v, r: ceiling(v.u) })), 0, true);
-    }
-  };
-  const vertex = (theta, u, center) => ({ theta, u,
-    r: p.fuseeTopRadius + radiusChange * center + floorOffset });
-  for (let segment = 0; segment < angularSegments; segment += 1) {
-    const a = 2 * Math.PI * segment / angularSegments, b = 2 * Math.PI * (segment + 1) / angularSegments;
-    for (let turn = -2; turn <= Math.ceil(p.grooveTurns) + 1; turn += 1) {
-      const ua = turn / p.grooveTurns + a / grooveAngle;
-      const ub = turn / p.grooveTurns + b / grooveAngle;
-      const nextA = ua + 1 / p.grooveTurns, nextB = ub + 1 / p.grooveTurns;
-      patch([vertex(a, ua - halfProgress, ua), vertex(b, ub - halfProgress, ub),
-        vertex(b, ub + halfProgress, ub), vertex(a, ua + halfProgress, ua)]);
-      patch([vertex(a, ua + halfProgress, nextA), vertex(b, ub + halfProgress, nextB),
-        vertex(b, nextB - halfProgress, nextB), vertex(a, nextA - halfProgress, nextA)]);
-      patch([vertex(a, ua + halfProgress, ua), vertex(b, ub + halfProgress, ub),
-        vertex(b, ub + halfProgress, nextB), vertex(a, ua + halfProgress, nextA)], -1);
-    }
-  }
-  for (const end of [0, 1]) {
-    const nodes = new Map();
-    const key = (point) => `${Math.round(point.x * 1e8)},${Math.round(point.y * 1e8)}`;
-    for (const [a, b] of capEdges[end]) {
-      const ka = key(a), kb = key(b);
-      if (ka === kb) continue;
-      if (!nodes.has(ka)) nodes.set(ka, { point: a, neighbors: new Set() });
-      if (!nodes.has(kb)) nodes.set(kb, { point: b, neighbors: new Set() });
-      nodes.get(ka).neighbors.add(kb);
-      nodes.get(kb).neighbors.add(ka);
-    }
-    const contour = [], first = nodes.keys().next().value;
-    let current = first, previous = null;
-    do {
-      const node = nodes.get(current);
-      if (node.neighbors.size !== 2) throw new Error('Fusee cap boundary is not a closed loop');
-      contour.push(new THREE.Vector2(node.point.x, node.point.y));
-      const next = [...node.neighbors].find((neighbor) => neighbor !== previous);
-      previous = current;
-      current = next;
-      if (contour.length > nodes.size) throw new Error('Fusee cap boundary repeats');
-    } while (current !== first);
-    if (contour.length !== nodes.size) throw new Error('Fusee cap boundary has disconnected pieces');
-    const triangles = THREE.ShapeUtils.triangulateShape(contour, []);
-    const z = end === 0 ? bodyTop : bodyBottom;
-    const normal = new THREE.Vector3(0, 0, end === 0 ? 1 : -1);
-    for (const triangle of triangles) {
-      const points = triangle.map((i) => new THREE.Vector3(contour[i].x, contour[i].y, z));
-      emit(...points, normal, normal, normal);
-    }
-  }
+  disk(outlines[0], tops[0], up);
+  for (let k = 0; k < tierCount; k += 1) shelf(outlines[k], outlines[k + 1], tops[k + 1]);
+  disk(outlines[tierCount], bottoms[tierCount], down);
+
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
   geometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
   geometry.computeBoundingBox();
   geometry.computeBoundingSphere();
-  geometry.userData = { angularSegments, grooveHalfWidth, floorOffset, topRadius, bottomRadius,
-    grooveTurns: p.grooveTurns, bodyTop, bodyBottom, machinedHelicalGroove: true };
+  geometry.userData = { angularSegments, steppedTiers: true, tierCount, risers, lobeEnds,
+    tops, bottoms, bodyTop: tops[0], bodyBottom: bottoms[tierCount], baseRadius: p.baseRadius,
+    outlineRadiusAt: (k, phi) => (k < tierCount ? lobeRadiusAt(k, phi) : p.baseRadius) };
   return geometry;
 }

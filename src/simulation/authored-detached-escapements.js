@@ -709,22 +709,37 @@ function brownDetachedEscapement(movement) {
   const barHalf = 20;
   const barOutline = (mirror) => {
     const map = ([x, y]) => fromRaster([mirror ? 523 - x : x, y]);
-    const left = barCentre.map(([x, y]) => [x - barHalf, y]);
-    const right = barCentre.map(([x, y]) => [x + barHalf, y]);
-    const pts = [...left, ...right.reverse()].map(map);
-    // A round top concentric with the band's end centre, not a square cut
-    // (the band is near vertical there, so the arc meets both edges).
+    // One even width square to the band's centre line, so both ends can
+    // be round: arcs concentric with the band's end centres, tangent to both
+    // edges (Brown's slanted break line at the foot is not reproduced).
+    const normalAt = (i) => {
+      const a = barCentre[Math.max(0, i - 1)];
+      const b = barCentre[Math.min(barCentre.length - 1, i + 1)];
+      const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
+      return [(b[1] - a[1]) / len, -(b[0] - a[0]) / len];
+    };
+    const side = (sign) => barCentre.map(([x, y], i) => {
+      const [nx, ny] = normalAt(i);
+      return [x + sign * barHalf * nx, y + sign * barHalf * ny];
+    });
+    const edgeA = side(1);
+    const edgeB = side(-1);
+    const pts = [...edgeA, ...edgeB.reverse()].map(map);
     return polygonClipping.union(
       poly(mirror ? pts.reverse() : pts),
       poly(circle(map(barCentre[0]), px(barHalf), 48)),
+      poly(circle(map(barCentre.at(-1)), px(barHalf), 48)),
     );
   };
   const webOutline = poly([
     ...quadraticPoints([66, 190], [72, 272], [130, 275]),
     ...quadraticPoints([393, 275], [451, 272], [457, 190]),
     [470, 330],
-    ...quadraticPoints([407, 456], [401, 386], [360, 385]),
-    ...quadraticPoints([163, 385], [122, 386], [116, 456]),
+    // The lower arch runs down tangent into each leg's round foot (it
+    // meets the foot circle at its inboard point), so the foot is one
+    // smooth curve with no toe or knuckle.
+    ...quadraticPoints([391, 464], [396, 392], [360, 385]),
+    ...quadraticPoints([163, 385], [127, 392], [132, 464]),
     [55, 330],
   ].map(fromRaster).reverse());
   const pendulumOutline = polygonClipping.union(barOutline(false), barOutline(true), webOutline);

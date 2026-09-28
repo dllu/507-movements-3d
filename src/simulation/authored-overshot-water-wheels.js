@@ -486,11 +486,19 @@ function overshotWaterWheel(movement) {
 
   // Brown's headrace ends just right of the wheel's crown.
   const flumeLength = 4.575;
+  // Pass 96: the headrace is one U-section extrusion (a 0.22 floor with 0.10
+  // side walls standing 0.26 above it), so the feed water runs in a channel
+  // rather than lying on a flat plank. The floor keeps the old plank's top.
+  const flumeSection = new THREE.Shape([
+    [-0.70, -0.11], [0.70, -0.11], [0.70, 0.37], [0.60, 0.37], [0.60, 0.11],
+    [-0.60, 0.11], [-0.60, 0.37], [-0.70, 0.37],
+  ].map(([u, v]) => new THREE.Vector2(u, v)));
   const flume = new THREE.Mesh(
-    new THREE.BoxGeometry(flumeLength, 0.22, 1.40),
+    new THREE.ExtrudeGeometry(flumeSection, { depth: flumeLength, bevelEnabled: false, curveSegments: 1 })
+      .translate(0, 0, -flumeLength / 2).rotateY(Math.PI / 2),
     frameMaterial,
   );
-  flume.position.set(-4.275 + flumeLength / 2, 3.43, -0.18);
+  flume.position.set(-4.275 + flumeLength / 2, 3.43, 0);
   flume.rotation.z = -0.045;
   flume.userData.role = 'fixed-top-feed-headrace-flume';
   root.add(flume);

@@ -599,3 +599,20 @@ test('movement 221 runtime binds both planes and leaves movement 507 authored', 
   disposeModel(movement507.root);
   disposeModel(model.root);
 });
+
+test('movement 221 links are broad flat two-eye bars in a steel link colour', () => {
+  const model = createMovementModel(catalog.movements[220]);
+  const links = [];
+  model.root.traverse((object) => {
+    if (object.isMesh && object.visible && object.geometry.userData.bores?.length === 2) links.push(object);
+  });
+  assert.equal(links.length, 1);
+  const radius = model.root.userData.geometry.outputPitchRadius;
+  for (const link of links) {
+    link.geometry.computeBoundingBox();
+    const box = link.geometry.boundingBox;
+    // Eyes 1.25 bar widths in radius; bar 0.15 of the gear radius wide.
+    assert.ok(Math.abs(box.max.y - 1.25 * 0.15 * radius) < 2e-3, `eye ${box.max.y}`);
+    assert.notEqual(link.material.color.getHex(), 0x252a2d);
+  }
+});

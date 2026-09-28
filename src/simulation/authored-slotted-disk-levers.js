@@ -735,9 +735,12 @@ function slottedDiskLeverRackAndWeight(movement) {
   const rack = new THREE.Group();
   rack.userData.role = 'horizontal-reciprocating-rack';
   root.add(rack);
+  // A deeper blue than the lever's sector, so the mesh at the base reads.
+  const rackMaterial = drivenMaterial.clone();
+  rackMaterial.color.multiplyScalar(0.62);
   const rackBody = new THREE.Mesh(
     new THREE.BoxGeometry(rackLength, rackBodyHeight, rackDepth),
-    drivenMaterial,
+    rackMaterial,
   );
   rackBody.position.set(
     0,
@@ -749,7 +752,7 @@ function slottedDiskLeverRackAndWeight(movement) {
   const rackToothSolid = rackToothGeometry({pitch:rackPitch,addendum:toothHeight/2,depth:rackDepth,pressureAngle:toothPressureAngle});
   const rackTeeth = [];
   for (let index = 0; index < rackToothCount; index += 1) {
-    const tooth = new THREE.Mesh(rackToothSolid, drivenMaterial);
+    const tooth = new THREE.Mesh(rackToothSolid, rackMaterial);
     tooth.position.set(
       leverPivot.x + rackToothOffsets[index] * rackPitch,
       rackPitchY,

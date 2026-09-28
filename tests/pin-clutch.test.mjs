@@ -23,7 +23,12 @@ test('052 consists of closed outward solids with a bored loose driver and a cont
     assert.ok(volume > 0); assert.ok([...edges.values()].every((count) => count === 2), `${geometry.type} closed edges`);
   });
   const { blocks: b, parts } = model.root.userData;
-  assert.equal(parts.shaft.parent, b.output.userData.rotor); assert.equal(parts.outputDisk.parent, parts.shaft.parent);
+  // Only the disk and hub slide; the shaft, end barrel and feather stay put axially.
+  assert.equal(parts.outputDisk.parent, b.output.userData.rotor); assert.equal(parts.outputHub.parent, b.output.userData.rotor);
+  for (const part of [parts.shaft, parts.knob, parts.feather]) assert.equal(part.parent, b.spindle.userData.rotor);
+  const p = model.root.userData.geometry, xs = new Set();
+  for (let i = 0; i < 64; i += 1) { model.update(p.cyclePeriod * i / 64); xs.add(b.spindle.position.x); }
+  assert.equal(xs.size, 1, 'the shaft does not slide');
   assert.equal(parts.studs.length, 2); assert.equal(parts.outputDisk.geometry.parameters.shapes.holes.length, 3);
   assert.ok(parts.driverBody.geometry.userData.profile.every(([, r]) => r > 0), 'the driver sleeve is genuinely hollow');
 });

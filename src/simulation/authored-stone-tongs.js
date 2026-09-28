@@ -293,10 +293,32 @@ function stoneLiftingTongs(movement) {
     [-1.931097, 2.879805],
     [-2.155107, 1.307302],
   ];
-  const stoneShapePoints = sourceStoneOutline.map(([x, y]) => [
-    x * sourceScale,
-    y * sourceScale,
-  ]);
+  // Pass 96: the traced outline's deep concave kinks became long grooves
+  // along the stone's depth in rotated views. Every vertex except the two
+  // bite seats (indices 0 and 11) is drawn 65% of the way out to the
+  // outline's convex hull, leaving a shallow rough-hewn wobble with Brown's
+  // silhouette and the seats where they were.
+  const hull = (() => {
+    const pts = sourceStoneOutline.map(([x, y]) => [x, y]).sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+    const cross = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+    const half = (list) => { const out = []; for (const p of list) { while (out.length >= 2 && cross(out.at(-2), out.at(-1), p) <= 0) out.pop(); out.push(p); } return out; };
+    const lower = half(pts), upper = half([...pts].reverse());
+    return [...lower.slice(0, -1), ...upper.slice(0, -1)];
+  })();
+  const towardHull = ([x, y]) => {
+    let best = null, bestDistance = Infinity;
+    hull.forEach((a, i) => {
+      const b = hull[(i + 1) % hull.length], dx = b[0] - a[0], dy = b[1] - a[1];
+      const t = THREE.MathUtils.clamp(((x - a[0]) * dx + (y - a[1]) * dy) / (dx * dx + dy * dy), 0, 1);
+      const q = [a[0] + t * dx, a[1] + t * dy], d = Math.hypot(q[0] - x, q[1] - y);
+      if (d < bestDistance) { bestDistance = d; best = q; }
+    });
+    return [x + 0.65 * (best[0] - x), y + 0.65 * (best[1] - y)];
+  };
+  const stoneShapePoints = sourceStoneOutline.map((point, index) => {
+    const [x, y] = index === 0 || index === 11 ? point : towardHull(point);
+    return [x * sourceScale, y * sourceScale];
+  });
   // The two points bite into small sockets in the stone's sides (the bite
   // seats), each in the plane of its own tong: the stone is one solid built
   // of five stacked layers whose outline is Brown's, with a V-socket at the

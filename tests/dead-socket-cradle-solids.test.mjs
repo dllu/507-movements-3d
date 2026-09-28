@@ -34,7 +34,7 @@ test('401 finite guide slots, pitman eyes and shaft bearings clear their pins fo
  }
  update(1.5);root.updateMatrixWorld(true);
  assert.ok(Math.abs(b.tangentSlide.position.x)<1e-12);
- assert.ok(Math.abs(b.slideStop.position.x-.06-g.slideHalfLength)<1e-12);
+ assert.equal(b.slideStop,undefined);
 });
 
 test('417 socket centres match the analytic state and the captured slide clears every guide face',()=>{

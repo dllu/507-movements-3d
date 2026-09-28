@@ -6,7 +6,7 @@
     },
     {
       "file": "src/simulation/authored-gears-core.js",
-      "sha256": "1f1e111970952afd82cb0ac8a8c0ebe8f8087259fe518d5b7189eb47270513f5"
+      "sha256": "b6e8e954e6e20b6938227f52f7cc4ce2708f2a2c18a0f08e57ca003b3b612308"
     },
     {
       "file": "src/simulation/miter-gear.js",
@@ -14,7 +14,7 @@
     },
     {
       "file": "src/simulation/irregular-gear-family.js",
-      "sha256": "920d18ac7edb5b9c4bf451ce58860a53a40ee17620e0a188756576d8575bbe57"
+      "sha256": "5ea90a2b3e7bd3b256b3a171c0febb8c0a543f19f50081874a4e93fce82e177f"
     },
     {
       "file": "src/simulation/irregular-gear-201.js",
@@ -26,7 +26,7 @@
     },
     {
       "file": "src/simulation/generated-irregular-gear-profiles.js",
-      "sha256": "5c3214d1c49c5ac0738f821381868544d0af67f53bd56de36c5b10ee33c31610"
+      "sha256": "cfa61cdcafea21d54044cc5c4c7bf7339f2b9a9a590b3527ad09ad0cda2c7b2b"
     },
     {
       "file": "src/simulation/band-epicyclic-geometry.js",
@@ -51,10 +51,10 @@
       "id": 191,
       "poses": 513,
       "period": 12,
-      "projectedTriangles": 9960,
+      "projectedTriangles": 10018,
       "maximumOverlapArea": 0.0,
       "penetratingPoses": 0,
-      "minimumGap": 0.0026480690427815637,
+      "minimumGap": 0.0024226357149273693,
       "maximumGap": 0.009524612610999576
     },
     {

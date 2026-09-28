@@ -90,14 +90,16 @@ export function makeRackRectifierGeometry({samples=96,cutterSteps=2048,ratchetSa
  const bounds=new THREE.Box3().setFromObject(root,true);bounds.expandByVector(new THREE.Vector3(amplitude+.06,.08,.02));root.userData.cameraFitBounds=bounds;
  // Brown's end stems are round rods broken off at the plate edge. Each is
  // one turned solid on the frame's mid-plane: the left rod flares into the
- // ring's end face; the right one keeps Brown's collar and bevel before its
- // thinner rod. They run on straight far enough that their clean ends never
+ // ring's end face; the right one is Brown's plain rod of radius
+ // 0.166, as measured: the ellipse at 511-514 is its broken end, not a step
+ // down to a thinner rod (p96).
+ // They run on straight far enough that their clean ends never
  // enter the drawn view over the frame's travel; no guides or posts (p60).
  const run=amplitude+.04+.05,lx=local([36,0])[0],rx=local([505,0])[0],px=x=>(x-s.axis[0])/100;
  const stem=(name,profile,y)=>add(name,turned(profile,96).rotateY(Math.PI/2).translate(0,local([0,y])[1],0),'frame',PALETTE.driven);
  {const r0=.185,fr=.01,x1=lx+.02,x0=px(8)-run,flare=Array.from({length:9},(_,i)=>{const t=Math.PI/2*i/8;return[lx-fr+fr*Math.sin(t),r0+fr*(1-Math.cos(t))];});
   stem('leftStub',[[x0,0],[x0,r0],...flare,[x1,r0+fr],[x1,0]],292.5);}
- {const x0=rx-.02,x1=px(514)+run;stem('rightStub',[[x0,0],[x0,.16],[px(511),.16],[px(514),.10],[x1,.10],[x1,0]],290);}
+ {const x0=rx-.02,x1=px(514)+run;stem('rightStub',[[x0,0],[x0,.166],[x1,.166],[x1,0]],290);}
  // Framing keeps the drawn stems (x 8 to 514), not their run-ons.
  for(const [x,sign] of [[8,-1],[514,1]])bounds.expandByPoint(new THREE.Vector3(px(x)+sign*(amplitude+.06),0,0));
  markShadows(root);root.updateMatrixWorld(true);

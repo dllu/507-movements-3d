@@ -43,8 +43,15 @@ test('144 clevis pins span both bored cheeks and the fixed pin seats in its pede
     const b = model.root.userData.blocks;
     const pedestal = new Box3().setFromObject(b.pedestal);
     const fixedPin = new Box3().setFromObject(b.fixedCenterPin.userData.blocks.shaft);
-    assert.ok(fixedPin.min.z < pedestal.max.z - .1);
-    assert.ok(fixedPin.max.z > .34);
+    // p96: the post stands in front of every moving part (Brown dots the
+    // links behind it) and is see-through; the fixed pin runs from behind
+    // the rear links forward through the post to a head on its front face.
+    assert.ok(fixedPin.min.z < -.34);
+    assert.ok(fixedPin.max.z > pedestal.max.z && fixedPin.max.z < pedestal.max.z + .02);
+    assert.equal(b.pedestal.userData.seeThrough, true);
+    const moving = new Box3();
+    for (const part of [b.linkageGroup, b.leftOutputAssembly, b.rightInputAssembly]) moving.union(new Box3().setFromObject(part));
+    assert.ok(pedestal.min.z > moving.max.z + .02, 'post clear in front of all moving parts');
     for (const handle of [b.leftOutputAssembly, b.rightInputAssembly]) {
       const { hub, endpointPin } = handle.userData.blocks;
       const shaft = endpointPin.userData.blocks.shaft;

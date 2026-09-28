@@ -4,9 +4,9 @@
   "method": "Bidirectional mesh vertices, edge midpoints and face centers against actual solids. Excludes same rigid family joins. Sampled check, not swept-volume proof. Includes the gear-face groove walls, rocking lever, groove pin, pivot and stub shaft; not the gears or fixed frame.",
   "summary": {
     "poses": 65,
-    "parts": 7,
-    "pairs": 15,
-    "checks": 5171996,
+    "parts": 10,
+    "pairs": 38,
+    "checks": 5945030,
     "failingPairs": 0
   },
   "failures": {},
@@ -17,11 +17,11 @@
     },
     {
       "file": "src/simulation/geared-crank-frame.js",
-      "sha256": "47dca3995f1973484b12773fb54c0fb8eea00a2a195e788e45461d05a5305301"
+      "sha256": "91eff0ed3e4be11ad1a42dff2d9c617b819f0d6b706d1283d79cd89aa47a21b2"
     },
     {
       "file": "src/simulation/geared-crank-source.js",
-      "sha256": "bedc46a072be0e81cbce11dc8bd76b38c50f382199212dbdee67388ae85cb40e"
+      "sha256": "0457549632c9de8e0e1674490d238a82f5dcca076f0c97c5b45768f4ffc6e80a"
     },
     {
       "file": "src/simulation/finite-plate-geometry.js",

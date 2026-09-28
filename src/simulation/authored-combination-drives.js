@@ -2,7 +2,6 @@ import * as THREE from 'three';
 import {
   CircularArcCurve3,
   PALETTE,
-  makeDynamicLink,
   makeDynamicMovingBelt,
   markShadows,
   matte,
@@ -498,22 +497,47 @@ function combinationWeightDrive(movement) {
     frameMaterial,
   );
   topBearingArm.userData.role = 'fixed-wall-bracket-eye-carrying-pivot-G';
-  // The arm stops at the rear face of B's drum instead of entering it.
-  const diskBearingArm = makeDynamicLink({
-    color: PALETTE.frame,
-    depth: 0.29,
-    jointRadius: 0.001,
-    thickness: 0.18,
-  });
-  diskBearingArm.userData.setEndpoints(
-    new THREE.Vector3(diskCenter.x, diskCenter.y, -0.62),
-    new THREE.Vector3(2.17, diskCenter.y, -0.62),
+  // B's bearing arm: one extrusion from the wall ending in a round eye
+  // concentric with B, set just behind the disk's rear face. B's shaft runs
+  // back through the disk into this eye, so the disk is carried, not floating.
+  const diskEyeRadius = 0.26;
+  const diskArmHalf = 0.09;
+  const diskArmLugAngle = Math.asin(diskArmHalf / diskEyeRadius);
+  const diskArmWallX = 2.17;
+  const diskArmShape = new THREE.Shape();
+  diskArmShape.moveTo(
+    diskCenter.x + diskEyeRadius * Math.cos(diskArmLugAngle),
+    diskCenter.y + diskArmHalf,
+  );
+  diskArmShape.lineTo(diskArmWallX, diskCenter.y + diskArmHalf);
+  diskArmShape.lineTo(diskArmWallX, diskCenter.y - diskArmHalf);
+  diskArmShape.lineTo(
+    diskCenter.x + diskEyeRadius * Math.cos(diskArmLugAngle),
+    diskCenter.y - diskArmHalf,
+  );
+  diskArmShape.absarc(
+    diskCenter.x,
+    diskCenter.y,
+    diskEyeRadius,
+    -diskArmLugAngle,
+    diskArmLugAngle - 2 * Math.PI,
+    true,
+  );
+  // Bored for B's shaft (a running fit), so the shaft passes through the eye.
+  diskArmShape.holes.push(new THREE.Path().absarc(
+    diskCenter.x, diskCenter.y, diskHubRadius + 0.004, 0, 2 * Math.PI, true,
+  ));
+  const diskArmFrontZ = -0.156;
+  const diskArmDepth = 0.29;
+  const diskBearingArm = new THREE.Mesh(
+    new THREE.ExtrudeGeometry(diskArmShape, {
+      bevelEnabled: false,
+      curveSegments: 48,
+      depth: diskArmDepth,
+    }).translate(0, 0, diskArmFrontZ - diskArmDepth),
+    frameMaterial,
   );
   diskBearingArm.userData.role = 'fixed-disk-bearing-arm';
-  // The link's 0.001 joint spheres are degenerate; drop them.
-  for (const child of [...diskBearingArm.children]) {
-    if (child.geometry?.type === 'SphereGeometry') child.removeFromParent();
-  }
   frame.add(base, rightPost, topBearingArm, diskBearingArm);
 
   const diskAssembly = new THREE.Group();
@@ -525,8 +549,11 @@ function combinationWeightDrive(movement) {
   diskBody.userData.role = 'revolving-disk-B';
   // B's shaft end runs forward through the drum and the crank arm; its end
   // is Brown's small axle circle.
-  const diskHub = cylinderAlongZ(diskHubRadius, 0.56, darkMaterial, 44);
-  diskHub.position.z = 0.13 + 0.28;
+  // It also runs back through the disk into the bearing arm's eye.
+  const diskHubRearZ = -0.3;
+  const diskHubFrontZ = 0.69;
+  const diskHub = cylinderAlongZ(diskHubRadius, diskHubFrontZ - diskHubRearZ, darkMaterial, 44);
+  diskHub.position.z = (diskHubFrontZ + diskHubRearZ) / 2;
   diskHub.userData.role = 'fixed-axis-disk-B-hub';
   // The drum stands on B's front face; the cord winds back towards B.
   const drum = cylinderAlongZ(drumRadius - cordRadius, 0.34, inputMaterial, 56);
@@ -984,7 +1011,7 @@ function combinationWeightDrive(movement) {
       bevelEnabled: false,
       curveSegments: 32,
       depth: 0.2,
-    }).translate(0, 0, -0.72),
+    }).translate(0, 0, -0.41),
     frameMaterial,
   );
   diskArmBrace.userData.role = 'source-concave-gusset-under-disk-bearing-arm';

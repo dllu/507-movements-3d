@@ -250,3 +250,17 @@ test('movement 498 starts and closes at rest, fits every pose, and leaves moveme
   disposeModel(nextModel.root);
   disposeModel(model.root);
 });
+
+test('498 (pass 96): the zero tag is clipped to the pressure leg by a band above the mercury', () => {
+  const { model } = movementModel();
+  const d = model.root.userData, b = d.blocks, g = d.geometry;
+  assert.ok(b.leftZeroBand, 'band present');
+  assert.ok(b.leftZeroBoard.userData.grooveForGlassLeg.grooveRadius - g.glassOuterRadius <= 0.005, 'tag groove fits the glass');
+  model.root.updateMatrixWorld(true);
+  const band = new THREE.Box3().setFromObject(b.leftZeroBand), tag = new THREE.Box3().setFromObject(b.leftZeroBoard);
+  assert.ok(band.max.y <= tag.max.y + 1e-9 && band.min.y >= tag.min.y, 'band lies within the tag height');
+  for (let i = 0; i <= 64; i += 1) {
+    const state = d.stateAtTime(d.geometry.cycleDuration * i / 64);
+    assert.ok(state.leftSurfaceY < band.min.y - 0.05, `mercury reaches the band at ${i}`);
+  }
+});

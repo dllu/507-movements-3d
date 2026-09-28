@@ -11,7 +11,23 @@ const mujoco=await loadMujoco();
 test('117 closed hardware retains a conjugate, regular cam and a stem long enough for the complete stroke',()=>{
  const v=makeRollerYokeGeometry(),u=v.root.userData,p=u.profile,s=u.source;
  try{
-  assert.equal(Object.keys(u.parts).length,27);
+  assert.equal(Object.keys(u.parts).length,41);
+  // p96: each roller is carried by a cheek on both faces, both seated on the
+  // crossbar, which runs back through the roller's depth; the pin spans both.
+  const box=n=>new THREE.Box3().setFromBufferAttribute(u.parts[n].geometry.attributes.position);
+  for(const [n,bar]of [['upper','upperBar'],['lower','lowerBar']]){
+   const roller=box(n+'Roller'),front=box(n+'Fork'),rear=box(n+'RearFork'),b=box(bar),pin=box(n+'Pin');
+   assert(front.min.z>roller.max.z&&rear.max.z<roller.min.z,n+' cheeks lie on both faces of the roller');
+   assert(Math.abs(rear.min.z+front.max.z)<1e-9&&Math.abs(rear.max.z+front.min.z)<1e-9,n+' cheeks are symmetric about the roller');
+   assert(b.min.z<=rear.min.z+1e-9&&b.max.z>=front.max.z,n+' crossbar spans both cheeks');
+   const seat=n==='upper'?[front.max.y,b.min.y]:[front.min.y,b.max.y];assert(Math.abs(seat[0]-seat[1])<1e-6,n+' cheeks meet the crossbar');
+   assert(pin.min.z<=rear.min.z+1e-9&&pin.max.z>=front.max.z-1e-9,n+' pin passes through both cheeks');
+  }
+  // p97: the yoke, stems and guide are centred on the cam's mid-plane.
+  v.root.updateMatrixWorld(true);const world=n=>new THREE.Box3().setFromObject(u.parts[n]);
+  for(const n of ['upperStem','lowerStem','lowerCollar','lowerBoss','guide','upperBar','lowerBar']){const b=world(n);assert(Math.abs(b.min.z+b.max.z)<1e-9,n+' centred on z = 0');}
+  const all=new THREE.Box3().setFromObject(v.root);assert(Math.abs(all.min.z+all.max.z)<1e-9,'no part stands proud on one face');
+  for(const n of Object.keys(u.parts).filter(n=>/Rear/.test(n))){const f=world(n.replace('Rear','')),r=world(n);assert(Math.abs(f.min.z+r.max.z)<1e-9&&Math.abs(f.max.z+r.min.z)<1e-9,n+' mirrors its front part');}
   for(const [n,m]of Object.entries(u.parts)){const a=inspectWeightedClutchSolid(m.geometry);assert(a.volume>0,n);assert.equal(a.components,1,n);assert.equal(a.unmatchedEdges+a.degenerate+a.nonfinite+a.wrongNormals,0,n);}
   for(let i=0;i<2048;i++){const phi=2*Math.PI*i/2048,a=p.at(phi),b=p.at(phi+Math.PI);assert(Math.abs(a.radius+b.radius-2*s.meanPitchRadius)<2e-15);assert(Math.abs(Math.hypot(a.point[0]-a.radius*Math.cos(phi),a.point[1]-a.radius*Math.sin(phi))-s.rollerRadius)<2e-15);assert(1-s.rollerRadius*a.curvature>.34);assert(Math.abs(a.second)<.5,'the smoothed cam must not jerk the yoke');}
   const g=u.geometry;assert(g.stemEnd+p.maximum<g.guideCenter-g.guideHalf-.1);assert(g.stemLowerTop+p.minimum>g.guideCenter+g.guideHalf+.2);assert(u.hideGround);

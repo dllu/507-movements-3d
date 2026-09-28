@@ -347,7 +347,10 @@ test('movement 240 advances exactly one counterclockwise pitch under each stop',
         + 1.12 * geometry.toothPitch);
       assert.ok(pawl.finiteContact.normalClearance > .0003);
       encounteredFaces.add(pawl.finiteContact.edge.type);
-      const lift = stop.liftSign * pawl.angleDelta;
+      // p96: C turns about its S-spring's bend, so its lift sense is the
+      // finite definition's.
+      const lift = model.root.userData.workingParts.stops[variantIndex].liftSign
+        * pawl.angleDelta;
       assert.ok(lift >= -2e-12);
       assert.ok(lift <= stop.maximumContactLift + 1e-6);
       maximumLift = Math.max(maximumLift, lift);
@@ -452,15 +455,19 @@ test('movement 240 renderer binds the selected stop and turns stop C with its S-
         );
       }
     }
-    // C and its S-lever are one plate turning about the lever's pivot eye.
+    // p96: C rides on its S-spring's free arm, turning about the spring's
+    // bend; its drawn hole (and the spring joint below it) is carried.
     const springPawl = state.pawls[2];
-    const expectedBearing = geometry.stopDefinitions[2].pivot.clone().add(
-      rotate(geometry.springBearingLocal, springPawl.angleDelta),
+    const bend = model.root.userData.workingParts.stops[2].pivot;
+    const hole = model.root.userData.workingParts.stops[2].hole;
+    const expectedBearing = bend.clone().add(
+      rotate(hole.clone().sub(bend), springPawl.angleDelta),
     );
-    const carried = new THREE.Vector3(geometry.springBearingLocal.x, geometry.springBearingLocal.y, 0)
-      .applyMatrix4(new THREE.Matrix4().makeRotationZ(blocks.springPawlStop.rotation.z));
-    vectorNear(new THREE.Vector2(carried.x, carried.y).add(geometry.stopDefinitions[2].pivot), expectedBearing, 1e-14,
-      'S-lever carried joint');
+    model.root.updateMatrixWorld(true);
+    const carried = new THREE.Vector3(hole.x - bend.x, hole.y - bend.y, 0)
+      .applyMatrix4(blocks.springPawlStop.matrixWorld);
+    vectorNear(new THREE.Vector2(carried.x, carried.y), expectedBearing, 1e-12,
+      'C carried hole');
     minimumBearingY = Math.min(minimumBearingY, expectedBearing.y);
     maximumBearingY = Math.max(maximumBearingY, expectedBearing.y);
     assert.equal(
@@ -469,8 +476,8 @@ test('movement 240 renderer binds the selected stop and turns stop C with its S-
       state.pawls.filter(pawl => pawl.contact !== null).length,
     );
   }
-  assert.ok(maximumBearingY - minimumBearingY > .1 && maximumBearingY - minimumBearingY < .3,
-    'C lifts through a small rigid swing of its S-lever');
+  assert.ok(maximumBearingY - minimumBearingY > .1 && maximumBearingY - minimumBearingY < .4,
+    'C rises bodily on its S-spring');
   assert.equal(blocks.wheelIndicator.userData.role, 'ratchet-wheel-face-index');
   assert.equal(blocks.leafSpring.userData.drawn, false);
   disposeModel(model.root);

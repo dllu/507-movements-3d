@@ -48,24 +48,6 @@ function beamBetween(start, end, width, depth, material) {
   return beam;
 }
 
-function lineTube(points, radius, material) {
-  const curve = new THREE.CatmullRomCurve3(
-    points,
-    false,
-    'centripetal',
-  );
-  return new THREE.Mesh(
-    new THREE.TubeGeometry(
-      curve,
-      Math.max(80, points.length * 2),
-      radius,
-      8,
-      false,
-    ),
-    material,
-  );
-}
-
 function makeDynamicCord(radius, material) {
   // Brown hatches the cord as a laid rope: the shared three-strand rope,
   // rebuilt along the straight run between its two moving ends.
@@ -388,21 +370,9 @@ function pointedArchInstrument(movement) {
   };
   elasticBar.userData.updateForBend = updateBarGeometry;
 
-  const targetLeftPoints = pathAtBend(1).outerPoints.map((point) => (
-    new THREE.Vector3(point.x, point.y, -0.145)
-  ));
-  const targetRightPoints = [...targetLeftPoints].reverse().map((point) => (
-    new THREE.Vector3(-point.x, point.y, point.z)
-  ));
-  const targetArch = {
-    left: lineTube(targetLeftPoints, 0.026, driverMaterial),
-    right: lineTube(targetRightPoints, 0.026, driverMaterial),
-  };
-  targetArch.left.userData.role =
-    'selected-left-half-of-pointed-arch';
-  targetArch.right.userData.role =
-    'mirrored-right-half-completing-pointed-arch';
-  root.add(targetArch.left, targetArch.right);
+  // Brown draws no arch curve and no drawing surface: the p49 red selected
+  // half-arch floated in mid-air whenever the lath left it, so it is gone.
+  // The lath's own working edge is the template.
   const prescribedPoints = [
     new THREE.Vector2(leftSpringingX, springingY),
     apex,
@@ -615,7 +585,6 @@ function pointedArchInstrument(movement) {
       slideIndex,
       slot,
       springingLine,
-      targetArch,
       workingEdge,
     },
     constraints: {
@@ -753,8 +722,6 @@ function pointedArchInstrument(movement) {
   root.userData.groundFloorY = -0.96;
   markShadows(root);
   board.receiveShadow = true;
-  targetArch.left.castShadow = false;
-  targetArch.right.castShadow = false;
   updateBarGeometry(1);
   update(0);
   correctDrawingTemplateParts(root,407,update);
@@ -764,6 +731,19 @@ function pointedArchInstrument(movement) {
     const loop = root.userData.blocks.cordLoop;
     loop.material = root.userData.blocks.cord.material;
     loop.userData.crossSection = 'laid-rope';
+  }
+  {
+    // The pencil's point ends in the back plane of the horizontal bar and the
+    // jamb (z -0.19), the wall face the instrument is laid against, instead
+    // of 0.06 behind it in empty space. Barrel and cone keep their radii.
+    const {barrel, cone, point} = root.userData.blocks.workingPencil;
+    const backPlaneZ = -0.19, coneLength = 0.16, barrelTop = 0.455;
+    point.position.z = backPlaneZ + 0.012;
+    cone.position.z = backPlaneZ + coneLength / 2;
+    const barrelBottom = backPlaneZ + coneLength;
+    barrel.geometry.dispose();
+    barrel.geometry = new THREE.CylinderGeometry(0.085, 0.085, barrelTop - barrelBottom, 30);
+    barrel.position.z = (barrelTop + barrelBottom) / 2;
   }
   update(0);
   return { root, update, cameraDirection: root.userData.cameraDirection };

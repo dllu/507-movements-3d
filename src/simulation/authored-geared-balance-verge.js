@@ -581,7 +581,8 @@ function gearedBalanceVergeEscapement(movement) {
   balance.position.y = balanceY;
   // Brown draws a broad flat rim.
   const rimShape = new THREE.Shape().absarc(0, 0, balanceRadius, 0, FULL_TURN, false);
-  rimShape.holes.push(new THREE.Path().absarc(0, 0, balanceRadius - 0.62, 0, FULL_TURN, true));
+  // About an eighth of the radius wide, as Brown's ellipses are apart.
+  rimShape.holes.push(new THREE.Path().absarc(0, 0, balanceRadius - 0.9, 0, FULL_TURN, true));
   const rimGeometry = new THREE.ExtrudeGeometry(rimShape, { bevelEnabled: false, curveSegments: 96, depth: 0.22 });
   rimGeometry.translate(0, 0, -0.11);
   const rim = new THREE.Mesh(rimGeometry, balanceMaterial);

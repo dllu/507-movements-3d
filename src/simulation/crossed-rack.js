@@ -4,14 +4,14 @@ import {makeCrossedRackGeometry} from './crossed-rack-geometry.js';
 import {sampleCrossedRackMotion} from './crossed-rack-motion.js';
 
 export function makeCrossedRackDrive(){
- const model=makeCrossedRackGeometry(profile.geometry),u=model.root.userData;
+ const model=makeCrossedRackGeometry(),u=model.root.userData,bounds=profile.motionBounds??{min:[-2.6,-4.81,-.5],max:[2.82,1.72,.39]};
  Object.assign(u,{profile,reconstructionStatus:'rebuilt',playbackPeriod:profile.playbackPeriod,
   animationTiming:{authoredCyclePeriod:profile.playbackPeriod},minimumDisplayCycleSeconds:profile.playbackPeriod,
-  sampledMotionBounds:profile.motionBounds,stateAtTime:sampleCrossedRackMotion,
+  sampledMotionBounds:bounds,stateAtTime:sampleCrossedRackMotion,
   // Frame Brown's crop: the complete stem runs on below it.
-  cameraFitBounds:new THREE.Box3(new THREE.Vector3(...profile.motionBounds.min),new THREE.Vector3(...profile.motionBounds.max)),
-  qualification:'Measured source contours, joint centers and sixteen teeth per side follow the engraving. Axial layers, concealed hook-toe relief, pin construction and regular pitch reconstruct details absent or irregular in the source.',
-  idealConstraints:'Only the lever is prescribed. An ideal prismatic rack constraint imposes the source-described straight path; the shaft and slot alone are not claimed to form a complete linear guide. Gravity, moving-pivot inertia, viscous drag and finite frictionless tooth contact determine rack height and both free pawl angles. Common density, zero extra payload, input amplitude and period are reconstruction assumptions. Startup seating, physical handoff rollback and finite whole-rack lift are retained. The eight-second physical input cycle plays in four seconds. After nine display seconds of recorded lift the lever keeps swinging back to its starting pose while the hooks are swung clear, the rack is let down and the hooks reseat beneath their teeth; this three-second return is a reconstructed demonstration (hook swing generated against the solids), so the twelve-second cycle repeats without a jump.'});
+  cameraFitBounds:new THREE.Box3(new THREE.Vector3(...bounds.min),new THREE.Vector3(...bounds.max)),
+  qualification:'Measured source contours, joint centers and sixteen teeth per side follow the engraving. Axial layers, the hook webs reaching back into the rack plane, the fitted hook tips and regular pitch reconstruct details absent or irregular in the source.',
+  idealConstraints:'Only the lever is prescribed (0.16 rad amplitude, eight-second physical swing played in four seconds). MuJoCo, baked offline, determines rack height and both pawl angles: the rack slides on an ideal prismatic vertical joint under gravity, and each pawl hangs on its lever pin with an assumed light torsional spring and light damping turning its hook toward the rack. Hook webs and rack teeth meet as convex prisms with assumed friction 0.15 and a 0.0015 contact margin, so rendered solids rest just apart. Common density, spring, damping and friction values are reconstruction assumptions; the shaft and slot alone are not claimed to form a complete linear guide. After two swings of ratchet lift, a demonstration reset not in the source (a smoothly ramped rack support and pawl-clearing torques, also simulated) raises the rack off the hooks, swings them clear, lets the rack down four pitches and sets it back on the hooks, so the twelve-second display loop repeats.'});
  model.update=time=>{const state=sampleCrossedRackMotion(time);u.setState(state);Object.assign(u.kinematics,state);};
  model.update(0);return model;
 }

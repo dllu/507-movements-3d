@@ -329,8 +329,10 @@ function seabedTriggeredSoundingWeight(movement) {
   const lineTopY = 60;
   const carryY = 65;
   // Successive stations lie stationDrift apart, far beyond the side of any
-  // view; the soundings alternate direction, so two soundings close the
-  // loop. worldOffsetX is where the bottom's station-0 point stands in the
+  // view. The vessel always moves on the same way (p96: alternating
+  // directions made the bottom shuttle back and forth), so every spent
+  // weight leaves to the left; the bottom's tone bands repeat every 5, which
+  // divides stationDrift, so the bottom wraps seamlessly. worldOffsetX is where the bottom's station-0 point stands in the
   // view (the rod's line is always x = 0).
   // (40: far beyond the side of the fit zoomed out three times at 16:9,
   // and of the usual oblique views.) The move is a slow creep while the
@@ -339,9 +341,7 @@ function seabedTriggeredSoundingWeight(movement) {
   const stationDrift = 40;
   const stationCreep = 12;
   const worldOffsetForTime = (cycleTime, parity) => {
-    const sign = parity === 0 ? -1 : 1;
-    const from = parity === 0 ? 0 : -stationDrift;
-    return from + sign * (transitionState(cycleTime, timeline.stationDriftBegins,
+    return -(transitionState(cycleTime, timeline.stationDriftBegins,
       timeline.stationDriftEnds, 0, stationCreep).value
       + transitionState(cycleTime, timeline.stationRunBegins,
         timeline.stationDriftEnds, 0, stationDrift - stationCreep).value);
@@ -352,7 +352,8 @@ function seabedTriggeredSoundingWeight(movement) {
   // end onto the line to dropStartY, where it is let go.
   const spareTravel = Object.freeze({ liftStart: 0.2, upEnd: 2.2, acrossEnd: 3.6 });
   const spareWeightStateForTime = (cycleTime, parity) => {
-    const side = parity === 0 ? stationDrift : -stationDrift;
+    // The previous station's weight always lies stationDrift to the left.
+    const side = -stationDrift;
     if (cycleTime < spareTravel.upEnd) {
       return { x: side, y: transitionState(cycleTime, spareTravel.liftStart,
         spareTravel.upEnd, groundedWeightCenterY, carryY) };
@@ -887,7 +888,7 @@ function seabedTriggeredSoundingWeight(movement) {
       spentWeightPosition: cycleTime < timeline.rodRecovered
         ? [spareWeightPositionForTime(cycleTime, parity)[0],
           freshWeightYState(cycleTime, parity).value]
-        : [worldOffsetForTime(cycleTime, parity) - (parity === 0 ? 0 : -stationDrift),
+        : [worldOffsetForTime(cycleTime, parity),
           groundedWeightCenterY],
       spentWeightLyingOnBottom: cycleTime >= timeline.rodRecovered,
       worldOffsetX: worldOffsetForTime(cycleTime, parity),
@@ -940,33 +941,41 @@ function seabedTriggeredSoundingWeight(movement) {
   const seabedSlab = groundBlock(seabedLength, seabedThickness, 3.4, {
     name: 'sea-bottom-contact-plane',
   });
-  seabedSlab.geometry.dispose();
-  seabedSlab.geometry = new THREE.BoxGeometry(seabedLength, seabedThickness, 3.4, 800, 1, 12);
   // p93: the bottom moves sideways as the vessel changes station, and a
   // featureless bottom made the spent weight seem to glide over it on its
   // own. Alternate two close tones in 2.5-wide bands (the shared speed-cue
   // idea for featureless moving parts) so the bottom visibly carries the
   // weight with it.
+  // p96: the vessel always moves on the same way, so the slab itself stays
+  // put and only its bands travel (a two-texel texture scrolled by the
+  // station offset). At the loop the offset wraps by one station, 40, which
+  // is eight whole band periods: nothing visibly jumps, and the slab's far
+  // ends never move.
+  const bandPeriod = 5;
+  const seabedBands = new THREE.DataTexture(new Uint8Array([255, 255, 255, 255, 230, 230, 230, 255]), 2, 1);
+  seabedBands.wrapS = THREE.RepeatWrapping;
+  seabedBands.magFilter = THREE.NearestFilter;
+  seabedBands.minFilter = THREE.NearestFilter;
+  seabedBands.needsUpdate = true;
   {
-    const banded = seabedSlab.geometry.toNonIndexed();
-    seabedSlab.geometry.dispose();
-    const position = banded.attributes.position;
-    const colors = new Float32Array(position.count * 3);
-    for (let i = 0; i < position.count; i += 3) {
-      const x = (position.getX(i) + position.getX(i + 1) + position.getX(i + 2)) / 3;
-      const shade = positiveModulo(Math.floor(x / 2.5), 2) === 0 ? 1 : 0.9;
-      colors.fill(shade, 3 * i, 3 * i + 9);
-    }
-    banded.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-    seabedSlab.geometry = banded;
-    for (const material of new Set(seabedSlab.material)) material.vertexColors = true;
+    const uv = seabedSlab.geometry.attributes.uv, position = seabedSlab.geometry.attributes.position;
+    for (let i = 0; i < uv.count; i += 1) uv.setXY(i, position.getX(i) / bandPeriod, 0.5);
+    uv.needsUpdate = true;
+    const banded = new Map([...new Set(seabedSlab.material)].map((material) => {
+      const copy = material.clone();
+      copy.map = seabedBands;
+      return [material, copy];
+    }));
+    seabedSlab.material = seabedSlab.material.map((material) => banded.get(material));
   }
+  seabedSlab.userData.bandTexture = seabedBands;
+  seabedSlab.userData.bandPeriod = bandPeriod;
   seabedSlab.position.set(stationDrift / 2, seabedY - seabedThickness / 2, 0);
   const seabedRings = [];
   seabed.add(seabedSlab);
-  // Fixed in the sea; it moves in the view only as the vessel changes
-  // station.
-  seabed.userData.fixed = false;
+  // Fixed in the sea and in the view; only its bands travel as the vessel
+  // changes station.
+  seabed.userData.fixed = true;
   seabed.userData.role = 'sea-bottom-passing-as-vessel-changes-station';
   root.add(seabed);
 
@@ -1600,7 +1609,9 @@ export function createAuthoredSoundingWeightMovement(movement) {
       const working = state.cycleTime < timeline.rodRecovered ? own : 1 - own;
       weights[working].position.set(state.weightCenterX, state.weightCenterY, 0);
       weights[1 - working].position.set(state.spentWeightPosition[0], state.spentWeightPosition[1], 0);
-      root.userData.blocks.seabed.position.x = state.worldOffsetX;
+      // The bottom's bands travel with the station offset; the slab stays.
+      const { seabedSlab } = root.userData.blocks;
+      seabedSlab.userData.bandTexture.offset.x = -state.worldOffsetX / seabedSlab.userData.bandPeriod;
       root.userData.activeWeightAssembly = weights[working];
     };
     // Two soundings make one seamless loop (the weights swap roles).

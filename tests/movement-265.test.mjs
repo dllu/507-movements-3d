@@ -69,7 +69,8 @@ test('movement 265 is the generator-guided traversing-roller cone drive', () => 
   assert.notEqual(blocks.cone, blocks.roller);
   assert.equal(blocks.coneBody.parent, blocks.coneRotor);
   assert.equal(blocks.rollerBody.parent, blocks.rollerRotor);
-  assert.equal(blocks.rollerTread.parent, blocks.rollerRotor);
+  // The tread is the crown of the one lathed roller disk, not a bead.
+  assert.equal(blocks.rollerTread, undefined);
   // The long shaft Brown draws is the roller's own output axle.
   assert.equal(blocks.rollerGuide.parent, blocks.roller);
   disposeModel(model.root);

@@ -292,7 +292,9 @@ test('048 rack-generated working flanks agree with the independent involute equa
     const inv = (r) => { const t = Math.sqrt((r / base) ** 2 - 1); return t - Math.atan(t); };
     for (const point of outlineOf(body)) {
       const r = point.length();
-      if (r < base + 0.007 || r >= g.outerRadius - 0.001) continue;
+      // With 64 teeth the root circle lies outside the base circle; its
+      // floor is not a flank.
+      if (r < Math.max(base, g.rootRadius) + 0.007 || r >= g.outerRadius - 0.001) continue;
       const toothAngle = Math.abs(THREE.MathUtils.euclideanModulo(Math.atan2(point.y, point.x) + Math.PI / g.teeth,
         tau / g.teeth) - Math.PI / g.teeth);
       const halfAngle = Math.PI / (2 * g.teeth) - g.module * 0.008 / (2 * radius) + inv(radius) - inv(r);

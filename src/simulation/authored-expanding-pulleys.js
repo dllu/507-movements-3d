@@ -686,8 +686,51 @@ function expandingPulley(movement) {
     }
   }
   buildClick();
+  // p96: Brown carries d on a curved bearing strap spanning the two upper
+  // arms' channels, its top edge an arc concentric with the pulley, just
+  // inside the rim segments at their most contracted; its lower part lies
+  // hidden behind c. It is a flat plate in the channels' plane whose side
+  // edges run into the channel walls (0.12 off each channel's axis, inside
+  // the 0.09-0.14 wall), and d's shaft ends in a bore through it.
+  {
+    let minimumOffset = Infinity;
+    for (let index = 0; index <= 256; index += 1) minimumOffset = Math.min(minimumOffset, stateAtPhase(index / 256).radialOffset);
+    const strapTop = rimInnerRadius + minimumOffset - 0.03, strapBottom = 1.72, wallOffset = 0.12;
+    const band = sector(strapBottom, strapTop, Math.PI / 6, 5 * Math.PI / 6, 256);
+    const side = (angle, sign) => {
+      const u = [Math.cos(angle), Math.sin(angle)], n = [-u[1], u[0]], far = 4;
+      const o = [n[0] * wallOffset * sign, n[1] * wallOffset * sign];
+      return poly([[o[0], o[1]], [o[0] + u[0] * far, o[1] + u[1] * far], [o[0] + u[0] * far + n[0] * far * sign, o[1] + u[1] * far + n[1] * far * sign], [o[0] + n[0] * far * sign, o[1] + n[1] * far * sign]]);
+    };
+    const strapOutline = polygonClipping.difference(
+      polygonClipping.intersection(band, side(Math.PI / 3, 1), side(2 * Math.PI / 3, -1)),
+      poly(circle([0, gearCenterDistance], 0.095, 64)),
+    );
+    if (strapOutline.length !== 1) throw new Error('d strap must be one plate');
+    const shape = new THREE.Shape(strapOutline[0][0].slice(0, -1).map(([x, y]) => new THREE.Vector2(x, y)));
+    for (const ring of strapOutline[0].slice(1)) shape.holes.push(new THREE.Path(ring.slice(0, -1).map(([x, y]) => new THREE.Vector2(x, y))));
+    const strapDepth = 0.1, strapZ = -0.55;
+    const strap = new THREE.Mesh(new THREE.ExtrudeGeometry(shape, {depth: strapDepth, bevelEnabled: false, curveSegments: 64}).translate(0, 0, strapZ - strapDepth / 2), frameMaterial);
+    strap.userData.role = 'fixed-curved-bearing-strap-carrying-pinion-d';
+    root.add(strap);
+    Object.assign(root.userData.blocks, {pinionStrap: strap});
+    Object.assign(root.userData.geometry, {pinionStrapBottomRadius: strapBottom, pinionStrapTopRadius: strapTop, pinionStrapZ: [strapZ - strapDepth / 2, strapZ + strapDepth / 2]});
+  }
   update(0);
   for (const slider of sliders) slider.children[3].visible = false;
+  // p96: each arm's inner end is a round boss concentric with its slot stud
+  // (the stud used to sit on the arm's square end).
+  for (const slider of sliders) {
+    const arm = slider.children[0], p = arm.geometry.parameters, outer = arm.position.x + p.width / 2, halfWidth = p.height / 2;
+    const armOutline = polygonClipping.union(
+      poly([[slotMidRadius, -halfWidth], [outer, -halfWidth], [outer, halfWidth], [slotMidRadius, halfWidth]]),
+      poly(circle([slotMidRadius, 0], 0.12, 64)),
+    );
+    const armShape = new THREE.Shape(armOutline[0][0].slice(0, -1).map(([x, y]) => new THREE.Vector2(x, y)));
+    arm.geometry.dispose();
+    arm.geometry = new THREE.ExtrudeGeometry(armShape, {depth: p.depth, bevelEnabled: false, curveSegments: 64}).translate(0, 0, -p.depth / 2);
+    arm.position.x = 0;
+  }
   wheelGear.userData.rotor.children[3].visible = false;
   pinion.userData.rotor.children[3].visible = false;
   markShadows(root);

@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import {horizontalRing, horizontalTurned, horizontalPlate} from './horizontal-turbine-solids.js';
 import {curvedPipeWall, mergePassageParts} from './finite-fluid-passages.js';
 import {boredPlanarLinkGeometry} from './bored-planar-link.js';
-import {circle, capsule, poly, plate, polygonClipping} from './finite-plate-geometry.js';
+import {circle, capsule, poly, plate, polygonClipping, turned} from './finite-plate-geometry.js';
 import {sectionMeshInPlace} from './cutaway-section.js';
 
 const replace = (mesh, geometry) => { mesh.geometry.dispose(); mesh.geometry = geometry; };
@@ -245,14 +245,32 @@ export function correctLiftPumpParts(root, id) {
     const linkGeometry=boredPlanarLinkGeometry({length:g.connectingRodLength,width:.10,eyeRadius:.15,boreRadius:.075,depth:.08});
     linkGeometry.translate(-g.connectingRodLength/2,0,0).rotateZ(Math.PI/2).scale(1,1/g.connectingRodLength,1);
     replace(b.connectingRod,linkGeometry);
+    // Pass 96: Brown draws each joint as a pin in a round eye. The lever has
+    // a bored eye (0.26 deep, just deeper than the 0.24 lever rod) at its
+    // pivot and at its rod end; the link lies against the
+    // lever's front face (LINK_Z) and the bracket against its back face, and
+    // each pin is only as long as the parts it joins, with a small head just
+    // clear of each outer face (no rod standing proud on one side).
+    const LEVER_HALF=.13,LINK_LOW=.135,LINK_HIGH=.215,BRACKET_LOW=-.215,BRACKET_HIGH=-.135,CLEAR=.003,HEAD=.02;
+    const pinGeometry=(radius,headRadius,low,high)=>turned([[low-CLEAR-HEAD,0],[low-CLEAR-HEAD,headRadius],[low-CLEAR,headRadius],[low-CLEAR,radius],
+      [high+CLEAR,radius],[high+CLEAR,headRadius],[high+CLEAR+HEAD,headRadius],[high+CLEAR+HEAD,0]],96);
     const pivotPin=b.lever.children[1],rodPin=b.lever.children[2];
-    replace(pivotPin,new THREE.CylinderGeometry(.19,.19,.75,48));
-    replace(rodPin,new THREE.CylinderGeometry(.07/.70,.07/.70,.75/.70,40));
-    const jointPin=new THREE.Mesh(new THREE.CylinderGeometry(.07,.07,.65,40),b.pumpRod.material);
-    jointPin.rotation.x=Math.PI/2;jointPin.position.set(0,.62,.1);b.piston.add(jointPin);b.jointPin=jointPin;
+    replace(pivotPin,pinGeometry(.09,.11,BRACKET_LOW,LEVER_HALF));
+    replace(rodPin,pinGeometry(.07,.085,-LEVER_HALF,LINK_HIGH));
+    for(const pin of [pivotPin,rodPin]){pin.rotation.set(0,0,0);pin.scale.setScalar(1);}
+    const pivotEye=new THREE.Mesh(turned([[-LEVER_HALF,.095],[-LEVER_HALF,.20],[LEVER_HALF,.20],[LEVER_HALF,.095]],96),b.lever.children[0].material);
+    const rodEye=new THREE.Mesh(turned([[-LEVER_HALF,.074],[-LEVER_HALF,.18],[LEVER_HALF,.18],[LEVER_HALF,.074]],96),b.lever.children[0].material);
+    rodEye.position.x=rodPin.position.x;
+    pivotEye.userData.role='hand-lever-bored-pivot-eye';rodEye.userData.role='hand-lever-bored-rod-eye';
+    b.lever.add(pivotEye,rodEye);b.leverEyes=[pivotEye,rodEye];
+    // The grip is Brown's plain round knob, cast with the lever.
+    b.lever.children[3].material=b.lever.children[0].material;
+    const jointPin=new THREE.Mesh(pinGeometry(.07,.085,-.055,LINK_HIGH),b.pumpRod.material);
+    jointPin.position.set(0,.62,0);b.piston.add(jointPin);b.jointPin=jointPin;
+    d.linkZ=(LINK_LOW+LINK_HIGH)/2;
     // The lever bracket rises from the head's top flange to the pivot.
-    const supportProfile=polygonClipping.difference(poly([[.97,2.75],[1.22,2.75],[1.12,3.10],[1.08,3.40],[.95,3.46],[.69,3.46],[.56,3.30],[.56,3.08],[.72,2.93],[.90,2.85]]),poly(circle([g.leverPivot.x,g.leverPivot.y],.195,96)));
-    const support=new THREE.Mesh(plate(supportProfile,-.30,-.20),b.base.material);
+    const supportProfile=polygonClipping.difference(poly([[.97,2.75],[1.22,2.75],[1.12,3.10],[1.08,3.40],[.95,3.46],[.69,3.46],[.56,3.30],[.56,3.08],[.72,2.93],[.90,2.85]]),poly(circle([g.leverPivot.x,g.leverPivot.y],.095,96)));
+    const support=new THREE.Mesh(plate(supportProfile,BRACKET_LOW,BRACKET_HIGH),b.base.material);
     support.userData.role='fixed-bored-lever-bracket';root.add(support);b.leverSupport=support;
     replace(b.spout,curvedPipeWall(b.spout.geometry.parameters.path,.19,.25,72));
   }
@@ -307,7 +325,7 @@ export function correctLiftPumpParts(root, id) {
     w.geometry.dispose();w.geometry=bucketAndHeadWater(h,h.step-.5);w.position.set(0,0,0);w.scale.set(1,1,1);
   }
   for(const rails of [b.barrelRearFrame,b.barrelRails])if(rails)rails.visible=false;
-  d.updateSolids=state=>{if(!modern){b.connectingRod.position.z=.27;
+  d.updateSolids=state=>{if(!modern){b.connectingRod.position.z=d.linkZ;
     // The bucket water stops where the head water (with its neck) begins.
     const h=d.pumpHeadWater,w=b.upperChamberWater,next=bucketAndHeadWater(h,Math.min(state.pistonTopY+.04,h.step-.001));
     w.geometry.attributes.position.array.set(next.attributes.position.array);w.geometry.attributes.position.needsUpdate=true;

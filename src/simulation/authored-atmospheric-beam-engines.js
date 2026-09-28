@@ -121,8 +121,12 @@ function segmentHeadBeamGeometry({
       tangentAt(endAngle), 1, 16),
     innerEnd,
     ...quadraticPoints(innerEnd, bottomFillet.control, bottomFillet.end, 18),
-    new THREE.Vector2(beamEnd, beamBottom),
-    new THREE.Vector2(beamEnd, beamTop),
+    // p96: the far end is a round end within the same length, not a
+    // square cut (Brown's plate crops the beam there).
+    new THREE.Vector2(beamEnd - (beamTop - beamBottom) / 2, beamBottom),
+    ...roundEnd(new THREE.Vector2(beamEnd - (beamTop - beamBottom) / 2, (beamTop + beamBottom) / 2),
+      (beamTop - beamBottom) / 2, new THREE.Vector2(0, -1), new THREE.Vector2(1, 0), 1, 32),
+    new THREE.Vector2(beamEnd - (beamTop - beamBottom) / 2, beamTop),
     ...pivotNotch(pivotBossRadius, beamTop),
     topFillet.start.clone(),
     ...quadraticPoints(topFillet.start, topFillet.control, topJoin, 18),

@@ -1,5 +1,6 @@
 import * as T from 'three';
 import {boredLatheGeometry} from './bored-lathe-geometry.js';
+import {boredHorizontalPlate} from './bored-horizontal-plate.js';
 import {fitPistonGuide} from './piston-guide-parts.js';
 import {LaidRopeGeometry,replaceWithLaidRope} from './laid-rope.js';
 import {creaseIndexedNormals} from './crease-normals.js';
@@ -66,13 +67,16 @@ export function correctCordTraverseParts(root,id,update){
    points.push([g.fuseeBottomY,.046],[g.fuseeTopY,.046]);return points;
   },128,'y');replace(b.fuseeBody,body);
   b.fuseeRotor.children.filter(o=>o.userData.role==='fusee-end-face').forEach(o=>o.visible=false);
-  for(const o of b.carriage.children){if(o.userData.role==='vertical-fusee-and-crank-shaft')replace(o,new T.CylinderGeometry(.043,.043,2.44,40));}
+  for(const o of b.carriage.children){if(o.userData.role==='vertical-fusee-and-crank-shaft')replace(o,new T.CylinderGeometry(.043,.043,o.geometry.parameters.height,40));}
   // Brown's plan: two frame bars along the traverse carry the wheel axles;
   // the nearer bar also carries the shaft's small-end bearing.
   const wheelZ=b.carriageWheels[0].position.z,wheelY=b.carriageWheels[0].position.y,barLength=b.carriageBed.geometry.parameters.width;
   for(const wheel of b.carriageWheels)replace(wheel.userData.hub,ring(.064,.042,.20));
   for(const wheel of b.carriageWheels){const axle=add(b.carriage,new T.CylinderGeometry(.040,.040,1.12,32),b.carriageBed.material,'fixed-carriage-wheel-axle');axle.position.set(wheel.position.x,wheelY,wheelZ);}
-  for(const bearing of b.carriage.children.filter(o=>o.userData.role==='carriage-mounted-fusee-shaft-bearing')){replace(bearing,ring(.14,.047,.14));bearing.rotation.set(0,0,0);const support=add(b.carriage,new T.BoxGeometry(.20,.10,.34),bearing.material,'fusee-journal-to-bearing-frame');support.position.set(0,bearing.position.y,-.26);}
+  for(const bearing of b.carriage.children.filter(o=>o.userData.role==='carriage-mounted-fusee-shaft-bearing')){
+   // Brown's two crank-end bearings are plain rectangular blocks standing on the bracket, bored for the shaft.
+   if(bearing.position.y>1){replace(bearing,boredHorizontalPlate({outline:[[-.38,wheelZ+.04],[.38,wheelZ+.04],[.38,.16],[-.38,.16]],holes:[{radius:.047}],depth:.18}));bearing.rotation.set(0,0,0);bearing.material=bearing.material.clone();bearing.material.color.setHex(0x7e8584);bearing.userData.role='carriage-mounted-crank-end-bearing-block';continue;}
+   replace(bearing,ring(.14,.047,.14));bearing.rotation.set(0,0,0);const support=add(b.carriage,new T.BoxGeometry(.20,.10,.34),bearing.material,'fusee-journal-to-bearing-frame');support.position.set(0,bearing.position.y,-.26);}
   const lowerCross=add(b.carriage,new T.BoxGeometry(barLength,.13,.13),b.carriageBed.material,'lower-fusee-bearing-crossmember');lowerCross.position.set(0,-.25,wheelZ);
   // Brown's two long flat bars run the length of the carriage, along the
   // fusee shaft: under the far wheel frame, past the fusee and the crank, and
@@ -84,7 +88,14 @@ export function correctCordTraverseParts(root,id,update){
   for(const bar of frameBars){bar.removeFromParent();bar.traverse(o=>o.geometry?.dispose());}
   const sideX=1.44,sideWidth=.24,sideZ=wheelZ-.125,sideStart=b.carriageBed.position.y-.065,sideEnd=7.5;
   for(const sign of[1,-1]){const side=add(b.carriage,new T.BoxGeometry(sideWidth,sideEnd-sideStart,.13),frameMaterial,'long-carriage-side-bar-run-past-plate-break');side.position.set(sign*sideX,(sideStart+sideEnd)/2,sideZ);sideBars358.push(side);}
-  const cross=add(b.carriage,new T.BoxGeometry(2*sideX,.14,.13),frameMaterial,'carriage-mounted-fusee-bearing-frame');cross.position.set(0,2.02,wheelZ);
+  // Pass 96: Brown's box bracket, not a full cross bar. One plate off the
+  // lower long bar, level with the old cross bar, runs out to 0.75 past the
+  // shaft (his top edge) and carries both crank-end bearing blocks. It
+  // spans the two blocks and stops short of the crank's sweep; Brown's
+  // outline runs on beyond the crank, which a solid plate in the crank's
+  // plane cannot do.
+  {const [y0,y1]=[g.crankBearingYs[0]-.1,g.crankBearingYs[1]+.1],[x0,x1]=[-sideX,.75];
+   const bracket=add(b.carriage,new T.BoxGeometry(x1-x0,y1-y0,.13),frameMaterial,'carriage-mounted-fusee-bearing-frame');bracket.position.set((x0+x1)/2,(y0+y1)/2,wheelZ);}
   for(const cord of[b.firstCord,b.secondCord])for(const marker of cord.userData.markers)marker.visible=false;
   for(const [i,cord]of[b.firstCord,b.secondCord].entries()){retainTraverseCord(cord,.03,480);cord.userData.mesh.userData.role=`finite-fusee-cord-${i+1}`;}
   const rail=b.track.children.find(o=>o.userData.role==='fixed-carriage-guide-rail'),railTop=rail.position.z+.05;

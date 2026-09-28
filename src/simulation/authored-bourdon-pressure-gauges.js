@@ -732,7 +732,11 @@ function bourdonPressureGauge(movement) {
   // with its link pin, so the pin stands in metal rather than on the very
   // tip of the tube.
   root.userData.blocks.tubeEndEyes = tubeEndPins.map((pin, index) => {
-    const eye = addRole(new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.085, 0.16, 40), tubeMaterial),
+    // Pass 96: the eye is the tube's rounded closed end, r 0.15 (just wider
+    // than the 0.27 tube and its end cap), so the tube end wraps the link pin
+    // and the link's socket in front sits concentric on it rather than
+    // standing half beyond the tip.
+    const eye = addRole(new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.16, 96), tubeMaterial),
       index === 0 ? 'left-free-tube-end-eye' : 'right-free-tube-end-eye');
     pin.add(eye);
     return eye;

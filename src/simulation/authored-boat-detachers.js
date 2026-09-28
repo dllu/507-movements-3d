@@ -212,7 +212,9 @@ function boatDetachingHook(movement) {
   const throatTable = swingPath.map(([, h]) => h);
   const lockedThroatHeight = throatTable[0];
   const exitThroatHeight = throatTable.at(-1);
-  const freeHookRise = 1.1;
+  // Pass 96: a shorter free rise (was 1.1) keeps the released hook and block
+  // in the default frame.
+  const freeHookRise = 0.5;
 
   const cycleDuration = 10;
   const stateAtTime = time => {
@@ -561,7 +563,8 @@ function boatDetachingHook(movement) {
     update,
   };
   update(0);
-  root.userData.cameraFitBounds = new THREE.Box3(new THREE.Vector3(-1.45, -3.62, -0.62), new THREE.Vector3(4.1, 3.3, 0.3));
+  // Pass 96: fitted to the hook's full travel (its eye tops out at 4.27).
+  root.userData.cameraFitBounds = new THREE.Box3(new THREE.Vector3(-1.45, -3.62, -0.62), new THREE.Vector3(4.1, 4.55, 0.3));
   root.userData.cameraDirection = new THREE.Vector3(0.28, 0.12, 1);
   root.userData.cameraDistanceScale = 1.0;
   root.userData.hideGround = true;

@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import {plate, poly, circle, sector, polygonClipping as clip} from './finite-plate-geometry.js';
 import {boredCylinderGeometry} from './piston-guide-parts.js';
 import {boredLatheGeometry} from './bored-lathe-geometry.js';
+import {toCreasedNormals} from 'three/addons/utils/BufferGeometryUtils.js';
 
 function replace(mesh, geometry) {
   mesh.geometry.dispose();
@@ -115,6 +116,23 @@ function correctProny(root) {
   // drawn, with no standard. Everything here is stationary.
   {
     const leverBack=g.leverPlaneZ-g.leverDepth/2,blockTop=g.leverCenterY+g.leverThickness/2-.01;
+    // p96: every strap hinge pin (the end ones in the bolt forks too) stands
+    // centred in the links' thickness, Brown's rivet dots inside the band,
+    // not half outside its outer edge; the block and bolts follow the pins.
+    {
+      const radii=[];
+      for(const strap of b.lowerStraps){const p=strap.geometry.attributes.position;for(let i=0;i<p.count;i++)radii.push(Math.hypot(p.getX(i),p.getY(i)));}
+      const midRadius=(Math.min(...radii)+Math.max(...radii))/2;
+      for(const pin of b.strapPins){const k=midRadius/Math.hypot(pin.position.x,pin.position.y);pin.position.x*=k;pin.position.y*=k;}
+      // The two end pins sat on the end links' end faces, half outside;
+      // move each into its end link so it has a full eye of metal round it.
+      const pins=b.strapPins,angle=p=>Math.atan2(p.position.y,p.position.x);
+      for(const [end,next] of [[pins[0],pins[1]],[pins.at(-1),pins.at(-2)]]){
+        const a=angle(end),toward=Math.sign(Math.atan2(Math.sin(angle(next)-a),Math.cos(angle(next)-a)));
+        const b2=a+toward*(.043+.04)/midRadius+toward*THREE.MathUtils.degToRad(1.1);
+        end.position.x=midRadius*Math.cos(b2);end.position.y=midRadius*Math.sin(b2);
+      }
+    }
     const [first,last]=[b.strapPins[0],b.strapPins.at(-1)];
     const endPins=[first,last].sort((p,q)=>p.position.x-q.position.x);
     const strapTop=Math.max(...b.lowerStraps.map(strap=>{strap.geometry.computeBoundingBox();return strap.geometry.boundingBox.max.y;}));
@@ -200,6 +218,27 @@ function centreProny244OnDrum(root,b,g,wood) {
   for(const pin of [b.strapPins[0],b.strapPins.at(-1)]){
     const pinMesh=pin.userData.rotor?.children[0]??pin.children[0];
     replace(pinMesh,new THREE.CylinderGeometry(pinR,pinR,pinHigh-pinLow,32));pin.position.z=(pinLow+pinHigh)/2;
+  }
+  // p96: the inner hinge pins end in short heads just proud of the strap
+  // faces instead of long spikes (they were centred in the links above).
+  {
+    const head=.008;
+    for(const pin of b.strapPins.slice(1,-1)){
+      const pinMesh=pin.userData.rotor?.children[0]??pin.children[0];
+      replace(pinMesh,new THREE.CylinderGeometry(pinR,pinR,strapFront-strapBack+2*head,32));
+      pin.position.z=(strapFront+strapBack)/2;
+    }
+  }
+  // p96: Brown's pan carries three different weights: a small block, a
+  // cylinder and a bell weight with a ring-handle knob (left to right).
+  if(b.scaleWeights?.length===3){
+    const [block,,bell]=[...b.scaleWeights].sort((p,q)=>p.position.x-q.position.x);
+    const bottom=o=>o.position.y-o.geometry.parameters.height/2;
+    const blockBottom=bottom(block);replace(block,new THREE.BoxGeometry(.26,.16,.2));block.position.y=blockBottom+.08;
+    block.userData.role='calibrated-scale-weight-block';
+    const bellBottom=bottom(bell),profile=[[0,0],[.16,0],[.16,.025],[.13,.06],[.095,.14],[.07,.2],[.055,.225],[.05,.235],[.035,.24],[.035,.25],[.05,.26],[.05,.29],[.035,.305],[0,.31]];
+    replace(bell,toCreasedNormals(new THREE.LatheGeometry(profile.map(([x,y])=>new THREE.Vector2(x,y)),64),Math.PI/6));
+    bell.position.y=bellBottom;bell.userData.role='calibrated-scale-weight-bell';
   }
   // Hang the pan centred under the ring.
   root.updateMatrixWorld(true);

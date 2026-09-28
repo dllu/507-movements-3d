@@ -12,7 +12,7 @@
     },
     {
       "file": "src/simulation/opposed-screw-nuts.js",
-      "sha256": "ff6724dd1b82b344149b12318206e71f306bb99d7e3a27948af5124be586889d"
+      "sha256": "7e5822a84b389d7c23c041c6a6e90f7e2b31db0ddcbd8476956ecf0c2304cdc8"
     },
     {
       "file": "src/simulation/worm-gear-geometry.js",

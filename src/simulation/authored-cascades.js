@@ -143,6 +143,27 @@ function loadAnchoredCascade(id) {
 export const loadAnchoredSevenToOneCascade = () => loadAnchoredCascade(20);
 export const loadAnchoredThreeToOneCascade = () => loadAnchoredCascade(21);
 
+// Pass 96: close the free tip of a block's lower S-hook with a rounded cap
+// of the tube's radius (the stock hook tube is open at its point).
+function capHoistHook(block) {
+  let hook = null;
+  block.userData.frame.traverse((part) => { if (part.geometry?.type === 'TubeGeometry') hook = part; });
+  if (!hook) return;
+  const { path, radius, radialSegments } = hook.geometry.parameters;
+  const { tangents, normals, binormals } = hook.geometry;
+  const last = tangents.length - 1;
+  // A ball of the tube's radius centred on the tip: its front half rounds
+  // the point and its back half closes the tube inside. Its equator is
+  // turned onto the tube's end ring, vertex for vertex, so no step shows.
+  const cap = new THREE.Mesh(new THREE.SphereGeometry(radius, radialSegments, 12), hook.material);
+  cap.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(
+    normals[last].clone(), tangents[last].clone(), binormals[last].clone().negate()));
+  cap.position.copy(path.getPointAt(1));
+  cap.userData.role = 'hook-tip-cap';
+  hook.add(cap);
+  markShadows(cap);
+}
+
 export function sixPulleyCascade() {
   const root = new THREE.Group();
   const upperRadii = [0.28, 0.38, 0.48];
@@ -161,8 +182,13 @@ export function sixPulleyCascade() {
   });
   const load = new THREE.Group();
   const lowerPulleys = lowerRadii.map((radius, index) => {
-    const pulley = makeHoistBlock({ radius, width: 0.20, color: PALETTE.driven,
-      lowerHook: true, lowerHookScale: 0.35 });
+    // Pass 96: the lower sheaves are thinned to 0.4 of their diameter and
+    // their pins cut to 0.35 of the sheave radius (at most the stock 0.065),
+    // so the smallest reads as an open sheave with a hub, not a black blob.
+    const pinRadius = Math.min(0.065, 0.35 * radius);
+    const pulley = makeHoistBlock({ radius, width: 0.8 * radius, color: PALETTE.driven,
+      lowerHook: true, lowerHookScale: 0.35, pinRadius, bore: pinRadius + 0.007 });
+    capHoistHook(pulley);
     pulley.position.set(lowerXs[index], radius - lowerRadii[2], 0);
     load.add(pulley);
     return pulley;
@@ -281,6 +307,7 @@ export function ceilingAnchoredEightToOneCascade() {
   const movingPulleys = xs.map((x, index) => {
     const pulley = makeHoistBlock({ radius: movingRadius, color: index === 0 ? PALETTE.driven : PALETTE.accent,
       ...(index === 0 ? { lowerHook: true, lowerHookScale: 0.6 } : { lowerEyeZ: 0, lowerEyeScale: 0.6 }) });
+    if (index === 0) capHoistHook(pulley);
     pulley.position.set(x, baseYs[index], 0);
     root.add(pulley);
     return pulley;

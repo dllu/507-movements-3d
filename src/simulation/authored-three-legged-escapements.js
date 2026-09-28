@@ -1487,20 +1487,69 @@ function longStoppingToothEscapement(movement) {
   wheelRotor.userData.role = 'clockwise-sixty-degree-long-tooth-rotor';
   escapeWheel.add(wheelRotor);
 
-  // Brown's long teeth are spears: a straight leading edge on the radius (so
-  // only the point meets D or E) and a trailing edge widening to the hub.
-  // Near the point the leading edge is raked back (0.2) so that it falls away
-  // from D's face faster than the face falls inboard.
-  const spear = (angle) => poly([
-    [0.10, -0.025],
-    [longToothRadius - 0.15, 0.03],
-    [longToothRadius, 0],
-    [longToothRadius - 0.15, 0.085],
-    [0.30, 0.30],
-    [0.02, 0.11],
-  ].map(([x, y]) => rotate2(new THREE.Vector2(x, y), angle).toArray()));
+  // Brown's long teeth are slim, straight-tapering blades whose roots meet
+  // in a triangular web round the hub. Each is one smooth outline: a
+  // straight leading edge running just ahead of the centre (as Brown draws
+  // it) and covering the inner pins, a straight trailing edge running back
+  // to the next leg's leading edge at Brown's web corner, and a round end
+  // tangent to the trailing edge. The working point is the corner where the
+  // leading edge meets the round end on the tooth radius, so only that
+  // corner meets D or E. Over its last 0.35 the leading edge turns through
+  // a tangent arc (sagitta under 0.005, too slight to see) to a rake of
+  // 0.085 at the point, against D's face's 0.067 in the tooth's frame, so it
+  // falls away from the face faster than the face falls inboard; a straight
+  // edge to the point would graze D at the drawn pose.
+  const legRake = 0.085;
+  const legStraightSlope = -0.02;
+  const legBendLength = 0.35;
+  const legTipRadius = 0.035;
+  const legRootX = 0.08;
+  const legLeadingY = (u) => {
+    const k = (legStraightSlope - legRake) / (2 * legBendLength);
+    if (u <= legBendLength) return legRake * u + k * u * u;
+    return (legRake + legStraightSlope) * legBendLength / 2 + legStraightSlope * (u - legBendLength);
+  };
+  // The trailing root lies on the next leg's leading edge, 0.45 from the
+  // centre (Brown's web corner).
+  const legTrailRoot = rotate2(new THREE.Vector2(0.45, legLeadingY(longToothRadius - 0.45)), toothPitch).toArray();
+  const legOutline = (() => {
+    const leading = [];
+    for (let i = 0; i <= 60; i += 1) {
+      const x = legRootX + (longToothRadius - legRootX) * i / 60;
+      leading.push([x, legLeadingY(longToothRadius - x)]);
+    }
+    // Round end: centre on the tooth radius, so the end leaves the working
+    // corner square to the radius and never reaches past it.
+    const cx = longToothRadius - legTipRadius;
+    const [tx, ty] = legTrailRoot;
+    const dx = tx - cx, dy = ty;
+    const d = Math.hypot(dx, dy);
+    // Tangent from the trailing root to the tip circle, on the +y side.
+    const tangentAngle = Math.atan2(dy, dx) - Math.acos(legTipRadius / d);
+    const end = [];
+    for (let i = 0; i <= 24; i += 1) {
+      const a = tangentAngle * i / 24;
+      end.push([cx + legTipRadius * Math.cos(a), legTipRadius * Math.sin(a)]);
+    }
+    return [...leading, ...end.slice(1), legTrailRoot];
+  })();
+  // The wedge cuts through the root disc can leave zero-area slivers.
+  const ringArea = (ring) => Math.abs(ring.reduce((sum, [x0, y0], i) => {
+    const [x1, y1] = ring[(i + 1) % ring.length];
+    return sum + x0 * y1 - x1 * y0;
+  }, 0) / 2);
+  const dropSlivers = (multi) => multi
+    .filter(([outer]) => ringArea(outer) > 1e-8)
+    .map(([outer, ...holes]) => [outer, ...holes.filter((hole) => ringArea(hole) > 1e-8)]);
+  const spear = (angle) => poly(legOutline.map(([x, y]) => rotate2(new THREE.Vector2(x, y), angle).toArray()));
   const wheelOutline = clip.difference(
-    clip.union(...Array.from({ length: toothCount }, (_, index) => spear(index * toothPitch))),
+    // The leg roots meet in Brown's triangular web (corners at the trailing
+    // roots) round a disc under the hub, so the wheel is one solid outline.
+    clip.union(
+      poly(circle([0, 0], 0.19, 96)),
+      poly(Array.from({ length: toothCount }, (_, index) => rotate2(new THREE.Vector2(...legTrailRoot), index * toothPitch).toArray())),
+      ...Array.from({ length: toothCount }, (_, index) => spear(index * toothPitch)),
+    ),
     poly(circle([0, 0], arborRadius + 0.0015, 64)),
   );
   const wedge = (angle) => poly([
@@ -1544,7 +1593,7 @@ function longStoppingToothEscapement(movement) {
   for (let index = 0; index < toothCount; index += 1) {
     const longTooth = new THREE.Mesh(
       platePrism(
-        clip.intersection(wheelOutline, wedge(index * toothPitch)),
+        dropSlivers(clip.intersection(wheelOutline, wedge(index * toothPitch))),
         lockPlaneZ - wheelDepth / 2,
         lockPlaneZ + wheelDepth / 2,
       ),

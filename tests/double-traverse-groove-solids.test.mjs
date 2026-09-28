@@ -39,12 +39,14 @@ test('348: both finite shoes clear the cross-slot walls and engage the disk dept
       const box = bounds(slide.block);
       assert.ok(box.min.z > disk.min.z && box.max.z < disk.max.z);
       assert.ok(bounds(b.inputShaft).max.z < box.min.z);
-      for (const floor of b.slotFloors) assert.ok(bounds(floor).max.z < box.min.z);
+      const floorZ = b.slottedDisk.userData.slotFloorZ + b.diskAssembly.position.z;
+      assert.ok(floorZ < box.min.z);
       const { width, height } = slide.block.geometry.parameters;
       for (const x of [-width / 2, 0, width / 2]) for (const y of [-height / 2, 0, height / 2]) {
         const point = new THREE.Vector3(x, y, 0).applyMatrix4(slide.block.matrixWorld);
         ray.set(new THREE.Vector3(point.x, point.y, 10), new THREE.Vector3(0, 0, -1));
-        for (const wall of [b.slottedDisk, ...b.slotEdges]) assert.equal(ray.intersectObject(wall, true).length, 0);
+        // Nothing of disk A lies over the shoe: the first hit is the groove floor.
+        for (const hit of ray.intersectObject(b.slottedDisk, true)) assert.ok(hit.point.z <= floorZ + 1e-6);
       }
       clearsPin(slide.pivotPin, [b.rodBody, b.rodLowerCap]);
     }
@@ -86,6 +88,17 @@ test('350: input shoe and output bar are inside their guides without solid overl
     assert.ok(shoe.min.y < rod.min.y && shoe.max.y > rod.max.y);
     assert.ok(shoe.min.z < rod.min.z && shoe.max.z > rod.max.z);
     assert.ok(pinD.min.z > rod.max.z && pinD.min.z < shoe.max.z);
+    // p96: guides a, a carry the rod's ends: each upright continues down in
+    // a flat L plate behind the shoe, and a lug closes over the rod end
+    // beyond the shoe's travel.
+    b.inputRodHangers.forEach(({ hanger, lug }, index) => {
+      const h = bounds(hanger), l = bounds(lug), up = bounds(b.outputGuideAssemblies[index].upright);
+      assert.ok(Math.abs(h.max.y - up.min.y) < 1e-6 && h.min.z >= up.min.z - 1e-6);
+      assert.ok(h.max.z < shoe.min.z && Math.abs(l.min.z - h.max.z) < 1e-6);
+      assert.ok(l.min.x > shoe.max.x || l.max.x < shoe.min.x);
+      assert.ok(l.min.x < (index === 0 ? rod.min.x : rod.max.x) && l.max.x > (index === 0 ? rod.min.x : rod.max.x));
+      assert.ok(l.min.y < rod.min.y && l.max.y > rod.max.y && l.max.z > rod.max.z);
+    });
     const bar = bounds(b.outputRail);
     for (const guide of b.outputGuideAssemblies) {
       const lips = guide.lips.map(bounds);

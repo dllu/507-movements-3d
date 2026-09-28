@@ -25,15 +25,23 @@ export function correctWatchRegulator(root){
   // Brown's regulator ring is small (about a third of the spring's radius):
   // keep the fixed ring and the lever's ring close round the staff so the
   // balance spring shows as one spiral from the collet out to stud R.
-  replace(b.fixedRing,tube(.28,.20,.17).rotateX(Math.PI/2));b.fixedRing.position.z=.98;
-  replace(b.regulatorRing,tube(.40,.16,.282).rotateX(Math.PI/2));
-  // The arm ends at the base of the pointer's triangular tip, so the two
-  // abut on one face instead of overlapping with z-fighting coplanar faces.
+  // The fixed ring's bore is the staff's journal bore (.152 on the .15
+  // staff), so no crescent of the hub behind shows round the staff.
+  replace(b.fixedRing,tube(.28,.20,.152).rotateX(Math.PI/2));b.fixedRing.position.z=.98;
+  // The regulator lever is one brass extrusion: the ring round the fixed
+  // ring and the arm down to the base of the pointer's triangular tip, which
+  // abuts it on one face. (A separate arm box ran into the ring with its
+  // faces coplanar with the ring's, and z-fought along the seam.)
   {
     b.pointer.geometry.computeBoundingBox();
     const armEnd=-(b.pointer.position.y+b.pointer.geometry.boundingBox.max.y);
-    replace(b.regulatorArm,new THREE.BoxGeometry(.18,armEnd-.38,.16));
-    b.regulatorArm.position.y=-(armEnd+.38)/2;
+    const lever=polygonClipping.difference(
+      polygonClipping.union(poly(circle([0,0],.40,128)),poly([[-.09,-armEnd],[.09,-armEnd],[.09,-.30],[-.09,-.30]])),
+      poly(circle([0,0],.282,128)));
+    replace(b.regulatorRing,plate(lever,-.08,.08));
+    b.regulatorRing.userData.role='regulator-lever-ring-and-pointer-arm';
+    b.regulatorArm.removeFromParent();b.regulatorArm.geometry.dispose();
+    b.regulatorArm=b.regulatorRing;
   }
   g.fixedRingInnerRadius=.17;g.fixedRingOuterRadius=.28;
   // The rate scale is a plain silvered sector: no engraved grid of arcs and

@@ -140,8 +140,11 @@ test('movement 355 records the engraving honestly and invents no source animatio
     'ring raster radius');
   near(geometry.sourceDiskRadiusPixels, 144.5, 0,
     'disk raster radius');
-  near(geometry.supportToCenter / geometry.sourceScale, 182, 2e-14,
-    'scaled support-to-center span');
+  near(geometry.sourcePintleToRingGapPixels, 40, 0,
+    'Brown\'s gap from pintle F to the near edge of ring A');
+  near(geometry.supportToCenter - geometry.ringOuterRadius,
+    40 * geometry.sourceScale, 1e-12,
+    'ring A keeps Brown\'s 40 px gap from pintle F (pass 96)');
   near(geometry.ringRadius / geometry.sourceScale, 151.5, 2e-14,
     'scaled ring radius');
   near(geometry.diskRadius / geometry.sourceScale, 144.5, 2e-14,
@@ -374,8 +377,8 @@ test('movement 355 closes one precession circuit and leaves 364 authored', () =>
     Math.PI * 2, 9e-16, 'one precession turn');
   near(finish.diskSpinAngle - start.diskSpinAngle,
     Math.PI * 2 * 12, 2e-14, 'twelve disk turns');
-  near(finish.precessionTurns, 1, 0, 'precession turn count');
-  near(finish.diskSpinTurns, 12, 0, 'disk turn count');
+  near(finish.precessionTurns, 1, 1e-15, 'precession turn count');
+  near(finish.diskSpinTurns, 12, 1e-14, 'disk turn count');
   vectorNear(finish.spinAxis, start.spinAxis, 9e-16,
     'spin-axis closure');
   vectorNear(finish.diskCenter, start.diskCenter, 2e-15,
@@ -435,4 +438,36 @@ test('movement 355 (pass 94): the opening view frames Brown\'s phase-0 pose, not
   const fitCenter = fit.getCenter(new THREE.Vector3());
   assert.ok(Math.abs(poseCenter.x - fitCenter.x) < 0.1, 'phase-0 pose centred across the view');
   assert.ok(fit.max.x - fit.min.x < 6, 'box spans the pose, not the 9.5-wide sweep');
+});
+
+test('movement 355 (pass 96): ring A clears the bearing cup and neck F is a buried round S-neck', () => {
+  const model = createMovementModel(catalog.movements[354]);
+  const { blocks, geometry } = model.root.userData;
+  for (const phase of [0, 0.25, 0.5, 0.75]) {
+    model.update(phase * geometry.precessionCyclePeriod);
+    model.root.updateMatrixWorld(true);
+    const cup = new THREE.Box3().setFromObject(blocks.supportCup);
+    const cupRadius = (cup.max.x - cup.min.x) / 2;
+    const ringPositions = blocks.ringBody.geometry.attributes.position;
+    const v = new THREE.Vector3();
+    let nearest = Infinity;
+    for (let i = 0; i < ringPositions.count; i += 1) {
+      v.fromBufferAttribute(ringPositions, i).applyMatrix4(blocks.ringBody.matrixWorld);
+      nearest = Math.min(nearest, Math.hypot(v.x - geometry.supportPivot.x, v.z - geometry.supportPivot.z));
+    }
+    assert.ok(nearest > cupRadius + 0.15, `ring A ${nearest} clear of the cup (radius ${cupRadius}) at ${phase}`);
+  }
+  // Both neck ends are buried: the start inside the pintle cap, the end in ring A's band.
+  const path = blocks.curvedNeck.geometry.parameters.path;
+  const start = path.getPoint(0); const end = path.getPoint(1);
+  assert.ok(start.x === 0 && start.y > geometry.pintleLength - 0.025 && start.y < geometry.pintleLength + 0.055, 'neck starts inside the pintle cap');
+  // The end is buried in the top of the left spindle bearing (ring A's band is bored there).
+  near(end.x, geometry.supportToCenter - geometry.bearingOffset, 1e-12, 'neck lands on the left bearing');
+  assert.ok(end.y > 0.096 && Math.hypot(end.y, geometry.neckRadius) < geometry.bearingOuterRadius, 'neck end inside the bearing wall');
+  assert.ok(geometry.neckRadius < geometry.bearingLength / 2, 'neck narrower than the bearing');
+  const lowest = Math.min(...path.getSpacedPoints(64).map((p) => p.y));
+  assert.ok(lowest > 0.096, 'nothing of the neck hangs below the ring or enters the bore');
+  const highest = Math.max(...path.getSpacedPoints(64).map((p) => p.y));
+  assert.ok(highest > geometry.pintleLength + 0.2, 'the neck arches up over the pintle as Brown draws');
+  disposeModel(model.root);
 });

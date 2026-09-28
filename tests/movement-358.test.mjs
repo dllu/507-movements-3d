@@ -429,3 +429,37 @@ test('movement 358 (pass 92): the crank carries the shared turned handle, centre
     model.root.traverse((object) => object.geometry?.dispose?.());
   }
 });
+
+test('movement 358 (pass 96): the shaft runs on through two bored blocks on a bracket to the crank', () => {
+  const model = createMovementModel(catalog.movements[357]);
+  try {
+    const { geometry, blocks } = model.root.userData;
+    const find = (role) => { const out = []; model.root.traverse((o) => { if (o.isMesh && o.visible && o.userData.role === role) out.push(o); }); return out; };
+    const [shaft] = find('vertical-fusee-and-crank-shaft');
+    const [hub] = find('fusee-crank-hub');
+    const [arm] = find('source-visible-fusee-crank-arm');
+    const bearingBlocks = find('carriage-mounted-crank-end-bearing-block');
+    const brackets = find('carriage-mounted-fusee-bearing-frame');
+    // Brown: the crank stands 132 px (1.28 at 0.0097 per pixel) beyond the fusee's large end.
+    near(geometry.crankHubY - geometry.fuseeTopY, 1.28, 0.02, 'crank beyond the fusee large end');
+    const shaftTop = shaft.position.y + shaft.geometry.parameters.height / 2;
+    const hubBottom = hub.position.y - hub.geometry.parameters.height / 2;
+    assert.ok(shaftTop > hubBottom + 0.03, `shaft runs into the crank hub (${shaftTop} vs ${hubBottom})`);
+    assert.equal(bearingBlocks.length, 2, 'two crank-end bearing blocks');
+    assert.equal(brackets.length, 1, 'one bracket carries them');
+    model.root.updateMatrixWorld(true);
+    const bracket = new THREE.Box3().setFromObject(brackets[0]);
+    // The crank's sweep is a disc about the shaft (world x) at the hub.
+    const armBox = new THREE.Box3().setFromObject(arm);
+    for (const block of bearingBlocks) {
+      assert.ok(block.geometry.userData.bores[0].radius > shaft.geometry.parameters.radiusTop, 'block bored clear of the shaft');
+      const box = new THREE.Box3().setFromObject(block);
+      assert.ok(box.intersectsBox(bracket), 'block stands on the bracket');
+      assert.ok(box.min.x > armBox.max.x + 0.05, 'block clear of the crank plane');
+    }
+    assert.ok(bracket.min.x > armBox.max.x + 0.05, 'bracket stops short of the crank plane');
+    assert.ok(blocks.fuseeRotor);
+  } finally {
+    model.root.traverse((object) => object.geometry?.dispose?.());
+  }
+});

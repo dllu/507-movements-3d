@@ -26,7 +26,7 @@ import { applyRotationIndicator } from './rotation-indicator.js';
 import { creaseLatheNormals } from './crease-normals.js';
 import sourcePresentation from '../data/source-presentation.js';
 import { makeFuseeMotion, fuseeParameters } from './fusee-motion.js';
-import { groovedFuseeGeometry } from './fusee-geometry.js';
+import { steppedFuseeGeometry } from './fusee-geometry.js';
 import { makeArticulatedFuseeChain } from './fusee-chain.js';
 import { fuseeSpringGeometry } from './fusee-spring.js';
 import { makeFuseeChainAnchor, makeFuseeSpringClamp } from './fusee-attachments.js';
@@ -400,6 +400,20 @@ function spurGears() {
   return finish(root, update, new THREE.Vector3(0.2, 0.1, 10));
 }
 
+// Rebuilds every plain cylinder in a model with at least `segments` sides,
+// keeping each one's dimensions, so small round parts are not polygonal.
+function resegmentCylinders(root, segments) {
+  root.traverse((part) => {
+    const geometry = part.geometry;
+    if (geometry?.type !== 'CylinderGeometry') return;
+    const p = geometry.parameters;
+    if (p.radialSegments >= segments) return;
+    part.geometry = new THREE.CylinderGeometry(p.radiusTop, p.radiusBottom, p.height,
+      segments, p.heightSegments, p.openEnded, p.thetaStart, p.thetaLength);
+    geometry.dispose();
+  });
+}
+
 function bevelGears() {
   const root = new THREE.Group();
   const apex = new THREE.Vector3(0, 0, 0);
@@ -516,6 +530,8 @@ function bevelGears() {
       pitchLineSpeed: driverSurfaceVelocity.length(),
     };
   };
+  // Round shafts, collars and hubs shade smoothly at close zoom.
+  resegmentCylinders(root, 64);
   update(0);
   // Brown draws both wheels edge-on, nearly without perspective, from a
   // little above the upright wheel's back face.
@@ -1113,14 +1129,29 @@ function brushWheels() {
   });
   // A slight crown gives one central contact with the disk. A cylindrical
   // face would demand different rolling speeds across its finite width.
-  const rollerProfile = [new THREE.Vector2(0, -0.14)];
+  // The wheel slides along its fixed shaft, so the drum and its hub are
+  // bored to run on it.
+  const rollerBoreRadius = 0.116;
+  const rollerProfile = [new THREE.Vector2(rollerBoreRadius, -0.14)];
   for (let step = 0; step <= 24; step += 1) {
     const axial = -0.14 + 0.28 * step / 24;
     rollerProfile.push(new THREE.Vector2(rollerRadius - 0.02 * (axial / 0.14) ** 2, axial));
   }
-  rollerProfile.push(new THREE.Vector2(0, 0.14), new THREE.Vector2(0, -0.14));
+  rollerProfile.push(new THREE.Vector2(rollerBoreRadius, 0.14), new THREE.Vector2(rollerBoreRadius, -0.14));
   roller.userData.tread.geometry.dispose();
   roller.userData.tread.geometry = new THREE.LatheGeometry(rollerProfile, 96);
+  for (const child of roller.userData.rotor.children) {
+    if (child.geometry?.type !== 'CylinderGeometry') continue;
+    const { radiusTop: hubRadius, height: hubLength } = child.geometry.parameters;
+    child.geometry.dispose();
+    child.geometry = new THREE.LatheGeometry([
+      new THREE.Vector2(rollerBoreRadius, -hubLength / 2), new THREE.Vector2(hubRadius, -hubLength / 2),
+      new THREE.Vector2(hubRadius, hubLength / 2), new THREE.Vector2(rollerBoreRadius, hubLength / 2),
+      new THREE.Vector2(rollerBoreRadius, -hubLength / 2),
+    ], 64).rotateX(Math.PI / 2);
+    child.rotation.set(0, 0, 0);
+    child.userData.role = 'bored-sliding-hub';
+  }
   roller.userData.crownHeight = 0.02;
   for (const child of [...roller.userData.rotor.children]) {
     if (child.geometry?.type === 'BoxGeometry' && !roller.userData.faceIndicators.includes(child)) {
@@ -1144,20 +1175,36 @@ function brushWheels() {
   // below the boss; the upper wheel's shaft is about 0.11.
   const diskShaft = makeShaft({ length: 2.5, radius: 0.21, axis: Y_AXIS });
   diskShaft.position.set(0, -1.75, 0);
-  const rollerShaft = makeShaft({ length: 1.25, radius: 0.11, axis: X_AXIS });
-  rollerShaft.position.set(0.42, diskSurfaceY + rollerRadius, 0);
+  // The upper shaft stays in its (omitted) bearings; only the wheel slides
+  // along it on a keyed fit. It spans the innermost setting's inner face to
+  // the plate's long outer end at the outermost setting.
+  const rollerShaftInner = 0.46;
+  const rollerShaftOuter = 1.84;
+  const rollerShaft = makeShaft({
+    length: rollerShaftOuter - rollerShaftInner,
+    radius: 0.11,
+    axis: X_AXIS,
+  });
+  rollerShaft.position.set(
+    (rollerShaftInner + rollerShaftOuter) / 2,
+    diskSurfaceY + rollerRadius,
+    0,
+  );
   root.add(diskShaft, rollerShaft);
   addRail(root, -2.48, 5.2, -0.72);
 
   // The cycle opens at the plate's setting, the roller about 0.97 from the
   // lower wheel's centre, then works outward and back inward.
-  const contactRadii = [0.97, 1.24, 0.55];
+  // The inner setting keeps a short shaft stub inside the wheel, as the
+  // plate's stub beside it, so the fixed shaft never pokes over the centre.
+  const contactRadii = [0.97, 1.24, 0.66];
   const dwellDuration = 3.2;
   const shiftDuration = 1.2;
   const stageDuration = dwellDuration + shiftDuration;
   const cycleDuration = stageDuration * contactRadii.length;
   const driverAnglePerDwell = Math.PI * 1.5;
-  const liftHeight = 0.2;
+  // The wheel stays on the disk and slides along its shaft (no lift).
+  const liftHeight = 0;
   const drivenIncrements = contactRadii.map(
     (radius) => driverAnglePerDwell * rollerRadius / radius,
   );
@@ -1242,7 +1289,6 @@ function brushWheels() {
       0,
     );
     roller.position.copy(rollerCenter);
-    rollerShaft.position.set(rollerCenter.x + 0.30, rollerCenter.y, 0);
     setSpin(roller, driverAngle);
     setSpin(rollerShaft, driverAngle);
     setSpin(disk, drivenAngle);
@@ -2294,12 +2340,49 @@ function ellipticalGears() {
   const drivenCenter = new THREE.Vector3(centerDistance / 2, 0, 0);
   driver.position.copy(driverCenter);
   driven.position.copy(drivenCenter);
+  // Plate 33 draws an oval line well inside each gear's teeth and a small
+  // ring round each shaft: a full-depth toothed rim round a recessed web,
+  // and a raised shaft boss, all in the wheel's own colour (as on 030).
+  const gearDepth = 0.26;
+  const webDepth = 0.18;
+  const rimInset = 0.25;
+  const bossRadius = 0.24;
+  for (const gear of [driver, driven]) {
+    const rotor = gear.userData.rotor;
+    const hub = rotor.children.find((part) => part.geometry?.type === 'CylinderGeometry');
+    const toothed = rotor.children.find((part) => part.userData.rackGeneratedGear);
+    const insetCurve = gear.userData.pitchPoints.map((point, index, points) => {
+      const tangent = points[(index + 1) % points.length].clone()
+        .sub(points[(index - 1 + points.length) % points.length]).normalize();
+      return point.clone().addScaledVector(new THREE.Vector2(tangent.y, -tangent.x), -rimInset);
+    });
+    const rimShape = new THREE.Shape(gear.userData.generatedCut.points);
+    rimShape.closePath();
+    rimShape.holes.push(new THREE.Path([...insetCurve].reverse()));
+    const extrude = (shape, depth) => {
+      const geometry = new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: false, curveSegments: 1 });
+      geometry.translate(0, 0, -depth / 2);
+      return geometry;
+    };
+    toothed.geometry.dispose();
+    toothed.geometry = extrude(rimShape, gearDepth);
+    const web = new THREE.Mesh(extrude(new THREE.Shape(insetCurve), webDepth), toothed.material);
+    web.userData.role = 'recessed-web';
+    rotor.add(web);
+    hub.geometry.dispose();
+    hub.geometry = new THREE.CylinderGeometry(bossRadius, bossRadius, gearDepth + 0.08, 64);
+    hub.material.dispose();
+    hub.material = toothed.material;
+    hub.userData.role = 'raised-shaft-boss';
+  }
   root.add(driver, driven);
   const driverShaft = makeShaft({ length: 0.40, radius: 0.14, axis: Z_AXIS });
   driverShaft.position.copy(driverCenter);
   const drivenShaft = makeShaft({ length: 0.40, radius: 0.14, axis: Z_AXIS });
   drivenShaft.position.copy(drivenCenter);
   root.add(driverShaft, drivenShaft);
+  resegmentCylinders(driverShaft, 64);
+  resegmentCylinders(drivenShaft, 64);
   const driverAngularSpeed = 0.62;
   root.userData.mechanism = 'centered-second-order-elliptical-gears';
   root.userData.blocks = { driven, drivenShaft, driver, driverShaft };
@@ -2448,6 +2531,13 @@ function internalGearDrive() {
     pitchRadius: ringPitchRadius,
     outerRadius: 1.68,
     teeth: ringTeeth,
+    // Plate 34 draws short, square, flat-topped teeth on the ring, about as
+    // wide as their gaps. A stub form (addendum 0.8, dedendum 1.0 module)
+    // keeps the flanks nearly parallel and the gaps open at the root.
+    addendum: module * 0.8,
+    dedendum: module * 1.0,
+    tipSamples: 4,
+    rootGapSamples: 4,
     chamfer: 0.006,
     backlash: 0.0006,
   });
@@ -2460,8 +2550,9 @@ function internalGearDrive() {
     depth: 0.28,
     radius: pinionPitchRadius,
     teeth: pinionTeeth,
-    addendum: module,
-    dedendum: module * 1.25,
+    // The same stub form as the ring.
+    addendum: module * 0.8,
+    dedendum: module * 1.0,
     chamfer: 0.006,
   });
   const pinionHub = pinion.userData.rotor.children.find((part) => part.geometry?.type === 'CylinderGeometry');
@@ -3546,24 +3637,47 @@ function variableSectorGears() {
     retireInkOutline(joint);
     gear.userData.rotor.add(joint);
   }
-  const collars = [];
-  for (const x of [-centerDistance / 2, centerDistance / 2]) {
-    const shape = new THREE.Shape();
-    shape.absarc(0, 0, collarOuterRadius, 0, 2 * Math.PI, false);
-    const hole = new THREE.Path();
-    hole.absarc(0, 0, collarInnerRadius, 0, 2 * Math.PI, true);
-    shape.holes.push(hole);
-    const geometry = new THREE.ExtrudeGeometry(shape, {
-      depth: 0.085, bevelEnabled: false, curveSegments: 64,
-    });
-    const collar = new THREE.Mesh(geometry, matte(PALETTE.frame, { roughness: 0.66 }));
-    collar.position.set(x, 0, 0.155);
-    root.add(collar);
-    collars.push(collar);
+  // Brown's fixed link is one flat plate in front of the gears: a ring round
+  // each shaft (the drawn collars) joined by a straight waist, with fillets
+  // concentric-tangent to both. One extrusion, bored for both shafts.
+  const linkDepth = 0.085;
+  const linkFront = 0.155;
+  const linkWaistHalfWidth = 0.4 * collarOuterRadius;
+  const linkFillet = 0.12;
+  const halfSpan = centerDistance / 2;
+  const filletCenterY = linkWaistHalfWidth + linkFillet;
+  const filletOffset = Math.sqrt((collarOuterRadius + linkFillet) ** 2 - filletCenterY ** 2);
+  // Tangent angle on each eye (measured from +x at the right eye).
+  const eyeTangent = Math.atan2(filletCenterY, -filletOffset);
+  const linkShape = new THREE.Shape();
+  // Right eye's outer arc from the lower tangent round to the upper tangent.
+  linkShape.absarc(halfSpan, 0, collarOuterRadius, -eyeTangent, eyeTangent, false);
+  // Upper-right fillet (concave), then waist, then upper-left fillet.
+  const fillet = (cx, cy, from, to) => linkShape.absarc(cx, cy, linkFillet, from, to, true);
+  fillet(halfSpan - filletOffset, filletCenterY, eyeTangent - Math.PI, -Math.PI / 2);
+  linkShape.lineTo(-halfSpan + filletOffset, linkWaistHalfWidth);
+  fillet(-halfSpan + filletOffset, filletCenterY, -Math.PI / 2, -eyeTangent);
+  linkShape.absarc(-halfSpan, 0, collarOuterRadius, Math.PI - eyeTangent, Math.PI + eyeTangent, false);
+  fillet(-halfSpan + filletOffset, -filletCenterY, eyeTangent, Math.PI / 2);
+  linkShape.lineTo(halfSpan - filletOffset, -linkWaistHalfWidth);
+  fillet(halfSpan - filletOffset, -filletCenterY, Math.PI / 2, Math.PI - eyeTangent);
+  linkShape.closePath();
+  for (const x of [-halfSpan, halfSpan]) {
+    const bore = new THREE.Path();
+    bore.absarc(x, 0, collarInnerRadius, 0, 2 * Math.PI, true);
+    linkShape.holes.push(bore);
   }
-  const centerLink = makeBeam(new THREE.Vector3(-centerDistance / 2 + 0.25, 0, 0.1975),
-    new THREE.Vector3(centerDistance / 2 - 0.25, 0, 0.1975),
-    { thickness: 0.035, depth: 0.04, color: PALETTE.frame });
+  const centerLink = new THREE.Mesh(
+    new THREE.ExtrudeGeometry(linkShape, { depth: linkDepth, bevelEnabled: false, curveSegments: 64 }),
+    matte(PALETTE.frame, { roughness: 0.66 }),
+  );
+  centerLink.position.z = linkFront;
+  centerLink.userData.role = 'fixed-center-link';
+  centerLink.userData.eyeRadius = collarOuterRadius;
+  centerLink.userData.boreRadius = collarInnerRadius;
+  centerLink.userData.waistHalfWidth = linkWaistHalfWidth;
+  // The eyes are the old collars, now of one piece with the link.
+  const collars = [centerLink, centerLink];
   centerLink.userData.fixedCenterLink = true;
   const driverShaft = makeShaft({ length: 0.44, radius: shaftRadius, axis: Z_AXIS });
   const drivenShaft = makeShaft({ length: 0.44, radius: shaftRadius, axis: Z_AXIS });
@@ -4359,29 +4473,21 @@ function fuseeDrive() {
   fusee.add(fuseeRotor);
   fusee.quaternion.setFromUnitVectors(Z_AXIS, Y_AXIS);
   fusee.position.copy(fuseeCenter);
-  const geometry = groovedFuseeGeometry(p);
+  const geometry = steppedFuseeGeometry(p);
   const fuseeMaterial = matte(PALETTE.driver, { metalness: 0.15, roughness: 0.61 });
   const fuseeBody = new THREE.Mesh(geometry, fuseeMaterial);
-  const makeTerminal = (radius, low, high) => {
-    const body = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, high - low, 128), fuseeMaterial);
-    body.rotation.x = Math.PI / 2;
-    body.position.z = (low + high) / 2;
-    fuseeRotor.add(body);
-    return body;
-  };
-  const topBoss = makeTerminal(0.555, geometry.userData.bodyTop, bodyTop);
-  const base = makeTerminal(1.18, bodyBottom, geometry.userData.bodyBottom);
   fuseeRotor.add(fuseeBody);
   Object.assign(fusee.userData, { axis: Y_AXIS.clone(), rotor: fuseeRotor, body: fuseeBody,
-    topBoss, base, grooveTurns: p.grooveTurns, machinedHelicalGroove: true });
+    grooveTurns: p.grooveTurns, steppedTiers: true, tierCount: geometry.userData.tierCount });
   const chain = makeArticulatedFuseeChain(motion.linkCount, motion.linkPitch);
   const barrelAnchor = makeFuseeChainAnchor({ pinRadius: p.barrelRadius, seatRadius: barrelOuterRadius,
     height: p.barrelChainZTop, offsets: [-0.013, 0.013] });
+  // The chain's end is pinned level on the lowest tier, against its riser.
   const fuseeAnchor = makeFuseeChainAnchor({ pinRadius: p.fuseeBottomRadius,
-    seatRadius: p.fuseeBottomRadius + geometry.userData.floorOffset,
-    radialSlope: (p.fuseeBottomRadius - p.fuseeTopRadius) / (2 * Math.PI * p.grooveTurns),
+    seatRadius: p.fuseeBottomRadius - p.riserGap,
     angle: 2 * Math.PI * p.grooveTurns, height: p.fuseeZBottom,
     offsets: motion.linkCount % 2 === 0 ? [-0.026, 0, 0.026] : [-0.013, 0.013] });
+  barrelAnchor.userData.chainEndAnchor = true;
   barrelRotor.add(barrelAnchor);
   fuseeRotor.add(fuseeAnchor);
   const innerClamp = makeFuseeSpringClamp({ innerRadius: 0.103, outerRadius: 0.125,
@@ -4397,19 +4503,14 @@ function fuseeDrive() {
   root.add(springBox, spring, fusee, chain, barrelShaft, fuseeShaft);
   // The plain barrel and the turned fusee carry the shared quadrant rotation cue.
   for (const rotor of [barrelRotor, fuseeRotor]) applyRotationIndicator(rotor, { axis: 'auto' });
-  // Match the visible barrel hook and the three lower courses. Retaining a
-  // reserve wrap at full wind lets the three-turn fusee match Brown's broad
-  // steps without requiring the chain to leave the barrel hook unsupported.
-  let low = 0, high = 1;
-  for (let i = 0; i < 36; i += 1) {
-    const middle = (low + high) / 2;
-    if (motion.stateAtProgress(middle, false).barrelTurns < 3) low = middle;
-    else high = middle;
-  }
-  const sourceProgress = (low + high) / 2;
+  // Plate 46 shows the chain run down to the fusee's lowest tier with about
+  // one wrap left on it, the rest coiled on the barrel.
+  const sourceWrapLeft = 5.0;
+  const sourceProgress = 1 - sourceWrapLeft / (2 * Math.PI * p.grooveTurns);
   const sourcePhase = Math.acos(1 - 2 * sourceProgress);
   const cycleRate = 0.18, cycleDuration = 2 * Math.PI / cycleRate;
   root.userData.mechanism = 'articulated-chain-in-machined-fusee-with-fixed-spring-arbor';
+  root.userData.fuseeForm = 'stepped-tiers-with-spiral-climb-lobes';
   root.userData.blocks = { springBox, spring, fusee, chain, barrelShaft, fuseeShaft,
     barrelAnchor, fuseeAnchor, innerClamp, outerClamp };
   root.userData.geometry = { ...p, barrelCenter, fuseeCenter, bodyBottom, bodyTop,
@@ -14773,32 +14874,56 @@ function handCrankPinionSectorRodPress() {
     platenPlaneZ,
   );
   platenBody.userData.role = 'source-six-unit-wide-moving-platen';
-  const platenBracketLeft = makeBeam(
-    new THREE.Vector3(0, 0, connectingRodPlaneZ),
-    new THREE.Vector3(-0.46, platenBodyBottom, connectingRodPlaneZ),
-    {
-      color: PALETTE.driven,
-      depth: 0.14,
-      thickness: 0.17,
-    },
-  );
-  platenBracketLeft.userData.role = 'left-web-from-wrist-pin-to-platen';
-  const platenBracketRight = makeBeam(
-    new THREE.Vector3(0, 0, connectingRodPlaneZ),
-    new THREE.Vector3(0.46, platenBodyBottom, connectingRodPlaneZ),
-    {
-      color: PALETTE.driven,
-      depth: 0.14,
-      thickness: 0.17,
-    },
-  );
-  platenBracketRight.userData.role = 'right-web-from-wrist-pin-to-platen';
+  // p97: the hanger under the platen is ONE extrusion (was two crossed
+  // cuboid beams): a round boss concentric with the wrist pin, joined to the
+  // platen's underside by straight lines tangent to the boss, as Brown's
+  // V-shaped lug. Its top runs 0.04 up inside the platen body.
+  const hangerBossRadius = 0.27;
+  const hangerFootHalfWidth = 0.46;
+  const hangerDepth = 0.14;
+  const hangerShape = (() => {
+    const corner = Math.hypot(hangerFootHalfWidth, platenBodyBottom);
+    const cornerAngle = Math.atan2(platenBodyBottom, hangerFootHalfWidth);
+    const tangentOffset = Math.acos(hangerBossRadius / corner);
+    const rightTangent = cornerAngle - tangentOffset;
+    const leftTangent = Math.PI - rightTangent;
+    const top = platenBodyBottom + 0.04;
+    const shape = new THREE.Shape();
+    shape.moveTo(-hangerFootHalfWidth, top);
+    shape.lineTo(-hangerFootHalfWidth, platenBodyBottom);
+    shape.lineTo(
+      hangerBossRadius * Math.cos(leftTangent),
+      hangerBossRadius * Math.sin(leftTangent),
+    );
+    shape.absarc(0, 0, hangerBossRadius, leftTangent, rightTangent + 2 * Math.PI, false);
+    shape.lineTo(hangerFootHalfWidth, platenBodyBottom);
+    shape.lineTo(hangerFootHalfWidth, top);
+    shape.closePath();
+    return shape;
+  })();
+  const platenHangerGeometry = new THREE.ExtrudeGeometry(hangerShape, {
+    bevelEnabled: false,
+    curveSegments: 96,
+    depth: hangerDepth,
+    steps: 1,
+  });
+  platenHangerGeometry.translate(0, 0, connectingRodPlaneZ - hangerDepth / 2);
+  const platenHanger = new THREE.Mesh(platenHangerGeometry, drivenMaterial);
+  platenHanger.userData.role = 'platen-hanger-lug-with-boss-concentric-with-wrist-pin';
+  platenHanger.userData.bossRadius = hangerBossRadius;
+  // p97: the pin starts inside the hanger lug (no bare stub behind it) and
+  // runs forward through the rod eye to its cap at connectingRodPlaneZ + 0.79.
+  const wristPinBackZ = connectingRodPlaneZ - hangerDepth / 2 + 0.01;
+  const wristPinFrontZ = connectingRodPlaneZ + 0.30;
   const platenWristPin = zCylinder(
     0.15,
-    0.60,
+    wristPinFrontZ - wristPinBackZ,
     darkMaterial,
-    34,
+    64,
   );
+  // The mesh origin stays on the pin's reference point; the cylinder's own
+  // axis (local y, turned onto z) is shifted instead.
+  platenWristPin.geometry.translate(0, (wristPinBackZ + wristPinFrontZ) / 2 - connectingRodPlaneZ, 0);
   platenWristPin.position.set(0, 0, connectingRodPlaneZ);
   platenWristPin.userData.role = 'platen-wrist-pin-on-vertical-stroke-line';
   const platenMotionIndex = new THREE.Mesh(
@@ -14867,8 +14992,7 @@ function handCrankPinionSectorRodPress() {
   platen.add(
     ...platenGuideEars,
     platenBody,
-    platenBracketLeft,
-    platenBracketRight,
+    platenHanger,
     platenWristPin,
     platenMotionIndex,
   );
@@ -15002,7 +15126,9 @@ function handCrankPinionSectorRodPress() {
     new THREE.Vector3(pinionCenter.x, pinionCenter.y - .20, rearFrameZ),
     {
       color: PALETTE.frame,
-      depth: frameDepth,
+      // p97: 0.01 shallower on each face than the column it joins, so the
+      // two front faces are not coplanar (they z-fought at the joint).
+      depth: frameDepth - 0.02,
       thickness: 0.18,
     },
   );
@@ -15258,8 +15384,7 @@ function handCrankPinionSectorRodPress() {
     pitchContactMarker,
     platen,
     platenBody,
-    platenBracketLeft,
-    platenBracketRight,
+    platenHanger,
     platenMotionIndex,
     platenWristPin,
     sectorAssembly,

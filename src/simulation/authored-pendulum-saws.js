@@ -393,8 +393,11 @@ function pendulumTreeSaw(movement) {
   pendulumBob.position.y = -pendulumLength;
   pendulumBob.userData.role = 'spade-shaped-source-style-pendulum-bob';
   pendulum.add(pendulumBob);
-  const rodJointPin = cylinderAlongZ(pinRadius, 0.64, darkMaterial, 24);
-  rodJointPin.position.y = -rodAttachmentRadius;
+  // p96: the pin starts 0.015 inside the rod's back face (world z 0.275)
+  // instead of standing 0.25 bare behind the pendulum; it keeps its front
+  // end (world z 0.66) through the connecting rod's eye.
+  const rodJointPin = cylinderAlongZ(pinRadius, 0.37, darkMaterial, 24);
+  rodJointPin.position.set(0, -rodAttachmentRadius, 0.135);
   rodJointPin.userData.role = 'pendulum-lower-driving-pin';
   pendulum.add(rodJointPin);
   const pendulumIndex = new THREE.Mesh(

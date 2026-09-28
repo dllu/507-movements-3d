@@ -5,8 +5,8 @@ import {
   matte,
 } from './primitives.js';
 
-import {boredCylinderGeometry,fitPistonGuide} from './piston-guide-parts.js';
-import {boreBoxY,replaceYJournal,closeFeedThread} from './drill-feed-parts.js';
+import {fitPistonGuide} from './piston-guide-parts.js';
+import {boreBoxY,replaceYJournal} from './drill-feed-parts.js';
 import {plate,poly} from './finite-plate-geometry.js';
 import {crankArmGeometry, turnedHandleGeometry, HANDLE_FOOT_EMBED} from './turned-handle.js';
 
@@ -30,26 +30,6 @@ const FULL_TURN = Math.PI * 2;
 // (Pass 92: the builders now live in turned-handle.js, shared with other
 // movements that draw the usual turned crank handle.)
 
-class VerticalHelixCurve extends THREE.Curve {
-  constructor({ maximumY, minimumY, phase = 0, radius, turns }) {
-    super();
-    this.maximumY = maximumY;
-    this.minimumY = minimumY;
-    this.phase = phase;
-    this.radius = radius;
-    this.turns = turns;
-  }
-
-  getPoint(progress, target = new THREE.Vector3()) {
-    const angle = this.phase + FULL_TURN * this.turns * progress;
-    return target.set(
-      this.radius * Math.cos(angle),
-      THREE.MathUtils.lerp(this.minimumY, this.maximumY, progress),
-      this.radius * Math.sin(angle),
-    );
-  }
-}
-
 function cylinderAlongY(radius, length, material, segments = 32) {
   return new THREE.Mesh(
     new THREE.CylinderGeometry(radius, radius, length, segments),
@@ -70,6 +50,135 @@ function tubeBetween(start, end, radius, material) {
   );
 }
 
+// Pass 96: Brown hatches both feed screws as fine V-threads. The screw is one
+// closed solid of one material: a helical grid whose rows follow the thread,
+// so the crest and root run exactly along rows (no stair-stepped crest), with
+// analytic normals that break sharply at the crest, flank and root edges.
+// A side is either a V-thread {root, crest} or a plain cylinder {radius};
+// `inner` null closes the solid to the axis. Points are
+// (r cos phi, y, r sin phi) with y = phase + u - lead * phi / 2pi: a
+// right-hand helix about +Y, whose front crests rise to the right as Brown
+// hatches them on both plates. Turned by Three's rotation.y = angle inside a
+// fixed nut, it advances +lead * angle / 2pi.
+// The V has a flat crest and root, each 1/8 of the lead, and 3/8 flanks;
+// the profile is linear between its four breaks, so rows sit only there.
+const V_THREAD_BREAKS = [0, 2 / 16, 8 / 16, 10 / 16];
+const vThreadDepthFraction = (u) => {
+  const s = ((u % 1) + 1) % 1;
+  if (s <= 2 / 16) return 1;
+  if (s <= 8 / 16) return 1 - (s - 2 / 16) / (6 / 16);
+  if (s <= 10 / 16) return 0;
+  return (s - 10 / 16) / (6 / 16);
+};
+
+function threadedTubeGeometry({ low, high, lead, phase = 0, outer, inner = null, segments = 96 }) {
+  const c = -lead / FULL_TURN;
+  const positions = [];
+  const normals = [];
+  const side = (spec) => spec.radius !== undefined
+    ? { r: () => spec.radius, slope: () => 0 }
+    : {
+      r: (u) => spec.root + (spec.crest - spec.root) * vThreadDepthFraction((u - phase) / lead),
+      // Band slope dr/du between rows i and i+1 (the profile is linear there).
+      slope: (u0, u1) => (spec.crest - spec.root)
+        * (vThreadDepthFraction((u1 - phase) / lead - 1e-9) - vThreadDepthFraction((u0 - phase) / lead + 1e-9))
+        / (u1 - u0),
+    };
+  const push = (p, n) => {
+    const a = new THREE.Vector3(...p[0]);
+    const cross = new THREE.Vector3(...p[1]).sub(a).cross(new THREE.Vector3(...p[2]).sub(a));
+    if (cross.lengthSq() < 1e-16) return;
+    const mean = new THREE.Vector3(...n[0]).add(new THREE.Vector3(...n[1])).add(new THREE.Vector3(...n[2]));
+    if (cross.dot(mean) < 0) { [p[1], p[2]] = [p[2], p[1]]; [n[1], n[2]] = [n[2], n[1]]; }
+    positions.push(...p.flat());
+    normals.push(...n.flat());
+  };
+  const cosOf = (j) => (j % segments === 0 ? 1 : Math.cos(FULL_TURN * j / segments));
+  const sinOf = (j) => (j % segments === 0 ? 0 : Math.sin(FULL_TURN * j / segments));
+  // Rows u_i cover [low, high + lead] so every column spans [low, high];
+  // a row outside that range clamps to the end plane (zero-area there).
+  const uStart = Math.floor((low - phase) / lead) * lead + phase;
+  const turns = Math.ceil((high + lead - uStart) / lead - 1e-9);
+  const rows = [];
+  for (let turn = 0; turn < turns; turn += 1) {
+    for (const fraction of V_THREAD_BREAKS) rows.push(uStart + (turn + fraction) * lead);
+  }
+  rows.push(uStart + turns * lead);
+  const surface = (spec, sign) => {
+    const s = side(spec);
+    // A plain cylinder needs no helical rows: one quad per column.
+    const bands = spec.radius !== undefined
+      ? [[low, high + lead]]
+      : rows.slice(0, -1).map((u, i) => [u, rows[i + 1]]);
+    for (let j = 0; j < segments; j += 1) {
+      for (const [u0, u1] of bands) {
+        const slope = s.slope(u0, u1);
+        const vertex = (jj, u) => {
+          const phi = FULL_TURN * jj / segments;
+          const y = THREE.MathUtils.clamp(u + c * phi, low, high);
+          const uu = y - c * phi;
+          const r = s.r(uu);
+          const cs = cosOf(jj);
+          const sn = sinOf(jj);
+          const n = new THREE.Vector3(r * cs - c * slope * sn, -r * slope, c * slope * cs + r * sn)
+            .normalize().multiplyScalar(sign);
+          return [[r * cs, y, r * sn], n.toArray()];
+        };
+        const a = vertex(j, u0);
+        const b = vertex(j + 1, u0);
+        const d = vertex(j, u1);
+        const e = vertex(j + 1, u1);
+        push([a[0], b[0], e[0]], [a[1], b[1], e[1]]);
+        push([a[0], e[0], d[0]], [a[1], e[1], d[1]]);
+      }
+    }
+  };
+  surface(outer, 1);
+  if (inner) surface(inner, -1);
+  const so = side(outer);
+  const si = inner ? side(inner) : null;
+  for (const [y, sign] of [[low, -1], [high, 1]]) {
+    const n = [0, sign, 0];
+    for (let j = 0; j < segments; j += 1) {
+      const ring = (jj, s) => {
+        if (!s) return [0, y, 0];
+        const r = s.r(y - c * FULL_TURN * jj / segments);
+        return [r * cosOf(jj), y, r * sinOf(jj)];
+      };
+      const o0 = ring(j, so);
+      const o1 = ring(j + 1, so);
+      const i0 = ring(j, si);
+      const i1 = ring(j + 1, si);
+      push([i0, o0, o1], [n, n, n]);
+      push([i0, o1, i1], [n, n, n]);
+    }
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
+  geometry.computeBoundingBox();
+  geometry.computeBoundingSphere();
+  geometry.userData.vThread = { low, high, lead, phase, outer, inner };
+  return geometry;
+}
+
+// Brown's flat spear-point drill: one flat extrusion in the spindle's plane.
+// The shank flares where it is set in its holder, waists, swells to the
+// spear's shoulder and runs straight to the point. y = 0 is the holder face;
+// the point is at y = -length.
+function spearBitGeometry({ length, top, waist, shoulder, shoulderAt = 0.72, thickness }) {
+  const right = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(top, 0, 0),
+    new THREE.Vector3(0.5 * (top + waist), -0.12 * length, 0),
+    new THREE.Vector3(waist, -0.38 * length, 0),
+    new THREE.Vector3(0.5 * (waist + shoulder), -0.58 * length, 0),
+    new THREE.Vector3(shoulder, -shoulderAt * length, 0),
+  ], false, 'centripetal').getSpacedPoints(32).map((p) => [p.x, p.y]);
+  const tip = [[0, -length]];
+  const left = [...right].reverse().map(([x, y]) => [-x, y]);
+  return plate(poly([...right, ...tip, ...left]), -thickness / 2, thickness / 2);
+}
+
 function opposingFeedScrewCrampDrill(movement) {
   const root = new THREE.Group();
 
@@ -87,9 +196,14 @@ function opposingFeedScrewCrampDrill(movement) {
   const drillAngularSpeed = drillTurnsPerDemonstration
     * FULL_TURN / demonstrationPeriod;
   const drillStartAngle = THREE.MathUtils.degToRad(12);
-  const feedTurnAmplitude = 1.25;
+  const feedTurnAmplitude = 2.8;
   const feedAngularFrequency = FULL_TURN / demonstrationPeriod;
-  const threadLead = 0.28;
+  // Pass 96: Brown hatches a fine thread; a 0.125 lead turned 2.8 times keeps
+  // the 0.35 feed travel.
+  const threadLead = 0.125;
+  const feedScrewRootRadius = 0.135;
+  const feedScrewCrestRadius = 0.18;
+  const nutThreadClearance = 0.005;
   const feedBaseY = -1.19;
   const feedRotorOrigin = new THREE.Vector3(
     commonAxisX,
@@ -101,8 +215,8 @@ function opposingFeedScrewCrampDrill(movement) {
   const maximumFeedTravel = threadLead * feedTurnAmplitude;
   const minimumClearance = drillTipY
     - (feedBaseY + workRestLocalY + workRestHalfHeight + maximumFeedTravel);
-  const threadMinimumY = 0.31;
-  const threadMaximumY = 1.46;
+  const threadMinimumY = 0.09;
+  const threadMaximumY = 1.48;
   const threadTurns = (threadMaximumY - threadMinimumY) / threadLead;
   const nutCenterY = -0.30;
   const handwheelRadius = 0.71;
@@ -116,9 +230,9 @@ function opposingFeedScrewCrampDrill(movement) {
       * feedAngularFrequency * Math.sin(feedPhase);
     const feedTurnsAcceleration = 0.5 * feedTurnAmplitude
       * feedAngularFrequency ** 2 * Math.cos(feedPhase);
-    const feedScrewAngle = -FULL_TURN * feedTurns;
-    const feedScrewAngularSpeed = -FULL_TURN * feedTurnsRate;
-    const feedScrewAngularAcceleration = -FULL_TURN
+    const feedScrewAngle = FULL_TURN * feedTurns;
+    const feedScrewAngularSpeed = FULL_TURN * feedTurnsRate;
+    const feedScrewAngularAcceleration = FULL_TURN
       * feedTurnsAcceleration;
     const axialTravel = threadLead * feedTurns;
     const axialSpeed = threadLead * feedTurnsRate;
@@ -144,7 +258,7 @@ function opposingFeedScrewCrampDrill(movement) {
       feedTurnsAcceleration,
       feedTurnsRate,
       threadAdvanceResidual: axialTravel
-        + threadLead * feedScrewAngle / FULL_TURN,
+        - threadLead * feedScrewAngle / FULL_TURN,
       workRestY, workRestTopY,
     };
   };
@@ -164,10 +278,6 @@ function opposingFeedScrewCrampDrill(movement) {
   const feedMaterial = matte(PALETTE.driven, {
     metalness: 0.18,
     roughness: 0.53,
-  });
-  const threadMaterial = matte(PALETTE.accent, {
-    metalness: 0.20,
-    roughness: 0.48,
   });
   const whiteMaterial = matte(PALETTE.white, { roughness: 0.43 });
 
@@ -219,32 +329,35 @@ function opposingFeedScrewCrampDrill(movement) {
   drillRotor.userData.role =
     'upper-hand-crank-drill-spindle-rigid-rotor';
   root.add(drillRotor);
+  // The spindle runs from the crank hub down through its bearing into a thin
+  // collar set just under the bearing, as Brown draws; the flat spear drill
+  // hangs from the collar (pass 96: no undrawn chuck, no needle stub).
   const drillSpindle = cylinderAlongY(
     0.105,
-    1.66,
+    0.99,
     darkMaterial,
     28,
   );
-  drillSpindle.position.y = -.27;
+  drillSpindle.position.y = 0.065;
   drillSpindle.userData.role = 'fixed-height-rotating-drill-spindle';
   drillRotor.add(drillSpindle);
   const drillChuck = cylinderAlongY(
-    0.22,
-    0.34,
-    drillMaterial,
-    32,
+    0.20,
+    0.07,
+    darkMaterial,
+    40,
   );
-  drillChuck.position.y = -0.77;
-  drillChuck.userData.role = 'drill-chuck-rigid-with-upper-spindle';
+  drillChuck.position.y = -0.43;
+  drillChuck.userData.role = 'drill-collar-rigid-with-upper-spindle';
   drillRotor.add(drillChuck);
+  const drillBitTopY = -0.455;
   const drillBit = new THREE.Mesh(
-    new THREE.ConeGeometry(0.12, 0.54, 5),
+    spearBitGeometry({ length: drillBitTopY - drillTipLocalY, top: 0.105,
+      waist: 0.055, shoulder: 0.10, thickness: 0.06 }),
     darkMaterial,
   );
-  drillBit.position.y = drillTipLocalY+.54/2;
-  drillBit.rotation.x=Math.PI;
-  drillBit.rotation.y = Math.PI / 5;
-  drillBit.userData.role = 'downward-pointing-drill-bit';
+  drillBit.position.y = drillBitTopY;
+  drillBit.userData.role = 'downward-pointing-flat-spear-drill-bit';
   drillRotor.add(drillBit);
   // Crank bar 0.11 thick (y 0.505-0.615), handle axis 1.60 from the spindle.
   const drillCrankHandleX = -1.60;
@@ -289,29 +402,12 @@ function opposingFeedScrewCrampDrill(movement) {
   feedScrewRotor.userData.role =
     'lower-feed-screw-rest-and-handwheel-rigid-rotor';
   root.add(feedScrewRotor);
-  const feedScrewCore = cylinderAlongY(
-    0.13,
-    1.52,
-    feedMaterial,
-    28,
-  );
-  feedScrewCore.position.y = 0.85;
-  feedScrewCore.userData.role = 'opposed-vertical-feed-screw-core';
-  feedScrewRotor.add(feedScrewCore);
+  // Pass 96: the feed screw is one solid V-threaded rod of one material,
+  // from inside the handle boss to inside the work rest.
   const feedThread = new THREE.Mesh(
-    new THREE.TubeGeometry(
-      new VerticalHelixCurve({
-        maximumY: threadMaximumY,
-        minimumY: threadMinimumY,
-        radius: 0.155,
-        turns: threadTurns,
-      }),
-      150,
-      0.030,
-      8,
-      false,
-    ),
-    threadMaterial,
+    threadedTubeGeometry({ low: threadMinimumY, high: threadMaximumY, lead: threadLead,
+      outer: { root: feedScrewRootRadius, crest: feedScrewCrestRadius } }),
+    feedMaterial,
   );
   feedThread.userData.handedness = 'right-hand-about-positive-Y';
   feedThread.userData.lead = threadLead;
@@ -371,9 +467,12 @@ function opposingFeedScrewCrampDrill(movement) {
   feedScrewRotor.add(feedIndex);
 
   replaceYJournal(drillHousing,.34,.109,.72);
-  replaceYJournal(fixedFeedNut,.34,.189,.40);
-  const nutThread=closeFeedThread(feedThread,fixedFeedNut,{inner:.13,outer:.185,
-    low:threadMinimumY,high:threadMaximumY,lead:threadLead,feedBaseY,nutY:nutCenterY,nutLength:.40});
+  // The fixed nut is one solid with the screw's V cut in its bore, offset
+  // radially by the running clearance and phased to the screw's world helix.
+  fixedFeedNut.geometry.dispose();
+  fixedFeedNut.geometry = threadedTubeGeometry({ low: -0.20, high: 0.20, lead: threadLead,
+    phase: feedBaseY - nutCenterY, outer: { radius: 0.34 },
+    inner: { root: feedScrewRootRadius + nutThreadClearance, crest: feedScrewCrestRadius + nutThreadClearance } });
 
   const update = (time) => {
     const state = stateAtTime(time);
@@ -404,10 +503,9 @@ function opposingFeedScrewCrampDrill(movement) {
       drillRotor,
       drillSpindle,
       feedIndex,
-      feedScrewCore,
       feedScrewRotor,
       feedThread,
-      fixedFeedNut, nutThread,
+      fixedFeedNut,
       cFrame,
       handwheelArms,
       handwheelHub,
@@ -490,7 +588,7 @@ function opposingFeedScrewCrampDrill(movement) {
         engravingEvidence:
           'the plate shows one C-shaped frame, an upper drill spindle and crank, a lower coaxial threaded feed screw with flat work rest, and a three-knob handwheel below the fixed lower frame arm',
         reconstructionDisclosure:
-          'frame depth, colors, four drill turns, 0.28-unit screw lead, 1.25-turn reversible feed excursion, and four-second cycle are engineered because Brown supplies no dimensions or timing and the official page has no canvas animation',
+          'frame depth, colors, four drill turns, 0.125-unit V-thread lead, 2.8-turn reversible feed excursion, and four-second cycle are engineered because Brown supplies no dimensions or timing and the official page has no canvas animation',
       },
       officialPage: 'https://507movements.com/mm_379.html',
       pairedMovement: 380,
@@ -503,12 +601,12 @@ function opposingFeedScrewCrampDrill(movement) {
     timeline: {
       demonstrationPeriod,
       note:
-        'the drill makes four continuous turns while the independent feed screw advances 1.25 turns and reverses to its exact starting pose',
+        'the drill makes four continuous turns while the independent feed screw advances 2.8 turns and reverses to its exact starting pose',
     },
     transmission: {
       drillAngularSpeed,
       feedLeadLaw:
-        'axial travel = -(thread lead / 2π) times the rendered feed-screw angle; the negative sign follows Three.js positive-Y rotation convention for the modeled right-hand helix',
+        'axial travel = +(thread lead / 2π) times the rendered feed-screw angle (Three.js positive-Y rotation) for the modeled right-hand helix, whose front crests rise to the right as Brown hatches them',
       maximumFeedTravel,
       minimumClearance,
       opposedAxisLaw:
@@ -544,16 +642,24 @@ function throughFeedScrewCrampDrill(movement) {
   const drillAngularSpeed = drillTurnsPerDemonstration
     * FULL_TURN / demonstrationPeriod;
   const drillStartAngle = THREE.MathUtils.degToRad(10);
-  const feedTurnAmplitude = 1.25;
+  // Pass 96: Brown hatches a fine thread; a 0.10 lead turned 2.75 times keeps
+  // the 0.275 down-feed.
+  const feedTurnAmplitude = 2.75;
   const feedAngularFrequency = FULL_TURN / demonstrationPeriod;
-  const threadLead = 0.22;
+  const threadLead = 0.10;
   const maximumDownFeed = threadLead * feedTurnAmplitude;
-  const outerSleeveRadius = 0.255;
-  const innerBoreRadius = 0.155;
+  // Pass 96: Brown's screw is about 0.45 of the nut's width: root 0.165 and
+  // crest 0.20 against the 0.44 nut. outerSleeveRadius is the thread root.
+  const outerSleeveRadius = 0.165;
+  const sleeveCrestRadius = 0.20;
+  const nutThreadClearance = 0.005;
+  const innerBoreRadius = 0.115;
   const drillSpindleRadius = 0.090;
   const radialBoreClearance = innerBoreRadius - drillSpindleRadius;
-  const sleeveMinimumY = -0.72;
-  const sleeveMaximumY = 0.72;
+  // The threaded sleeve runs from inside the thrust collar to inside the
+  // cross-handle hub, as Brown's hatching runs from block to collar.
+  const sleeveMinimumY = -0.75;
+  const sleeveMaximumY = 0.81;
   const sleeveLength = sleeveMaximumY - sleeveMinimumY;
   const threadTurns = sleeveLength / threadLead;
   const drillTipLocalY = -1.73;
@@ -570,9 +676,9 @@ function throughFeedScrewCrampDrill(movement) {
       * feedAngularFrequency * Math.sin(feedPhase);
     const feedTurnsAcceleration = 0.5 * feedTurnAmplitude
       * feedAngularFrequency ** 2 * Math.cos(feedPhase);
-    const feedScrewAngle = FULL_TURN * feedTurns;
-    const feedScrewAngularSpeed = FULL_TURN * feedTurnsRate;
-    const feedScrewAngularAcceleration = FULL_TURN
+    const feedScrewAngle = -FULL_TURN * feedTurns;
+    const feedScrewAngularSpeed = -FULL_TURN * feedTurnsRate;
+    const feedScrewAngularAcceleration = -FULL_TURN
       * feedTurnsAcceleration;
     const axialTravel = -threadLead * feedTurns;
     const axialSpeed = -threadLead * feedTurnsRate;
@@ -602,7 +708,7 @@ function throughFeedScrewCrampDrill(movement) {
       relativeDrillAngularSpeed,
       sharedRotorY,
       threadAdvanceResidual: axialTravel
-        + threadLead * feedScrewAngle / FULL_TURN,
+        - threadLead * feedScrewAngle / FULL_TURN,
     };
   };
 
@@ -622,10 +728,6 @@ function throughFeedScrewCrampDrill(movement) {
     metalness: 0.18,
     roughness: 0.53,
     side: THREE.DoubleSide,
-  });
-  const threadMaterial = matte(PALETTE.accent, {
-    metalness: 0.20,
-    roughness: 0.48,
   });
   const whiteMaterial = matte(PALETTE.white, { roughness: 0.43 });
 
@@ -688,57 +790,19 @@ function throughFeedScrewCrampDrill(movement) {
   feedSleeveRotor.userData.role =
     'rotating-translating-hollow-feed-screw-and-cross-handle';
   root.add(feedSleeveRotor);
-  const hollowSleeve = new THREE.Mesh(
-    new THREE.CylinderGeometry(
-      outerSleeveRadius,
-      outerSleeveRadius,
-      sleeveLength,
-      40,
-      1,
-      true,
-    ),
+  // Pass 96: the hollow feed screw is one solid of one material: a fine
+  // V-thread outside, the spindle's bore inside.
+  const feedThread = new THREE.Mesh(
+    threadedTubeGeometry({ low: sleeveMinimumY, high: sleeveMaximumY, lead: threadLead,
+      outer: { root: outerSleeveRadius, crest: sleeveCrestRadius },
+      inner: { radius: innerBoreRadius } }),
     feedMaterial,
   );
-  hollowSleeve.userData.innerBoreRadius = innerBoreRadius;
-  hollowSleeve.userData.role =
-    'open-ended-hollow-feed-screw-sleeve';
-  feedSleeveRotor.add(hollowSleeve);
-  const sleeveEndRings = [];
-  for (const y of [sleeveMinimumY, sleeveMaximumY]) {
-    const ring = new THREE.Mesh(
-      new THREE.RingGeometry(
-        innerBoreRadius,
-        outerSleeveRadius,
-        40,
-      ),
-      feedMaterial,
-    );
-    // Set 0.004 inside the sleeve end, within the neck, so the ring never
-    // lies in the thread's flat end face (pass 90 coincident-face screen).
-    ring.position.y = y - Math.sign(y) * 0.004;
-    ring.rotation.x = -Math.PI / 2;
-    ring.userData.role = 'annular-end-face-showing-feed-screw-bore';
-    sleeveEndRings.push(ring);
-    feedSleeveRotor.add(ring);
-  }
-  const feedThread = new THREE.Mesh(
-    new THREE.TubeGeometry(
-      new VerticalHelixCurve({
-        maximumY: sleeveMaximumY,
-        minimumY: sleeveMinimumY,
-        radius: outerSleeveRadius + 0.035,
-        turns: threadTurns,
-      }),
-      180,
-      0.031,
-      8,
-      false,
-    ),
-    threadMaterial,
-  );
+  feedThread.geometry.userData.boreRadius = innerBoreRadius;
+  const hollowSleeve = feedThread;
   feedThread.userData.handedness = 'right-hand-about-positive-Y';
   feedThread.userData.lead = threadLead;
-  feedThread.userData.role = 'external-thread-on-hollow-feed-screw';
+  feedThread.userData.role = 'open-ended-hollow-v-threaded-feed-screw';
   feedSleeveRotor.add(feedThread);
   const feedHandleHub = cylinderAlongY(
     0.34,
@@ -795,32 +859,35 @@ function throughFeedScrewCrampDrill(movement) {
   root.add(drillRotor);
   const drillSpindle = cylinderAlongY(
     drillSpindleRadius,
-    2.78,
+    2.57,
     darkMaterial,
     28,
   );
-  drillSpindle.position.y = -0.02;
+  // Ends inside the chuck (pass 96), not below it.
+  drillSpindle.position.y = 0.085;
   drillSpindle.userData.role =
     'continuous-inner-spindle-through-hollow-feed-screw';
   drillRotor.add(drillSpindle);
+  // Pass 96: a shorter chuck under the thrust collar carries Brown's flat
+  // spear drill (no needle stub).
   const drillChuck = cylinderAlongY(
     0.22,
-    0.35,
+    0.22,
     drillMaterial,
     32,
   );
-  drillChuck.position.y = -1.26;
+  drillChuck.position.y = -1.135;
   drillChuck.userData.role =
     'lower-drill-chuck-rigid-with-through-spindle';
   drillRotor.add(drillChuck);
+  const drillBitTopY = -1.235;
   const drillBit = new THREE.Mesh(
-    new THREE.ConeGeometry(0.12, 0.58, 5),
+    spearBitGeometry({ length: drillBitTopY - drillTipLocalY, top: 0.08,
+      waist: 0.05, shoulder: 0.085, thickness: 0.055 }),
     darkMaterial,
   );
-  drillBit.position.y = drillTipLocalY+.58/2;
-  drillBit.rotation.x=Math.PI;
-  drillBit.rotation.y = Math.PI / 5;
-  drillBit.userData.role = 'downward-bit-on-through-spindle';
+  drillBit.position.y = drillBitTopY;
+  drillBit.userData.role = 'downward-flat-spear-bit-on-through-spindle';
   drillRotor.add(drillBit);
   const drillCrankHub = cylinderAlongY(
     0.18,
@@ -863,22 +930,18 @@ function throughFeedScrewCrampDrill(movement) {
   drillIndex.userData.role = 'white-inner-drill-spindle-rotation-index';
   drillRotor.add(drillIndex);
 
-  replaceYJournal(hollowSleeve,outerSleeveRadius,innerBoreRadius,sleeveLength);
-  // End rings remain inspection faces; the sleeve itself now includes its inner wall.
-  replaceYJournal(fixedFeedNut,.44,.325,.70);
+  // The fixed nut is one solid with the sleeve's V cut in its bore.
+  fixedFeedNut.geometry.dispose();
+  fixedFeedNut.geometry = threadedTubeGeometry({ low: -0.35, high: 0.35, lead: threadLead,
+    phase: feedBaseY - 1.33, outer: { radius: 0.44 },
+    inner: { root: outerSleeveRadius + nutThreadClearance, crest: sleeveCrestRadius + nutThreadClearance } });
   replaceYJournal(feedHandleHub,.34,innerBoreRadius,.22);
   replaceYJournal(thrustCollar,.32,.095,.28);
   boreBoxY(feedHandleBar,innerBoreRadius);
-  const nutThread=closeFeedThread(feedThread,fixedFeedNut,{inner:outerSleeveRadius,outer:.321,
-    low:sleeveMinimumY,high:sleeveMaximumY,lead:threadLead,feedBaseY,nutY:1.33,nutLength:.70});
-  // A hollow neck connects the cross handle to the sleeve; opposed rotating
-  // thrust rings capture the independently spinning inner drill shaft.
-  const sleeveNeck=new THREE.Mesh(boredCylinderGeometry(.255,innerBoreRadius,.16),feedMaterial);
-  sleeveNeck.position.y=.76;feedSleeveRotor.add(sleeveNeck);
-  const lowerSleeveNeck=new THREE.Mesh(boredCylinderGeometry(.23,innerBoreRadius,.08),feedMaterial);
-  lowerSleeveNeck.position.y=-.73;feedSleeveRotor.add(lowerSleeveNeck);
-  const thrustRings=[-.88-.18,-.88+.18].map(y=>{
-    const ring=cylinderAlongY(.14,.06,drillMaterial);ring.position.y=y;drillRotor.add(ring);return ring;
+  // The upper thrust ring rides on the collar's top face inside the sleeve
+  // bore; the chuck bears on the collar's underside.
+  const thrustRings=[-.88+.17].map(y=>{
+    const ring=cylinderAlongY(.11,.04,drillMaterial);ring.position.y=y;drillRotor.add(ring);return ring;
   });
 
   const update = (time) => {
@@ -915,11 +978,10 @@ function throughFeedScrewCrampDrill(movement) {
       feedIndex,
       feedSleeveRotor,
       feedThread,
-      fixedFeedNut, nutThread,
+      fixedFeedNut,
       fixedWorkRest,
       cFrame,
-      hollowSleeve, sleeveNeck, lowerSleeveNeck, thrustRings,
-      sleeveEndRings,
+      hollowSleeve, thrustRings,
       thrustCollar,
     },
     degreesOfFreedom: {
@@ -998,7 +1060,7 @@ function throughFeedScrewCrampDrill(movement) {
         engravingEvidence:
           'the plate shows one C-shaped frame with fixed lower rest, an externally threaded upper feed member with a two-ended cross handle, a narrower continuous drill spindle through its center, an upper drill crank, and a lower chuck and bit',
         reconstructionDisclosure:
-          'frame depth, bore and spindle radii, thrust-collar interpretation, colors, four drill turns, 0.22-unit screw lead, 1.25-turn reversible feed excursion, and four-second cycle are engineered because Brown supplies no dimensions or timing and the official page has no canvas animation',
+          'frame depth, bore and spindle radii, thrust-collar interpretation, colors, four drill turns, 0.10-unit V-thread lead, 2.75-turn reversible feed excursion, and four-second cycle are engineered because Brown supplies no dimensions or timing and the official page has no canvas animation',
       },
       officialPage: 'https://507movements.com/mm_380.html',
       pairedMovement: 379,
@@ -1011,7 +1073,7 @@ function throughFeedScrewCrampDrill(movement) {
     timeline: {
       demonstrationPeriod,
       note:
-        'the inner drill makes four continuous turns while the hollow outer feed screw advances 1.25 turns, carries both axial members downward, and reverses smoothly to the start',
+        'the inner drill makes four continuous turns while the hollow outer feed screw advances 2.75 turns, carries both axial members downward, and reverses smoothly to the start',
     },
     transmission: {
       axialCaptureLaw:
@@ -1020,7 +1082,7 @@ function throughFeedScrewCrampDrill(movement) {
         'inner drill radius remains smaller than the hollow feed-screw bore radius by one fixed radial clearance',
       drillAngularSpeed,
       feedLeadLaw:
-        'axial travel = -(thread lead / 2π) times outer feed-screw angle for the modeled positive-Y right-hand helix',
+        'axial travel = +(thread lead / 2π) times outer feed-screw angle (Three.js positive-Y rotation) for the modeled right-hand helix, whose front crests rise to the right as Brown hatches them',
       maximumDownFeed,
       minimumClearance,
       relativeRotationLaw:

@@ -158,10 +158,15 @@ export function twoHandleGabDisengager() {
     poly(circle(pivotRest, pivotRadius + boreClearance, 48)));
 
   // Upper handle: the traced visible body and grip ...
+  // The traced grip is sampled as a centripetal spline from the end of the
+  // straight top edge round the nose and back, so it shades without kinks.
   const handleRasterOutline = [
-    [271, 174], [360, 174], [368, 177], [378, 182], [390, 186], [480, 187], [495, 188], [503, 192],
-    [505, 198], [501, 204], [490, 206.5], [420, 207], [400, 209], [385, 213], [372, 217], [360, 220],
-    [345, 223], [330, 224], [313, 224], [298, 218], [287, 210], [280, 203], [274, 193], [271, 184],
+    [271, 174],
+    ...new THREE.CatmullRomCurve3([
+      [360, 174], [368, 177], [378, 182], [390, 186], [480, 187], [495, 188], [503, 192],
+      [505, 198], [501, 204], [490, 206.5], [420, 207], [400, 209], [385, 213], [372, 217], [360, 220],
+      [345, 223], [330, 224], [313, 224], [298, 218], [287, 210], [280, 203], [274, 193], [271, 184],
+    ].map(([x, y]) => new THREE.Vector3(x, y, 0)), false, 'centripetal').getPoints(360).map((v) => [v.x, v.y]),
   ];
   const toHandle = ([x, y]) => [x - pivotRest[0], y - pivotRest[1]];
   const rotate = ([x, y], a) => [x * Math.cos(a) - y * Math.sin(a), x * Math.sin(a) + y * Math.cos(a)];

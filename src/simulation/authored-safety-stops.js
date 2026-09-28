@@ -659,8 +659,18 @@ function otisSafetyStop(movement) {
     return marker;
   });
 
+  // Each pin spans only what it joins, standing 0.03 proud of its lever:
+  // the fulcrum pins run from the platform's pivot support (rear face
+  // z -0.20) to the lever's front face; the joint pins span lever and pawl.
+  // The meshes stay centred at z 0.30, so the offset goes in the geometry
+  // (the cylinder's local y is world z).
+  const spanPin = (radius, rearZ, frontZ) => {
+    const pin = cylinderAlongZ(radius, frontZ - rearZ, darkMaterial);
+    pin.geometry.translate(0, (rearZ + frontZ) / 2 - 0.30, 0);
+    return pin;
+  };
   const leverPivotPins = [leftPivot, rightPivot].map((position, index) => {
-    const pin = cylinderAlongZ(0.13, 0.72, darkMaterial);
+    const pin = index === 0 ? spanPin(0.13, -0.22, 0.24) : spanPin(0.13, -0.22, 0.56);
     pin.position.copy(position);
     pin.userData.role = index === 0
       ? 'fixed-left-elbow-fulcrum-pin'
@@ -669,7 +679,7 @@ function otisSafetyStop(movement) {
     return pin;
   });
   const lowerJointPins = [0, 1].map((index) => {
-    const pin = cylinderAlongZ(0.105, 0.56, darkMaterial);
+    const pin = index === 0 ? spanPin(0.105, 0.04, 0.40) : spanPin(0.105, 0.20, 0.56);
     pin.userData.role = index === 0
       ? 'left-lever-to-pawl-pivot'
       : 'right-lever-to-pawl-pivot';

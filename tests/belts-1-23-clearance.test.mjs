@@ -209,3 +209,58 @@ test('belts-1-23 p93: 003 and 004 sheaves show cast ring hubs and short shaft st
     }
   }
 });
+
+test('belts-1-23 p96: 004 strands leave the drum level with their guides, clear of the other coils', () => {
+  const model = modelFor(4);
+  model.update(1, 0.016);
+  const [, driven, left, right] = model.root.userData.beltContacts;
+  const wrap = driven.arc;
+  const pitch = Math.abs(wrap.axialTravel) / (Math.abs(wrap.sweep) / (2 * Math.PI));
+  assert.ok(pitch > 2 * 0.05 + 0.03, `helix pitch ${pitch} exceeds a rope diameter plus clearance`);
+  const bottom = wrap.getPoint(0).y, top = wrap.getPoint(1).y;
+  // Each guide's tangent run to the drum is horizontal at its end coil.
+  assert.ok(Math.abs(left.arc.getPoint(1).y - bottom) < 1e-9, 'incoming strand meets the bottom coil level');
+  assert.ok(Math.abs(right.arc.getPoint(0).y - top) < 1e-9, 'outgoing strand leaves the top coil level');
+});
+
+test('belts-1-23 p96: 005 lever is one flat extrusion with an eye round each pin', () => {
+  const { arm } = modelFor(5).root.userData.blocks;
+  const levers = arm.children.filter((part) => part.isMesh);
+  assert.equal(levers.length, 1);
+  assert.equal(levers[0].geometry.type, 'ExtrudeGeometry');
+  levers[0].geometry.computeBoundingBox();
+  const box = levers[0].geometry.boundingBox;
+  assert.ok(Math.abs(box.min.x + 0.12) < 1e-6 && Math.abs(box.min.y + 0.12) < 1e-3, 'pivot eye of 1.6 pin radii, concentric');
+});
+
+test('belts-1-23 p96: 006 hub boss and shaft are smooth', () => {
+  const root = modelFor(6).root;
+  let boss = null;
+  root.traverse((part) => { if (part.geometry?.type === 'CylinderGeometry' && Math.abs(part.geometry.parameters.radiusTop - 0.24) < 1e-9) boss = part; });
+  assert.ok(boss && boss.geometry.parameters.radialSegments >= 48);
+});
+
+test('belts-1-23 p96: 010 curved cones carry end lands beyond the belt travel', () => {
+  const model = modelFor(10);
+  const { driver, belt } = model.root.userData.blocks;
+  assert.equal(driver.userData.body.userData.role, 'curved-cone-with-end-lands');
+  const half = 2.5 / 2 + driver.userData.landWidth;
+  for (const time of [Math.PI, 3 * Math.PI]) {
+    model.update(time, 0.016);
+    const z = model.root.userData.kinematics.beltZ;
+    assert.ok(half - (Math.abs(z) + 0.08) > 0.5 * 0.16, `belt edge ${Math.abs(z) + 0.08} stays well inboard of ${half}`);
+  }
+});
+
+test('belts-1-23 p96: 019 lower sheaves are thin with small pins; 022 hook tip is capped', () => {
+  const { lowerPulleys } = modelFor(19).root.userData.blocks;
+  for (const block of lowerPulleys) {
+    const radius = block.userData.treadRadius + 0.032;
+    assert.ok(Math.abs(block.userData.width - 0.8 * radius) < 1e-9, 'width 0.4 of the diameter');
+    const pin = block.userData.pin.userData.rotor.children[0].geometry.parameters.radiusTop;
+    assert.ok(pin <= 0.35 * radius + 1e-9 && pin <= 0.065);
+  }
+  let caps = 0;
+  modelFor(22).root.traverse((part) => { if (part.userData.role === 'hook-tip-cap') caps += 1; });
+  assert.equal(caps, 1);
+});

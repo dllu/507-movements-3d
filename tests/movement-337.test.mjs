@@ -465,3 +465,17 @@ test('movement 337 closes exactly and leaves movement 507 as the next draft', ()
   disposeModel(model507.root);
   disposeModel(model.root);
 });
+
+test('movement 337 p96: shaft O ends in a round flange concentric with it', () => {
+  const model = createMovementModel(catalog.movements[336]);
+  model.update(0);
+  model.root.updateMatrixWorld(true);
+  let flange = null;
+  let shank = null;
+  model.root.traverse((object) => {
+    if (object.userData.role === 'fixed-wall-bracket-of-beam-shaft-O-flange') flange = object;
+    if (object.userData.role === 'fixed-wall-bracket-of-beam-shaft-O-shank') shank = object;
+  });
+  assert.equal(flange.geometry.type, 'CylinderGeometry');
+  assert.ok(flange.geometry.parameters.radiusTop > 1.3 * shank.geometry.parameters.radiusTop);
+});

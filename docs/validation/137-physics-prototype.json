@@ -6,11 +6,11 @@
     },
     {
       "file": "src/simulation/expansion-eccentric-profile.js",
-      "sha256": "ce771457350376fce4a065efb34748121b9b9408fe1dc44166a2f3e03f656e78"
+      "sha256": "da52e2ee7149e3735e426b2d27ff364930a144cb2a5991f1419e68291150f187"
     },
     {
       "file": "src/simulation/mujoco-expansion-eccentric/physics.js",
-      "sha256": "44c29a9c18ca76ab3bd9e9e215d1958699c05c7f7b7e708a56e09dd3155da662"
+      "sha256": "e168360e75f52f2c1560404486aa2f159bf0ce838e15d31f526981730c0a7930"
     },
     {
       "file": "src/simulation/mujoco/simulation.js",
@@ -30,66 +30,66 @@
       "options": {
         "timestep": 0.0005,
         "period": 8,
-        "spread": 4,
+        "spread": 4.05,
         "samples": 192
       },
-      "penetration": 0.00024011827746878156,
-      "min": -0.0509587342569096,
-      "max": 0.05520653006645756,
+      "penetration": 0.000010183794081908282,
+      "min": -0.05082254391273232,
+      "max": 0.05534312351712051,
       "resets": 0
     },
     "time-refined": {
       "options": {
         "timestep": 0.00025,
         "period": 8,
-        "spread": 4,
+        "spread": 4.05,
         "samples": 192
       },
-      "penetration": 0.0002109073219140889,
-      "min": -0.05095873087512295,
-      "max": 0.05520661257870895,
+      "penetration": 0.000007702960170330453,
+      "min": -0.05082234559136479,
+      "max": 0.05534322308750746,
       "resets": 0
     },
     "mesh-refined": {
       "options": {
         "timestep": 0.0005,
         "period": 8,
-        "spread": 4,
+        "spread": 4.05,
         "samples": 384
       },
-      "penetration": 0.00033559803078270223,
-      "min": -0.050980121944367095,
-      "max": 0.05520571131274003,
+      "penetration": 0.000010921958032761303,
+      "min": -0.05084389213319211,
+      "max": 0.055342340700326356,
       "resets": 0
     },
     "fine": {
       "options": {
         "timestep": 0.00025,
         "period": 8,
-        "spread": 4,
+        "spread": 4.05,
         "samples": 384
       },
-      "penetration": 0.00025693524858610983,
-      "min": -0.05098036537263543,
-      "max": 0.05520583016957162,
+      "penetration": 0.000008557867079816983,
+      "min": -0.05084406527441771,
+      "max": 0.0553424413618479,
       "resets": 0
     }
   },
   "comparisons": {
     "time-refined": {
-      "maximumForkAngleDifference": 0.000025827310588810715,
-      "maximumRollerPositionDifferencePixels": 0.009478622986093532,
-      "maximumRodAngleDifference": 0.001051376828317574
+      "maximumForkAngleDifference": 0.0000017726321675376466,
+      "maximumRollerPositionDifferencePixels": 0.0006505560054863163,
+      "maximumRodAngleDifference": 0.000005849121649529471
     },
     "mesh-refined": {
-      "maximumForkAngleDifference": 0.00007651989835237571,
-      "maximumRollerPositionDifferencePixels": 0.028082802695321887,
-      "maximumRodAngleDifference": 0.005775310161838987
+      "maximumForkAngleDifference": 0.00007664733294106968,
+      "maximumRollerPositionDifferencePixels": 0.028129571189372572,
+      "maximumRodAngleDifference": 0.00009335735872744236
     },
     "fine": {
-      "maximumForkAngleDifference": 0.00007658392048200124,
-      "maximumRollerPositionDifferencePixels": 0.028106298816894457,
-      "maximumRodAngleDifference": 0.006712146438517044
+      "maximumForkAngleDifference": 0.00007648257771565581,
+      "maximumRollerPositionDifferencePixels": 0.02806910602164568,
+      "maximumRodAngleDifference": 0.00009261873109433182
     }
   },
   "settledComparisonSeconds": [

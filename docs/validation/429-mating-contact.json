@@ -2,8 +2,8 @@
   "poses": 1025,
   "maximumOverlapArea": 0.0,
   "penetratingPoses": 0,
-  "maximumGap": 0.010026356964290715,
-  "minimumGap": 0.00718338591562723,
+  "maximumGap": 0.012225448008618153,
+  "minimumGap": 0.007170813673287921,
   "method": "Intersection and distance of actual rendered rotor triangle projections at 1025 interleaved poses. Parallel solid extrusions share the same axial span. Shafts, packing, pressure, sealing and torque are outside this profile audit.",
   "sources": [
     {
@@ -16,7 +16,7 @@
     },
     {
       "file": "src/simulation/generated-holly-mate.js",
-      "sha256": "ccc4b4b84d923a1c29348e4005e7b8e6e31cfd1631b219ed5f7f2a4196b6e7b2"
+      "sha256": "5fcc90e4ba06785ed3157df6246030af01d4d1a6374d0bd62b2c38c75446c4cc"
     },
     {
       "file": "scripts/export-holly-contact.mjs",
@@ -24,7 +24,7 @@
     },
     {
       "file": "scripts/generate-holly-mate.py",
-      "sha256": "c5a8cbca8bc58748521398b169985bd7c8a146d32635748c6027f088e111203c"
+      "sha256": "3db6e2f0e877d22d07d8dc88aab12002f12c421087e376ca7cf7db3ee2e99aec"
     },
     {
       "file": "scripts/review-holly-contact.py",

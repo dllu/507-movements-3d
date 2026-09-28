@@ -622,3 +622,25 @@ test('movement 217 runtime matches D, shares 218, and leaves 269 authored', () =
   disposeModel(movement507.root);
   disposeModel(model.root);
 });
+
+test('movement 218 catch G rides F\'s plain rim between notches instead of hovering', () => {
+  const model = createMovementModel(catalog.movements[217]);
+  const { stateAtInputTravel } = model.root.userData;
+  let minimum = Infinity;
+  let maximumRideGap = 0;
+  for (let index = 0; index <= 4000; index += 1) {
+    const phase = index / 4000;
+    const state = stateAtInputTravel((phase + 1) * FULL_TURN);
+    minimum = Math.min(minimum, state.catchSolidClearance);
+    // After the projection lifts it at e, G's lug tip grazes the rim (not
+    // 20 degrees clear of it) and passes level over the intermediate notches
+    // until it drops into the next notch at C.
+    if (phase > 0.6 && phase < 0.94) {
+      assert.ok(Math.abs(state.catchHookPolarRadius - 1.6405) < 1e-9, `phase ${phase}`);
+      maximumRideGap = Math.max(maximumRideGap, state.catchHookPolarRadius - 0.09 - 1.55);
+    }
+  }
+  assert.ok(minimum >= 0.0004, `minimum lug clearance ${minimum}`);
+  assert.ok(maximumRideGap <= 0.0006, `ride gap ${maximumRideGap}`);
+  disposeModel(model.root);
+});

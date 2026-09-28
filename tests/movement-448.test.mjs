@@ -300,9 +300,9 @@ test('movement 448 update maps linkage, piston, checks, and water extents exactl
       geometry.connectingRodLength, 5e-16,
     `rendered rigid-link length at ${phase}`);
     const endpoints = rodEndpoints();
-    vectorNear(endpoints.piston, state.pistonRodJoint.clone().setZ(.27), 8e-16,
+    vectorNear(endpoints.piston, state.pistonRodJoint.clone().setZ(model.root.userData.linkZ), 8e-16,
       `rod piston endpoint at ${phase}`);
-    vectorNear(endpoints.lever, state.leverPin.clone().setZ(.27), 8e-16,
+    vectorNear(endpoints.lever, state.leverPin.clone().setZ(model.root.userData.linkZ), 8e-16,
       `rod lever endpoint at ${phase}`);
     // Pass 69: one stream runs through the spout and falls from its lip,
     // present exactly while the upstroke discharges.
@@ -333,4 +333,22 @@ test('movement 507 remains the next authored frontier', () => {
   assert.notEqual(model507.root.userData.archetype, ARCHETYPE);
   disposeModel(model448.root);
   disposeModel(model507.root);
+});
+
+test('448 (pass 96): each joint pin spans only its eyes, with small heads', () => {
+  const model = createMovementModel(catalog.movements[447]);
+  const d = model.root.userData, b = d.blocks;
+  model.update(d.geometry.cycleDuration * 0.3);
+  model.root.updateMatrixWorld(true);
+  const zSpan = (mesh) => { mesh.geometry.computeBoundingBox(); return mesh.geometry.boundingBox; };
+  const link = zSpan(b.connectingRod), eye = zSpan(b.leverEyes[0]);
+  const [pivotPin, rodPin] = [b.lever.children[1], b.lever.children[2]];
+  const bracket = zSpan(b.leverSupport);
+  const linkLow = d.linkZ - 0.04, linkHigh = d.linkZ + 0.04;
+  assert.ok(Math.abs(linkLow - eye.max.z) < 0.01, 'link lies against the lever face');
+  for (const [pin, low, high] of [[pivotPin, bracket.min.z, eye.max.z], [rodPin, eye.min.z, linkHigh], [b.jointPin, -0.055, linkHigh]]) {
+    const box = zSpan(pin);
+    assert.ok(box.min.z > low - 0.03 && box.max.z < high + 0.03, `pin stands proud: ${box.min.z}..${box.max.z} vs ${low}..${high}`);
+    assert.ok(box.max.x < 0.12, 'pin head is small');
+  }
 });

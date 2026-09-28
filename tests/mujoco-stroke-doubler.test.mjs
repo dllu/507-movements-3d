@@ -17,6 +17,11 @@ test('118 visible hardware is closed and retains the source pinion, rack and pit
   assert.equal(u.families.pinion,'pinion');assert.equal(u.families.pitman,'carrier');assert.equal(u.families.spindle,'carrier');assert.equal(u.families.upperRack,'rack');assert.equal(u.families.lowerRack,'fixed');
   for(const [n,m]of Object.entries(u.parts)){const a=inspectWeightedClutchSolid(m.geometry);assert(a.volume>0,n);assert.equal(a.components,1,n);assert.equal(a.unmatchedEdges+a.degenerate+a.nonfinite+a.wrongNormals,0,n);}
   assert.equal(u.parts.pinion.geometry.userData.toothProfile,'rounded-rack-generated-involute-with-root-transition');assert(u.hideGround);
+  // p96: both upper corners of the fixed rack's web are the same round: the
+  // highest body point over each end is equally far below the root line.
+  {const pos=u.parts.lowerRack.geometry.attributes.position,b=new THREE.Box3().setFromBufferAttribute(pos),top=[-Infinity,-Infinity],w=.02;
+   for(let i=0;i<pos.count;i++){const x=pos.getX(i),y=pos.getY(i);if(x<b.min.x+w)top[0]=Math.max(top[0],y);if(x>b.max.x-w)top[1]=Math.max(top[1],y);}
+   assert(Math.abs(top[0]-top[1])<.01,'matching rounded ends '+top);assert(b.max.y-top[0]>.1,'rounded left end');}
  }finally{disposeObject3D(v.root);}
 });
 

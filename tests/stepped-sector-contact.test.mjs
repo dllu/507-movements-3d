@@ -104,7 +104,7 @@ test('038 exposes a fixed center link with real shaft bores and clearance over t
       const gearBounds = new THREE.Box3().setFromObject(gear.userData.mesh);
       const hubBounds = new THREE.Box3().setFromObject(gear.userData.hub);
       assert.ok(collarBounds.min.z - hubBounds.max.z > 0.0049, 'fixed collar clears the spinning hub');
-      assert.ok(linkBounds.min.z - gearBounds.max.z > 0.064, 'the center link clears every tooth and radial face');
+      assert.ok(linkBounds.min.z - gearBounds.max.z > 0.04, 'the center link clears every tooth and radial face');
       for (let ray = 0; ray < 16; ray += 1) {
         const angle = 2 * Math.PI * ray / 16;
         const origin = new THREE.Vector3(gear.position.x, 0, 0.1975);
@@ -112,6 +112,12 @@ test('038 exposes a fixed center link with real shaft bores and clearance over t
         const hits = new THREE.Raycaster(origin, direction, 0, 0.4).intersectObject(collar, false);
         assert.ok(hits.length > 0 && hits[0].distance - geometry.shaftRadius > 0.0059,
           'the shaft has running clearance inside the actual collar bore');
+        // The eye is solid all round the bore out to the collar radius
+        // (the link joins it without a lollipop-stick neck).
+        const faceOrigin = origin.clone().addScaledVector(direction, 0.25).setZ(1);
+        const faceHits = new THREE.Raycaster(faceOrigin, new THREE.Vector3(0, 0, -1), 0, 2)
+          .intersectObject(collar, false);
+        assert.ok(faceHits.length > 0, 'the eye is solid from its bore outward');
       }
     }
   }

@@ -555,6 +555,60 @@ function slottedTraverse(movement) {
   inputGuideRail.userData.beyondPlateCrop = true;
   inputGuideRail.userData.role =
     'fixed-horizontal-guide-for-driven-lower-pin-D';
+  // p96: the rod is carried at both ends by the fixed guides a, a. Each
+  // guide's upright continues down behind D's shoe (z <= -0.21, the shoe
+  // stops at -0.20) and turns outward in one flat L-shaped plate; a lug
+  // with a round front concentric with the rod closes over the rod's end,
+  // beyond the shoe's travel.
+  const rodHalfLength = (sourceInputHalfStroke * 2 * sourceScale + 0.34 + 0.16) / 2;
+  const hangerBackZ = fixedFramePlaneZ + 0.04 - 0.27;
+  const hangerFrontZ = -0.21;
+  const lugRadius = 0.125;
+  const lugInnerX = sourceInputHalfStroke * sourceScale + 0.17 + 0.035;
+  const lugOuterX = rodHalfLength + 0.10;
+  const hangerTopY = sourceOutputRailWorldY - (plateOutputRailHeight + 0.50) / 2;
+  const hangerBottomY = inputGuideWorldY - lugRadius;
+  const hangerFootTopY = inputGuideWorldY + lugRadius;
+  const inputRodHangers = plateGuideXs.map((sourceX, index) => {
+    const side = Math.sign(sourceX);
+    const guideX = sourceX * sourceScale;
+    const outline = [
+      [guideX - 0.10 * side, hangerTopY],
+      [guideX - 0.10 * side, hangerBottomY],
+      [lugOuterX * side, hangerBottomY],
+      [lugOuterX * side, hangerFootTopY],
+      [guideX + 0.10 * side, hangerFootTopY],
+      [guideX + 0.10 * side, hangerTopY],
+    ];
+    if (side < 0) outline.reverse();
+    const hanger = new THREE.Mesh(
+      plate(poly(outline), hangerBackZ, hangerFrontZ),
+      frameMaterial,
+    );
+    hanger.userData.role = `guide-a-${index + 1}-hanger-carrying-rod-for-pin-D`;
+    hanger.userData.beyondPlateCrop = true;
+    const lugProfile = [[hangerFrontZ, inputGuideWorldY - lugRadius]];
+    for (let step = 0; step <= 24; step += 1) {
+      const angle = -Math.PI / 2 + Math.PI * step / 24;
+      lugProfile.push([inputRodZ + lugRadius * Math.cos(angle),
+        inputGuideWorldY + lugRadius * Math.sin(angle)]);
+    }
+    lugProfile.push([hangerFrontZ, inputGuideWorldY + lugRadius]);
+    const lug = new THREE.Mesh(
+      plate(poly(lugProfile.map(([z, y]) => [y, z]).reverse()),
+        side > 0 ? lugInnerX : -lugOuterX,
+        side > 0 ? lugOuterX : -lugInnerX)
+        .applyMatrix4(new THREE.Matrix4().makeBasis(
+          new THREE.Vector3(0, 1, 0),
+          new THREE.Vector3(0, 0, 1),
+          new THREE.Vector3(1, 0, 0),
+        )),
+      frameMaterial,
+    );
+    lug.userData.role = `guide-a-${index + 1}-lug-over-rod-end-for-pin-D`;
+    lug.userData.beyondPlateCrop = true;
+    return { hanger, lug };
+  });
   const inputGuideDashes = [];
   const dashCount = 23;
   for (let index = 0; index < dashCount; index += 1) {
@@ -581,6 +635,7 @@ function slottedTraverse(movement) {
     fixedPinSupport,
     fixedPinBearing,
     inputGuideRail,
+    ...inputRodHangers.flatMap(({ hanger, lug }) => [hanger, lug]),
   );
   root.add(fixedFrame);
 
@@ -913,6 +968,7 @@ function slottedTraverse(movement) {
     fixedPinSupport,
     inputGuideDashes,
     inputGuideRail,
+    inputRodHangers,
     inputShoe,
     leverAssembly,
     leverJointAnchor,

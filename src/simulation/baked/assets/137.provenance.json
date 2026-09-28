@@ -8,30 +8,30 @@
     "rod"
   ],
   "period": 8,
-  "loopStart": 23.998,
-  "loopEnd": 31.998,
+  "loopStart": 0,
+  "loopEnd": 8,
   "turns": [
     6.283185307179586,
     0,
-    -16.117643714983814,
-    -36.76399442352259,
+    -16.117053105748276,
+    -15.609459678626664,
     0
   ],
   "bounds": {
     "min": [
-      -1.2736530424480672,
-      -3.1661368676024586,
+      -1.27367779393362,
+      -3.1666794865453958,
       -0.660000023841858
     ],
     "max": [
-      4.411139215345233,
-      2.110600480374036,
+      4.411408113142371,
+      2.11002981578797,
       0.48000001668930053
     ]
   },
   "focus": [
-    1.5687430864485827,
-    -0.5277681936142113,
+    1.5688651596043754,
+    -0.5283248353787129,
     -0.09000000357627871
   ],
   "cameraDirection": [
@@ -40,7 +40,7 @@
     15
   ],
   "source": {
-    "reportSha256": "b58471b95cac327c2ce8b22be8eaaccb956391639518deff0cde76ca24f29196",
+    "reportSha256": "53c084e495318e2cdd960c8230a578f90a4c4e59d9aa9f388d67017f9e7a8a32",
     "simulationSources": [
       {
         "file": "src/data/expansion-eccentric-outline.js",
@@ -48,11 +48,11 @@
       },
       {
         "file": "src/simulation/expansion-eccentric-profile.js",
-        "sha256": "ce771457350376fce4a065efb34748121b9b9408fe1dc44166a2f3e03f656e78"
+        "sha256": "da52e2ee7149e3735e426b2d27ff364930a144cb2a5991f1419e68291150f187"
       },
       {
         "file": "src/simulation/mujoco-expansion-eccentric/physics.js",
-        "sha256": "44c29a9c18ca76ab3bd9e9e215d1958699c05c7f7b7e708a56e09dd3155da662"
+        "sha256": "e168360e75f52f2c1560404486aa2f159bf0ce838e15d31f526981730c0a7930"
       },
       {
         "file": "src/simulation/mujoco/simulation.js",
@@ -74,20 +74,29 @@
       },
       {
         "file": "scripts/bake-expansion-eccentric.mjs",
-        "sha256": "a8e9e390cb3ad61159c7ab6555bf00730d33693a0058979d0cd584434058f6e9"
+        "sha256": "b93cb1cb7f2c84d36f69e0f7e797851edc757a411e12a4c78dc57d129c02508d"
       }
     ],
     "options": {
       "timestep": 0.00025,
       "period": 8,
-      "spread": 4,
+      "spread": 4.05,
       "samples": 384
     },
-    "maximumLoopSeamPixels": 0.000059886756324199764,
-    "maximumLoopVelocitySeamPixelsPerSecond": 0.02176127206544561,
-    "maximumPenetrationPixels": 0.025693524858610983
+    "maximumLoopSeamPixels": 0.006694611455230776,
+    "maximumLoopVelocitySeamPixelsPerSecond": 0.17457855588251958,
+    "maximumPenetrationPixels": 0.0008557867079816983,
+    "steadyStateStart": 16.249999999986578,
+    "kinematic": {
+      "lowerRoller": "no-slip rolling on the nearest cam point",
+      "minimumLowerGapPixels": 0.06543547487946055,
+      "maximumLowerGapPixels": 1.1770604508557214,
+      "maximumUpperSimulatedSlipPixelsPerSecond": 0.30262002566393464,
+      "upperSimulatedTurns": -16.117053105748276,
+      "upperNoSlipTurns": -16.111442594829075
+    }
   },
-  "samples": 16000,
-  "bytes": 1016626,
-  "assetSha256": "7ddc554c17beaa8183e0e4e38c93d28b385bb98d0585f17020dd1e5ce1198dea"
+  "samples": 4001,
+  "bytes": 463227,
+  "assetSha256": "dd618b9d336abdfff3e1a7dfafae4c73ed19551844f8b11e01dd3f2183794d2a"
 }

@@ -95,7 +95,7 @@ test('movement 304 is one thirty-pin wheel and a broad pallet plate hung from a 
   assert.equal(blocks.preferredPins.length, 15);
   assert.equal(blocks.legacyPins.length, 15);
   assert.equal(blocks.spokeMeshes.length, 5);
-  assert.equal(blocks.hubBoltMeshes.length, 8);
+  assert.equal(blocks.hubBoltMeshes.length, 7, 'Brown draws seven hub bolts');
   assert.equal(blocks.colletScrews.length, 2);
   assert.equal(blocks.sidePlateScrews.length, 2);
   vectorNear(blocks.escapeWheel.userData.axis,

@@ -84,7 +84,11 @@ test('movement 348 is Snyder’s two-stroke perpendicular-slot disk', () => {
   assert.equal(blocks.primarySlide.assembly.parent, model.root);
   assert.equal(blocks.secondarySlide.assembly.parent, model.root);
   assert.equal(blocks.slottedDisk.parent, blocks.diskAssembly);
-  assert.equal(blocks.slottedDisk.userData.actualThroughSlots, true);
+  // p96: the crossed slots are one cross-shaped opening in a single closed
+  // disk solid whose plain back plate is the groove floor.
+  assert.equal(blocks.slottedDisk.userData.actualThroughSlots, false);
+  assert.ok(blocks.slottedDisk.userData.slotFloorZ < -0.075);
+  assert.equal(blocks.slottedDisk.geometry.groups.length, 2);
   assert.equal(blocks.primaryRodAnchor.parent, blocks.rodAssembly);
   assert.equal(blocks.secondaryRodAnchor.parent, blocks.rodAssembly);
   assert.equal(blocks.guidePointAnchor.parent, blocks.rodAssembly);
@@ -98,8 +102,8 @@ test('movement 348 is Snyder’s two-stroke perpendicular-slot disk', () => {
     blocks.secondarySlide.assembly);
   assert.equal(blocks.guideRails.length, 2);
   assert.equal(blocks.framePosts.length, 2);
-  assert.equal(blocks.slotFloors.length, 2);
-  assert.equal(blocks.slotEdges.length, 4);
+  assert.equal(blocks.slotFloors.length, 0);
+  assert.equal(blocks.slotEdges.length, 0);
 
   assert.equal(contacts.primarySlideInDiskSlot.fixedToInputMember,
     blocks.diskAssembly);

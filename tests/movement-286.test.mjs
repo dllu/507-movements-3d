@@ -355,22 +355,25 @@ test('movement 286 closes exactly while movement 339 remains the next authored d
   const start = stateAtTime(0);
   const closure = stateAtTime(timeline.cyclePeriod);
   assert.equal(closure.cycleIndex, 1);
-  assert.equal(closure.cyclePhase, 0);
+  near(closure.cyclePhase, start.cyclePhase, 1e-12, 'closure phase');
+  // Time zero is Brown's pose: the toe just touching the lifter.
+  assert.equal(start.contactActive, true);
+  near(start.followerLift, 0, 1e-4, 'source pose starts at first contact');
   assert.equal(closure.stage, start.stage);
   assert.equal(closure.contactActive, start.contactActive);
-  near(closure.toeAngle, start.toeAngle, 0, 'toe closure');
-  near(closure.followerLift, start.followerLift, 0,
+  near(closure.toeAngle, start.toeAngle, 1e-12, 'toe closure');
+  near(closure.followerLift, start.followerLift, 1e-12,
     'follower closure');
-  near(closure.contactGap, start.contactGap, 0,
+  near(closure.contactGap, start.contactGap, 1e-12,
     'clearance closure');
 
   model.update(0);
   const startToe = blocks.toe.quaternion.clone();
   const startLifter = blocks.lifter.position.clone();
   model.update(timeline.cyclePeriod);
-  near(blocks.toe.quaternion.angleTo(startToe), 0, 0,
+  near(blocks.toe.quaternion.angleTo(startToe), 0, 1e-7,
     'rendered toe closure');
-  vectorNear(blocks.lifter.position, startLifter, 0,
+  vectorNear(blocks.lifter.position, startLifter, 1e-12,
     'rendered lifter closure');
 
   const movement507 = catalog.movements[506];

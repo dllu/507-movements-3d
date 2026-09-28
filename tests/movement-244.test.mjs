@@ -438,3 +438,29 @@ test('p93: lever D rests on the wooden block, centred on the pulley, with the pa
     disposeModel(model.root);
   }
 });
+
+test('p96: movement 244 strap hinge pins sit centred in the links and end in short heads; the pan carries three different weights', () => {
+  const model = createMovementModel(catalog.movements[243]);
+  const { strapPins, lowerStraps, scaleWeights } = model.root.userData.blocks;
+  const radii = [];
+  for (const strap of lowerStraps) {
+    const p = strap.geometry.attributes.position;
+    for (let i = 0; i < p.count; i += 1) radii.push(Math.hypot(p.getX(i), p.getY(i)));
+  }
+  const inner = Math.min(...radii), outer = Math.max(...radii);
+  model.root.updateMatrixWorld(true);
+  const strapBox = new THREE.Box3();
+  for (const strap of lowerStraps) strapBox.union(new THREE.Box3().setFromObject(strap));
+  strapPins.forEach((pin, index) => {
+    const r = Math.hypot(pin.position.x, pin.position.y);
+    near(r, (inner + outer) / 2, 1e-9, `pin ${index} centred in the band`);
+    const mesh = pin.userData.rotor?.children[0] ?? pin.children[0];
+    const length = mesh.geometry.parameters.height;
+    if (index > 0 && index < strapPins.length - 1) {
+      assert.ok(length < strapBox.max.z - strapBox.min.z + 0.02, `inner pin ${index} trimmed to the strap`);
+    }
+  });
+  const roles = scaleWeights.map((w) => w.userData.role).sort();
+  assert.deepEqual(roles, ['calibrated-scale-weight', 'calibrated-scale-weight-bell', 'calibrated-scale-weight-block']);
+  disposeModel(model.root);
+});

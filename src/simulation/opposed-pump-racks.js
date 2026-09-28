@@ -7,7 +7,7 @@ import {glandCylinder} from './beyond-crop-hardware.js';
 // to an 18-tooth, 20-degree involute pinion and its conjugate straight racks.
 export const pumpRackDimensions=Object.freeze({radius:.855,teeth:18,addendum:.095,dedendum:.12,
  rackLength:3.56,rightRackLength:3.72,rackWidth:.34,depth:.18,period:4,amplitude:Math.PI/3,
- leftY:.34,rightY:-.66,leverAngle:Math.atan2(-211,470),leverHalfLength:2.576});
+ leftY:.34,rightY:-.66,leverAngle:Math.atan2(-211,470),leverHalfLength:2.576,leverTipZ:-.235,knobRadius:.13});
 
 export function makeOpposedPumpRacks(){
  const d=pumpRackDimensions,root=new THREE.Group(),pitch=2*Math.PI*d.radius/d.teeth;
@@ -33,10 +33,15 @@ export function makeOpposedPumpRacks(){
  // web, and they emerge beyond the racks.
  const leverGroup=new THREE.Group();leverGroup.rotation.z=d.leverAngle;
  for(const sign of [-1,1]){
-  const arm=makeBeam(new THREE.Vector3(sign*.6,0,-.145),new THREE.Vector3(sign*d.leverHalfLength,0,-.145),
+  // Pass 97: each ball is centred on its arm's axis at the arm's end, so the
+  // rod's centreline runs through the ball's centre. The arm leans back 2.6
+  // degrees in depth (unseen from the front) so the ball clears the racks when
+  // the lever swings up behind them.
+  const tip=new THREE.Vector3(sign*d.leverHalfLength,0,d.leverTipZ);
+  const arm=makeBeam(new THREE.Vector3(sign*.6,0,-.145),tip,
    {color:PALETTE.driver,depth:.10,thickness:.12});
-  const knob=new THREE.Mesh(new THREE.SphereGeometry(.13,24,16),matte(PALETTE.ink));
-  knob.position.set(sign*d.leverHalfLength,0,-.23);leverGroup.add(arm,knob);
+  const knob=new THREE.Mesh(new THREE.SphereGeometry(d.knobRadius,32,20),matte(PALETTE.ink));
+  knob.name='leverKnob';knob.position.copy(tip);leverGroup.add(arm,knob);
  }
  rotor.add(leverGroup);root.add(pinion);
  const profiles=[];

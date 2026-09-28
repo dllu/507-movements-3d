@@ -63,3 +63,15 @@ test('398 wheel turns monotonically at varying speed, never stopping, with a sea
   near(stateAtTime(T).outputRotorAngle - stateAtTime(0).outputRotorAngle, 3 * FULL_TURN, 1e-9, 'three turns per cam turn');
   near(stateAtTime(T).rollerDistance, stateAtTime(0).rollerDistance, 1e-12, 'follower loop closes');
 });
+
+test('398 rear crosshead block ends in a lug concentric with the rod pin (pass 96)', () => {
+  const model = createMovementModel(catalog.movements[397]);
+  const follower = model.root.userData.blocks.follower;
+  const pin = follower.userData.pivot;
+  const rear = follower.userData.blocks.at(-1);
+  rear.geometry.computeBoundingBox();
+  const box = rear.geometry.boundingBox;
+  const lugRadius = 1.6 * 0.14;
+  near(box.max.x, pin.position.x + lugRadius, 2e-3, 'lug reaches one lug radius past the pin');
+  assert.ok(pin.position.x - 0.14 > box.min.x, 'pin fully over the block');
+});

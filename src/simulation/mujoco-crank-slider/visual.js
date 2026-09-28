@@ -24,7 +24,7 @@ export function makeMujocoCrankSlider(mujoco,options={}) {
   const r=u.geometry.outerRadius+.04,bounds=new THREE.Box3(new THREE.Vector3(-r,-r,-.51),new THREE.Vector3(u.geometry.right+.04,r,.40));
   Object.assign(u,{mechanism:'mujoco-ordinary-crank-slider',simulationBackend:'mujoco',physics,
     fidelity:'authored',reconstructionStatus:'integrated',supportsRestart:true,
-    reconstructionNote:'The curved spokes follow the engraving. Guide shoes, rear support and depth are reconstructed; pins and guides use ideal joints.',
+    reconstructionNote:'The curved spokes follow the engraving. Guide shoes and depth are reconstructed; pins and guides use ideal joints.',
     cameraFitBounds:bounds,sampledMotionBounds:{min:bounds.min.toArray(),max:bounds.max.toArray()},
     animationTiming:{authoredCyclePeriod:physics.description.options.period,displayCycleDuration:physics.description.options.period,playbackTimeScale:1},
     qualification:'Only the crankshaft is actuated. MuJoCo hinge/slider joints and a wrist closure determine rod and crosshead motion. Bearings are ideal constraints, with independent finite hardware clearance checks.'});

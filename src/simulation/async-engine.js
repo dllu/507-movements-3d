@@ -260,6 +260,11 @@ export class MovementEngine {
     const fill = new THREE.DirectionalLight(0xb9d8e2, 1.15);
     fill.position.set(-6, 3, 4);
     this.scene.add(fill);
+    // A weak, shadowless back light so faces turned away from the key (seen
+    // from behind or below) keep their form instead of going near-black.
+    const back = new THREE.DirectionalLight(0xf3ead8, 0.85);
+    back.position.set(3, -4, -8);
+    this.scene.add(back);
   }
 
   setAmbientOcclusion(enabled) {

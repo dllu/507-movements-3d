@@ -779,6 +779,22 @@ function proportionalCompasses(movement) {
   upperSpanWitness.castShadow = false;
   lowerSpanWitness.castShadow = false;
   correctProportionalCompasses(root);
+  // p96: close the pivot stack. The collar seats 0.005 into the washer
+  // (world z 0.235-0.435), the screw head 0.005 into the collar (0.43-0.55),
+  // the driver slot straddles the head's top face, and the axle ends inside
+  // the head instead of the head floating 0.105 clear on a bare pin.
+  {
+    const stackBase = pivotAssembly.position.z;
+    pivotCollar.position.z = 0.335 - stackBase;
+    setScrewHead.position.z = 0.49 - stackBase;
+    setScrewSlot.position.z = 0.55 - stackBase;
+    const axle = root.userData.blocks.pivotAxle;
+    const axleBottom = axle.position.z - axle.geometry.parameters.height / 2;
+    const axleTop = 0.52 - stackBase;
+    axle.geometry.dispose();
+    axle.geometry = new THREE.CylinderGeometry(0.065, 0.065, axleTop - axleBottom, 48);
+    axle.position.z = (axleTop + axleBottom) / 2;
+  }
   return finishDrawingGauge(root,update,cycleDuration);
 }
 

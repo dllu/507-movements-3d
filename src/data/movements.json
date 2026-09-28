@@ -496,7 +496,7 @@
       "archetype": "clutch-geared-dog",
       "fidelity": "authored",
       "sourceUrl": "https://507movements.com/mm_048.html",
-      "mechanicalNote": "The long clutch cylinders follow the engraving. Six tapered jaws, an 18:32 gear ratio, dimensions and lever travel are reconstructed. The output starts at actual jaw-flank contact and coasts after withdrawal. Engagement is an ideal inelastic impact against a constant-speed input; stresses and elastic deformation are not simulated."
+      "mechanicalNote": "The long clutch cylinders follow the engraving. Six tapered jaws, a fine 16:64 gear pair meshing on the viewer's side, dimensions and lever travel are reconstructed. The output starts at actual jaw-flank contact and coasts after withdrawal. Engagement is an ideal inelastic impact against a constant-speed input; stresses and elastic deformation are not simulated."
     },
     {
       "id": 49,
@@ -540,7 +540,7 @@
       "archetype": "clutch-pin",
       "fidelity": "authored",
       "sourceUrl": "https://507movements.com/mm_052.html",
-      "mechanicalNote": "Two studs take up the hole clearance before driving the right disk. The common shaft and right disk slide together, while the left disk runs freely on its sleeve. A bent lever and pivoted shoe move the grooved collar. Dimensions, the unshown sleeve arrangement and operating timing are reconstructed. Engagement is an ideal rigid impact; bearing friction and elastic stress are not simulated."
+      "mechanicalNote": "Two studs take up the hole clearance before driving the right disk. Only the right disk and its hub slide, on a feather key along the fixed shaft, while the left disk runs freely on its sleeve. A bent lever and pivoted shoe move the grooved collar. Dimensions, the unshown sleeve arrangement and operating timing are reconstructed. Engagement is an ideal rigid impact; bearing friction and elastic stress are not simulated."
     },
     {
       "id": 53,

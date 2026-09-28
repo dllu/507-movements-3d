@@ -445,25 +445,70 @@ function pileDriverReleasingHooks(movement) {
   const block = new THREE.Group();
   block.userData.role = 'rope-block-carrying-pliers-jaws';
   const stirrupRight = [[66.5, 94], [67, 84], [63.5, 73], [55, 62], [41, 52], [25, 43], [11, 33], [2, 23], [0, 20.5]];
+  // p96: each stirrup band is one smooth strip (a centripetal spline through
+  // the traced centreline, offset by its half-width) rather than a chain of
+  // capsules; it is a little broader than the traced 3.8 px so it reads as a
+  // cast band, not a wire. Brown leaves the space inside the bands open.
+  const bandHalf = 2.6;
+  const bandStrip = (points) => {
+    const curve = new THREE.CatmullRomCurve3(points.map(([x, y]) => new THREE.Vector3(x, y, 0)), false, 'centripetal');
+    const left = [], right = [];
+    for (let i = 0; i <= 96; i += 1) {
+      const p = curve.getPoint(i / 96), t = curve.getTangent(i / 96);
+      left.push([p.x - bandHalf * t.y, p.y + bandHalf * t.x]);
+      right.push([p.x + bandHalf * t.y, p.y - bandHalf * t.x]);
+    }
+    // Carry the ends on into the bar above and the block below.
+    const a = curve.getTangent(0), b = curve.getTangent(1);
+    const extend = (q, t, d) => [q[0] + d * t.x, q[1] + d * t.y];
+    left.unshift(extend(left[0], a, -4)); right.unshift(extend(right[0], a, -4));
+    left.push(extend(left.at(-1), b, 3)); right.push(extend(right.at(-1), b, 3));
+    return poly([...left, ...right.reverse()]);
+  };
+  // Round ears concentric with the jaw pivots, joined to the block's sides
+  // (the pivots sat on the block's edges with the old free-standing discs).
+  const EAR_RADIUS = 10.5;
+  const ear = (side) => polygonClipping.union(
+    poly(circle([side * PIVOT_X, 0], EAR_RADIUS, 96)),
+    poly(side > 0
+      ? [[STOP_HALF - 1, -EAR_RADIUS], [PIVOT_X, -EAR_RADIUS], [PIVOT_X, EAR_RADIUS], [STOP_HALF - 1, EAR_RADIUS]]
+      : [[-PIVOT_X, -EAR_RADIUS], [-STOP_HALF + 1, -EAR_RADIUS], [-STOP_HALF + 1, EAR_RADIUS], [-PIVOT_X, EAR_RADIUS]]),
+  );
+  // An eye lug standing on the crossbar, across the rope eye's plane, that
+  // the eye's lower bow passes through.
   const castingOutline = polygonClipping.union(
     poly([[-68, 94], [68, 94], [68, 104], [-68, 104]]),
     poly([[-35, 84], [35, 84], [35, 94], [-35, 94]]),
     poly([[-24.5, 67], [24.5, 67], [24.5, 84], [-24.5, 84]]),
     poly([[-24.5, 67], [0, 49], [24.5, 67]]),
-    ...stirrupRight.slice(1).map((p, i) => capsule(stirrupRight[i], p, 1.9, 12)),
-    ...stirrupRight.slice(1).map((p, i) => capsule([-stirrupRight[i][0], stirrupRight[i][1]], [-p[0], p[1]], 1.9, 12)),
+    bandStrip(stirrupRight),
+    bandStrip(stirrupRight.map(([x, y]) => [-x, y])),
     poly([[-STOP_HALF, BLOCK_BOTTOM], [STOP_HALF, BLOCK_BOTTOM], [STOP_HALF, 10], [26, 10], [24, 34], [0, 21], [-24, 34], [-26, 10], [-STOP_HALF, 10]]),
-    poly(circle([PIVOT_X, 0], 9, 64)),
-    poly(circle([-PIVOT_X, 0], 9, 64)),
+    ear(1),
+    ear(-1),
   );
   const casting = slab(castingOutline.map((polygon) => polygon.map((ring) => scaled(ring))), ...BLOCK_Z, blockMaterial,
     'rope-block-casting-bar-web-stirrup-and-pivot-ears');
   // The stop lugs reach forward into the jaw plane below the pivot bosses.
   const stopLug = slab(poly(scaled([[-STOP_HALF, BLOCK_BOTTOM], [STOP_HALF, BLOCK_BOTTOM], [STOP_HALF, -14], [-STOP_HALF, -14]])),
     BLOCK_Z[1], JAW_Z[1], blockMaterial, 'rope-block-jaw-closing-stop-lugs');
-  const ring = mesh(new THREE.TorusGeometry(7 * S, 2 * S, 14, 40), darkMaterial, 'hoisting-rope-eye-on-rope-block');
+  const ring = mesh(new THREE.TorusGeometry(7 * S, 2 * S, 24, 64), darkMaterial, 'hoisting-rope-eye-on-rope-block');
   const ropeZ = (BLOCK_Z[0] + BLOCK_Z[1]) / 2;
-  ring.position.set(0, (104 + 7 + 0.4) * S, ropeZ);
+  // The eye's lower bow runs through the lug's bore (centre y EYE_BOW).
+  const EYE_BOW = 108.2;
+  ring.position.set(0, (EYE_BOW + 7) * S, ropeZ);
+  // The lug: a thin plate standing on the crossbar across the eye's plane
+  // (so its bore runs along x), arched concentric with that bore.
+  const lugHalfThickness = 1.7 * S, lugRadius = 4.4, lugBore = 2.35;
+  const lugShape = polygonClipping.difference(
+    polygonClipping.union(poly(circle([0, EYE_BOW], lugRadius, 64)),
+      poly([[-lugRadius, 103], [lugRadius, 103], [lugRadius, EYE_BOW], [-lugRadius, EYE_BOW]])),
+    poly(circle([0, EYE_BOW], lugBore, 48)));
+  // Built in the (z, y) plane about the rope's line, then turned edge-on.
+  const eyeLug = slab(lugShape.map((polygon) => polygon.map((r) => r.map(([u, v]) => [u * S, v * S]))),
+    -lugHalfThickness, lugHalfThickness, blockMaterial, 'rope-eye-lug-on-crossbar');
+  eyeLug.rotation.y = Math.PI / 2;
+  eyeLug.position.z = ropeZ;
   const pins = [-1, 1].map((side) => {
     const pin = mesh(new THREE.CylinderGeometry(PIN_RADIUS * S, PIN_RADIUS * S, JAW_Z[1] + 0.06 - BLOCK_Z[0] + 0.02, 48), darkMaterial,
       `${side < 0 ? 'left' : 'right'}-jaw-pivot-pin`);
@@ -475,7 +520,7 @@ function pileDriverReleasingHooks(movement) {
     block.add(head);
     return pin;
   });
-  block.add(casting, stopLug, ring, ...pins);
+  block.add(casting, eyeLug, stopLug, ring, ...pins);
 
   const jaws = [-1, 1].map((side) => {
     const jaw = new THREE.Group();
@@ -530,9 +575,9 @@ function pileDriverReleasingHooks(movement) {
     jaws[0].rotation.z = -state.jawOpeningAngle;
     jaws[1].rotation.z = state.jawOpeningAngle;
     weight.position.y = state.weightY * S;
-    // The rope's end is seized into the top of the eye (ring top 120.4), so
+    // The rope's end is seized into the top of the eye (ring top 124.2), so
     // no gap shows between them.
-    const ropeEndY = (state.blockHeight + 119.8) * S;
+    const ropeEndY = (state.blockHeight + 123.6) * S;
     const hangingLength = ropeTopY - ropeEndY;
     // The lay travels with the rope: its phase is fixed at the eye.
     rope.userData.setPoints([new THREE.Vector3(0, ropeTopY, ropeZ), new THREE.Vector3(0, ropeEndY, ropeZ)], hangingLength);

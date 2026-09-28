@@ -46,8 +46,17 @@ both. All runs finish without resets. The selected 0.00025-second, 384-cell run
 has maximum contact penetration of 0.0726 engraving pixels. Source hashes and
 results are in the [physics report](validation/137-physics-prototype.json).
 
-The baked loop starts at 23.748 seconds. Its maximum position seam is 0.00167
-pixels and velocity seam is 0.01693 pixels/second for the cam, fork and rod.
+Pass 97: the rollers carry solid-disk inertia (mass 0.3, axial inertia 0.015)
+and the roller spread is 4.05 pixels (was 4), which removes a 0.03-pixel pinch
+that stalled the cam by up to 0.08 radians once a turn. The bake keeps only one
+steady-state cycle, from 16.25 seconds (cam at the engraved pose), so playback
+starts and loops at steady state. The lower roller runs 0.07–1.18 pixels clear
+of the cam while the upper roller bears on it, so in the simulation it barely
+touches the cam and would stand still; its angle is integrated kinematically
+from no-slip rolling on the nearest cam point. The same integration reproduces
+the upper roller's simulated spin to 0.04% (slip at most 0.3 pixels/second).
+Its maximum position seam is 0.0067 pixels and velocity seam is 0.17
+pixels/second for the cam, fork, upper roller and rod.
 Roller angle winding is preserved across loops; roller faces are rotationally
 symmetric. Tests independently check interpolated cam/roller clearance, rod-pin
 alignment, motion bounds, restart, serialization and source provenance. The

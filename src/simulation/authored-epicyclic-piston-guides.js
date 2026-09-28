@@ -300,28 +300,42 @@ function FixedAnnulusAndFrame({
     bearing.userData.fixed = true;
     bearing.userData.role = `${sideName}-fixed-annulus-D-bearing-boss`;
     sideBearings.push(bearing);
-    // Brown draws each leg as one broad flat bar, not a pair of rods.
+    // Brown draws each leg as one broad flat bar, not a pair of rods. It is
+    // one extrusion whose top end is a half-round concentric with the
+    // bearing boss and inside it (p96: the square top overhung the boss).
+    // Brown's legs run off the plate's foot; they continue on the same line
+    // down to the level of the cylinder's foot (y = -6.842) and end there
+    // cleanly (Brown draws no bed plate).
     for (const offset of [0]) {
-      const leg = beamBetween2D(
-        new THREE.Vector2(
-          side * fixedRingOuterRadius + offset,
-          -0.10,
-        ),
-        // Brown's legs run off the plate's foot; they continue on the same
-        // line down to the level of the cylinder's foot (y = -6.842) and end
-        // there cleanly (Brown draws no bed plate).
-        new THREE.Vector2(
-          side * fixedRingOuterRadius + offset + (side * 14.1 * sourceScale
-            - side * fixedRingOuterRadius) * (6.842 - 0.10) / (20.15 * sourceScale - 0.10),
-          -6.842,
-        ),
-        0.32,
-        0.26,
-        frameMaterial,
-        // Kept ahead of the flywheel rim and arms (back face z=-0.37 against
-        // the rim's -0.40) so the rotating wheel never passes through them.
-        -0.24,
+      // The top centre is the boss's final centre: correctEpicyclicGuide
+      // moves the side bosses out to x = +/-1.975 (clear of wheel B's tips).
+      const top = new THREE.Vector2(side * 1.975 + offset, 0);
+      const lineStart = new THREE.Vector2(side * fixedRingOuterRadius + offset, -0.10);
+      const foot = new THREE.Vector2(
+        lineStart.x + (side * 14.1 * sourceScale
+          - side * fixedRingOuterRadius) * (6.842 - 0.10) / (20.15 * sourceScale - 0.10),
+        -6.842,
       );
+      const axis = foot.clone().sub(top);
+      const length = axis.length();
+      const halfWidth = 0.16;
+      const legShape = new THREE.Shape();
+      legShape.moveTo(0, halfWidth);
+      legShape.absarc(0, 0, halfWidth, Math.PI / 2, 3 * Math.PI / 2, false);
+      legShape.lineTo(length, -halfWidth);
+      legShape.lineTo(length, halfWidth);
+      legShape.closePath();
+      // Kept ahead of the flywheel rim and arms (back face z=-0.345 against
+      // the rim's -0.40) and inside the boss's depth.
+      const legBack = -0.345;
+      const legFront = -0.105;
+      const legGeometry = new THREE.ExtrudeGeometry(legShape, {
+        bevelEnabled: false, curveSegments: 24, depth: legFront - legBack,
+      });
+      legGeometry.translate(0, 0, legBack);
+      const leg = new THREE.Mesh(legGeometry, frameMaterial);
+      leg.position.set(top.x, top.y, 0);
+      leg.rotation.z = Math.atan2(axis.y, axis.x);
       leg.userData.fixed = true;
       leg.userData.role = `${sideName}-A-frame-support-leg`;
       supportLegs.push(leg);

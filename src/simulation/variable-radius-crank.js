@@ -2,7 +2,6 @@ import * as THREE from 'three';
 import {plate, poly, circle, capsule, disk, polygonClipping as clip} from './finite-plate-geometry.js';
 import {PALETTE, matte, markShadows} from './primitives.js';
 import {disposeObject3D} from './dispose-model.js';
-import {supportMaterial} from './back-plate-support.js';
 import {sourceVariableCrankGeometry, variableRadiusCrankAtAngle} from './variable-radius-crank-motion.js';
 
 export function makeVariableRadiusCrank() {
@@ -25,8 +24,8 @@ export function makeVariableRadiusCrank() {
   const mainOutline = clip.union(hole([0, 0], .38), capsule([.20, 0], [1.50, 0], .24));
   const mainShape = clip.difference(mainOutline, hole([0, 0], .104), capsule([.34, 0], [1.50, 0], .082));
   add('slottedCrank', plate(mainShape, 0, .18), 'main', PALETTE.driven);
-  // Both crank shafts run back into plain bearings flanged to the framing
-  // behind the mechanism (z = -0.55), so neither floats. The small crank sits
+  // Both crank shafts run back into plain flanged bearings behind the
+  // mechanism (z = -0.55). The small crank sits
   // behind the pitman, where its sweep stays clear of the slotted crank.
   add('mainShaft', disk(.10, -.55, .22, 96), 'fixed', PALETTE.ink, [...g.mainPivot, 0]);
   const bearing = (name, center) => {
@@ -56,31 +55,14 @@ export function makeVariableRadiusCrank() {
     poly([[0, -.14], [1.36, -.18], [Lr, -.2], [Lr, .2], [1.36, .18], [0, .14]]));
   add('powerRocker', plate(clip.difference(rockerOutline, hole([0, 0], .114), hole([Lr, 0], .124)), .02, .20), 'rocker', PALETTE.driven);
   add('rockerFulcrumPin', disk(.12, -.22, .26, 96), 'fixed', PALETTE.ink, [...g.rockerPivot, 0]);
-  // Brown draws no fulcrum; a plain round bearing boss, stayed back to the
-  // framing wall like the shaft bearings, is the minimal fixed pivot.
+  // Brown draws no fulcrum; a plain round bearing boss is the minimal
+  // fixed pivot.
   add('rockerFulcrumBearing', plate(clip.difference(hole([0, 0], .32), hole([0, 0], .124)), -.20, 0), 'fixed', PALETTE.muted, [...g.rockerPivot, 0]);
 
-  // Brown draws no frame. Each shaft bearing's flange and the rocker's
-  // fulcrum block are carried by a stay running straight back to a round
-  // flange on the framing wall behind the mechanism; stay and flange lie
-  // within the bearing flange's outline, so the plate's view is unchanged.
-  {
-    const frame = supportMaterial(); frame.fog = false;
-    const support = new THREE.Group(); support.userData.role = 'fixed-framing-behind-crank-bearings';
-    const aux = new THREE.Vector2(0, 0), main = new THREE.Vector2(...g.mainPivot), zWall = -1.6;
-    const stay = (role, x, y, zFront) => {
-      const bar = new THREE.Mesh(new THREE.BoxGeometry(.3, .3, zFront - zWall), frame); bar.position.set(x, y, (zFront + zWall) / 2);
-      bar.userData.role = role; bar.name = role;
-      const flange = new THREE.Mesh(disk(.26, zWall - .08, zWall, 64), frame); flange.position.set(x, y, 0);
-      flange.userData.role = role + '-flange'; flange.name = role + '-flange';
-      support.add(bar, flange);
-    };
-    stay('fixed-stay-from-auxiliary-bearing-to-framing-wall', aux.x, aux.y, -.55);
-    stay('fixed-stay-from-main-bearing-to-framing-wall', main.x, main.y, -.55);
-    stay('fixed-stay-from-rocker-fulcrum-block-to-framing-wall', ...g.rockerPivot, -.20);
-    support.traverse(o => { if (o.isMesh) { o.castShadow = o.receiveShadow = true; } });
-    blocks.fixed.add(support);
-  }
+  // Pass 96: Brown draws no frame. The stays that ran 1.05 back from each
+  // bearing and the fulcrum to flanges on an undrawn wall dominated the side,
+  // top and bottom views and joined nothing to each other; each fixed pivot
+  // now ends in its own slim flanged bearing, seen end-on as Brown draws it.
   const update = time => {
     const angle = g.phase + 2 * Math.PI * time / g.period, s = variableRadiusCrankAtAngle(angle, g);
     blocks.main.position.set(...g.mainPivot, 0); blocks.main.rotation.z = s.mainAngle;

@@ -162,18 +162,30 @@ function makeFollower({
     return rail;
   });
 
-  const blocks = [4.65, 7.35].map((sourceX) => {
-    const block = new THREE.Mesh(
-      new THREE.BoxGeometry(0.58, 0.72, 0.36),
-      followerMaterial,
+  // Pass 96: the rear block ends in a round lug concentric with the rod pin
+  // (1.6 pin radii), in the block's own extrusion, so the pin and rod eye
+  // are carried by the crosshead instead of overhanging its square end.
+  const pinRadius = 0.14;
+  const lugRadius = 1.6 * pinRadius;
+  const blockOutline = (sourceX) => {
+    const [x0, x1] = [sourceX * scale - 0.29, sourceX * scale + 0.29];
+    const body = poly([[x0, -0.36], [x1, -0.36], [x1, 0.36], [x0, 0.36]]);
+    if (sourceX < 7) return body;
+    const neckX = x1 - 0.20;
+    return clip.union(
+      body,
+      poly([[neckX, -lugRadius], [pivotOffset, -lugRadius], [pivotOffset, lugRadius], [neckX, lugRadius]]),
+      poly(circle([pivotOffset, 0], lugRadius, 72)),
     );
-    block.position.set(sourceX * scale, 0, 0.45);
+  };
+  const blocks = [4.65, 7.35].map((sourceX) => {
+    const block = new THREE.Mesh(plate(blockOutline(sourceX), 0.27, 0.63), followerMaterial);
     block.userData.role = 'guided-follower-crosshead-block';
     follower.add(block);
     return block;
   });
 
-  const pivot = cylinderAlongZ(0.14, 0.58, darkMaterial, 28);
+  const pivot = cylinderAlongZ(pinRadius, 0.58, darkMaterial, 28);
   pivot.position.set(pivotOffset, 0, 0.54);
   pivot.userData.role = 'crosshead-pin-to-finite-connecting-rod';
   follower.add(pivot);

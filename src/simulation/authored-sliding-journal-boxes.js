@@ -387,8 +387,10 @@ function claytonSlidingJournalBox(movement) {
   const crossheadRod = new THREE.Group();
   for (const side of [-1, 1]) {
     // Brown's rod is a heavy bar, about a sixth of the yoke's width.
-    const arm = new THREE.Mesh(new THREE.BoxGeometry(rodHalfLength - slotHalfWidth, 0.66, 0.32), drivenMaterial);
-    arm.position.set(side * (rodHalfLength + slotHalfWidth) / 2, crossheadRodY, -0.02);
+    // It sits wholly inside the yoke's depth (z -0.17..0.17), so no rod face
+    // stands a hair proud of the yoke's faces to draw a seam across it.
+    const arm = new THREE.Mesh(new THREE.BoxGeometry(rodHalfLength - slotHalfWidth, 0.66, 0.28), drivenMaterial);
+    arm.position.set(side * (rodHalfLength + slotHalfWidth) / 2, crossheadRodY, 0);
     crossheadRod.add(arm);
   }
   crossheadRod.userData.role = 'crosshead-horizontal-output-rod';

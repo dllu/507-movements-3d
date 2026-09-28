@@ -25,6 +25,9 @@ export const FINE_TOOTH_PASSING_RATES = new Map([
   [42, 6.8755],
   [43, 7.4230],
   [44, 6.1879],
+  // 048's fine gears: the 16-tooth pinion at 4π/9 rad/s (the 64-tooth
+  // loose gear passes the same teeth per second).
+  [48, 64 * (Math.PI / 9) / (2 * Math.PI)],
   [53, 6.6845],
 ]);
 

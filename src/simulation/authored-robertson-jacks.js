@@ -571,8 +571,10 @@ function robertsonJack(movement) {
   root.add(pumpLever);
   const leverShape = polygonClipping.difference(
     polygonClipping.union(
-      poly([[-leverShortArm, -0.055], [leverBandDistance, -0.055],
-        [leverBandDistance, 0.055], [-leverShortArm, 0.055]]),
+      // Pass 96: Brown's handle is a socket that widens from the fulcrum
+      // eye to the ferrule (half-width 0.055 to 0.10), not a thin strap.
+      poly([[-leverShortArm, -0.055], [0.19, -0.055], [leverBandDistance, -0.10],
+        [leverBandDistance, 0.10], [0.19, 0.055], [-leverShortArm, 0.055]]),
       poly(circle([0, 0], 0.19, 64)),
       poly(circle([-leverShortArm, 0], 0.19, 64)),
     ),
@@ -581,13 +583,18 @@ function robertsonJack(movement) {
   );
   const leverBar = mesh(pumpLever, plate(leverShape, leverZ - 0.05,
     leverZ + 0.05), leverMaterial, 'straight-hand-lever-with-two-eyes');
-  const leverBand = mesh(pumpLever, new THREE.CylinderGeometry(0.075, 0.075,
-    0.06, 32).rotateZ(Math.PI / 2).translate(leverBandDistance, 0, leverZ),
+  const leverBand = mesh(pumpLever, new THREE.CylinderGeometry(0.11, 0.11,
+    0.07, 48).rotateZ(Math.PI / 2).translate(leverBandDistance, 0, leverZ),
   darkMaterial, 'lever-ferrule-band');
-  const handle = mesh(pumpLever, new THREE.CapsuleGeometry(0.15,
-    leverHandleLength - leverBandDistance - 0.30, 6, 24)
-    .rotateZ(Math.PI / 2)
-    .translate((leverBandDistance + leverHandleLength) / 2 + 0.02, 0, leverZ),
+  // Brown's turned grip: a spindle swelling from the ferrule and rounding
+  // off at the end.
+  const gripLength = leverHandleLength - leverBandDistance + 0.02;
+  const handle = mesh(pumpLever, new THREE.LatheGeometry([
+    [0, 0], [0.10, 0], [0.125, 0.10], [0.15, 0.35], [0.155, 0.60],
+    [0.14, 0.85], [0.11, 1.02], [0.06, gripLength - 0.03], [0, gripLength],
+  ].map(([r, y]) => new THREE.Vector2(r, y)), 40)
+    .rotateZ(-Math.PI / 2)
+    .translate(leverBandDistance + 0.035, 0, leverZ),
   darkMaterial, 'long-hand-grip-on-pump-lever');
 
   // Rising cylinder with Brown's cupped head and J-claw.

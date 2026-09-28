@@ -387,8 +387,19 @@ test('p94: movement 247 re-arms with the rod in view: the fresh weight runs down
     // beyond any view.
     near(bedBox.max.y, bedTop, 0, 'bottom level fixed');
     assert.ok(bedBox.min.x < -wide.halfWidth - 20 && bedBox.max.x > wide.halfWidth + 20, `bottom ends in view at ${time}`);
-    const bedX = blocks.seabed.position.x;
-    if (previousBedX !== null) assert.ok(Math.abs(bedX - previousBedX) < 0.5, `bottom continuous at ${time}`);
+    // p96: the slab stays put; its bands travel by the station offset.
+    assert.equal(blocks.seabed.position.x, 0);
+    const bedX = model.root.userData.kinematics.worldOffsetX;
+    near(blocks.seabedSlab.userData.bandTexture.offset.x, -bedX / 5, 1e-12, 'bands follow the station offset');
+    // p96: the vessel always moves on the same way; at the sounding's end
+    // the bottom wraps back by one station (40, a whole number of its 5-wide
+    // tone periods), so its look is continuous and it never reverses.
+    if (previousBedX !== null) {
+      const step = bedX - previousBedX, wrapped = step > 20 ? step - 40 : step;
+      if (step > 20) near(step, 40, 1e-3, `bottom wraps by one station at ${time}`);
+      assert.ok(Math.abs(wrapped) < 0.5, `bottom continuous at ${time}`);
+      assert.ok(wrapped <= 1e-12, `bottom always drifts the same way at ${time}`);
+    }
     const state = model.root.userData.kinematics;
     const t = state.cycleTime;
     const rod = new THREE.Box3().setFromObject(blocks.housingTop)
@@ -409,7 +420,10 @@ test('p94: movement 247 re-arms with the rod in view: the fresh weight runs down
       // A weight lying on the bottom moves only with the bottom.
       if (previous[index]?.lying && lying) {
         const moved = box.getCenter(new THREE.Vector3()).x - previous[index].x;
-        near(moved, bedX - previousBedX, 1e-9, `weight ${index} slides over the bottom at ${time}`);
+        // (at the station wrap the bottom's look repeats, so the weight
+        // keeps its place relative to the new station's frame)
+        const bedStep = bedX - previousBedX > 20 ? bedX - previousBedX - 40 : bedX - previousBedX;
+        near(moved, bedStep, 1e-3, `weight ${index} slides over the bottom at ${time}`);
       }
       previous[index] = { box, lying, x: box.getCenter(new THREE.Vector3()).x };
       if (box.max.y > fit.min.y && box.min.y < fit.max.y
@@ -645,14 +659,16 @@ test('movement 247 curled leaf spring bears on the upper arm and loads the catch
   disposeModel(model.root);
 });
 
-test('p93: the moving sea bottom carries alternating tone bands so its sideways travel reads', () => {
+test('p93/p96: the sea bottom carries alternating tone bands that travel with the station', () => {
   const model = createMovementModel(catalog.movements[246]);
   const slab = model.root.userData.blocks.seabedSlab;
-  const colors = slab.geometry.attributes.color;
-  assert.ok(colors, 'bottom has per-face tones');
-  const shades = new Set();
-  for (let i = 0; i < colors.count; i += 1) shades.add(colors.getX(i));
-  assert.deepEqual([...shades].sort(), [0.8999999761581421, 1]);
-  for (const material of slab.material) assert.equal(material.vertexColors, true);
+  const { bandTexture, bandPeriod } = slab.userData;
+  assert.equal(bandPeriod, 5);
+  assert.deepEqual([...bandTexture.image.data], [255, 255, 255, 255, 230, 230, 230, 255]);
+  assert.equal(bandTexture.wrapS, THREE.RepeatWrapping);
+  for (const material of slab.material) assert.equal(material.map, bandTexture);
+  // One station (40) is a whole number of band periods, so the loop's wrap
+  // of the offset is invisible.
+  assert.equal(40 % bandPeriod, 0);
   disposeModel(model.root);
 });

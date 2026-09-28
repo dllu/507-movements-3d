@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import {plate,poly,circle,capsule,disk,polygonClipping as clip} from './finite-plate-geometry.js';
-import {gearedCrankSource as g,gearedCrankState,sourcePoint,groovePoint} from './geared-crank-source.js';
+import {plate,poly,circle,capsule,disk,ring,polygonClipping as clip} from './finite-plate-geometry.js';
+import {gearedCrankSource as g,gearedCrankState,sourcePoint,groovePoint,crankEye0} from './geared-crank-source.js';
 import {matte,PALETTE} from './primitives.js';
 import {disposeObject3D} from './dispose-model.js';
 
@@ -43,25 +43,39 @@ function grooveBand(G,count=768){
  geometry.computeBoundingSphere();return geometry;
 }
 export function makeGearedCrankFrame(){
- const root=new THREE.Group(),lever=new THREE.Group(),drive=new THREE.Group(),fixed=new THREE.Group(),parts={},families={};root.add(lever,drive,fixed);
- lever.name='lever';drive.name='drive';fixed.name='fixed';
+ const root=new THREE.Group(),lever=new THREE.Group(),drive=new THREE.Group(),fixed=new THREE.Group(),crank=new THREE.Group(),link=new THREE.Group(),parts={},families={};
+ root.add(lever,drive,fixed,crank,link);
+ lever.name='lever';drive.name='drive';fixed.name='fixed';crank.name='crank';link.name='link';
  const material=matte(PALETTE.driver,{roughness:.65,metalness:.14});material.fog=false;
  const add=(name,geometry,body)=>{const mesh=new THREE.Mesh(geometry,material);mesh.name=name;body.add(mesh);parts[name]=mesh;families[name]=body.name;return mesh;};
  const G=gearedCrankGroove;
  add('oblong-groove-band',grooveBand(G),drive);
- const p=sourcePoint(g.pivot).toArray(),pin=sourcePoint(g.pin).toArray(),eye=sourcePoint(g.eye).toArray();
- // One rigid bent lever: long arm to the groove pin, short arm to the eye.
- const outline=clip.union(capsule(p,pin,.13,48),capsule(pin,eye,.10,48),poly(circle(p,.32,64)),poly(circle(pin,.2,64)),poly(circle(eye,.32,64)));
- const shape=clip.difference(outline,poly(circle(p,.163,64)),poly(circle(eye,.14,64)));
+ const p=sourcePoint(g.pivot).toArray(),pin=sourcePoint(g.pin).toArray(),eye=crankEye0.toArray();
+ // The long lever: its fixed eye on the right, its pin in the groove.
+ const outline=clip.union(capsule(p,pin,.13,48),poly(circle(p,.32,64)),poly(circle(pin,.2,64)));
+ const shape=clip.difference(outline,poly(circle(p,.163,64)));
  lever.position.set(...p,0);
  add('rocking-lever',plate(shape,.12,.22).translate(-p[0],-p[1],0),lever);
- add('groove-pin',disk(G.pinRadius,-.055,.22,64).translate(pin[0]-p[0],pin[1]-p[1],0),lever);
- add('groove-pin-head',disk(.17,.22,.27,64).translate(pin[0]-p[0],pin[1]-p[1],0),lever);
- add('rear-supported-gear-shaft',disk(.18,-.8,.18,64),fixed);
+ // The lever pin runs from the groove through the lever into the link's eye.
+ add('groove-pin',disk(G.pinRadius,-.055,.406,64).translate(pin[0]-p[0],pin[1]-p[1],0),lever);
+ // Pass 96: Brown's short arm is a link from the lever pin to the eye of a
+ // crank on the large gear's axle (in front of the gear, clear of the lever),
+ // which the rocking lever swings to and fro. Crank and link are plain
+ // plates with bored ends.
+ const crankShape=clip.difference(clip.union(capsule([0,0],eye,.1,48),poly(circle([0,0],.3,64)),poly(circle(eye,.19,64))),poly(circle([0,0],.183,64)));
+ add('axle-crank',plate(crankShape,.24,.32),crank);
+ add('crank-hub-boss',ring(.183,.3,.19,.24,96),crank);
+ add('crank-pin',disk(.085,.25,.406,64).translate(...eye,0),crank);
+ const linkLength=Math.hypot(pin[0]-eye[0],pin[1]-eye[1]);
+ const linkShape=clip.difference(clip.union(capsule([0,0],[linkLength,0],.09,48),poly(circle([0,0],.19,64)),poly(circle([linkLength,0],.24,64))),
+  poly(circle([0,0],.088,64)),poly(circle([linkLength,0],G.pinRadius+.004,64)));
+ add('crank-link',plate(linkShape,.33,.41),link);
+ add('rear-supported-gear-shaft',disk(.18,-.8,.316,64),fixed);
  add('rocker-pivot',disk(.16,.18,.60,64).translate(...p,0),fixed);
  add('rocker-pivot-retainer',disk(.21,.56,.60,64).translate(...p,0),fixed);
  const source=gearedCrankState(0);
- const update=time=>{const s=gearedCrankState(time);drive.rotation.z=s.rotation;lever.rotation.z=s.leverAngle;root.updateMatrixWorld(true);return s;};
- root.userData={parts,families,blocks:{lever,drive,fixed},reconstructionStatus:'candidate',hideGround:true,groove:G,initialState:source};update(0);
+ const update=time=>{const s=gearedCrankState(time);drive.rotation.z=s.rotation;lever.rotation.z=s.leverAngle;crank.rotation.z=s.crankAngle;
+  link.position.set(s.eye.x,s.eye.y,0);link.rotation.z=Math.atan2(s.pin.y-s.eye.y,s.pin.x-s.eye.x);root.updateMatrixWorld(true);return s;};
+ root.userData={parts,families,blocks:{lever,drive,fixed,crank,link},reconstructionStatus:'candidate',hideGround:true,groove:G,initialState:source};update(0);
  return {root,update,dispose:()=>disposeObject3D(root)};
 }

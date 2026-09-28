@@ -1,11 +1,11 @@
 import { correctCraneBrakeJoints, correctSpatialPulley, finishBandDrive } from './band-drive-working-parts.js';
 import {correctChainDrive} from './chain-drive-working-parts.js';
-import { ropeDrumSpokeShape } from './rope-drum-spoke.js';
+import { octagonalRopeCageDrive } from './octagonal-rope-cage.js';
 import { filletPulleySpokes } from './spoked-wheel.js';
 import { creaseLatheNormals } from './crease-normals.js';
-import { HelicalDrumWrap } from './helical-drum-wrap.js';
 import { ceilingAnchoredEightToOneCascade, sixPulleyCascade, loadAnchoredSevenToOneCascade, loadAnchoredThreeToOneCascade } from './authored-cascades.js';
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import {correctClampParts} from './clamp-working-parts.js';
 import { plate, poly, circle, polygonClipping } from './finite-plate-geometry.js';
 import {windlassSheaveGeometry,windlassHookGeometry,windingAdvance} from './windlass-hardware.js';
@@ -539,8 +539,13 @@ function rightAngleCrossed() {
   const root = new THREE.Group();
   const driverCenter = new THREE.Vector3(0, 2.1, 0);
   const drivenCenter = new THREE.Vector3(0, -2.55, 0);
-  const leftVertex = new THREE.Vector3(-3.3, drivenCenter.y, 0);
-  const rightVertex = new THREE.Vector3(3.3, drivenCenter.y, 0);
+  // Pass 96: each guide stands level with the end coil its strand winds on
+  // (the incoming strand on the bottom coil, the outgoing one off the top),
+  // so neither free span has to cross the helix on the drum.
+  const coilHalfTravel = 0.15;
+  const leftVertex = new THREE.Vector3(-3.3, drivenCenter.y - coilHalfTravel, 0);
+  const rightVertex = new THREE.Vector3(3.3, drivenCenter.y + coilHalfTravel, 0);
+  const drivenCoilCenter = (sign) => drivenCenter.clone().addScaledVector(Y_AXIS, sign * coilHalfTravel);
   const driverRadius = 0.88;
   const drivenRadius = 0.58;
   const guideRadius = 0.48;
@@ -575,13 +580,13 @@ function rightAngleCrossed() {
     Z_AXIS,
   ).sort((first, second) => first.x - second.x)[0];
   const drivenLeftTangent = tangentPointsFromExternal(
-    drivenCenter,
+    drivenCoilCenter(-1),
     leftVertex,
     drivenRadius,
     Y_AXIS,
   ).sort((first, second) => second.z - first.z)[0];
   const drivenRightTangent = tangentPointsFromExternal(
-    drivenCenter,
+    drivenCoilCenter(1),
     rightVertex,
     drivenRadius,
     Y_AXIS,
@@ -622,18 +627,18 @@ function rightAngleCrossed() {
   );
   const drivenEntryArc = circularArcThrough(
     drivenCenter,
-    drivenLeftTangent,
-    drivenRightTangent,
+    drivenLeftTangent.clone().setY(drivenCenter.y),
+    drivenRightTangent.clone().setY(drivenCenter.y),
     Y_AXIS,
     drivenLeftTangent.clone().sub(leftGuideContact.end).normalize(),
   );
   const wrapSweep = drivenEntryArc.sweep + Math.sign(drivenEntryArc.sweep) * Math.PI * 4;
   const drivenWrap = new AxialWrapCurve3(
     drivenCenter,
-    drivenLeftTangent.clone().sub(drivenCenter),
+    drivenLeftTangent.clone().sub(drivenCoilCenter(-1)),
     Y_AXIS,
     wrapSweep,
-    0.30,
+    2 * coilHalfTravel,
   );
   const driverArc = new FleetWrapCurve3(circularArcThrough(
     driverCenter,
@@ -834,7 +839,46 @@ function tighteningPulley() {
   };
   const belt = makeDynamicMovingBelt(pathAt(1).curve, { radius: ropeRadius, laid: true, markerCount: 0 });
   belt.userData.mechanismBelt = true;
-  const arm = makeDynamicLink({ thickness: 0.085, depth: 0.12, color: PALETTE.frame, jointRadius: 0.085 });
+  // Pass 96: lever B is one flat extrusion in its own plane, with a round eye
+  // concentric with each pin (1.6 pin radii at the pivot, tapering to the
+  // idler's eye), in place of a square bar pushed through by the pivot pin.
+  const pinRadius = 0.075;
+  const leverDepth = 0.1;
+  const arm = (() => {
+    const group = new THREE.Group();
+    const pivotEye = 1.6 * pinRadius;
+    const idlerEye = 1.35 * pinRadius;
+    // External tangents of the two eye circles (x from 0 to armLength).
+    const slope = Math.asin((pivotEye - idlerEye) / armLength);
+    const shape = new THREE.Shape();
+    const steps = 48;
+    const topAngle = Math.PI / 2 + slope;
+    shape.moveTo(armLength + idlerEye * Math.cos(-topAngle), idlerEye * Math.sin(-topAngle));
+    for (let i = 1; i <= steps; i += 1) {
+      const a = -topAngle + (2 * topAngle) * i / steps;
+      shape.lineTo(armLength + idlerEye * Math.cos(a), idlerEye * Math.sin(a));
+    }
+    for (let i = 0; i <= steps; i += 1) {
+      const a = topAngle + (2 * Math.PI - 2 * topAngle) * i / steps;
+      shape.lineTo(pivotEye * Math.cos(a), pivotEye * Math.sin(a));
+    }
+    shape.closePath();
+    const geometry = new THREE.ExtrudeGeometry(shape, { depth: leverDepth, bevelEnabled: false, curveSegments: 1 });
+    geometry.translate(0, 0, -leverDepth / 2);
+    const lever = new THREE.Mesh(geometry, matte(PALETTE.frame, { metalness: 0.1, roughness: 0.65 }));
+    lever.userData.role = 'tensioner-lever';
+    // Eye centres, kept as markers for the rigid-lever checks.
+    const startEye = new THREE.Object3D();
+    const endEye = new THREE.Object3D();
+    group.add(lever, startEye, endEye);
+    group.userData.setEndpoints = (start, end) => {
+      lever.position.copy(start);
+      lever.rotation.set(0, 0, Math.atan2(end.y - start.y, end.x - start.x));
+      startEye.position.copy(start);
+      endEye.position.copy(end);
+    };
+    return markShadows(group);
+  })();
   root.add(driver, driven, idler, belt, arm);
   castSpokedHub(driver);
   castSpokedHub(driven);
@@ -843,7 +887,7 @@ function tighteningPulley() {
   // Both pins belong to the rigid lever: the idler turns on its pin, and the
   // lever turns with its pivot journal in the unshown bracket.
   const idlerPin = addAxle(root, sourceIdler.clone().setZ(-0.08), 0.62);
-  const pivotPin = addAxle(root, pivot, 0.35);
+  const pivotPin = addAxle(root, pivot, 0.2);
   const driverAngularSpeed = 1.35;
   const phaseOffset = 4.5;
   const transmissionIntegral = (time) => {
@@ -946,7 +990,7 @@ function oscillatingSector() {
   sectorPlate.userData.role = 'open-sector-rim';
   const lever = new THREE.Mesh(new THREE.BoxGeometry(4.4, 0.14, 0.22), matte(PALETTE.ink));
   const hub = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.24, 0.24, 0.34, 24),
+    new THREE.CylinderGeometry(0.24, 0.24, 0.34, 64),
     matte(PALETTE.ink),
   );
   hub.rotation.x = Math.PI / 2;
@@ -982,7 +1026,7 @@ function oscillatingSector() {
     sectorRadius * Math.cos(attachmentDrop), -sectorRadius * Math.sin(attachmentDrop), beltZ);
   // Brown draws only the ring boss at the pivot: the shaft stands just proud
   // of the hub.
-  const sectorShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.075, 0.44, 22),
+  const sectorShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.075, 0.44, 48),
     matte(PALETTE.ink, { metalness: 0.28, roughness: 0.44 }));
   sectorShaft.rotation.x = Math.PI / 2;
   sector.add(sectorPlate, lever, hub, sectorShaft);
@@ -1576,6 +1620,27 @@ function coneSpeedDrive(nonlinear = false) {
       body.geometry = creaseLatheNormals(new THREE.LatheGeometry(points, 64));
       body.userData.role = 'cone-with-end-land';
       cone.userData.landWidth = landWidth;
+    }
+  } else {
+    // Pass 96: Brown draws a short turned land at each end of 10's curved
+    // cones (a thin rim at the large end, a hub at the small end). A land 0.6
+    // of a belt width long at each end keeps the belt's edge well inboard of
+    // the end rims at the stroke's extremes without narrowing the ratio range.
+    const curvedLand = 0.6 * beltWidth;
+    for (const cone of [driver, driven]) {
+      const points = [new THREE.Vector2(0, -length / 2 - curvedLand),
+        new THREE.Vector2(cone.userData.radiusAt(0), -length / 2 - curvedLand)];
+      for (let index = 0; index <= 96; index += 1) {
+        const normalized = index / 96;
+        points.push(new THREE.Vector2(cone.userData.radiusAt(normalized), -length / 2 + normalized * length));
+      }
+      points.push(new THREE.Vector2(cone.userData.radiusAt(1), length / 2 + curvedLand),
+        new THREE.Vector2(0, length / 2 + curvedLand));
+      const body = cone.userData.body;
+      body.geometry.dispose();
+      body.geometry = creaseLatheNormals(new THREE.LatheGeometry(points, 64));
+      body.userData.role = 'curved-cone-with-end-lands';
+      cone.userData.landWidth = curvedLand;
     }
   }
   const makeBeltCurve = (level) => {
@@ -5695,76 +5760,103 @@ function chineseDifferentialWindlass() {
   movingBlock.position.set(0, sourcePulleyCenterY, pulleyCenterZ);
   movingBlock.userData.axis = Y_AXIS.clone();
   movingBlock.userData.role = 'vertically-translating-pulley-block-and-hook';
-  const hangerLength = 1.4;
-  const hangerFrontOffset = 0.36;
+  // Pass 96: the hook block is a symmetric two-cheek clevis in steel grey.
+  // Each cheek is Brown's strap (a round eye about the axle, a straight strap
+  // below); a bridge joins the cheeks under the sheave rim, and the neck and
+  // hook hang from the bridge's centre in the sheave's own plane. The axle
+  // passes through both cheeks, capped on each face.
+  const hangerLength = 1.44;
+  const hangerFrontOffset = 0;
+  const sheaveHalfWidth = .23;
+  const cheekThickness = .1;
+  const cheekInner = sheaveHalfWidth + .03;
+  const cheekOuter = cheekInner + cheekThickness;
+  const strapHalfWidth = .32;
+  const eyeRadius = .4;
+  const axleBoreRadius = .105;
+  const sheaveRimRadius = lowerPulleyPitchRadius + ropeRadius + .02;
+  const bridgeTop = -(sheaveRimRadius + .04);
   const hangerOrientation = new THREE.Quaternion().setFromUnitVectors(
     Z_AXIS,
     lowerPulleyAxis,
   );
+  const blockMaterial = matte(PALETTE.frame, {
+    metalness: 0.2,
+    roughness: 0.55,
+  });
+  const cheekShape = new THREE.Shape();
+  const eyeJoin = Math.asin(strapHalfWidth / eyeRadius);
+  cheekShape.moveTo(-strapHalfWidth, -hangerLength);
+  cheekShape.lineTo(strapHalfWidth, -hangerLength);
+  cheekShape.lineTo(strapHalfWidth, -Math.cos(eyeJoin) * eyeRadius);
+  cheekShape.absarc(0, 0, eyeRadius, eyeJoin - Math.PI / 2,
+    Math.PI * 3 / 2 - eyeJoin, false);
+  cheekShape.closePath();
+  const bore = new THREE.Path();
+  bore.absarc(0, 0, axleBoreRadius, 0, fullTurn, true);
+  cheekShape.holes.push(bore);
+  const extrude = (shape, z0, z1) => {
+    const g = new THREE.ExtrudeGeometry(shape, {
+      bevelEnabled: false, curveSegments: 48, depth: z1 - z0, steps: 1,
+    });
+    g.translate(0, 0, z0);
+    return g;
+  };
+  const bridgeShape = new THREE.Shape();
+  bridgeShape.moveTo(-strapHalfWidth, -hangerLength);
+  bridgeShape.lineTo(strapHalfWidth, -hangerLength);
+  bridgeShape.lineTo(strapHalfWidth, bridgeTop);
+  bridgeShape.lineTo(-strapHalfWidth, bridgeTop);
+  bridgeShape.closePath();
+  const clevisParts = [
+    extrude(cheekShape, cheekInner, cheekOuter),
+    extrude(cheekShape, -cheekOuter, -cheekInner),
+    extrude(bridgeShape, -cheekInner, cheekInner),
+  ];
+  const loadHanger = new THREE.Mesh(mergeGeometries(clevisParts), blockMaterial);
+  for (const part of clevisParts) part.dispose();
+  loadHanger.quaternion.copy(hangerOrientation);
+  loadHanger.userData.role = 'two-cheek-clevis-hook-block-of-movable-pulley';
+  loadHanger.userData.cheekInner = cheekInner;
+  loadHanger.userData.cheekOuter = cheekOuter;
+  loadHanger.userData.bridgeTop = bridgeTop;
+  // Retired ink outline kept, hidden, for block references.
   const loadHangerOutline = new THREE.Mesh(
-    new THREE.BoxGeometry(0.68, hangerLength + 0.02, 0.12),
+    new THREE.BoxGeometry(0.01, 0.01, 0.01),
     inkMaterial,
   );
-  loadHangerOutline.quaternion.copy(hangerOrientation);
-  loadHangerOutline.position.copy(lowerPulleyAxis).multiplyScalar(
-    hangerFrontOffset - 0.055,
-  );
-  loadHangerOutline.position.y = -hangerLength / 2;
-  loadHangerOutline.userData.role = (
-    'dark-outline-behind-front-mounted-load-hanger'
-  );
-  // An ink outline, not a part: hidden, kept for block references.
   loadHangerOutline.visible = false;
   loadHangerOutline.userData.retiredInkOutline = true;
-  const loadHanger = new THREE.Mesh(
-    new THREE.BoxGeometry(0.64, hangerLength, 0.16),
-    drivenMaterial,
-  );
-  loadHanger.quaternion.copy(hangerOrientation);
-  loadHanger.position.copy(lowerPulleyAxis).multiplyScalar(
-    hangerFrontOffset,
-  );
-  loadHanger.position.y = -hangerLength / 2;
-  loadHanger.userData.role = 'rigid-hanger-below-movable-pulley';
+  loadHangerOutline.userData.role = 'retired-dark-outline-of-load-hanger';
   const lowerAxle = makeShaft({
     axis: lowerPulleyAxis,
     color: PALETTE.ink,
-    length: 0.92,
+    length: 2 * (cheekOuter + .03),
     radius: 0.1,
   });
   lowerAxle.userData.role = 'axle-of-tilted-load-pulley';
   const loadHook = new THREE.Mesh(
     windlassHookGeometry(),
-    drivenMaterial,
+    blockMaterial,
   );
   loadHook.quaternion.copy(hangerOrientation);
-
-  loadHook.position.copy(lowerPulleyAxis).multiplyScalar(
-    hangerFrontOffset,
-  );
-
   loadHook.position.y = 0;
   loadHook.userData.role = 'load-hook-fixed-to-movable-pulley-block';
   const hookNeck = new THREE.Mesh(
     new THREE.BoxGeometry(0.22, 0.2, 0.18),
-    drivenMaterial,
+    blockMaterial,
   );
   hookNeck.quaternion.copy(hangerOrientation);
-  hookNeck.position.copy(lowerPulleyAxis).multiplyScalar(
-    hangerFrontOffset,
-  );
-  hookNeck.position.y = -1.42;
+  hookNeck.position.y = -1.44;
   hookNeck.userData.role = 'neck-joining-load-hook-to-pulley-block';
-  const hangerBoss = new THREE.Mesh(new THREE.CylinderGeometry(.40, .40, .10, 64), drivenMaterial);
-  hangerBoss.geometry.rotateX(Math.PI / 2);
-  hangerBoss.quaternion.copy(hangerOrientation);
-  hangerBoss.position.copy(lowerPulleyAxis).multiplyScalar(.45);
-  movingBlock.add(hangerBoss);
-  const axleEnd = new THREE.Mesh(new THREE.CylinderGeometry(.16, .16, .05, 48), inkMaterial);
-  axleEnd.geometry.rotateX(Math.PI / 2);
-  axleEnd.quaternion.copy(hangerOrientation);
-  axleEnd.position.copy(lowerPulleyAxis).multiplyScalar(.515);
-  movingBlock.add(axleEnd);
+  for (const side of [1, -1]) {
+    const axleEnd = new THREE.Mesh(new THREE.CylinderGeometry(.16, .16, .05, 48), inkMaterial);
+    axleEnd.geometry.rotateX(Math.PI / 2);
+    axleEnd.quaternion.copy(hangerOrientation);
+    axleEnd.position.copy(lowerPulleyAxis).multiplyScalar(side * (cheekOuter + .02));
+    axleEnd.userData.role = 'axle-cap-on-clevis-cheek';
+    movingBlock.add(axleEnd);
+  }
   movingBlock.add(
     lowerPulley,
     lowerAxle,
@@ -6256,715 +6348,6 @@ function chineseDifferentialWindlass() {
     root,
     update,
     cameraDirection: new THREE.Vector3(-.8, .5, 12),
-  };
-}
-
-function singleWrappedRopeDrumDrive() {
-  const root = new THREE.Group();
-  const fullTurn = Math.PI * 2;
-
-  // Movement 134 has no source animation.  These dimensions are measured
-  // from the 525 px public-domain engraving; the caption supplies the
-  // authoritative topology: one rope or band, wound one or more complete
-  // turns around one drum, converts uniform rotation into uniform material
-  // travel along two free spans that appear collinear in the engraving.
-  const sourceScale = 0.01;
-  const sourceRasterDrumCenter = new THREE.Vector2(253, 231);
-  const sourceRasterDrumOuterRadius = 181;
-  const sourceRasterRimInnerRadius = 151;
-  const sourceRasterRopeCenterY = 404;
-  const sourceRasterRopeLeftX = 20;
-  const sourceRasterRopeRightX = 486;
-  const sourceRasterHubOuterRadius = 43;
-  const sourceRasterShaftHoleRadius = 25;
-  const sourceRasterRimSeparatorCount = 8;
-  const sourceRasterSpokeCount = 4;
-  const wrapTurns = 1;
-  const wrapSweep = fullTurn * wrapTurns;
-
-  const drumFlangeOuterRadius = sourceRasterDrumOuterRadius * sourceScale;
-  const drumRimInnerRadius = sourceRasterRimInnerRadius * sourceScale;
-  const ropePitchRadius = (
-    sourceRasterRopeCenterY - sourceRasterDrumCenter.y
-  ) * sourceScale;
-  const leftRopeEndX = (
-    sourceRasterRopeLeftX - sourceRasterDrumCenter.x
-  ) * sourceScale;
-  const rightRopeEndX = (
-    sourceRasterRopeRightX - sourceRasterDrumCenter.x
-  ) * sourceScale;
-  const axialLead = .14;
-  const axialSlope = axialLead / (2 * Math.PI * ropePitchRadius);
-  const leftFreeSpanLength = -leftRopeEndX * Math.hypot(1, axialSlope);
-  const rightFreeSpanLength = rightRopeEndX * Math.hypot(1, axialSlope);
-  const hubOuterRadius = sourceRasterHubOuterRadius * sourceScale;
-  const shaftHoleRadius = sourceRasterShaftHoleRadius * sourceScale;
-  const ropeRadius = 0.045;
-  const drumContactBedRadius = ropePitchRadius - ropeRadius;
-  const drumWidth = 0.5;
-  const flangeDepth = 0.07;
-  const ropePlaneZ = 0;
-  const wrappedLength = Math.hypot(wrapSweep * ropePitchRadius, axialLead);
-  const nominalVisibleRopeLength = leftFreeSpanLength
-    + wrappedLength + rightFreeSpanLength;
-  const ropeMarkerCount = 13;
-  const markerEndFadeLength = 0.18;
-  const materialMarkerOffsets = Array.from(
-    { length: ropeMarkerCount },
-    (_, index) => nominalVisibleRopeLength
-      * (index + 0.5) / ropeMarkerCount,
-  );
-  const drumAngularSpeed = 0.72;
-  const drumRotationPeriod = fullTurn / drumAngularSpeed;
-  const ropeLinearSpeed = ropePitchRadius * drumAngularSpeed;
-  const linearTravelPerDrumRadian = ropePitchRadius;
-
-  const driverMaterial = matte(PALETTE.driver, {
-    metalness: 0.14,
-    roughness: 0.59,
-  });
-  const drivenMaterial = matte(PALETTE.driven, {
-    metalness: 0.08,
-    roughness: 0.72,
-  });
-  const frameMaterial = matte(PALETTE.frame, {
-    metalness: 0.14,
-    roughness: 0.69,
-  });
-  const inkMaterial = matte(PALETTE.ink, {
-    metalness: 0.23,
-    roughness: 0.49,
-  });
-  const indexMaterial = matte(PALETTE.white, { roughness: 0.47 });
-
-  const centeredExtrusion = (shape, depth, bevelSize = 0.006) => {
-    const geometry = new THREE.ExtrudeGeometry(shape, {
-      bevelEnabled: bevelSize > 0,
-      bevelSegments: 1,
-      bevelSize,
-      bevelThickness: bevelSize,
-      curveSegments: 32,
-      depth,
-      steps: 1,
-    });
-    geometry.translate(0, 0, -depth / 2);
-    geometry.computeVertexNormals();
-    return geometry;
-  };
-  const annulusShape = (innerRadius, outerRadius) => {
-    const shape = new THREE.Shape();
-    shape.absarc(0, 0, outerRadius, 0, fullTurn, false);
-    const hole = new THREE.Path();
-    hole.absarc(0, 0, innerRadius, 0, fullTurn, true);
-    shape.holes.push(hole);
-    return shape;
-  };
-  const cylinderAlongZ = (radius, length, material, segments = 40) => {
-    const cylinder = new THREE.Mesh(
-      new THREE.CylinderGeometry(radius, radius, length, segments),
-      material,
-    );
-    cylinder.rotation.x = Math.PI / 2;
-    return cylinder;
-  };
-
-  class SegmentedWrappedRopeCurve extends THREE.Curve {
-    constructor() {
-      super();
-      this.wrap = new HelicalDrumWrap(ropePitchRadius, wrapSweep, axialLead);
-      this.leftSpan = new THREE.LineCurve3(
-        new THREE.Vector3(leftRopeEndX, -ropePitchRadius, -axialLead / 2 + leftRopeEndX * axialSlope),
-        this.wrap.getPoint(0),
-      );
-      this.rightSpan = new THREE.LineCurve3(
-        this.wrap.getPoint(1),
-        new THREE.Vector3(rightRopeEndX, -ropePitchRadius, axialLead / 2 + rightRopeEndX * axialSlope),
-      );
-      this.curves = [this.leftSpan, this.wrap, this.rightSpan];
-      this.segmentLengths = [
-        leftFreeSpanLength,
-        wrappedLength,
-        rightFreeSpanLength,
-      ];
-      this.transitionDistances = [
-        leftFreeSpanLength,
-        leftFreeSpanLength + wrappedLength,
-      ];
-      this.totalLength = nominalVisibleRopeLength;
-      this.wrapStartDistance = this.transitionDistances[0];
-      this.wrapEndDistance = this.transitionDistances[1];
-    }
-
-    segmentAtDistance(rawDistance) {
-      const distance = THREE.MathUtils.clamp(rawDistance, 0, this.totalLength);
-      if (distance <= this.segmentLengths[0]) {
-        return {
-          curve: this.leftSpan,
-          index: 0,
-          localFraction: distance / this.segmentLengths[0],
-          segmentStartDistance: 0,
-        };
-      }
-      if (distance <= this.transitionDistances[1]) {
-        return {
-          curve: this.wrap,
-          index: 1,
-          localFraction: (
-            distance - this.transitionDistances[0]
-          ) / this.segmentLengths[1],
-          segmentStartDistance: this.transitionDistances[0],
-        };
-      }
-      return {
-        curve: this.rightSpan,
-        index: 2,
-        localFraction: (
-          distance - this.transitionDistances[1]
-        ) / this.segmentLengths[2],
-        segmentStartDistance: this.transitionDistances[1],
-      };
-    }
-
-    getPoint(fraction, target = new THREE.Vector3()) {
-      return this.getPointAtDistance(fraction * this.totalLength, target);
-    }
-
-    getPointAt(fraction, target = new THREE.Vector3()) {
-      return this.getPoint(fraction, target);
-    }
-
-    getPointAtDistance(distance, target = new THREE.Vector3()) {
-      const segment = this.segmentAtDistance(distance);
-      return segment.curve.getPoint(segment.localFraction, target);
-    }
-
-    getTangent(fraction, target = new THREE.Vector3()) {
-      return this.getTangentAtDistance(fraction * this.totalLength, target);
-    }
-
-    getTangentAt(fraction, target = new THREE.Vector3()) {
-      return this.getTangent(fraction, target);
-    }
-
-    getTangentAtDistance(distance, target = new THREE.Vector3()) {
-      const segment = this.segmentAtDistance(distance);
-      return segment.curve.getTangent(segment.localFraction, target);
-    }
-
-    getLength() {
-      return this.totalLength;
-    }
-  }
-
-  const ropeCurve = new SegmentedWrappedRopeCurve();
-  // Brown hatches the rope as laid rope; its lay runs with the rope travel.
-  const rope = makeDynamicMovingBelt(ropeCurve, {
-    closed: false,
-    color: PALETTE.rope,
-    markerCount: 0,
-    radius: ropeRadius,
-    tubularSegments: 420,
-    laid: true,
-  });
-  rope.userData.mechanismString = true;
-  rope.userData.physicalCable = true;
-  rope.userData.role = 'one-continuous-rope-wound-once-around-one-drum';
-  rope.userData.ropeCount = 1;
-  rope.userData.wrapTurns = wrapTurns;
-  rope.userData.materialMarkerOffsets = materialMarkerOffsets;
-  const ropeMesh = rope.children[0];
-  ropeMesh.userData.role = 'single-wrapped-and-two-free-span-rope-mesh';
-  const ropeMarkers = materialMarkerOffsets.map((offset, index) => {
-    const marker = new THREE.Mesh(
-      new THREE.SphereGeometry(ropeRadius * 1.55, 12, 9),
-      indexMaterial,
-    );
-    marker.position.copy(ropeCurve.getPointAtDistance(offset));
-    marker.userData.index = index;
-    marker.userData.materialOffset = offset;
-    marker.userData.role = 'white-material-marker-on-single-capstan-rope';
-    rope.add(marker);
-    return marker;
-  });
-  rope.userData.markers = ropeMarkers;
-
-  const drum = new THREE.Group();
-  const drumRotor = new THREE.Group();
-  drum.add(drumRotor);
-  drum.userData.axis = Z_AXIS.clone();
-  drum.userData.pitchRadius = ropePitchRadius;
-  drum.userData.role = 'single-fixed-axis-rope-driving-drum';
-  drum.userData.rotor = drumRotor;
-
-  const contactBed = new THREE.Mesh(
-    centeredExtrusion(
-      annulusShape(drumRimInnerRadius, drumContactBedRadius),
-      drumWidth,
-      0,
-    ),
-    driverMaterial,
-  );
-  contactBed.userData.contactRadius = drumContactBedRadius;
-  contactBed.userData.role = 'cylindrical-bed-under-the-single-rope-wrap';
-  const frontFlange = new THREE.Mesh(
-    centeredExtrusion(
-      annulusShape(drumRimInnerRadius, drumFlangeOuterRadius),
-      flangeDepth,
-      0.004,
-    ),
-    driverMaterial,
-  );
-  frontFlange.position.z = drumWidth / 2 + flangeDepth / 2;
-  frontFlange.userData.role = 'front-retaining-flange-of-rope-drum';
-  const rearFlange = frontFlange.clone();
-  rearFlange.position.z = -drumWidth / 2 - flangeDepth / 2;
-  rearFlange.userData.role = 'rear-retaining-flange-of-rope-drum';
-
-  const spokeShape = ropeDrumSpokeShape();
-  const spokeGeometry = centeredExtrusion(spokeShape, 0.2, 0.007);
-  const spokes = Array.from(
-    { length: sourceRasterSpokeCount },
-    (_, index) => {
-      const spoke = new THREE.Mesh(spokeGeometry.clone(), driverMaterial);
-      spoke.position.z = 0.08;
-      spoke.rotation.z = index * Math.PI / 2;
-      spoke.userData.index = index;
-      spoke.userData.role = 'one-of-four-curved-drum-spokes';
-      return spoke;
-    },
-  );
-  const hub = new THREE.Mesh(centeredExtrusion(annulusShape(shaftHoleRadius + .001, hubOuterRadius), drumWidth + .12, 0), driverMaterial);
-  hub.userData.role = 'bored-hub-rigid-with-rope-drum';
-  const hubFaceRing = new THREE.Mesh(
-    new THREE.TorusGeometry(hubOuterRadius * 0.8, 0.035, 9, 48),
-    inkMaterial,
-  );
-  hubFaceRing.position.z = drumWidth / 2 + 0.07;
-  hubFaceRing.userData.role = 'dark-front-outline-of-drum-hub';
-  const inputShaft = cylinderAlongZ(
-    shaftHoleRadius,
-    1.18,
-    inkMaterial,
-    38,
-  );
-  inputShaft.position.z = -.10;
-  inputShaft.userData.axis = Z_AXIS.clone();
-  inputShaft.userData.role = 'input-shaft-fast-to-single-rope-drum';
-  const shaftFace = new THREE.Mesh(
-    new THREE.CircleGeometry(shaftHoleRadius, 38),
-    inkMaterial,
-  );
-  shaftFace.position.z = .491;
-  shaftFace.userData.role = 'front-face-of-input-shaft';
-  const frontOuterOutline = new THREE.Mesh(
-    new THREE.TorusGeometry(
-      drumFlangeOuterRadius - 0.025,
-      0.028,
-      9,
-      88,
-    ),
-    inkMaterial,
-  );
-  frontOuterOutline.position.z = drumWidth / 2 + flangeDepth + 0.012;
-  frontOuterOutline.userData.role = 'dark-outline-of-drum-front-rim';
-  const frontInnerOutline = new THREE.Mesh(
-    new THREE.TorusGeometry(
-      drumRimInnerRadius + 0.02,
-      0.025,
-      9,
-      80,
-    ),
-    inkMaterial,
-  );
-  frontInnerOutline.position.z = frontOuterOutline.position.z;
-  frontInnerOutline.userData.role = 'dark-inner-outline-of-drum-front-rim';
-  const rimSeparators = Array.from(
-    { length: sourceRasterRimSeparatorCount },
-    (_, index) => {
-      const separator = new THREE.Mesh(
-        new THREE.BoxGeometry(
-          drumFlangeOuterRadius - drumRimInnerRadius,
-          0.14,
-          0.012,
-        ),
-        inkMaterial,
-      );
-      const angle = index * fullTurn / sourceRasterRimSeparatorCount;
-      const radius = (
-        drumFlangeOuterRadius + drumRimInnerRadius
-      ) / 2;
-      separator.position.set(
-        Math.cos(angle) * radius,
-        Math.sin(angle) * radius,
-        drumWidth / 2 + flangeDepth + .001,
-      );
-      separator.rotation.z = angle;
-      separator.userData.index = index;
-      separator.userData.role = 'one-of-eight-source-rim-separator-plates';
-      return separator;
-    },
-  );
-  const drumRotationIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(0.34, 0.065, 0.034),
-    indexMaterial,
-  );
-  drumRotationIndex.position.set(
-    1.08,
-    0.42,
-    frontOuterOutline.position.z + 0.045,
-  );
-  drumRotationIndex.rotation.z = Math.atan2(0.42, 1.08);
-  drumRotationIndex.userData.role = 'white-index-showing-uniform-drum-rotation';
-  drumRotor.add(
-    contactBed,
-    frontFlange,
-    rearFlange,
-    ...spokes,
-    hub,
-    hubFaceRing,
-    inputShaft,
-    shaftFace,
-    frontOuterOutline,
-    frontInnerOutline,
-    ...rimSeparators,
-    drumRotationIndex,
-  );
-
-  const rearFrameZ = -0.52;
-  const pedestalBottomY = -2.18;
-  const pedestal = new THREE.Mesh(
-    new THREE.BoxGeometry(0.34, 1.92, 0.38),
-    frameMaterial,
-  );
-  pedestal.position.set(0, -1.24, rearFrameZ);
-  pedestal.userData.role = 'rear-fixed-pedestal-supporting-drum-axis';
-  const pedestalFoot = new THREE.Mesh(
-    new THREE.BoxGeometry(1.75, 0.16, 0.68),
-    frameMaterial,
-  );
-  pedestalFoot.position.set(0, pedestalBottomY, rearFrameZ);
-  pedestalFoot.userData.role = 'fixed-foot-of-drum-bearing-pedestal';
-  const rearBearing = new THREE.Mesh(
-    centeredExtrusion(annulusShape(shaftHoleRadius + .003, hubOuterRadius * .7 + .075), .30, 0),
-    frameMaterial,
-  );
-  rearBearing.position.z = -.51;
-  rearBearing.userData.axis = Z_AXIS.clone();
-  rearBearing.userData.role = 'fixed-bearing-behind-drum-hub';
-
-  const bottomContactPoint = ropeCurve.wrap.getPoint(0);
-  const pitchContactMarker = new THREE.Mesh(
-    new THREE.SphereGeometry(0.045, 18, 12),
-    indexMaterial,
-  );
-  pitchContactMarker.position.copy(bottomContactPoint);
-  pitchContactMarker.position.z += ropeRadius * 1.45;
-  pitchContactMarker.userData.noShadow = true;
-  pitchContactMarker.userData.role = 'white-bottom-drum-rope-pitch-contact';
-  const cameraEnvelope = new THREE.Mesh(
-    new THREE.BoxGeometry(5.35, 4.85, 0.01),
-    new THREE.MeshBasicMaterial({
-      colorWrite: false,
-      depthWrite: false,
-      opacity: 0,
-      transparent: true,
-    }),
-  );
-  cameraEnvelope.position.set(0, -0.14, rearFrameZ - 0.25);
-  cameraEnvelope.userData.cameraFramingEnvelope = true;
-  cameraEnvelope.userData.noShadow = true;
-  cameraEnvelope.userData.role = 'invisible-complete-rope-drum-envelope';
-  root.add(
-    cameraEnvelope,
-    pedestal,
-    pedestalFoot,
-    rearBearing,
-    drum,
-    rope,
-    pitchContactMarker,
-  );
-  // Brown crops both free spans at the plate edge. Beyond it each span simply
-  // runs on straight and taut, and ends cleanly out of the default view; Brown
-  // draws no reels or stands, so none are modelled. Each lead is a whole number
-  // of strand periods long so the lay runs continuously into the drawn spans.
-  // Keep the default view on Brown's crop.
-  root.updateMatrixWorld(true);
-  root.userData.cameraFitBounds = new THREE.Box3().setFromObject(root, true);
-  const strandPeriod = LAID_ROPE.layPerDiameter * 2 * ropeRadius / LAID_ROPE.strands;
-  const ropeLeadLength = Math.ceil(1.0 / strandPeriod) * strandPeriod;
-  const ropeLeads = [-1, 1].map((side) => {
-    const span = side < 0 ? ropeCurve.leftSpan : ropeCurve.rightSpan;
-    const cropEnd = side < 0 ? span.v1.clone() : span.v2.clone();
-    const outward = span.v2.clone().sub(span.v1).normalize().multiplyScalar(side);
-    const endPoint = cropEnd.clone().addScaledVector(outward, ropeLeadLength);
-    const lead = makeDynamicMovingBelt(
-      side < 0 ? new THREE.LineCurve3(endPoint, cropEnd) : new THREE.LineCurve3(cropEnd, endPoint),
-      { closed: false, color: PALETTE.rope, markerCount: 0, radius: ropeRadius, laid: true },
-    );
-    lead.userData.role = side < 0 ? 'rope-running-on-beyond-left-crop' : 'rope-running-on-beyond-right-crop';
-    root.add(lead);
-    return { lead, side };
-  });
-  const updateRopeLeads = (ropeTravel) => {
-    for (const { lead, side } of ropeLeads) {
-      lead.userData.updateDistance(side < 0 ? ropeTravel : ropeTravel - nominalVisibleRopeLength);
-    }
-  };
-  root.userData.ropeLeads = ropeLeads.map(({ lead }) => lead);
-
-  const stateAtDrumKinematics = ({
-    drumAngle,
-    angularAcceleration,
-    angularSpeed,
-    time = null,
-  }) => {
-    const ropeTravel = ropePitchRadius * drumAngle;
-    const linearSpeed = ropePitchRadius * angularSpeed;
-    const linearAcceleration = ropePitchRadius * angularAcceleration;
-    const contactRadius = new THREE.Vector3(0, -ropePitchRadius, 0);
-    const drumSurfaceVelocity = new THREE.Vector3().crossVectors(
-      Z_AXIS.clone().multiplyScalar(angularSpeed),
-      contactRadius,
-    );
-    const drumSurfaceAcceleration = new THREE.Vector3().crossVectors(
-      Z_AXIS.clone().multiplyScalar(angularAcceleration),
-      contactRadius,
-    ).add(new THREE.Vector3().crossVectors(
-      Z_AXIS.clone().multiplyScalar(angularSpeed),
-      new THREE.Vector3().crossVectors(
-        Z_AXIS.clone().multiplyScalar(angularSpeed),
-        contactRadius,
-      ),
-    ));
-    const freeRopeVelocity = new THREE.Vector3(1, 0, axialSlope).normalize().multiplyScalar(linearSpeed);
-    const freeRopeAcceleration = new THREE.Vector3(1, 0, axialSlope).normalize().multiplyScalar(
-      linearAcceleration
-    );
-    const noSlipVelocityError = drumSurfaceVelocity.clone().sub(
-      freeRopeVelocity
-    );
-    const rotationPhase = THREE.MathUtils.euclideanModulo(
-      drumAngle / fullTurn,
-      1,
-    );
-    return {
-      angularAcceleration,
-      angularSpeed,
-      bottomContactPoint: bottomContactPoint.clone(),
-      contactRadius,
-      drumAngle,
-      drumSurfaceAcceleration,
-      drumSurfaceVelocity,
-      freeRopeAcceleration,
-      freeRopeVelocity,
-      linearAcceleration,
-      linearSpeed,
-      linearTravelPerDrumRadian,
-      noSlipVelocityError,
-      nominalVisibleRopeLength,
-      ropeCount: 1,
-      ropeCurve,
-      ropeLength: ropeCurve.getLength(),
-      ropeLengthError: ropeCurve.getLength() - nominalVisibleRopeLength,
-      ropeTravel,
-      rotationPhase,
-      stage: angularSpeed >= 0
-        ? 'drum-turns-counterclockwise-rope-travels-right'
-        : 'drum-turns-clockwise-rope-travels-left',
-      time,
-      velocityDiscontinuous: false,
-      wrapSweep,
-      wrapTurns,
-    };
-  };
-  const stateAtTime = (time) => stateAtDrumKinematics({
-    angularAcceleration: 0,
-    angularSpeed: drumAngularSpeed,
-    drumAngle: drumAngularSpeed * time,
-    time,
-  });
-  const materialDistanceAtTime = (time, materialOffset) => (
-    THREE.MathUtils.euclideanModulo(
-      materialOffset + stateAtTime(time).ropeTravel,
-      nominalVisibleRopeLength,
-    )
-  );
-  const ropeMaterialPointAtTime = (time, materialOffset) => (
-    ropeCurve.getPointAtDistance(materialDistanceAtTime(time, materialOffset))
-  );
-  const ropeMaterialVelocityAtDistance = (distance, angularSpeed) => (
-    ropeCurve.getTangentAtDistance(distance).multiplyScalar(
-      ropePitchRadius * angularSpeed
-    )
-  );
-  const wrappedContactStateAtAngle = (angle, angularSpeed) => {
-    const radial = new THREE.Vector3(
-      ropePitchRadius * Math.sin(angle),
-      -ropePitchRadius * Math.cos(angle),
-      0,
-    );
-    const surfaceVelocity = new THREE.Vector3().crossVectors(
-      Z_AXIS.clone().multiplyScalar(angularSpeed),
-      radial,
-    );
-    const ropeVelocity = ropeCurve.wrap.getTangent(angle / wrapSweep).multiplyScalar(ropePitchRadius * angularSpeed);
-    return {
-      angle,
-      noSlipVelocityError: surfaceVelocity.clone().sub(ropeVelocity),
-      radial,
-      ropeVelocity,
-      surfaceVelocity,
-    };
-  };
-
-  root.userData.mechanism = 'single-rope-one-turn-drum-linear-drive';
-  root.userData.cameraDistanceScale = 1.06;
-  root.userData.blocks = {
-    cameraEnvelope,
-    contactBed,
-    drum,
-    drumRotationIndex,
-    drumRotor,
-    frontFlange,
-    frontInnerOutline,
-    frontOuterOutline,
-    hub,
-    hubFaceRing,
-    inputShaft,
-    pedestal,
-    pedestalFoot,
-    pitchContactMarker,
-    rearBearing,
-    rearFlange,
-    rimSeparators,
-    rope,
-    ropeMarkers,
-    ropeMesh,
-    shaftFace,
-    spokes,
-  };
-  root.userData.geometry = {
-    axialLead,
-    axialSlope,
-    drumAngularSpeed,
-    drumContactBedRadius,
-    drumFlangeOuterRadius,
-    drumRimInnerRadius,
-    drumRotationPeriod,
-    drumWidth,
-    flangeDepth,
-    fullTurn,
-    hubOuterRadius,
-    leftFreeSpanLength,
-    leftRopeEndX,
-    linearTravelPerDrumRadian,
-    markerEndFadeLength,
-    materialMarkerOffsets,
-    nominalVisibleRopeLength,
-    pedestalBottomY,
-    rearFrameZ,
-    rightFreeSpanLength,
-    rightRopeEndX,
-    ropeLinearSpeed,
-    ropeMarkerCount,
-    ropePitchRadius,
-    ropePlaneZ,
-    ropeRadius,
-    shaftHoleRadius,
-    sourceRasterDrumCenter,
-    sourceRasterDrumOuterRadius,
-    sourceRasterHubOuterRadius,
-    sourceRasterRimInnerRadius,
-    sourceRasterRimSeparatorCount,
-    sourceRasterRopeCenterY,
-    sourceRasterRopeLeftX,
-    sourceRasterRopeRightX,
-    sourceRasterShaftHoleRadius,
-    sourceRasterSpokeCount,
-    sourceScale,
-    wrappedLength,
-    wrapSweep,
-    wrapTurns,
-  };
-  root.userData.materialDistanceAtTime = materialDistanceAtTime;
-  root.userData.ropeMaterialPointAtTime = ropeMaterialPointAtTime;
-  root.userData.ropeMaterialVelocityAtDistance =
-    ropeMaterialVelocityAtDistance;
-  root.userData.stateAtDrumKinematics = stateAtDrumKinematics;
-  root.userData.stateAtTime = stateAtTime;
-  root.userData.wrappedContactStateAtAngle = wrappedContactStateAtAngle;
-
-  const update = (time) => {
-    const state = stateAtTime(time);
-    drumRotor.rotation.set(0, 0, state.drumAngle);
-    drum.userData.angularSpeed = state.angularSpeed;
-    drum.userData.angularAcceleration = state.angularAcceleration;
-    rope.userData.materialTravel = state.ropeTravel;
-    rope.userData.updateDistance(state.ropeTravel);
-    updateRopeLeads(state.ropeTravel);
-    ropeMarkers.forEach((marker, index) => {
-      const materialDistance = materialDistanceAtTime(
-        time,
-        materialMarkerOffsets[index],
-      );
-      marker.position.copy(ropeCurve.getPointAtDistance(materialDistance));
-      marker.visible = materialDistance > markerEndFadeLength
-        && materialDistance
-          < nominalVisibleRopeLength - markerEndFadeLength;
-      marker.userData.materialDistance = materialDistance;
-      marker.userData.velocity = ropeMaterialVelocityAtDistance(
-        materialDistance,
-        state.angularSpeed,
-      );
-    });
-    root.userData.contacts = {
-      drumRopeWrap: {
-        contactPoint: state.bottomContactPoint.clone(),
-        noSlipVelocityError: state.noSlipVelocityError.clone(),
-        pitchRadius: ropePitchRadius,
-        ropeCount: state.ropeCount,
-        wrapSweep: state.wrapSweep,
-        wrapTurns: state.wrapTurns,
-      },
-      fixedDrumBearing: {
-        axisError: drum.userData.axis.distanceTo(Z_AXIS),
-        centerTranslation: drum.position.length(),
-      },
-      ropeMaterialFlow: {
-        linearAcceleration: state.linearAcceleration,
-        linearSpeed: state.linearSpeed,
-        travelPerDrumRadian: state.linearTravelPerDrumRadian,
-      },
-    };
-    root.userData.kinematics = state;
-  };
-  update(0);
-  cameraEnvelope.castShadow = false;
-  cameraEnvelope.receiveShadow = false;
-  pitchContactMarker.castShadow = false;
-  pitchContactMarker.receiveShadow = false;
-  root.traverse((object) => {
-    const materials = Array.isArray(object.material)
-      ? object.material
-      : object.material
-        ? [object.material]
-        : [];
-    for (const material of materials) material.fog = false;
-  });
-  root.userData.materialsIgnoreSceneFog = true;
-  root.userData.hideGround = true;
-  root.userData.supportsRestart = true;
-  root.userData.minimumDisplayCycleSeconds = 4;
-  root.userData.animationTiming = { authoredCyclePeriod: drumRotationPeriod };
-  root.userData.tractionAssumption = 'Prescribed mean rope speed R omega; helical axial creep is reported, not dynamically solved.';
-  for (const outline of [frontOuterOutline, frontInnerOutline, hubFaceRing]) outline.visible = false;
-  drumRotationIndex.visible = false;
-  pitchContactMarker.visible = false;
-  return {
-    root,
-    update,
-    reset: () => update(0),
-    cameraDirection: new THREE.Vector3(.4, .2, 13.5),
   };
 }
 
@@ -12095,7 +11478,8 @@ export function createAuthoredBeltMovement(movement) {
     case 124: result = fiddleDrill(); break;
     case 126: result = fixedPulleyBellCrankForceRedirector(); break;
     case 129: result = chineseDifferentialWindlass(); break;
-    case 134: result = singleWrappedRopeDrumDrive(); break;
+    // 134: an eight-beam cage with the rope wound on an octagon (pass 97).
+    case 134: result = octagonalRopeCageDrive(); break;
     case 141: result = endlessBandSaw(); break;
     // 227-229: each finite chain is whole (a hoist stroke); no pipes or deck.
     case 227: result = alternatingPlaneLinkChainPulley(movement); correctChainDrive(result, 227); break;

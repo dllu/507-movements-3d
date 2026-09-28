@@ -4,16 +4,16 @@
   "format": "mujoco-loop",
   "version": 1,
   "asset": "src/simulation/baked/assets/mujoco-092.json.gz",
-  "bytes": 11619,
-  "assetSha256": "581789d7e5f1e267fa1fbda591377fa6208765350c22f432d494133a8816129f",
+  "bytes": 5698,
+  "assetSha256": "711eccd6f60106bbc0786e67c92a1ac93248df020f5430936c62d022be55d142",
   "motionSources": {
     "src/simulation/mujoco-crank-slider/physics.js": "7bc81f27e261e5b5f34a3d04cc3b8183012d520da71307c8f0de814fce1a7b3f",
     "src/simulation/mujoco-crank-slider/source.js": "bacb6e8ab397daa3a1b982084d474cb66bf194f4cb121d6e0ae55109e9b6d907",
-    "src/simulation/mujoco-crank-slider/visual.js": "a707a4f49c2d05b69d0b925767c035c0d43bfdfdaab682cb836b0c08a61a44ef",
+    "src/simulation/mujoco-crank-slider/visual.js": "7910f10878fc406f72a29138ad06c8584587ed0316c46d9a0467a0bed911d803",
     "src/simulation/mujoco/simulation.js": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
   },
   "visualSourcesAtBake": {
-    "src/simulation/mujoco-crank-slider/geometry.js": "129995cb4f354b319b340081f989b629fe1e0cf3cc912593a12d2bfc8df8b28f"
+    "src/simulation/mujoco-crank-slider/geometry.js": "8b7032bacac652b46b48b32a2c0c7ef7f88882e9d6d2746b50f7777a78e0802e"
   },
   "physicsXmlSha256": {
     "default": "34ec7bccae2c79921e137065e546b15ffbda96b54fd30d8190fcbfdea1f2abba"
@@ -56,16 +56,16 @@
           }
         ]
       },
-      "roundTripPixels": 0.00000567661829598331,
+      "roundTripPixels": 0.005979161238208184,
       "seam": {
-        "seamStepPixels": 2.149945922769943,
-        "interiorStepPixels": 2.1500970722545887,
-        "seamSecondPixels": 0.05403205616508266,
-        "interiorSecondPixels": 0.05403958498493765
+        "seamStepPixels": 2.1511189554450354,
+        "interiorStepPixels": 2.1517979502178144,
+        "seamSecondPixels": 0.054075622144279877,
+        "interiorSecondPixels": 0.0541275466400469
       }
     }
   },
   "extras": [],
   "removed": [],
-  "bakeSeconds": 0.6493384246826172
+  "bakeSeconds": 0.6133540048599243
 }

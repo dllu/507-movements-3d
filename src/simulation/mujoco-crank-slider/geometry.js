@@ -53,9 +53,11 @@ export function makeCrankSliderGeometry() {
   const guideEnd=right+.6,endBar=.12;
   const guide=clip.difference(poly([[left,bottom],[guideEnd+endBar,bottom],[guideEnd+endBar,top],[left,top]]),poly([[innerLeft,lower],[guideEnd,lower],[guideEnd,upper],[innerLeft,upper]]));
   attach('guide',plate(guide,-.15,.06),'frame',PALETTE.muted);
-  const rear=clip.difference(clip.union(poly(circle([0,0],.205,128)),poly([[0,-.065],[innerLeft,-.065],[innerLeft,.065],[0,.065]]),
-    poly([[left,bottom],[innerLeft,bottom],[innerLeft,top],[left,top]])),poly(circle([0,0],shaftRadius+.003,128)));
-  attach('rearSupport',plate(rear,-.38,-.15),'frame',PALETTE.muted);
+  // Pass 96: Brown draws no frame between the shaft and the guide. A rear
+  // bar joining them (the old `rearSupport`) showed through the wheel's six
+  // spoke openings and the 0.02 rim-to-guide gap, so any static connector
+  // behind the wheel is visible; the guide and the hatched shaft end are both
+  // fixed ground, as drawn, and nothing joins them.
   const atAngle=theta=>{
     const pin=[r*Math.cos(theta),r*Math.sin(theta)],dy=offset-pin[1],dx=Math.sqrt(length*length-dy*dy);
     return {pin,slider:pin[0]+dx,rodAngle:Math.atan2(dy,dx)};

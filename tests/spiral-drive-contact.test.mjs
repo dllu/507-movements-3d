@@ -6,38 +6,43 @@ import { createMovementModel } from '../src/simulation/registry.js';
 
 const catalog = JSON.parse(await readFile(new URL('../src/data/movements.json', import.meta.url)));
 
+const wheelBuckets = new WeakMap();
+// Independent radial ray cast against the actual rendered side triangles.
 function renderedWheelRadius(point, geometry) {
-  const { circumferenceSteps, axialSteps, depth, pitch } = geometry.userData;
+  const { depth } = geometry.userData;
   if (Math.abs(point.z) > depth / 2) return 0;
-  const angle = THREE.MathUtils.euclideanModulo(Math.atan2(point.y, point.x) + pitch / 2, 2 * Math.PI);
-  const angular = Math.min(circumferenceSteps - 1, Math.floor(angle / (2 * Math.PI) * circumferenceSteps));
-  const axial = Math.min(axialSteps - 1, Math.floor((point.z / depth + 0.5) * axialSteps));
-  const stride = circumferenceSteps + 1;
-  const ray = new THREE.Ray(new THREE.Vector3(0, 0, point.z), new THREE.Vector3(point.x, point.y, 0).normalize());
-  // At grid seams, Float32 coordinates can put the exact ray in an adjacent
-  // cell. Query those triangles too, without substituting an analytic surface.
-  for (const da of [0, -1, 1]) {
-    for (const dt of [0, -1, 1]) {
-      const row = axial + da;
-      if (row < 0 || row >= axialSteps) continue;
-      const a = row * stride + THREE.MathUtils.euclideanModulo(angular + dt, circumferenceSteps);
-      for (const ids of [[a, a + 1, a + stride + 1], [a, a + stride + 1, a + stride]]) {
-        const vertices = ids.map((i) => new THREE.Vector3().fromBufferAttribute(geometry.attributes.position, i));
-        const hit = ray.intersectTriangle(...vertices, false, new THREE.Vector3());
-        if (hit) return Math.hypot(hit.x, hit.y);
-        const triangle = new THREE.Triangle(...vertices);
-        const plane = triangle.getPlane(new THREE.Plane());
-        const seamHit = ray.intersectPlane(plane, new THREE.Vector3());
-        if (seamHit) {
-          const barycentric = triangle.getBarycoord(seamHit, new THREE.Vector3());
-          if (Math.min(barycentric.x, barycentric.y, barycentric.z) >= -1e-9) {
-            return Math.hypot(seamHit.x, seamHit.y);
-          }
-        }
+  const count = 720, bucketOf = (x, y) => Math.floor(THREE.MathUtils.euclideanModulo(Math.atan2(y, x), 2 * Math.PI)
+    / (2 * Math.PI) * count) % count;
+  if (!wheelBuckets.has(geometry)) {
+    const buckets = Array.from({ length: count }, () => []);
+    const position = geometry.attributes.position, index = geometry.index;
+    for (let i = 0; i < index.count; i += 3) {
+      const v = [0, 1, 2].map((j) => new THREE.Vector3().fromBufferAttribute(position, index.getX(i + j)));
+      if (Math.max(...v.map((p) => p.z)) - Math.min(...v.map((p) => p.z)) < 1e-9) continue;
+      const angles = v.map((p) => bucketOf(p.x, p.y));
+      const set = new Set();
+      for (const a of angles) for (const b of angles) {
+        const lo = Math.min(a, b), hi = Math.max(a, b);
+        if (hi - lo > count / 2) { for (let k = hi; k <= lo + count; k += 1) set.add(k % count); }
+        else for (let k = lo; k <= hi; k += 1) set.add(k);
       }
+      for (const k of set) buckets[k].push(new THREE.Triangle(...v));
     }
+    wheelBuckets.set(geometry, buckets);
   }
-  throw new Error(`The generated wheel must close around each radial ray: ${point.toArray()}.`);
+  const buckets = wheelBuckets.get(geometry);
+  let radius = 0;
+  const hit = new THREE.Vector3();
+  // Rays lying exactly in a station row can graze shared edges; nudge them.
+  for (const dz of [0, 1e-7, -1e-7]) {
+    const ray = new THREE.Ray(new THREE.Vector3(0, 0, point.z + dz), new THREE.Vector3(point.x, point.y, 0).normalize());
+    for (const triangle of buckets[bucketOf(point.x, point.y)]) {
+      if (ray.intersectTriangle(triangle.a, triangle.b, triangle.c, false, hit)) radius = Math.max(radius, Math.hypot(hit.x, hit.y));
+    }
+    if (radius) break;
+  }
+  if (!radius) throw new Error(`The generated wheel must close around each radial ray: ${point.toArray()}.`);
+  return radius;
 }
 
 /** Signed distance (outside positive) from a disk-local point to the flat rib:

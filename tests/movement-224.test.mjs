@@ -323,3 +323,37 @@ test('movement 224 click e holds pinion d: one flat plate that seats, ratchets a
   near(peak - stateAtTime(canonicalTimes.expanded).pinionAngle, 2 * g.clickAngularClearance, 1e-6, 'slip-back');
   disposeModel(model.root);
 });
+
+test('movement 224 carries pinion d on a curved strap between the upper channels', () => {
+  const model = createMovementModel(catalog.movements[223]);
+  const { blocks, geometry } = model.root.userData;
+  const strap = blocks.pinionStrap;
+  assert.equal(strap.parent, model.root);
+  assert.equal(strap.userData.role, 'fixed-curved-bearing-strap-carrying-pinion-d');
+  strap.geometry.computeBoundingBox();
+  const box = strap.geometry.boundingBox;
+  // d's shaft ends inside the strap's thickness.
+  const shaftBox = new THREE.Box3().setFromObject(blocks.pinionShaft);
+  assert.ok(shaftBox.min.z > box.min.z && shaftBox.min.z < box.max.z);
+  // Its arc top stays inside the rim segments at their most contracted.
+  for (let index = 0; index <= 64; index += 1) {
+    model.update(model.root.userData.transmission.cyclePeriod * index / 64);
+    model.root.updateMatrixWorld(true);
+    for (const rim of blocks.rimSegments) {
+      const rimBox = new THREE.Box3().setFromObject(rim);
+      const p = rim.geometry.attributes.position, v = new THREE.Vector3();
+      let inner = Infinity;
+      for (let i = 0; i < p.count; i += 1) inner = Math.min(inner, v.fromBufferAttribute(p, i).applyMatrix4(rim.matrixWorld).setZ(0).length());
+      assert.ok(inner > geometry.pinionStrapTopRadius + 0.02, `rim ${inner}`);
+      assert.ok(rimBox.max.z > box.min.z);
+    }
+  }
+  // Each arm ends in a round boss concentric with its slot stud.
+  for (const slider of blocks.sliders) {
+    const arm = slider.children[0];
+    arm.geometry.computeBoundingBox();
+    const armBox = arm.geometry.boundingBox;
+    assert.ok(Math.abs(armBox.min.x - (geometry.slotMidRadius - 0.12)) < 1e-3);
+    assert.ok(Math.abs(armBox.max.y - 0.12) < 1e-3);
+  }
+});

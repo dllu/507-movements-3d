@@ -54,35 +54,48 @@ export function stopBand240(stop,profile,tipRadius){
  const end=pts[n].clone().sub(pts[n-1]).normalize(),toe=[];for(let i=1;i<24;i++){const a=Math.atan2(end.y,end.x)+Math.PI/2-Math.PI*i/24;toe.push([arm.x+r*Math.cos(a),arm.y+r*Math.sin(a)]);}
  return poly([...left,...toe,...right.reverse()]);
 }
-// Brown's stop C and its flat S-lever are one plate, set out in world
-// coordinates at rest and returned in the stop group's frame (the S-lever's
-// pivot eye at the origin). C is traced from the plate: a tapered block
-// whose top edge runs up under the teeth to its upper right tip, a short
-// right edge, and a lower edge that swings left and curls down into a round
-// knob; its drawn hole is kept as a plain hole. The tip is the stop's
-// rounded working toe on the steep face; the right edge runs down from it.
+// Brown's stop C, set out in world coordinates at rest and returned in the
+// stop group's frame (about its turning centre, stop.pivot). p96: C is the
+// broad block Brown draws, whose top edge is serrated to sit in two tooth
+// spaces: the wheel's own outline across those two spaces, offset by a
+// running clearance and cut flat at the working toe's depth, so both of C's
+// teeth have the same flat tips. The working toe (the finite nose circle)
+// bears low on the steep face at C's upper right; the right edge runs down
+// from it. Below the block, the traced lower edge swings left and curls down
+// into the round knob. The drawn hole is a plain hole.
 export const C240_PLATE={
  top:[[40,262],[120,250],[230,236],[330,196],[392,140]],
  bottom:[[447,232],[400,275],[360,300],[290,308],[240,295],[200,272],[150,268],[125,282],[116,322],[102,366],[76,390],[42,382],[20,332],[22,280]],
  hole:[335,225],holeRadius:.05,joint:[395,282]};
-export const C240={band:.055,leaf:.17,eye:.17};
+export const C240={band:.055,leaf:.17,eye:.17,clearance:.012,inner:1.3};
+export function wheelTipAngles240(profile,tipRadius){
+ const tips=[];for(let i=0;i<profile.length;i+=3){const a=profile[i+1],b=profile[i+2];if(a.length()>tipRadius-1e-6&&b.length()>tipRadius-1e-6){const m=a.clone().add(b);tips.push(Math.atan2(m.y,m.x));}}return tips;
+}
 export function stopC240(stop,profile,tipRadius,g){
- const P=stop.pivot,T=P.clone().add(stop.arm),r=stop240Radius-.0005;
+ const P=stop.pivot,T=stop.noseCenter.clone(),r=stop240Radius-.0005;
  const world=([x,y])=>new THREE.Vector2((130+x/4-g.sourceImageCenter.x)*g.sourceScale,(g.sourceImageCenter.y-(330+y/4))*g.sourceScale);
- const bottomRight=world(C240_PLATE.bottom[0]),A=world(C240_PLATE.top.at(-1));
- // The top edge runs tangent onto the toe; the right edge is a capsule from
- // the toe down to the block's lower right.
- const d=A.distanceTo(T),base=Math.atan2(A.y-T.y,A.x-T.x),half=Math.acos(Math.min(1,r/d));
- const tangents=[base+half,base-half].map(t=>T.clone().add(new THREE.Vector2(r*Math.cos(t),r*Math.sin(t))));
- const Q=tangents.sort((u,v)=>v.distanceTo(bottomRight)-u.distanceTo(bottomRight))[0];
- const toLocal=list=>{const local=list.map(p=>p.clone().sub(P));let area=0;local.forEach((p,i)=>{const q=local[(i+1)%local.length];area+=p.x*q.y-q.x*p.y;});if(area<0)local.reverse();return poly(local.map(p=>p.toArray()));};
- // p93: pass smooth centripetal splines through the traced points so the
- // curled knob and the top edge shade as curves, not facets.
+ const bottomRight=world(C240_PLATE.bottom[0]);
  const smooth=(list,count)=>new THREE.CatmullRomCurve3(list.map(p=>new THREE.Vector3(p.x,p.y,0)),false,'centripetal').getPoints(count).map(p=>new THREE.Vector2(p.x,p.y));
- const block=toLocal([...smooth(C240_PLATE.top.map(world),48),Q,T,...smooth(C240_PLATE.bottom.map(world),160)]);
- const edge=capsule(T.clone().sub(P).toArray(),bottomRight.clone().sub(P).toArray(),r,32);
- const hole=world(C240_PLATE.hole).sub(P);
- return {outline:clip.difference(clip.union(block,edge),poly(circle(hole.toArray(),C240_PLATE.holeRadius,48))),joint:world(C240_PLATE.joint).sub(P)};
+ const ccw=list=>{let area=0;list.forEach((p,i)=>{const q=list[(i+1)%list.length];area+=p.x*q.y-q.x*p.y;});return area<0?[...list].reverse():list;};
+ const polyOf=list=>poly(ccw(list).map(p=>p.toArray()));
+ // The two spaces: clockwise from the toe to the second wheel tip.
+ const tT=Math.atan2(T.y,T.x),wrap=a=>Math.atan2(Math.sin(a-tT),Math.cos(a-tT));
+ const behind=wheelTipAngles240(profile,tipRadius).map(wrap).filter(a=>a<-.02).sort((u,v)=>v-u),t2=tT+behind[1];
+ const polar=(a,rad)=>new THREE.Vector2(rad*Math.cos(a),rad*Math.sin(a));
+ const top=smooth(C240_PLATE.top.map(world),48),arc=[];for(let i=0;i<=48;i++)arc.push(polar(tT+(t2-tT)*i/48,C240.inner));
+ const upper=polyOf([...top,T,...arc,polar(t2,tipRadius+.03)]);
+ // The wheel dilated by the running clearance, near C only.
+ const pieces=[poly(profile.map(p=>p.toArray()))],c=C240.clearance;
+ profile.forEach((a,i)=>{const b=profile[(i+1)%profile.length],m=Math.atan2(a.y+b.y,a.x+b.x);if(Math.abs(Math.atan2(Math.sin(m-(tT+t2)/2),Math.cos(m-(tT+t2)/2)))>.9||a.distanceTo(b)<1e-9)return;pieces.push(capsule(a.toArray(),b.toArray(),c,12));});
+ const dilated=clip.union(...pieces);
+ const depth=poly(circle([0,0],T.length()-r,720));
+ const serrated=clip.difference(upper,dilated,depth);
+ const lower=polyOf([...top,T,...smooth(C240_PLATE.bottom.map(world),160)]);
+ const edge=capsule(T.toArray(),bottomRight.toArray(),r,32);
+ const holeCentre=world(C240_PLATE.hole);
+ const worldOutline=clip.difference(clip.union(serrated,lower,edge),poly(circle(holeCentre.toArray(),C240_PLATE.holeRadius,48)));
+ const local=worldOutline.map(polygon=>polygon.map(ring=>ring.map(([x,y])=>[x-P.x,y-P.y])));
+ return {outline:local,joint:world(C240_PLATE.joint).sub(P),hole:holeCentre.sub(P),secondTipAngle:t2};
 }
 // The band's course is traced from the plate (pixels): the lower run up from
 // the leaf, the loop at the right and the upper run back to C.
@@ -129,13 +142,17 @@ export function finishStops240(root,stops){
    const joint=stop.pivot.clone().add(c.joint);
    sSpring=makeSSpring240({pivot:anchor},joint.clone().sub(anchor),g,body.material,stop.pivot,anchor);
   }
-  // C's drawn hole is small: a slimmer pin and collar there.
-  const bore=i===2?.05:.089;
-  replace(body,plate(clip.difference(joined,poly(circle([0,0],bore,128))),-.09,.09));
+  // p96: C (i 2) has no pin: its drawn hole stays a plain hole, and its
+  // group turns about the S-spring's bend (stop.pivot), where nothing is cut.
+  replace(body,plate(i===2?joined:clip.difference(joined,poly(circle([0,0],.089,128))),-.09,.09));
+  if(i===2)group.position.set(stop.pivot.x,stop.pivot.y,group.position.z);
   const nose=new THREE.Object3D();nose.position.set(stop.arm.x,stop.arm.y,body.position.z);nose.userData.role=`${stop.key}-finite-working-toe`;group.add(nose);noses.push(nose);
-  const collar=group.children.find(o=>o.userData.role===`${stop.key}-pivot-ring`);replace(collar,i===2?ring(.05,.1,-.02,.035,96):ring(.089,.13,-.02,.035,128));/* seated just clear of the plate's face */collars.push(collar);
+  const collar=group.children.find(o=>o.userData.role===`${stop.key}-pivot-ring`);
+  if(i===2){group.remove(collar);collar.userData.drawn=false;}
+  else{replace(collar,ring(.089,.13,-.02,.035,128));/* seated just clear of the plate's face */collars.push(collar);}
  });
- root.traverse(o=>{if(o.userData.role==='stop-C-fixed-pivot-pin'){const m=o.isMesh?o:o.userData.rotor?.children.find(c=>c.isMesh)??o.children.find(c=>c.isMesh);if(m){m.geometry.dispose();m.geometry=new THREE.CylinderGeometry(.047,.047,.34,48);}}});
+ // C's old fixed pin through its hole is retired: C rides on its S-spring.
+ {const pins=[];root.traverse(o=>{if(o.userData.role==='stop-C-fixed-pivot-pin')pins.push(o);});for(const o of pins){o.parent.remove(o);o.userData.drawn=false;}}
  replace(b.wheel.userData.hub,ring(.124,.39,-.2272,.2272,128));
  replace(b.wheelIndicator,new THREE.BoxGeometry(.055,.65,.012));
  b.wheelIndicator.position.set(0,.95,g.wheelDepth/2+.006);
@@ -147,6 +164,6 @@ export function finishStops240(root,stops){
  d.workingParts={stops,noses,collars,paths};d.minimumDisplayCycleSeconds=12;d.hideGround=true;
  d.sourceAnimation.reason='Animation unavailable: fetched page has no inline add_model or mm_present program.';
  d.dynamics={forceValidated:false,prescribedBiasAndSelection:true,freeRunPath:'offline continuous finite-circle clearance',selfLocking:false};
- d.reconstructionNote='The hook, straight gravity stop and spring stop are flat plates in the wheel plane, all three riding the teeth at once with their own rounded toes dropping onto the retaining faces. Their free-running lift over each tooth and drop are prescribed offline finite-clearance paths. The retaining reaction tends to lift each stop, so gravity or spring preload is required; unlimited holding load and passive release are not validated. Stop C turns on a pin through its own hole; the flat S-spring, anchored at its leaf eye, bends to follow C by a prescribed blend, not a solved flexure.';
+ d.reconstructionNote='The hook, straight gravity stop and spring stop are flat plates in the wheel plane, all three riding the teeth at once with their own rounded toes dropping onto the retaining faces. Their free-running lift over each tooth and drop are prescribed offline finite-clearance paths. The retaining reaction tends to lift each stop, so gravity or spring preload is required; unlimited holding load and passive release are not validated. Stop C is the broad block Brown draws, its top edge serrated into two tooth spaces; it is carried on the free arm of its flat S-spring and rises bodily over the teeth, prescribed as a turn about the spring\'s bend (its drawn hole is a plain hole, since a plate seated in two spaces cannot lift by turning about a pin between them). The spring bends to follow C by a prescribed blend, not a solved flexure.';
  root.traverse(o=>{if(o.isMesh)for(const material of[].concat(o.material))material.fog=false;});
 }

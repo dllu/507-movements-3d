@@ -387,7 +387,7 @@ function midpointVibratingRodParallelMotion(movement) {
   // through the radius rod's eye, with no bracket (an ideal fixed pivot).
   fixedFrame.add(
     pinWallBracket({ x: 0, y: 0, pinRadius: beamShaftRadius, zPin: 0.04 - 0.31, zWall: -0.55, beyondPlateCrop: true,
-      flange: 0.5, role: 'fixed-wall-bracket-of-beam-shaft-O' }),
+      flange: 0.54, round: true, role: 'fixed-wall-bracket-of-beam-shaft-O' }),
   );
   root.add(fixedFrame);
 
@@ -1053,7 +1053,7 @@ function upperRadiusVibratingRodParallelMotion(movement) {
   // through the radius rod's eye, with no bracket (an ideal fixed pivot).
   fixedFrame.add(
     pinWallBracket({ x: 0, y: 0, pinRadius: beamShaftRadius, zPin: 0.04 - 0.31, zWall: -0.55, beyondPlateCrop: true,
-      flange: 0.4, role: 'fixed-wall-bracket-of-beam-shaft-O' }),
+      flange: 0.52, round: true, role: 'fixed-wall-bracket-of-beam-shaft-O' }),
   );
   root.add(fixedFrame);
 

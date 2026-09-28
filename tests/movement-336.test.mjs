@@ -561,3 +561,34 @@ test('movement 336 closes exactly and leaves movement 507 as the next draft', ()
   disposeModel(model507.root);
   disposeModel(model.root);
 });
+
+test('movement 336 p96: M sits in a round boss bridging the slot; slim crossbar behind the S cap', () => {
+  const model = createMovementModel(catalog.movements[335]);
+  model.update(0);
+  model.root.updateMatrixWorld(true);
+  const find = (role) => {
+    let found = null;
+    model.root.traverse((object) => { if (object.userData.role === role) found = object; });
+    return found;
+  };
+  const lever = find('slotted-tapered-rigid-side-lever-body');
+  const pinM = find('common-working-pin-M');
+  const centre = pinM.getWorldPosition(new THREE.Vector3());
+  const pinRadius = pinM.geometry.parameters.radiusTop;
+  const raycaster = new THREE.Raycaster();
+  for (let k = 0; k < 24; k += 1) {
+    const angle = k * Math.PI / 12;
+    const origin = centre.clone().add(new THREE.Vector3(Math.cos(angle), Math.sin(angle), 0)
+      .multiplyScalar(1.8 * pinRadius));
+    origin.z = 5;
+    raycaster.set(origin, new THREE.Vector3(0, 0, -1));
+    assert.ok(raycaster.intersectObject(lever).length > 0, `lever solid round M at ${k * 15} degrees`);
+  }
+  const cap = new THREE.Box3().setFromObject(find('orange-transverse-crosshead-end-cap-at-S'));
+  const bar = new THREE.Box3().setFromObject(find('orange-round-transverse-crossbar-from-cap-S-to-piston-rod'));
+  const rod = new THREE.Box3().setFromObject(find('piston-rod-rigidly-suspended-from-S'));
+  assert.ok(cap.max.z - cap.min.z < 0.2, 'the drawn cap is only the crosshead end');
+  assert.ok(bar.max.y - bar.min.y < 0.25, 'the crossbar is slim');
+  assert.ok(bar.min.z <= rod.min.z && bar.max.z >= cap.min.z, 'the crossbar joins cap and rod');
+  assert.ok(rod.max.y > bar.min.y, 'the rod runs into the crossbar');
+});

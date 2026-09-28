@@ -70,7 +70,9 @@ export function correctSpinningFanParts(root,id){
   p.wall=add(b.voluteWall,fanWall(shape,1.28),b.voluteWall.children[0].material,'continuous-finite-volute-wall');
   for(const old of b.voluteWall.children.slice(0,-1)){old.visible=false;}
   let radius=0;const positions=b.blades[0].geometry.attributes.position;for(let i=0;i<positions.count;i++)radius=Math.max(radius,Math.hypot(positions.getX(i),positions.getY(i)));
-  const target=3.30,scale=target/radius;const geometry=b.blades[0].geometry.clone().scale(scale,scale,1);for(const blade of b.blades)blade.geometry=geometry;
+  const target=3.30,scale=target/radius;
+  // Pass 96: at t = 0 the blade tips stand at Brown's 1, 5 and 9 o'clock (28 degrees clockwise of the authored set).
+  const geometry=b.blades[0].geometry.clone().scale(scale,scale,1).rotateZ(-28*Math.PI/180);for(const blade of b.blades)blade.geometry=geometry;
   root.userData.geometry.impellerOuterRadius=target;
   replace(b.hub,tube(.57,.134,.98));replace(b.hubIndex,new THREE.BoxGeometry(.28,.065,1.02));b.hubIndex.position.x=.36;
   p.spiders=[];

@@ -102,7 +102,7 @@
   "sources": [
     {
       "file": "src/simulation/authored-epicyclic-trains.js",
-      "sha256": "06f97b16dea3b51e2e7b8dd170800c7a77b14be67ba2589a80fad1364f0adf63"
+      "sha256": "a9e6be7b42c855c8de61448abffeef6aeb383282404e35c0d2bda2a14ce6b4e5"
     },
     {
       "file": "src/simulation/compound-epicyclic-corrections.js",

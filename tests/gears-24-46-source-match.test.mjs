@@ -75,6 +75,17 @@ test('025 shaft collars turn with the shafts they are fixed to', () => {
   }
 });
 
+test('025 p96: shafts, collars and hubs are smooth (at least 48 sides)', () => {
+  const model = modelFor(25);
+  let cylinders = 0;
+  model.root.traverse((part) => {
+    if (part.geometry?.type !== 'CylinderGeometry') return;
+    cylinders += 1;
+    assert.ok(part.geometry.parameters.radialSegments >= 48);
+  });
+  assert.ok(cylinders >= 7);
+});
+
 test('027 rollers are bored clear of their pins and their hubs stay within the face', () => {
   const model = modelFor(27);
   model.root.updateMatrixWorld(true);

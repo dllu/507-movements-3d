@@ -23,7 +23,8 @@ test('072 preserves the measured four-lobe cam and the source lever arrangement'
   assert.ok(data.parts.striker.geometry.boundingBox.max.x<p.noseOffset[0]);
   assert.ok(data.parts.workpiece.parent===data.blocks.fixed);
   assert.ok(data.parts.socketLiner.parent===data.blocks.fixed);
-  assert.ok(p.restQ>0.068&&p.restQ<0.069);
+  // Pass 96: the striker lands flat in its seat in the bloom's dip.
+  assert.ok(p.restQ>0.0799&&p.restQ<0.0801);
   dispose(model);
 });
 
@@ -48,7 +49,7 @@ test('072 respects every finite cam flank and step through all four lobes',()=>{
     assert.ok(state.q<=p.restQ+1e-12);peak=Math.max(peak,Math.abs(state.velocity));
     if(state.camContactEngaged)assert.ok(Math.abs(study.gap(state.angle,state.q))<1e-7);
   }
-  assert.ok(peak>.66&&peak<.68);
+  assert.ok(peak>.71&&peak<.73);
   assert.equal(at((e.landing.time+p.period)/2).stage,'workpiece-dwell');
 });
 
@@ -120,4 +121,20 @@ test('072 has a front source view, supported workpiece and readable strike caden
   assert.ok(crestToImpact>.28&&crestToImpact<.4);
   assert.match(data.idealConstraints,/inelastic/);
   dispose(model);
+});
+
+test('072 striker seats in the dip of the bloom',async()=>{
+  const {default:pc}=await import('polygon-clipping');
+  const rot=(v,q)=>[p.pivot[0]+v[0]*Math.cos(q)-v[1]*Math.sin(q),p.pivot[1]+v[0]*Math.sin(q)+v[1]*Math.cos(q)];
+  const part=name=>profile.parts.find(x=>x.name===name).shape.polygons,close=r=>[...r,r[0]];
+  const bloom=part('workpiece').map(poly=>poly.map(close));
+  const area=m=>m.reduce((s,poly)=>s+poly.reduce((t,r,k)=>{let a=0;for(let i=0;i<r.length-1;i++)a+=r[i][0]*r[i+1][1]-r[i+1][0]*r[i][1];return t+(k?-1:1)*Math.abs(a/2);},0),0);
+  const hit=(name,q)=>part(name).reduce((s,poly)=>s+area(pc.intersection(poly.map(r=>close(r).map(v=>rot(v,q))),bloom)),0);
+  for(const name of ['striker','hammerBody','hammerSleeve'])assert.ok(hit(name,p.restQ)<1e-12,name);
+  // A little lower, only the striker meets the bloom: it rests on the seat's floor,
+  // not on the rim, and its whole lower face bears (the overlap is a thin strip).
+  assert.ok(hit('striker',p.restQ+.002)>2e-4);assert.ok(hit('hammerBody',p.restQ+.002)<1e-12);
+  // The striker sits below the rim: its lowest point is under the bloom's rim line.
+  const lowest=Math.min(...part('striker')[0][0].map(v=>rot(v,p.restQ)[1]));
+  assert.ok(lowest<1.08,`striker bottom ${lowest}`);
 });

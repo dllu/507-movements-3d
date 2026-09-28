@@ -713,22 +713,43 @@ function axialPinPulleyClutch(movement) {
   // and drops vertically past the shaft between two collars.  The lever is a
   // flat hooked strap turning about that stud; two fork pins behind the strap
   // straddle the shift collar ring, so the strap pushes the pulley axially.
-  const leverPivot = new THREE.Vector3(
-    (disengagedPulleyX + engagedPulleyX) / 2 + shiftCollarOffsetX + 0.50,
-    lowerCenter.y + 0.58,
-    0.42,
-  );
-  const leverStrapOffsetX = -0.50;
+  // Pass 96: the stud stands on the centre line of the right upright's
+  // front face (x 1.38) rather than on its inner edge, so the eye is carried
+  // squarely; the strap keeps its drawn line by hooking 0.105 further left.
+  const leverPivot = new THREE.Vector3(1.38, lowerCenter.y + 0.58, 0.42);
+  const leverStrapOffsetX =
+    (disengagedPulleyX + engagedPulleyX) / 2 + shiftCollarOffsetX - leverPivot.x;
   const leverHookRadius = 0.30;
   const leverStrapBottom = -1.26;
   const leverStrapWidth = 0.13;
   const leverThickness = 0.07;
-  const leverPivotPin = cylinderAlongZ(0.05, 0.42 + 0.28 + 0.06, darkMaterial, 28);
-  leverPivotPin.position.set(leverPivot.x, leverPivot.y, (-0.28 + 0.48) / 2);
+  // One turned stud: a flanged foot sunk into the upright's face, a round
+  // standoff clearing the shift collar, and a slim journal through the eye
+  // ending in a small head in front of it.
+  const postFrontZ = -0.28;
+  const eyeBackZ = leverPivot.z - leverThickness / 2;
+  const eyeFrontZ = leverPivot.z + leverThickness / 2;
+  const studProfile = [
+    [0, postFrontZ - 0.02],
+    [0.095, postFrontZ - 0.02],
+    [0.095, postFrontZ + 0.03],
+    [0.07, postFrontZ + 0.06],
+    [0.07, eyeBackZ - 0.004],
+    [0.05, eyeBackZ - 0.004],
+    [0.05, eyeFrontZ + 0.004],
+    [0.075, eyeFrontZ + 0.004],
+    [0.075, eyeFrontZ + 0.03],
+    [0, eyeFrontZ + 0.03],
+  ].map(([radius, z]) => new THREE.Vector2(radius, z));
+  const leverPivotPin = new THREE.Mesh(
+    new THREE.LatheGeometry(studProfile, 36).rotateX(Math.PI / 2),
+    darkMaterial,
+  );
+  leverPivotPin.position.set(leverPivot.x, leverPivot.y, 0);
   leverPivotPin.userData.role = 'fixed-operating-lever-pivot';
   root.add(leverPivotPin);
-  // The stud seats directly in the right upright's front face, as Brown
-  // draws the lever eye at the upright's edge; no separate bracket.
+  // The stud seats on the right upright's front-face centre line; no
+  // separate bracket.
   const leverRotor = new THREE.Group();
   leverRotor.position.copy(leverPivot);
   leverRotor.userData.role = 'hooked-operating-lever-turning-on-upright-stud';
