@@ -14,8 +14,24 @@ export function crown237LiftAtTravel(travel) {
   const liftAngle = (2*t**3-3*t*t+1)*a + (t**3-2*t*t+t)*u + (-2*t**3+3*t*t)*b + (t**3-t*t)*v;
   const derivativePerTravel = ((6*t*t-6*t)*a+(3*t*t-4*t+1)*u+(-6*t*t+6*t)*b+(3*t*t-2*t)*v)/step;
   return { liftAngle, derivativePerTravel, mode: travel < bake.startTravel ? 'clear-over-low-crown-ramp'
-    : travel <= bake.peakTravel ? 'pawl-climbing-crown-ramp'
+    : travel <= bake.peakTravel ? (!bake.noseContact || (bake.noseContact[i] && bake.noseContact[i + 1]) ? 'pawl-climbing-crown-ramp' : 'pawl-edge-riding-crown-crest')
       : travel >= bake.armSwing ? 'pawl-seated-after-crown-face' : 'pawl-prescribed-crest-clearance-and-drop' };
+}
+// Drive-stroke approach: before the face the nose rides down the ramp into
+// the root, then drives with the pawl at rest (lift 0).
+const approach = bake.approach ?? [0, 0], approachCount = approach.length - 1,
+  approachStep = (bake.overtravel ?? 1) / approachCount;
+const approachSlopes = approach.map((v, i) => {
+  if (i === 0 || i === approachCount) return i === 0 ? (approach[1] - approach[0]) / approachStep : 0;
+  const a = (v - approach[i - 1]) / approachStep, b = (approach[i + 1] - v) / approachStep;
+  return a * b > 0 ? 2 * a * b / (a + b) : 0;
+});
+export function crown237ApproachLiftAtTravel(travel) {
+  const x = THREE.MathUtils.clamp(travel / approachStep, 0, approachCount), i = Math.min(approachCount - 1, Math.floor(x)), t = x - i;
+  const a = approach[i], b = approach[i + 1], u = approachSlopes[i] * approachStep, v = approachSlopes[i + 1] * approachStep;
+  const liftAngle = (2*t**3-3*t*t+1)*a + (t**3-2*t*t+t)*u + (-2*t**3+3*t*t)*b + (t**3-t*t)*v;
+  const derivativePerTravel = ((6*t*t-6*t)*a+(3*t*t-4*t+1)*u+(-6*t*t+6*t)*b+(3*t*t-2*t)*v)/approachStep;
+  return { liftAngle, derivativePerTravel, mode: 'pawl-riding-down-ramp-into-root' };
 }
 export function crown237Triangles(wheel) {
   return wheel.userData.crownTeeth.flatMap(tooth => {
@@ -37,17 +53,24 @@ export function installCrown237Parts(root) {
   const replace = (mesh, geometry) => { mesh.geometry.dispose(); mesh.geometry = geometry; };
   // One smooth curved plate of even width whose rounded end is the working
   // nose (radius pawlNoseRadius about the old nose centre): no separate ball.
-  // 0.001 inside the round nose it replaces, for the plate's flat faces.
-  const tip = new THREE.Vector2(b.pawlNose.position.y, b.pawlNose.position.z), r = g.pawlNoseRadius - 0.001;
-  const curve = new THREE.SplineCurve([new THREE.Vector2(-0.14, 0), new THREE.Vector2(-0.25, -0.14), new THREE.Vector2(-0.34, -0.36), tip]);
-  const side = sign => Array.from({length: 49}, (_, i) => {
-    const t = sign === 1 ? i / 48 : 1 - i / 48, p = curve.getPoint(t), tangent = curve.getTangent(t);
-    const w = r * (0.75 + 0.25 * t ** 8); // swells only into the nose
+  // 0.004 inside the round nose it replaces, so the plate's flat faces and
+  // square edges stay inside the working sphere on the helicoidal ramps.
+  const tip = new THREE.Vector2(b.pawlNose.position.y, b.pawlNose.position.z), r = g.pawlNoseRadius - 0.004;
+  // Brown's pawl hangs from its eye in one sweep down into the root; the
+  // control points scale with the drop to the seated nose.
+  const k = tip.y / -0.62;
+  const curve = new THREE.SplineCurve([new THREE.Vector2(-0.14, 0), new THREE.Vector2(-0.25, -0.14 * k), new THREE.Vector2(-0.34, -0.36 * k), tip]);
+  // Three quarters of the nose's width, widening smoothly over the last
+  // third into the nose's own round cap (no bulb or step at the end).
+  const side = sign => Array.from({length: 65}, (_, i) => {
+    const t = sign === 1 ? i / 64 : 1 - i / 64, p = curve.getPoint(t), tangent = curve.getTangent(t);
+    const u = THREE.MathUtils.clamp((t - 2 / 3) * 3, 0, 1), w = r * (0.75 + 0.25 * u * u * (3 - 2 * u));
     return [p.x - sign * tangent.y * w, p.y + sign * tangent.x * w];
   });
   const end = curve.getTangent(1), endAngle = Math.atan2(end.y, end.x);
   const cap = Array.from({length: 23}, (_, i) => {
-    const a = endAngle - Math.PI / 2 + Math.PI * (i + 1) / 24;
+    // From the first side's end (+90 degrees) round the front to the other side.
+    const a = endAngle + Math.PI / 2 - Math.PI * (i + 1) / 24;
     return [tip.x + r * Math.cos(a), tip.y + r * Math.sin(a)];
   });
   const outline = [...side(1), ...cap, ...side(-1)];
@@ -89,14 +112,12 @@ export function installCrown237Parts(root) {
   b.armFulcrumShaft.position.y = (0.7 + studFoot) / 2;
   // Painted crest indices stay inside the ramp; they must not become obstacles.
   for (const tick of b.crownWheel.userData.driveFaceTicks) tick.visible = false;
-  const toothMaterial = b.crownWheel.userData.crownTeeth[0].material.clone();
-  toothMaterial.flatShading = true;
-  for (const tooth of b.crownWheel.userData.crownTeeth) tooth.material = toothMaterial;
+  // The teeth carry their own exact normals (flat ramps and faces, round walls).
   root.userData.cameraFov = 8;
   root.userData.cameraDistanceScale = 0.94;
   root.userData.minimumDisplayCycleSeconds = g.cyclePeriod;
   root.userData.hideGround = true;
-  root.userData.reconstructionNote = 'The finite rounded pawl follows an offline-baked envelope of the actual crown-tooth triangles, then has a prescribed crest clearance and continuous drop. Clockwise drive uses the radial tooth face. Return bias, wheel holding, friction and impacts are not dynamically solved; the official page has no registered animation.';
+  root.userData.reconstructionNote = 'The finite rounded pawl follows an offline-baked envelope of the actual crown-tooth triangles, then has a prescribed crest clearance and continuous drop onto the next ramp, down which it rides into the root. Clockwise drive uses the radial tooth face with the nose seated in the root. Return bias, wheel holding, friction and impacts are not dynamically solved; the official page has no registered animation.';
   root.traverse(o => { for (const m of [].concat(o.material ?? [])) m.fog = false; });
 }
 

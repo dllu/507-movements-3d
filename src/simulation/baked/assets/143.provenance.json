@@ -1,15 +1,15 @@
 {
   "version": 1,
-  "assetSha256": "f6e0c69b5a0c81498ae31a6ab36a2c5eacf1ce11b06f2fba7af8fbcadcca6944",
-  "bytes": 1158769,
+  "assetSha256": "bf83067462c04d64578352078c83e1a53067da18fbac442fe8eb09a54486c6ff",
+  "bytes": 1147613,
   "sources": [
     {
       "file": "src/simulation/sliding-worm-geometry.js",
-      "sha256": "12178ded3707b3478e5e79be3a29ef11398f32849fde74a61286820894e7feb4"
+      "sha256": "73ab5fb882ff1d3ee25146d62cc4cffa7dbe92ae77f5e3610a3be95b9db74387"
     },
     {
       "file": "src/simulation/sliding-worm-kinematics.js",
-      "sha256": "a3dc3e07c267695f6691ade60bb552bd9db12f45f534ce794d3c55fdf4c15922"
+      "sha256": "aa52736bb4a7be298ec0787bc4e81217c3119ca7788cd047f3bea1718c635e98"
     },
     {
       "file": "src/simulation/instanced-worm-wheel.js",
@@ -29,7 +29,7 @@
     },
     {
       "file": "scripts/bake-sliding-worm-candidate.mjs",
-      "sha256": "7a272f72304c720d6fe5bcae1779a83c6b47bac254c6d54e5c9266e63c5d41f0"
+      "sha256": "33293c516e87452cf386682c4d86287b199c75afc62ad60549b9374684da8fad"
     },
     {
       "file": "scripts/lib/simplify-worm-wheel.mjs",
@@ -58,16 +58,16 @@
   },
   "simplification": {
     "sourceTriangles": 70014,
-    "triangles": 2850,
-    "error": 0.0009772904450073838,
+    "triangles": 2914,
+    "error": 0.0009960844181478024,
     "radialRelief": 0.003,
     "lockedVertices": 528,
     "repair": {
       "history": [
         {
           "pass": 0,
-          "violations": 497,
-          "maximumViolation": 0.012264101069398974
+          "violations": 503,
+          "maximumViolation": 0.007234746863854129
         },
         {
           "pass": 1,
@@ -75,19 +75,19 @@
           "maximumViolation": 0
         }
       ],
-      "rayMisses": 27,
-      "maximumAdditionalRelief": 0.01410374074331655
+      "rayMisses": 45,
+      "maximumAdditionalRelief": 0.00831998462564365
     },
-    "correctedFaceNormals": 6
+    "correctedFaceNormals": 0
   },
   "validation": [
     {
       "file": "docs/validation/143-render-contact.json",
-      "sha256": "64bd98c3064861e2ad32c8a12cf66decfa4436fbcd3a9fc2e13ed086e7b8b13b"
+      "sha256": "efa3184d529f6bb021a6aee8aec4f51e7ae9ae4626ec9b591945715892bd8cc2"
     },
     {
       "file": "docs/validation/143-assembly.json",
-      "sha256": "4fe5aed0c70c6348e0d3e711252ec5cdfd0acc5eb975ce35fd360629057ed81b"
+      "sha256": "e2e56d3444e98866c0a73d718a22be8184e871dbf1fa59e6923bcdecad9ccf4c"
     },
     {
       "file": "docs/validation/143-envelope.json",

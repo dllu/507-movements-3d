@@ -299,7 +299,9 @@ export function bellCrankHangerGabDisengager() {
     floorY: fromRaster(0, 600).y, zWall,
     extra: [({mat}) => backBar([valvePivot, bellPivot], {zFront: zWall, width: .3, material: mat,
       role: 'fixed-bracket-from-rockshaft-bearing-to-bell-crank-stud'}),
-    ({mat}) => pinBoss({x: bellPivot.x, y: bellPivot.y, radius: .2, zBack: zWall - .1, zFront: -.16, material: mat,
+    // Pass 93: only a short collar behind the crank; the long boss back to
+    // the (hidden) wall stuck out like a second shaft in rotated views.
+    ({mat}) => pinBoss({x: bellPivot.x, y: bellPivot.y, radius: .2, zBack: -.26, zFront: -.16, material: mat,
       role: 'fixed-bell-crank-stud-boss'})],
   });
   root.add(valveRocker, eccentricRod, bellCrank, pivotPin, hangerLink, eccentric.sheave, frame);

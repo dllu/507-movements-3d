@@ -237,17 +237,34 @@ export function conicalStudHeadGeometry(parameters, index) {
   const stud = motion.studs[index], topology = headTopology(parameters);
   const positions = [], indices = [...topology.indices];
   const { points, sectors, rings } = topology;
+  // Round (button) heads: a shallow crown, highest at the stud's axis, so a
+  // head at the silhouette reads as Brown's round stud and not as a square
+  // block. The crown only removes material inside the cut cap.
+  const crownPoint = (u, v) => {
+    const angle = stud.angle + u / stud.radius, height = stud.height + v;
+    const pitch = parameters.centerDistance - motion.meanRadius - motion.slope * height;
+    const radius = pitch + parameters.studFront - conicalStudCrownSag * (u * u + v * v) / parameters.studRadius ** 2;
+    return new THREE.Vector3(radius * Math.cos(angle), radius * Math.sin(angle), height);
+  };
+  const smoothNormals = new Map();
   for (const back of [false, true]) {
     for (const [i, { u, v }] of points.entries()) {
       const angle = stud.angle + u / stud.radius, height = stud.height + v;
       const pitch = parameters.centerDistance - motion.meanRadius - motion.slope * height;
-      // Round (button) heads: a shallow crown, highest at the stud's axis,
-      // so a head at the silhouette reads as Brown's round stud and not as
-      // a square block. The crown only removes material inside the cut cap.
-      const crown = pitch + parameters.studFront
-        - conicalStudCrownSag * (u * u + v * v) / parameters.studRadius ** 2;
+      const crown = crownPoint(u, v).setZ(0).length();
       const radius = back ? pitch - parameters.studBack : Math.min(cut.caps[index][i], crown);
       positions.push(radius * Math.cos(angle), radius * Math.sin(angle), height);
+      // The pinion's tip sweep shaves up to 0.0018 off every crown top, and
+      // the conservative per-triangle relief turns that shave into a 64-point
+      // star at the pole. Where the shave is that shallow, and away from the
+      // cap's creased rim, shade with the crown's own normal; deeper relief
+      // (the working cut) keeps its true normals.
+      if (!back && crown - radius < 0.0025 && i <= (rings - 1) * sectors) {
+        const e = 1e-5, du = crownPoint(u + e, v).sub(crownPoint(u - e, v)), dv = crownPoint(u, v + e).sub(crownPoint(u, v - e));
+        const normal = du.cross(dv).normalize();
+        if (normal.x * Math.cos(angle) + normal.y * Math.sin(angle) < 0) normal.negate();
+        smoothNormals.set(positions.slice(-3).map((value) => Math.fround(value)).join(), normal);
+      }
     }
   }
   const offset = points.length;
@@ -265,6 +282,11 @@ export function conicalStudHeadGeometry(parameters, index) {
   geometry.setIndex(indices);
   // Hard edges where the cut cap meets the stud's side wall and back.
   creaseIndexedNormals(geometry);
+  const position = geometry.attributes.position, normal = geometry.attributes.normal;
+  for (let i = 0; i < position.count; i += 1) {
+    const smooth = smoothNormals.get([position.getX(i), position.getY(i), position.getZ(i)].join());
+    if (smooth) normal.setXYZ(i, smooth.x, smooth.y, smooth.z);
+  }
   geometry.userData.generatedStudHead = true;
   geometry.userData.cut = cut;
   return geometry;

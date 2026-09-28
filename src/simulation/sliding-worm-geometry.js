@@ -10,6 +10,19 @@ const rectangle=(a,b,c,d)=>poly([[a,b],[c,b],[c,d],[a,d]]);
 const disk=(r)=>poly(circle([0,0],r,128));
 const ring=(r,bore)=>clip.difference(disk(r),disk(bore));
 
+function mirrorDepth(geometry){
+ geometry.scale(1,1,-1);
+ for(const attribute of Object.values(geometry.attributes))for(let i=0;i<attribute.count;i+=3)for(let k=0;k<attribute.itemSize;k++){
+  const b=attribute.getComponent(i+1,k);attribute.setComponent(i+1,k,attribute.getComponent(i+2,k));attribute.setComponent(i+2,k,b);
+ }
+ return geometry;
+}
+// The hobbed wheel for the mirrored worm is the hob field reversed in depth.
+export function mirrorWheelCut(cut){
+ const n=cut.angularSteps+1,m=cut.axialSteps,flip=values=>values&&Array.from({length:values.length},(_,k)=>values[(m-Math.floor(k/n))*n+k%n]);
+ return {...cut,radii:flip(cut.radii),generatingPhases:flip(cut.generatingPhases)};
+}
+
 // Offline assembly. All expensive generated surfaces are supplied by the bake.
 export function makeSlidingWormGeometry(cut){
  const root=new THREE.Group(),parts={},blocks={};
@@ -55,6 +68,9 @@ export function makeSlidingWormGeometry(cut){
   const stored=new THREE.Vector3();for(let j=0;j<3;j++)stored.add(new THREE.Vector3().fromBufferAttribute(normals,i+j));
   if(normal.dot(stored)<=0){normal.normalize();for(let j=0;j<3;j++)normals.setXYZ(i+j,normal.x,normal.y,normal.z);}
  }
+ // A left-hand worm is the depth (Z) mirror of the generated right-hand one;
+ // the bore and key are symmetric in Z. Swap each triangle's winding.
+ if(g.hand<0)mirrorDepth(worm);
  add('bored-worm',worm,'worm','driver');
  for(const [name,low,high]of [['left-journal',-.71,-g.wormLength/2],['right-journal',g.wormLength/2,.71]])alongX(name,clip.difference(disk(.145),poly(bore)),low,high,'worm','driver');
  const wheel=makeInstancedWormWheel(g,cut,.132,materials.driven);wheel.name='generated-wheel';wheel.rotation.z=g.wheelPhase;blocks.wheel.add(wheel);parts.wheel=wheel;

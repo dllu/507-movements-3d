@@ -11,7 +11,8 @@ for(const id of[484,485,486]){
  test(`${id}: working solids clear journals, supports and moving sail interfaces`,()=>{
   const model=make(id),b=model.root.userData.blocks,p=model.root.userData.windRotorWorkingParts,pairs=[];
   if(id===484){
-   for(const fixed of [...b.bearings,...b.supports.flatMap(s=>[s.shoulder,s.upright])]){
+   // Brown's plank standards carry the shaft directly; there are no bearing rings or shoulders.
+   for(const fixed of b.supports.map(s=>s.upright)){
     for(const moving of[b.shaft,b.helicalBlade,...b.endCollars,b.loadWheel.children[0]])pairs.push([moving,fixed]);
    }
   }else if(id===485){

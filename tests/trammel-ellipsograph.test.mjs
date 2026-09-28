@@ -25,3 +25,9 @@ test('152 shoes hold both stud centers and pencil follows one ellipse through a 
   v.reset();assert.ok(b.horizontalStudAssembly.getWorldPosition(new THREE.Vector3()).distanceTo(new THREE.Vector3(-.784,0,.7))<1e-12);
  }finally{v.dispose();}
 });
+test('152 paper sheet is parchment, distinct from the page background (pass 93)',async()=>{
+ const {PALETTE}=await import('../src/simulation/primitives.js');
+ const v=makeTrammelEllipsograph();try{let sheet;v.root.traverse(o=>{if(o.name==='drawing-board-under-ellipse')sheet=o;});
+  assert.ok(sheet);assert.notEqual(sheet.material.color.getHex(),PALETTE.paper);assert.equal(sheet.material.color.getHex(),0xe9e1cf);
+ }finally{v.dispose?.();}
+});

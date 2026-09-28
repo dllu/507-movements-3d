@@ -956,6 +956,24 @@ function fitBrownRatchetAndFlywheel(model) {
   rim.visible = false;
   for (const spoke of b.flywheelSpokes) spoke.visible = false;
   b.flywheelWheel = wheel;
+  // Brown pivots the pawl on the drum's face well inside the cord band. The
+  // drum here is open inside r 0.47, so one round boss, concentric with the
+  // pawl pin and merged into the drum body and rim, carries the pawl eye on
+  // its face (0.01 behind the pawl), clear of the ratchet tips by 0.04.
+  {
+    const bossRadius = 0.10;
+    const boss = new THREE.Mesh(
+      plate(clip.intersection(
+        poly(circle(p.pivot, bossRadius, 96)),
+        poly(circle([0, 0], 0.595, 192)),
+      ), 0.31, 0.575),
+      b.drumBody.material,
+    );
+    boss.userData.role = 'drum-boss-carrying-pawl-pivot';
+    b.looseDrum.add(boss);
+    markShadows(boss);
+    b.pawlPivotBoss = boss;
+  }
   // The least-clearance table drops the pawl from each crest in one frame.
   // That snap is physical here: during overrun a tooth passes in about 0.3 s,
   // and a pawl held up for even 0.01 s would have its hooked nose struck by

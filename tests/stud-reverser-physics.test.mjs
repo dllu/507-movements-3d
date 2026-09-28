@@ -16,3 +16,17 @@ test('153 relieved arm sustains passive reciprocation without a prescribed reset
   assert.ok(low>-.02&&low<.08);assert.ok(high>1&&high<1.05);assert.ok(Math.abs(ends[2][1]-ends[1][1])<.001);assert.ok(Math.abs(ends[2][2]-ends[1][2])<1e-5);
  }finally{p.dispose();}
 });
+test('153 elbow boss is lever-coloured with its pin in the eye, and the return arm has plate width',async()=>{
+ const THREE=await import('three');const {makeRelievedStudReverser}=await import('../src/simulation/mujoco-stud-reverser/geometry.js');
+ const v=makeRelievedStudReverser({inputContactMinimum:1.4}),b=v.root.userData.blocks,g=v.root.userData.geometry;
+ try{
+  assert.equal(b.leverPivotCollar.material,b.inputArm.userData.blocks.working.material);
+  const pin=b.fixedFrame.getObjectByName('fixed-elbow-pivot-pin');assert.ok(pin);pin.geometry.computeBoundingBox();
+  assert.ok(pin.geometry.boundingBox.max.z>g.leverPlaneZ+.36,'pin reaches the boss face');
+  const arm=b.outputArm.userData.blocks.body.geometry;arm.computeBoundingBox();
+  // Working (+y) edge unchanged at the old half-width; idle edge widened to about 0.31 total at the eye.
+  assert.ok(Math.abs(arm.boundingBox.max.y-g.leverOutputHalfWidth)<1e-3);
+  assert.ok(arm.boundingBox.max.y-arm.boundingBox.min.y>.3);
+  assert.ok(Math.abs(arm.boundingBox.max.x-(g.leverOutputLength+g.leverOutputHalfWidth))<5e-3);
+ }finally{v.dispose();}
+});

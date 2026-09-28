@@ -437,3 +437,25 @@ test('movement 360 (pass 92): the upright has a round top concentric with the be
     disposeModel(model.root);
   }
 });
+
+test('movement 360 carries the pawl eye on a round drum boss concentric with its pin', () => {
+  const model = createMovementModel(catalog.movements[359]);
+  const { blocks } = model.root.userData;
+  const boss = blocks.pawlPivotBoss;
+  assert.ok(boss, 'pawl pivot boss exists');
+  assert.equal(boss.parent, blocks.looseDrum, 'boss is rigid with the drum');
+  for (let sample = 0; sample <= 48; sample += 1) {
+    model.update(12 * sample / 48);
+    model.root.updateMatrixWorld(true);
+    const pin = blocks.pawlHinge.getWorldPosition(new THREE.Vector3());
+    const bossBox = new THREE.Box3().setFromObject(boss);
+    const pawlBox = new THREE.Box3().setFromObject(blocks.pawlArm);
+    // The pawl's back face lies just in front of the boss face.
+    assert.ok(pawlBox.min.z - bossBox.max.z > 0.005 && pawlBox.min.z - bossBox.max.z < 0.02);
+    const local = blocks.looseDrum.worldToLocal(pin.clone());
+    // The eye (r 0.0575) lies wholly on the boss (r 0.10) round the pin.
+    assert.ok(Math.hypot(local.x, local.y) < 0.595 - 0.0575, 'eye inside the rim bore');
+    assert.ok(bossBox.containsPoint(pin.clone().setZ((bossBox.min.z + bossBox.max.z) / 2)), 'pin passes through the boss');
+  }
+  disposeModel(model.root);
+});

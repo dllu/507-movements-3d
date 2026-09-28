@@ -482,25 +482,18 @@ test('movement 216 transition teeth remain collision-free and the rear carrier c
   const centralBounds = new THREE.Box3().setFromObject(blocks.centralBody);
   const ringBounds = new THREE.Box3().setFromObject(blocks.ringBody);
   const pinionBounds = new THREE.Box3().setFromObject(blocks.pinionBody);
-  near(
-    centralBounds.min.z - carrierBounds.max.z,
-    geometry.carrierAxialGap,
-    1e-8,
-    'rear carrier clears central working plane',
-  );
-  near(
-    ringBounds.min.z - carrierBounds.max.z,
-    geometry.carrierAxialGap,
-    1e-8,
-    'rear carrier clears ring working plane',
-  );
-  near(centralBounds.min.z, pinionBounds.min.z, 0,
-    'external sector and pinion share a working plane');
+  // p93: the web clears the moving pinion by carrierAxialGap, while the ring
+  // and the sector's root disk reach back 0.015 into it (one rigid member).
+  near(pinionBounds.min.z - carrierBounds.max.z, geometry.carrierAxialGap, 1e-6,
+    'rear web clears the pinion working plane');
+  assert.ok(geometry.carrierAxialGap > 0.004 && geometry.carrierAxialGap < 0.01);
+  assert.ok(centralBounds.min.z < carrierBounds.max.z - 0.01, 'sector root disk seats in the web');
+  assert.ok(ringBounds.min.z < carrierBounds.max.z - 0.01, 'ring seats in the web');
   near(centralBounds.max.z, pinionBounds.max.z, 0,
     'external sector and pinion share a front face');
-  near(ringBounds.min.z, pinionBounds.min.z, 0,
-    'internal sector and pinion share a working plane');
-  assert.ok(geometry.carrierAxialGap > 0.06);
+  near(ringBounds.max.z, pinionBounds.max.z, 0,
+    'internal sector and pinion share a front face');
+  assert.equal(blocks.carrierBody.userData.seeThrough, true, 'web is the see-through part');
 
   const sweptBounds = new THREE.Box3();
   for (const time of Object.values(model.root.userData.canonicalTimes)) {

@@ -83,11 +83,23 @@ export function finishReversingMangleGuides(root,update,id) {
   // smooth flank normals and creased edges. The cavity is cut by this outline.
   {
     const gear=b.pinion.userData.rotor.children[0],old=gear.geometry,u=b.pinion.userData;
-    old.computeBoundingBox();const {min,max}=old.boundingBox;
+    old.computeBoundingBox();let {min:{z:low},max:{z:high}}=old.boundingBox;
+    // p93: 192's six-tooth pinion is set by Brown's pitch and the small
+    // radius of the tooth row's hooked turns, so it keeps six teeth. Full-depth
+    // involutes on six teeth are long pointed petals, though. Cut stub teeth
+    // instead (addendum and dedendum 0.8 module), and the wheel's cavity,
+    // generated offline from this outline, follows. The face also stood 0.2
+    // proud of the wheel's tooth land; trim it to the tooth row plus 0.015.
+    if(id===192){
+      const m=2*u.pitchRadius/u.teeth;
+      u.outerRadius=u.pitchRadius+.8*m;u.rootRadius=u.pitchRadius-.8*m;
+      root.updateMatrixWorld(true);
+      if(cavities[id]){const offset=(.375)-(gear.getWorldPosition(new THREE.Vector3()).z-b.wheelRotor.getWorldPosition(new THREE.Vector3()).z)-high;high+=offset;}
+    }
     const outline=involuteSpurOutline({teeth:u.teeth,pitchRadius:u.pitchRadius,rootRadius:u.rootRadius,outerRadius:u.outerRadius,pressureAngle:u.pressureAngle});
-    const shapes=new THREE.Shape(outline),flat=smoothExtrudeGeometry(shapes,max.z-min.z,{low:min.z,curveSegments:1});
+    const shapes=new THREE.Shape(outline),flat=smoothExtrudeGeometry(shapes,high-low,{low,curveSegments:1});
     flat.userData={...old.userData,pinionOutlineShapes:shapes,pinionOutline:outline.map(p=>[p.x,p.y]),toothProfile:'exact-involute-tip-and-root-arcs'};
-    flat.parameters={shapes,options:{depth:max.z-min.z,bevelEnabled:false}};
+    flat.parameters={shapes,options:{depth:high-low,bevelEnabled:false}};
     gear.geometry=flat;old.dispose();
     gear.userData.role??='flat-involute-mangle-pinion';
   }

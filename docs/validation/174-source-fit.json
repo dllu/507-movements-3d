@@ -9,10 +9,10 @@
         112
       ],
       "projected": [
-        316.2392147371289,
-        111.56314189362317
+        316.2392147368354,
+        111.56314189336305
       ],
-      "errorPixels": 1.814169161641531
+      "errorPixels": 1.8141691619890696
     },
     {
       "name": "upper inner hook",
@@ -21,10 +21,10 @@
         190
       ],
       "projected": [
-        366.06816229806145,
-        189.71993841293317
+        366.06816229818935,
+        189.7199384124043
       ],
-      "errorPixels": 0.2882370403459749
+      "errorPixels": 0.2882370408900906
     },
     {
       "name": "upper nose",
@@ -33,10 +33,10 @@
         234
       ],
       "projected": [
-        408.8244856757123,
-        233.57649001018035
+        408.82448567607673,
+        233.57649000942095
       ],
-      "errorPixels": 0.9268966182546057
+      "errorPixels": 0.9268966189257432
     },
     {
       "name": "lower inner hook",
@@ -45,10 +45,10 @@
         325
       ],
       "projected": [
-        366.9310236149035,
-        324.81190735375543
+        366.931023615101,
+        324.8119073542925
       ],
-      "errorPixels": 0.949833572305831
+      "errorPixels": 0.9498335723930983
     },
     {
       "name": "lower crest",
@@ -57,10 +57,10 @@
         411
       ],
       "projected": [
-        298.68203073971483,
-        409.96896558579886
+        298.68203073942027,
+        409.9689655859415
       ],
-      "errorPixels": 3.4744714670672425
+      "errorPixels": 3.4744714673062154
     },
     {
       "name": "lower nose",
@@ -69,10 +69,10 @@
         294
       ],
       "projected": [
-        406.83256613868883,
-        293.84756724049214
+        406.83256613906536,
+        293.8475672412598
       ],
-      "errorPixels": 1.1773434361761577
+      "errorPixels": 1.1773434357034047
     }
   ],
   "method": "Nearest projected jaw mesh vertex to selected manually measured engraving boundary points. These are sparse feature checks, not a whole-contour registration.",
@@ -87,7 +87,7 @@
     },
     {
       "file": "src/simulation/baked/assets/174.json.gz",
-      "sha256": "cc9683749ef8605d054ff1af7e1c0ba20d4bf92e77e1b094433cad722c4a57d4"
+      "sha256": "af3b57120a27f96ba32f7e77de0371eb9640cb0cac6b8b23b79c27c2df944f75"
     },
     {
       "file": "public/engravings/mm_174.png",

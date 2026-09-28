@@ -940,6 +940,25 @@ function seabedTriggeredSoundingWeight(movement) {
   });
   seabedSlab.geometry.dispose();
   seabedSlab.geometry = new THREE.BoxGeometry(seabedLength, seabedThickness, 3.4, 800, 1, 12);
+  // p93: the bottom moves sideways as the vessel changes station, and a
+  // featureless bottom made the spent weight seem to glide over it on its
+  // own. Alternate two close tones in 2.5-wide bands (the shared speed-cue
+  // idea for featureless moving parts) so the bottom visibly carries the
+  // weight with it.
+  {
+    const banded = seabedSlab.geometry.toNonIndexed();
+    seabedSlab.geometry.dispose();
+    const position = banded.attributes.position;
+    const colors = new Float32Array(position.count * 3);
+    for (let i = 0; i < position.count; i += 3) {
+      const x = (position.getX(i) + position.getX(i + 1) + position.getX(i + 2)) / 3;
+      const shade = positiveModulo(Math.floor(x / 2.5), 2) === 0 ? 1 : 0.9;
+      colors.fill(shade, 3 * i, 3 * i + 9);
+    }
+    banded.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+    seabedSlab.geometry = banded;
+    for (const material of new Set(seabedSlab.material)) material.vertexColors = true;
+  }
   seabedSlab.position.set(stationDrift / 2, seabedY - seabedThickness / 2, 0);
   const seabedRings = [];
   seabed.add(seabedSlab);

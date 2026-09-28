@@ -41,11 +41,28 @@ function forkedHorn209(b){
  for(const o of[stem,...tines,collar])if(o)o.visible=false;
  b.forkHorn=horn;b.forkHornBoss=boss;
 }
+// Local z (in a row's frame) at which a bar reaches 0.01 into the wheel body.
+function rimDepth205(row){const bodyHalf=.18,sunk=.01;return Math.abs(row.position.z)-bodyHalf+sunk;}
 export function correctVariableDrive(root,id){
  const b=root.userData.blocks;
  if(id===205){
   for(const cam of b.camMeshes){flat(cam,.092);cam.userData.generationGeometry=cam.geometry;replace(cam,outlined(profiles.cam205,.18,.092));}
-  for(const row of b.wheelRows)for(const tooth of row.userData.teeth)flat(tooth);
+  // p93: Brown draws every tooth as a plain rectangular bar: long bars in
+  // front, and behind them short squares (the rest of each rear bar is hidden
+  // by the wheel). Each tooth is now one straight-sided bar just enclosing the
+  // old involute tooth (its full width, out to its tip), running in to r 2.62
+  // on its wheel face and sunk 0.01 into it; the root keys go. The cams are
+  // regenerated against these bars (scripts/generate-205-209-profiles.py).
+  const innerX=2.62;
+  for(const row of b.wheelRows)for(const tooth of row.userData.teeth){
+   flat(tooth);const p=tooth.geometry.attributes.position;let low=Infinity,high=-Infinity,tip=-Infinity,zLow=Infinity,zHigh=-Infinity;
+   for(let i=0;i<p.count;i++){low=Math.min(low,p.getY(i));high=Math.max(high,p.getY(i));tip=Math.max(tip,p.getX(i));zLow=Math.min(zLow,p.getZ(i));zHigh=Math.max(zHigh,p.getZ(i));}
+   // The row plane faces the wheel on one side: sink the bar 0.01 into it.
+   const sink=rimDepth205(row),z0=row.position.z<0?zLow:Math.min(zLow,-sink),z1=row.position.z<0?Math.max(zHigh,sink):zHigh;
+   replace(tooth,plate(poly([[innerX,low],[tip,low],[tip,high],[innerX,high]]),z0,z1));
+   for(const key of tooth.children)key.visible=false;
+   tooth.userData.plainRectangularBar=true;
+  }
   for(const hub of b.camHubs)replace(hub,ring(.18,.092,.261));
   replace(b.wheelBody,ring(root.userData.geometry.wheelRootRadius,.102,.36));replace(b.wheelHub,ring(.34,.102,.72));
   for(const o of[...b.baseRails,...b.rearUprights,...b.bearingBridges,...b.bearingRings,...b.wheelFaceRims])o.visible=false;

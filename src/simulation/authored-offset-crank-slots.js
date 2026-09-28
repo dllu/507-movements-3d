@@ -175,7 +175,9 @@ function parallelOffsetSlottedCranks(movement) {
   outputRotor.add(outputIndex);
 
   // The plate's wrist pin projects well beyond the slotted crank.
-  const wristPinBeyondSlot = 0.45;
+  // p93: measured against the input shaft's projecting length on the plate
+  // (about 0.34 of it), 0.45 read as a stub; 0.65 matches.
+  const wristPinBeyondSlot = 0.65;
   const wristPinLength = Math.abs(outputPlaneZ - inputPlaneZ)
     + crankDepth * 0.8 + wristPinBeyondSlot;
   const wristPin = cylinderAlongZ(

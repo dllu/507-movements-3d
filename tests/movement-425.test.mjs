@@ -67,3 +67,19 @@ test('425: no markers, flow spheres or foundation', () => {
     assert.equal(model.root.userData.hideGround, true);
   } finally { disposeObject3D(model.root); }
 });
+
+test('movement 425 steam keeps its own per-frame normals after the load-time normal pass (p93)', async () => {
+  const { creaseNormalsIn } = await import('../src/simulation/crease-normals.js');
+  const model = createMovementModel(catalog.movements[424]);
+  creaseNormalsIn(model.root);
+  model.update(4 * 0.33);
+  for (const mesh of Object.values(model.root.userData.blocks.steam)) {
+    const { position, normal } = mesh.geometry.attributes;
+    for (let i = 0; i < mesh.geometry.drawRange.count; i += 3) {
+      const flat = Math.abs(position.getZ(i) - position.getZ(i + 1)) < 1e-6
+        && Math.abs(position.getZ(i) - position.getZ(i + 2)) < 1e-6;
+      if (flat) for (let k = 0; k < 3; k += 1) assert.ok(Math.abs(normal.getZ(i + k)) > 0.999, 'flat caps shade flat');
+    }
+  }
+  disposeObject3D(model.root);
+});

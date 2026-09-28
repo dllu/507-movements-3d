@@ -209,11 +209,11 @@
     },
     {
       "file": "src/simulation/authored-clamps.js",
-      "sha256": "87675bee8eca4663226b5d5fc8e84d76e8bbb7fa026f9f686958f29f3dbd7c90"
+      "sha256": "84b59b7763d6384e16dff27e1d3fd4b6d4c1f3b900ec36fb96ccbf4d119533aa"
     },
     {
       "file": "tests/helpers/solid-surface.mjs",
-      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+      "sha256": "8f39335894306bfe77f2d3562e6c2e7ac867dead2e078f2d1da4da7151998b99"
     }
   ]
 }

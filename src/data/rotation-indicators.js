@@ -104,6 +104,8 @@ export default {
   320: ['small-chain-tensioning-pulley-(body|hub)', 'large-main-weight-pulley-(body|hub)',
     '(roughened-ratchet-pulley-p|going-wheel-with-fixed-roughened-pulley-P)-(body|hub)'],
   334: ['working-tread-of-backing-roller-A'],
+  // 347: the plain solid flywheel carries only the rod socket.
+  347: ['rotating-solid-flywheel-carrying-the-rod-socket'],
   352: ['larger-winding-barrel', 'smaller-unwinding-barrel', 'finite-bored-rope-groove'],
   354: ['ten-source-unit-solid-crank-disk', 'raised-rim-on-crosshead-face-of-input-disk', 'central-input-hub',
     'front-face-of-central-input-hub'],

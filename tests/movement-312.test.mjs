@@ -194,8 +194,9 @@ test('movement 312 preserves Bloxam’s primary dimensions, slopes, timing angle
     THREE.MathUtils.degToRad(2), 0, 'two-degree tooth face');
   near(geometry.detentFaceSlope,
     THREE.MathUtils.degToRad(8), 0, 'eight-degree detent face');
+  assert.equal(geometry.wheelSpin, -1, 'Brown’s arrow turns the wheels clockwise');
   near(geometry.palletWheelFacePhaseOffset,
-    -THREE.MathUtils.degToRad(10), 0,
+    -geometry.wheelSpin * THREE.MathUtils.degToRad(10), 0,
     'small-wheel acting face is ten degrees behind');
   near(geometry.pickupAngle / THREE.MathUtils.degToRad(1 / 60),
     20, 2e-14, 'twenty-minute pickup');
@@ -278,7 +279,7 @@ test('movement 312 fixes both nine-tooth wheels to one arbor and advances exactl
   assert.equal(transmission.stepsPerPendulumCycle, 2);
   assert.equal(transmission.mechanismClosurePendulumCycles, 9);
   assert.equal(transmission.escapeAndPalletWheelAngularSpeedRatio, 1);
-  assert.match(transmission.direction, /counterclockwise/);
+  assert.match(transmission.direction, /^clockwise/);
 
   for (let cycle = -3; cycle <= 10; cycle += 1) {
     const start = stateAtTime(cycle * geometry.pendulumPeriod);
@@ -289,21 +290,22 @@ test('movement 312 fixes both nine-tooth wheels to one arbor and advances exactl
     near(start.wheelAngle, wheelAngleAtCycleStart(cycle), 2e-15,
       `cycle ${cycle} datum`);
     near(afterOneBeat.wheelAngle - start.wheelAngle,
-      geometry.wheelAdvancePerBeat, 2e-14,
+      geometry.wheelSpin * geometry.wheelAdvancePerBeat, 2e-14,
       `cycle ${cycle} first vibration`);
     near(end.wheelAngle - start.wheelAngle,
-      geometry.wheelAdvancePerCycle, 2e-14,
+      geometry.wheelSpin * geometry.wheelAdvancePerCycle, 2e-14,
       `cycle ${cycle} two vibrations`);
+    // Clockwise: tooth k sits at -40c + 40k degrees at cycle c's start.
     assert.equal(start.startingLeftOuterToothIndex,
-      positiveModulo(4 - cycle, 9));
+      positiveModulo(4 + cycle, 9));
     assert.equal(start.rightLandingOuterToothIndex,
-      positiveModulo(-cycle, 9));
+      positiveModulo(1 + cycle, 9));
     assert.equal(start.leftLandingOuterToothIndex,
-      positiveModulo(3 - cycle, 9));
+      positiveModulo(5 + cycle, 9));
     assert.equal(start.rightLiftInnerToothIndex,
-      positiveModulo(7 - cycle, 9));
+      positiveModulo(2 + cycle, 9));
     assert.equal(start.leftLiftInnerToothIndex,
-      positiveModulo(2 - cycle, 9));
+      positiveModulo(7 + cycle, 9));
   }
 
   for (const phase of [0, 0.24, 0.37, 0.55, 0.75, 0.87, 0.98]) {
@@ -322,7 +324,7 @@ test('movement 312 fixes both nine-tooth wheels to one arbor and advances exactl
   }
   const closure = stateAtTime(9 * geometry.pendulumPeriod);
   const start = stateAtTime(0);
-  near(closure.wheelAngle - start.wheelAngle, FULL_TURN, 2e-15,
+  near(closure.wheelAngle - start.wheelAngle, -FULL_TURN, 2e-15,
     'nine pendulum cycles close one wheel revolution');
   near(closure.pendulumAngle, start.pendulumAngle, 0,
     'pendulum closes with the wheels');
@@ -371,10 +373,10 @@ test('movement 312 alternates no-recoil A and B outer locks and keeps exactly on
 
   const expectedInnerSequence = [
     [0.10, 'left', 'left-A-rests-on-pallet-wheel'],
-    [0.30, 'right', 'right-B-deposited-on-lowest'],
+    [0.30, 'right', 'right-B-deposited-on-upper'],
     [0.37, 'right', 'small-wheel-curved-tooth-raises-right-B'],
     [0.60, 'right', 'right-B-rests-on-raised'],
-    [0.80, 'left', 'left-A-deposited-on-upper'],
+    [0.80, 'left', 'left-A-deposited-on-lowest'],
     [0.87, 'left', 'small-wheel-curved-tooth-raises-left-A'],
     [0.97, 'left', 'left-A-rests-on-raised'],
   ];
@@ -404,12 +406,14 @@ test('movement 312 generates exact plane-pallet contacts on curved small-wheel t
   near(geometry.nominalArmLift,
     THREE.MathUtils.degToRad(40 / 60), 0,
     'nominal forty-minute arm lift');
+  // B is now lifted at the top of the small wheel and A at the bottom, so
+  // the top/bottom asymmetry swaps sides.
   near(geometry.primitiveRightLift / THREE.MathUtils.degToRad(1 / 60),
-    38.00072508089486, 2e-12,
-    'right primitive-circle lift is a little under forty minutes');
+    40.45808408016355, 2e-12,
+    'right primitive-circle lift is a little over forty minutes');
   near(geometry.primitiveLeftLift / THREE.MathUtils.degToRad(1 / 60),
-    -40.45808408016355, 2e-12,
-    'left primitive-circle lift is a little over forty minutes');
+    -38.00072508089486, 2e-12,
+    'left primitive-circle lift is a little under forty minutes');
   near(geometry.palletWheelPrimitiveRadius
     / geometry.historicalEscapeWheelRadius,
   0.2 / 2.05, 2e-16, 'published inner-to-outer radius ratio');
@@ -476,7 +480,7 @@ test('movement 312 generates exact plane-pallet contacts on curved small-wheel t
     const end = stateAtCyclePhase(lift.end);
     near(start.wheelAngularSpeed, 0, 2e-7,
       `${lift.side} step starts without a velocity jump`);
-    assert.ok(middle.wheelAngularSpeed > 0);
+    assert.ok(geometry.wheelSpin * middle.wheelAngularSpeed > 0);
     near(end.wheelAngularSpeed, 0, 2e-7,
       `${lift.side} step lands without a velocity jump`);
     near(end.wheelAdvance - start.wheelAdvance,
@@ -488,14 +492,16 @@ test('movement 312 generates exact plane-pallet contacts on curved small-wheel t
   const rightEnd = palletContactAt(1, 1);
   const leftStart = palletContactAt(-1, 0);
   const leftEnd = palletContactAt(-1, 1);
-  near(rightStart.toothAngle, -Math.PI / 2, 0,
-    'B is deposited on the lowest tooth');
-  near(rightEnd.toothAngle, -Math.PI / 2 + geometry.wheelAdvancePerBeat,
-    0, 'lowest tooth lifts B through twenty wheel degrees');
-  near(leftStart.toothAngle, Math.PI / 2, 0,
-    'A is deposited on the opposed upper tooth');
-  near(leftEnd.toothAngle, Math.PI / 2 + geometry.wheelAdvancePerBeat,
-    0, 'upper tooth lifts A through twenty wheel degrees');
+  // Clockwise: B (under its hook) rides the top tooth, A (over its band)
+  // the bottom one.
+  near(rightStart.toothAngle, Math.PI / 2, 0,
+    'B is deposited on the upper tooth');
+  near(rightEnd.toothAngle, Math.PI / 2 - geometry.wheelAdvancePerBeat,
+    0, 'upper tooth lifts B through twenty wheel degrees');
+  near(leftStart.toothAngle, -Math.PI / 2, 0,
+    'A is deposited on the opposed lowest tooth');
+  near(leftEnd.toothAngle, -Math.PI / 2 - geometry.wheelAdvancePerBeat,
+    0, 'lowest tooth lifts A through twenty wheel degrees');
   disposeModel(model.root);
 });
 
@@ -580,11 +586,11 @@ test('movement 312 follows the 20/40-arcminute pendulum handoff and supplies equ
 
   assert.deepEqual(timeline.schedule, [
     'right-B-descends-with-pendulum-while-left-A-locks',
-    'right-B-is-deposited-on-lowest-inner-wheel-tooth',
+    'right-B-is-deposited-on-upper-inner-wheel-tooth',
     'pendulum-lifts-left-A-from-20-to-40-arcminutes-and-unlocks',
     'both-rigid-wheels-advance-20-degrees-while-inner-wheel-cocks-right-B',
     'right-B-outer-stop-locks-the-larger-wheel',
-    'left-A-descends-with-pendulum-and-is-deposited-on-upper-tooth',
+    'left-A-descends-with-pendulum-and-is-deposited-on-lowest-tooth',
     'pendulum-lifts-right-B-from-20-to-40-arcminutes-and-unlocks',
     'both-rigid-wheels-advance-20-degrees-while-inner-wheel-cocks-left-A',
     'left-A-outer-stop-locks-the-larger-wheel',
@@ -622,7 +628,7 @@ test('movement 312 remains continuous and finite across every event and across i
   }
 
   for (let cycle = -2; cycle <= 10; cycle += 1) {
-    let previousWheelAngle = -Infinity;
+    let previousWheelAngle = Infinity;
     for (let sample = 0; sample <= 240; sample += 1) {
       const time = (cycle + sample / 240) * geometry.pendulumPeriod;
       const state = stateAtTime(time);
@@ -632,7 +638,7 @@ test('movement 312 remains continuous and finite across every event and across i
             `${key} finite at cycle ${cycle}, sample ${sample}`);
         }
       }
-      assert.ok(state.wheelAngle >= previousWheelAngle - 2e-14,
+      assert.ok(state.wheelAngle <= previousWheelAngle + 2e-14,
         `wheel never recoils at cycle ${cycle}, sample ${sample}`);
       assert.ok(state.innerContactError < 2e-15);
       assert.ok(state.beatContactError < 2e-15);

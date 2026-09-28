@@ -74,7 +74,9 @@ function buildSourceOscillatingEngine(o) {
   const towardP = o.towardP;
   const axisZ = 0.42;
   const crankLow = 0.06;
-  const crankHigh = 0.26;
+  // Pass 93: the single web stands 0.035 behind the rod eye; the shaft end
+  // shows 0.02 proud of it and clears the rod by 0.018 at dead centre.
+  const crankHigh = 0.285;
   const rodRadius = u(o.pistonRodHalfWidth);
   const rodBore = rodRadius + 0.006;
   const pinRadius = u(0.17);
@@ -121,19 +123,13 @@ function buildSourceOscillatingEngine(o) {
   const crankShaft = cylinderAlongZ(shaftRadius, shaftFront - shaftBack, darkMaterial, 34);
   crankShaft.position.z = (shaftFront + shaftBack) / 2;
   crankShaft.userData.role = `${o.rolePrefix}live-crankshaft-O`;
-  // Brown draws the crank plate over the rod eye. The crank is therefore
-  // double-webbed: the shaft ends in the rear web, the rod eye rides the pin
-  // between the webs, and the front web is carried by the pin alone, so the
-  // rod can pass over the shaft axis at dead centre with nothing to cut.
-  const frontWebLow = axisZ + 0.10 + 0.02;
-  const frontWebHigh = frontWebLow + (crankHigh - crankLow);
-  const crankFrontWeb = new THREE.Mesh(plate(crankOutline, frontWebLow, frontWebHigh), crankMaterial);
-  crankFrontWeb.userData.role = `${o.rolePrefix}front-crank-web-over-rod-eye-O-P`;
-  const shaftEndCap = cylinderAlongZ(shaftRadius, 0.04, darkMaterial, 34);
-  shaftEndCap.position.z = frontWebHigh + 0.01;
-  shaftEndCap.userData.role = `${o.rolePrefix}front-web-shaft-centre-boss`;
-  const pinFront = frontWebHigh + 0.03;
-  // The pin's rear end stops 0.02 inside the rear web instead of lying
+  // Pass 93: one crank plate. Brown draws the rod's eye whole over the
+  // crank's P end, so the rod eye rides the pin in front of the single web;
+  // the shaft ends 0.04 behind the rod plane, so the rod crosses the shaft
+  // axis at dead centre with nothing to cut. The plain pin stands 0.02
+  // proud of the eye's face (not coplanar with it).
+  const pinFront = axisZ + 0.10 + 0.02;
+  // The pin's rear end stops 0.02 inside the web instead of lying
   // coplanar with its back face (which z-fought as a speckled patch).
   const pinBack = crankLow + 0.02;
   const crankPin = cylinderAlongZ(pinRadius, pinFront - pinBack, darkMaterial, 30);
@@ -142,7 +138,7 @@ function buildSourceOscillatingEngine(o) {
   const crankPinAnchor = new THREE.Object3D();
   crankPinAnchor.position.set(r, 0, axisZ);
   crankPinAnchor.userData.role = `analytic-${o.rolePrefix}direct-crank-pin-P`;
-  inputCrank.add(crankArm, crankFrontWeb, shaftEndCap, crankShaft, crankPin, crankPinAnchor);
+  inputCrank.add(crankArm, crankShaft, crankPin, crankPinAnchor);
 
   const cylinderAssembly = new THREE.Group();
   cylinderAssembly.position.set(o.cylinderPivot.x, o.cylinderPivot.y, 0);
@@ -237,7 +233,6 @@ function buildSourceOscillatingEngine(o) {
     axisZ,
     barrel,
     crankArm,
-    crankFrontWeb,
     crankPin,
     crankPinAnchor,
     crankShaft,
@@ -647,7 +642,6 @@ function oscillatingCylinderEngine(movement) {
   const {
     barrel,
     crankArm,
-    crankFrontWeb,
     crankPin,
     crankPinAnchor,
     crankShaft,
@@ -763,7 +757,6 @@ function oscillatingCylinderEngine(movement) {
   root.userData.blocks = {
     barrel,
     crankArm,
-    crankFrontWeb,
     crankBearing: upperRail,
     crankPin,
     crankPinAnchor,
@@ -1290,7 +1283,6 @@ function invertedPendulumEngine(movement) {
   const {
     barrel,
     crankArm,
-    crankFrontWeb,
     crankPin,
     crankPinAnchor,
     crankShaft,
@@ -1405,7 +1397,6 @@ function invertedPendulumEngine(movement) {
   root.userData.blocks = {
     barrel,
     crankArm,
-    crankFrontWeb,
     crankBearing: lowerFoundation,
     crankPin,
     crankPinAnchor,

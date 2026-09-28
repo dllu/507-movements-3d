@@ -533,3 +533,24 @@ test('movement 303 p89: the pallet arbor ends 0.01 inside the pendulum rod', () 
   const arbor = box(byRole('Graham-pallet-arbor-to-pendulum')), rod = box(byRole('pendulum-rod-C'));
   near(arbor.min.z - rod.min.z, 0.01, 1e-5, 'arbor rear end');
 });
+
+test('movement 303 p93: the pendulum strap hangs on the pallet arbor through a round eye', () => {
+  const model = createMovementModel(catalog.movements[302]);
+  model.update(0, 0); model.root.updateMatrixWorld(true);
+  const roles = [];
+  model.root.traverse(o => { if (o.userData.role) roles.push(o.userData.role); });
+  assert.ok(!roles.includes('triangular-anchor-apex-cap'), 'no cap corner poking through the hub');
+  let rod = null, arbor = null;
+  model.root.traverse(o => {
+    if (o.userData.role === 'pendulum-rod-C') rod = o;
+    if (o.userData.role === 'Graham-pallet-arbor-to-pendulum') arbor = o;
+  });
+  rod.geometry.computeBoundingBox();
+  const eye = rod.geometry.boundingBox;
+  // The strap's top is an arc about the arbor axis (anchor-local origin),
+  // wider than the arbor, so the arbor passes through the eye.
+  near(eye.max.y, 0.24, 1e-6, 'eye top');
+  assert.ok(eye.max.x >= 0.24 - 1e-3 && eye.min.x <= -0.24 + 1e-3, 'eye wider than the strap');
+  assert.ok(arbor.geometry.parameters.radiusTop < 0.24, 'arbor inside the eye');
+  disposeModel(model.root);
+});

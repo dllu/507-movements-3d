@@ -84,7 +84,17 @@ test('192-194 pinions are flat unbeveled involute extrusions and the wheel bore 
     const gear = b.pinion.userData.rotor.children[0];
     assert.equal(gear.geometry.parameters.options.bevelEnabled, false, `${id} pinion has no faceting chamfer`);
     gear.geometry.computeBoundingBox();
-    assert.ok(Math.abs(gear.geometry.boundingBox.max.z - gear.geometry.boundingBox.min.z - 0.37) < 1e-6);
+    // p93: 192's pinion face is trimmed to its tooth row (0.19 deep), and its
+    // teeth are 0.8-module stubs; 193 and 194 keep the full 0.37 face.
+    const face = gear.geometry.boundingBox.max.z - gear.geometry.boundingBox.min.z;
+    assert.ok(Math.abs(face - (id === 192 ? 0.19 : 0.37)) < 1e-6, `${id} face ${face}`);
+    if (id === 192) {
+      const {pitchRadius, teeth, outerRadius, rootRadius} = b.pinion.userData, m = 2 * pitchRadius / teeth;
+      assert.ok(Math.abs(outerRadius - pitchRadius - .8 * m) < 1e-9 && Math.abs(pitchRadius - rootRadius - .8 * m) < 1e-9, '192 stub teeth');
+      model.root.updateMatrixWorld(true);
+      const land = new THREE.Box3().setFromObject(b.toothLand), pin = new THREE.Box3().setFromObject(gear);
+      assert.ok(pin.max.z - land.max.z > .01 && pin.max.z - land.max.z < .02, '192 pinion front just proud of the tooth land');
+    }
     const shaft = b.wheelShaft.userData.rotor?.children.find((o) => o.isMesh) ?? b.wheelShaft;
     const bore = b.wheelBody.geometry.userData.plate.polygons[0][1];
     const boreRadius = Math.max(...bore.map(([x, y]) => Math.hypot(x, y)));

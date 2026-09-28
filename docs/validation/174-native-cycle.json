@@ -18,10 +18,10 @@
     }
   ],
   "timestepDifference": {
-    "upper": 0.002652820352161923,
-    "lower": 0.0005516599438181986,
-    "board": 0.0010684617011784067,
-    "boardY": 0.001057262115324203
+    "upper": 0.0020066159078890866,
+    "lower": 0.001552826480255634,
+    "board": 0.0016284650608006448,
+    "boardY": 0.0008105976515211683
   },
   "scope": "Only board X is actuated. Passive jaw hinges and free board Y; orientation held. Native collision pieces preserve the source trace. Finite display hardware and bake interpolation remain unqualified.",
   "runs": [
@@ -29,27 +29,29 @@
       "parameters": {
         "timestep": 0.0005,
         "friction": 0.5,
-        "opening": 0.06,
+        "opening": 0.1,
         "force": 10,
         "contacts": true,
-        "cyclic": true
+        "cyclic": true,
+        "returnStiffness": 0.5,
+        "damping": 0.25
       },
       "minimumGap": 0,
       "seam": {
-        "upper": 1.3010426069826053e-18,
-        "lower": 4.336808689942018e-19,
-        "board": 1.3877787807814457e-17,
-        "boardY": 5.204170427930421e-18,
-        "upperSpeed": 4.067338380648815e-15,
-        "lowerSpeed": 3.1996705154713204e-16,
-        "boardSpeed": 1.6232513838396952e-14,
-        "boardYSpeed": 2.7424488689076422e-15
+        "upper": 8.673617379884035e-19,
+        "lower": 8.673617379884035e-19,
+        "board": 2.7755575615628914e-17,
+        "boardY": 3.469446951953614e-18,
+        "upperSpeed": 1.7870335215679304e-15,
+        "lowerSpeed": 1.0656608533976942e-15,
+        "boardSpeed": 5.604386188218519e-15,
+        "boardYSpeed": 2.3851882019878608e-15
       },
       "cycleDifference": {
-        "upper": 3.8071950106410846e-12,
-        "lower": 6.584364130313158e-13,
-        "board": 4.1591868837898005e-12,
-        "boardY": 5.9252863032766e-13
+        "upper": 1.1832271707562514e-10,
+        "lower": 5.3381814650067805e-9,
+        "board": 8.067960050039957e-10,
+        "boardY": 5.211492036527599e-10
       },
       "contactJaws": [
         "jaw0",
@@ -57,27 +59,27 @@
       ],
       "first": {
         "time": 16.00000000000806,
-        "upper": 0.002856765323687776,
-        "lower": 0.0020232579745176065,
-        "board": 0.035193229049520026,
-        "boardY": 0.004082130663380067,
-        "boardSpeed": -8.0127398615725e-15,
-        "boardYSpeed": 9.346385164368096e-16,
-        "upperSpeed": 2.0415832071898082e-15,
-        "lowerSpeed": 4.276892082077967e-17,
+        "upper": 0.0028567653290804645,
+        "lower": 0.0020232579687387044,
+        "board": 0.03519322907258385,
+        "boardY": 0.004082130663317336,
+        "boardSpeed": 5.7191617139377926e-15,
+        "boardYSpeed": 4.242401229114864e-15,
+        "upperSpeed": 2.5842617942911753e-15,
+        "lowerSpeed": -1.6533866650478963e-15,
         "contacts": 12,
         "appliedForce": -10
       },
       "last": {
         "time": 21.999999999994078,
-        "upper": 0.0028567653236877748,
-        "lower": 0.002023257974517607,
-        "board": 0.03519322904952004,
-        "boardY": 0.004082130663380062,
-        "boardSpeed": 8.21977397682445e-15,
-        "boardYSpeed": -1.8078103524708327e-15,
-        "upperSpeed": -2.025755173459007e-15,
-        "lowerSpeed": -2.7719813072635235e-16,
+        "upper": 0.0028567653290804654,
+        "lower": 0.0020232579687387035,
+        "board": 0.035193229072583876,
+        "boardY": 0.004082130663317339,
+        "boardSpeed": 1.1323547902156311e-14,
+        "boardYSpeed": 1.8572130271270036e-15,
+        "upperSpeed": 4.371295315859106e-15,
+        "lowerSpeed": -2.7190475184455905e-15,
         "contacts": 12,
         "appliedForce": -10
       }
@@ -86,27 +88,29 @@
       "parameters": {
         "timestep": 0.00025,
         "friction": 0.5,
-        "opening": 0.06,
+        "opening": 0.1,
         "force": 10,
         "contacts": true,
-        "cyclic": true
+        "cyclic": true,
+        "returnStiffness": 0.5,
+        "damping": 0.25
       },
       "minimumGap": 0,
       "seam": {
-        "upper": 0,
-        "lower": 8.673617379884035e-19,
-        "board": 2.0816681711721685e-17,
-        "boardY": 1.734723475976807e-18,
-        "upperSpeed": 1.6455178498149032e-16,
-        "lowerSpeed": 1.3488301487675934e-15,
-        "boardSpeed": 7.440587431736915e-16,
-        "boardYSpeed": 1.7866632987964873e-15
+        "upper": 4.336808689942018e-19,
+        "lower": 0,
+        "board": 1.6653345369377348e-16,
+        "boardY": 8.673617379884035e-19,
+        "upperSpeed": 6.449809017066198e-17,
+        "lowerSpeed": 2.257441879139477e-18,
+        "boardSpeed": 1.7947238308123636e-17,
+        "boardYSpeed": 2.0822679271489953e-16
       },
       "cycleDifference": {
-        "upper": 1.4532333236089157e-11,
-        "lower": 4.678093199275701e-12,
-        "board": 8.553630026497672e-12,
-        "boardY": 5.88788566513454e-13
+        "upper": 5.112309905269674e-8,
+        "lower": 3.031345214817363e-8,
+        "board": 1.037385261026813e-9,
+        "boardY": 1.2750388479407238e-9
       },
       "contactJaws": [
         "jaw0",
@@ -114,27 +118,27 @@
       ],
       "first": {
         "time": 15.999999999985386,
-        "upper": 0.002856765323687658,
-        "lower": 0.002023257974517728,
-        "board": 0.03519322904951879,
-        "boardY": 0.004082130663380064,
-        "boardSpeed": 9.712301835977531e-15,
-        "boardYSpeed": 2.0025772951056387e-15,
-        "upperSpeed": -8.707410709450622e-17,
-        "lowerSpeed": 1.7215926104164607e-15,
+        "upper": 0.0028567653290804637,
+        "lower": 0.002023257968738705,
+        "board": 0.03519322907258403,
+        "boardY": 0.004082130663317336,
+        "boardSpeed": -7.4729807242141e-15,
+        "boardYSpeed": -2.6983025359126016e-15,
+        "upperSpeed": -9.318457639591122e-16,
+        "lowerSpeed": 1.040065878953521e-15,
         "contacts": 12,
         "appliedForce": -10
       },
       "last": {
         "time": 22.000000000014033,
-        "upper": 0.002856765323687658,
-        "lower": 0.002023257974517727,
-        "board": 0.03519322904951877,
-        "boardY": 0.0040821306633800625,
-        "boardSpeed": 8.96824309280384e-15,
-        "boardYSpeed": 2.1591399630915142e-16,
-        "upperSpeed": 7.74776778869841e-17,
-        "lowerSpeed": 3.727624616488673e-16,
+        "upper": 0.002856765329080464,
+        "lower": 0.002023257968738705,
+        "board": 0.035193229072584195,
+        "boardY": 0.004082130663317335,
+        "boardSpeed": -7.490927962522223e-15,
+        "boardYSpeed": -2.906529328627501e-15,
+        "upperSpeed": -8.673476737884502e-16,
+        "lowerSpeed": 1.0423233208326606e-15,
         "contacts": 12,
         "appliedForce": -10
       }
@@ -147,7 +151,7 @@
     },
     {
       "file": "src/simulation/mujoco-bench-clamp/physics.js",
-      "sha256": "013f7b319cceff3da7c709c4794e9d79ea3b5e88d1f8e68512c20f78b8310b21"
+      "sha256": "ae135ba9f82418f9ce58f9122eae92beb38bc01eddde5c8704272597dc93fcbb"
     },
     {
       "file": "src/simulation/mujoco-bench-clamp/profile.js",

@@ -137,3 +137,19 @@ test('negative control: a pinion half a pitch out of phase jams the crown teeth'
   model.update = (time) => { update(time); rotor.rotation.z += Math.PI / 12; };
   assert.ok(worstPenetration(model, 24).depth > 0.02);
 });
+
+test('298 p93: crown teeth are round-topped crenellations, not pointed trapezoids', () => {
+  const { blocks, geometry: g } = create().root.userData;
+  const tooth = blocks.crownToothSolids[0];
+  assert.equal(tooth.geometry.type, 'ExtrudeGeometry');
+  tooth.geometry.computeBoundingBox();
+  const box = tooth.geometry.boundingBox;
+  // Tooth 0 at the top: z is tangential, y radial.
+  const pitchLength = Math.PI * g.gearModule;
+  assert.ok(box.max.y - box.min.y >= 0.2, 'broad radially');
+  const pos = tooth.geometry.attributes.position;
+  let tipHalf = 0, top = -Infinity;
+  for (let i = 0; i < pos.count; i += 1) top = Math.max(top, pos.getX(i));
+  for (let i = 0; i < pos.count; i += 1) if (pos.getX(i) > top - 0.06) tipHalf = Math.max(tipHalf, Math.abs(pos.getZ(i)));
+  assert.ok(tipHalf * 2 > 0.28 * pitchLength, `rounded top ${tipHalf * 2} wide 0.06 below the crest`);
+});

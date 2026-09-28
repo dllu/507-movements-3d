@@ -127,8 +127,8 @@ export default {
     note: 'Nearly end-on view down the camshaft: the hatched shaft end in front of the sliding cam series, the rocking lever on its right-hand fulcrum and the valve rod; no base, posts, guides or index marks are drawn, and none are shown (p60 support policy).',
   },
   151: {
-    remove: ['guide-(?:back|upper|lower)-\\d', 'guide-post-\\d-.*', 'bearing-(?:post|foot)-.*', 'rear-base', 'upper-bearing-(?:arm|rear-tie|post)', 'input-shaft-rotation-mark'],
-    note: 'The opposite-hand screw shaft between its end bearings, the two nuts and the upper worm shaft end-on in its bearing ring; no base, posts, upright or index mark are drawn.',
+    remove: ['guide-(?:back|upper|lower)-\\d', 'guide-post-\\d-.*', 'rear-base', 'upper-bearing-(?:arm|rear-tie|post)', 'input-shaft-rotation-mark'],
+    note: 'The opposite-hand screw shaft carried by its two guided nuts and the upper worm shaft end-on in its bearing ring; no base, posts, upright or index mark are drawn.',
   },
   152: {
     remove: ['(?:horizontal-stud|vertical-stud|pencil)-white-motion-index'],
@@ -459,7 +459,7 @@ export default {
   },
   312: {
     remove: ['fixed-bloxam-support-frame', 'bloxam-pendulum-bob', '(left-A-E|right-B-F)-anti-double-impulse-reinforcement-wire', 'documented-point-two-inch-primitive-diameter-ring', '(?:.*-)?white-.*witness'],
-    note: 'Front elevation of the two wheels and the gravity arms hung from C with fork pins E, F; the trapezoid outline is the arms themselves, and no separate support frame is drawn. The pendulum is only a dashed line and no bob is drawn.',
+    note: 'Front elevation of the two wheels and the gravity arms hung from C with fork pins E, F; the trapezoid outline is the arms themselves, and no separate support frame is drawn. Brown dashes the pendulum behind the wheels; here it hangs from the stud at C, see-through and just in front of the wheel because the fork pins sit inside the spokes, and no bob is drawn.',
   },
   315: {
     remove: ['fixed-bearing-bridge-post', 'fixed-upper-spindle-bearing', 'nonphysical-wrist-orbit-reference-circle', 'white-crank-rotation-index', 'white-spindle-rotation-index', 'white-pendulum-orientation-index'],
@@ -516,8 +516,8 @@ export default {
     note: 'The disk A with its crossed slots at about 29 degrees and slides c, and the bar B broken off above the disk; no stand, base, external guide, guide pin or white indices are drawn.',
   },
   350: {
-    remove: ['fixed-wide-base', 'fixed-base-edge', 'lower-input-direction-dash-\\d+', 'fixed-horizontal-guide-for-driven-lower-pin-D', 'lower-input-horizontal-guide-shoe', 'fixed-upper-pin-rear-support', 'white-traverse-index-on-output-bar', 'output-bar-motion-rib-\\d', 'moving-pin-D-green-front-index'],
-    note: 'The slotted link with its two pins, the short bar with its riser and guides a, a; the lower pin\'s drive is only a dotted line on the plate, so no input guide, shoe, dashes, base, pin post or indices are drawn.',
+    remove: ['fixed-wide-base', 'fixed-base-edge', 'lower-input-direction-dash-\\d+', 'fixed-upper-pin-rear-support', 'white-traverse-index-on-output-bar', 'output-bar-motion-rib-\\d', 'moving-pin-D-green-front-index'],
+    note: 'The slotted link with its two pins, the short bar with its riser and guides a, a; the lower pin\'s drive is only a dotted line on the plate, so D rides on one plain round rod laid along that line, in a bored shoe centred on it; no dashes, base, pin post or indices are drawn.',
   },
   351: {
     remove: ['fixed-stamp-machine-base', 'fixed-anvil-below-falling-stamp', 'fixed-workpiece-at-lower-impact-stop', '(?:upper|lower)-C-shaped-rack-guide-open-to-teeth', 'fixed-bearing-for-horizontal-pinion-shaft'],
@@ -642,8 +642,8 @@ export default {
     note: 'Oblique side view (turned about 17° and raised about 20°, so the wheel\'s face shows as Brown draws it) of the point, screw-threaded arm and the solid milled wheel with its long nut, framed on the arm\'s whole sweep round the point; no paper or white indices are drawn.',
   },
   385: {
-    remove: ['fixed-vertical-door-jamb', 'fixed-door-frame-lintel', 'one-of-four-door-face-trim-bars', 'door-opening-handle', '(frame|door)-side-white-pin-turn-index', 'white-toggle-height-index', 'white-weight-height-index'],
-    note: 'The two long upright pins, each ending in a plain eye beside its link\'s eye, the toggle links and the small pear weight hung on an S-hook from the apex pin. Brown crops the pins, and the default view frames the linkage above the door; their sockets stand on bored blocks on the door top and on the wall beside the opening, and the door hangs on plain knuckle hinges. No lintel, jamb, trim, handle or white indices are drawn.',
+    remove: ['fixed-vertical-door-jamb', 'fixed-door-frame-lintel', 'one-of-four-door-face-trim-bars', 'door-opening-handle', '(frame|door)-side-white-pin-turn-index', 'white-toggle-height-index', 'white-weight-height-index', 'fixed-wall-beside-door-opening', 'moving-door-panel', 'one-of-three-fixed-axis-door-hinge-barrels', 'fixed-hinge-leaf-on-wall', 'door-hinge-leaf-on-door', '(frame|door)-pin-socket-bracket'],
+    note: 'The two long upright pins, each ending in a plain eye beside its link\'s eye, the toggle links and the small pear weight hung on an S-hook from the apex pin. Brown crops the pins and draws no door or wall, so neither is drawn here: each pin turns in one plain bearing boss, the socket fixed to the frame and the socket fixed to the door, which carries its pin round the (undrawn) hinge axis as the door opens. No lintel, jamb, trim, handle or white indices are drawn.',
   },
   387: {
     note: 'Side elevation of the one wharf ladder, level at high water as in Brown\'s upper figure; the animation carries it down to the boat at low water, his lower figure, so it is not drawn twice. The wharf rail panels (posts with ball finials, top and bottom rails, crossed braces) are joined to the fixed ladder posts. The tide is a shallow translucent surface layer, fading with depth, for Brown\'s surface lines, and the dinghy is his length, about 0.31 of the ladder. The factory omits the undrawn white rail and tread indices.',

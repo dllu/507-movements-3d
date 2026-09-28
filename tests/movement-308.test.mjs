@@ -37,13 +37,11 @@ const nibGap = (state) => {
   return polygonGap(rect, wheel);
 };
 const pinGap = (state) => {
-  const local = [g.lockPinCenter[0] - g.leverPivot[0], g.lockPinCenter[1] - g.leverPivot[1]];
-  return data.signedDistance(
-    data.leverPoint(local, state.leverLift),
-    data.wheelOutlineAt(state.wheelAdvance),
-  ) - g.lockPinRadius;
+  const head = g.leverHeadOutline.map((polygon) => polygon.map(
+    (ring) => ring.map((point) => data.leverPoint(point, state.leverLift)),
+  ));
+  return polygonGap(head, data.wheelOutlineAt(state.wheelAdvance));
 };
-
 test('308 reproduces Brown’s plate: pendulum P, P, hooked wheel under a cock, lever Q, click C and pallet I', () => {
   assert.equal(movement.id, 308);
   assert.equal(data.fidelity, 'authored');
@@ -58,6 +56,13 @@ test('308 reproduces Brown’s plate: pendulum P, P, hooked wheel under a cock, 
     assert.ok(!roles.some((role) => pattern.test(role)), `undrawn part ${pattern}`);
   }
   assert.equal(g.toothCount, 6);
+  // p93: Q is a broad bell crank whose hooked head locks the wheel in the
+  // wheel's own plane; no rear lock pin.
+  assert.ok(!roles.includes('Q-locking-pin'));
+  assert.ok(roles.includes('Q-hooked-head-in-wheel-plane'));
+  const head = new THREE.Box3().setFromObject(data.blocks.leverHead);
+  const wheel = new THREE.Box3().setFromObject(data.blocks.wheelPlate);
+  assert.ok(head.min.z >= wheel.min.z - 1e-9 && head.max.z <= wheel.max.z + 1e-9, 'head in the wheel plane');
   assert.equal(data.blocks.click.parent, data.blocks.pendulum);
   assert.equal(data.blocks.palletPlate.parent, data.blocks.pendulum);
   assert.equal(data.blocks.lever.parent, model.root);
@@ -103,7 +108,7 @@ test('308 advances exactly one tooth per pendulum cycle, only while swinging lef
   assert.ok(Math.abs(a.wheelAngle - b.wheelAngle - g.toothPitch) < 1e-9);
 });
 
-test('308 finite outlines: Q pin, pallet I nib, Q and C never interpenetrate, and Q relocks every tooth', () => {
+test('308 finite outlines: Q hook, pallet I nib, Q and C never interpenetrate, and Q relocks every tooth', () => {
   let minimumPin = Infinity;
   let minimumNib = Infinity;
   let minimumClick = Infinity;

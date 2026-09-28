@@ -6,7 +6,7 @@
     },
     {
       "file": "src/simulation/authored-gears-core.js",
-      "sha256": "76c271f4f15c12052c331e549e8130d20d4ecfce15194a20b18a93f055254d71"
+      "sha256": "1f1e111970952afd82cb0ac8a8c0ebe8f8087259fe518d5b7189eb47270513f5"
     },
     {
       "file": "src/simulation/miter-gear.js",
@@ -14,7 +14,7 @@
     },
     {
       "file": "src/simulation/irregular-gear-family.js",
-      "sha256": "bc8b85557b2d8a78b982d46fc736b31268c476275c6c8e698628b0194d682e5a"
+      "sha256": "920d18ac7edb5b9c4bf451ce58860a53a40ee17620e0a188756576d8575bbe57"
     },
     {
       "file": "src/simulation/irregular-gear-201.js",

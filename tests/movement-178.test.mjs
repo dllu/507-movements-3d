@@ -1064,3 +1064,12 @@ test('movement 178 closes one rotating radial slot through a fixed eccentric cir
   disposeModel(movement179.root);
   disposeModel(model.root);
 });
+
+test('178 (pass 93): no undrawn rear flange, and the rod ends plainly past the plate', () => {
+  const model = createMovementModel(catalog.movements[177]);
+  const roles = [];
+  model.root.traverse((o) => { if (o.isMesh) roles.push(o.userData.role ?? ''); });
+  assert.ok(!roles.some((r) => /flange/.test(r)), roles.filter((r) => /flange/.test(r)).join());
+  assert.equal(model.root.userData.blocks.guideFlange, undefined);
+  assert.ok(!roles.includes('connecting-rod-eye-on-horizontal-output-slide'), 'no empty eye at the unshown slide');
+});

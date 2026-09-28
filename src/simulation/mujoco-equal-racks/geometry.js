@@ -5,16 +5,27 @@ import {plate,poly,polygonClipping,disk} from '../finite-plate-geometry.js';
 import {convexPlateCells} from '../mujoco/convex-plate.js';
 import {PALETTE,matte,markShadows} from '../primitives.js';
 export {THREE};
-export function makeEqualRacksGeometry({samples=96,cutterSteps=2048,amplitude=.75,addendum=.6,dedendum=1.1}={}){
+// Brown draws square, flat-topped teeth. Unshifted stub involutes at a
+// 16-degree pressure angle fit the measured shaft spacing exactly (module =
+// working diameter / 12) and keep flat tips about 1.1 module wide; the
+// 0.64-module addendum stays inside the pinion-pinion interference limit
+// (0.65 module at 16 degrees). The rack pitch follows the pinion. 192
+// samples per tooth keep the native convex cells' tooth-entry penetration
+// below 0.02 source pixel (96 samples gave 0.18).
+export function makeEqualRacksGeometry({samples=192,cutterSteps=2048,amplitude=.75,addendum=.64,dedendum=1,pressureAngle=16*Math.PI/180}={}){
  if(!Number.isInteger(samples)||samples<32||!Number.isInteger(cutterSteps)||cutterSteps<256||!Number.isFinite(amplitude)||amplitude<=0||amplitude>1||![addendum,dedendum].every(x=>Number.isFinite(x)&&x>0))throw new RangeError('Invalid 115 geometry options');
- const root=new THREE.Group(),parts={},families={},blocks={},cells={},m=s.module,R=s.teeth*m/2,O=s.workingRadius,pitch=Math.PI*m,alpha=Math.PI/9,workingAngle=Math.acos(R*Math.cos(alpha)/O),inv=a=>Math.tan(a)-a,shift=s.teeth*(inv(workingAngle)-inv(alpha))/(2*Math.tan(alpha)),cutterR=R+shift*m,corner=.12*m,clearance=.001;
+ const root=new THREE.Group(),parts={},families={},blocks={},cells={},O=s.workingRadius,m=2*O/s.teeth,R=s.teeth*m/2,pitch=Math.PI*m,alpha=pressureAngle,workingAngle=alpha,shift=0,cutterR=R,corner=.12*m,clearance=.001;
  const local=([x,y])=>[(Math.cos(s.tilt)*(x-s.axis[0])+Math.sin(s.tilt)*(s.axis[1]-y))/100,(-Math.sin(s.tilt)*(x-s.axis[0])+Math.cos(s.tilt)*(s.axis[1]-y))/100];
- const f={source:s,axis:s.axis,tilt:s.tilt,samples,cutterSteps,module:m,pitchRadius:R,workingRadius:O,pitch,pressureAngle:alpha,workingAngle,profileShift:shift,cutterPitchRadius:cutterR,corner,clearance,addendum,dedendum,amplitude,origins:s.origins,counts:{upper:10,lower:9}};
+ const f={source:s,axis:s.axis,tilt:s.tilt,samples,cutterSteps,module:m,pitchRadius:R,workingRadius:O,pitch,pressureAngle:alpha,workingAngle,profileShift:shift,cutterPitchRadius:cutterR,corner,clearance,addendum,dedendum,amplitude,counts:{upper:8,lower:9}};
+ // Rack teeth sit in the pinion spaces at the drawn phases (tooth k of a
+ // pinion lies at phase + k*pi/6); each rack is centred on the shafts.
+ const spaceX=(phase,side)=>{const x=((-side*R*(phase-side*Math.PI/2)+pitch/2)%pitch+pitch)%pitch;return x;};
+ f.origins={};for(const [name,side,phase]of [['upper',1,s.phase],['lower',-1,s.lowerPhase]]){const half=(f.counts[name]-1)/2*pitch,x=spaceX(phase,side);f.origins[name]=x+Math.round((-half-x)/pitch)*pitch;}
  for(const n of ['upper','lower','frame']){blocks[n]=new THREE.Group();root.add(blocks[n]);}
  const add=(name,g,family,color)=>{const mesh=new THREE.Mesh(g,matte(color,{metalness:.18,roughness:.55}));mesh.name=name;blocks[family].add(mesh);parts[name]=mesh;families[name]=family;return mesh;};
  for(const [name,side,phase,color]of [['upper',1,s.phase,PALETTE.driver],['lower',-1,s.lowerPhase,PALETTE.accent]]){
   blocks[name].position.y=side*O;
-  const gear=roundedRackGear({teeth:s.teeth,module:m,depth:.24,boreRadius:s.circles[name].radius/100,addendum,dedendum,profileShift:shift,tipRadius:corner,samples,cutterSteps});gear.rotateZ(phase);add(name,gear,name,color);
+  const gear=roundedRackGear({teeth:s.teeth,module:m,depth:.24,boreRadius:s.circles[name].radius/100,addendum,dedendum,pressureAngle:alpha,profileShift:shift,tipRadius:corner,samples,cutterSteps});gear.rotateZ(phase);add(name,gear,name,color);
   add(name+'Shaft',disk(s.circles[name].radius/100,-.22,.18,96),name,PALETTE.ink);
  }
  const path=new THREE.Shape();path.moveTo(20,257);path.bezierCurveTo(37,257,41,248,48,226);path.bezierCurveTo(62,193,84,165,111,150);path.bezierCurveTo(130,138,150,141,179,141);path.lineTo(378,139);path.bezierCurveTo(401,138,420,150,437,165);path.bezierCurveTo(463,188,478,219,486,239);path.bezierCurveTo(491,248,497,250,505,252);path.lineTo(504,316);path.bezierCurveTo(492,316,487,322,482,338);path.bezierCurveTo(465,377,438,412,402,424);path.bezierCurveTo(388,429,369,426,346,427);path.lineTo(144,426);path.bezierCurveTo(117,426,98,414,79,393);path.bezierCurveTo(57,369,47,344,40,329);path.bezierCurveTo(37,323,29,321,20,319);path.closePath();
@@ -26,7 +37,7 @@ export function makeEqualRacksGeometry({samples=96,cutterSteps=2048,amplitude=.7
  const body=polygonClipping.difference(outline,poly(inner)),circleY=bottom+corner,circleX=pitch/4-dedendum*m*Math.tan(alpha)-corner*(1/Math.cos(alpha)-Math.tan(alpha)),tooth=[[-(pitch/4+(.95*m-clearance)*Math.tan(alpha)),rootY]];
  for(let i=0;i<=16;i++){const a=Math.PI+alpha+(Math.PI/2-alpha)*i/16;tooth.push([-circleX+corner*Math.cos(a),circleY+corner*Math.sin(a)]);}tooth.push([circleX,bottom]);
  for(let i=1;i<=16;i++){const a=-Math.PI/2+(Math.PI/2-alpha)*i/16;tooth.push([circleX+corner*Math.cos(a),circleY+corner*Math.sin(a)]);}tooth.push([pitch/4+(.95*m-clearance)*Math.tan(alpha),rootY]);
- const racks=[];for(const [name,side]of [['upper',1],['lower',-1]])for(let i=0;i<f.counts[name];i++)racks.push(poly(tooth.map(([x,y])=>[x+s.origins[name]+i*pitch,side*y])));
+ const racks=[];for(const [name,side]of [['upper',1],['lower',-1]])for(let i=0;i<f.counts[name];i++)racks.push(poly(tooth.map(([x,y])=>[x+f.origins[name]+i*pitch,side*y])));
  add('frame',plate(polygonClipping.union(body,...racks),-.12,.12),'frame',PALETTE.driven);
  const rightWall=y=>505-(y-252)/64;
  for(const [name,points]of [['leftStub',[[8,272],[20,272],[20,307],[8,307]]],['rightStub',[[rightWall(262),262],[518,262],[518,300],[rightWall(300),300]]]])add(name,plate(poly(points.map(local)),-.07,.07),'frame',PALETTE.driven);

@@ -10,6 +10,14 @@ export function finishGenevaWorkingParts(model,id){
  const {root,update}=model,d=root.userData,b=d.blocks;
  if(id===215){
   unexpanded(b.lockingCamBody);unexpanded(b.stopWheelBody);d.geometry.stopWheelBevelThickness=0;d.geometry.axialLayerGap=.085;
+  // p93: the raised crescent stood 0.085 in front of its carrier disk, held
+  // only by the shaft and face pin. Run its back down 0.005 into the disk's
+  // front face; the slot wheel's plane (in front of that layer) is untouched.
+  {root.updateMatrixWorld(true);let disk=null;root.traverse(o=>{if(o.isMesh&&/rear-full-driver-carrier-disk/.test(o.userData.role??''))disk=o;});
+   if(disk){const cam=b.lockingCamBody,diskFront=new T.Box3().setFromObject(disk).max.z,camBox=new T.Box3().setFromObject(cam);
+    const g=cam.geometry;g.computeBoundingBox();const {min,max}=g.boundingBox,worldToLocal=(max.z-min.z)/(camBox.max.z-camBox.min.z),newMin=min.z-(camBox.min.z-(diskFront-.005))*worldToLocal;
+    const pos=g.attributes.position;for(let i=0;i<pos.count;i++){const z=pos.getZ(i);if(z<min.z+1e-9)pos.setZ(i,newMin);}pos.needsUpdate=true;g.computeBoundingBox();g.computeBoundingSphere();
+    d.geometry.crescentSeatedOnCarrier=true;}}
   const old=b.facePin.geometry,p=old.parameters;b.facePin.geometry=new T.CylinderGeometry(p.radiusTop,p.radiusBottom,p.height,128);old.dispose();
   d.reconstructionNote='The analytical pin law fits the interior radial slots and terminal faces. A short pin-to-slot-mouth collision remains near engagement handoff. Drive and reversal are prescribed; that handoff, friction, impact and loading are not physically qualified.';
  }else d.reconstructionNote='The official animation supplies the indexing schedule. Its broad finger does not maintain exact contact throughout that schedule: small midstroke overlap and intervals of clearance remain. Locking-arc tessellation is improved; loaded indexing is not yet qualified.';

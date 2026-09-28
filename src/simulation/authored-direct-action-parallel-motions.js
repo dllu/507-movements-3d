@@ -459,13 +459,27 @@ function directActionEngineParallelMotion(movement) {
   fixedFrame.userData.role =
     'fixed-engine-casting-crank-bearing-slot-D-cylinder-cover-and-radius-pivot-F';
   const toModel = (points) => points.map(([x, y]) => [x * sourceScale, y * sourceScale]);
+  // Brown's bell is one smooth curve: each flank, and the arm's concave
+  // underside, is a centripetal Catmull-Rom spline through the measured
+  // stations (densely sampled); only the bearing seat and the arm's box
+  // corners stay sharp.
+  const smooth = (points, count = 64) => new THREE.CatmullRomCurve3(
+    points.map(([x, y]) => new THREE.Vector3(x, y, 0)), false, 'centripetal')
+    .getPoints(count).map((point) => [point.x, point.y]);
+  const rightFlank = smooth([[8.3, -31.5], [7.2, -20], [6.6, -14], [6.2, -8],
+    [5.3, -4.5], [4.0, -2.3], [2.7, -1.14]]);
+  const leftFlank = smooth([[-2.7, -1.14], [-4.0, -2.3], [-5.3, -4.5],
+    [-6.2, -8], [-6.45, -11.2], [-6.5, -12.6]], 48);
+  const armUnderside = smooth([[-14.0, -16.3], [-11.4, -18.6], [-9.2, -21.0],
+    [-7.9, -23.8], [-7.6, -31.5]]);
   const castingOutline = toModel([
-    [8.3, -31.5], [7.2, -20], [6.6, -14], [6.2, -8], [5.3, -4.5],
-    [4.0, -2.3], [2.7, -1.14], [2.7, -0.4], [1.9, -0.4], [1.9, 0.9],
-    [-1.9, 0.9], [-1.9, -0.4], [-2.7, -0.4], [-2.7, -1.14], [-4.0, -2.3],
-    [-5.3, -4.5], [-6.2, -8], [-6.5, -12.6], [-6.5, -14.5], [-12.4, -14.5],
-    [-12.4, -13.2], [-18.1, -13.2], [-18.1, -16.3], [-14.0, -16.3],
-    [-11.4, -18.6], [-9.2, -21.0], [-7.9, -23.8], [-7.6, -31.5],
+    ...rightFlank,
+    [2.7, -0.4], [1.9, -0.4], [1.9, 0.9],
+    [-1.9, 0.9], [-1.9, -0.4], [-2.7, -0.4],
+    ...leftFlank,
+    [-6.5, -14.5], [-12.4, -14.5],
+    [-12.4, -13.2], [-18.1, -13.2], [-18.1, -16.3],
+    ...armUnderside,
   ]);
   const ellipse = (cx, cy, rx, ry, count = 96) => Array.from({ length: count },
     (_, i) => [cx + rx * Math.cos(FULL_TURN * i / count),

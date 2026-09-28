@@ -569,3 +569,18 @@ test('movement 270 closes all marked members and leaves movement 507 authored', 
   disposeModel(model289.root);
   disposeModel(model.root);
 });
+
+test('movement 270 closes the bearing behind the rollers and blinds the cover holes', () => {
+  const model = createMovementModel(catalog.movements[269]);
+  const { blocks, geometry } = model.root.userData;
+  const plateBox = new THREE.Box3().setFromObject(blocks.cagePlate);
+  const webBox = new THREE.Box3().setFromObject(blocks.pulleyWeb);
+  // The rear retaining plate lies behind the web and spans past the bore.
+  assert.ok(plateBox.max.z < webBox.min.z, 'the retaining plate stays behind the turning web');
+  assert.ok(plateBox.max.x > geometry.outerRaceInnerRadius + 0.05, 'the plate covers the pulley bore');
+  const roles = [];
+  model.root.traverse((object) => roles.push(object.userData.role ?? ''));
+  assert.equal(roles.filter((role) => role === 'assembled-view-cover-backing-closing-the-pin-holes').length, 1);
+  assert.equal(roles.filter((role) => /^assembled-view-retainer-pin-end-/.test(role)).length, 6);
+  disposeModel(model.root);
+});

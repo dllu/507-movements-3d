@@ -32,7 +32,13 @@ export function makeRollerYokeGeometry(options={}){
   const y=sign*R,pinRadius=name==='upper'?.0376:.0405;
   add(name+'Roller',ring(pinRadius+.001,roller,-.20,.20,192),name,PALETTE.brass);
   const barY=sign>0?upperY:lowerY,foot=(x)=>[(x-s.axis[0])/100,barY];
-  const legs=clip.union(capsule(foot(106),[-.06,y+sign*.06],.012,24),capsule(foot(155),[.06,y+sign*.06],.012,24),poly(circle([0,y],.103,96)));
+  // Each bracket is one fork plate (p93): the eye boss and two curved arms,
+ // 0.045 wide, leaving the boss sideways and sweeping out to the crossbar as
+ // Brown's cupped fork arms do (were 0.024-wide straight wire struts).
+ const arm=(F,B)=>{const C=[F[0],B[1]+(F[1]-B[1])*.3],pt=t=>[0,1].map(k=>(1-t)**2*B[k]+2*(1-t)*t*C[k]+t*t*F[k]),left=[],right=[];
+  for(let i=0;i<=32;i++){const t=i/32,p=pt(t),q=pt(Math.min(1,t+.01)),o=pt(Math.max(0,t-.01)),d=[q[0]-o[0],q[1]-o[1]],l=Math.hypot(...d),n=[-d[1]/l*.0225,d[0]/l*.0225];left.push([p[0]+n[0],p[1]+n[1]]);right.push([p[0]-n[0],p[1]-n[1]]);}
+  return poly([...left,...right.reverse()]);};
+ const legs=clip.union(arm(foot(106),[-.07,y]),arm(foot(155),[.07,y]),poly(circle([0,y],.103,96)));
   const boundary=poly([[-1,Math.min(barY,y)-.12],[1,Math.min(barY,y)-.12],[1,Math.max(barY,y)+.12],[-1,Math.max(barY,y)+.12]]);
   const trim=sign>0?poly([[-1,-3],[1,-3],[1,barY],[-1,barY]]):poly([[-1,barY],[1,barY],[1,3],[-1,3]]);
   const fork=clip.difference(clip.intersection(legs,boundary,trim),poly(circle([0,y],pinRadius,64)));

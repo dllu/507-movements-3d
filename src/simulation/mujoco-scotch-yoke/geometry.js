@@ -32,7 +32,9 @@ export function makeScotchYokeGeometry() {
   // slot rather than crossed by solid stem. The strap stays in the yoke plane,
   // in front of the shaft end and hub (which stop at z=.18), because the yoke
   // itself crosses the shaft axis at mid-stroke.
-  const loopY=-crankRadius,loopInner=.19,loopOuter=.27,strapTop=roots[1]+.01;
+  // Pass 93: the tines are 0.15 wide, half the stem's 0.30 diameter (they
+  // were 0.08, wire-thin beside the stem).
+  const loopY=-crankRadius,loopInner=.19,loopOuter=.34,strapTop=roots[1]+.01;
   attach('stemLoop',plate(clip.difference(clip.union(poly(circle([stemX,loopY],loopOuter,128)),
     poly([[stemX-loopOuter,loopY],[stemX+loopOuter,loopY],[stemX+loopOuter,strapTop],[stemX-loopOuter,strapTop]])),
   capsule([stemX,loopY],[stemX,roots[1]],loopInner,128)),stemZ-.12,stemZ+.12),'yoke',PALETTE.driven);

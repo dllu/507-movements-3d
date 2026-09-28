@@ -490,9 +490,11 @@ export function roundTripError(live, baked, times) {
  * the second difference (sudden change of speed) there, against the largest
  * of each anywhere inside the loop. Pixels.
  */
-export function seamContinuity(baked, duration, samples) {
-  const dt = duration / samples, meshes = [];
-  baked.root.traverse(o => {if (o.isMesh && o.geometry.attributes.position) meshes.push(o);});
+export function seamContinuity(baked, duration, samples, exclude = []) {
+  // exclude: keys of meshes the route's sync rebuilds with a changing vertex
+  // count (109's cut workpiece), whose samples have no correspondence.
+  const dt = duration / samples, meshes = [], skip = new Set(exclude), keys = skip.size ? objectKeys(baked.root) : null;
+  baked.root.traverse(o => {if (o.isMesh && o.geometry.attributes.position && !(keys && skip.has(keys.get(o)))) meshes.push(o);});
   const snapshot = time => {
     baked.update(time);const out = [];const v = new THREE.Vector3();
     for (const m of meshes) {const p = m.geometry.attributes.position, stride = Math.max(1, Math.floor(p.count / 32));for (let k = 0; k < p.count; k += stride) out.push(v.fromBufferAttribute(p, k).applyMatrix4(m.matrixWorld).toArray());}

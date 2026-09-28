@@ -1099,7 +1099,7 @@ function locomotiveStephensonExpansionLinkValveGear() {
   {
     const wallFrontZ = -0.5;
     const wallBackZ = -1.0;
-    const wallMaterial = matte(0xcfcabf, { roughness: 0.8 });
+    const wallMaterial = matte(0x8a8276, { roughness: 0.85 });
     const topLeft = sourcePointFromRaster(new THREE.Vector2(60, 86));
     const bottomRight = sourcePointFromRaster(new THREE.Vector2(187, 220));
     // Pass 90: Brown's hatching shades one massive block; it is one solid.

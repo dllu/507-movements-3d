@@ -6,8 +6,9 @@ import * as THREE from 'three';
 import {createAuthoredGearMovement} from '../src/simulation/authored-gears.js';
 import {disposeObject3D} from '../src/simulation/dispose-model.js';
 import {solidSurface,surfacePoints,surfaceTriangles} from './helpers/solid-surface.mjs';
-import {faceWorm195Geometry} from '../src/simulation/feed-worm-assembly-parts.js';
+import {faceWorm195Geometry,faceWorm195DisplayGeometry} from '../src/simulation/feed-worm-assembly-parts.js';
 import data from '../src/data/face-worm-195.js';
+import displaySector from '../src/data/face-worm-195-mesh.js';
 function verifySources(report){for(const x of report.sources)assert.equal(createHash('sha256').update(fs.readFileSync(x.file)).digest('hex'),x.sha256,x.file);const x=report.factorySource,s=fs.readFileSync(x.file,'utf8'),a=s.indexOf('function '+x.name+'('),b=s.indexOf('\nfunction ',a+1);assert.equal(createHash('sha256').update(s.slice(a,b)).digest('hex'),x.sha256,x.name);}
 for(const id of[195,207]){
  test(`${id} actual shaft surfaces clear every exposed hub and solid worm bore`,()=>{
@@ -41,7 +42,7 @@ test('195 face teeth have real valleys, a closed backing, and consistently outwa
  // The periodic grid's first row is uncut land, and every land edge and cliff is a baked crossing.
  for(let j=0;j<data.angularSteps;j++)assert.equal(data.heights[j],0);
  assert.ok(data.crossings.length>100);for(const[kind,i,j,t,ha,hb]of data.crossings){assert.ok(kind===0||kind===1);assert.ok(t>=0&&t<=1);assert.ok(ha===0||hb===0||ha!==hb);assert.ok(ha<=0&&hb<=0);}
- const g=faceWorm195Geometry(),triangles=surfaceTriangles(g);let volume=0;for(const t of triangles)volume+=t.a.dot(t.b.clone().cross(t.c))/6;assert.ok(volume>.015&&volume<.05,`signed volume ${volume}`);
+ const g=faceWorm195Geometry(data),triangles=surfaceTriangles(g);let volume=0;for(const t of triangles)volume+=t.a.dot(t.b.clone().cross(t.c))/6;assert.ok(volume>.015&&volume<.05,`signed volume ${volume}`);
  // Closed apart from zero-area collinear junction loops: every edge off the
  // flat land is matched by an opposite edge.
  const p=g.attributes.position,index=g.index.array,key=k=>[p.getX(k),p.getY(k),p.getZ(k)].map(v=>Math.round(v*1e6)).join(),edges=new Map();
@@ -55,4 +56,32 @@ test('195 face teeth have real valleys, a closed backing, and consistently outwa
 });
 test('195 full opposed finite-solid sweep has no sampled penetration',()=>{
  const report=JSON.parse(fs.readFileSync('docs/validation/feed-worm-195-solids.json'));verifySources(report);assert.equal(report.poses,17);assert.equal(report.status,'sampled-flanks-clear');for(const r of report.results){assert.equal(r.penetrations,0);assert.ok(r.queries>200000);assert.ok(r.minimumGap>.002);}
+});
+test('195 displays an adaptive sector: a twelfth of the dense triangles, closed, on or just below the dense surface, with its normals',()=>{
+ const dense=faceWorm195Geometry(data),g=faceWorm195DisplayGeometry(),m=createAuthoredGearMovement({id:195}),b=m.root.userData.blocks;
+ // Both wheels together stay within a phone budget.
+ const tris=g.index.count/3,denseTris=dense.index.count/3;assert.ok(tris<4000&&tris*8<denseTris,`sector triangles ${tris}`);
+ for(const side of['upper','lower']){const w=b[side+'GeneratedFace'];assert.equal(w.count,24);assert.equal(w.geometry.index.count/3,tris);}
+ // Same closure and volume as the dense sector.
+ const volume=geometry=>surfaceTriangles(geometry).reduce((v,t)=>v+t.a.dot(t.b.clone().cross(t.c))/6,0);
+ assert.ok(Math.abs(volume(g)-volume(dense))<2e-4,`volume ${volume(g)} vs ${volume(dense)}`);
+ const p=g.attributes.position,index=g.index.array,key=k=>[p.getX(k),p.getY(k),p.getZ(k)].map(v=>Math.round(v*1e6)).join(),edges=new Map();
+ for(let f=0;f<index.length;f+=3)for(let e=0;e<3;e++){const a=key(index[f+e]),c=key(index[f+(e+1)%3]);if(a!==c)edges.set(a+'|'+c,(edges.get(a+'|'+c)??0)+1);}
+ let open=0;for(const[k,c]of edges){const[a,d]=k.split('|');if((edges.get(d+'|'+a)??0)!==c)open++;}assert.ok(open<=3,`open edges ${open}`);
+ // Every display vertex lies on the dense surface or at most the bake's
+ // sinking below it; none stands proud of it (the worm clearance).
+ const solid=solidSurface(dense),v=new THREE.Vector3();let proud=0,deep=0;
+ for(let k=0;k<p.count;k++){v.fromBufferAttribute(p,k);const d=solid.signedDistance(v,.01);if(d>2e-5)proud++;if(d<-displaySector.simplification.down-1e-5)deep++;}
+ assert.equal(proud,0);assert.equal(deep,0);
+ // Corner normals face their triangles.
+ const n=g.attributes.normal;let bad=0;
+ for(let f=0;f<index.length;f+=3){const t=[0,1,2].map(e=>new THREE.Vector3().fromBufferAttribute(p,index[f+e])),fn=t[1].clone().sub(t[0]).cross(t[2].clone().sub(t[0]));if(fn.length()<1e-8)continue;fn.normalize();
+  for(let e=0;e<3;e++)if(fn.dot(new THREE.Vector3().fromBufferAttribute(n,index[f+e]))<.2)bad++;}
+ // (Zero-area collinear junction slivers, as in the dense sector, are skipped.)
+ assert.ok(bad===0,`normals opposing their faces ${bad}`);
+ // The bore arc has a corner every pitch/8, matching the 192-sided lathed centre.
+ const bore=[];for(let k=0;k<p.count;k++){v.fromBufferAttribute(p,k);if(Math.abs(Math.hypot(v.x,v.y)-displaySector.innerRadius)<1e-5)bore.push(Math.atan2(v.y,v.x));}
+ for(const a of bore){const q=a/(2*Math.PI/192);assert.ok(Math.abs(q-Math.round(q))<1e-4,`bore vertex at ${a}`);}
+ assert.equal(b.upperBoredCenter.geometry.userData.segments,192);
+ dense.dispose();g.dispose();disposeObject3D(m.root);
 });

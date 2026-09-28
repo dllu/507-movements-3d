@@ -444,7 +444,7 @@ test('movement 332 renderer binds every named pin and spatial link', () => {
       new THREE.Vector3()), new THREE.Vector3(
         state.pointC.x,
         state.pointC.y,
-        0.91,
+        blocks.radiusBarEndAnchor.getWorldPosition(new THREE.Vector3()).z,
       ), 1.2e-15, `radius bar at C at ${time}`);
     vector3Near(blocks.crossheadEAnchor.getWorldPosition(
       new THREE.Vector3()), new THREE.Vector3(
@@ -477,7 +477,7 @@ test('movement 332 renderer binds every named pin and spatial link', () => {
   assert.equal(model331.root.userData.fidelity, 'authored');
   assert.notEqual(model331.root.userData.archetype,
     model.root.userData.archetype);
-  assert.equal(model331.root.userData.blocks.flywheelSpokes.length, 6);
+  assert.equal(model331.root.userData.blocks.flywheelSpokes.length, 4);
   assert.equal(blocks.framePosts, undefined,
     'the plate shows no frame posts or bedplate');
   const undrawn = [];

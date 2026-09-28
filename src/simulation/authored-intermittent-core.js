@@ -3,7 +3,7 @@ import { finishGeneva212Contact } from './geneva-212-contact.js';
 import { installLanternStop233 } from './lantern-stop-233-working-parts.js';
 import { stop240Definitions, stop240Advance } from './ratchet-stop-240-contact.js';
 import { stateStops240, finishStops240, stop240MaximumLifts } from './ratchet-stop-240-working-parts.js';
-import { crown237Return, crown237LiftAtTravel, crown237Triangles, crown237Closest, installCrown237Parts, fitCrown237 } from './crown-pawl-237-working-parts.js';
+import { crown237Return, crown237LiftAtTravel, crown237ApproachLiftAtTravel, crown237Triangles, crown237Closest, installCrown237Parts, fitCrown237 } from './crown-pawl-237-working-parts.js';
 import { finishSingleTooth241 } from './single-tooth-241-working-parts.js';
 import { installAlternatingPawl236 } from './alternating-pawl-236-working-parts.js';
 import { starTappetState, finishStarTappet } from './star-tappet-working-parts.js';
@@ -1936,8 +1936,9 @@ function snapActionStarCounter() {
   dropBody.userData.springDropBody = true;
   const [strikerX, strikerY] = localRing([mechanism.striker], hinge)[0];
   // Brown draws the striker as an open circle; it is a plain steel stud
-  // riveted through the drop.
-  const openPinMaterial = matte('#c3c7c1', { metalness: 0.2, roughness: 0.5 });
+  // riveted through the drop. Dark steel, so it does not read as a hole on
+  // the cream page (the old near-white did).
+  const openPinMaterial = matte(PALETTE.frame, { metalness: 0.25, roughness: 0.5 });
   const striker = cylinder(L.strikerRadius * k, z.dropBack + 0.01, z.pawlFront + 0.012, openPinMaterial, 24);
   striker.position.x = strikerX;
   striker.position.y = strikerY;
@@ -1998,46 +1999,36 @@ function snapActionStarCounter() {
     toWorld(mechanism.rotateAboutHinge(L.springEnd, delta)),
   );
   const springLeaf = makeDynamicLeafSpring(springCurveAt(0), {
-    band: { halfWidthAt: () => 0.028 },
+    // One straight flat strip of constant section, Brown's proportion.
+    band: { halfWidthAt: () => 0.035 },
     color: PALETTE.muted,
     planeZ: springPlaneZ,
-    radius: 0.016,
+    radius: 0.019,
     tubularSegments: 48,
   });
   springLeaf.userData.flexibleLeafSpring = true;
   springLeaf.userData.role = 'flat-leaf-spring-carrying-drop';
 
   // Brown's fixed stop pin under the tail. Brown draws it and the striker as
-  // open circles; the model shows plain steel pins. The stop pin stands on a
-  // slim fixed strap behind the drop, which also carries the clamp block
-  // holding the leaf spring's end (Brown breaks the spring off at the plate
-  // edge; the clamp gives it a real, held end).
-  const steelPinMaterial = matte('#c3c7c1', { metalness: 0.2, roughness: 0.5 });
+  // open circles; the model shows plain dark-steel pins. Brown draws no
+  // strap or bracket: the stop pin is a plain fixed stud spanning the drop's
+  // depth, and the one straight flat leaf spring ends in a small clamp block
+  // in its own plane (Brown breaks the spring off at the plate edge; the
+  // clamp gives it a real, held end without a second parallel bar).
+  const steelPinMaterial = matte(PALETTE.frame, { metalness: 0.25, roughness: 0.5 });
   const frameMaterial = matte(PALETTE.frame, { metalness: 0.1, roughness: 0.7 });
-  const strapBack = z.dropBack - 0.18, strapFront = z.dropBack - 0.10;
-  const stopPin = cylinder(L.stopPinRadius * k, strapFront, z.dropFront + 0.03, steelPinMaterial, 28);
+  const stopPin = cylinder(L.stopPinRadius * k, z.dropBack - 0.03, z.dropFront + 0.03, steelPinMaterial, 28);
   const stopPoint = toWorld(mechanism.stopPin), clampPoint = toWorld(L.springClamp);
   stopPin.position.x = stopPoint.x;
   stopPin.position.y = stopPoint.y;
   stopPin.userData.fixed = true;
   stopPin.userData.role = 'fixed-drop-stop-pin';
-  const strapWidth = 0.1, strapVector = stopPoint.clone().sub(clampPoint);
-  const strapShape = new THREE.Shape();
-  strapShape.absarc(0, 0, strapWidth / 2, Math.PI / 2, 3 * Math.PI / 2, false);
-  strapShape.absarc(strapVector.length(), 0, strapWidth / 2 + 0.02, -Math.PI / 2, Math.PI / 2, false);
-  strapShape.closePath();
-  const strap = slab(strapShape, strapBack, strapFront, frameMaterial);
-  strap.position.x = clampPoint.x;
-  strap.position.y = clampPoint.y;
-  strap.rotation.z = Math.atan2(strapVector.y, strapVector.x);
-  strap.userData.fixed = true;
-  strap.userData.role = 'fixed-strap-carrying-stop-pin-and-spring-clamp';
-  const clampBlock = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, springPlaneZ + 0.05 - strapFront), frameMaterial);
-  clampBlock.position.set(clampPoint.x, clampPoint.y, (springPlaneZ + 0.05 + strapFront) / 2);
+  const clampBlock = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 0.1), frameMaterial);
+  clampBlock.position.set(clampPoint.x, clampPoint.y, springPlaneZ);
   clampBlock.userData.fixed = true;
   clampBlock.userData.role = 'fixed-clamp-block-holding-leaf-spring-end';
 
-  root.add(strap, clampBlock, stopPin, star, driver, drop, springLeaf);
+  root.add(clampBlock, stopPin, star, driver, drop, springLeaf);
 
   // The steady contact solution for one pin event, baked offline.
   const fingerprint = snapCounterMotionFingerprint();
@@ -7745,7 +7736,9 @@ function sharedPivotDoubleStrokeRatchet() {
   };
   const rockerBody = new THREE.Mesh(
     centeredExtrusion(
-      taperedLinkShape(pinCenter, 0.17, fulcrumCenter, 0.29, [fulcrumBore]),
+      // Brown's pin eye is a broad round end (about 0.23 across the half)
+      // round a small pin, concentric with it.
+      taperedLinkShape(pinCenter, 0.23, fulcrumCenter, 0.29, [fulcrumBore]),
       leverDepth,
     ),
     leverMaterial,
@@ -7782,7 +7775,7 @@ function sharedPivotDoubleStrokeRatchet() {
   commonPawlStud.position.z = leverDepth / 2 + 0.05 - commonPawlStudLength / 2;
   commonPawlStud.userData.commonPawlPivotStud = true;
   const commonPawlHead = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.12, 0.12, 0.05, 28),
+    new THREE.CylinderGeometry(0.105, 0.105, 0.05, 28),
     matte(PALETTE.ink, { metalness: 0.23, roughness: 0.47 }),
   );
   commonPawlHead.rotation.x = Math.PI / 2;
@@ -8879,7 +8872,10 @@ function pinGuidedHalfToothIntermittentLockingDrive() {
   );
   const driverBoreRadius = constructionScale;
   const pinionBoreRadius = constructionScale;
-  const rawPinRadius = 0.375;
+  // Brown's entry pin is a small stud (about 0.23 construction units across
+  // the plate's 9.1 rim radius); at 0.25 it stands wholly on the wheel face
+  // just inside the plain rim instead of overhanging the relief.
+  const rawPinRadius = 0.25;
   const driverPinRadius = rawPinRadius * constructionScale;
 
   const degreesToRadians = THREE.MathUtils.degToRad;
@@ -9040,9 +9036,11 @@ function pinGuidedHalfToothIntermittentLockingDrive() {
   const rawPinionCenter = new THREE.Vector2(-rawCenterDistance, 0);
   const rawPinOrbitRadius = 8.7;
   const guideHumpCenter = new THREE.Vector2(4.5, -1.75);
-  const guideHumpRadius = 2.5;
-  // A 0.012 running clearance, as the former offset flank kept.
-  const guideContactRadius = guideHumpRadius + rawPinRadius + 0.012;
+  // The pin centre rides an arc of 2.887 about the hump centre (the law
+  // solved below); with the smaller pin the hump grows to keep a 0.012
+  // running clearance on the same path.
+  const guideContactRadius = 2.5 + 0.375 + 0.012;
+  const guideHumpRadius = guideContactRadius - rawPinRadius - 0.012;
   const guideHandoffPhase = degreesToRadians(14.5);
   const guideHandoffPinionAngle = -guideHandoffPhase * indexingRatio;
   // March the pin round (angle measured from the line of centres, pinion
@@ -9149,7 +9147,8 @@ function pinGuidedHalfToothIntermittentLockingDrive() {
   // which carries on over the crown and down to a rounded, drooping tip. The
   // underside is the parallel line and the concentric inner arc, so the
   // banana keeps one thickness.
-  const guideThickness = 0.8;
+  // Brown's tongue is a broad bean, about half the hub ring across.
+  const guideThickness = 1.3;
   const guideRootX = 1.2;
   const guideRootTop = new THREE.Vector2(guideRootX, -0.55);
   const guideTipAngle = degreesToRadians(57);
@@ -11542,9 +11541,24 @@ function splitRimFacePinWindingStop() {
     const center = driverToothPhase
       + index * fullTurn / driverRatchetToothCount;
     const pitch = fullTurn / driverRatchetToothCount;
+    // Brown's teeth are hooked: the long back is hollowed (one quadratic
+    // curve from the root to the tip, sagging towards the centre) and the
+    // short face runs straight back down to the next root.
+    const backRoot = polarPoint(driverRatchetRootRadius, center - pitch * 0.49);
+    const backTip = polarPoint(driverRatchetTipRadius, center + pitch * 0.14);
+    const backControl = backRoot.clone().add(backTip).multiplyScalar(0.5);
+    backControl.multiplyScalar(1 - 0.35 * (driverRatchetTipRadius - driverRatchetRootRadius)
+      / backControl.length());
+    driverRatchetOutline.push(backRoot);
+    for (let step = 1; step < 10; step += 1) {
+      const t = step / 10;
+      driverRatchetOutline.push(new THREE.Vector2(
+        (1 - t) ** 2 * backRoot.x + 2 * (1 - t) * t * backControl.x + t ** 2 * backTip.x,
+        (1 - t) ** 2 * backRoot.y + 2 * (1 - t) * t * backControl.y + t ** 2 * backTip.y,
+      ));
+    }
     driverRatchetOutline.push(
-      polarPoint(driverRatchetRootRadius, center - pitch * 0.49),
-      polarPoint(driverRatchetTipRadius, center + pitch * 0.14),
+      backTip,
       polarPoint(driverRatchetRootRadius, center + pitch * 0.49),
     );
     driverToothAngles.push(center + pitch * 0.14);
@@ -17158,7 +17172,10 @@ function springTappetArmStarRatchet(movement) {
   const sourceWheelCenter = new THREE.Vector2(168, 235);
   const sourceCarrierPivot = new THREE.Vector2(455, 338);
   const sourceTappetHinge = new THREE.Vector2(319, 331);
-  const sourceTappetNose = new THREE.Vector2(192, 303);
+  // The nose centre lies on Brown's dashed swing arc (radius 254 px about
+  // the arm pivot), which passes 0.74 from the star's axis: the tappet then
+  // drives the stubby points without reaching inside their large root circle.
+  const sourceTappetNose = new THREE.Vector2(204.3, 297.0);
   // The click's eye sits a little above Brown's hole so the hook can run
   // round outside the points in one smooth sweep.
   const sourceHoldingClickPivot = new THREE.Vector2(159, 141);
@@ -17190,7 +17207,9 @@ function springTappetArmStarRatchet(movement) {
   );
 
   const ratchetOuterRadius = 1.22;
-  const ratchetRootRadius = 0.5;
+  // Brown's star has stubby points on a large root circle: measured on the
+  // plate, the roots average 0.6 of the tip radius.
+  const ratchetRootRadius = 0.72;
   // The star is as thick as the tappet hook and the holding click that bear
   // on it in its own plane.
   const ratchetDepth = 0.22;
@@ -17329,7 +17348,7 @@ function springTappetArmStarRatchet(movement) {
   const driveCarrierSwing = (driveSwingLow + driveSwingHigh) / 2;
   const driveCarrierEndAngle = sourceCarrierAngle - driveCarrierSwing;
   const highCarrierAngle = driveCarrierEndAngle;
-  const returnContactReleaseAngle = sourceCarrierAngle
+  let returnContactReleaseAngle = sourceCarrierAngle
     + THREE.MathUtils.degToRad(12);
   const lowCarrierAngle = sourceCarrierAngle
     + THREE.MathUtils.degToRad(15);
@@ -17481,9 +17500,12 @@ function springTappetArmStarRatchet(movement) {
       tappetDelta: 0,
     };
   };
-  const releaseContact = returnContactAtCarrierAngle(
-    returnContactReleaseAngle,
-  );
+  // The returning nose leaves the next point's back where it last touches.
+  let releaseContact = returnContactAtCarrierAngle(returnContactReleaseAngle);
+  while (!releaseContact.engaged && returnContactReleaseAngle > sourceCarrierAngle) {
+    returnContactReleaseAngle -= THREE.MathUtils.degToRad(0.25);
+    releaseContact = returnContactAtCarrierAngle(returnContactReleaseAngle);
+  }
   if (!releaseContact.engaged) {
     throw new RangeError('The returning tappet does not reach the next tooth.');
   }
@@ -19436,8 +19458,15 @@ function coaxialArmCrownRatchet(movement) {
   // Plate proportion: handle end 1.40 wheel radii from the fulcrum.
   const armHandleRadius = wheelOuterRadius * 2.55 / 1.82;
   const pawlTipTangent = -0.4;
-  const pawlTipVertical = -0.62;
   const pawlNoseRadius = 0.055;
+  // Brown's pawl reaches down into the teeth: its nose seats in the root, the
+  // V between a radial face and the next tooth's ramp, touching the face and
+  // standing 0.003 clear of the ramp (its tangent plane at the nose radius).
+  const seatRampSlope = wheelToothHeight
+    / (toothPitch * Math.hypot(armPawlPivotRadius, pawlTipTangent));
+  const pawlSeatHeight = pawlNoseRadius * seatRampSlope
+    + pawlNoseRadius * Math.hypot(1, seatRampSlope) + 0.003;
+  const pawlTipVertical = wheelBaseHeight + pawlSeatHeight - armPivotHeight;
   const pawlLength = Math.hypot(pawlTipTangent, pawlTipVertical);
   const baseTipRadius = Math.hypot(
     armPawlPivotRadius,
@@ -19448,7 +19477,11 @@ function coaxialArmCrownRatchet(movement) {
     armPawlPivotRadius,
   );
   const faceContactOffset = Math.asin(pawlNoseRadius / baseTipRadius);
-  const overtravel = toothPitch * 0.45;
+  // The arm's return overtravel carries the lifted nose past the crest; it
+  // drops onto the next ramp and, on the drive stroke, rides down it into
+  // the root before meeting the face. A seated nose climbs the whole ramp,
+  // so the swing is 1.8 pitches.
+  const overtravel = toothPitch * 0.8;
   const armSwing = toothPitch + overtravel;
   const highArmAngle = armSwing / 2;
   const lowArmAngle = -armSwing / 2;
@@ -19565,31 +19598,83 @@ function coaxialArmCrownRatchet(movement) {
       Math.sin(angle) * radius,
       height,
     ];
+    // Brown's teeth stand on the cup's rim as one toothed ring: each ramp is
+    // the exact helicoid (height linear in angle), and the inner and outer
+    // walls are true arcs flush with the cup's walls.
+    const toothSegments = 24;
+    const makeCrownToothGeometry = (lowAngle, highAngle) => {
+      const positions = [];
+      const normals = [];
+      const indices = [];
+      const vertex = (radius, angle, height, normal) => {
+        positions.push(...radialPoint(radius, angle, height));
+        normals.push(...normal);
+        return positions.length / 3 - 1;
+      };
+      const slope = wheelToothHeight / toothPitch;
+      const angleAt = (k) => lowAngle + (highAngle - lowAngle) * k / toothSegments;
+      const heightAt = (k) => wheelBaseHeight + wheelToothHeight * k / toothSegments;
+      // Ramp (helicoid), normal (s sin a, -s cos a, r) normalised.
+      const rampNormal = (radius, angle) => {
+        const n = new THREE.Vector3(slope * Math.sin(angle), -slope * Math.cos(angle), radius).normalize();
+        return [n.x, n.y, n.z];
+      };
+      const ramp = [];
+      for (let k = 0; k <= toothSegments; k += 1) {
+        const angle = angleAt(k);
+        ramp.push([
+          vertex(wheelInnerRadius, angle, heightAt(k), rampNormal(wheelInnerRadius, angle)),
+          vertex(wheelOuterRadius, angle, heightAt(k), rampNormal(wheelOuterRadius, angle)),
+        ]);
+      }
+      for (let k = 0; k < toothSegments; k += 1) {
+        const [a, b] = ramp[k];
+        const [c, d] = ramp[k + 1];
+        indices.push(a, b, d, a, d, c);
+      }
+      // Outer and inner arcs (radial normals), bottom (down).
+      for (const [radius, sign] of [[wheelOuterRadius, 1], [wheelInnerRadius, -1]]) {
+        const wall = [];
+        for (let k = 0; k <= toothSegments; k += 1) {
+          const angle = angleAt(k);
+          const n = [sign * Math.cos(angle), sign * Math.sin(angle), 0];
+          wall.push([vertex(radius, angle, wheelBaseHeight, n), vertex(radius, angle, heightAt(k), n)]);
+        }
+        for (let k = 0; k < toothSegments; k += 1) {
+          const [a, b] = wall[k];
+          const [c, d] = wall[k + 1];
+          if (sign > 0) indices.push(a, c, d, a, d, b);
+          else indices.push(a, d, c, a, b, d);
+        }
+      }
+      const bottom = [];
+      for (let k = 0; k <= toothSegments; k += 1) {
+        const angle = angleAt(k);
+        bottom.push([vertex(wheelInnerRadius, angle, wheelBaseHeight, [0, 0, -1]),
+          vertex(wheelOuterRadius, angle, wheelBaseHeight, [0, 0, -1])]);
+      }
+      for (let k = 0; k < toothSegments; k += 1) {
+        const [a, b] = bottom[k];
+        const [c, d] = bottom[k + 1];
+        indices.push(a, d, b, a, c, d);
+      }
+      // The radial drive face at the high end.
+      const faceNormal = [-Math.sin(highAngle), Math.cos(highAngle), 0];
+      const f0 = vertex(wheelInnerRadius, highAngle, wheelBaseHeight, faceNormal);
+      const f1 = vertex(wheelOuterRadius, highAngle, wheelBaseHeight, faceNormal);
+      const f2 = vertex(wheelInnerRadius, highAngle, wheelTipHeight, faceNormal);
+      const f3 = vertex(wheelOuterRadius, highAngle, wheelTipHeight, faceNormal);
+      indices.push(f0, f3, f1, f0, f2, f3);
+      const geometry = new THREE.BufferGeometry();
+      geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+      geometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
+      geometry.setIndex(indices);
+      return geometry;
+    };
     for (let toothIndex = 0; toothIndex < toothCount; toothIndex += 1) {
       const lowAngle = crownMountPhase + toothIndex * toothPitch;
       const highAngle = lowAngle + toothPitch;
-      const vertices = [
-        ...radialPoint(wheelInnerRadius, lowAngle, wheelBaseHeight),
-        ...radialPoint(wheelOuterRadius, lowAngle, wheelBaseHeight),
-        ...radialPoint(wheelInnerRadius, highAngle, wheelBaseHeight),
-        ...radialPoint(wheelOuterRadius, highAngle, wheelBaseHeight),
-        ...radialPoint(wheelInnerRadius, highAngle, wheelTipHeight),
-        ...radialPoint(wheelOuterRadius, highAngle, wheelTipHeight),
-      ];
-      const indices = [
-        0, 2, 3, 0, 3, 1,
-        0, 1, 5, 0, 5, 4,
-        2, 4, 5, 2, 5, 3,
-        0, 4, 2,
-        1, 3, 5,
-      ];
-      const geometry = new THREE.BufferGeometry();
-      geometry.setAttribute(
-        'position',
-        new THREE.Float32BufferAttribute(vertices, 3),
-      );
-      geometry.setIndex(indices);
-      geometry.computeVertexNormals();
+      const geometry = makeCrownToothGeometry(lowAngle, highAngle);
       const tooth = new THREE.Mesh(geometry, wheelMaterial);
       tooth.userData.driveFaceAngle = highAngle;
       tooth.userData.index = toothIndex;
@@ -19883,19 +19968,19 @@ function coaxialArmCrownRatchet(movement) {
       && drivenTravel < toothPitch - boundaryEpsilon
       ? -halfTravelSpeed
       : 0;
+    // Before it reaches the face the nose rides down the ramp into the root.
     const liftState = drivingHalf
-      ? {
-        derivativePerTravel: 0,
-        liftAngle: 0,
-        mode: driveEngaged
-          ? 'pawl-driving-radial-crown-face'
-          : 'pawl-approaching-radial-crown-face',
-      }
+      ? (driveEngaged
+        ? {
+          derivativePerTravel: 0,
+          liftAngle: 0,
+          mode: 'pawl-driving-radial-crown-face',
+        }
+        : crown237ApproachLiftAtTravel(driveTravel))
       : liftAtReturnTravel(halfTravel);
     const pawlLiftAngle = liftState.liftAngle;
-    const pawlLiftAngularSpeed = drivingHalf
-      ? 0
-      : liftState.derivativePerTravel * halfTravelSpeed;
+    const pawlLiftAngularSpeed = liftState.derivativePerTravel
+      * halfTravelSpeed;
     const tipGeometry = tipGeometryAtLift(pawlLiftAngle);
     const hingePlanar = rotateVector(
       new THREE.Vector2(armPawlPivotRadius, 0),
@@ -20136,6 +20221,7 @@ function coaxialArmCrownRatchet(movement) {
     overtravel,
     pawlLength,
     pawlNoseRadius,
+    pawlSeatHeight,
     pawlTipTangent,
     pawlTipVertical,
     peakLiftAngle,

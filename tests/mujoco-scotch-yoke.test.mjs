@@ -124,3 +124,8 @@ test('093 ten-turn timestep refinement agrees within a tenth source pixel',t=>{
     t.diagnostic(JSON.stringify({maximumTimestepDifferencePixels:difference*100,maximumRefinedDifferencePixels:refined*100}));
   } finally {coarse.dispose();fine.dispose();finer.dispose();}
 });
+test('093 stem loop tines are half the stem diameter (pass 93)',()=>{
+ const v=makeMujocoScotchYoke(mujoco),u=v.root.userData,g=u.geometry;
+ try{const loop=u.parts.stemLoop.geometry;loop.computeBoundingBox();const width=loop.boundingBox.max.x-loop.boundingBox.min.x;
+  assert.ok(Math.abs((width/2-.19)-g.stemRadius)<.01,'tine width equals the stem radius');}finally{v.dispose();}
+});

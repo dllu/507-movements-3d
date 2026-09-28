@@ -346,7 +346,11 @@ test('movement 227 renders interlocked plate and loop links in genuinely orthogo
   // Brown draws flat plate links pierced at each joint; the links standing
   // across the teeth are flat loops seen edge-on.
   assert.equal(blocks.links.length % 2, 0);
-  assert.equal(blocks.links[1].geometry.type, 'TubeGeometry');
+  // p93: each edge-on loop is one piece, broad along its sides and narrowed
+  // through the end bars that pass through the plates' eyes.
+  assert.equal(blocks.links[1].geometry.userData.profile, 'one-piece-edge-on-loop-link-227');
+  assert.ok(Math.hypot(blocks.links[1].geometry.userData.endBarHalf, geometry.linkWireRadius) < 0.048);
+  blocks.links[1].traverse((object) => { if (object.userData.role === 'edge-on-link-side-strap') assert.equal(object.visible, false); });
   assert.equal(blocks.links[0].geometry.type, 'ExtrudeGeometry');
   assert.equal(blocks.links[0].geometry.parameters.shapes.holes.length, 2);
   assert.ok(geometry.linkLoopHalfWidth > geometry.linkWireRadius * 2.8);

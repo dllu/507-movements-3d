@@ -75,3 +75,19 @@ test('037 conical teeth and cut studs clear the opposite rotating solids', () =>
   assert.equal(model.root.userData.contactValidation.status, 'incomplete');
   console.log(JSON.stringify({ minStudClearance, minBodyClearance, maxWorkingGap }));
 });
+
+test('037 p93: stud crowns shade smoothly at the pole (no star from the shallow tip-sweep shave)', () => {
+  const model = createMovementModel(catalog.movements[36]);
+  const { studs } = model.root.userData.blocks;
+  for (const stud of studs.slice(0, 13)) {
+    const position = stud.geometry.attributes.position, normal = stud.geometry.attributes.normal;
+    const pole = new THREE.Vector3().fromBufferAttribute(normal, 0);
+    // The first ring (vertices 1..64) lies within 1/16 of the stud radius:
+    // its normals stay within 5 degrees of the pole's.
+    for (let i = 1; i <= 64; i += 1) {
+      const n = new THREE.Vector3().fromBufferAttribute(normal, i);
+      assert.ok(n.angleTo(pole) < THREE.MathUtils.degToRad(5), `stud ${stud.userData.index} vertex ${i}`);
+    }
+    assert.ok(position.count > 0);
+  }
+});

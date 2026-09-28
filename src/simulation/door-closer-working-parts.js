@@ -53,7 +53,10 @@ export function correctDoorCloserParts(model){
   const block=()=>plate(clip.difference(poly([[-.22,-.20],[.22,-.20],[.22,.20],[-.22,.20]]),poly(circle([0,0],.089,96))),top,blockTop).rotateX(-Math.PI/2);
   for(const[role,x]of[['frame-pin-socket-bracket',-g.framePinOffset],['door-pin-socket-bracket',g.doorPinRadius]]){const o=find(root,role);replace(o,block());o.position.set(x,0,0);}
   // The socket rings sit on the blocks; the long pins stand clear above them.
-  for(const{socket}of forks){socket.position.y=blockTop+.125;}
+  // Pass 93: Brown draws no door or wall, so each pin turns in one plain
+ // bored bearing boss (the socket on the door and on the frame), 0.55 tall;
+ // the door, wall, hinges and the square blocks are not presented.
+ for(const{socket}of forks){replace(socket,ring(.19,.089,blockTop+.25-top));socket.position.y=(top+blockTop+.25)/2;}
   for(const prefix of['frame-side','door-side'])find(root,`${prefix}-socket-upper-lip`).position.y=blockTop+.25;
   const wall=find(root,'fixed-wall-beside-door-opening');replace(wall,new T.BoxGeometry(2.13,top,t));wall.position.set(-1.185,top/2,-t/2);
   const door=find(root,'moving-door-panel');replace(door,new T.BoxGeometry(g.doorWidth-.12,top,t));door.position.set(.06+g.doorWidth/2,top/2,-t/2);

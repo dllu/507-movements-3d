@@ -658,3 +658,13 @@ test('movement 208 pinion is a wide slotted strip that clears the inner neighbou
   }
   disposeModel(model.root);
 });
+
+test('movement 208 slot outline is free of swept-cutter zigzags', async () => {
+  const { staircaseInOutlines } = await import('../scripts/screen-faceting.mjs');
+  const outline = (await import('../src/simulation/generated-pin-slot-208.js')).default;
+  const result = staircaseInOutlines([outline]);
+  // What remains is one eased junction per tooth, where two pin rings'
+  // sweeps meet (r 0.905); the swept-cutter cusps (80 before) are gone.
+  assert.ok(result.zigzags <= 16, `zigzags ${result.zigzags}`);
+  assert.ok(result.longestRun < 6);
+});

@@ -118,3 +118,12 @@ test('054 each crossover has two physical collar-retaining faces', () => {
     }
   }
 });
+
+test('054 p93: the running rim stands off the crab-end linings, so no faces coincide', () => {
+  const { root } = makeStarMangle(), parts = root.userData.parts, rim = parts.outerRim.geometry.userData;
+  for (const end of [...parts.crabEnds, ...parts.crabReturns]) {
+    const crab = end.geometry.userData;
+    assert.ok(crab.radialEnd - rim.radialEnd >= 0.003 - 1e-12);
+    assert.ok(rim.clearance - crab.guideClearance >= 0.0014 - 1e-12);
+  }
+});

@@ -782,19 +782,21 @@ export function createAuthoredDoorCloserMovement(movement) {
   for (const role of ['pear-shaped-door-closing-weight', 'weight-neck', 'white-weight-height-index']) {
     weightEye.parent.traverse((o) => { if (o.userData.role === role) o.position.z += eyeZ - (role === 'weight-neck' ? o.position.z : 0); });
   }
-  const bounds = model.root.userData.cameraFitBounds, box = new THREE.Box3();
+  // Pass 93: fit only the presented parts (pins, bosses, links, weight);
+  // the door, wall, hinges and blocks are not presented, so they must not
+  // widen the frame.
+  const notPresented = /^(fixed-wall-beside-door-opening|moving-door-panel|one-of-three-fixed-axis-door-hinge-barrels|fixed-hinge-leaf-on-wall|door-hinge-leaf-on-door|(frame|door)-pin-socket-bracket|fixed-vertical-door-jamb|fixed-door-frame-lintel|one-of-four-door-face-trim-bars|door-opening-handle)$/;
+  const bounds = model.root.userData.cameraFitBounds.makeEmpty(), box = new THREE.Box3();
   for (let i = 0; i <= 32; i += 1) {
     model.update(10 * i / 32);
     model.root.updateMatrixWorld(true);
     model.root.traverseVisible((o) => {
-      if (!o.geometry) return;
+      if (!o.geometry || notPresented.test(o.userData.role ?? '')) return;
       o.geometry.computeBoundingBox();
       bounds.union(box.copy(o.geometry.boundingBox).applyMatrix4(o.matrixWorld));
     });
   }
-  // Frame Brown's view: the pins, toggle and weight, with the door and wall
-  // that carry the pins below the default view.
-  bounds.min.y = Math.max(bounds.min.y, model.root.userData.geometry.endpointY - 1.35);
+  // Frame Brown's view: the pins in their bosses, the toggle and the weight.
   model.update(0);
   return model;
 }

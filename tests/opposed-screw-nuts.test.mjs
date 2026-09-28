@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {makeOpposedScrewNuts,opposedScrewState,opposedScrewDimensions as g} from '../src/simulation/opposed-screw-nuts.js';
+import {opposedScrewWormProfile} from '../src/simulation/opposed-screw-profile.js';
 import {solidSurface,surfacePoints} from './helpers/solid-surface.mjs';
 
 test('151 candidate puts wheel on screw axis and upper worm into the page',()=>{
@@ -17,12 +18,16 @@ test('151 candidate puts wheel on screw axis and upper worm into the page',()=>{
 test('151 opposite threads keep nuts symmetric about their original midpoint',()=>{
  for(let i=0;i<=600;i++){
   const s=opposedScrewState(i/10);assert.ok(Math.abs(s.nutX[0]+s.nutX[1]-g.sourceNutX[0]-g.sourceNutX[1])<1e-12);
-  assert.ok(Math.abs(s.wormAngle-18*s.wheelAngle)<1e-12);
+  assert.ok(Math.abs(s.wormAngle-36*s.wheelAngle)<1e-12);
   for(let j=0;j<2;j++)assert.ok(Math.abs(s.nutX[j]-g.sourceNutX[j]+(j===0?1:-1)*g.pitch*s.wheelAngle/(2*Math.PI))<1e-12);
  }
  assert.deepEqual(opposedScrewState(0),opposedScrewState(60));
+ // The finer 36:1 worm spins twice as fast, but its thread crests travel no
+ // faster than the old 18:1 worm's did (0.55 world units per second).
  const speed=Math.abs(opposedScrewState(13.501).wormAngle-opposedScrewState(13.5).wormAngle)/.001;
- assert.ok(speed<2*Math.PI*1.26);
+ const v=makeOpposedScrewNuts(),{wormScale}=v.root.userData.geometry;v.dispose();
+ assert.ok(speed<2*Math.PI*2.6);
+ assert.ok(speed/(2*Math.PI)*opposedScrewWormProfile().pitch*wormScale<.57);
 });
 test('151 rendered square threads clear their nut threads through a complete screw turn',()=>{
  const v=makeOpposedScrewNuts();try{
@@ -37,5 +42,16 @@ test('151 rendered square threads clear their nut threads through a complete scr
     }
    }
   }
+ }finally{v.dispose();}
+});
+test('151 wheel has 36 fine teeth with a hub boss through it and a thick plain shaft',()=>{
+ const v=makeOpposedScrewNuts();try{
+  const p=v.root.userData.parts;
+  assert.equal(p.wheel.userData.teeth,36);
+  for(const name of ['screw-bearing--0.55','screw-bearing-0.55'])assert.equal(p[name],undefined);
+  const hub=new THREE.Box3().setFromObject(p['wheel-hub-boss']),wheel=new THREE.Box3().setFromObject(p.wheel);
+  assert.ok(hub.min.x<wheel.min.x-.1&&hub.max.x>wheel.max.x+.1,'hub boss stands out of both wheel faces');
+  const shaft=new THREE.Box3().setFromObject(p['plain-shaft']);
+  assert.ok(shaft.max.y>.2&&shaft.max.y<.26,'plain shaft nearly as thick as the threads');
  }finally{v.dispose();}
 });

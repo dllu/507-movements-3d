@@ -834,6 +834,10 @@ test('185 (pass 90): one solid wall block, flat eared straps turning with their 
   assert.equal(wall.length, 1);
   const size = new THREE.Box3().setFromObject(wall[0]).getSize(new THREE.Vector3());
   assert.ok(size.x > 2.5 && size.y > 2.6, `massive block ${size.toArray()}`);
+  // Pass 93: mid stone, not a near-white ghost on the cream paper.
+  const {r, g, b: blue} = wall[0].material.color;
+  const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * blue;
+  assert.ok(luminance > 0.15 && luminance < 0.4, `wall luminance ${luminance} (linear)`);
   for (const strap of [b.forwardStrap, b.backwardStrap]) {
     assert.equal(strap.userData.ring.geometry.type, 'ExtrudeGeometry');
   }

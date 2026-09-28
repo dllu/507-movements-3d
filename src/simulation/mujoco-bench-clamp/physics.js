@@ -1,7 +1,11 @@
 import {createMujocoSimulation} from '../mujoco/simulation.js';
 import {benchClampProfile,convexProfilePieces} from './profile.js';
 // Contact study: prescribed board push, passive jaw hinges. No jaw actuators.
-export function makeBenchClampPhysics(mujoco,{timestep=.0005,friction=.5,opening=.06,force=10,contacts=true,cyclic=false}={}){
+// A light inferred return spring (Brown draws none; it stands in for the
+// workman knocking the jaws open) opens each jaw about 0.1 rad once the board
+// is withdrawn, so every insertion visibly turns both jaws shut on the board.
+// At the clamped pose it resists with under 0.05 torque against the drive's 10.
+export function makeBenchClampPhysics(mujoco,{timestep=.0005,friction=.5,opening=.1,force=10,contacts=true,cyclic=false,returnStiffness=.5,damping=.25}={}){
  const profiles=[benchClampProfile(0),benchClampProfile(1)];let assets='';
  const bodies=profiles.map((p,side)=>{
   const geoms=convexProfilePieces(p.points,p.triangles).map((tri,i)=>{
@@ -9,7 +13,7 @@ export function makeBenchClampPhysics(mujoco,{timestep=.0005,friction=.5,opening
    assets+=`<mesh name="${name}" vertex="${vertices}"/>`;
    return `<geom name="${name}" type="mesh" mesh="${name}"/>`;
   }).join('');
-  return `<body pos="${p.pivot[0]} ${p.pivot[1]} ${side===0?.12:-.12}"><joint name="jaw${side}" axis="0 0 1" damping=".03"/>
+  return `<body pos="${p.pivot[0]} ${p.pivot[1]} ${side===0?.12:-.12}"><joint name="jaw${side}" axis="0 0 1" damping="${damping}" stiffness="${returnStiffness}" springref="${side===0?opening:-opening}"/>
    <inertial pos="0 0 0" mass=".2" diaginertia=".03 .03 .06"/>${geoms}</body>`;
  }).join('');
  const xml=`<mujoco><compiler angle="radian"/><option timestep="${timestep}" gravity="0 0 0" integrator="implicitfast" iterations="100" tolerance="1e-9"/>
@@ -24,5 +28,5 @@ export function makeBenchClampPhysics(mujoco,{timestep=.0005,friction=.5,opening
   return .6-.8*smooth((phase-2.5)/2);
  };
  const p=createMujocoSimulation(mujoco,{xml,initialize:({data})=>{data.qpos[0]=opening;data.qpos[1]=-opening;data.qpos[2]=.6;data.ctrl[0]=.6;},beforeStep:({data,time})=>{data.ctrl[0]=target(time);}});
- return Object.assign(p,{parameters:{timestep,friction,opening,force,contacts,cyclic},state:()=>({time:p.data.time,upper:p.data.qpos[0],lower:p.data.qpos[1],board:p.data.qpos[2],boardY:p.data.qpos[3],boardSpeed:p.data.qvel[2],boardYSpeed:p.data.qvel[3],upperSpeed:p.data.qvel[0],lowerSpeed:p.data.qvel[1],contacts:p.data.ncon,appliedForce:p.data.actuator_force[0]})});
+ return Object.assign(p,{parameters:{timestep,friction,opening,force,contacts,cyclic,returnStiffness,damping},state:()=>({time:p.data.time,upper:p.data.qpos[0],lower:p.data.qpos[1],board:p.data.qpos[2],boardY:p.data.qpos[3],boardSpeed:p.data.qvel[2],boardYSpeed:p.data.qvel[3],upperSpeed:p.data.qvel[0],lowerSpeed:p.data.qvel[1],contacts:p.data.ncon,appliedForce:p.data.actuator_force[0]})});
 }

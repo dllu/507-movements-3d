@@ -37,3 +37,27 @@ test('engraving dimensions close throughout the cycle and fit the three initial 
     assert.ok(Math.hypot(projected[0] - pixel[0], projected[1] - pixel[1]) < 1.6);
   }
 });
+
+test('168 slotted crank is one broad extrusion with a narrow slot and walls wider than the pin', async () => {
+  const {makeVariableRadiusCrank} = await import('../src/simulation/variable-radius-crank.js');
+  const THREE = await import('three');
+  const model = makeVariableRadiusCrank();
+  try {
+    const crank = model.root.userData.parts.slottedCrank, pin = model.root.userData.parts.slotPin;
+    crank.geometry.computeBoundingBox(); pin.geometry.computeBoundingBox();
+    const box = crank.geometry.boundingBox, pinDiameter = pin.geometry.boundingBox.getSize(new THREE.Vector3()).x;
+    // Arm 0.48 wide (3.3x the pin), boss radius 0.38.
+    assert.ok(Math.abs(box.max.y - .38) < 2e-3 && Math.abs(box.min.y + .38) < 2e-3);
+    assert.ok(Math.abs(box.max.x - 1.74) < 2e-3);
+    // Probe across the arm at mid-slot: solid, slot, solid, with each wall wider than the pin.
+    const ray = new THREE.Raycaster(), hits = [];
+    const mesh = new THREE.Mesh(crank.geometry, new THREE.MeshBasicMaterial({side: THREE.DoubleSide}));
+    ray.set(new THREE.Vector3(.9, -1, .09), new THREE.Vector3(0, 1, 0));
+    for (const hit of ray.intersectObject(mesh)) hits.push(+(hit.point.y).toFixed(4));
+    const ys = [...new Set(hits)].sort((a, b) => a - b);
+    assert.equal(ys.length, 4, `crossings ${ys}`);
+    const [a, b, c, d] = ys;
+    assert.ok(b - a > pinDiameter && d - c > pinDiameter, `walls ${b - a}, ${d - c}`);
+    assert.ok(c - b > pinDiameter && c - b - pinDiameter < .025, `slot ${c - b}`);
+  } finally { model.dispose(); }
+});

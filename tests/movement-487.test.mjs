@@ -385,3 +385,29 @@ test('movement 487 fits every wheel pose and leaves spinning movement 507 as the
   assert.equal(next.fidelity, 'authored');
   disposeModel(model.root);
 });
+
+test('487: arms run on through the rim and each float lies alongside its arm, inside the rims', () => {
+  const { model } = movementModel();
+  const { blocks, geometry } = model.root.userData;
+  const unit = geometry.rimOuterRadiusSceneUnit / 10;
+  for (const { paddle, spokes } of blocks.spokeAssemblies) {
+    const box = (mesh) => { mesh.geometry.computeBoundingBox(); return mesh.geometry.boundingBox.clone().translate(mesh.position); };
+    const float = box(paddle);
+    for (const spoke of spokes) {
+      const arm = box(spoke);
+      assert.ok(arm.max.x > geometry.rimOuterRadiusSceneUnit + 0.2, 'arm passes through the rim');
+      assert.ok(arm.max.x < float.max.x, 'arm stops short of the float tip');
+      // half the arm's breadth lies beside the float, half against it
+      assert.ok(arm.min.y < float.min.y && arm.max.y > float.min.y);
+    }
+    assert.ok(Math.abs(float.min.x - 7.25 * unit) < 1e-6 && Math.abs(float.max.x - 13 * unit) < 1e-6, 'float reaches in under the rim');
+    for (const rim of blocks.rims) {
+      rim.geometry.computeBoundingBox();
+      const r = rim.geometry.boundingBox.clone().translate(rim.position);
+      const inner = Math.min(Math.abs(r.min.z), Math.abs(r.max.z));
+      const outer = Math.max(Math.abs(r.min.z), Math.abs(r.max.z));
+      assert.ok(float.max.z > inner && float.max.z < outer && -float.min.z > inner && -float.min.z < outer, 'float ends stop inside the rims');
+    }
+  }
+  model.root.traverse((o) => { o.geometry?.dispose(); });
+});

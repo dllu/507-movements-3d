@@ -93,6 +93,22 @@ export function finishOpposedSpur239(model) {
     post.userData.role = `${name}-journal-support-post`; root.add(journal, post); journals.push(journal); posts.push(post);
   }
   b.bearingPost.visible = false;
+  // p93: Brown draws only the stops' eye holes. Drop their undrawn journals
+  // and posts, and trim each fixed pivot to the boss's thickness (0.01 proud
+  // each side); the pivots are fixed points with no drawn frame.
+  for (const [i, side] of ['left', 'right'].entries()) {
+    journals[i].visible = false; posts[i].visible = false;
+    root.updateMatrixWorld(true);
+    root.traverse((o) => {
+      if (!o.isMesh || o.geometry.type !== 'CylinderGeometry') return;
+      let r = o; while (r && !r.userData.role) r = r.parent;
+      if (r?.userData.role !== `${side}-fixed-stop-pivot-shaft`) return;
+      const box = new THREE.Box3().setFromObject(o), p = o.geometry.parameters;
+      const low = -0.01, high = 0.41, axisZ = new THREE.Vector3(0, 1, 0).transformDirection(o.matrixWorld).z;
+      const shift = ((low + high) / 2 - (box.min.z + box.max.z) / 2) / axisZ;
+      replace(o, new THREE.CylinderGeometry(p.radiusTop, p.radiusBottom, high - low, p.radialSegments).translate(0, shift, 0));
+    });
+  }
   d.workingParts239 = { designs, journals, posts };
   // The plate breaks the wheel off just below its hub; that is Brown's
   // drawing convention, so the wheel is modelled whole. The camera fits the

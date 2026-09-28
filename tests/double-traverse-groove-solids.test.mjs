@@ -78,9 +78,14 @@ test('350: input shoe and output bar are inside their guides without solid overl
   const b = root.userData.blocks;
   for (let sample = 0; sample <= 64; sample += 1) {
     update(4 * sample / 64); root.updateMatrixWorld(true);
-    const shoe = bounds(b.inputShoe), inputRails = b.inputGuideRail.children.map(bounds);
-    assert.ok(shoe.min.y > inputRails[0].max.y && shoe.max.y < inputRails[1].min.y);
-    assert.ok(shoe.min.z > inputRails[0].min.z && shoe.max.z < inputRails[0].max.z);
+    // D's bored shoe rides on one plain round rod along Brown's dotted line;
+    // the rod runs through the shoe over the whole stroke and D is seated in
+    // the shoe's front face, clear of the rod.
+    const shoe = bounds(b.inputShoe), rod = bounds(b.inputGuideRail), pinD = bounds(b.movingPinD);
+    assert.ok(rod.min.x < shoe.min.x && rod.max.x > shoe.max.x);
+    assert.ok(shoe.min.y < rod.min.y && shoe.max.y > rod.max.y);
+    assert.ok(shoe.min.z < rod.min.z && shoe.max.z > rod.max.z);
+    assert.ok(pinD.min.z > rod.max.z && pinD.min.z < shoe.max.z);
     const bar = bounds(b.outputRail);
     for (const guide of b.outputGuideAssemblies) {
       const lips = guide.lips.map(bounds);

@@ -95,7 +95,8 @@ test('movement 235 preserves the measured engraving layout and straight-face des
   assert.deepEqual(plate.rasterWheelCenter.toArray(), [168, 235]);
   assert.deepEqual(plate.rasterCarrierPivot.toArray(), [455, 338]);
   assert.deepEqual(plate.rasterTappetHinge.toArray(), [319, 331]);
-  assert.deepEqual(plate.rasterTappetNose.toArray(), [192, 303]);
+  // The nose centre sits on Brown's dashed swing arc (254 px about the pivot).
+  assert.deepEqual(plate.rasterTappetNose.toArray(), [204.3, 297]);
   // The click's eye sits a little above Brown's hole (153) so the hook
   // runs round the points in one sweep.
   assert.deepEqual(plate.rasterHoldingClickPivot.toArray(), [159, 141]);
@@ -117,9 +118,11 @@ test('movement 235 preserves the measured engraving layout and straight-face des
     0,
     'raked teeth: an almost radial working face (8 degrees) and a long back',
   );
-  assert.ok(geometry.ratchetRootRadius < geometry.ratchetOuterRadius * 0.5);
-  assert.ok(geometry.sourceContactFraction > 0.1);
-  assert.ok(geometry.sourceContactFraction < 0.13);
+  // Brown's stubby points: the root circle is about 0.6 of the tip circle.
+  assert.ok(geometry.ratchetRootRadius > geometry.ratchetOuterRadius * 0.55);
+  assert.ok(geometry.ratchetRootRadius < geometry.ratchetOuterRadius * 0.62);
+  assert.ok(geometry.sourceContactFraction > 0.15);
+  assert.ok(geometry.sourceContactFraction < 0.2);
   vectorNear(
     stateAtCycleCoordinate(0).tappetHinge,
     geometry.sourceHinge,
@@ -234,7 +237,7 @@ test('movement 235 tappet yields only on return and clears the tooth before spri
     'arm-rising-from-low-clearance-to-drive-face',
   ]);
   assert.ok(contactSegments.size >= 2, 'the nose traverses adjacent tooth faces');
-  assert.ok(maximumReturnDeflection > .42 && maximumReturnDeflection <= .44);
+  assert.ok(maximumReturnDeflection > .40 && maximumReturnDeflection <= .43);
   assert.equal(stateAtCycleCoordinate(0).tappetDelta, 0);
   assert.ok(stateAtCycleCoordinate(timeline.topOvertravelEndPhase).tappetClearance > .0003,
     'the prescribed transfer dwell releases the tappet without penetrating the star');
@@ -286,8 +289,9 @@ test('movement 235 upper click lifts for forward indexing and locks reverse dwel
     }
   }
   assert.ok(deflectedSamples > 500);
-  assert.ok(maximumClickLift > THREE.MathUtils.degToRad(25));
-  assert.ok(maximumClickLift < THREE.MathUtils.degToRad(27));
+  // The stubby points lift the click less than the old long spikes did.
+  assert.ok(maximumClickLift > THREE.MathUtils.degToRad(16));
+  assert.ok(maximumClickLift < THREE.MathUtils.degToRad(19));
   disposeModel(model.root);
 });
 

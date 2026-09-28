@@ -1252,6 +1252,9 @@ function qualifyEngagedGeometry(model) {
   b.selectorLeftWall.position.x=-g.slotHalfWidth-.013;
   b.selectorRightWall.position.x=g.slotHalfWidth+.013;
   b.fixedFrontBearingRing.geometry.dispose();b.fixedFrontBearingRing.geometry=ring(.425,.555,-.075,.075,96);
+  // Pass 93: as in 177, the rear bearing is a bored ring seated on the input
+  // shaft instead of a loose torus hanging off its end.
+  b.fixedRearBearingRing.geometry.dispose();b.fixedRearBearingRing.geometry=ring(.372,.5,-.075,.075,96);b.fixedRearBearing.position.z=-1.005;
   b.fixedFrontBearing.position.z=.82;
   installShoulderedOutput(model);
   for(const mesh of [b.selectorLeftLobe,b.selectorRightLobe]){mesh.material=mesh.material.clone();mesh.material.color.multiplyScalar(.8);}
@@ -1296,6 +1299,9 @@ function qualifyReleasedGeometry(model) {
   }
   for(const mesh of [b.selectorUpperWall,b.selectorLowerWall,b.selectorTopGroove,b.selectorBottomGroove,b.wristFaceOutline,b.wristFaceIndex]){mesh.removeFromParent();mesh.geometry.dispose();}
   b.fixedFrontBearingRing.geometry.dispose();b.fixedFrontBearingRing.geometry=ring(.425,.555,-.075,.075,96);b.fixedFrontBearing.position.z=.82;
+  // Pass 93: the rear bearing was a loose torus hanging off the input shaft's
+  // end. Like the front one, it is now a plain bored ring seated on the shaft.
+  b.fixedRearBearingRing.geometry.dispose();b.fixedRearBearingRing.geometry=ring(.372,.5,-.075,.075,96);b.fixedRearBearing.position.z=-1.005;
   installShoulderedOutput(model);
   for(const mesh of [b.motionEnvelope,b.inputShaftIndex,b.outputRotationIndex,b.selectorIndex])mesh.visible=false;
   root.traverse(o=>{if(o.material)for(const material of [].concat(o.material))material.fog=false;});

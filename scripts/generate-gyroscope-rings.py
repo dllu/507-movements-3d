@@ -28,7 +28,9 @@ def ring(radius, width, depth, normal, bore_axis, bore, bosses=()):
     return {'positions':[round(float(v),7) for v in mesh.vert_properties[:,:3].reshape(-1)],'indices':mesh.tri_verts.reshape(-1).tolist()}
 
 data={
- 'support355':ring(1.77255,.10,.12,'y','x',.096),
+ # Ring A is Brown's broad flat band: the inner edge keeps its clearance to
+ # disk C's rim (1.72255), the band runs out to 1.93 and is 0.07 deep.
+ 'support355':ring(1.82630,.2075,.07,'y','x',.096),
  'outer356':ring(2.1735,.15,.12,'z','y',.081,(('y',.13),)),
  'middle356':ring(1.99125,.12,.11,'z','x',.074,(('x',.12),('y',.12))),
  'inner356':ring(1.674,.11,.10,'y','z',.070,(('x',.11),('y',.11))),

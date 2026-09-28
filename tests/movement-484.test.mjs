@@ -70,7 +70,8 @@ test('movement 484 is one radial spiral wound once around one rigid horizontal c
   assert.equal(model.root.userData.archetype, ARCHETYPE);
   assert.equal(model.root.userData.fidelity, 'authored');
   assert.equal(geometry.helixTurns, 1);
-  assert.equal(geometry.helixHandedness, 1);
+  // Brown's front crossing runs down-left from the right-hand lobe: left-handed.
+  assert.equal(geometry.helixHandedness, -1);
   assert.equal(degreesOfFreedom.independentOperatingCoordinates, 1);
   assert.equal(degreesOfFreedom.rotorRotationAboutHorizontalAxis, 1);
   assert.equal(degreesOfFreedom.loadWheelRotationRigidWithShaft, 1);
@@ -126,18 +127,18 @@ test('movement 484 preserves Brown’s unavailable source and discloses the reco
   assert.deepEqual(plate.approximateRightBearingPixels, [431, 283]);
   assert.equal(evidence.explicitInBrownDescription.length, 5);
   assert.match(evidence.engravingEvidence,
-    /one horizontal cylindrical core.*two pedestal bearings.*one complete turn/s);
+    /one horizontal cylindrical core.*two plain upright standards.*one complete turn/s);
   assert.match(evidence.fullerCorroboration,
     /John Douglas Pitts Fuller’s 1834 Key.*items 23–24/s);
   assert.match(evidence.fullerCorroboration,
     /near-verbatim later statement/);
   assert.match(evidence.reconstructionDisclosure,
-    /Right-handedness.*flow speed.*torque coefficient.*independently engineered/s);
+    /left-handed winding is read from the plate.*flow speed.*torque coefficient.*independently engineered/s);
   assert.match(sourceReference.fullerKeyUrl, /books\.google\.com/);
   disposeModel(model.root);
 });
 
-test('movement 484 blade midsurface vertices form one exact right-handed radial helical ribbon', () => {
+test('movement 484 blade midsurface vertices form one exact left-handed radial helical ribbon', () => {
   const { model } = movementModel();
   const { blocks, geometry, helixPointScene, transmission } =
     model.root.userData;
@@ -146,7 +147,7 @@ test('movement 484 blade midsurface vertices form one exact right-handed radial 
   const positions = bladeGeometry.getAttribute('position');
 
   assert.equal(bladeData.turns, 1);
-  assert.equal(bladeData.handedness, 1);
+  assert.equal(bladeData.handedness, -1);
   assert.equal(bladeData.segments, geometry.helixSegments);
   assert.equal(bladeData.sourceVertexCount, 2 * (geometry.helixSegments + 1));
   assert.ok(positions.count > bladeData.sourceVertexCount);
@@ -213,10 +214,10 @@ test('movement 484 converts positive-X axial flow to the correctly signed shaft 
   vectorNear(motion.shaftAngularVelocityVector,
     new THREE.Vector3(expectedOmega, 0, 0), 0,
     'angular-velocity vector');
-  assert.ok(expectedOmega < 0);
-  assert.equal(motion.rotationSenseViewedFromPositiveX, 'clockwise');
+  assert.ok(expectedOmega > 0);
+  assert.equal(motion.rotationSenseViewedFromPositiveX, 'counterclockwise');
   near(stateAtTime(geometry.cycleDuration).rotorAngleRadian,
-    -FULL_TURN, 0, 'one cycle rotation');
+    FULL_TURN, 0, 'one cycle rotation');
   near(-(-geometry.helixHandedness)
     * FULL_TURN * geometry.axialToRotorCoupling
     * geometry.axialFlowSpeedMetrePerSecond
@@ -228,7 +229,7 @@ test('movement 484 converts positive-X axial flow to the correctly signed shaft 
     / geometry.physicalPitchMetre,
   -expectedOmega, 0, 'reversing flow reverses speed');
   assert.match(dynamics.reciprocalScrewAction,
-    /positive-X axial flow produces negative-X shaft rotation/);
+    /positive-X axial flow produces positive-X shaft rotation/);
   assert.match(transmission.angularSpeedEquation,
     /omega_x=-handedness.*U_axial\/pitch/);
   disposeModel(model.root);
@@ -272,7 +273,7 @@ test('movement 484 torque, opposing load, and extracted shaft power share one di
   assert.match(dynamics.assumptionScope,
     /quasi-steady torque coefficient.*rather than CFD/s);
   assert.match(dynamics.energyBalance,
-    /same negative-X sign.*positive extracted shaft power/s);
+    /same positive-X sign.*positive extracted shaft power/s);
   assert.match(transmission.torqueEquation,
     /C_Q.*rho\*U\^2\/2.*R_outer/);
   disposeModel(model.root);
@@ -394,7 +395,8 @@ test('movement 484 keeps bearings fixed, fits every pose, and leaves spinning mo
   for (let sample = 0; sample <= 240; sample += 1) {
     model.update(geometry.cycleDuration * sample / 240);
     model.root.updateMatrixWorld(true);
-    union.union(new THREE.Box3().setFromObject(model.root));
+    // Precise bounds: the rotated blade's loose box overstates its 1.54 radius by up to √2.
+    union.union(new THREE.Box3().setFromObject(model.root, true));
     [
       ...blocks.bearings,
       ...blocks.supports.map(({ support }) => support),

@@ -9,7 +9,7 @@ test('143 closes the measured fixed rod through a complete traverse and restart'
   const s=slidingWormAtTime(g.period*i/1440),rod=Math.hypot(g.fixedPivot[0]-s.wrist[0],g.fixedPivot[1]-s.wrist[1]);
   assert.ok(Math.abs(rod-measuredLength)<1e-12);
   assert.ok(Math.abs(Math.hypot(s.wrist[0]-s.carriageX,s.wrist[1])-Math.hypot(...g.crank))<1e-12);
-  assert.ok(Math.abs(s.inputAngle/22-s.wheelAngle)<1e-12);
+  assert.ok(Math.abs(-s.inputAngle/22-s.wheelAngle)<1e-12,'left-hand worm turns opposite to the wheel');
   assert.ok(s.carriageX-.99>-2.97&&s.carriageX+.99<2.895,'complete carriage stays on the fixed guide');
   low=Math.min(low,s.carriageX);high=Math.max(high,s.carriageX);
  }

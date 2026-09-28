@@ -16,8 +16,11 @@ function meshWithSurfaceNormals(vertices, indices, groups) {
 
 // A shallow concave running face supports the same collar on each steady
 // stroke. Brown does not provide this section; it is an inferred guide fit.
+// Where the crab ends overlap it at the crossovers, their linings (0.0001
+// clearance, 1.85 outer face) coincided with it and z-fought, so its running
+// face stands 0.0015 off the collar and its outer face stops at 1.847.
 export function starMangleRunningRim(motion, { collarOffset = 0.265, collarRadius = 0.10,
-  clearance = 0.0001, radialStart = 1.78, radialEnd = 1.85, radialSegments = 64, arcSegments = 512 } = {}) {
+  clearance = 0.0015, radialStart = 1.78, radialEnd = 1.847, radialSegments = 64, arcSegments = 512 } = {}) {
   const p = motion.parameters, centerRadius = p.wheelRadius + collarOffset, profile = [];
   for (const side of [1, -1]) for (let i = 0; i <= radialSegments; i += 1) {
     const fraction = side === 1 ? i / radialSegments : 1 - i / radialSegments;

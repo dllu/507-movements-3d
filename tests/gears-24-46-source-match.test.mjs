@@ -145,7 +145,9 @@ test('043 view keeps the lower wheel edge-on and turns the upper wheel toward th
   const { drivenAxis, driverAxis } = model.root.userData.gearContact;
   const worldAxis = (axis) => axis.clone().applyQuaternion(model.root.quaternion);
   const view = model.cameraDirection.clone().normalize();
-  assert.ok(Math.abs(worldAxis(drivenAxis).dot(view)) < 0.05);
+  // p93-g fitted the view to both of Brown's shaft lines; that fit keeps the
+  // lower wheel's axis within 6 degrees of the picture plane (sin 6 = 0.105).
+  assert.ok(Math.abs(worldAxis(drivenAxis).dot(view)) < Math.sin(6 * Math.PI / 180));
   assert.ok(worldAxis(driverAxis).dot(view) < -0.4);
   const previousView = new THREE.Vector3(6.8, 0.1, 8.6).normalize();
   assert.ok(Math.abs(worldAxis(drivenAxis).dot(previousView)) > 0.3,

@@ -19,12 +19,15 @@ export function makeArticulatedFuseeChain(linkCount, linkPitch) {
   const plateGeometry = new THREE.ExtrudeGeometry(shape, { depth: plateThickness,
     bevelEnabled: false, curveSegments: 8 });
   plateGeometry.translate(0, 0, -plateThickness / 2);
+  // Dark blued steel throughout: pale plates and pins read as a white dashed
+  // line on the cream page. The two plate rows differ slightly in tone so
+  // the articulation still reads.
   const evenPlates = new THREE.InstancedMesh(plateGeometry,
-    new THREE.MeshStandardMaterial({ color: 0xb6bebb, metalness: 0.28, roughness: 0.55 }), Math.ceil(linkCount / 2) * 3);
+    new THREE.MeshStandardMaterial({ color: 0x4a4f52, metalness: 0.28, roughness: 0.55 }), Math.ceil(linkCount / 2) * 3);
   const oddPlates = new THREE.InstancedMesh(plateGeometry,
-    new THREE.MeshStandardMaterial({ color: 0x515c5b, metalness: 0.24, roughness: 0.60 }), Math.floor(linkCount / 2) * 2);
+    new THREE.MeshStandardMaterial({ color: 0x353b3d, metalness: 0.24, roughness: 0.60 }), Math.floor(linkCount / 2) * 2);
   const pins = new THREE.InstancedMesh(new THREE.CylinderGeometry(pinRadius, pinRadius, 0.074, 12),
-    new THREE.MeshStandardMaterial({ color: 0x8c9997, metalness: 0.28, roughness: 0.54 }), linkCount + 1);
+    new THREE.MeshStandardMaterial({ color: 0x5f6668, metalness: 0.28, roughness: 0.54 }), linkCount + 1);
   root.add(evenPlates, oddPlates, pins);
   const links = Array.from({ length: linkCount }, () => ({
     matrix: new THREE.Matrix4(), hinge: new THREE.Vector3(),

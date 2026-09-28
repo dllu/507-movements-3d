@@ -85,7 +85,7 @@ export function makeBeltGovernorSolids({beltSeamSpacing=2.4}={}){
  // and their half-wrap, without inventing a receiving pulley or gate train.
  const beltPath=[...Array.from({length:97},(_,i)=>{const a=Math.PI/2+Math.PI*i/96;return[(g.pulleyRadius+.0002)*Math.cos(a),(g.pulleyRadius+.0002)*Math.sin(a)];}),[4.48,-(g.pulleyRadius+.0002)],[4.48,-(g.pulleyRadius+.0002)-.025],...Array.from({length:97},(_,i)=>{const a=3*Math.PI/2-Math.PI*i/96;return[((g.pulleyRadius+.0002)+.025)*Math.cos(a),((g.pulleyRadius+.0002)+.025)*Math.sin(a)];}),[4.48,(g.pulleyRadius+.0002)+.025],[4.48,(g.pulleyRadius+.0002)]];
  const beltGeometry=plate(poly(beltPath),-.162,.162);beltGeometry.rotateX(Math.PI/2);
- add('flatBelt',beltGeometry,'belt',PALETTE.ink);
+ add('flatBelt',beltGeometry,'belt',PALETTE.belt);
  const seamCount=Math.ceil((8.96+Math.PI*(g.pulleyRadius+.026))/beltSeamSpacing)+1;
  for(let i=0;i<seamCount;i++)add('beltSeam'+i,new THREE.BoxGeometry(.018,.324,.0015),'belt',PALETTE.muted);
  const update=makeBeltGovernorUpdater(root,g,{beltSeamSpacing});

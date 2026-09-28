@@ -8,9 +8,12 @@ const replace=(mesh,geometry)=>{mesh.geometry.dispose();mesh.geometry=geometry;}
 // flats between the teeth. The profile is analytic: a flat under each plate
 // link, a concave notch hugging each plate link's round end at the joint (the
 // driving face, 0.0008 clear), and concave flanks rising to a sharp point.
+// p93: the notch now departs at 22 degrees (was 38), so the flank's control
+// point lies inside the chord from the notch to the tip and the flank is
+// truly hollow, as Brown draws the star's sides (it bulged at 38).
 export function cleanSprocketProfile227(g,options={}){
  const R=g.pitchRadius,half=g.chainNodeStep/2,e=g.plateLinkEndRadius+(options.clearance??.0008),
-  tip=options.tipRadius??2.62,depart=(options.departDegrees??38)*Math.PI/180,tipHalf=options.tipHalfWidth??.2,
+  tip=options.tipRadius??2.62,depart=(options.departDegrees??22)*Math.PI/180,tipHalf=options.tipHalfWidth??.2,
   arcSteps=24,curveSteps=40,outer=[];
  const P=(a,r)=>[Math.cos(a)*r,Math.sin(a)*r],rot=(p,a)=>[p[0]*Math.cos(a)-p[1]*Math.sin(a),p[0]*Math.sin(a)+p[1]*Math.cos(a)];
  // Upper half of the tooth at angle 0: joint N at +half; the valley flat
@@ -27,12 +30,66 @@ export function cleanSprocketProfile227(g,options={}){
  const hole=[];for(let i=0;i<=96;i++)hole.push(P(-i/96*2*Math.PI,g.shaftHoleRadius));
  return [[outer.map(p=>p.map(v=>+v.toFixed(8))),hole.map(p=>p.map(v=>+v.toFixed(8)))]];
 }
+// p93: 227's edge-on links were a thin wire loop with two broad box straps
+// laid on its straight sides, so each looked like a box joined to the flat
+// plates by wire rings. Make each one piece: the same loop path (its round
+// end bars still pass through the flat plates' eyes) swept with a flat
+// section that is as broad as the straps along the sides and narrows through
+// each end bar to fit the eye.
+function edgeOnLinkGeometry227(g){
+ const L=g.linkPitch,r=g.linkLoopHalfWidth,t=g.linkWireRadius,broad=g.plateLinkEndRadius-.01,eye=g.plateLinkEyeRadius??.048;
+ const narrow=Math.sqrt(Math.max(1e-6,(eye-.004)**2-t*t));
+ const path=[];// [x,y,tx,ty,halfBroad]
+ const straight=60,arc=48;
+ // Integration p93: hold the narrow section until the loop has left the
+ // plate's thickness (with margin for articulation), then broaden; the
+ // earlier blend began at the tip and grazed the plate by 0.002-0.003.
+ const hold=.3;
+ const pushArc=(cx,from)=>{for(let i=0;i<=arc;i++){const a=from+Math.PI*i/arc,u=Math.max(0,(Math.abs(i/arc-.5)*2-hold)/(1-hold)),w=narrow+(broad-narrow)*u*u*(3-2*u);
+   path.push([cx+r*Math.cos(a),r*Math.sin(a),-Math.sin(a),Math.cos(a),w]);}};
+ for(let i=0;i<straight;i++){const x=r+(L-2*r)*i/straight;path.push([x,-r,1,0,broad]);}
+ pushArc(L-r,-Math.PI/2);
+ for(let i=1;i<straight;i++){const x=L-r-(L-2*r)*i/straight;path.push([x,r,-1,0,broad]);}
+ pushArc(r,Math.PI/2);
+ const positions=[],normals=[],index=[];
+ // Four corners per station, each face with its own normals.
+ const n=path.length;
+ const faces=[[0,1,'out'],[1,2,'up'],[2,3,'in'],[3,0,'down']];
+ for(const [c0,c1,kind] of faces){
+  const base=positions.length/3;
+  for(const [x,y,tx,ty,w] of path){
+   const nx=ty,ny=-tx;// outward in the loop plane
+   const corners=[[x+nx*t,y+ny*t,-w],[x+nx*t,y+ny*t,w],[x-nx*t,y-ny*t,w],[x-nx*t,y-ny*t,-w]];
+   for(const c of [c0,c1]){positions.push(...corners[c]);
+    normals.push(...(kind==='out'?[nx,ny,0]:kind==='in'?[-nx,-ny,0]:kind==='up'?[0,0,1]:[0,0,-1]));}
+  }
+  for(let i=0;i<n;i++){const j=(i+1)%n,a=base+2*i,b=base+2*i+1,c=base+2*j,d=base+2*j+1;index.push(a,c,b,b,c,d);}
+ }
+ const geometry=new THREE.BufferGeometry();
+ geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
+ geometry.setAttribute('normal',new THREE.Float32BufferAttribute(normals,3));
+ geometry.setIndex(index);
+ // Orient every triangle outward (the loop runs counterclockwise).
+ const pos=geometry.attributes.position,nor=geometry.attributes.normal,A=new THREE.Vector3(),B=new THREE.Vector3(),C=new THREE.Vector3(),N=new THREE.Vector3();
+ for(let k=0;k<index.length;k+=3){A.fromBufferAttribute(pos,index[k]);B.fromBufferAttribute(pos,index[k+1]);C.fromBufferAttribute(pos,index[k+2]);N.fromBufferAttribute(nor,index[k]);
+  if(B.sub(A).cross(C.sub(A)).dot(N)<0){const tmp=index[k+1];index[k+1]=index[k+2];index[k+2]=tmp;}}
+ geometry.setIndex(index);
+ geometry.userData={profile:'one-piece-edge-on-loop-link-227',broadHalf:broad,endBarHalf:narrow};
+ return geometry;
+}
 export function correctChainDrive(model,id){
  const {root}=model,d=root.userData,b=d.blocks,g=d.geometry;
  const wheel=id===227?b.sprocket:id===229?b.wheel:null;
  const originalWheelPolygons=wheel?[wheel.geometry.parameters.shapes.extractPoints(64).shape.map(p=>p.toArray())]:null;
  d.chainDriveParts={originalWheelPolygons};
- if(id===227)replace(wheel,plate(cleanSprocketProfile227(g),-g.sprocketDepth/2,g.sprocketDepth/2));
+ if(id===227){
+  replace(wheel,plate(cleanSprocketProfile227(g),-g.sprocketDepth/2,g.sprocketDepth/2));
+  const loop=edgeOnLinkGeometry227(g);let shared=null;
+  root.traverse(o=>{if(o.userData.role!=='edge-on-flat-loop-link-across-tooth')return;
+   if(!shared){shared=o.geometry;}o.geometry=loop;
+   for(const strap of o.children)if(strap.userData.role==='edge-on-link-side-strap')strap.visible=false;});
+  shared?.dispose();
+ }
  else if(profiles[id]){
   if(wheel)replace(wheel,plate(profiles[id],-(g.sprocketDepth??g.wheelDepth)/2,(g.sprocketDepth??g.wheelDepth)/2));
   else {

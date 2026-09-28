@@ -5,7 +5,7 @@
     "parts": 42,
     "pairs": 591,
     "poses": 65,
-    "checks": 3075696,
+    "checks": 3357524,
     "failingPairs": 0
   },
   "failures": {},
@@ -13,22 +13,22 @@
     "part-29/bar-fixed-underside-direct-drive-projection-34": {
       "firstPose": 0,
       "points": 2,
-      "maximumDepth": 0.000005558869228816654
+      "maximumDepth": 0.000004062996841330824
     },
     "part-31/distal-input-driving-face-37": {
       "firstPose": 12,
       "points": 3,
-      "maximumDepth": 0.000002144849696683604
+      "maximumDepth": 0.000002784302187447407
     },
     "part-29/distal-input-driving-face-37": {
       "firstPose": 42,
-      "points": 12,
-      "maximumDepth": 0.0003253548459003587
+      "points": 11,
+      "maximumDepth": 0.00032535409547210074
     },
     "bar-fixed-front-return-stud-35/bored-return-arm-39": {
       "firstPose": 42,
       "points": 4,
-      "maximumDepth": 0.00008611131468136413
+      "maximumDepth": 0.00008108497906714196
     }
   },
   "sources": [
@@ -38,7 +38,7 @@
     },
     {
       "file": "src/simulation/mujoco-stud-reverser/geometry.js",
-      "sha256": "53e4d165ea87da91257135de86b58ae19a85731f40dc02b3635745737895d627"
+      "sha256": "b1eb767f1dbae5ffbbbd5d13eb7c86cbafec954e0c582ef56a96dc45b0437bf2"
     },
     {
       "file": "src/simulation/mujoco-stud-reverser/sync.js",
@@ -50,7 +50,7 @@
     },
     {
       "file": "src/simulation/baked/assets/153.json.gz",
-      "sha256": "a31e8352f252fb628565ac4c6c7552d6715d0956e51df7fc5502d49a9322042a"
+      "sha256": "7185a3c23ee14db230e1c53045440b72b8c0537e9af758ef0e23d62cbc0072a7"
     },
     {
       "file": "src/simulation/baked/playback.js",

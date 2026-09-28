@@ -172,3 +172,13 @@ test('189 motion is smooth, closes on itself and plays at a natural pace', () =>
   assert.ok(maximumSpeed < 3, `peak point speed ${maximumSpeed} units/s`);
   assert.ok(maximumJerkStep < 0.02, `velocity step ${maximumJerkStep} per 1/480 s`);
 }));
+
+test('189 (pass 93): the bell-crank stud has only a short collar behind the crank', () => {
+  const model = createMovementModel(movement);
+  let boss = null;
+  model.root.traverse((o) => { if (o.userData.role === 'fixed-bell-crank-stud-boss') boss = o; });
+  assert.ok(boss);
+  const box = new THREE.Box3().setFromObject(boss);
+  assert.ok(box.max.z - box.min.z <= 0.11 + 1e-9, `collar depth ${box.max.z - box.min.z}`);
+  disposeObject3D(model.root);
+});

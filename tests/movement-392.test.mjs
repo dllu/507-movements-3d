@@ -370,3 +370,24 @@ test('movement 392 factory is isolated before movement 507', () => {
   disposeModel(model392.root);
   disposeModel(model507.root);
 });
+
+test('movement 392 hangs the lower wrist pin in a round lug centred on it', () => {
+  const model = createMovementModel(catalog.movements[391]);
+  const saw = model.root.userData.blocks.sawAssembly;
+  const block = saw.userData.lowerBlock, pin = saw.userData.lowerWrist;
+  const lugRadius = block.userData.pinLugRadius;
+  assert.equal(lugRadius, 0.18);
+  model.update(0);
+  model.root.updateMatrixWorld(true);
+  const pinCentre = pin.getWorldPosition(new THREE.Vector3());
+  const blockBox = new THREE.Box3().setFromObject(block);
+  // The block's outline reaches one lug radius below the pin centre, so the
+  // pin sits wholly in metal (was centred on the block's bottom edge).
+  assert.ok(Math.abs(blockBox.min.y - (pinCentre.y - lugRadius)) < 1e-3);
+  assert.ok(lugRadius > pin.geometry.parameters.radiusTop + 0.04);
+  // At bottom stroke the lug still clears the flywheel rim.
+  const g = model.root.userData.geometry;
+  const rimTop = g.crankCenter.y + 1.13;
+  assert.ok(g.sliderLowY - lugRadius - rimTop > 0.01);
+  disposeModel(model.root);
+});

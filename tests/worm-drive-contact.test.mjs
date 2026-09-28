@@ -93,6 +93,10 @@ test('031 has a closed, axially straight-flanked screw with integral end caps', 
   const geometry = mesh.geometry;
   const { pitch, pitchRadius, pressureAngle, tipRadius, rootRadius, length, section, loadedSide } = geometry.userData;
   assert.equal(geometry.userData.profile, 'thin-rib-loaded-flank-worm');
+  // Brown's worm is left-handed: the thread is the mirror (local x) of the
+  // right-handed generator, so check the section in the unmirrored frame.
+  const hand = model.root.userData.geometry.wormHandedness;
+  assert.equal(hand, -1, 'the plate draws a left-handed worm');
   const positions = geometry.attributes.position;
   const normals = geometry.attributes.normal;
   const edges = new Map();
@@ -109,7 +113,8 @@ test('031 has a closed, axially straight-flanked screw with integral end caps', 
     }
     const expected = new THREE.Vector3().fromBufferAttribute(normals, i);
     assert.ok(normal.dot(expected) > 0, 'winding follows the outward cap/flank normal');
-    for (const point of points) {
+    for (const mirrored of points) {
+      const point = new THREE.Vector3(hand * mirrored.x, mirrored.y, mirrored.z);
       assert.ok(Math.abs(point.z) <= length / 2 + 1e-7);
       const radius = Math.hypot(point.x, point.y);
       if (radius < rootRadius - 1e-5 || Math.abs(point.z) > length / 2 - 1e-6) continue;
@@ -140,6 +145,13 @@ test('031 generated worm wheel clears both screw flanks and remains engaged thro
   const thread = worm.userData.thread;
   const wheelMesh = wheel.userData.toothMesh;
   const { pitchRadius, pitch, tipRadius, rootRadius, pressureAngle, length } = thread.geometry.userData;
+  // Undo the left-hand mirror (worm local x, wheel local z) so the analytic
+  // right-handed generator applies; the ray casts use the unmirrored wheel.
+  const hand = model.root.userData.geometry.wormHandedness;
+  const wormMirror = new THREE.Matrix4().makeScale(hand, 1, 1);
+  const wheelMirror = new THREE.Matrix4().makeScale(1, 1, hand);
+  const wheelGeometry = wheelMesh.geometry.clone().applyMatrix4(wheelMirror);
+  wheelGeometry.userData = wheelMesh.geometry.userData;
   const wheelPositions = wheelMesh.geometry.attributes.position;
   const threadPositions = thread.geometry.attributes.position;
   const wheelSamples = [];
@@ -166,14 +178,14 @@ test('031 generated worm wheel clears both screw flanks and remains engaged thro
   for (let phase = 0; phase <= 64; phase += 1) {
     model.update(2 * Math.PI / 2.2 * phase / 64, 0);
     model.root.updateMatrixWorld(true);
-    const toWheel = wheelMesh.matrixWorld.clone().invert().multiply(thread.matrixWorld);
+    const toWheel = wheelMirror.clone().multiply(wheelMesh.matrixWorld.clone().invert()).multiply(thread.matrixWorld);
     for (const sample of threadSamples) {
       const point = sample.clone().applyMatrix4(toWheel);
       if (Math.abs(point.z) > wheel.userData.depth / 2 || Math.hypot(point.x, point.y) > wheel.userData.outerRadius + 0.005) continue;
-      const gap = Math.hypot(point.x, point.y) - renderedWheelRadius(point, wheelMesh.geometry);
+      const gap = Math.hypot(point.x, point.y) - renderedWheelRadius(point, wheelGeometry);
       assert.ok(gap >= -1e-6, `phase ${phase}: an actual screw vertex enters the wheel by ${-gap}`);
     }
-    const toWorm = thread.matrixWorld.clone().invert().multiply(wheelMesh.matrixWorld);
+    const toWorm = wormMirror.clone().multiply(thread.matrixWorld.clone().invert()).multiply(wheelMesh.matrixWorld);
     let closestGap = Infinity;
     const closest = new THREE.Vector3();
     const closestNormal = new THREE.Vector3();
@@ -205,8 +217,8 @@ test('031 generated worm wheel clears both screw flanks and remains engaged thro
         closestNormal.copy(normal).normalize();
       }
     }
-    const origin = closest.clone().applyMatrix4(thread.matrixWorld);
-    const towardFlank = closestNormal.negate().transformDirection(thread.matrixWorld);
+    const origin = closest.clone().applyMatrix4(wormMirror).applyMatrix4(thread.matrixWorld);
+    const towardFlank = closestNormal.negate().applyMatrix4(wormMirror).transformDirection(thread.matrixWorld);
     const hits = new THREE.Raycaster(origin, towardFlank, 0, 0.03).intersectObject(thread, false);
     assert.ok(hits.length > 0 && hits[0].distance < 0.004,
       `phase ${phase}: an actual wheel vertex remains within 0.004 of a rendered screw flank (${hits[0]?.distance})`);

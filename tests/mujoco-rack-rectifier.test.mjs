@@ -12,7 +12,9 @@ const disable=(p,names)=>{for(let i=0;i<p.model.ngeom;i++)if(names.includes(Obje
 test('116 uses closed source-proportioned hardware with separate pinions and six-tooth ratchets',()=>{
  const v=makeRackRectifierGeometry(),u=v.root.userData;
  try{
-  assert.equal(Object.keys(u.parts).length,17);
+  assert.equal(Object.keys(u.parts).length,14);
+  // Pass 93: each end stem is one turned solid; the shaft is one piece; no run-on boxes.
+  assert.deepEqual(Object.keys(u.parts).filter(n=>/stubExtension|shaftTail/.test(n)),[]);
   // p60 support policy: Brown draws no stands, guides or back bars here.
   assert.deepEqual(Object.keys(u.parts).filter(n=>/Guide|Pillar|Foot|Bearing|BackBar|Post|Clip|Strap|TieBar/.test(n)),[]);
   for(const [name,mesh]of Object.entries(u.parts)){const a=inspectWeightedClutchSolid(mesh.geometry);assert(a.volume>0,name);assert.equal(a.components,1,name);assert.equal(a.unmatchedEdges+a.degenerate+a.nonfinite+a.wrongNormals,0,name);}

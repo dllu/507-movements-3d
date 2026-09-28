@@ -1706,8 +1706,9 @@ function rockingBeamTieRodFlywheelMotion() {
   beamPivotPin.position.copy(beamPivot);
   beamPivotPin.userData.fixed = true;
   seatPinRing(beamPivotPin, beamPlaneZ + beamDepth / 2);
+  // Sized like Brown's circle round the hatched shaft, well inside the beam.
   const beamPivotFrontRing = new THREE.Mesh(
-    new THREE.TorusGeometry(0.30, 0.075, 10, 40),
+    new THREE.TorusGeometry(0.21, 0.055, 10, 40),
     accentMaterial,
   );
   beamPivotFrontRing.position.set(
@@ -1849,14 +1850,15 @@ function rockingBeamTieRodFlywheelMotion() {
   const beamRotor = new THREE.Group();
   beamAssembly.add(beamRotor);
   beamAssembly.userData.rotor = beamRotor;
-  // Brown draws a one-armed beam: a small eye for the upright rod at its
-  // left end, widening to a squared right end whose boss turns on the
-  // fixed (hatched) shaft. The kinematic pivot and 13-unit arm are unchanged.
+  // Brown draws a one-armed beam: a rounded left end concentric with the
+  // upright rod's pin, widening (about 1.4x) to a squared right end that
+  // carries the fixed (hatched) shaft. The left end is a semicircle of radius
+  // 0.26, 1.3x the pin's 0.199 retaining ring, so the ring sits inside it.
+  // The kinematic pivot and 13-unit arm are unchanged.
   const beamBody = new THREE.Mesh(
     plate(clip.difference(clip.union(
-      poly([[-beamRadius,.13],[.34,.27],[.34,-.27],[-beamRadius,-.13]]),
-      poly(circle([-beamRadius,0],.17,64)),
-      poly(circle([0,0],.30,64))),
+      poly([[-beamRadius,.26],[.40,.36],[.40,-.36],[-beamRadius,-.26]]),
+      poly(circle([-beamRadius,0],.26,96))),
       ...[-beamRadius,0].map(x => poly(circle([x,0],.108,64)))),
     -beamDepth / 2, beamDepth / 2),
     driverMaterial,

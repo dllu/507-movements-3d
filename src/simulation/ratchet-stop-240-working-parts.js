@@ -7,11 +7,14 @@ export const stop240MaximumLifts=paths.paths.map(p=>Math.max(...p));
 const parks=stop240MaximumLifts.map((v,i)=>v+(i===2?.03:.10));
 function pathAt(values,q){const x=Math.max(0,Math.min(1,q))*(values.length-1),i=Math.min(values.length-2,Math.floor(x)),f=x-i;return{value:values[i]*(1-f)+values[i+1]*f,slope:(values[i+1]-values[i])*(values.length-1),curvature:0};}
 export function stateStops240(s,stops,outline,pitch){
+ s.allStopsRiding=true;
  s.pawls=s.pawls.map((old,i)=>{
-  // Stop C stays down through every stroke, as Brown draws it: turning on
-  // its own hole, its toe can only leave or re-enter a space by riding the
-  // ramp, never by a lift at rest. The hook and straight stops alternate.
-  if(i===2&&!old.engaged)old={...old,engaged:true,parked:false};
+  // Every stop stays down through every stroke, as Brown draws them: a
+  // gravity stop (and C on its spring) can only leave or re-enter a space by
+  // riding the ramp, never by a lift at rest. p93: the hook and straight
+  // stops no longer alternate with a prescribed park well above the tips;
+  // each rides its own baked finite-clearance path over every tooth.
+  if(!old.engaged)old={...old,engaged:true,parked:false};
   const stop=stops[i],ratio=parks[i]/stop.parkLift;let lift=Math.abs(old.angleDelta)*ratio,speed=old.angularSpeed*ratio,acceleration=old.angularAcceleration*ratio;
   if(old.engaged){const p=pathAt(paths.paths[i],s.driveProgress);lift=p.value;speed=stop.liftSign*p.slope*s.driveProgressSpeed;acceleration=stop.liftSign*(p.curvature*s.driveProgressSpeed**2+p.slope*s.driveProgressAcceleration);}
   const contact=stop240Contact(stop,lift,s.wheelAngle,outline);contact.normalClearance+=.0005;
@@ -73,7 +76,10 @@ export function stopC240(stop,profile,tipRadius,g){
  const tangents=[base+half,base-half].map(t=>T.clone().add(new THREE.Vector2(r*Math.cos(t),r*Math.sin(t))));
  const Q=tangents.sort((u,v)=>v.distanceTo(bottomRight)-u.distanceTo(bottomRight))[0];
  const toLocal=list=>{const local=list.map(p=>p.clone().sub(P));let area=0;local.forEach((p,i)=>{const q=local[(i+1)%local.length];area+=p.x*q.y-q.x*p.y;});if(area<0)local.reverse();return poly(local.map(p=>p.toArray()));};
- const block=toLocal([...C240_PLATE.top.map(world),Q,T,...C240_PLATE.bottom.map(world)]);
+ // p93: pass smooth centripetal splines through the traced points so the
+ // curled knob and the top edge shade as curves, not facets.
+ const smooth=(list,count)=>new THREE.CatmullRomCurve3(list.map(p=>new THREE.Vector3(p.x,p.y,0)),false,'centripetal').getPoints(count).map(p=>new THREE.Vector2(p.x,p.y));
+ const block=toLocal([...smooth(C240_PLATE.top.map(world),48),Q,T,...smooth(C240_PLATE.bottom.map(world),160)]);
  const edge=capsule(T.clone().sub(P).toArray(),bottomRight.clone().sub(P).toArray(),r,32);
  const hole=world(C240_PLATE.hole).sub(P);
  return {outline:clip.difference(clip.union(block,edge),poly(circle(hole.toArray(),C240_PLATE.holeRadius,48))),joint:world(C240_PLATE.joint).sub(P)};
@@ -141,6 +147,6 @@ export function finishStops240(root,stops){
  d.workingParts={stops,noses,collars,paths};d.minimumDisplayCycleSeconds=12;d.hideGround=true;
  d.sourceAnimation.reason='Animation unavailable: fetched page has no inline add_model or mm_present program.';
  d.dynamics={forceValidated:false,prescribedBiasAndSelection:true,freeRunPath:'offline continuous finite-circle clearance',selfLocking:false};
- d.reconstructionNote='The hook, straight gravity stop and spring stop are flat plates in the wheel plane, compared one at a time with their own rounded toes on the retaining faces. Their free-running lift, drop and selection are prescribed. The retaining reaction tends to lift each stop, so gravity or spring preload is required; unlimited holding load and passive release are not validated. Stop C turns on a pin through its own hole; the flat S-spring, anchored at its leaf eye, bends to follow C by a prescribed blend, not a solved flexure.';
+ d.reconstructionNote='The hook, straight gravity stop and spring stop are flat plates in the wheel plane, all three riding the teeth at once with their own rounded toes dropping onto the retaining faces. Their free-running lift over each tooth and drop are prescribed offline finite-clearance paths. The retaining reaction tends to lift each stop, so gravity or spring preload is required; unlimited holding load and passive release are not validated. Stop C turns on a pin through its own hole; the flat S-spring, anchored at its leaf eye, bends to follow C by a prescribed blend, not a solved flexure.';
  root.traverse(o=>{if(o.isMesh)for(const material of[].concat(o.material))material.fog=false;});
 }

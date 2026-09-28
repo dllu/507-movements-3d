@@ -398,8 +398,18 @@ test('movement 356 renderer binds all three gimbal axes and the ball shaft', () 
   model.root.traverse((object) => {
     if (object.isMesh) meshCount += 1;
   });
-  // 38 less 11 ink rims, edge lines and the equator line, less 4 spin indexes.
-  assert.equal(meshCount, 23);
+  // 38 less 11 ink rims, edge lines and the equator line, less 4 spin
+  // indexes, less the upper base tier and neck merged into the one turned
+  // trumpet pedestal (p93).
+  assert.equal(meshCount, 21);
+  let turned = null;
+  model.root.traverse((object) => {
+    if (object.userData.role === 'fixed-turned-trumpet-pedestal-of-Bohnenberger-machine') turned = object;
+  });
+  assert.equal(turned?.geometry.type, 'LatheGeometry', 'one lathed trumpet pedestal');
+  const radii = turned.geometry.parameters.points.map((p) => p.x);
+  assert.ok(Math.max(...radii) >= 0.99 && Math.min(...radii.filter((r) => r > 0)) <= 0.34,
+    'broad foot flaring up to a slender waist');
   disposeModel(model.root);
 });
 

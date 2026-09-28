@@ -111,8 +111,15 @@ test('movement 201 is Brown\'s eccentric gear, carried pinion, one open belt, ro
   // Brown's letter A is caption lettering, not a part; presentation removes it.
   assert.equal(blocks.letterA.parent, null);
   assert.equal(blocks.carrierBody.parent, blocks.carrier);
-  assert.equal(blocks.slotRails.length, 2);
-  assert.equal(blocks.armJunctions.length, 2);
+  // p93: the rocker is one bell-crank extrusion (boss, both arms, slotted eye).
+  assert.equal(blocks.slotRails.length, 0);
+  assert.equal(blocks.armJunctions.length, 0);
+  assert.equal(blocks.pivotCollar, blocks.carrierBody);
+  assert.equal(blocks.carrierBody.userData.role, 'one-piece-bell-crank-with-pivot-boss-and-slotted-eye');
+  assert.equal(blocks.carrierBody.geometry.parameters.shapes.holes.length, 3, 'pivot bore, pinion-shaft bore and slot');
+  let torusCount = 0;
+  for (const object of blocks.carrier.children) if (object.geometry?.type === 'TorusGeometry') torusCount += 1;
+  assert.equal(torusCount, 0, 'no bare torus collar on the pivot');
   assert.equal(blocks.letterStrokes.length, 3);
   assert.equal(blocks.eccentricGear.userData.fixedShaftCenter, true);
   assert.ok(blocks.eccentricGear.userData.eccentricOffset.length() > 0);

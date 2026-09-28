@@ -33,3 +33,14 @@ test('143 asset and validation provenance match the current sources',()=>{
  assert.equal(hash(asset),provenance.assetSha256);assert.ok(provenance.bytes<1_500_000);
  for(const source of [...provenance.sources,...provenance.validation])assert.equal(hash(source.file),source.sha256,source.file);
 });
+test('143 worm is left-handed: its front crests slope up to the right, as Brown draws',()=>{
+ const model=makeSlidingWormModel(JSON.parse(gunzipSync(fs.readFileSync(asset))));
+ try{
+  model.update(0);const worm=model.root.getObjectByName('bored-worm'),p=worm.geometry.attributes.position,v=new Vector3(),crest=[];let rmax=0;
+  for(let i=0;i<p.count;i++){v.fromBufferAttribute(p,i).applyMatrix4(worm.matrixWorld);const r=Math.hypot(v.y-g.shaftY,v.z);rmax=Math.max(rmax,r);crest.push([v.x,v.y-g.shaftY,v.z,r]);}
+  const tips=crest.filter(q=>q[3]>rmax-.01&&q[2]>0),front=tips.filter(q=>Math.abs(q[1])<.03),up=tips.filter(q=>q[1]>.08&&q[1]<.12);
+  let sum=0,n=0;
+  for(const f of front){let best=null;for(const u of up){const d=u[0]-f[0];if(Math.abs(d)<.08&&(best===null||Math.abs(d)<Math.abs(best)))best=d;}if(best!==null){sum+=best;n++;}}
+  assert.ok(n>100&&sum/n>.005,`front crest rises to the right (${sum/n})`);
+ }finally{model.dispose();}
+});

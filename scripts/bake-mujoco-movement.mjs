@@ -72,7 +72,7 @@ export async function bake(id) {
         for (let j = 0; j <= 8; j++) {const s = Math.round(j * samples / 8);times.push([startTime + s * dt, s * dt]);}
         roundTrip[name] = roundTripError(live, baked, times);
         // Seam: playback must be as smooth across the loop end as inside it.
-        roundTrip[name].seam = seamContinuity(baked, duration, samples);
+        roundTrip[name].seam = seamContinuity(baked, duration, samples, config.seamExclude);
         const seam = roundTrip[name].seam;
         console.log(`${id} ${name}: seam step ${seam.seamStepPixels.toFixed(4)} px (interior max ${seam.interiorStepPixels.toFixed(4)}), seam second difference ${seam.seamSecondPixels.toFixed(4)} px (interior max ${seam.interiorSecondPixels.toFixed(4)})`);
         if (seam.seamStepPixels > seam.interiorStepPixels + .05 || seam.seamSecondPixels > seam.interiorSecondPixels + .05) throw new Error('Playback is less smooth across the seam than inside the loop');

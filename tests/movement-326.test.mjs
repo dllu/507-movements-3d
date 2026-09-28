@@ -523,19 +523,43 @@ test('movement 326 closes exactly and leaves movement 339 as the next authored d
   disposeModel(model.root);
 });
 
-test('movement 326 hides the connecting rod inside the hollow standard below the cap', () => {
+test('movement 326 hides the connecting rod inside the capped hollow standard', () => {
   const model = createMovementModel(catalog.movements[325]);
   const { blocks, geometry } = model.root.userData;
-  const skin = new THREE.Box3().setFromObject(blocks.standardFrontSkin);
-  const walls = new THREE.Box3().setFromObject(blocks.standardSideWalls);
+  const box = (object) => new THREE.Box3().setFromObject(object);
+  const skin = box(blocks.standardFrontSkin);
+  const walls = box(blocks.standardSideWalls);
   // Brown dots the rod inside the standard: the front skin lies in front of
-  // the rod, the crank pin and the slide, and the walls join it to the plate.
+  // the rod and the walls join it to the plate.
   assert.ok(skin.min.z > geometry.connectingRodPlaneZ + geometry.connectingRodDepth / 2);
-  const pin = new THREE.Box3().setFromObject(blocks.crankPinShaft);
-  assert.ok(skin.min.z > pin.max.z);
   near(walls.min.z, geometry.frameFrontZ, 1e-6, 'walls meet the slotted back plate');
   near(walls.max.z, skin.min.z, 1e-6, 'walls meet the front skin');
   // The skin's top edge is the cap, below the crank shaft.
   assert.ok(skin.max.y < 0);
+  const pin = box(blocks.crankPinShaft);
+  assert.ok(skin.min.z > pin.max.z);
+  // A recessed cap closes the top behind a narrow slot for the rod, below
+  // the crank's sweep.
+  const cap = box(blocks.standardCap);
+  near(cap.min.z, geometry.frameFrontZ, 1e-6, 'cap meets the back plate');
+  const slot = skin.min.z - cap.max.z;
+  assert.ok(slot > geometry.connectingRodDepth && slot < 0.3, `rod slot ${slot}`);
+  assert.ok(cap.max.y < skin.max.y && cap.max.y > skin.max.y - 0.7);
+  for (let step = 0; step < 64; step += 1) {
+    model.update(4 * step / 64);
+    model.root.updateMatrixWorld(true);
+    for (const part of [blocks.crankArm, blocks.crankPinShaft]) {
+      assert.ok(box(part).min.y > cap.max.y + 0.03, `crank clears the cap at ${step}`);
+    }
+  }
+  // The piston rod runs inside the hollow standard, into the foot's bore.
+  const foot = box(blocks.foundationFoot);
+  for (const time of [0, 1, 2, 3]) {
+    model.update(time);
+    model.root.updateMatrixWorld(true);
+    const rod = box(blocks.pistonRod);
+    assert.ok(rod.min.z > geometry.frameFrontZ && rod.max.z < skin.min.z);
+    assert.ok(rod.min.y > foot.min.y && rod.min.y < -5.0, `rod end hidden at ${time}`);
+  }
   disposeModel(model.root);
 });

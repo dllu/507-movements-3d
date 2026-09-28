@@ -1500,7 +1500,8 @@ function eccentricSpurDriverLinkedIdler(movement) {
       sourceFourBar.idlerCenter.y,
       driverLinkZ,
     ),
-    { color: PALETTE.frame, depth: 0.09, thickness: 0.1 },
+    // p93: same role as link a-b, so the same material (it was grey).
+    { color: PALETTE.ink, depth: 0.09, thickness: 0.1 },
   );
   driverLink.userData.role = 'simple-fixed-length-link-c-center-to-b';
   root.add(driverLink);

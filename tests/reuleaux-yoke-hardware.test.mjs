@@ -38,3 +38,12 @@ test('135 bowed yoke uses connected bored shoes and full-width valve rods', () =
     assert(Math.max(...contour.map(p => p.x)) > d.outerHalfWidth + .29);
   } finally { disposeObject3D(model.root); }
 });
+
+test('135 shows no undrawn rod guides hanging round the rods (pass 93)', () => {
+  const model = createMovementModel(movement);
+  try {
+    const names = [];
+    model.root.traverse((o) => { if (o.isMesh) names.push(o.name); });
+    assert(!names.some((n) => /RodGuide/.test(n)), names.filter((n) => /RodGuide/.test(n)).join());
+  } finally { disposeObject3D(model.root); }
+});

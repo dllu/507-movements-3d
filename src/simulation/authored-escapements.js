@@ -4746,9 +4746,81 @@ function debaufreFrictionalRestEscapement(
 // carries S in a bored cock at each end (past the wheel, clear of the flags)
 // and the crown-wheel arbor in a foot bearing on the bar joining their feet
 // under the arbor end. The view is framed without it.
+// p93: Brown's toothed cup is one wall with the saw cut into its top edge.
+// The shared builder stood a separate arc-sampled tooth on a 64-sided band,
+// so the band's flats and the teeth's true arcs stepped against each other.
+// Build the band and its 13 teeth as one closed wall between true circles,
+// with the same tooth law (tip angles, linear back over 0.8 of a pitch, flat
+// gap at the band top), and hide the separate teeth.
+function unifiedToothedCup234(g, band, teeth) {
+  const p = band.geometry.attributes.position;
+  let inner = Infinity, outer = 0;
+  for (let i = 0; i < p.count; i += 1) {
+    const r = Math.hypot(p.getX(i), p.getY(i));
+    inner = Math.min(inner, r); outer = Math.max(outer, r);
+  }
+  const base = g.toothBaseZ - g.bodyDepth, root = g.toothBaseZ, tip = g.toothTipZ;
+  const pitch = g.toothPitch, back = pitch * 0.8, tips = teeth.map((t) => t.userData.mountAngle).sort((a, b) => a - b);
+  // Samples of the top edge, one turn from the first tooth's tip.
+  const samples = [];
+  for (let k = 0; k < tips.length; k += 1) {
+    const t0 = tips[k];
+    const gapSteps = Math.max(2, Math.ceil((pitch - back) / 0.02)), backSteps = Math.max(8, Math.ceil(back / 0.02));
+    for (let i = 0; i <= gapSteps; i += 1) samples.push([t0 + (pitch - back) * i / gapSteps, root, i === 0]);
+    for (let i = 1; i <= backSteps; i += 1) samples.push([t0 + (pitch - back) + back * i / backSteps, root + (tip - root) * i / backSteps, false]);
+  }
+  samples.push([tips[0] + tips.length * pitch, root, true]);
+  const positions = [], normals = [];
+  const polar = (r, a, z) => new THREE.Vector3(Math.cos(a) * r, Math.sin(a) * r, z);
+  const push = (points, pointNormals) => points.forEach((q, k) => { positions.push(q.x, q.y, q.z); const n = pointNormals[k]; normals.push(n.x, n.y, n.z); });
+  const tri = (a, b, c, desired, n) => {
+    const face = new THREE.Vector3().crossVectors(b.clone().sub(a), c.clone().sub(a));
+    if (face.lengthSq() < 1e-14) return;
+    const flip = face.dot(desired) < 0, fn = face.normalize().multiplyScalar(flip ? -1 : 1);
+    const ns = n ?? [fn, fn, fn];
+    if (flip) push([a, c, b], [ns[0], ns[2], ns[1]]); else push([a, b, c], ns);
+  };
+  const quad = (a, b, c, d, desired, n) => { tri(a, b, c, desired, n && [n[0], n[1], n[2]]); tri(a, c, d, desired, n && [n[0], n[2], n[3]]); };
+  for (let i = 0; i + 1 < samples.length; i += 1) {
+    const [a0, z0] = samples[i], [a1, z1, step] = samples[i + 1];
+    const out0 = new THREE.Vector3(Math.cos(a0), Math.sin(a0), 0), out1 = new THREE.Vector3(Math.cos(a1), Math.sin(a1), 0);
+    const mid = out0.clone().add(out1).normalize();
+    // At a tooth tip the edge drops straight from the tip to the band top.
+    const top1 = step ? tip : z1;
+    quad(polar(outer, a0, base), polar(outer, a1, base), polar(outer, a1, top1), polar(outer, a0, z0), mid, [out0, out1, out1, out0]);
+    const in0 = out0.clone().negate(), in1 = out1.clone().negate();
+    quad(polar(inner, a0, base), polar(inner, a1, base), polar(inner, a1, top1), polar(inner, a0, z0), mid.clone().negate(), [in0, in1, in1, in0]);
+    quad(polar(outer, a0, z0), polar(outer, a1, top1), polar(inner, a1, top1), polar(inner, a0, z0), new THREE.Vector3(0, 0, 1));
+    quad(polar(outer, a0, base), polar(outer, a1, base), polar(inner, a1, base), polar(inner, a0, base), new THREE.Vector3(0, 0, -1));
+    if (step) {
+      const forward = new THREE.Vector3(-Math.sin(a1), Math.cos(a1), 0);
+      quad(polar(inner, a1, root), polar(outer, a1, root), polar(outer, a1, tip), polar(inner, a1, tip), forward);
+    }
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
+  return geometry;
+}
+
 function hideGroundFor234(model) {
   const root = model.root, g = root.userData.geometry;
   root.userData.hideGround = true;
+  {
+    let band = null;
+    const teeth = [];
+    root.traverse((o) => {
+      if (o.userData.role === 'crown-wheel-tooth-band') band = o;
+      if (o.userData.role === 'axial-saw-tooth') teeth.push(o);
+    });
+    const geometry = unifiedToothedCup234(g, band, teeth);
+    band.geometry.dispose();
+    band.geometry = geometry;
+    band.position.z = 0;
+    band.userData.role = 'crown-wheel-toothed-cup-wall';
+    band.userData.unifiedWithTeeth = true;
+    for (const tooth of teeth) tooth.visible = false;
+  }
   const mat = supportMaterial();
   const vergeZ = g.axialLayers.vergeAxis;
   // Brown's crown is an open cup: its floor shows only the arbor's hole, so

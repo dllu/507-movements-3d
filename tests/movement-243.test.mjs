@@ -215,9 +215,15 @@ test('movement 243 closed route is position-, tangent-, and ribbon-frame continu
     2e-15, 'left twist begins in vertical-pulley axial direction');
   vectorNear(frameAtDistance(leftTwist.endDistance).widthDirection, Z_AXIS,
     2e-15, 'left twist ends in guide axial direction');
+  // The twist finishes 3/4 of the way along the span (flat on the guide),
+  // so it is half done at 3/8.
   const leftMidWidth = frameAtDistance(
-    (leftTwist.startDistance + leftTwist.endDistance) / 2,
+    leftTwist.startDistance + (leftTwist.endDistance - leftTwist.startDistance) * 0.375,
   ).widthDirection;
+  vectorNear(frameAtDistance(leftTwist.startDistance + (leftTwist.endDistance - leftTwist.startDistance) * 0.8).widthDirection,
+    Z_AXIS, 1e-12, 'left twist is complete before the guide');
+  vectorNear(frameAtDistance(beltSegments[6].startDistance + (beltSegments[6].endDistance - beltSegments[6].startDistance) * 0.2).widthDirection,
+    Z_AXIS, 1e-12, 'right twist starts after leaving the guide');
   near(leftMidWidth.dot(Y_AXIS), Math.SQRT1_2, 2e-15,
     'left twist halfway Y component');
   near(leftMidWidth.dot(Z_AXIS), Math.SQRT1_2, 2e-15,
@@ -345,7 +351,7 @@ test('movement 243 has one non-self-intersecting flat band and one marker set', 
   assert.equal(markers.length, geometry.markerCount);
   assert.equal(geometry.markerCount, 14);
   assert.equal(ribbon.userData.role, 'single-flat-spatial-power-band');
-  assert.equal(positions.count, (blocks.belt.userData.ribbonSamples + 1) * 4);
+  assert.equal(positions.count, (blocks.belt.userData.ribbonSamples + 1) * 8);
   assert.equal(ribbon.geometry.index.count, blocks.belt.userData.ribbonSamples * 24);
   assert.equal(
     new Set(markers.map(({ userData }) => userData.markerIndex)).size,

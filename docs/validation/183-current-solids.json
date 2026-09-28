@@ -6,30 +6,30 @@
   "poses": 65,
   "sources": {
     "factory": "98df2d1f88ac620e79df4d0566ae6a52dece9f384d703052798e58ca7dc38ac2",
-    "parts": "7e3e155f35ccdc87e474f38ed4035e28845f536a22086ec97bd9a0470cbdc0c4",
-    "motion": "a69ad463037e1f4f090fdaf0aefd635b679be88f9ede1cea774405ab729d88aa"
+    "parts": "0c472f978c944b05af2ba46188a2c1e68303e0dd09d04eb6ca2d9edc35581e6a",
+    "motion": "d713b78fe12fa783c7634c8167e45bd150f26e94b7020464c31267096b2ace41"
   },
   "results": {
     "183": {
       "meshes": 16,
-      "worstPenetration": 0.0001801919014908106,
+      "worstPenetration": 0.00004538573810238127,
       "pairs": {
         "upper-handle-wing/lower-handle-quadrant": {
-          "depth": 0.0001801919014908106,
+          "depth": 0.00004538573810238127,
           "time": 13.21875
         }
       }
     },
     "184": {
       "meshes": 16,
-      "worstPenetration": 0.0001801919014908106,
+      "worstPenetration": 0.00004538573810238127,
       "pairs": {
         "fixed-sectioned-upper-handle-shaft/lower-handle-lever": {
-          "depth": 8.344650331837448e-9,
-          "time": 12.9375
+          "depth": 8.34465033183759e-9,
+          "time": 5.34375
         },
         "upper-handle-wing/lower-handle-quadrant": {
-          "depth": 0.0001801919014908106,
+          "depth": 0.00004538573810238127,
           "time": 13.21875
         }
       }

@@ -27,3 +27,21 @@ export function makeThreadCuttingProfile({segments=128,leadTeeth=52,workTeeth=76
   gearY:y((e.gearTop+e.gearBottom)/2),gearDepth:(e.gearBottom-e.gearTop)/100,
   beamZ:x=>leadZ-(x-leadX)*dz/dx};
 }
+
+// The reversing drive: the carriage descends from its upper stop to its lower
+// stop in the first half period (the tool cutting) and returns in the second,
+// with smooth reversals. b = 0 is the top reversal.
+export function makeThreadCuttingStroke(f,period) {
+ const half=period/2,d=period*.025,stroke=f.upper-f.lower,speed=stroke/(half-d),phase=f.upper/speed+d/2;
+ const end=t=>{const a=t/d;return {distance:speed*d*(a*a*a-a*a*a*a/2),speed:speed*(3*a*a-2*a*a*a)};};
+ const cycle=time=>((time+phase)%period+period)%period;
+ const input=time=>{const b=cycle(time),t=Math.min(b,period-b);let s,v;
+  if(t<d){const e=end(t);s=e.distance;v=e.speed;}else if(t>half-d){const e=end(half-t);s=stroke-e.distance;v=e.speed;}else{s=speed*(t-d/2);v=speed;}
+  return {angle:(f.upper-s)/(-f.lead),velocity:(b>half?v:-v)/(-f.lead),carriage:f.upper-s};};
+ // The work angle the tool has reached on the current cutting descent. On the
+ // return the tool runs back up its own finished groove; at the top reversal
+ // the finished screw is exchanged for a fresh blank and the cut restarts.
+ const bottomWorkAngle=f.ratio*f.lower/(-f.lead);
+ const cutWorkAngle=(time,workAngle)=>cycle(time)<half?workAngle:Math.max(workAngle,bottomWorkAngle);
+ return {period,phase,input,cycle,descending:time=>cycle(time)<half,bottomWorkAngle,cutWorkAngle};
+}

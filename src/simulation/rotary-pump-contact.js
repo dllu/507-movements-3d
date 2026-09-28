@@ -111,14 +111,19 @@ export function correctCaryPump(root) {
   }
   replace(b.portSeparatorE,plate(polygonClipping.difference(packing,poly(wall)),-g.casingDepth*.45,g.casingDepth*.45));b.portSeparatorE.position.set(0,0,0);
   d.caryWallRadiusAtAngle=angle=>caryWallRadius(angle,g.pistonLength);
-  // H leaves M through the wall's throat, then climbs the right side.
+  // H leaves M through the wall's throat, turns and runs round the casing
+  // hard against it (its 0.34 wall merges 0.02 into the casing's outer face,
+  // like Brown's cast passage), then rises straight up the right side into
+  // the goose-neck. Pass 93: it looped down in an S below the casing before.
+  const hugAt=deg=>{const a=deg*Math.PI/180,r=caryWallRadius(a,g.pistonLength)+.30+.32;return new THREE.Vector3(r*Math.cos(a),r*Math.sin(a),0);};
+  let side=0;for(let deg=-60;deg<=60;deg+=.5)side=Math.max(side,hugAt(deg).x);
   const curve=new THREE.CatmullRomCurve3([
     new THREE.Vector3(...rot([1.72,0]),0),
     new THREE.Vector3(...rot([2.35,0]),0),
-    new THREE.Vector3(2.25,-2.30,0),new THREE.Vector3(2.90,-1.45,0),
-    new THREE.Vector3(3.05,-.45,0),new THREE.Vector3(3.05,1.35,0),
-    new THREE.Vector3(3.28,2.27,0),new THREE.Vector3(3.76,2.05,0),new THREE.Vector3(3.86,1.30,0),
-  ]);
+    ...[-48,-36,-24,-12].map(hugAt),
+    new THREE.Vector3(side,.35,0),new THREE.Vector3(side,1.55,0),
+    new THREE.Vector3(side+.22,2.38,0),new THREE.Vector3(side+.80,2.38,0),new THREE.Vector3(side+1.0,1.55,0),
+  ],false,'centripetal');
   replace(b.dischargeH.shell,curvedPipeWall(curve,.29,.34,128));
   b.dischargeH.shell.userData.curve=curve;
   replace(b.dischargeH.water,new THREE.TubeGeometry(curve,128,.21,12,false));

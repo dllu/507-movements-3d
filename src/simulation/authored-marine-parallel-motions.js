@@ -602,7 +602,7 @@ function sideLeverRockshaftParallelMotion(movement) {
 
   const beamShaftLow = leverPlaneZ - leverHalfDepth - 0.14;
   // The shaft's cut end stands clearly proud of the boss (Brown hatches it).
-  const beamShaftHigh = leverPlaneZ + leverHalfDepth + 0.07;
+  const beamShaftHigh = leverPlaneZ + leverHalfDepth + 0.12;
   const beamShaft = fixedPart(cylinderAlongZ(0.37 * s,
     beamShaftHigh - beamShaftLow, darkMaterial, 34),
   'fixed-sectioned-side-lever-shaft-O');
@@ -633,14 +633,35 @@ function sideLeverRockshaftParallelMotion(movement) {
   // lever is shown: the left arm mirrors the right one out to the hidden
   // driving station, ending in a round end concentric with it.
   const leftEnd = -hiddenDrivenBeamRadius / s;
+  // The straps run straight (convex hull of their ends and a 0.72 waist
+  // circle at O) and Brown's round boss, 2.8x the shaft's radius and
+  // concentric with O, stands clear of both flanks: no angular widening.
+  const bossRadiusO = 1.05;
+  const strapWaistO = 0.72;
+  const strapHull = (() => {
+    const points = [
+      [leftEnd + 0.7, -0.45], [9.35, -0.45], [10.05, -0.25],
+      [10.05, 0.25], [9.35, 0.45], [leftEnd + 0.7, 0.45],
+      ...Array.from({ length: 144 }, (_, i) => [
+        strapWaistO * Math.cos(i * Math.PI / 72),
+        strapWaistO * Math.sin(i * Math.PI / 72)]),
+    ].sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+    const turn = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+    const half = (list) => {
+      const out = [];
+      for (const point of list) {
+        while (out.length >= 2 && turn(out[out.length - 2], out[out.length - 1], point) <= 0) out.pop();
+        out.push(point);
+      }
+      out.pop();
+      return out;
+    };
+    return [...half(points), ...half([...points].reverse())];
+  })();
   const leverOutline = clip.difference(
     clip.union(
-      poly([
-        [leftEnd + 0.7, -0.45], [-2.2, -1.00], [0, -1.45], [2.2, -1.00], [9.35, -0.45],
-        [10.05, -0.25], [10.05, 0.25], [9.35, 0.45], [2.2, 1.05],
-        [0, 1.60], [-2.2, 1.05], [leftEnd + 0.7, 0.45],
-      ].map(([x, y]) => [x * s, y * s])),
-      poly(circle([0, 0], 1.125 * s, 72)),
+      poly(strapHull.map(([x, y]) => [x * s, y * s])),
+      poly(circle([0, 0], bossRadiusO * s, 96)),
       poly(circle([sideLeverRightRadius, 0], 0.875 * s, 64)),
       poly(circle([leftEnd * s, 0], 0.7 * s, 64)),
     ),
@@ -1455,17 +1476,25 @@ function sideLeverMarineParallelMotion(movement) {
     'fixed-cylinder-lid-flange-with-piston-rod-bore');
   deck.position.z = vesselAxisZ;
 
-  const bracketLow = vesselAxisZ + lidHalfDepth - 0.30;
-  const bracketHigh = 0.78;
+  // The radius bar runs just behind the links (see radiusBarPlaneZ), so
+  // Brown's thin gooseneck stands in F's plane just in front of the lid, and
+  // only a short foot laps back onto the lid flange.
+  const lidFrontZ = vesselAxisZ + lidHalfDepth;
+  // The bar runs 0.005 behind the left link at C (link back face 0.28).
+  const radiusBarPlaneZ = 0.28 - 0.005 - 0.08;
+  const bracketHigh = radiusBarPlaneZ - 0.08 - 0.005;
+  const bracketLow = bracketHigh - 0.20;
+  const bracketFootLow = lidFrontZ - 0.30;
+  const bracketFootTop = lidHigh + 0.28 * s;
   const gooseneck = [];
-  for (let step = 0; step <= 12; step += 1) {
-    const angle = Math.PI * step / 24;
+  for (let step = 0; step <= 48; step += 1) {
+    const angle = Math.PI * step / 96;
     gooseneck.push([
       radiusPivotF.x - 1.35 * s + 1.35 * s * Math.sin(angle),
       lidHigh + (radiusPivotF.y - lidHigh - 0.2 * s) * (1 - Math.cos(angle)),
     ]);
   }
-  const radiusSupport = fixedPart(new THREE.Mesh(plate(clip.union(
+  const bracketOutline = clip.union(
     poly([
       [radiusPivotF.x - 1.6 * s, lidHigh - 0.1 * s],
       [radiusPivotF.x + 0.25 * s, lidHigh - 0.1 * s],
@@ -1474,10 +1503,18 @@ function sideLeverMarineParallelMotion(movement) {
       ...gooseneck.reverse(),
     ]),
     poly(circle([radiusPivotF.x, radiusPivotF.y], 0.45 * s, 48)),
-  ), bracketLow, bracketHigh), frameMaterial),
+  );
+  const footOutline = clip.intersection(bracketOutline, poly([
+    [radiusPivotF.x - 2 * s, lidHigh - 0.2 * s], [radiusPivotF.x + s, lidHigh - 0.2 * s],
+    [radiusPivotF.x + s, bracketFootTop], [radiusPivotF.x - 2 * s, bracketFootTop],
+  ]));
+  const radiusSupport = fixedPart(new THREE.Mesh(mergeGeometries([
+    plate(bracketOutline, bracketLow, bracketHigh),
+    plate(footOutline, bracketFootLow, bracketLow),
+  ]), frameMaterial),
   'fixed-gooseneck-bracket-on-cylinder-lid-carrying-F');
-  const fixedPivotFLow = bracketHigh - 0.30;
-  const fixedPivotFHigh = 1.01;
+  const fixedPivotFLow = bracketHigh - 0.08;
+  const fixedPivotFHigh = radiusBarPlaneZ + 0.12;
   const fixedPivotF = fixedPart(cylinderAlongZ(0.25 * s,
     fixedPivotFHigh - fixedPivotFLow, darkMaterial, 34),
   'fixed-radius-bar-pivot-F');
@@ -1508,10 +1545,21 @@ function sideLeverMarineParallelMotion(movement) {
   leverBody.userData.bores = leverBores;
   leverBody.userData.role =
     'tapered-eight-unit-side-lever-with-bosses-A-and-end-pin';
-  const leverRib = new THREE.Mesh(plate(poly([
-    [1.75 * s, -0.06 * s], [7.0 * s, -0.06 * s],
-    [7.0 * s, 0.06 * s], [1.75 * s, 0.06 * s],
-  ]), leverPlaneZ + leverHalfDepth - 0.01, leverPlaneZ + leverHalfDepth + 0.03),
+  // A 0.14-wide rib with a rounded top, running from boss A into the end
+  // boss (a 0.064 stick read as a stray rod lying on the lever).
+  const ribShape = new THREE.Shape();
+  const ribHalf = 0.07;
+  const ribRise = 0.035;
+  ribShape.moveTo(-0.01, -ribHalf);
+  ribShape.lineTo(ribRise * 0.45, -ribHalf);
+  ribShape.absellipse(ribRise * 0.45, 0, ribRise * 0.55, ribHalf, -Math.PI / 2, Math.PI / 2, false);
+  ribShape.lineTo(-0.01, ribHalf);
+  ribShape.closePath();
+  const ribStart = 1.55 * s;
+  const ribEnd = 7.35 * s;
+  const leverRib = new THREE.Mesh(new THREE.ExtrudeGeometry(ribShape, {
+    bevelEnabled: false, curveSegments: 16, depth: ribEnd - ribStart,
+  }).rotateY(-Math.PI / 2).translate(ribEnd, 0, leverPlaneZ + leverHalfDepth),
   blueMaterial);
   // Brown's centre line is the lever's raised web, not an ink stripe.
   leverRib.userData.role = 'side-lever-raised-centre-web';
@@ -1584,7 +1632,7 @@ function sideLeverMarineParallelMotion(movement) {
     depth: 0.16,
     eyeMaterial: darkMaterial,
     length: radiusBarLength,
-    planeZ: 0.91,
+    planeZ: radiusBarPlaneZ,
     role: 'fixed-length-radius-bar-F-C',
     startBoreRadius: 0.25 * sourceScale + 0.005,
     boreRadius: 0.22 * sourceScale + 0.005,
@@ -1658,8 +1706,8 @@ function sideLeverMarineParallelMotion(movement) {
       'common-pin-side-lever-to-left-link'),
     beamRight: pinOn(sideLever, 0.24 * s, sideLeverRadius, leverPlaneZ, 0.49,
       'common-pin-side-lever-to-right-link'),
-    pointC: pinOn(leftLinkParts.rod, 0.22 * s, leftLinkPointCDistance, 0.26,
-      1.01, 'common-pin-left-link-to-radius-bar-at-C'),
+    pointC: pinOn(leftLinkParts.rod, 0.22 * s, leftLinkPointCDistance,
+      radiusBarPlaneZ - 0.10, 0.46, 'common-pin-left-link-to-radius-bar-at-C'),
     pointD: pinOn(leftLinkParts.rod, 0.22 * s, leftLinkLength, 0.26, 0.76,
       'common-pin-left-link-to-parallel-bar-at-D'),
     pointE: pinOn(crossheadOutput, 0.24 * s, 0, crossheadHigh - 0.02, 0.76,
@@ -1706,7 +1754,7 @@ function sideLeverMarineParallelMotion(movement) {
     radiusBarPivotF: {
       fixedMember: fixedPivotF,
       movingMember: radiusBarParts.rod,
-      point: new THREE.Vector3(radiusPivotF.x, radiusPivotF.y, 0.91),
+      point: new THREE.Vector3(radiusPivotF.x, radiusPivotF.y, radiusBarPlaneZ),
       type: 'fixed-revolute-pair-F',
     },
   };

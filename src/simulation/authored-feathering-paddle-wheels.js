@@ -71,7 +71,8 @@ function featheringPaddleWheel(movement) {
   const stationaryEccentricRadiusSceneUnit = 5 * sourceScale;
   const controlRingRadiusSceneUnit = 7 * sourceScale;
   const mainShaftRadiusSceneUnit = 1.9 * sourceScale;
-  const bucketHeightSceneUnit = 8 * sourceScale;
+  // Plate: each bucket is about 0.78 of ring d's diameter (11 source units).
+  const bucketHeightSceneUnit = 11 * sourceScale;
   const bucketFaceWidthSceneUnit = 1.48;
   const bucketThicknessSceneUnit = 0.13;
   const rotorCenter = new THREE.Vector3(-0.28, 0.28, 0);
@@ -88,7 +89,7 @@ function featheringPaddleWheel(movement) {
   ];
 
   const physicalArmRadiusMetre = 3.0;
-  const physicalBucketHeightMetre = 1.6;
+  const physicalBucketHeightMetre = 2.2;
   const physicalBucketWidthMetre = 1.8;
   const physicalWaterlineYMetre = -1.10;
   const vesselSpeedXMetrePerSecond = 2.0;

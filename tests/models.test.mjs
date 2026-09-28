@@ -1979,7 +1979,7 @@ test('movement 29 advances an 18-tooth spur gear once per single-start disk revo
     'one full turn of the face thread has exactly one spur-tooth lead');
   assert.ok(Math.abs(geometry.circularPitch
     - Math.PI * 2 * geometry.gearPitchRadius / geometry.gearTeeth) < 1e-12);
-  assert.equal(gear.userData.toothProfile, 'sampled-round-spiral-envelope');
+  assert.equal(gear.userData.toothProfile, 'sampled-flat-rib-spiral-envelope');
   assert.ok(gear.userData.toothHeight > 0 && gear.userData.toothHeight < 0.1,
     'the short generated teeth have a valid solid profile');
 
@@ -2000,6 +2000,10 @@ test('movement 29 advances an 18-tooth spur gear once per single-start disk revo
     if (object.userData.spiralThread) threads.push(object);
   });
   assert.equal(threads.length, 1, 'the disk carries one physical spiral thread');
+  assert.equal(disk.userData.threadCaps.length, 0, 'the flat rib ends in its own round plan ends');
+  const ribBox = new THREE.Box3().setFromBufferAttribute(threads[0].geometry.attributes.position);
+  assert.ok(Math.abs(ribBox.max.z - disk.userData.rib.top) < 1e-6, 'the rib has a flat top');
+  assert.ok(ribBox.min.z < disk.userData.rib.base, 'the rib is seated into the disk face');
 
   for (const [shaft, center, axis] of [
     [diskShaft, new THREE.Vector3(), geometry.diskAxis],
@@ -2226,11 +2230,14 @@ test('movement 31 matches a single-start worm lead to one wheel-tooth pitch', ()
   const initial = { ...model.root.userData.kinematics };
   assert.ok(Math.abs(initial.wormAngle - geometry.wormPhase) < 1e-12);
   assert.ok(Math.abs(initial.wheelAngle - geometry.wheelPhase) < 1e-12);
-  assert.ok(Math.abs(initial.wormAngle + Math.PI / 2
+  // Brown's worm is left-handed: the pair is the mirror of the right-handed
+  // generator, whose worm angles are negated.
+  assert.equal(geometry.wormHandedness, -1);
+  assert.ok(Math.abs(geometry.wormHandedness * initial.wormAngle + Math.PI / 2
     - geometry.wheelTeeth * (initial.wheelAngle - Math.PI / 2)) < 1e-12,
     'the source-oriented starting pose keeps the synchronized generating phase');
 
-  const inputPeriod = Math.PI * 2 / initial.wormAngularSpeed;
+  const inputPeriod = Math.PI * 2 / Math.abs(initial.wormAngularSpeed);
   for (const fraction of [0, 0.17, 0.43, 0.78, 1]) {
     model.update(inputPeriod * fraction, 0.016);
     const state = model.root.userData.kinematics;
@@ -2253,7 +2260,8 @@ test('movement 31 matches a single-start worm lead to one wheel-tooth pitch', ()
 
   model.update(inputPeriod, 0);
   const afterOneTurn = model.root.userData.kinematics;
-  assert.ok(Math.abs(afterOneTurn.wormAngle - initial.wormAngle - Math.PI * 2) < 1e-12);
+  assert.ok(Math.abs(afterOneTurn.wormAngle - initial.wormAngle
+    - geometry.wormHandedness * Math.PI * 2) < 1e-12);
   assert.ok(Math.abs(afterOneTurn.wheelAngle - initial.wheelAngle
     - Math.PI * 2 / geometry.wheelTeeth) < 1e-12,
   'one revolution of the single-start worm advances the wheel by one tooth');

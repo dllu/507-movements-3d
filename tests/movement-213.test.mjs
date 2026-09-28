@@ -203,7 +203,17 @@ test('movement 213 reproduces the engraving proportions, five teeth, source pose
   assert.ok(geometry.stopOuterProfile.length > 1000);
   assert.equal(geometry.stopInnerProfile.length, 151);
   assert.equal(geometry.stopRingOutline.length, geometry.stopOuterProfile.length + geometry.stopInnerProfile.length);
-  assert.equal(geometry.driverRatchetOutline.length, 66);
+  // 22 hooked teeth: root, eight points of the hollow back, tip, next root.
+  assert.equal(geometry.driverRatchetOutline.length, 22 * 12);
+  {
+    // Each back is hollow: its midpoint lies inside the root-to-tip chord.
+    const outline = geometry.driverRatchetOutline;
+    for (let tooth = 0; tooth < 22; tooth += 1) {
+      const root = outline[tooth * 12], tip = outline[tooth * 12 + 10], mid = outline[tooth * 12 + 5];
+      const chordMid = root.clone().add(tip).multiplyScalar(0.5);
+      assert.ok(mid.length() < chordMid.length() - 0.02, `tooth ${tooth} back is hollow`);
+    }
+  }
   assert.deepEqual(
     geometry.stopToothArcs.map((arc) => arc.length),
     [9, 9, 9, 9, 9],

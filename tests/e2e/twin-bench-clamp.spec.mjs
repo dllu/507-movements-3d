@@ -1,7 +1,7 @@
 import {expect,test} from '@playwright/test';
 test('174 plays its baked bench clamp and restarts on desktop and mobile',async({page})=>{
  const errors=[];page.on('pageerror',e=>errors.push(e.message));await page.emulateMedia({reducedMotion:'reduce'});
- await page.goto('/portable/#/movement/174');const canvas=page.locator('.simulation-canvas');await expect(canvas).toBeVisible();await page.waitForTimeout(300);
+ await page.goto('/portable/#/movement/174');const canvas=page.locator('.simulation-canvas');await expect(canvas).toBeVisible();await page.waitForTimeout(1500);
  const initial=await canvas.screenshot();await page.screenshot({path:'/dev/shm/174-packaged-source.png'});
  await page.locator('.play-control').click();await page.waitForTimeout(1800);await page.locator('.play-control').click();
  expect((await canvas.screenshot()).equals(initial)).toBe(false);await page.screenshot({path:'/dev/shm/174-packaged-moving.png'});

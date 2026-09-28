@@ -192,3 +192,20 @@ test('belts-1-23: 012 and 013 fixed sheaves hang by an open hook from a ceiling 
   assert.ok(hasTube(thirteen.fixedHanger));
   assert.ok(thirteen.anchorEye.position.y < box(thirteen.support).min.y);
 });
+
+test('belts-1-23 p93: 003 and 004 sheaves show cast ring hubs and short shaft stubs, as engraved', () => {
+  for (const [id, keys] of [[3, ['driven', 'guideA', 'guideB']], [4, ['guideLeft', 'guideRight']]]) {
+    const root = modelFor(id).root, blocks = root.userData.blocks ?? {};
+    const pulleys = keys.map((key) => blocks[key]).filter(Boolean);
+    if (id === 4) root.traverse((o) => { if (o.userData?.hub && o.userData.tread?.userData.role === 'solid-pulley-drum') pulleys.push(o); });
+    assert.ok(pulleys.length >= 2, `${id} pulleys`);
+    for (const pulley of pulleys) {
+      const data = pulley.userData;
+      assert.equal(data.hub.material, data.tread.material, `${id} hub in the wheel's metal`);
+      const shaft = data.rotor.children.find((child) => child.userData.role === 'keyed-shaft');
+      const length = new THREE.Box3().setFromObject(shaft).getSize(new THREE.Vector3());
+      const shaftLength = shaft.userData.length ?? Math.max(length.x, length.y, length.z);
+      assert.ok(shaftLength <= data.width + 0.10 + 1e-6, `${id} stub ${shaftLength}`);
+    }
+  }
+});

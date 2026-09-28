@@ -235,8 +235,8 @@ test('movement 283 keeps both rack meshes simultaneous and exactly no-slip', () 
   let rightMaximum = -Infinity;
   let minimumMeshMargin = Infinity;
 
-  assert.equal(geometry.pinionTeeth, 18);
-  assert.equal(geometry.rackToothCount, 16);
+  assert.equal(geometry.pinionTeeth, 16);
+  assert.equal(geometry.rackToothCount, 13);
   near(geometry.rackPitch,
     geometry.pinionPitchRadius * geometry.pinionAngularPitch, 0,
   'shared pinion-rack circular pitch');
@@ -275,9 +275,9 @@ test('movement 283 keeps both rack meshes simultaneous and exactly no-slip', () 
     'left rack stroke');
   near(rightMaximum - rightMinimum, transmission.rackStroke, 0,
     'right rack stroke');
-  near(transmission.rackStroke / geometry.rackPitch, 9, 0,
-    'nine tooth pitches per half-turn');
-  assert.ok(minimumMeshMargin > 1.16,
+  near(transmission.rackStroke / geometry.rackPitch, 8, 1e-15,
+    'eight tooth pitches per half-turn');
+  assert.ok(minimumMeshMargin > 2.4 * geometry.rackPitch,
     `rack mesh coverage margin ${minimumMeshMargin}`);
   assert.match(transmission.leftRackNoSlipLaw, /left-rack-speed = -/);
   assert.match(transmission.rightRackNoSlipLaw, /right-rack-speed =/);

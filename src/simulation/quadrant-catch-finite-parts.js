@@ -89,12 +89,99 @@ function hull(points) {
 // A plain lever: the tangent hull of a boss and an eye.
 export const tangentLever = (a, ra, b, rb) => P(hull([...circlePoints(a, ra, 96), ...circlePoints(b, rb, 64)]));
 
-// Outlines traced from plate 183 (upper un-rotated from its 0.6 deg plate
-// pose): the upper C-arm with Brown's hooked tip, the upper pointed-window
-// wing, and the lower band with its anvil window between two curved webs.
-const upperArmTrace = Object.freeze([[[[245.4, 112.5], [244.5, 112.6], [243.2, 113.9], [241.8, 117.9], [240.6, 122.9], [240.5, 131.8], [239.9, 133.6], [235.5, 137], [224.8, 152], [220.3, 160.1], [217.1, 169.1], [216, 180.1], [216.2, 186.1], [217.4, 193.1], [220.1, 202.1], [223.9, 210], [228, 217], [228.7, 227], [230.6, 237], [230.6, 241], [224.9, 261], [216.6, 282.1], [215.6, 289.1], [213.2, 290.9], [205.2, 291.7], [203.5, 292.7], [202.5, 294.3], [202.3, 299.3], [202.8, 302.3], [204.5, 304.8], [207.4, 306], [213.4, 305.8], [217.4, 304.3], [219.3, 302.9], [225.1, 297], [233.3, 285.9], [238.9, 279.9], [240.7, 275.9], [245.5, 255.8], [247.6, 236.8], [247.4, 221.8], [240.3, 205.9], [236.6, 194.9], [235.3, 188.9], [235.2, 182.9], [237.7, 174.9], [240.6, 169.9], [243.9, 165.9], [247.9, 162.8], [251.8, 160.8], [254.8, 159.9], [257.8, 159.9], [270.9, 162.5], [275.6, 162.3], [276.6, 161.3], [276.6, 159.7], [275.6, 158.7], [268.8, 158.2], [263.8, 156.6], [259.8, 154.3], [253.8, 149.7], [249.3, 143.8], [246.9, 138.8], [245.6, 132.8], [245.6, 122.8], [248.2, 114.2], [247.2, 113.1]]]]);
-const upperWingTrace = Object.freeze([[[[380.5, 37.5], [376.6, 37.6], [358.6, 40.8], [353.8, 42.3], [351.9, 44.7], [349.9, 49.7], [349.9, 52.7], [351.6, 57.7], [351.2, 59.5], [349.7, 60.9], [336.9, 67.6], [320, 77.5], [306, 84.7], [300.1, 88.7], [288.2, 94.8], [285.2, 95.3], [280.1, 94.5], [268.1, 94.6], [262.2, 96.1], [258.2, 97.7], [250.2, 102.9], [246.7, 106.8], [245.1, 109.6], [245.2, 110.4], [246.4, 111.5], [249.3, 112], [255.3, 105.9], [261.2, 101.7], [267.2, 99.3], [271.2, 98.6], [280.2, 98.5], [286.2, 100.1], [293.2, 104], [298.1, 108.3], [302.9, 115.2], [305.3, 122.2], [305.5, 133.2], [303.6, 140.2], [299.3, 147.2], [295.7, 151.1], [287.8, 156.3], [279.1, 158.7], [278.1, 159.7], [278.1, 161.2], [278.5, 161.8], [279.9, 162], [289.8, 159.5], [292.6, 159.9], [295.1, 162.5], [309, 172.3], [320.1, 183], [328.2, 192.9], [332.9, 202.9], [334.4, 212.9], [334.3, 215.9], [332.6, 223.9], [332.6, 226.8], [333.2, 228.3], [352.7, 237.5], [355.7, 237.6], [358.7, 236.8], [372.5, 224.7], [374.5, 223.7], [378.5, 222.8], [380.3, 221.3], [381.2, 219.4], [381.9, 215.4], [383.5, 212.4], [388.5, 205.5], [393.3, 203.1], [394.7, 200.9], [395.8, 197.5], [398.9, 194.1], [403.7, 184.1], [404.2, 172.2], [405.2, 170.7], [407.7, 169.9], [408.7, 168.9], [408.7, 167.2], [406.9, 163.1], [406.9, 157.1], [409.4, 151.1], [410.5, 144.1], [411.5, 131.1], [411.3, 117.1], [410.5, 112.1], [410.9, 110.3], [413, 107.8], [413, 106.3], [410.5, 103.8], [409.5, 102.1], [408.8, 98.1], [402.6, 77.2], [398.9, 69.2], [396, 65.2], [389.9, 48.3], [383.9, 39.4], [382.4, 38]], [[377.1, 89.9], [378.9, 90.7], [380.1, 92.4], [385.1, 109.3], [386.4, 117.3], [386.5, 139.3], [384.6, 150.3], [378.9, 169.4], [375.2, 178.4], [367.8, 192.5], [363.2, 198.5], [360.3, 200.1], [359.5, 199.9], [358.5, 198.6], [357.8, 194.6], [354.8, 185.7], [348.6, 175.7], [338.7, 164.2], [329.8, 156.3], [320.8, 149.8], [319.3, 148], [318.7, 145], [319.6, 139], [319.6, 128], [320.7, 125.2], [322.5, 124.1], [338.4, 118], [350.3, 111.7], [362.2, 102.4], [371.2, 93.8], [375.1, 90.7]]]]);
-const lowerQuadrantTrace = Object.freeze([[[[194.1, 251.9], [193.6, 255.5], [194.9, 260.5], [202.6, 276.4], [203.7, 277.9], [206.5, 278.3], [210.5, 276.7], [212.5, 276.6], [217.5, 277.8], [224.5, 280.9], [232.8, 287.6], [240.5, 298.5], [243.7, 304.5], [249.1, 318.5], [251.7, 331.3], [253.6, 332.4], [256.5, 331.3], [261.5, 326.9], [265.5, 324.3], [275.5, 319.9], [281.5, 318.6], [285.5, 318.7], [292.5, 319.9], [299.5, 323.3], [306.5, 327.9], [309.4, 328.4], [310.9, 327.9], [313.9, 313.5], [316.5, 305.5], [319.8, 297.5], [323.9, 290.5], [329.5, 283.6], [338.5, 277], [344.5, 274.7], [356.5, 274.5], [358.9, 273.9], [363.1, 262.5], [366.1, 251.5], [366.5, 248.5], [365.6, 244.6], [363.4, 242.3], [346.5, 232.8], [332.5, 227.2], [316.5, 222.6], [308.5, 221.3], [302.5, 219.7], [292.5, 218.5], [273.5, 218.5], [256.5, 220.7], [235.5, 226], [221.5, 232.8], [203.5, 243.9]], [[234.8, 252.9], [240.5, 250], [251.5, 245.9], [269.5, 242.6], [286.5, 242.5], [301.5, 244.7], [306.5, 245.9], [319.5, 250.5], [322.3, 252], [323.2, 254.5], [322.3, 256.1], [316.5, 260.6], [308.5, 268.5], [302.9, 275.5], [297.9, 285.5], [292.9, 298.5], [290.9, 305.4], [288.5, 307.1], [284.5, 306.6], [273.5, 306.4], [271.1, 305.3], [265.2, 290.5], [261.7, 283.5], [256.1, 274.5], [249.4, 266.7], [242.4, 261.3], [234.9, 257.3], [233.9, 254.6]]]]);
+// Brown's quadrant castings, rebuilt from their intended construction rather
+// than traced pixel by pixel (the old traces wobbled and creased up to 23 deg).
+// Rims and window edges that Brown draws concentric with a shaft are true
+// arcs about it; every other drawn edge is a straight line or one circular arc
+// through three points read off plate 183; the curly C-arm is two smooth
+// splines through its drawn edges, ending in a round hook concentric with a
+// single centre. Angles are page degrees (y down) about the named pivot.
+const polar = (c, r, a) => [c[0] + r * Math.cos(a * deg), c[1] + r * Math.sin(a * deg)];
+const arcAbout = (c, r, a0, a1, n = 96) => Array.from({ length: n + 1 }, (_, i) => polar(c, r, a0 + (a1 - a0) * i / n));
+// The circular arc from p0 through pm to p1.
+function arc3(p0, pm, p1, n = 64) {
+  const [ax, ay] = p0, [bx, by] = pm, [cx, cy] = p1;
+  const d = 2 * (ax * (by - cy) + bx * (cy - ay) + cx * (ay - by));
+  const ux = ((ax * ax + ay * ay) * (by - cy) + (bx * bx + by * by) * (cy - ay) + (cx * cx + cy * cy) * (ay - by)) / d;
+  const uy = ((ax * ax + ay * ay) * (cx - bx) + (bx * bx + by * by) * (ax - cx) + (cx * cx + cy * cy) * (bx - ax)) / d;
+  const ang = ([x, y]) => Math.atan2(y - uy, x - ux);
+  const a0 = ang(p0), am = ang(pm);
+  let a1 = ang(p1);
+  const within = (a, s, e) => { const u = ((a - s) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI), v = ((e - s) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI); return u <= v; };
+  // Go the way that passes pm.
+  let sweep = ((a1 - a0) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
+  if (!within(am, a0, a1)) sweep -= 2 * Math.PI;
+  const r = Math.hypot(ax - ux, ay - uy);
+  return Array.from({ length: n + 1 }, (_, i) => [ux + r * Math.cos(a0 + sweep * i / n), uy + r * Math.sin(a0 + sweep * i / n)]);
+}
+const chain = (...pieces) => { const out = []; for (const p of pieces) for (const q of p) { const l = out.at(-1); if (!l || Math.hypot(q[0] - l[0], q[1] - l[1]) > 1e-6) out.push(q); } return out; };
+// The point where the line from a through b meets the circle (c, r) beyond b.
+function lineToCircle(a, b, c, r) {
+  const d = [b[0] - a[0], b[1] - a[1]], f = [a[0] - c[0], a[1] - c[1]];
+  const A = d[0] ** 2 + d[1] ** 2, B = 2 * (f[0] * d[0] + f[1] * d[1]), C = f[0] ** 2 + f[1] ** 2 - r * r;
+  const t = (-B + Math.sqrt(B * B - 4 * A * C)) / (2 * A);
+  return [a[0] + d[0] * t, a[1] + d[1] * t];
+}
+const angleAbout = (c, p) => Math.atan2(p[1] - c[1], p[0] - c[0]) / deg;
+
+// Lower quadrant (plane F): a band between the rim (bandRadius) and an inner
+// rim at 111 px, both about the lower shaft, with straight end cuts; below
+// each end a short lip, then a concave web flank (one arc) into the hub. The
+// anvil window is the band's inner rim over two concave arc sides and a
+// straight foot.
+const bandInner = 111;
+function lowerQuadrantOutline() {
+  const leftOuter = lineToCircle([202.6, 276.4], [194.1, 251.9], PL, bandRadius + 3);
+  const rightOuter = lineToCircle([358.9, 273.9], [366.1, 251.5], PL, bandRadius + 3);
+  const outer = chain(
+    [leftOuter, [202.9, 277.6], [212.5, 276.8]],
+    arc3([212.5, 276.8], [240.5, 298.5], [252.4, 334]),
+    [[282, 336]],
+    arc3([310.5, 331], [323.9, 290.5], [344.5, 274.7]),
+    [[358.9, 273.9], rightOuter],
+    arcAbout(PL, bandRadius + 3, angleAbout(PL, rightOuter), angleAbout(PL, leftOuter), 256).slice(1, -1));
+  const tl = polar(PL, bandInner, -116.5), tr = polar(PL, bandInner, -68.2);
+  const window = chain(
+    arcAbout(PL, bandInner, -116.5, -68.2, 96),
+    arc3(tr, [302.9, 275.5], [290.4, 305.6]),
+    arc3([271.6, 305.6], [256.1, 274.5], tl).slice(0, -1));
+  return polygonClipping.difference(P(outer), P(window));
+}
+
+// Upper wing (plane F): the rim (rimRadius) about the upper shaft; a squared
+// tab at the top; a straight upper edge running into the boss; a convex lower
+// edge (one arc) down to the toe, which is cut to the band's rim. The pointed
+// window is bounded by an arc concentric with the shaft (112 px) and two
+// concave arcs meeting a short flank beside the boss.
+function upperWingOutline() {
+  const top = polar(PU, rimRadius + 3, -40.6);
+  const outer = chain(
+    [top, [355, 41.6], [350.2, 49.5], [350.3, 60.6]],
+    [[274, 103.4]],
+    [[287, 155]],
+    arc3([291, 159.6], [320.1, 183], [334.4, 213.5]),
+    [[333.3, 250]],
+    arcAbout(PU, rimRadius + 3, 62, -40.6, 192).slice(0, -1));
+  const tr = polar(PU, 112, -19.4), br = polar(PU, 112, 40.2);
+  const window = chain(
+    arcAbout(PU, 112, -19.4, 40.2, 96),
+    arc3(br, [348.6, 175.7], [320.8, 149.8]),
+    arc3([320.8, 149.8], [319.2, 136.5], [322.5, 124.1]).slice(1),
+    arc3([322.5, 124.1], [350.3, 111.7], tr).slice(1, -1));
+  return polygonClipping.difference(P(outer), P(window));
+}
+
+// Upper C-arm (plane A): two smooth splines through Brown's edges, ending in
+// the hook's round end, concentric with one centre.
+function upperArmOutline() {
+  const hook = [207.6, 298.8], hookR = 7.4;
+  const left = [[248, 118], [240.5, 129], [234, 139.5], [222.5, 157], [216.4, 177], [218, 196], [225.5, 212.5], [230, 230], [229, 248],
+    [222.5, 268], [215.5, 285], polar(hook, hookR, -102)];
+  const right = [polar(hook, hookR, 85), [216.5, 304.2], [225.5, 296.5], [233.5, 285.5], [240.8, 274.5],
+    [245.6, 255], [247.6, 236.5], [246.5, 221], [240.2, 206], [235.8, 191], [236.8, 178], [242.5, 168], [250.5, 162], [260, 160], [270, 162.5], [280, 160]];
+  const outline = chain(smooth(left, 10), arcAbout(hook, hookR, 258, 85, 48).slice(1, -1), smooth(right, 10));
+  return P(outline);
+}
 
 // Brown's ball lever: a straight bar from the ball to a broad crook that
 // wraps under the web into the hub (plate 183 edges, px).
@@ -109,14 +196,16 @@ export function quadrantCatchParts() {
   upper.parts.hub = { planes: 'BAF', poly: circlePoly(PU, hubRadius.upper) };
   lower.parts.hub = { planes: 'WRBAFH', poly: circlePoly(PL, hubRadius.lower) };
   // The band's rims are true arcs about the lower shaft.
-  lower.parts.quadrant = { planes: 'F', poly: polygonClipping.intersection(lowerQuadrantTrace, circlePoly(PL, bandRadius, 512)) };
+  lower.parts.quadrant = { planes: 'F', poly: polygonClipping.intersection(lowerQuadrantOutline(), circlePoly(PL, bandRadius, 512)) };
   lower.parts.lever = { planes: 'H', poly: leverOutline() };
   lower.parts.weightArm = { planes: 'W', poly: tangentLever(PL, 24, eyes.lower, eyeRadius) };
   // The wing's outer rim is a true arc about the upper shaft; its toe is cut
   // to the band's rim, on which it rests in the plate pose.
-  upper.parts.wing = { planes: 'F', poly: diff(polygonClipping.intersection(upperWingTrace, circlePoly(PU, rimRadius, 512)),
-    circlePoly(PL, bandRadius + 0.4, 512)) };
-  upper.parts.arm = { planes: 'A', poly: union(upperArmTrace, circlePoly(PU, hubRadius.upper - 2)) };
+  // The wing stops 1 px inside the boss, so its cut face is buried in the
+  // boss and no bore wall doubles the boss's own.
+  upper.parts.wing = { planes: 'F', poly: diff(polygonClipping.intersection(upperWingOutline(), circlePoly(PU, rimRadius, 512)),
+    circlePoly(PL, bandRadius + 0.4, 512), circlePoly(PU, hubRadius.upper - 1, 128)) };
+  upper.parts.arm = { planes: 'A', poly: union(upperArmOutline(), circlePoly(PU, hubRadius.upper - 2)) };
   upper.parts.weightArm = { planes: 'B', poly: tangentLever(PU, 20, eyes.upper, eyeRadius) };
   upper.eye = [...eyes.upper];
   lower.eye = [...eyes.lower];

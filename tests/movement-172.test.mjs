@@ -38,3 +38,13 @@ test('172 (pass 90): the wrist is Brown\'s large eye on a crosshead bar sliding 
    assert.ok(Math.abs(p.y-g.guideY)<1e-12);assert.ok(Math.abs(p.x-eggAtTime(t).wrist[0])<1e-12);}
  }finally{disposeObject3D(m.root);}
 });
+test('172 (pass 93): the tracing point reads as a ring eye on the rod, concentric with its pin',()=>{
+ const m=createAuthoredCurveGeneratorMovement({id:172});
+ try {const {tracer,tracerEye,rod}=m.root.userData.parts;
+  for(const o of [tracer,tracerEye,rod])o.geometry.computeBoundingBox();
+  const eye=tracerEye.geometry.boundingBox,r=rod.geometry.boundingBox;
+  assert.ok(eye.max.x-eye.min.x>.19,'eye nearly the rod width');
+  assert.ok(Math.abs(eye.min.z-r.max.z)<1e-9,'eye seated on the rod face');
+  assert.equal(tracer.position.x,tracerEye.position.x);
+ }finally{disposeObject3D(m.root);}
+});

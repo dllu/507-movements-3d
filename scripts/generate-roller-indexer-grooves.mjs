@@ -1,5 +1,9 @@
 import {writeFile} from 'node:fs/promises';
 const R=1.52,pitch=Math.PI/4,half=pitch*.36,gap=1.10,centerRadius=1.04,rollerRadius=.078,rollerLength=.35;
+// The roller, and the stud's retaining head just beyond its outer end
+// (radius 0.064, from 0.004 to 0.066 past the end; see the factory), which
+// runs into the groove with it.
+const bodies=[{r:rollerRadius,s0:-rollerLength/2,s1:rollerLength/2},{r:.064,s0:rollerLength/2+.004,s1:rollerLength/2+.066}];
 const height=2*(gap*Math.tan(half)+.035),vertical=64,clearance=.002,states=[];
 for(let i=0;i<=384;i++){
  const phi=-pitch/2+pitch*i/384,u=Math.max(0,Math.min(1,(Math.tan(phi)+Math.tan(half))/(2*Math.tan(half)))),f=u*u*u*(10-15*u+6*u*u),a=f*pitch;
@@ -12,12 +16,14 @@ function radiusAt(delta,y){
   const angle=Math.PI-delta+copy*pitch,ex=Math.cos(angle),ez=Math.sin(angle);
   for(const{c,v}of states){
    const dx=c[0],dy=c[1]-y,dz=c[2],ev=ex*v[0]+ez*v[2],dv=dx*v[0]+dy*v[1]+dz*v[2];
-   const A=1-ev*ev,B=-2*(ex*dx+ez*dz-ev*dv),C=dx*dx+dy*dy+dz*dz-dv*dv-(rollerRadius+clearance)**2,disc=B*B-4*A*C;
-   if(disc<0||A<1e-12)continue;
-   let lo=(-B-Math.sqrt(disc))/(2*A),hi=(-B+Math.sqrt(disc))/(2*A);
-   if(Math.abs(ev)>1e-12){const a=(dv-rollerLength/2-clearance)/ev,b=(dv+rollerLength/2+clearance)/ev;lo=Math.max(lo,Math.min(a,b));hi=Math.min(hi,Math.max(a,b));}
-   else if(Math.abs(dv)>rollerLength/2+clearance)continue;
-   if(hi>=lo&&hi>=0&&lo<R)radius=Math.min(radius,Math.max(0,lo));
+   for(const{r:bodyRadius,s0,s1}of bodies){
+    const A=1-ev*ev,B=-2*(ex*dx+ez*dz-ev*dv),C=dx*dx+dy*dy+dz*dz-dv*dv-(bodyRadius+clearance)**2,disc=B*B-4*A*C;
+    if(disc<0||A<1e-12)continue;
+    let lo=(-B-Math.sqrt(disc))/(2*A),hi=(-B+Math.sqrt(disc))/(2*A);
+    if(Math.abs(ev)>1e-12){const a=(dv+s0-clearance)/ev,b=(dv+s1+clearance)/ev;lo=Math.max(lo,Math.min(a,b));hi=Math.min(hi,Math.max(a,b));}
+    else if(-dv<s0-clearance||-dv>s1+clearance)continue;
+    if(hi>=lo&&hi>=0&&lo<R)radius=Math.min(radius,Math.max(0,lo));
+   }
   }
  }
  return radius;

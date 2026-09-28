@@ -580,9 +580,12 @@ test('movement 176 keeps one rear wrist engaged with the radial slot of one coax
   assert.ok(size.x > 8.31);
   assert.ok(size.y > 8.31,
     'full crank witness keeps every rotated pose in the camera envelope');
-  assert.ok(size.z > 2.37,
+  // Pass 93: the rear bearing is a bored ring seated on the input shaft (no
+  // loose torus past its end), so the shaft's end sets the rear depth.
+  assert.ok(size.z > 2.3,
     'rear input, selector, front output, shafts, and bearings occupy real depth');
-  assert.ok(bounds.min.z < -1.18);
+  assert.ok(bounds.min.z < -1.12);
+  assert.ok(fixedRearBearingRing.geometry.type !== 'TorusGeometry');
   assert.ok(bounds.max.z > 1.17);
   assert.equal(model.cameraDirection.x, 0);
   assert.equal(model.cameraDirection.y, 0);

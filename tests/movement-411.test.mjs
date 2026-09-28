@@ -436,3 +436,17 @@ test('411: the paper-shift knob ends inside the drum guide, not in its face', ()
   assert.ok(Math.abs(k.min.x - (g.min.x + 0.01)) < 1e-6, 'knob inner end 0.01 inside the guide');
   assert.ok(Math.abs(k.max.x - 1.31) < 1e-6, 'knob outer end unchanged');
 });
+
+test('movement 411 drum paper is an off-white ruled texture, not a white blank (p93)', () => {
+  const model = createMovementModel(catalog.movements[410]);
+  const { paperDrum } = model.root.userData.blocks;
+  const color = paperDrum.material.color.clone().convertLinearToSRGB();
+  const luminance = 0.2126 * color.r + 0.7152 * color.g + 0.0722 * color.b;
+  assert.ok(luminance < 0.85, `paper luminance ${luminance}`);
+  const map = paperDrum.material.map;
+  assert.ok(map?.isDataTexture, 'section ruling texture');
+  const shades = new Set();
+  for (let x = 0; x < map.image.width; x += 1) shades.add(map.image.data[x * 4]);
+  assert.ok(shades.size >= 3, 'paper, minor and major ruling');
+  assert.ok(paperDrum.geometry.attributes.uv, 'axial ruling coordinate');
+});

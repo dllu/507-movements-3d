@@ -93,10 +93,12 @@ function halfLatheSolid(section, segments = 160) {
 function flangedCastCasing(root) {
   const d = root.userData, b = d.blocks;
   const material = b.caseWalls[0].material;
+  // p93: Brown draws the cup's bottom corners square, inside and out; the
+  // two-chord chamfers there shaded as bands.
   const casing = new THREE.Mesh(halfLatheSolid([
-    [0.765, -1.90], [1.78, -1.90], [2.00, -1.84], [2.10, -1.70],
+    [0.765, -1.90], [2.10, -1.90],
     [2.10, 1.58], [2.42, 1.58], [2.42, 1.96], [0.745, 1.96],
-    [0.745, 1.78], [1.91, 1.78], [1.91, -1.60], [1.83, -1.68],
+    [0.745, 1.78], [1.91, 1.78], [1.91, -1.68],
     [0.765, -1.68],
   ]), material);
   casing.userData.role = 'fixed-flanged-cast-casing-in-section';
@@ -197,7 +199,7 @@ function condensateWater(root, stateAtTime, cycleDuration, liftScale) {
   // seat are one connected body, so they are one half lathe (two bodies
   // shared the face at the seat top and drew an internal sheet there).
   const pool = addWater(halfLatheBuffer(7), 'condensate-gathering-in-A-on-the-seat-and-sealing-its-bore');
-  const film = addWater(halfLatheBuffer(10), 'condensate-running-down-D-to-the-box-floor', true);
+  const film = addWater(halfLatheBuffer(22), 'condensate-running-down-D-to-the-box-floor', true);
   const outlet = addWater(halfLatheBuffer(5), 'condensate-leaving-through-B', true);
   writeHalfLathe(outlet.geometry, [[0.001, -1.70], [0.66, -1.70], [0.66, -3.18], [0.001, -3.18], [0.001, -1.70]]);
   const store = { area, levelAt, levelRange, lowestLevel, mean };
@@ -209,8 +211,12 @@ function condensateWater(root, stateAtTime, cycleDuration, liftScale) {
     // Over D's shoulder edge, its waist and dished foot to the flange rim,
     // down to the floor and in to the mouth of B. It starts 0.005 under the
     // seat's lower face (y 1.10), so no film face lies on it as D closes.
-    writeHalfLathe(film.geometry, [[0.82, 1.095], [0.815, 0.775 + lift], [0.83, 0.62 + lift], [0.90, 0.30 + lift],
-      [0.995, 0.08 + lift], [1.025, -0.07 + lift], [1.03, -1.40], [1.02, -1.665], [0.85, -1.672], [0.70, -1.69]]);
+    // p93: the stretch over D's waist and dished foot is a smooth curve
+    // through the same points (4 samples per span), as D's own profile is.
+    const curtain = [[0.815, 0.775 + lift], [0.83, 0.62 + lift], [0.90, 0.30 + lift], [0.995, 0.08 + lift], [1.025, -0.07 + lift]]
+      .map(([r, y]) => new THREE.Vector2(r, y));
+    const smoothCurtain = new THREE.SplineCurve(curtain).getPoints(16).map((p) => [p.x, p.y]);
+    writeHalfLathe(film.geometry, [[0.82, 1.095], ...smoothCurtain, [1.03, -1.40], [1.02, -1.665], [0.85, -1.672], [0.70, -1.69]]);
     const flow = THREE.MathUtils.clamp(state.flowFraction, 0, 1);
     film.material.opacity = material.opacity * THREE.MathUtils.smoothstep(flow, 0, 0.25);
     outlet.material.opacity = material.opacity * THREE.MathUtils.smoothstep(flow, 0, 0.25);

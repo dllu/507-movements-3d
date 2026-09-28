@@ -8,11 +8,19 @@
   "sources": [
     {
       "file": "src/simulation/feed-worm-assembly-parts.js",
-      "sha256": "08ce8187e8a089148ad4559f1b0d8c3f29dc7121fe8a650e2a93d0080d219b35"
+      "sha256": "cae898f234946171980d9353e5beffe3cb78a1d95131a777cc2beec1faca3aa4"
     },
     {
       "file": "src/data/face-worm-195.js",
       "sha256": "97c6c55d2c4835ed76527768dec2374cdfea7b77a782b48ee76c4e923a4f6e68"
+    },
+    {
+      "file": "src/data/face-worm-195-mesh.js",
+      "sha256": "9673f951b341652903ad0bec69ee8c0cd51aa7d1e712c27387ddd0da3bb95daa"
+    },
+    {
+      "file": "scripts/bake-face-worm-195-mesh.mjs",
+      "sha256": "5614fd9301d5dfcf366edb6b5642b07f4dac01f068d92e8e3b106a451c73d57d"
     },
     {
       "file": "src/simulation/solid-worm.js",
@@ -28,7 +36,7 @@
     },
     {
       "file": "scripts/review-feed-worm-working-faces.mjs",
-      "sha256": "93398a73a7cffea82f8d3e1f84039e130592e15e48bc931f5b5ed3e74ed5b12f"
+      "sha256": "c2a0b279cca2eb73ee2b42f7d4cfde53bcfd4819d22bd4370405b3653d13cd0f"
     }
   ],
   "method": "Actual wheel triangle centers and closest worm triangles, opposing outward normals; resisting input moment and intended output moment. Finite clearance is not loaded zero-gap contact.",

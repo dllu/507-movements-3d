@@ -22,38 +22,9 @@ const source = (px, py) => new THREE.Vector2((px - 150) * SCALE, (276 - py) * SC
 // Closed solid from a map of the unit cube [0,1]^3 sampled nu x nv x 1. Faces
 // are emitted outward in parameter space, then the whole mesh is flipped if
 // the map reverses orientation, so every face shares one outward winding.
-function parametricSolid(nu, nv, map) {
-  const positions = [];
-  const at = (u, v, w) => map(u, v, w);
-  const quad = (a, b, c, d) => { for (const p of [a, b, c, a, c, d]) positions.push(p.x, p.y, p.z); };
-  for (let i = 0; i < nu; i += 1) for (let j = 0; j < nv; j += 1) {
-    const u0 = i / nu, u1 = (i + 1) / nu, v0 = j / nv, v1 = (j + 1) / nv;
-    quad(at(u0, v0, 0), at(u0, v1, 0), at(u1, v1, 0), at(u1, v0, 0));
-    quad(at(u0, v0, 1), at(u1, v0, 1), at(u1, v1, 1), at(u0, v1, 1));
-  }
-  for (let i = 0; i < nu; i += 1) {
-    const u0 = i / nu, u1 = (i + 1) / nu;
-    quad(at(u0, 0, 0), at(u1, 0, 0), at(u1, 0, 1), at(u0, 0, 1));
-    quad(at(u0, 1, 0), at(u0, 1, 1), at(u1, 1, 1), at(u1, 1, 0));
-  }
-  for (let j = 0; j < nv; j += 1) {
-    const v0 = j / nv, v1 = (j + 1) / nv;
-    quad(at(0, v0, 0), at(0, v0, 1), at(0, v1, 1), at(0, v1, 0));
-    quad(at(1, v0, 0), at(1, v1, 0), at(1, v1, 1), at(1, v0, 1));
-  }
-  let volume = 0;
-  for (let k = 0; k < positions.length; k += 9) {
-    const [ax, ay, az, bx, by, bz, cx, cy, cz] = positions.slice(k, k + 9);
-    volume += ax * (by * cz - bz * cy) - ay * (bx * cz - bz * cx) + az * (bx * cy - by * cx);
-  }
-  if (volume < 0) for (let k = 0; k < positions.length; k += 9) {
-    for (let e = 0; e < 3; e += 1) [positions[k + 3 + e], positions[k + 6 + e]] = [positions[k + 6 + e], positions[k + 3 + e]];
-  }
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-  geometry.computeVertexNormals();
-  return geometry;
-}
+const CROWN_TOOTH_HALF_WIDTH = 0.072;
+const CROWN_TOOTH_DRAFT_DEG = 8;
+const CROWN_TOOTH_RADIAL_WIDTH = 0.24;
 
 function cylinder(radius, length, axis, material, segments = 32) {
   const mesh = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, length, segments), material);
@@ -539,28 +510,45 @@ function gearedBalanceVergeEscapement(movement) {
   crown.add(drum);
   const addendum = gearModule, dedendum = gearModule * 1.25;
   const pitchLineX = crownFaceX + dedendum;
-  const flankSlope = Math.tan(THREE.MathUtils.degToRad(20));
-  // Crown teeth are thinned for backlash: the crown's rim is only locally
-  // a straight rack for the involute pinion.
-  const crownBacklash = 0.03;
-  // Narrow radially: teeth away from the pitch point are tilted about the
-  // arbor, so their radial edges drift from the ideal rack.
-  const crownToothRadialWidth = 0.14;
-  const halfPitchWidth = Math.PI * gearModule / 4 - crownBacklash / 2;
+  // Brown draws square crenellations with rounded tops, about half a pitch
+  // wide. Each tooth is one extrusion of that section (tangent x axial),
+  // run radially across the rim: nearly parallel flanks with a slight draft,
+  // capped by a full circular arc. The draft and the arc's clearance give the
+  // backlash the involute pinion needs.
+  const crownToothHalfWidth = CROWN_TOOTH_HALF_WIDTH;
+  const crownToothDraft = Math.tan(THREE.MathUtils.degToRad(CROWN_TOOTH_DRAFT_DEG));
+  const crownToothHeight = addendum + dedendum;
+  const crownToothRadialWidth = CROWN_TOOTH_RADIAL_WIDTH;
+  const crownToothSection = (() => {
+    // Half width at height h above the drum face (pitch line at h = dedendum).
+    const halfAt = (h) => crownToothHalfWidth + (dedendum - h) * crownToothDraft;
+    // The tip arc is tangent to both flanks and reaches the full height.
+    let tipRadius = halfAt(crownToothHeight);
+    for (let i = 0; i < 20; i += 1) tipRadius = halfAt(crownToothHeight - tipRadius);
+    const tipCentre = crownToothHeight - tipRadius;
+    const shape = new THREE.Shape();
+    const baseHalf = halfAt(-0.02);
+    shape.moveTo(-baseHalf, -0.02);
+    shape.lineTo(baseHalf, -0.02);
+    shape.lineTo(halfAt(tipCentre), tipCentre);
+    shape.absarc(0, tipCentre, tipRadius, 0, Math.PI, false);
+    shape.lineTo(-baseHalf, -0.02);
+    return shape;
+  })();
+  const crownToothGeometry = new THREE.ExtrudeGeometry(crownToothSection, { bevelEnabled: false, curveSegments: 24, depth: crownToothRadialWidth });
+  // Section x -> tangent (+z at the top), section y -> +x along the arbor,
+  // extrusion -> radial, centred on the pitch radius.
+  crownToothGeometry.translate(0, 0, -crownToothRadialWidth / 2);
+  crownToothGeometry.applyMatrix4(new THREE.Matrix4().makeBasis(
+    new THREE.Vector3(0, 0, 1), new THREE.Vector3(1, 0, 0), new THREE.Vector3(0, 1, 0),
+  ));
+  crownToothGeometry.translate(crownFaceX, crownPitchRadius, 0);
   const crownToothSolids = [];
   for (let index = 0; index < crownTeeth; index += 1) {
     const angle = Math.PI / 2 + index * FULL_TURN / crownTeeth;
-    const geometry = parametricSolid(1, 1, (u, v, w) => {
-      const height = v * (addendum + dedendum);
-      const half = halfPitchWidth + (dedendum - height) * flankSlope;
-      const tangent = (u * 2 - 1) * half;
-      const radius = crownPitchRadius + (w - 0.5) * crownToothRadialWidth;
-      return new THREE.Vector3(
-        crownFaceX - 0.02 * (1 - v) + height,
-        radius * Math.sin(angle) + tangent * Math.cos(angle),
-        radius * Math.cos(angle) - tangent * Math.sin(angle),
-      );
-    });
+    const geometry = crownToothGeometry.clone();
+    // Tooth 0 sits at the top (+y); tooth i at angle measured from +z.
+    geometry.rotateX(Math.PI / 2 - angle);
     const tooth = new THREE.Mesh(geometry, crownMaterial);
     tooth.userData.role = 'crown-wheel-axial-tooth';
     tooth.userData.index = index;
@@ -601,7 +589,7 @@ function gearedBalanceVergeEscapement(movement) {
   rim.userData.role = 'balance-C-rim';
   balance.add(rim);
   for (let index = 0; index < 3; index += 1) {
-    const spoke = new THREE.Mesh(new THREE.BoxGeometry(balanceRadius - 0.3, 0.12, 0.2), balanceMaterial);
+    const spoke = new THREE.Mesh(new THREE.BoxGeometry(balanceRadius - 0.3, 0.12, 0.34), balanceMaterial);
     // At the display pose (balance angle zero) one spoke points left and two
     // reach right, to front and back, as Brown draws them toward C.
     const angle = Math.PI + index * FULL_TURN / 3;
@@ -610,7 +598,8 @@ function gearedBalanceVergeEscapement(movement) {
     spoke.userData.role = 'balance-C-spoke';
     balance.add(spoke);
   }
-  const balanceHub = cylinder(0.32, 0.36, Y_AXIS, steel);
+  // Brown's collar on the staff: a round boss the spokes run into.
+  const balanceHub = cylinder(0.5, 0.3, Y_AXIS, balanceMaterial, 48);
   balanceHub.userData.role = 'balance-C-hub';
   balance.add(balanceHub);
   staff.add(staffRod, pinion, balance);

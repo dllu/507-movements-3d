@@ -786,3 +786,15 @@ test('movement 198 fills a real 3D envelope as the reviewed queue advances throu
   disposeModel(movement200.root);
   disposeModel(model.root);
 });
+
+test('movement 198 pinion has six stub involute teeth on a full hub (p93)', () => {
+  const model = createMovementModel(catalog.movements[197]);
+  const {pitchRadius, teeth, outerRadius, rootRadius} = model.root.userData.blocks.pinion.userData;
+  const m = 2 * pitchRadius / teeth;
+  assert.equal(teeth, 6);
+  assert.ok(Math.abs(outerRadius - pitchRadius - 0.8 * m) < 1e-9);
+  assert.ok(Math.abs(pitchRadius - rootRadius - 0.8 * m) < 1e-9);
+  const gear = model.root.userData.blocks.pinion.userData.rotor.children[0];
+  const radii = gear.userData.sourceOutline.map(([x, y]) => Math.hypot(x, y));
+  assert.ok(Math.abs(Math.max(...radii) - outerRadius) < 1e-9 && Math.abs(Math.min(...radii) - rootRadius) < 1e-9);
+});

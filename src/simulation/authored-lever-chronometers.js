@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { ringArea, trimOutwardCusps } from './outline-cusps.js';
 import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { plate, poly, circle, polygonClipping } from './finite-plate-geometry.js';
 import { spokedWheelGeometry } from './spoked-wheel.js';
@@ -768,6 +769,16 @@ function leverChronometerEscapement(movement) {
     }
     kept[kept.length - 1] = ring[0];
     return kept;
+  }));
+  // Each swept pose leaves the grown tooth's corner printed in the stone
+  // faces: a sawtooth (turns of about 146 degrees, up to 0.0045 deep).
+  // Cutting off its sharp outward cusps removes material only, so the teeth
+  // stay clear, and the faces become the smooth envelope.
+  crescentShape = crescentShape.map((polygon) => polygon.map((ring, ringIndex) => {
+    const open = ring.slice(0, -1);
+    const material = (ringArea(open) > 0) === (ringIndex === 0) ? 1 : -1;
+    const trimmed = trimOutwardCusps(open, { material, maxSegment: 0.02 });
+    return [...trimmed, trimmed[0]];
   }));
   const crescent = new THREE.Mesh(flatPart(crescentShape, frontLow, frontHigh), palletMaterial);
   crescent.userData.role = 'crescent-pallet-plate-with-locking-only-pallets-A-and-B';

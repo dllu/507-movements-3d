@@ -604,19 +604,23 @@ test('movement 344 closes one exact revolution and leaves movement 507 as the ne
   disposeModel(model.root);
 });
 
-test('movement 344 draws the crank plate over the rod eye with a double-webbed crank', () => {
+test('movement 344 has one crank plate with the rod eye pinned on its face', () => {
   const model = createMovementModel(catalog.movements[343]);
   const { blocks } = model.root.userData;
   model.update(0);
   model.root.updateMatrixWorld(true);
   const box = (object) => new THREE.Box3().setFromObject(object);
-  const front = box(blocks.crankFrontWeb), rear = box(blocks.crankArm);
+  const crank = box(blocks.crankArm), pin = box(blocks.crankPin);
   const eye = box(blocks.pistonCrankEye), shaft = box(blocks.crankShaft);
-  // Brown's crank plate lies over the rod end; the shaft ends in the rear
-  // web, so the rod can cross the shaft axis at dead centre.
-  assert.ok(front.min.z > eye.max.z, 'front web in front of the rod eye');
-  assert.ok(rear.max.z < eye.min.z, 'rear web behind the rod eye');
-  assert.ok(shaft.max.z < eye.min.z, 'live shaft stops behind the rod plane');
-  assert.equal(blocks.crankFrontWeb.parent, blocks.crankArm.parent);
+  const crankPlates = [];
+  model.root.traverse((o) => { if (/crank-web|link-shaped-crank/.test(o.userData.role ?? '')) crankPlates.push(o.userData.role); });
+  assert.equal(crankPlates.length, 1, 'one crank plate');
+  assert.equal(blocks.crankFrontWeb, undefined);
+  // Brown draws the rod eye whole over the crank's P end.
+  assert.ok(crank.max.z < eye.min.z, 'crank web behind the rod eye');
+  assert.ok(shaft.max.z < eye.min.z - 0.01, 'live shaft stops behind the rod plane');
+  assert.ok(eye.min.z - crank.max.z < 0.04, 'rod eye close over the web');
+  assert.ok(pin.max.z > eye.max.z + 0.01 && pin.max.z < eye.max.z + 0.03, 'pin stands just proud of the eye');
+  assert.ok(pin.min.z > crank.min.z && pin.min.z < crank.max.z, 'pin seated in the web');
   disposeModel(model.root);
 });

@@ -5,7 +5,7 @@
     "parts": 42,
     "pairs": 39,
     "poses": 1,
-    "checks": 30068,
+    "checks": 30140,
     "failingPairs": 0
   },
   "failures": {},
@@ -17,7 +17,7 @@
     },
     {
       "file": "src/simulation/mujoco-stud-reverser/geometry.js",
-      "sha256": "53e4d165ea87da91257135de86b58ae19a85731f40dc02b3635745737895d627"
+      "sha256": "b1eb767f1dbae5ffbbbd5d13eb7c86cbafec954e0c582ef56a96dc45b0437bf2"
     },
     {
       "file": "src/simulation/mujoco-stud-reverser/sync.js",
@@ -29,7 +29,7 @@
     },
     {
       "file": "/dev/shm/153-supported-fine-samples.json",
-      "sha256": "c58711a4331672811992f6c29defe4b506d87cd275f7543fd481ce165357b67c"
+      "sha256": "88e1fde7d525f250896439ab419794ebb1d0874dedeb9bf17c8863eb40162bf3"
     },
     {
       "file": "src/simulation/finite-plate-geometry.js",

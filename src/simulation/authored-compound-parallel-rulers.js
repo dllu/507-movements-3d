@@ -22,7 +22,7 @@ function smootherstepSecond(value) {
   return 60 * value * (1 - value) * (1 - 2 * value);
 }
 
-function capsulePath(startX, endX, radius, samples = 20) {
+function capsulePath(startX, endX, radius, samples = 48) {
   const path = new THREE.Path();
   path.moveTo(startX, -radius);
   for (let index = 1; index <= samples; index += 1) {
@@ -92,21 +92,28 @@ function makeSlottedRuler({
   return markShadows(group);
 }
 
+// A pin fitted to the 0.09 bores of the rulers and arm eyes. Its washer
+// rests on the top arm's eye (armTopY) under the retaining head. Collars
+// (spacers under a raised eye, or a shoe filling a slot) are coaxial bosses.
+const PIN_SHAFT_RADIUS = 0.087;
 function makeVerticalPin({
+  armTopY,
   baseY,
-  height,
+  collars = [],
   radius,
   role,
-  washerY,
 }) {
   const group = new THREE.Group();
   group.userData.role = role;
   group.userData.radius = radius;
+  const washerY = armTopY + 0.032;
+  const shaftTop = washerY + 0.035;
   const shaft = new THREE.Mesh(
-    new THREE.CylinderGeometry(radius * 0.55, radius * 0.55, height, 28),
+    new THREE.CylinderGeometry(PIN_SHAFT_RADIUS, PIN_SHAFT_RADIUS,
+      shaftTop - baseY, 32),
     matte(PALETTE.ink, { metalness: 0.27, roughness: 0.42 }),
   );
-  shaft.position.y = baseY + height / 2;
+  shaft.position.y = (baseY + shaftTop) / 2;
   shaft.userData.role = `${role}-vertical-shaft`;
   const washer = new THREE.Mesh(
     new THREE.TorusGeometry(radius, 0.032, 10, 36),
@@ -124,6 +131,16 @@ function makeVerticalPin({
   cap.position.y = washerY + 0.035;
   cap.userData.role = `${role}-retaining-head`;
   group.add(shaft, washer, cap);
+  for (const [index, collar] of collars.entries()) {
+    const mesh = new THREE.Mesh(
+      new THREE.CylinderGeometry(collar.radius, collar.radius,
+        collar.top - collar.bottom, 48),
+      shaft.material,
+    );
+    mesh.position.y = (collar.top + collar.bottom) / 2;
+    mesh.userData.role = `${role}-${collar.role ?? `collar-${index}`}`;
+    group.add(mesh);
+  }
   return markShadows(group);
 }
 
@@ -169,11 +186,30 @@ function compoundCrossedArmParallelRuler(movement) {
   const outwardHoldEndPhase = 0.50;
   const returnEndPhase = 0.90;
   const transitionDuration = demonstrationPeriod * outwardEndPhase;
-  const armLayerUpperToLower = 0.35;
-  const armLayerLowerToUpper = 0.49;
+  // Arm eyes are 0.13 deep. The lower arm lies on the rulers (0.005
+  // running clearance) and the upper arm lies on the lower one at the
+  // crossing; at its ends the upper arm's eyes sit on spacer collars.
+  const armHalfDepth = 0.065;
+  const armLayerUpperToLower = rulerTopY + armHalfDepth + 0.005;
+  const armLayerLowerToUpper = armLayerUpperToLower + 2 * armHalfDepth
+    + 0.005;
+  const lowerArmTopY = armLayerUpperToLower + armHalfDepth;
+  const upperArmTopY = armLayerLowerToUpper + armHalfDepth;
+  const upperArmBottomY = armLayerLowerToUpper - armHalfDepth;
   const pinBaseY = -rulerDepth / 2 - 0.02;
-  const pinHeight = 0.74;
-  const pinWasherY = 0.60;
+  const spacerCollar = {
+    bottom: rulerTopY - 0.005,
+    radius: 0.13,
+    role: 'spacer-collar-under-upper-arm-eye',
+    top: upperArmBottomY - 0.002,
+  };
+  // The slider pins wear a shoe that fills the slot's width.
+  const slotShoe = (top) => ({
+    bottom: -rulerDepth / 2 + 0.005,
+    radius: slotRadius - 0.006,
+    role: 'slot-shoe-filling-slot-B',
+    top,
+  });
   const paperTopY = -rulerDepth / 2 - 0.055;
 
   const sliderXForHalfSeparation = (halfSeparation) => fixedPivotX
@@ -233,44 +269,49 @@ function compoundCrossedArmParallelRuler(movement) {
   });
 
   const upperFixedPin = makeVerticalPin({
+    armTopY: lowerArmTopY,
     baseY: pinBaseY,
-    height: pinHeight,
     radius: fixedPinRadius,
     role: 'fixed-arm-pivot-on-upper-ruler-A',
-    washerY: pinWasherY,
   });
   upperFixedPin.position.x = fixedPivotX;
   const lowerFixedPin = makeVerticalPin({
+    armTopY: upperArmTopY,
     baseY: pinBaseY,
-    height: pinHeight,
+    collars: [spacerCollar],
     radius: fixedPinRadius,
     role: 'fixed-arm-pivot-on-lower-ruler-A',
-    washerY: pinWasherY,
   });
   lowerFixedPin.position.x = fixedPivotX;
   upperRulerA.add(upperFixedPin);
   lowerRulerA.add(lowerFixedPin);
 
   const upperSliderPinB = makeVerticalPin({
+    armTopY: upperArmTopY,
     baseY: pinBaseY,
-    height: pinHeight,
+    collars: [slotShoe(upperArmBottomY - 0.002)],
     radius: sliderPinRadius,
     role: 'upper-slot-sliding-pin-B',
-    washerY: pinWasherY,
   });
   const lowerSliderPin = makeVerticalPin({
+    armTopY: lowerArmTopY,
     baseY: pinBaseY,
-    height: pinHeight,
+    collars: [slotShoe(rulerTopY + 0.003)],
     radius: sliderPinRadius,
     role: 'lower-slot-sliding-pin-equivalent-to-B',
-    washerY: pinWasherY,
   });
+  // Through both middle eyes, with a head under the lower arm.
   const centerPivot = makeVerticalPin({
-    baseY: armLayerUpperToLower - .075,
-    height: .38,
+    armTopY: upperArmTopY,
+    baseY: armLayerUpperToLower - armHalfDepth - 0.04,
+    collars: [{
+      bottom: armLayerUpperToLower - armHalfDepth - 0.04,
+      radius: centerPinRadius * 0.74,
+      role: 'lower-retaining-head',
+      top: armLayerUpperToLower - armHalfDepth - 0.002,
+    }],
     radius: centerPinRadius,
     role: 'common-midpoint-pivot-of-both-crossed-arms',
-    washerY: pinWasherY + 0.035,
   });
 
   const armUpperFixedToLowerSlider = makeRulerArm(armLength, {middleEye: true});
@@ -715,10 +756,10 @@ function twoArmParallelogramRuler(movement) {
   const outwardHoldEndPhase = 0.50;
   const returnEndPhase = 0.90;
   const transitionDuration = demonstrationPeriod * outwardEndPhase;
-  const armLayerY = 0.37;
+  // The parallel arms never cross, so both lie on the rulers (0.005
+  // running clearance above the 0.13-deep eyes' undersides).
+  const armLayerY = rulerTopY + 0.065 + 0.005;
   const pinBaseY = -rulerDepth / 2 - 0.02;
-  const pinHeight = 0.67;
-  const pinWasherY = 0.52;
   const pivotRadius = 0.125;
   const paperTopY = -rulerDepth / 2 - 0.055;
 
@@ -772,32 +813,28 @@ function twoArmParallelogramRuler(movement) {
 
   const jointPins = {
     lowerLeft: makeVerticalPin({
+      armTopY: armLayerY + 0.065,
       baseY: pinBaseY,
-      height: pinHeight,
       radius: pivotRadius,
       role: 'lower-left-revolute-joint-B-to-C',
-      washerY: pinWasherY,
     }),
     lowerRight: makeVerticalPin({
+      armTopY: armLayerY + 0.065,
       baseY: pinBaseY,
-      height: pinHeight,
       radius: pivotRadius,
       role: 'lower-right-revolute-joint-B-to-C',
-      washerY: pinWasherY,
     }),
     upperLeft: makeVerticalPin({
+      armTopY: armLayerY + 0.065,
       baseY: pinBaseY,
-      height: pinHeight,
       radius: pivotRadius,
       role: 'upper-left-revolute-joint-A-to-C',
-      washerY: pinWasherY,
     }),
     upperRight: makeVerticalPin({
+      armTopY: armLayerY + 0.065,
       baseY: pinBaseY,
-      height: pinHeight,
       radius: pivotRadius,
       role: 'upper-right-revolute-joint-A-to-C',
-      washerY: pinWasherY,
     }),
   };
 

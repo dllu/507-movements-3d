@@ -61,7 +61,10 @@ function pivotedSailWindmill(movement) {
   const sailCount = 6;
   const rotorRadiusSceneUnit = 1.72;
   const sweepRadiusSceneUnit = 2.22;
-  const sailWidthSceneUnit = 1.28;
+  // Plate: each board is about 1.05 pivot-circle radii long. 1.62 (0.94 R) is
+  // the longest board that keeps 0.03 clear of its neighbour through the
+  // official flip schedule (closest at phase 0.75); 1.75 would collide.
+  const sailWidthSceneUnit = 1.62;
   const sailHeightSceneUnit = 0.72;
   const sailThicknessSceneUnit = 0.065;
   const pivotTransitionAngleRadian = Math.PI / 6;
@@ -69,7 +72,7 @@ function pivotedSailWindmill(movement) {
   const cycleDuration = 60 / officialCyclesPerMinute;
   const shaftAngularVelocityRadianPerSecond = FULL_TURN / cycleDuration;
   const physicalRotorRadiusMetre = 4.0;
-  const physicalSailWidthMetre = 1.65;
+  const physicalSailWidthMetre = 2.09;
   const physicalSailHeightMetre = 2.0;
   const windSpeedMagnitudeMetrePerSecond = 6.0;
   const windVelocityZMetrePerSecond = -windSpeedMagnitudeMetrePerSecond;
@@ -656,10 +659,12 @@ function pivotedSailWindmill(movement) {
   // stood 0.08 proud and read as an off-centre crescent from above), and its
   // foot runs on below the arm so the arm enters the pin's side rather than
   // the pin sitting on the thinner arm with a lip all round.
+  // Pass 93: the pin is slimmer (r 0.05) and seats half-way into the arm's
+  // square end bracket, its head just below the top of the sail's stile.
   for (const { hingePin } of root.userData.blocks.armAssemblies) {
-    const top = 0.405, bottom = -0.60;
+    const top = 0.355, bottom = -0.52;
     hingePin.geometry.dispose();
-    hingePin.geometry = new THREE.CylinderGeometry(0.10, 0.10, top - bottom, 32);
+    hingePin.geometry = new THREE.CylinderGeometry(0.05, 0.05, top - bottom, 32);
     hingePin.position.y = (top + bottom) / 2;
   }
   markShadows(root);

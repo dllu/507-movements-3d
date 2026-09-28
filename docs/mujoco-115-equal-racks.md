@@ -181,3 +181,23 @@ TMPDIR=/dev/shm PROBE_PREFIX=/dev/shm/115-new-clearances node scripts/audit-equa
 TMPDIR=/dev/shm node --test tests/mujoco-equal-racks.test.mjs tests/shifted-involute.test.mjs
 TMPDIR=/dev/shm INTEGRATED=1 PROBE_PREFIX=/dev/shm/115-new-views node scripts/capture-equal-racks-candidate.mjs
 ```
+
+## Pass 93 revision: square stub teeth
+
+The shifted 20-degree teeth above read as pointed stars, while Brown draws
+square, flat-topped teeth. Both pinions are now **unshifted** 12-tooth
+involutes. Their module is the measured working diameter divided by 12
+(0.0964197, a 30.29-pixel rack pitch). They use a 16-degree pressure angle,
+a 0.64-module stub addendum (inside the 0.65-module interference limit for
+a 12:12 pair) and a 1.0-module dedendum. The tips are flat and 1.1 module wide.
+
+The rack pitch follows the pinion. The racks therefore carry 8 upper and
+9 lower teeth, where Brown draws about 10 and 9 at his finer, inconsistent
+rack pitch (26.2 and 28.6 pixels). Rack origins come from the drawn pinion
+phases, with each rack centred on the shafts.
+
+Tooth outlines use 192 samples: at 96, tooth entry on the convex cells
+penetrated 0.18 pixel. Two native cycles give a frame range of ±0.7512,
+mesh error 0.199 pixel and penetration 0.016 pixel. The two pinions no longer
+touch each other; both are driven. The bake was regenerated with the same
+375-sample loop.

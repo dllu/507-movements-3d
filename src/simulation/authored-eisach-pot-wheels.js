@@ -481,25 +481,27 @@ function eisachPotWheel(movement) {
     'fixed-trough-above-stream-receiving-overturned-pots';
   root.add(dischargeTrough);
   const troughLength = 4.36;
+  // Pass 93: one U-section trough (it was a plank with 0.03 lips): floor
+  // 0.10 thick, walls 0.04 thick standing 0.22 above the floor, and the
+  // raised water 0.13 deep (about 60% up the walls). The water's sides and
+  // bottom run 0.01 into the walls and floor, so none of its faces lie on
+  // theirs.
+  const troughFloorTop = 0.05, troughWallTop = troughFloorTop + 0.22, troughWaterTop = troughFloorTop + 0.13;
+  const troughSection = poly([[-.45, -.05], [.45, -.05], [.45, troughWallTop], [.41, troughWallTop],
+    [.41, troughFloorTop], [-.41, troughFloorTop], [-.41, troughWallTop], [-.45, troughWallTop]]);
   const troughBottom = new THREE.Mesh(
-    new THREE.BoxGeometry(troughLength, 0.10, .90),
+    plate(troughSection, -troughLength / 2, troughLength / 2).rotateY(Math.PI / 2),
     frameMaterial,
   );
+  troughBottom.userData.role = 'u-section-discharge-trough';
   dischargeTrough.add(troughBottom);
-  const troughSides = [-1, 1].map((sign) => {
-    const side = new THREE.Mesh(
-      new THREE.BoxGeometry(troughLength, 0.08, .04),
-      frameMaterial,
-    );
-    side.position.set(0, 0.04, sign * .43);
-    dischargeTrough.add(side);
-    return side;
-  });
+  // The U is one extrusion; its walls are part of it.
+  const troughSides = [];
   const troughWater = new THREE.Mesh(
-    new THREE.BoxGeometry(troughLength - 0.18, .02, .80),
+    new THREE.BoxGeometry(troughLength - 0.18, troughWaterTop - troughFloorTop + 0.01, .84),
     waterMaterial,
   );
-  troughWater.position.y = 0.065;
+  troughWater.position.y = (troughWaterTop + troughFloorTop - 0.01) / 2;
   troughWater.userData.role = 'raised-water-flow-in-discharge-trough';
   dischargeTrough.add(troughWater);
   const troughSupports = [dischargeTroughX-.25, dischargeTroughX+.25].map((x) => {
@@ -538,7 +540,7 @@ function eisachPotWheel(movement) {
     const vx = -inputAngularSpeed * (mouth.y - wheelCenter.y);
     const vy = inputAngularSpeed * (mouth.x - wheelCenter.x);
     const x0 = mouth.x, y0 = mouth.y - 0.08, z0 = 0;
-    const landY = dischargeTroughY + 0.08;
+    const landY = dischargeTroughY + troughWaterTop;
     const g = 9.81;
     // Time to fall to the trough water: y0 + vy t - g t^2 / 2 = landY.
     const tEnd = (vy + Math.sqrt(vy * vy + 2 * g * (y0 - landY))) / g;

@@ -12,7 +12,7 @@
     {
       "id": 503,
       "poses": 33,
-      "queries": 243906,
+      "queries": 312288,
       "penetrations": 0,
       "maxDepth": 0,
       "worst": null
@@ -20,7 +20,7 @@
     {
       "id": 504,
       "poses": 33,
-      "queries": 230715,
+      "queries": 370638,
       "penetrations": 0,
       "maxDepth": 0,
       "worst": null
@@ -28,33 +28,10 @@
     {
       "id": 505,
       "poses": 33,
-      "queries": 1246068,
+      "queries": 1246666,
       "penetrations": 0,
       "maxDepth": 0,
       "worst": null
     }
-  ],
-  "sources": [
-    {
-      "file": "src/simulation/authored-epicyclic-trains.js",
-      "sha256": "e47c5c80451963855a386c4b37a3342d3d0721803a8a23baffefc4f8303d00a2"
-    },
-    {
-      "file": "src/simulation/epicyclic-family-corrections.js",
-      "sha256": "7216704f70d8ef89ab95c02fd719d6e73638dbff7a6a1ad4c29507efc89e6518"
-    },
-    {
-      "file": "src/data/planetary-505-profiles.js",
-      "sha256": "d1659803ae11eff874e5a2514a85ebc31259f51efd73b8001cf13efc142ed252"
-    },
-    {
-      "file": "scripts/review-epicyclic-teeth.mjs",
-      "sha256": "9247d964dd84cf3b3eb66c0c6e76997651cb673c9aa278c086aa5979b771026c"
-    }
-  ],
-  "baseline505": {
-    "poses": 17,
-    "penetrations": 3762,
-    "depthLowerBound": 0.05
-  }
+  ]
 }

@@ -17,8 +17,13 @@ export function makeVariableRadiusCrank() {
     blocks[family].add(mesh); parts[name] = mesh; families[name] = family; return mesh;
   };
   const hole = (center, radius) => poly(circle(center, radius, 128));
-  const mainOutline = clip.union(hole([0, 0], .312), capsule([.20, 0], [1.50, 0], .18));
-  const mainShape = clip.difference(mainOutline, hole([0, 0], .104), capsule([.34, 0], [1.50, 0], .088));
+  // Brown's slotted crank is a broad arm with a narrow slot and a large
+  // shaft boss, as one extrusion: arm 0.48 wide (3.3x the 0.144 slot pin),
+  // walls 0.158 (wider than the pin), slot 0.164 wide (0.010 clearance a
+  // side) and boss radius 0.38. Over a revolution the pin's slot radius
+  // spans 0.361-1.476, inside the closed slot's 0.258-1.582.
+  const mainOutline = clip.union(hole([0, 0], .38), capsule([.20, 0], [1.50, 0], .24));
+  const mainShape = clip.difference(mainOutline, hole([0, 0], .104), capsule([.34, 0], [1.50, 0], .082));
   add('slottedCrank', plate(mainShape, 0, .18), 'main', PALETTE.driven);
   // Both crank shafts run back into plain bearings flanged to the framing
   // behind the mechanism (z = -0.55), so neither floats. The small crank sits

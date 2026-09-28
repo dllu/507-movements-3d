@@ -87,7 +87,11 @@ test('491 the pawl turns about the radial pin Brown draws, flat against the lowe
   model.update(0); root.updateMatrixWorld(true);
   const pivot = b.pawlPivotAssembly.getWorldPosition(new THREE.Vector3());
   const tip = b.pawlTip.getWorldPosition(new THREE.Vector3());
-  assert.ok(pivot.z > 1.1 && Math.abs(pivot.x) < 1e-9, 'pivot faces the viewer at the start, as drawn');
+  // Pass 93: the pivot sits 15° round from the front so the seated nose meets
+  // its radial tooth face nearly edge-on to Brown's line of sight.
+  assert.ok(pivot.z > 1.05 && pivot.x < -0.25 && pivot.x > -0.35, 'pivot on the front of the lower capstan, just left of centre');
+  const nose = Math.atan2(tip.z, tip.x) * 180 / Math.PI;
+  assert.ok(nose > 84 && nose < 90, `seated nose near the line of sight (azimuth ${nose})`);
   assert.ok(tip.x > pivot.x + 0.3, 'nose hangs down to the right, toward recoil, as drawn');
 });
 

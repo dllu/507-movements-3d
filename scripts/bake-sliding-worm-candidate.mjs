@@ -2,9 +2,13 @@ import fs from 'node:fs';
 import {gzipSync} from 'node:zlib';
 import {createHash} from 'node:crypto';
 import {BufferGeometry} from 'three';
-import {makeSlidingWormGeometry} from '../src/simulation/sliding-worm-geometry.js';
+import {makeSlidingWormGeometry,mirrorWheelCut} from '../src/simulation/sliding-worm-geometry.js';
+import {slidingWormDimensions as g} from '../src/simulation/sliding-worm-kinematics.js';
 import {simplifyWormWheel} from './lib/simplify-worm-wheel.mjs';
-const input='/dev/shm/143-refined-profile.json',profile=JSON.parse(fs.readFileSync(input)),model=makeSlidingWormGeometry(profile.profile);
+const input='/dev/shm/143-refined-profile.json',profile=JSON.parse(fs.readFileSync(input));
+// A left-hand worm's wheel is the depth mirror of the generated right-hand cut.
+if(g.hand<0)profile.profile=mirrorWheelCut(profile.profile);
+const model=makeSlidingWormGeometry(profile.profile);
 try{
  const wheel=model.root.userData.parts.wheel,original=wheel.geometry;
  wheel.geometry=await simplifyWormWheel(original,profile.parameters,profile.profile);original.dispose();wheel.computeBoundingBox();wheel.computeBoundingSphere();

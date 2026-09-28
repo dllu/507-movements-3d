@@ -26,9 +26,12 @@ export function installLanternStop233(root, latchShape, update) {
   const material=disk.material;
   const spindle=new THREE.Mesh(new THREE.CylinderGeometry(.095,.095,.48,64).rotateX(Math.PI/2),material);
   spindle.position.set(g.rollerArmLocal.x,g.rollerArmLocal.y,.73);spindle.userData.role='roller-spindle-in-separate-arm-and-disk-bores';b.rollerStop.add(spindle);
-  for(const pin of [b.rollerPivotPin,b.latchPivotPin]) {
-    replace(pin.userData.rotor.children[0],new THREE.CylinderGeometry(.095,.095,1.60,64));
-    pin.position.z=.17;pin.userData.length=1.60;
+  // p93: each fixed pivot is a short stud just through its own part (arm
+  // z .745-.895, latch .53-.69) with 0.045 standing out each side, not a
+  // 1.6-long rod running behind the wheel (Brown draws only the eyes).
+  for(const [pin,back,front] of [[b.rollerPivotPin,.70,.94],[b.latchPivotPin,.485,.735]]) {
+    replace(pin.userData.rotor.children[0],new THREE.CylinderGeometry(.095,.095,front-back,64));
+    pin.position.z=(back+front)/2;pin.userData.length=front-back;
   }
   const wheelRotor=b.wheel.userData.rotor;
   for(const mesh of wheelRotor.children)if(mesh.isMesh&&mesh.geometry.type==='CylinderGeometry'&&!mesh.userData.lanternTrundle){

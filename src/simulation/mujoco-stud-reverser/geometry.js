@@ -20,13 +20,26 @@ export function makeRelievedStudReverser({inputContactMinimum=1.4}={}){
  replace(b.diskHub,ring(.134,g.hubRadius,.07,.23,96));
  replace(b.diskHubFace,ring(.134,g.hubRadius*.48,-.020,.0175,96));
  replace(b.leverPivotCollar,ring(.114,g.leverPivotRadius,-.17,.36,96));
+ // The elbow's boss is part of the lever, as Brown draws it, not a black
+ // disk; its front face cap shows the pivot pin's end as his inner circle.
+ b.leverPivotCollar.material=material;
+ // Run the fixed elbow pin up through the boss to just behind the face cap,
+ // so the eye shows its pin rather than an empty bore.
+ {const pin=b.fixedFrame.children.find(o=>o.isMesh&&Math.abs(o.position.x-g.leverPivot.x)<1e-6&&Math.abs(o.position.y-g.leverPivot.y)<1e-6);
+  if(!pin)throw new Error('Elbow pivot pin not found');const r=pin.geometry.parameters?.radiusTop??.11;
+  pin.geometry.dispose();pin.geometry=disk(r,-.54,g.leverPlaneZ+.38,96);pin.rotation.set(0,0,0);pin.position.set(g.leverPivot.x,g.leverPivot.y,0);pin.name='fixed-elbow-pivot-pin';}
  replace(b.leverPivotFace,ring(.114,g.leverPivotRadius*.48,.17,.208,96));
  for(const guide of b.guideRollers){const parts=guide.userData.blocks;replace(parts.wheel,ring(.089,g.guideRollerRadius,-.17,.17,96));replace(parts.hub,ring(.089,g.guideRollerRadius*.30,-.225,.225,96));}
  // The return arm must clear the front of the bar while meeting its projecting pin.
  const output=b.outputArm,outputMaterial=output.children[0].material;
  for(const mesh of [...output.children]){output.remove(mesh);mesh.geometry.dispose();}
  const oh=g.leverOutputHalfWidth,ol=g.leverOutputLength;
- const outputShape=clip.difference(clip.union(poly([[0,-oh],[ol,-oh],[ol,oh],[0,oh]]),poly(circle([ol,0],oh,96))),poly(circle([0,0],g.leverPivotRadius,96).map(([x,y])=>{const a=-output.rotation.z;return [x*Math.cos(a)-y*Math.sin(a),x*Math.sin(a)+y*Math.cos(a)];})));
+ // Brown's return arm is about 20 source pixels wide, tapering towards its
+ // end. Its working (+y) edge, which meets the bar's stud, stays where it was;
+ // the idle edge is widened, 0.13 at the eye to 0.075 at the end, and the
+ // end is a semicircle tangent to both edges.
+ const wide=[.13,.075],tip=[ol-.04,-wide[1]/2],tipRadius=oh+wide[1]/2;
+ const outputShape=clip.difference(clip.union(poly([[0,-oh-wide[0]],[tip[0],-oh-wide[1]],[tip[0],oh],[0,oh]]),poly(circle(tip,tipRadius,96))),poly(circle([0,0],g.leverPivotRadius,96).map(([x,y])=>{const a=-output.rotation.z;return [x*Math.cos(a)-y*Math.sin(a),x*Math.sin(a)+y*Math.cos(a)];})));
  const outputMesh=new THREE.Mesh(plate(outputShape,-.1,.1),outputMaterial);outputMesh.name='bored-return-arm';output.add(outputMesh);output.position.z=.05;output.userData.blocks={body:outputMesh};
  // Keep visible moving volumes disjoint: studs and hubs start at their host faces.
  for(const assembly of b.pinAssemblies){const p=assembly.userData.blocks;replace(p.pin,disk(g.studRadius,.12-g.studCenterZ,.73-g.studCenterZ,96));replace(p.face,disk(g.studRadius*.72,-.022,.020,96));}

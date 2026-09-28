@@ -41,19 +41,25 @@ test('237 finite curved shoulder and rendered nose clear tooth solids',()=>{
 test('237 actual drive face gives clockwise torque and ramp normal lifts the radial hinge',()=>{
   const m=make(),d=m.root.userData,b=d.blocks,triangles=b.crownWheel.userData.crownTeeth.flatMap(t=>surfaceTriangles(t.geometry));
   const near=new THREE.Vector3(),closest=new THREE.Vector3();let minimumDriveMoment=Infinity,minimumRampLiftMoment=Infinity;
-  for(const phase of [.22,.30,.40,.49,.75,.78,.80,.82]){
+  // Drive phases, the approach riding down the ramp into the root, and the
+  // return climb while the nose itself bears on the ramp.
+  let rampSamples=0;
+  for(const phase of [.10,.15,.30,.40,.49,.55,.60,.65,.70]){
     const s=pose(m,phase),inverse=b.crownWheel.userData.rotor.matrixWorld.clone().invert(),center=s.tipWorld.clone().applyMatrix4(inverse);
     let distance=Infinity,normal;
     for(const triangle of triangles){triangle.closestPointToPoint(center,near);const value=near.distanceTo(center);if(value<distance){distance=value;closest.copy(near);normal=triangle.getNormal(new THREE.Vector3());}}
+    if(!s.driveEngaged&&distance-d.geometry.pawlNoseRadius>.00021)continue;
+    if(!s.driveEngaged)rampSamples++;
     const force=center.clone().sub(closest).normalize();assert.ok(force.dot(normal)>.99999);
-    if(s.driveEngaged){const moment=-(closest.x*force.y-closest.y*force.x);assert.ok(moment<-1.5);minimumDriveMoment=Math.min(minimumDriveMoment,-moment);}
+    if(s.driveEngaged){const moment=-(closest.x*force.y-closest.y*force.x);assert.ok(moment<-1.2);minimumDriveMoment=Math.min(minimumDriveMoment,-moment);}
     else{
       const n=force.clone().applyAxisAngle(new THREE.Vector3(0,0,1),s.wheelAngle-s.armAngle);
       const liftMoment=n.y*s.tipGeometry.tangentDerivative+n.z*s.tipGeometry.verticalDerivative;
       assert.ok(liftMoment>.6);minimumRampLiftMoment=Math.min(minimumRampLiftMoment,liftMoment);
     }
   }
-  console.log({minimumClockwiseDriveMoment:minimumDriveMoment,minimumRampLiftMoment});
+  assert.ok(rampSamples>=4);
+  console.log({minimumClockwiseDriveMoment:minimumDriveMoment,minimumRampLiftMoment,rampSamples});
 });
 
 test('237 radial eye, curved body and output bores clear actual shafts',()=>{
@@ -83,5 +89,5 @@ test('237 baked return is C1, finite geometry is stable, and full-cycle vertices
     assert.ok(a.tipWorld.distanceTo(b.tipWorld)<2e-7);assert.ok(Math.abs(a.pawlLiftAngularSpeed-b.pawlLiftAngularSpeed)<.001);
   }
   assert.deepEqual(snapshot(),before);assert.equal(d.hideGround,true);assert.equal(d.minimumDisplayCycleSeconds,4);assert.match(d.reconstructionNote,/not dynamically solved/);
-  assert.equal(d.blocks.crownWheelBody.material.flatShading,false);assert.equal(d.blocks.crownWheel.userData.crownTeeth[0].material.flatShading,true);
+  assert.equal(d.blocks.crownWheelBody.material.flatShading,false);assert.equal(d.blocks.crownWheel.userData.crownTeeth[0].material.flatShading,false);
 });

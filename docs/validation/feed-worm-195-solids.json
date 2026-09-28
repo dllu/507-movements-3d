@@ -13,25 +13,25 @@
   "results": [
     {
       "side": "upper",
-      "queries": 5708139,
+      "queries": 625032,
       "penetrations": 0,
       "maximumDepth": 0,
-      "minimumGap": 0.0027359142472649215,
+      "minimumGap": 0.0027536627109442597,
       "worst": null
     },
     {
       "side": "lower",
-      "queries": 5708836,
+      "queries": 627293,
       "penetrations": 0,
       "maximumDepth": 0,
-      "minimumGap": 0.002735914247264945,
+      "minimumGap": 0.0027536627109442362,
       "worst": null
     }
   ],
   "sources": [
     {
       "file": "src/simulation/feed-worm-assembly-parts.js",
-      "sha256": "08ce8187e8a089148ad4559f1b0d8c3f29dc7121fe8a650e2a93d0080d219b35"
+      "sha256": "cae898f234946171980d9353e5beffe3cb78a1d95131a777cc2beec1faca3aa4"
     },
     {
       "file": "src/data/face-worm-195.js",
@@ -40,6 +40,14 @@
     {
       "file": "scripts/generate-face-worm-195.mjs",
       "sha256": "c05883e744eb102350f5f823e6969173972c0e0bac7ecc40489d821abe256855"
+    },
+    {
+      "file": "src/data/face-worm-195-mesh.js",
+      "sha256": "9673f951b341652903ad0bec69ee8c0cd51aa7d1e712c27387ddd0da3bb95daa"
+    },
+    {
+      "file": "scripts/bake-face-worm-195-mesh.mjs",
+      "sha256": "5614fd9301d5dfcf366edb6b5642b07f4dac01f068d92e8e3b106a451c73d57d"
     },
     {
       "file": "src/simulation/feed-worm-wheel.js",

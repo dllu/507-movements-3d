@@ -354,8 +354,9 @@ function makeLever({
   // The guard pin stands on the lever's front face on its centre line just
   // clear of the roller's edge, level with the roller.
   const guardPin = cylinderAlongZ(0.052, 0.12, darkMaterial, 20);
+  void rollerRadius;
   guardPin.position.set(
-    forkCenterLocal.x - PIN_ORBIT + rollerRadius + 0.072,
+    forkCenterLocal.x + 0.172,
     forkCenterLocal.y,
     -0.24,
   );
@@ -392,23 +393,26 @@ function reedHybridEscapement(movement) {
   const toothPitch = FULL_TURN / toothCount;
   const wheelAdvancePerHalfBeat = toothPitch / 2;
   const wheelAdvancePerBalanceCycle = toothPitch;
-  const lockContactAngle = THREE.MathUtils.degToRad(22.5);
+  const lockContactAngle = reed396.fAngle;
   const wheelToothTipRadius = 1.72;
   const wheelRootRadius = 1.52;
-  const wheelInnerRadius = 1.22;
+  const wheelInnerRadius = 1.34;
   const wheelDepth = 0.28;
-  const wheelReferenceAngle = lockContactAngle;
+  const wheelReferenceAngle = reed396.gAngle;
   const leverPivot = new THREE.Vector2(2.18, 0);
   const leverAmplitude = THREE.MathUtils.degToRad(5);
   const balanceAmplitude = THREE.MathUtils.degToRad(120);
   const balancePeriod = 4;
   const halfBeatDuration = balancePeriod / 2;
-  const balanceDirectPalletReach = 0.62;
+  // Brown's staff b stands 1.83 tip radii from staff a (plate 1.82).
+  const balanceDirectPalletReach = -reed396.balanceCenter - wheelToothTipRadius;
   const balanceCenter = new THREE.Vector2(
     -wheelToothTipRadius - balanceDirectPalletReach,
     0,
   );
-  const balanceRadius = 2.24;
+  // Rim outer radius 2.80 (0.87 of this): 1.63 tip radii, as on the plate,
+  // passing just short of staff a's bearing.
+  const balanceRadius = 3.22;
   const rollerRadius = 0.60;
   const rollerPinRadius = 0.072;
   const leverMoveStart = 0.36;
@@ -416,13 +420,15 @@ function reedHybridEscapement(movement) {
   const wheelAdvanceEnd = 0.58;
   const leverMoveEnd = 0.66;
 
+  // Nominal point locks: g below the line of centres locks at the lever's
+  // negative bank, detent f above it at the positive bank.
   const contactGAtNegativeBank = new THREE.Vector2(
-    wheelToothTipRadius * Math.cos(lockContactAngle),
-    wheelToothTipRadius * Math.sin(lockContactAngle),
+    wheelToothTipRadius * Math.cos(reed396.gAngle),
+    wheelToothTipRadius * Math.sin(reed396.gAngle),
   );
   const contactFAtPositiveBank = new THREE.Vector2(
-    wheelToothTipRadius * Math.cos(lockContactAngle),
-    -wheelToothTipRadius * Math.sin(lockContactAngle),
+    wheelToothTipRadius * Math.cos(reed396.fAngle),
+    wheelToothTipRadius * Math.sin(reed396.fAngle),
   );
   const palletGLocal = rotate2(
     contactGAtNegativeBank.clone().sub(leverPivot),
@@ -493,10 +499,10 @@ function reedHybridEscapement(movement) {
   fixedFrame.userData.role =
     'fixed-watch-plate-carrying-parallel-staffs-a-b-and-c';
   const base = new THREE.Mesh(
-    new THREE.BoxGeometry(7.55, 0.20, 1.12),
+    new THREE.BoxGeometry(9.40, 0.20, 1.12),
     frameMaterial,
   );
-  base.position.set(-0.76, -2.58, -0.37);
+  base.position.set(-1.60, -3.08, -0.37);
   base.userData.role = 'fixed-watch-escapement-base';
   fixedFrame.add(base);
   const bearingPositions = [
@@ -513,8 +519,10 @@ function reedHybridEscapement(movement) {
   });
   const bankingPins = [-1, 1].map((side) => {
     const pin = cylinderAlongZ(0.085, 0.44, darkMaterial, 24);
+    // Each pin stands where the tail's flank (half-width 0.07) meets it at
+    // the bank, so the lever rests on it.
     pin.position.set(leverPivot.x + 0.47,
-      side * 0.20, -0.50);
+      side * (0.07 + 0.085 + 0.47 * Math.sin(leverAmplitude)) / Math.cos(leverAmplitude), -0.50);
     pin.userData.side = side;
     pin.userData.role = 'fixed-banking-pin-l';
     fixedFrame.add(pin);
@@ -526,10 +534,10 @@ function reedHybridEscapement(movement) {
     const argument = Math.PI * halfPhase;
     const angularFrequency = Math.PI / halfBeatDuration;
     return {
-      acceleration: side * balanceAmplitude
+      acceleration: -side * balanceAmplitude
         * angularFrequency ** 2 * Math.cos(argument),
-      angle: -side * balanceAmplitude * Math.cos(argument),
-      speed: side * balanceAmplitude
+      angle: side * balanceAmplitude * Math.cos(argument),
+      speed: -side * balanceAmplitude
         * angularFrequency * Math.sin(argument),
     };
   };
@@ -911,12 +919,12 @@ function reedHybridEscapement(movement) {
     update,
   };
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-4.72, -2.84, -0.72),
-    new THREE.Vector3(3.08, 2.55, 1.02),
+    new THREE.Vector3(-6.04, -2.90, -0.72),
+    new THREE.Vector3(3.08, 2.90, 1.02),
   );
   root.userData.cameraDistanceScale = 1.07;
   root.userData.cameraDirection = new THREE.Vector3(6.8, 5.2, 12.8);
-  root.userData.groundFloorY = -2.72;
+  root.userData.groundFloorY = -3.20;
   update(0);
   return finishReed396Parts({ root, update });
 }

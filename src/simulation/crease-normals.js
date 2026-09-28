@@ -319,6 +319,10 @@ const facetsSmoothed = new WeakSet();
 export function smoothFacetNormals(geometry, { creaseAngle = Math.PI * 25 / 180, kinkAngle = Math.PI * 4 / 180, narrowFraction = 0.06 } = {}) {
   const position = geometry?.attributes?.position;
   if (!position || facetsSmoothed.has(geometry) || geometry.morphAttributes.position?.length) return geometry;
+  // Geometry rewritten every frame (steam and water volumes, flexing parts)
+  // authors its own normals each frame; leave it alone.
+  if (position.usage === THREE.DynamicDrawUsage || geometry.attributes.normal?.usage === THREE.DynamicDrawUsage
+    || geometry.userData.dynamicGeometry) return geometry;
   facetsSmoothed.add(geometry);
   if (Object.values(geometry.attributes).some((attribute) => attribute.isInterleavedBufferAttribute)) return geometry;
   const index = geometry.index;
@@ -445,6 +449,13 @@ export function smoothFacetNormals(geometry, { creaseAngle = Math.PI * 25 / 180,
     }
     for (let n = c0; n < c1; n += 1) parent[Math.floor(cornersAt.items[n] / 3)] = -1;
   }
-  geometry.setAttribute('normal', new THREE.BufferAttribute(normal, 3));
+  // Write in place when possible, so code holding the normal array keeps
+  // writing to the attribute that is drawn.
+  if (normalAttribute && normalAttribute.array.length === normal.length && !normalAttribute.isInterleavedBufferAttribute) {
+    normalAttribute.array.set(normal);
+    normalAttribute.needsUpdate = true;
+  } else {
+    geometry.setAttribute('normal', new THREE.BufferAttribute(normal, 3));
+  }
   return geometry;
 }

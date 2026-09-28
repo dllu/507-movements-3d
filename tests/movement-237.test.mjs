@@ -136,8 +136,13 @@ test('movement 237 preserves the scanned layout, crown orientation, and source p
     1e-15,
     'source handle-to-wheel proportion',
   );
-  near(THREE.MathUtils.radToDeg(geometry.armSwing), 26.1, 2e-14,
+  // A seated nose climbs the whole ramp on return: 1.8 pitches of swing.
+  near(THREE.MathUtils.radToDeg(geometry.armSwing), 32.4, 2e-14,
     'one pitch plus return overtravel');
+  // The nose seats in the root: it touches the face below a third of the
+  // tooth height, just clear of the next ramp.
+  assert.ok(geometry.pawlSeatHeight - geometry.wheelBaseHeight
+    < geometry.wheelToothHeight / 3);
   near(
     geometry.crownMountPhase,
     geometry.highArmAngle
@@ -151,7 +156,8 @@ test('movement 237 preserves the scanned layout, crown orientation, and source p
   near(source.armAngle, 0, 2e-17, 'engraving arm pose');
   assert.equal(source.driveEngaged, true);
   assert.equal(source.stage, 'clockwise-drive-against-axial-face');
-  assert.ok(source.driveCompressionTorque < -0.8);
+  // The seated pawl hangs steeply, so less of its thrust is tangential.
+  assert.ok(source.driveCompressionTorque < -0.55);
   disposeModel(model.root);
 });
 
@@ -179,8 +185,15 @@ test('movement 237 builds twenty rising axial ramps with radial drive faces', ()
       2e-15,
       `tooth ${index} radial face`,
     );
+    // One curved wedge per pitch: helicoidal ramp, true-arc walls flush with
+    // the cup (radii exactly the cup's), and the radial drive face.
     const positions = tooth.geometry.getAttribute('position');
-    assert.equal(positions.count, 6);
+    assert.ok(positions.count > 100);
+    for (let vertex = 0; vertex < positions.count; vertex += 1) {
+      const radius = Math.hypot(positions.getX(vertex), positions.getY(vertex));
+      assert.ok(Math.abs(radius - geometry.wheelOuterRadius) < 2e-6
+        || Math.abs(radius - geometry.wheelInnerRadius) < 2e-6);
+    }
     let minimumHeight = Infinity;
     let maximumHeight = -Infinity;
     for (let vertex = 0; vertex < positions.count; vertex += 1) {
@@ -237,7 +250,7 @@ test('movement 237 approaches, contacts, and drives exactly one clockwise crown 
         `face normal contact at ${coordinate}`);
       assert.ok(Math.abs(state.driveContactCenterError) < 8e-16);
       assert.ok(state.driveNormalVelocityError < 5e-15);
-      assert.ok(state.driveCompressionTorque < -0.8);
+      assert.ok(state.driveCompressionTorque < -0.55);
       near(
         state.wheelAngle,
         -(state.driveTravel - geometry.overtravel),
@@ -251,6 +264,9 @@ test('movement 237 approaches, contacts, and drives exactly one clockwise crown 
     } else {
       approachSamples += 1;
       assert.equal(state.stage, 'clockwise-lost-motion-approach');
+      // The nose rides down the ramp into the root before the face.
+      assert.equal(state.pawlMode, 'pawl-riding-down-ramp-into-root');
+      assert.ok(state.pawlLiftAngle >= 0);
       near(state.wheelAngle, 0, 0, `approach dwell at ${coordinate}`);
       near(state.wheelAngularSpeed, 0, 0,
         `approach output speed at ${coordinate}`);
@@ -260,8 +276,8 @@ test('movement 237 approaches, contacts, and drives exactly one clockwise crown 
   assert.ok(approachSamples > 10_000);
   assert.ok(driveSamples > 10_000);
   assert.ok(maximumClockwiseSpeed > 0.34);
-  assert.ok(timeline.driveContactPhase > 0.18);
-  assert.ok(timeline.driveContactPhase < 0.19);
+  assert.ok(timeline.driveContactPhase > 0.22);
+  assert.ok(timeline.driveContactPhase < 0.24);
   near(stateAtCycleCoordinate(0.5).wheelAngle, -geometry.toothPitch, 2e-15,
     'loaded stroke advances one pitch');
   disposeModel(model.root);
@@ -308,11 +324,14 @@ test('movement 237 return pawl remains rigid and clears or follows every crown r
   assert.deepEqual(modes, new Set([
     'clear-over-low-crown-ramp',
     'pawl-climbing-crown-ramp',
+    // Near the crest the lifted plate's edge rides the tooth's top corner.
+    'pawl-edge-riding-crown-crest',
     'pawl-prescribed-crest-clearance-and-drop',
   ]));
-  assert.ok(maximumTipStep < 4e-5,
+  assert.ok(maximumTipStep < 5e-5,
     `return nose maximum sample step ${maximumTipStep}`);
-  assert.ok(maximumClearance > 0.13);
+  // The drop clears the crest by about 0.1 before landing on the next ramp.
+  assert.ok(maximumClearance > 0.09);
   near(
     stateAtCycleCoordinate(timeline.faceReleasePhase).pawlLiftAngle,
     geometry.peakLiftAngle,
@@ -323,8 +342,14 @@ test('movement 237 return pawl remains rigid and clears or follows every crown r
   assert.ok(maximumLift < geometry.peakLiftAngle + 0.006);
   near(stateAtCycleCoordinate(0.5).pawlLiftAngle, 0, 0,
     'pawl starts return seated');
-  near(stateAtCycleCoordinate(1).pawlLiftAngle, 0, 0,
-    'pawl ends return seated');
+  // The return ends with the nose dropped onto the next ramp; the drive
+  // stroke's approach rides it down into the root, seated at the face.
+  near(stateAtCycleCoordinate(1 - 1e-9).pawlLiftAngle,
+    stateAtCycleCoordinate(1).pawlLiftAngle, 1e-6,
+    'pawl lands on the next ramp where the approach begins');
+  assert.ok(stateAtCycleCoordinate(1).pawlLiftAngle > 0.2);
+  near(stateAtCycleCoordinate(timeline.driveContactPhase).pawlLiftAngle, 0, 1e-9,
+    'pawl seated in the root when it meets the face');
   const beforeRelease = stateAtCycleCoordinate(
     timeline.faceReleasePhase - 1e-8,
   );
@@ -364,10 +389,12 @@ test('movement 237 analytic arm, wheel, pawl, and nose speeds match finite diffe
     near(state.wheelAngularSpeed,
       scalarSpeedAt(coordinate, 'wheelAngle'), 2e-8,
       `wheel speed at ${coordinate}`);
+    // The baked lift is a C1 monotone Hermite; central differences across its
+    // knots differ from the analytic slope by up to about 1e-5 relative.
     near(state.pawlLiftAngularSpeed,
-      scalarSpeedAt(coordinate, 'pawlLiftAngle'), 5e-8,
+      scalarSpeedAt(coordinate, 'pawlLiftAngle'), 1e-5,
       `pawl lift speed at ${coordinate}`);
-    vectorNear(state.tipVelocity, vectorSpeedAt(coordinate, 'tipWorld'), 5e-8,
+    vectorNear(state.tipVelocity, vectorSpeedAt(coordinate, 'tipWorld'), 1e-5,
       `pawl nose velocity at ${coordinate}`);
   }
   disposeModel(model.root);

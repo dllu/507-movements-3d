@@ -12,15 +12,15 @@
     },
     {
       "file": "src/simulation/variable-drive-205-209-parts.js",
-      "sha256": "a185c1ba5509ca991f2339e4f0363455df69015fd364737d1a915c6210085723"
+      "sha256": "1185eb432ffd4de52d2c7807a4bca56e7ecdab3d93ec9f9f183483316527e2b8"
     },
     {
       "file": "src/simulation/generated-variable-drive-205-209.js",
-      "sha256": "55db166b77b6c98e814067315c89181bab67d7b306493d7a57c31aa4cc9b1ffd"
+      "sha256": "a770823e6746c65cf7eb8f2c8f50b456d650961c7930c0cf0157717faa9a2fc9"
     },
     {
       "file": "src/simulation/generated-pin-slot-208.js",
-      "sha256": "bcac160d3b5ca0fdee7fd7d5b959fb6e9bb9cb5de58e9d48dbfc4274c705c101"
+      "sha256": "8a30afdf899966855067dc077a31e53157b2fd7c24cdf9036ce309a12061184d"
     },
     {
       "file": "src/simulation/bored-lathe-geometry.js",
@@ -53,7 +53,7 @@
       "poses": 513,
       "overlap": 0,
       "penetratingPairPoses": 0,
-      "maximumClosestGap": 0.0010994777648017408
+      "maximumClosestGap": 0.0014481071322786506
     },
     {
       "id": 209,
@@ -68,7 +68,7 @@
     "tested": 1036070,
     "inside": 0,
     "maxPenetration": 0,
-    "maxGap": 0.0016649400562623355,
-    "maxWorkingGap": 0.0016649400562623355
+    "maxGap": 0.0017587503814830887,
+    "maxWorkingGap": 0.0017587503814830887
   }
 }

@@ -48,3 +48,8 @@ test('163 serialized geometry and world transforms match the clearance-audited s
   }
  }finally{original.dispose();baked.dispose();}
 });
+test('163 flat belt uses the shared hemp-brown belt colour (pass 93)',async()=>{
+ const {PALETTE}=await import('../src/simulation/primitives.js');
+ const bundle=JSON.parse(gunzipSync(fs.readFileSync('src/simulation/baked/assets/163.json.gz')));const v=makeBeltGovernorModel(bundle);
+ try{for(const name of ['flatBelt','beltReturnBeyondCrop'])assert.equal(v.root.getObjectByName(name).material.color.getHex(),PALETTE.belt);}finally{v.dispose();}
+});

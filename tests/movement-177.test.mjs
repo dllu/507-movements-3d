@@ -588,9 +588,14 @@ test('movement 177 lets the rear wrist clear a quarter-turned curved slot while 
   assert.ok(size.x >= 2 * (geometry.crankRadius + geometry.topOuterRadius));
   assert.ok(size.y >= 2 * (geometry.crankRadius + geometry.topOuterRadius),
     'motion witness contains the running rear crank at every phase');
-  assert.ok(size.z > 2.37,
+  // Pass 93: the rear bearing is a bored ring seated on the input shaft (no
+  // loose torus past its end), so the shaft's end sets the rear depth.
+  assert.ok(size.z > 2.3,
     'rear input, recessed passage, front output, and bearings occupy real depth');
-  assert.ok(bounds.min.z < -1.18);
+  assert.ok(bounds.min.z < -1.12);
+  const rearRing = fixedRearBearingRing.geometry;
+  rearRing.computeBoundingBox();
+  assert.ok(rearRing.type !== 'TorusGeometry' && rearRing.boundingBox.max.z - rearRing.boundingBox.min.z < 0.16);
   assert.ok(bounds.max.z > 1.17);
   assert.equal(model.cameraDirection.x, 0);
   assert.equal(model.cameraDirection.y, 0);

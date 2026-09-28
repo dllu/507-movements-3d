@@ -54,8 +54,12 @@ test('244 wooden block fills lever to pulley, strap bolts run straight, and no u
     model.root.updateMatrixWorld(true);
     assert.equal(b.upperShoe.userData.role,'upper-wooden-brake-block-under-lever-D');
     const block=new THREE.Box3().setFromObject(b.upperShoe);
-    assert.ok(block.max.y>g.leverCenterY,'block reaches up under the lever');
-    assert.ok(block.max.z<g.leverPlaneZ-g.leverDepth/2,'and stays behind it');
+    // p93-fc: lever D was moved back into the pulley's mid-plane and rests on
+    // the block's flat top, so the block now meets D's underside rather than
+    // rising beside it, and D lies within the block's depth.
+    const lever=new THREE.Box3().setFromObject(b.lever);
+    assert.ok(Math.abs(block.max.y-lever.min.y)<2e-3,`block reaches up under the lever (${block.max.y} vs ${lever.min.y})`);
+    assert.ok(lever.min.z>=block.min.z-1e-6&&lever.max.z<=block.max.z+1e-6,'and D bears on it within its depth');
     for(const {bolt,eye} of b.endBolts){
       assert.equal(bolt.rotation.x,0);assert.equal(bolt.rotation.z,0);
       assert.ok(Math.abs(bolt.position.x-eye.position.x)<1e-12,'bolt is straight above its eye');

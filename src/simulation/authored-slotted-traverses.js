@@ -539,14 +539,20 @@ function slottedTraverse(movement) {
 
   const inputGuideWorldY = worldOffsetY
     + sourceInputGuideY * sourceScale;
-  const inputGuideRail = new THREE.Group();
-  for (const side of [-1, 1]) {
-    const rail = new THREE.Mesh(new THREE.BoxGeometry(
-      sourceInputHalfStroke * 2 * sourceScale + 0.34, 0.03, 0.24), frameMaterial);
-    rail.position.y = side * 0.12;
-    inputGuideRail.add(rail);
-  }
-  inputGuideRail.position.set(0, inputGuideWorldY, -0.05);
+  // Brown only dots D's path. D rides on one plain round rod laid along that
+  // line, behind the lever and below guides a, a; a bored shoe centred on D
+  // slides on it. The rod is an ideal fixed guide (like O's bearing).
+  const inputRodRadius = 0.06;
+  const inputRodZ = -0.08;
+  const inputGuideRail = new THREE.Mesh(
+    new THREE.CylinderGeometry(inputRodRadius, inputRodRadius,
+      sourceInputHalfStroke * 2 * sourceScale + 0.34 + 0.16, 36)
+      .rotateZ(Math.PI / 2),
+    frameMaterial,
+  );
+  inputGuideRail.position.set(0, inputGuideWorldY, inputRodZ);
+  // The rod's plain ends stay out of the camera fit, which frames Brown's view.
+  inputGuideRail.userData.beyondPlateCrop = true;
   inputGuideRail.userData.role =
     'fixed-horizontal-guide-for-driven-lower-pin-D';
   const inputGuideDashes = [];
@@ -753,14 +759,23 @@ function slottedTraverse(movement) {
   const movingInput = new THREE.Group();
   movingInput.userData.role =
     'driven-lower-pin-D-translating-in-fixed-horizontal-guide';
+  // Shoe: 0.34 long, 0.22 tall, z -0.20..0.12, bored along x for the rod.
   const inputShoe = new THREE.Mesh(
-    new THREE.BoxGeometry(0.34, 0.20, 0.22),
+    plate(clip.difference(
+      poly([[-0.11, -0.20], [0.11, -0.20], [0.11, 0.12], [-0.11, 0.12]]),
+      poly(circle([0, inputRodZ], inputRodRadius + 0.006, 64)),
+    ), -0.17, 0.17).applyMatrix4(new THREE.Matrix4().makeBasis(
+      // Profile drawn in (y, z) and extruded along x.
+      new THREE.Vector3(0, 1, 0),
+      new THREE.Vector3(0, 0, 1),
+      new THREE.Vector3(1, 0, 0),
+    )),
     inputMaterial,
   );
-  inputShoe.position.z = -0.05;
   inputShoe.userData.role = 'lower-input-horizontal-guide-shoe';
-  const movingPinD = cylinderAlongZ(0.112, 0.72, pinMaterial, 32);
-  movingPinD.position.z = 0.23;
+  // Seated 0.10 into the shoe's front face, clear of the rod behind it.
+  const movingPinD = cylinderAlongZ(0.112, 0.575, pinMaterial, 32);
+  movingPinD.position.z = 0.3075;
   movingPinD.userData.role = 'moving-steel-pin-in-lower-lever-slot-D';
   const movingPinCap = cylinderAlongZ(0.065, 0.035, inputMaterial, 28);
   movingPinCap.position.z = 0.61;

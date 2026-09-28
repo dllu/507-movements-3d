@@ -43,7 +43,9 @@ import { steppedSectorCut, steppedSectorMotion } from './stepped-sector-geometry
 import { mangleToothOutline } from './mangle-gear-geometry.js';
 import { makeIrregularDrive201, irregularDriver201 } from './irregular-gear-201.js';
 import { smoothExtrudeGeometry } from './smooth-extrusion.js';
+import { makeSeeThrough } from './see-through-part.js';
 import { spokedWheelGeometry } from './spoked-wheel.js';
+import { trimOutwardCusps } from './outline-cusps.js';
 import {
   PALETTE,
   beltCurveCrossed,
@@ -1290,7 +1292,8 @@ function brushWheels() {
 
 function makeSpiralDiskWheel({
   radius = 1.55,
-  ridgeRadius = 0.062,
+  ribHalfWidth = 0.05,
+  ribHeight = 0.1,
   spiralLead,
   spiralStartAngle = Math.PI / 2,
   spiralStartRadius = 1.03,
@@ -1300,14 +1303,20 @@ function makeSpiralDiskWheel({
   const rotor = new THREE.Group();
   root.add(rotor);
   root.userData.rotor = rotor;
+  const diskMaterial = matte(PALETTE.driver, { metalness: 0.11, roughness: 0.66 });
   const body = new THREE.Mesh(
     new THREE.CylinderGeometry(radius, radius, thickness, 88),
-    matte(PALETTE.driver, { metalness: 0.11, roughness: 0.66 }),
+    diskMaterial,
   );
   body.rotation.x = Math.PI / 2;
   rotor.add(body);
 
-  const threadZ = thickness / 2 + ridgeRadius * 0.78;
+  // Brown draws the thread as a flat-topped rib standing up from the disk
+  // face in the disk's own material: one plan outline (the spiral band with
+  // round ends) extruded from just inside the face to its flat top.
+  const ribBase = thickness / 2;
+  const ribTop = ribBase + ribHeight;
+  const threadZ = ribBase + ribHeight / 2;
   const spiralCurve = new class extends THREE.Curve {
     getPoint(progress, target = new THREE.Vector3()) {
       const angle = spiralStartAngle + progress * Math.PI * 2;
@@ -1321,23 +1330,38 @@ function makeSpiralDiskWheel({
         spiralLead * Math.sin(angle) + 2 * Math.PI * radius * Math.cos(angle), 0).normalize();
     }
   }();
-  const thread = new THREE.Mesh(
-    new THREE.TubeGeometry(spiralCurve, 320, ridgeRadius, 24, false),
-    matte(PALETTE.ink, { metalness: 0.16, roughness: 0.6 }),
-  );
+  const spiralSteps = 480;
+  const capSteps = 20;
+  const outline = [];
+  const at = (progress, offset) => {
+    const angle = spiralStartAngle + progress * Math.PI * 2;
+    const r = spiralStartRadius + progress * spiralLead + offset;
+    return new THREE.Vector2(Math.cos(angle) * r, Math.sin(angle) * r);
+  };
+  for (let i = 0; i <= spiralSteps; i += 1) outline.push(at(i / spiralSteps, ribHalfWidth));
+  // Round plan end at the outer end, concentric with the centreline end.
+  const endCenter = at(1, 0);
+  const endAngle = spiralStartAngle + Math.PI * 2;
+  for (let i = 1; i < capSteps; i += 1) {
+    const a = endAngle + Math.PI * i / capSteps;
+    outline.push(new THREE.Vector2(endCenter.x + Math.cos(a) * ribHalfWidth, endCenter.y + Math.sin(a) * ribHalfWidth));
+  }
+  for (let i = spiralSteps; i >= 0; i -= 1) outline.push(at(i / spiralSteps, -ribHalfWidth));
+  const startCenter = at(0, 0);
+  for (let i = 1; i < capSteps; i += 1) {
+    const a = spiralStartAngle + Math.PI + Math.PI * i / capSteps;
+    outline.push(new THREE.Vector2(startCenter.x + Math.cos(a) * ribHalfWidth, startCenter.y + Math.sin(a) * ribHalfWidth));
+  }
+  if (THREE.ShapeUtils.isClockWise(outline)) outline.reverse();
+  const sink = 0.004;
+  const ribGeometry = new THREE.ExtrudeGeometry(new THREE.Shape(outline), {
+    depth: ribHeight + sink, bevelEnabled: false, curveSegments: 1,
+  });
+  ribGeometry.translate(0, 0, ribBase - sink);
+  const thread = new THREE.Mesh(ribGeometry, diskMaterial);
   thread.userData.spiralThread = true;
   thread.userData.curve = spiralCurve;
-  const threadCaps = [spiralCurve.getPoint(0), spiralCurve.getPoint(1)].map((point, index) => {
-    const cap = new THREE.Mesh(
-      new THREE.SphereGeometry(ridgeRadius, 24, 16),
-      matte(PALETTE.ink, { metalness: 0.16, roughness: 0.6 }),
-    );
-    cap.position.copy(point);
-    cap.userData.spiralThreadCap = true;
-    cap.userData.threadEnd = index === 0 ? 'start' : 'end';
-    rotor.add(cap);
-    return cap;
-  });
+  thread.userData.role = 'flat-spiral-rib-on-disk-face';
   rotor.add(thread);
 
   const hub = new THREE.Mesh(
@@ -1360,14 +1384,14 @@ function makeSpiralDiskWheel({
 
   root.userData.axis = Z_AXIS.clone();
   root.userData.radius = radius;
-  root.userData.ridgeRadius = ridgeRadius;
+  root.userData.rib = { halfWidth: ribHalfWidth, base: ribBase, top: ribTop };
   root.userData.spiralCurve = spiralCurve;
   root.userData.spiralEndRadius = spiralStartRadius + spiralLead;
   root.userData.spiralLead = spiralLead;
   root.userData.spiralStartAngle = spiralStartAngle;
   root.userData.spiralStartRadius = spiralStartRadius;
   root.userData.thread = thread;
-  root.userData.threadCaps = threadCaps;
+  root.userData.threadCaps = [];
   root.userData.threadTurns = 1;
   root.userData.threadZ = threadZ;
   return markShadows(root);
@@ -1382,7 +1406,8 @@ function diskSpiralDrive() {
   const spiralStartAngle = Math.PI / 2;
   const disk = makeSpiralDiskWheel({
     radius: 1.55,
-    ridgeRadius: 0.062,
+    ribHalfWidth: 0.05,
+    ribHeight: 0.1,
     spiralLead: circularPitch,
     spiralStartAngle,
     spiralStartRadius: 1.03,
@@ -1392,7 +1417,8 @@ function diskSpiralDrive() {
     disk.userData.spiralStartRadius + disk.userData.spiralEndRadius
   ) / 2;
   const gearOuterRadius = gearPitchRadius + 0.02;
-  const spiralContactZ = disk.userData.threadZ + disk.userData.ridgeRadius;
+  // The rib's vertical walls drive the teeth; contact is at mid-height.
+  const spiralContactZ = disk.userData.threadZ;
   const gearCenter = new THREE.Vector3(nominalContactRadius, 0, disk.userData.threadZ + gearPitchRadius);
   const gearPhase = Math.PI / 2 + Math.PI / (2 * gearTeeth);
   const gear = new THREE.Group();
@@ -1407,7 +1433,7 @@ function diskSpiralDrive() {
     centerX: gearCenter.x,
     centerZ: gearCenter.z,
     threadZ: disk.userData.threadZ,
-    ridgeRadius: disk.userData.ridgeRadius,
+    rib: disk.userData.rib,
     startRadius: disk.userData.spiralStartRadius,
     lead: circularPitch,
     startAngle: spiralStartAngle,
@@ -1421,7 +1447,7 @@ function diskSpiralDrive() {
     axis: Y_AXIS.clone(), teeth: gearTeeth, pitchRadius: gearPitchRadius,
     outerRadius: gearOuterRadius, rootRadius: toothGeometry.userData.rootRadius,
     toothHeight: gearOuterRadius - toothGeometry.userData.rootRadius,
-    toothProfile: 'sampled-round-spiral-envelope', toothMesh,
+    toothProfile: 'sampled-flat-rib-spiral-envelope', toothMesh,
   });
   gear.position.copy(gearCenter);
   root.add(disk, gear);
@@ -1840,6 +1866,36 @@ function rectangularGears() {
   return finish(root, update, new THREE.Vector3(0.12, 0.10, 10));
 }
 
+/** Reflect a geometry in place across one local coordinate plane, keeping
+ * triangles outward-facing (winding reversed) and normals reflected. */
+function mirrorGeometryAxis(geometry, axis) {
+  const scale = { x: [-1, 1, 1], y: [1, -1, 1], z: [1, 1, -1] }[axis];
+  geometry.scale(...scale);
+  if (geometry.index) {
+    const index = geometry.index.array;
+    for (let i = 0; i < index.length; i += 3) {
+      const t = index[i + 1]; index[i + 1] = index[i + 2]; index[i + 2] = t;
+    }
+    geometry.index.needsUpdate = true;
+  } else {
+    for (const attribute of Object.values(geometry.attributes)) {
+      const n = attribute.itemSize;
+      const array = attribute.array;
+      for (let i = 0; i < attribute.count; i += 3) {
+        for (let k = 0; k < n; k += 1) {
+          const t = array[(i + 1) * n + k];
+          array[(i + 1) * n + k] = array[(i + 2) * n + k];
+          array[(i + 2) * n + k] = t;
+        }
+      }
+      attribute.needsUpdate = true;
+    }
+  }
+  geometry.computeBoundingBox();
+  geometry.computeBoundingSphere();
+  return geometry;
+}
+
 export function wormAndWheel(options = {}) {
   const root = new THREE.Group();
   // The visible Brown outline favors 29 regularized teeth. Its irregular
@@ -1850,7 +1906,11 @@ export function wormAndWheel(options = {}) {
   const module = 2 * wheelPitchRadius / wheelTeeth;
   const pressureAngle = options.pressureAngle ?? Math.PI / 9;
   const wormStarts = 1;
-  const wormHandedness = 1;
+  // `leftHand` builds the mirror image (in the wheel's mid-plane) of the
+  // right-handed pair: the worm thread and the wheel's skewed teeth are both
+  // reflected, so the generated mesh stays conjugate; the worm then turns the
+  // opposite way for the same wheel motion.
+  const wormHandedness = options.leftHand ? -1 : 1;
   const axialPitch = Math.PI * 2 * wheelPitchRadius / wheelTeeth;
   const wormTurns = 3.5;
   const wormLength = options.wormLength ?? axialPitch * wormTurns;
@@ -1878,6 +1938,7 @@ export function wormAndWheel(options = {}) {
       pitchRadius: wormPitchRadius, module, length: wormLength, pressureAngle,
       angularSteps: options.wormAngularSteps ?? 640,
     });
+  if (options.leftHand) mirrorGeometryAxis(threadGeometry, 'x');
   const thread = new THREE.Mesh(threadGeometry, matte(PALETTE.driver, { metalness: 0.15, roughness: 0.58 }));
   thread.userData.screwThread = true;
   wormRotor.add(thread);
@@ -1908,6 +1969,7 @@ export function wormAndWheel(options = {}) {
     wormLength, depth: wheelDepth, pressureAngle,
   }, { profile: options.profile ?? null }), matte(PALETTE.driven, { metalness: 0.11, roughness: 0.68 }));
   toothMesh.userData.wormGeneratedWheel = true;
+  if (options.leftHand) mirrorGeometryAxis(toothMesh.geometry, 'z');
   if (options.wheelTipRadius) {
     // Brown's wheel teeth stop short of the worm's thick core: trim the
     // generated tips to a flat land (removes material only).
@@ -1958,13 +2020,14 @@ export function wormAndWheel(options = {}) {
 
   const wheelGapCenter = 0;
   const wheelPhase = options.wheelPhase ?? 1.5516232067748517;
-  const wormPhase = -Math.PI / 2 + wheelTeeth * (wheelPhase - Math.PI / 2);
+  // Mirrored worm angles are the negatives of the right-handed pair's.
+  const wormPhase = wormHandedness * (-Math.PI / 2 + wheelTeeth * (wheelPhase - Math.PI / 2));
   const contactPoint = new THREE.Vector3(
     0,
     wheelCenter.y + wheelPitchRadius,
     0,
   );
-  const wormAngularSpeed = 2.2;
+  const wormAngularSpeed = wormHandedness * 2.2;
   root.userData.mechanism = 'single-start-worm-and-wheel';
   root.userData.blocks = { wheel, wheelShaft, worm, wormShaft };
   root.userData.geometry = {
@@ -2641,6 +2704,9 @@ function ellipticalSlidingPinion() {
     radius: 0.009, color: PALETTE.accent, tubularSegments: 384, markerCount: 0, closed: false,
   });
   spring.userData.tensionSpring = true;
+  // A coiled steel spring (the zigzag Brown draws beside the slot), not a
+  // band or rope: it keeps its spring colour rather than the rope brown.
+  spring.userData.role = 'coiled-tension-spring-pressing-pinion-bearing-into-mesh';
   slottedBar.add(spring);
   const addSpringAnchor = (parent, x, base) => {
     const pin = new THREE.Mesh(new THREE.CylinderGeometry(0.017, 0.017, springEndZ - base, 16), matte(PALETTE.ink));
@@ -3427,14 +3493,19 @@ function variableSectorGears() {
     if (constrainChamfer) {
       // Three.js bevel miters can overshoot a sharp generated corner. Keep
       // every rendered cap and bevel vertex within the sampled cutting face.
+      const pointAngles = points.map((p) => THREE.MathUtils.euclideanModulo(Math.atan2(p.y, p.x), 2 * Math.PI));
       const positions = geometry.attributes.position;
       for (let index = 0; index < positions.count; index += 1) {
         const x = positions.getX(index), y = positions.getY(index);
         const radius = Math.hypot(x, y);
         if (radius < 1e-12) continue;
         const angle = THREE.MathUtils.euclideanModulo(Math.atan2(y, x), 2 * Math.PI);
-        const column = Math.floor(angle / (2 * Math.PI) * points.length);
-        const a = points[column], b = points[(column + 1) % points.length];
+        // The outline is star-shaped about the axis: find the edge whose
+        // angular span holds this vertex.
+        let low = 0, high = pointAngles.length - 1;
+        if (angle < pointAngles[0] || angle >= pointAngles[high]) low = high;
+        else while (high - low > 1) { const middle = (low + high) >> 1; if (pointAngles[middle] <= angle) low = middle; else high = middle; }
+        const a = points[low], b = points[(low + 1) % points.length];
         const limit = (a.x * b.y - a.y * b.x)
           / (x / radius * (b.y - a.y) - y / radius * (b.x - a.x));
         if (radius > limit) {
@@ -3455,7 +3526,10 @@ function variableSectorGears() {
     return gear;
   };
   const driver = makeSectorGear(cut.driver, -centerDistance / 2, PALETTE.driver);
-  const driven = makeSectorGear(cut.points, centerDistance / 2, PALETTE.driven, true);
+  // The polar min-envelope of the swept driver leaves a fine sawtooth on the
+  // steep relieved flanks (cusps up to 0.0009); trimming its outward cusps
+  // removes material only and leaves the smooth envelope.
+  const driven = makeSectorGear(trimOutwardCusps(cut.points, { maxSegment: 0.01 }), centerDistance / 2, PALETTE.driven, true);
   driven.userData.generatedCut = cut;
   // The source shows the large sector's radial joint across the wheel face.
   // Its outer continuation is already the exposed step edge.
@@ -3896,6 +3970,13 @@ function angularBevelGears() {
   root.add(driver, driven);
   retireInkOutline(driver.userData.inset);
   retireInkOutline(driven.userData.inset);
+  // Brown draws a plain collar round the shaft at the upper wheel's toe,
+  // part of the wheel: the hub boss stands 0.08 proud of the toe face in
+  // each wheel's own colour instead of reading as a bare black stub.
+  for (const gear of [driver, driven]) {
+    gear.userData.hub.material = gear.userData.body.material;
+    gear.userData.hub.userData.role = 'hub-collar-at-bevel-toe';
+  }
   // The plate carries the upper shaft well past the rim at upper left and,
   // in front, on past the intersection with the lower shaft. Intersecting
   // shafts cannot both run through the apex: the lower one ends just clear
@@ -3946,7 +4027,7 @@ function angularBevelGears() {
   root.userData.mechanism = 'equal-angular-bevel-gears-on-acute-intersecting-shafts';
   // The source shows truncated cones, with the toe around three-fifths of
   // the heel diameter.
-  root.rotation.z = Math.PI / 12;
+  root.rotation.z = THREE.MathUtils.degToRad(10);
   root.userData.cameraFov = 18;
   root.userData.blocks = { driven, drivenShaft, driver, driverShaft };
   root.userData.gearContact = {
@@ -4004,9 +4085,11 @@ function angularBevelGears() {
   };
   update(0);
   // Plate 43 keeps the lower wheel nearly edge-on while the upper wheel's
-  // toothed face and hub turn toward the eye: the view is rotated about
-  // the driven axis, which projects at 45 degrees down to the left.
-  return finish(root, update, new THREE.Vector3(4.1, -4.1, 8.2));
+  // toothed face and hub turn toward the eye. Fitted to the plate's shaft
+  // lines: the upper shaft falls about 14 degrees to the right (Brown about
+  // 19) and the lower one rises at 45 (Brown 46), with the lower wheel's
+  // axis within 6 degrees of the picture plane.
+  return finish(root, update, new THREE.Vector3(0.374, -0.292, 0.88));
 }
 
 function crossedHelicalGears() {
@@ -14728,7 +14811,61 @@ function handCrankPinionSectorRodPress() {
     platenPlaneZ + 0.22,
   );
   platenMotionIndex.userData.role = 'white-index-showing-platen-translation';
+  // The crossbar's ends lie over the columns (Brown draws them there), but the
+  // columns stand behind the linkage plane. Each end carries a guide ear:
+  // one rectangular yoke, the platen's own height, that wraps its column
+  // with 0.004 running clearance and joins the crossbar's back face, so the
+  // platen is visibly guided instead of floating in front of the frame.
+  const guideClearance = 0.004;
+  const guideWall = 0.06;
+  const columnBackZ = rearFrameZ - frameDepth / 2;
+  const columnFrontZ = rearFrameZ + frameDepth / 2;
+  const platenBackZ = platenPlaneZ - 0.2;
+  const platenGuideEars = [-1, 1].map((sideSign) => {
+    const innerX = sourceFrameColumnInnerX * sourceScale - guideClearance;
+    const outerX = sourceFrameColumnOuterX * sourceScale + guideClearance;
+    const backZ = columnBackZ - guideClearance;
+    const frontZ = columnFrontZ + guideClearance;
+    const outline = new THREE.Shape([
+      new THREE.Vector2(innerX - guideWall, backZ - guideWall),
+      new THREE.Vector2(outerX + guideWall, backZ - guideWall),
+      new THREE.Vector2(outerX + guideWall, platenBackZ + 0.002),
+      new THREE.Vector2(innerX - guideWall, platenBackZ + 0.002),
+    ]);
+    outline.holes.push(new THREE.Path([
+      new THREE.Vector2(innerX, backZ),
+      new THREE.Vector2(innerX, frontZ),
+      new THREE.Vector2(outerX, frontZ),
+      new THREE.Vector2(outerX, backZ),
+    ]));
+    const geometry = new THREE.ExtrudeGeometry(outline, { depth: platenBodyHeight, bevelEnabled: false });
+    // Shape (x, z) extruded along +z; turn it so the extrusion runs down y.
+    geometry.rotateX(Math.PI / 2);
+    geometry.translate(0, platenBodyTop, 0);
+    if (sideSign < 0) geometry.scale(-1, 1, 1);
+    if (sideSign < 0) {
+      const index = geometry.index;
+      if (index) for (let i = 0; i < index.count; i += 3) {
+        const t = index.getX(i + 1); index.setX(i + 1, index.getX(i + 2)); index.setX(i + 2, t);
+      } else {
+        const position = geometry.attributes.position;
+        const normal = geometry.attributes.normal;
+        for (let i = 0; i < position.count; i += 3) {
+          for (const attribute of [position, normal]) {
+            const a = [attribute.getX(i + 1), attribute.getY(i + 1), attribute.getZ(i + 1)];
+            attribute.setXYZ(i + 1, attribute.getX(i + 2), attribute.getY(i + 2), attribute.getZ(i + 2));
+            attribute.setXYZ(i + 2, ...a);
+          }
+        }
+      }
+    }
+    const ear = new THREE.Mesh(geometry, drivenMaterial);
+    ear.userData.side = sideSign < 0 ? 'left' : 'right';
+    ear.userData.role = 'platen-guide-ear-wrapping-frame-column';
+    return ear;
+  });
   platen.add(
+    ...platenGuideEars,
     platenBody,
     platenBracketLeft,
     platenBracketRight,
@@ -14797,52 +14934,58 @@ function handCrankPinionSectorRodPress() {
     rearFrameZ,
   );
   baseRail.userData.role = 'fixed-wide-base-of-press-frame';
+  // The head is one flush block: the anvil, the spacers and the header all
+  // come forward to the platen's front face, so nothing reads as a separate
+  // shelf overhanging below the head.
+  const headFrontZ = platenPlaneZ + 0.21;
+  const headBackZ = rearFrameZ - frameDepth / 2 - 0.04;
   const fixedAnvil = new THREE.Mesh(
     new THREE.BoxGeometry(
       212 * engravingScale,
       (sourceFixedAnvilTopY - sourceFixedAnvilBottomY) * sourceScale,
-      platenPlaneZ + .24 - (rearFrameZ - frameDepth / 2),
+      headFrontZ - (rearFrameZ - frameDepth / 2),
     ),
     frameMaterial,
   );
   fixedAnvil.position.set(
     0,
     (sourceFixedAnvilBottomY + sourceFixedAnvilTopY) * sourceScale / 2,
-    (platenPlaneZ + .24 + rearFrameZ - frameDepth / 2) / 2,
+    (headFrontZ + rearFrameZ - frameDepth / 2) / 2,
   );
   fixedAnvil.userData.role = 'fixed-upper-anvil-opposed-to-rising-platen';
   const topCap = new THREE.Mesh(
     new THREE.BoxGeometry(
       sourceTopCapHalfWidth * sourceScale * 2,
       (sourceTopCapTopY - sourceTopCapBottomY) * sourceScale,
-      frameDepth + 0.18,
+      headFrontZ - headBackZ + 0.1,
     ),
     frameMaterial,
   );
+  // The cornice overhangs the head by 0.05 all round, as Brown's moulding.
   topCap.position.set(
     0,
     (sourceTopCapBottomY + sourceTopCapTopY) * sourceScale / 2,
-    rearFrameZ + 0.04,
+    (headFrontZ + headBackZ) / 2,
   );
   topCap.userData.role = 'fixed-wide-top-cap-of-press-frame';
   const topBlocks = [-1, 1].map((sideSign) => {
     const block = new THREE.Mesh(
-      new THREE.BoxGeometry(29 * engravingScale, 30 * engravingScale + .004, frameDepth + 0.08),
+      new THREE.BoxGeometry(29 * engravingScale, 30 * engravingScale + .004, headFrontZ - headBackZ),
       frameMaterial,
     );
     block.position.set(
       sideSign * 84.5 * engravingScale,
       407 * engravingScale,
-      rearFrameZ,
+      (headFrontZ + headBackZ) / 2,
     );
     block.userData.side = sideSign < 0 ? 'left' : 'right';
     block.userData.role = 'fixed-spacer-between-anvil-and-top-cap';
     return block;
   });
   const headerPanel = new THREE.Mesh(
-    new THREE.BoxGeometry(169 * engravingScale, 30 * engravingScale + .004, frameDepth + .08), frameMaterial,
+    new THREE.BoxGeometry(169 * engravingScale, 30 * engravingScale + .004, headFrontZ - headBackZ), frameMaterial,
   );
-  headerPanel.position.set(0, 407 * engravingScale, rearFrameZ);
+  headerPanel.position.set(0, 407 * engravingScale, (headFrontZ + headBackZ) / 2);
   headerPanel.userData.role = 'solid-header-between-top-spacers';
   const sectorPedestal = new THREE.Mesh(
     new THREE.BoxGeometry(0.82, 0.21, frameDepth + 0.08),
@@ -14875,8 +15018,8 @@ function handCrankPinionSectorRodPress() {
     pinionBracket,
   );
 
-  // Brown draws the platen spanning the two plain columns; no separate
-  // guide cheeks run down their inner faces.
+  // Brown draws the platen spanning the two plain columns; its guide ears
+  // (above) run on the columns themselves, with no separate guide cheeks.
   const pitchContactMarker = new THREE.Mesh(
     new THREE.SphereGeometry(0.055, 18, 12),
     indexMaterial,
@@ -25211,9 +25354,11 @@ function curvedSlotRockerVariableVelocitySlide() {
   // stroke (slider travel 0.567..2.150) with a small overhang each end.
   const sliderBarBottom = -4.52;
   const sliderBarTop = 2.92;
+  // Brown's bar is about 0.15 of the cam's width (0.30 here); it still
+  // clears the rocking shaft (r 0.215) beside it by 0.06.
   const sliderBar = new THREE.Mesh(
     new THREE.BoxGeometry(
-      0.16,
+      0.3,
       sliderBarTop - sliderBarBottom,
       0.2,
     ),
@@ -25329,12 +25474,12 @@ function curvedSlotRockerVariableVelocitySlide() {
       : 'fixed-upper-prismatic-guide';
     // One rectangular block bored for the bar (Brown's guide blocks).
     const blockShape = new THREE.Shape([
-      new THREE.Vector2(-0.18, -0.21), new THREE.Vector2(0.18, -0.21),
-      new THREE.Vector2(0.18, 0.21), new THREE.Vector2(-0.18, 0.21),
+      new THREE.Vector2(-0.25, -0.21), new THREE.Vector2(0.25, -0.21),
+      new THREE.Vector2(0.25, 0.21), new THREE.Vector2(-0.25, 0.21),
     ]);
     blockShape.holes.push(new THREE.Path([
-      new THREE.Vector2(-0.105, -0.155), new THREE.Vector2(-0.105, 0.155),
-      new THREE.Vector2(0.105, 0.155), new THREE.Vector2(0.105, -0.155),
+      new THREE.Vector2(-0.175, -0.155), new THREE.Vector2(-0.175, 0.155),
+      new THREE.Vector2(0.175, 0.155), new THREE.Vector2(0.175, -0.155),
     ]));
     const blockGeometry = new THREE.ExtrudeGeometry(blockShape, { depth: 0.25, bevelEnabled: false });
     blockGeometry.translate(0, 0, -0.125);
@@ -26304,9 +26449,11 @@ function fixedPinionIrregularVibratingWheelCarrier() {
     canonicalInputTravels,
   ).map(([name, travel]) => [name, stateAtInputTravel(travel)]));
 
+  // Spans the wheel hub (z +-0.252) and the strap (0.33..0.48), just proud
+  // of both ends; nothing is carried beyond them.
   const wheelShaft = makeShaft({
     axis: Z_AXIS,
-    length: 1.34,
+    length: 0.8,
     radius: 0.073,
   });
   wheelShaft.userData.role = 'shaft-of-wheel-A-carried-by-vibrating-arm';
@@ -26485,7 +26632,7 @@ function fixedPinionIrregularVibratingWheelCarrier() {
   const update = (time) => {
     const state = stateAtTime(time);
     wheel.position.set(state.wheelCenter.x, state.wheelCenter.y, 0);
-    wheelShaft.position.set(state.wheelCenter.x, state.wheelCenter.y, -0.05);
+    wheelShaft.position.set(state.wheelCenter.x, state.wheelCenter.y, 0.13);
     setSpin(wheel, state.wheelAngle);
     setSpin(wheelShaft, state.wheelAngle);
     setSpin(pinion, state.pinionAngle);
@@ -26529,15 +26676,16 @@ function fixedPinionIrregularVibratingWheelCarrier() {
   correctIrregularGearFamily(root, 196, update);
   // Brown stands the arm pivot on a short tapered pedestal over a hatched
   // block and draws no base rail, tall post or standard behind pinion B.
-  // The pedestal and block stay behind the arm plane; the pedestal top
-  // seats under the pivot bearing sleeve.
+  // The pedestal and block stand in the arm's plane, just behind the strap
+  // (z 0.33..0.48), with the stand eye on the pedestal top; the wheel's
+  // sweep (x < 1.7) never reaches the block (x > 1.85).
   for (const undrawn of [carrierStandard, pinionStandard, frameFoot]) {
     undrawn.removeFromParent();
     undrawn.traverse((part) => part.geometry?.dispose());
   }
   const supportMaterial = matte(PALETTE.frame, { metalness: 0.08, roughness: 0.72 });
   supportMaterial.fog = false;
-  const pedestalBack = -0.69;
+  const pedestalBack = 0.095;
   const pedestalDepth = 0.22;
   const pedestalTop = carrierPivot.y - 0.22;
   const plinthTop = carrierPivot.y - 0.72;
@@ -29936,98 +30084,97 @@ function eccentricGearCarriedPinionRocker() {
   carrier.position.set(carrierPivot.x, carrierPivot.y, 0);
   carrier.userData.fixedLength = carrierLength;
   carrier.userData.role = 'rocking-carrier-and-horizontal-slotted-arm';
-  const carrierShape = new THREE.Shape();
-  carrierShape.moveTo(-0.34, 0.18);
-  carrierShape.lineTo(-0.15, carrierLength - 0.2);
-  carrierShape.lineTo(0.15, carrierLength - 0.2);
-  carrierShape.lineTo(0.34, 0.18);
-  carrierShape.closePath();
-  const carrierBodyGeometry = new THREE.ExtrudeGeometry(carrierShape, {
-    bevelEnabled: true,
-    bevelSegments: 1,
-    bevelSize: 0.018,
-    bevelThickness: 0.018,
-    depth: 0.16,
-    steps: 1,
-  });
-  // Behind the pinion (z 0.14-0.48) and in front of the pulleys.
-  carrierBodyGeometry.translate(0, 0, -0.06);
-  const carrierBody = new THREE.Mesh(
-    carrierBodyGeometry,
-    matte(PALETTE.frame, { metalness: 0.1, roughness: 0.7 }),
-  );
-  carrierBody.userData.role = 'rigid-tapered-pinion-carrier';
-
-  // Brown draws a short oval eye at the end of a solid arm, not a slot along
-  // the whole arm. The roller only travels 2.40-2.48 from the pivot.
+  // Brown draws the rocker as one flat bell-crank: a tapered upright arm
+  // carrying the pinion's shaft in an end boss, a tapered horizontal arm
+  // ending in the slotted eye for rod A's pin, and a round boss on the fixed
+  // pivot shaft. One plan outline, extruded once (z -0.08..0.08), between
+  // the pulleys behind and the pinion's hub (z 0.081) in front.
   const slotRailOffset = 0.17;
   const slotRailStart = -2.56;
   const slotRailEnd = -2.36;
-  const slotRails = [-1, 1].map((side) => {
-    const rail = makeBeam(
-      new THREE.Vector3(slotRailStart, side * slotRailOffset, 0.22),
-      new THREE.Vector3(slotRailEnd, side * slotRailOffset, 0.22),
-      {
-        color: PALETTE.frame,
-        depth: 0.13,
-        thickness: 0.085,
-      },
-    );
-    rail.userData.role = 'side-of-horizontal-follower-slot';
-    return rail;
-  });
-  // Half rings close each end of the eye without crossing the roller's path.
-  const slotCapShape = new THREE.Shape();
-  slotCapShape.absarc(0, 0, slotRailOffset + 0.044, 0, Math.PI, false);
-  slotCapShape.absarc(0, 0, slotRailOffset - 0.044, Math.PI, 0, true);
-  slotCapShape.closePath();
-  const slotCapGeometry = new THREE.ExtrudeGeometry(slotCapShape, {
-    bevelEnabled: false, curveSegments: 24, depth: 0.088,
-  }).translate(0, 0, -0.044);
-  const slotCapMaterial = matte(PALETTE.frame, { metalness: 0.1, roughness: 0.68 });
-  const slotEndRing = new THREE.Mesh(slotCapGeometry, slotCapMaterial);
-  slotEndRing.position.set(slotRailStart, 0, 0.22);
-  slotEndRing.rotation.z = Math.PI / 2;
-  slotEndRing.userData.role = 'rounded-outer-end-of-horizontal-slot';
-  const slotInnerEnd = new THREE.Mesh(slotCapGeometry, slotCapMaterial);
-  slotInnerEnd.position.set(slotRailEnd, 0, 0.22);
-  slotInnerEnd.rotation.z = -Math.PI / 2;
-  slotInnerEnd.userData.role = 'rounded-inner-end-of-horizontal-slot';
-  const pivotCollar = new THREE.Mesh(
-    new THREE.TorusGeometry(0.38, 0.105, 12, 52),
-    matte(PALETTE.frame, { metalness: 0.13, roughness: 0.64 }),
+  const bellCrankOutline = (() => {
+    const bossRadius = 0.42;
+    const topCenter = new THREE.Vector2(0, carrierLength);
+    const topRadius = 0.2;
+    const eyeRadius = 0.215;
+    const eyeInner = new THREE.Vector2(slotRailEnd, 0);
+    const eyeOuter = new THREE.Vector2(slotRailStart, 0);
+    // First intersection of the ray p0 + t (p1 - p0), t in R, with a circle,
+    // choosing the root nearest `hint` in t.
+    const hit = (p0, p1, center, radius, hint) => {
+      const d = p1.clone().sub(p0);
+      const f = p0.clone().sub(center);
+      const A = d.dot(d);
+      const B = 2 * f.dot(d);
+      const C = f.dot(f) - radius * radius;
+      const root = Math.sqrt(B * B - 4 * A * C);
+      const ts = [(-B - root) / (2 * A), (-B + root) / (2 * A)];
+      const t = Math.abs(ts[0] - hint) < Math.abs(ts[1] - hint) ? ts[0] : ts[1];
+      return p0.clone().addScaledVector(d, t);
+    };
+    const angleOf = (p, c) => Math.atan2(p.y - c.y, p.x - c.x);
+    const arc = (points, center, radius, from, to, steps) => {
+      while (to < from) to += Math.PI * 2;
+      const count = Math.max(2, Math.ceil(steps * (to - from) / (Math.PI * 2)));
+      for (let i = 1; i < count; i += 1) {
+        const a = from + (to - from) * i / count;
+        points.push(new THREE.Vector2(center.x + radius * Math.cos(a), center.y + radius * Math.sin(a)));
+      }
+    };
+    const origin = new THREE.Vector2(0, 0);
+    const side = (sign) => {
+      const p0 = new THREE.Vector2(sign * 0.34, 0.18);
+      const p1 = new THREE.Vector2(sign * 0.15, carrierLength - 0.2);
+      return { boss: hit(p0, p1, origin, bossRadius, 0), top: hit(p0, p1, topCenter, topRadius, 1) };
+    };
+    const arm = (sign) => {
+      const p0 = new THREE.Vector2(-0.33, sign * 0.2);
+      const p1 = new THREE.Vector2(-2.17, sign * 0.085);
+      return { boss: hit(p0, p1, origin, bossRadius, 0), eye: hit(p0, p1, eyeInner, eyeRadius, 1) };
+    };
+    const right = side(1);
+    const left = side(-1);
+    const upper = arm(1);
+    const lower = arm(-1);
+    const points = [right.boss, right.top];
+    arc(points, topCenter, topRadius, angleOf(right.top, topCenter), angleOf(left.top, topCenter), 96);
+    points.push(left.top, left.boss);
+    arc(points, origin, bossRadius, angleOf(left.boss, origin), angleOf(upper.boss, origin), 160);
+    points.push(upper.boss, upper.eye);
+    arc(points, eyeInner, eyeRadius, angleOf(upper.eye, eyeInner), Math.PI / 2, 96);
+    points.push(new THREE.Vector2(eyeInner.x, eyeRadius), new THREE.Vector2(eyeOuter.x, eyeRadius));
+    arc(points, eyeOuter, eyeRadius, Math.PI / 2, Math.PI * 1.5, 96);
+    points.push(new THREE.Vector2(eyeOuter.x, -eyeRadius), new THREE.Vector2(eyeInner.x, -eyeRadius));
+    arc(points, eyeInner, eyeRadius, Math.PI * 1.5, angleOf(lower.eye, eyeInner), 96);
+    points.push(lower.eye, lower.boss);
+    arc(points, origin, bossRadius, angleOf(lower.boss, origin), angleOf(right.boss, origin), 160);
+    return points;
+  })();
+  const bellCrankShape = new THREE.Shape(bellCrankOutline);
+  const pivotBore = new THREE.Path();
+  pivotBore.absarc(0, 0, 0.115, 0, Math.PI * 2, true);
+  const pinionShaftBore = new THREE.Path();
+  pinionShaftBore.absarc(0, carrierLength, 0.092, 0, Math.PI * 2, true);
+  const slotHalfWidth = 0.13;
+  const slotHole = new THREE.Path();
+  slotHole.absarc(slotRailEnd, 0, slotHalfWidth, -Math.PI / 2, Math.PI / 2, false);
+  slotHole.lineTo(slotRailStart, slotHalfWidth);
+  slotHole.absarc(slotRailStart, 0, slotHalfWidth, Math.PI / 2, Math.PI * 1.5, false);
+  slotHole.closePath();
+  bellCrankShape.holes.push(pivotBore, pinionShaftBore, slotHole);
+  const carrierBody = new THREE.Mesh(
+    smoothExtrudeGeometry(bellCrankShape, 0.16, { low: -0.08 }),
+    matte(PALETTE.frame, { metalness: 0.1, roughness: 0.7 }),
   );
-  pivotCollar.position.z = 0.2;
-  pivotCollar.userData.looseOnOutputShaft = true;
-  pivotCollar.userData.role = 'loose-rocker-pivot-collar';
-  // Two mirrored halves form one solid arm tapering from the pivot boss to
-  // the eye, as Brown draws it.
-  const armMaterial = matte(PALETTE.frame, { metalness: 0.1, roughness: 0.68 });
-  const armStartX = slotRailEnd + slotRailOffset + 0.02;
-  const armJunctions = [-1, 1].map((side) => {
-    const half = new THREE.Shape([
-      new THREE.Vector2(armStartX, 0),
-      new THREE.Vector2(armStartX, side * 0.085),
-      // Ends inside the pivot collar ring, clear of the pivot shaft.
-      new THREE.Vector2(-0.33, side * 0.2),
-      new THREE.Vector2(-0.33, 0),
-    ]);
-    const junction = new THREE.Mesh(
-      new THREE.ExtrudeGeometry(half, { bevelEnabled: false, depth: 0.13 })
-        .translate(0, 0, 0.22 - 0.065),
-      armMaterial,
-    );
-    junction.userData.role = 'slot-to-pivot-arm-junction';
-    return junction;
-  });
-  carrier.add(
-    carrierBody,
-    ...slotRails,
-    slotEndRing,
-    slotInnerEnd,
-    pivotCollar,
-    ...armJunctions,
-  );
+  carrierBody.userData.role = 'one-piece-bell-crank-with-pivot-boss-and-slotted-eye';
+  carrierBody.userData.looseOnOutputShaft = true;
+  carrierBody.userData.slot = { start: slotRailStart, end: slotRailEnd, halfWidth: slotHalfWidth, low: -0.08, high: 0.08 };
+  carrierBody.userData.pivotBoreRadius = 0.115;
+  carrierBody.userData.pinionShaftBoreRadius = 0.092;
+  const slotRails = [];
+  const armJunctions = [];
+  const pivotCollar = carrierBody;
+  carrier.add(carrierBody);
 
   const pinion = makeGear({
     color: PALETTE.accent,
@@ -30111,10 +30258,12 @@ function eccentricGearCarriedPinionRocker() {
   const outputShaft = makeShaft({
     axis: Z_AXIS,
     color: PALETTE.ink,
-    length: 1.58,
+    length: 0.97,
     radius: 0.105,
   });
-  outputShaft.position.set(carrierPivot.x, carrierPivot.y, -0.02);
+  // Ends just proud of the bell-crank boss (front face z 0.08); Brown shows
+  // only its end face.
+  outputShaft.position.set(carrierPivot.x, carrierPivot.y, -0.325);
   outputShaft.userData.fixed = true;
   outputShaft.userData.stationary = true;
   outputShaft.userData.role = 'stationary-common-pivot-shaft';
@@ -30129,8 +30278,8 @@ function eccentricGearCarriedPinionRocker() {
     length: 1.75,
     radius: 0.06,
   });
-  // In front of the slot sides (front face z 0.285) rather than through them.
-  rodStem.position.set(0, -0.78, 0.36);
+  // Just in front of the bell-crank's eye (front face z 0.08).
+  rodStem.position.set(0, -0.78, 0.17);
   rodStem.userData.role = 'rod-A-stem';
   const slotFollower = new THREE.Mesh(
     new THREE.CylinderGeometry(0.165, 0.165, 0.36, 30),
@@ -30138,13 +30287,14 @@ function eccentricGearCarriedPinionRocker() {
     matte(PALETTE.brass, { metalness: 0.18, roughness: 0.52 }),
   );
   slotFollower.rotation.x = Math.PI / 2;
-  slotFollower.position.z = 0.29;
+  // Rod A's pin runs through the eye's slot (z -0.08..0.08), proud both sides.
+  slotFollower.position.z = 0.06;
   slotFollower.userData.role = 'roller-sliding-in-horizontal-arm-slot';
   const followerRim = new THREE.Mesh(
     new THREE.TorusGeometry(0.17, 0.042, 9, 36),
     matte(PALETTE.ink, { metalness: 0.18, roughness: 0.54 }),
   );
-  followerRim.position.z = 0.49;
+  followerRim.position.z = 0.26;
   followerRim.userData.role = 'slot-follower-roller-rim';
   rod.add(rodStem, slotFollower, followerRim);
 
@@ -30156,12 +30306,12 @@ function eccentricGearCarriedPinionRocker() {
     new THREE.TorusGeometry(0.13, 0.045, 9, 32),
     matte(PALETTE.frame, { metalness: 0.14, roughness: 0.62 }),
   );
-  guideRing.position.set(rodGuideX, guideY, 0.36);
+  guideRing.position.set(rodGuideX, guideY, 0.17);
   guideRing.quaternion.setFromUnitVectors(Z_AXIS, Y_AXIS);
   guideRing.userData.role = 'fixed-guide-bushing-around-rod-A';
   const guideBracket = makeBeam(
     new THREE.Vector3(rodGuideX - 0.42, guideY, -0.28),
-    new THREE.Vector3(rodGuideX - 0.13, guideY, 0.36),
+    new THREE.Vector3(rodGuideX - 0.13, guideY, 0.17),
     { color: PALETTE.frame, depth: 0.13, thickness: 0.1 },
   );
   guideBracket.userData.role = 'rod-guide-support-bracket';
@@ -30174,9 +30324,9 @@ function eccentricGearCarriedPinionRocker() {
   rodStem.position.y = -0.78 - (2.9 - 1.75) / 2;
   for (const [label, y] of [['Upper', guideY], ['Lower', guideY - 1.2]]) {
     const holder = new THREE.Group();
-    holder.position.set(rodGuideX, y, 0.36);
+    holder.position.set(rodGuideX, y, 0.17);
     holder.add(...wallGuide({ name: `rodA${label}Guide`, axis: 'y', halfLength: 0.1, boreRadius: 0.064,
-      outerRadius: 0.14, zWall: -0.9 - 0.36, material: matte(PALETTE.frame, { metalness: 0.14, roughness: 0.62 }) }));
+      outerRadius: 0.14, zWall: -0.9 - 0.17, material: matte(PALETTE.frame, { metalness: 0.14, roughness: 0.62 }) }));
     holder.userData.role = `fixed-${label.toLowerCase()}-bored-guide-of-rod-A`;
     rodGuide.add(holder);
   }
@@ -30333,7 +30483,7 @@ function eccentricGearCarriedPinionRocker() {
     rod,
     rodGuide,
     rodStem,
-    slotEndRing,
+    slotEndRing: null,
     slotFollower,
     slotRails,
     smallPulley,
@@ -32659,7 +32809,9 @@ function compoundMutilatedExternalInternalGearReverser() {
   const sourceHubReferenceRadius = 0.4;
   const gearDepth = 0.34;
   const carrierDepth = 0.16;
-  const carrierCenterZ = -0.34;
+  // The web's front face (z -0.187) runs 0.005 behind the reversing pinion;
+  // the ring and the centre sector's root disk reach back into it.
+  const carrierCenterZ = -0.279;
   const profileBevel = 0.012;
   const carrierAxialGap = -gearDepth / 2 - profileBevel
     - (carrierCenterZ + carrierDepth / 2 + profileBevel);
@@ -32999,20 +33151,21 @@ function compoundMutilatedExternalInternalGearReverser() {
   carrierBody.userData.role =
     'rear-web-rigidly-joining-center-sector-and-internal-ring';
   carrierBody.userData.rearCarrier = true;
+  // Brown draws no web: it is the see-through part, so the gears show from
+  // behind and it does not hide the mechanism.
+  makeSeeThrough(carrierBody);
+  // Root bodies deepened 0.02 at the back only, so they seat in the web.
+  const webSeat = 0.02;
+  const seatedExtrusion = (shape) => centeredExtrusion(shape, gearDepth + webSeat)
+    .translate(0, 0, -webSeat / 2);
   const ringBody = new THREE.Mesh(
-    centeredExtrusion(
-      annulusShape(ringOuterRadius, ringRootRadius),
-      gearDepth,
-    ),
+    seatedExtrusion(annulusShape(ringOuterRadius, ringRootRadius)),
     driverMaterial,
   );
   ringBody.userData.role = 'outer-internal-gear-root-ring';
   ringBody.userData.equivalentTeeth = ringEquivalentTeeth;
   const centralBody = new THREE.Mesh(
-    centeredExtrusion(
-      annulusShape(centralRootRadius, shaftBoreRadius),
-      gearDepth,
-    ),
+    seatedExtrusion(annulusShape(centralRootRadius, shaftBoreRadius)),
     driverMaterial,
   );
   centralBody.userData.role = 'inner-external-gear-root-disk';
@@ -33193,8 +33346,9 @@ function compoundMutilatedExternalInternalGearReverser() {
   compoundShaft.position.set(compoundCenter.x, compoundCenter.y,
     (shaftFrontZ + compoundShaftRearZ) / 2);
   compoundShaft.userData.role = 'compound-input-shaft';
-  // The rear web turns past the pinion axis, so the pinion shaft stops in front of it.
-  const pinionShaftRearZ = carrierCenterZ + carrierDepth / 2 + 0.02;
+  // The rear web turns past the pinion axis, so the pinion shaft ends at the
+  // pinion's back face, in front of the web.
+  const pinionShaftRearZ = -gearDepth / 2 - profileBevel + 0.002;
   const pinionShaftFrontZ = shaftFrontZ;
   const pinionShaft = makeShaft({
     axis: Z_AXIS,
@@ -34790,7 +34944,7 @@ function createGearCoreModel(movement) {
     case 29: return sourceIndexFree(diskSpiralDrive());
     case 30: return sourceIndexFree(rectangularGears());
     // Brown's 31: three thin ribs on a thick core, wheel tips short of it.
-    case 31: return sourceIndexFree(wormAndWheel({ thinRib: -1, ribTurns: 3, ribTipWidth: 0.07,
+    case 31: return sourceIndexFree(wormAndWheel({ leftHand: true, thinRib: -1, ribTurns: 3, ribTipWidth: 0.07,
       wormCoreRadius: 0.15, wormCrestRadius: 0.25, wheelTipRadius: 1.287 }));
     case 32: return frictionWheels();
     case 33: return sourceIndexFree(ellipticalGears());

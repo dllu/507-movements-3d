@@ -1,9 +1,21 @@
 # Movement 174: twin-jaw bench clamp — reviewed reconstruction
 
-The browser now uses a 16-mesh reconstruction and a 278,171-byte geometry-and-
+The browser now uses a 16-mesh reconstruction and a 285,857-byte geometry-and-
 motion bake. Both jaws respond passively to board contact. A six-second cycle
 withdraws and reinserts the board; the old forced jaw angles, decorative
 outlines, white indices and floating contact markers have been replaced.
+
+Pass 93 (p93-fc): the p93 audit found the jaws effectively static (0.0007 rad
+per cycle). Once seated, rigid jaws have nothing to open them when the board
+is withdrawn, so every reinsertion met them where they were. Each jaw hinge now
+carries a light inferred return spring (stiffness 0.5, damping 0.25, rest angle
+0.1 rad open). Brown draws none; it stands in for the workman knocking the jaws
+open. On withdrawal both jaws turn about 0.10 rad open, clearing the noses from
+the board's faces. On reinsertion the board's end strikes the crossed tails and
+turns both jaws shut until the noses bear on the sides, as the caption says. At
+the clamped pose the spring resists with under 0.05 torque against the drive's
+force limit of 10, and the clamped pose is unchanged (upper 0.0029, lower 0.0020
+rad).
 
 The [original page](https://507movements.com/mm_174.html) has no enabled animation.
 The engraving and caption are the source reference.
@@ -32,8 +44,8 @@ are checked separately.
 The [cycle qualification](validation/174-native-cycle.json) simulates three
 withdrawal/reinsertion cycles at 0.0005 and 0.00025 seconds. The final cycle
 repeats in position and velocity to numerical precision. Maximum transient
-coarse/fine differences are 0.00266 radians at the upper jaw, 0.000552 at the
-lower jaw, 0.00107 in board X and 0.00106 in board Y. No negative native
+coarse/fine differences (pass 93) are 0.00201 radians at the upper jaw, 0.00155
+at the lower jaw, 0.00163 in board X and 0.00081 in board Y. No negative native
 contact distances were recorded, with a small contact margin enabled.
 
 ## Visible assembly and checks
@@ -43,15 +55,15 @@ screw-head slots. The board and bench have finite thickness; their unillustrated
 ends and bearing depths are inferred. The view is nearly orthographic, fog and
 scene ground are disabled, and Restart restores the closed source pose.
 
-- [Bake](validation/174-bake.json): 982 adaptive keys for a six-second cycle;
+- [Bake](validation/174-bake.json): 1,156 adaptive keys (pass 93) for a six-second cycle;
   maximum error at the recorded samples is below 9.91e-7. The final key is made
   exactly equal to the first after verifying the native seam. Browser playback
   loads no MuJoCo/WASM or live physics.
 - [Assembly clearance](validation/174-assembly-clearance.json): all 16 physical
-  meshes and 42 cross-body pairs, 129 poses, 2,186,808 surface queries and no
+  meshes and 42 cross-body pairs, 129 poses, 2,474,778 surface queries and no
   sampled intersections.
 - [Dense jaw contact](validation/174-dense-contact.json): four subinterval
-  samples per adaptive key interval, 3,925 poses and 27,427,900 surface queries,
+  samples per adaptive key interval, 4,621 poses and 32,291,548 surface queries,
   with no sampled jaw/board intersections. These are sampled checks, not a
   continuous collision proof.
 - Two tests pass for measured screw centers, board position, finite transforms,

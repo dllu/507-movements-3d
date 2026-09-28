@@ -17,7 +17,20 @@ export function finishSingleTooth241(model) {
   // A darker shade of the disk's colour, so the tooth plate reads on its face.
   b.driverTooth.material = b.driverTooth.material.clone();
   b.driverTooth.material.color.multiplyScalar(0.78);
-  const click = polygonClipping.difference(poly(g.holdingClickOutlinePoints.map(p => p.toArray())), poly(circle([0, 0], 0.09, 96)));
+  // p93: Brown's click is a broad horn swelling from its eye, not an even
+  // thin arc. Thicken the eye half of the source outline (both sides, by
+  // circles along its centre line tapering to nothing at 60% of its length);
+  // the working half and the nose that holds the wheel are unchanged.
+  const clickPoints = g.holdingClickOutlinePoints.map(p => p.toArray());
+  const far = clickPoints.reduce((best, p, i) => Math.hypot(...p) > Math.hypot(...clickPoints[best]) ? i : best, 0);
+  const lower = clickPoints.slice(0, far + 1).filter(p => Math.hypot(...p) > 0.25), upper = clickPoints.slice(far).filter(p => Math.hypot(...p) > 0.25);
+  const centre = lower.map(p => { const q = upper.reduce((a, b) => Math.hypot(b[0] - p[0], b[1] - p[1]) < Math.hypot(a[0] - p[0], a[1] - p[1]) ? b : a); return [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2]; });
+  const reach = Math.hypot(...clickPoints[far]), swell = [];
+  for (const c of centre) {
+    const f = Math.hypot(...c) / reach;
+    if (f < 0.6) swell.push(poly(circle(c, 0.2 - 0.11 * f / 0.6, 48)));
+  }
+  const click = polygonClipping.difference(polygonClipping.union(poly(clickPoints), ...swell, poly(circle([0, 0], 0.24, 96))), poly(circle([0, 0], 0.09, 96)));
   replace(b.holdingClickBody, plate(click, -0.09, 0.09));
   replace(b.driverDisk, ring(0.098, g.driverBodyRadius, -0.12, 0.12, 96));
   b.driverDisk.rotation.set(0, 0, 0);

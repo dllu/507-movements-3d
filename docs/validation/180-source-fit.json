@@ -2,7 +2,7 @@
   "movement": 180,
   "status": "selected-source-features-checked",
   "method": "Nearest actual rendered vertices in initial front projection to eleven manually selected engraving features. Sparse feature check, not full contour registration.",
-  "maximumErrorPixels": 3.2491619368858773,
+  "maximumErrorPixels": 3.249130845328138,
   "features": [
     {
       "name": "upper outer tip",
@@ -12,10 +12,10 @@
         62
       ],
       "nearest": [
-        251.89205309565875,
-        63.53258739589944
+        251.891959995416,
+        63.532627597124986
       ],
-      "errorPixels": 2.4348899447124297
+      "errorPixels": 2.4348429057587206
     },
     {
       "name": "upper outer arc",
@@ -25,10 +25,10 @@
         91.5
       ],
       "nearest": [
-        291.8951278964029,
-        90.27627666161453
+        291.89504532549023,
+        90.27630111311476
       ],
-      "errorPixels": 2.434745444889557
+      "errorPixels": 2.434804539897345
     },
     {
       "name": "upper shoulder",
@@ -38,10 +38,10 @@
         111
       ],
       "nearest": [
-        314.56149617505395,
-        110.03639717717618
+        314.56142138395217,
+        110.03641270463527
       ],
-      "errorPixels": 1.7314224367665025
+      "errorPixels": 1.7314759340916126
     },
     {
       "name": "outer cheek",
@@ -51,10 +51,10 @@
         333
       ],
       "nearest": [
-        416.1030374189919,
-        333.4929643535737
+        416.1030506055963,
+        333.49293990280944
       ],
-      "errorPixels": 0.50361747746366
+      "errorPixels": 0.5035962421380302
     },
     {
       "name": "lower nose",
@@ -64,10 +64,10 @@
         499
       ],
       "nearest": [
-        332.31462767585793,
-        498.052989990538
+        332.3147056518598,
+        498.05299852833156
       ],
-      "errorPixels": 2.500865697287393
+      "errorPixels": 2.500934633710755
     },
     {
       "name": "inner hook",
@@ -77,10 +77,10 @@
         398
       ],
       "nearest": [
-        328.49445630481927,
-        395.911542027661
+        328.4944940664244,
+        395.911552069513
       ],
-      "errorPixels": 2.148774332023538
+      "errorPixels": 2.148755688121754
     },
     {
       "name": "board contact lobe",
@@ -90,10 +90,10 @@
         452
       ],
       "nearest": [
-        280.16660612043273,
-        453.1502837261192
+        280.1666664176678,
+        453.1503127952607
       ],
-      "errorPixels": 1.1622866470627258
+      "errorPixels": 1.162324060543633
     },
     {
       "name": "upper inner edge",
@@ -103,10 +103,10 @@
         232
       ],
       "nearest": [
-        311.1774041306211,
-        229.58836890382003
+        311.1773764086629,
+        229.5883857636303
       ],
-      "errorPixels": 3.2491619368858773
+      "errorPixels": 3.249130845328138
     },
     {
       "name": "fixed upper left",
@@ -142,10 +142,10 @@
         154
       ],
       "nearest": [
-        280.0833132372257,
-        151.91430374279986
+        280.08333325267097,
+        151.91444638631089
       ],
-      "errorPixels": 2.087359569598803
+      "errorPixels": 2.0872178387922156
     }
   ],
   "sources": [
@@ -155,11 +155,11 @@
     },
     {
       "file": "src/simulation/baked/single-clamp.js",
-      "sha256": "cc60bb5a814c0cda9cb1fd4ed9cef1d6327ac3c83affbb31741575002142ab51"
+      "sha256": "ba70e28c514c75699e5c343faa581650a66b2b1d7e11986ae518e125aec8782e"
     },
     {
       "file": "src/simulation/baked/assets/180.json.gz",
-      "sha256": "dc469df620b874177d5e6b27a49678bea4ec5c0cde0dbbe61d32d4383c63fe7d"
+      "sha256": "24babef29f6dc3bf329bacffb26947d634b8b3fd4553a55cd7b2f5e82b5f6d5b"
     },
     {
       "file": "public/engravings/mm_180.png",

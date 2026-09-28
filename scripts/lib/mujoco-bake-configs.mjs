@@ -15,6 +15,9 @@
 //                   recorded as centreline points instead of vertex frames;
 //                   the route's sync(u, qpos, curves) rebuilds the mesh
 //   derivedMeshes   keys of meshes that sync rebuilds from those curves
+//                   (or, for 109, from the recorded qpos)
+//   seamExclude     derived meshes whose vertex count changes, left out of
+//                   the seam continuity check
 //   qpos            false omits the recorded joint coordinates
 //   minLoopSeconds  shortest loop considered (a long gear-ratio repeat)
 export const bakeConfigs = {
@@ -125,7 +128,12 @@ export const bakeConfigs = {
   },
   109: {
     directory: 'src/simulation/mujoco-thread-cutting',
-    note: 'The lathe drive reverses each period: the tool carriage feeds along the stock cutting the thread and returns, and the geometric cut follows it back; one 24 s period closes the loop.',
+    // The route's sync rebuilds the cut workpiece from the recorded work angle.
+    derivedMeshes: ['parts.workpiece'],
+    // Its vertex count changes as the cut advances, so it is left out of the
+    // seam vertex-continuity check; it is a function of the periodic qpos and time.
+    seamExclude: ['parts.workpiece'],
+    note: 'The lathe drive reverses each period: the tool carriage descends along the stock cutting the thread, leaving the plain blank below it, and returns up its finished groove; a fresh blank replaces the screw at the top reversal. The route sync rebuilds the cut from the recorded work angle and loop time; one 24 s period closes the loop.',
   },
   110: {
     directory: 'src/simulation/mujoco-half-nut',

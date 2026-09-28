@@ -11,7 +11,9 @@ const mujoco=await loadMujoco();
 test('119 preserves closed hardware and a section view independent of the solids',()=>{
  const v=makeEndlessRackGeometry(),u=v.root.userData;
  try{
-  assert.equal(Object.keys(u.parts).length,9);
+  assert.equal(Object.keys(u.parts).length,10);
+  // p93: Brown shows only end rods; each runs in under its rack end by 0.35 and no rod spans the rack's back.
+  for(const n of ['rod','rodRight']){const b=new THREE.Box3().setFromBufferAttribute(u.parts[n].geometry.attributes.position);assert(Math.min(Math.abs(b.min.x),Math.abs(b.max.x))>1.3,n);}
   for(const [name,mesh]of Object.entries(u.parts)){const a=inspectWeightedClutchSolid(mesh.geometry);assert(a.volume>0,name);assert.equal(a.components,1,name);assert.equal(a.unmatchedEdges+a.degenerate+a.nonfinite+a.wrongNormals,0,name);}
   assert.equal(u.parts.pinion.geometry.userData.toothProfile,'rounded-rack-generated-involute-with-root-transition');
   assert(!u.sectionView&&u.parts.guide.visible,'the solid guide bar is drawn by default');u.setSectionView(true);assert(!u.parts.guide.visible);u.setSectionView(false);assert(u.parts.guide.visible);

@@ -44,16 +44,17 @@ test('326: translating piston rod clears the standard and its deep foot',()=>{
   const m=createMovementModel(movements[325]);
   try {
     const {blocks:b,geometry:g,animationTiming}=m.root.userData;m.root.updateMatrixWorld(true);
-    // Brown shows the rod only through the slot: it runs behind the standard.
-    for(const fixed of [b.framePlate,b.foundationFoot])assert.ok(bounds(b.pistonRod).max.z<bounds(fixed).min.z);
+    // The rod runs down inside the hollow standard, into the foot's bore.
+    assert.ok(bounds(b.pistonRod).min.z>bounds(b.framePlate).max.z);
+    assert.ok(bounds(b.pistonRod).max.z<bounds(b.standardFrontSkin).min.z);
     for(let i=0;i<=32;i++) {
       m.update(animationTiming.authoredCyclePeriod*i/32);m.root.updateMatrixWorld(true);
-      assert.ok(bounds(b.pistonRod).min.y>=g.frameBaseBottomY,'rod end stays hidden above the foot bottom');
+      assert.ok(bounds(b.pistonRod).min.y>bounds(b.foundationSole).max.y-1e-9,'rod end stays inside the foot bore');
       assert.ok(bounds(b.pistonRod).min.z>bounds(b.flywheelRim).max.z,'rod clears the flywheel');
     }
     m.update(0);m.root.updateMatrixWorld(true);
-    assert.ok(bounds(b.pistonRod).intersectsBox(bounds(b.lowerSlideBridge)),'piston rod must join slide');
-    for(const shoe of [b.leftSlideShoe,b.rightSlideShoe])assert.ok(bounds(shoe).intersectsBox(bounds(b.lowerSlideBridge)),'lower bridge joins both shoes');
+    assert.ok(bounds(b.pistonRod).intersectsBox(bounds(b.slideBridge)),'piston rod must join slide');
+    assert.equal(b.lowerSlideBridge,undefined,'no rear bridge behind the standard');
     for(const [shoe,face] of [[b.leftSlideShoe,b.leftPlanedFace],[b.rightSlideShoe,b.rightPlanedFace]]) {
       assert.ok(bounds(shoe.userData.frontCheek).min.z>bounds(face).max.z);
     }

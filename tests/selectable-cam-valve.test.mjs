@@ -19,3 +19,9 @@ test('150 ordinary rod pins close on a vertical output through every selection',
   m.reset();assert.ok(u.kinematics.valve.top.distanceTo(first.top)<1e-12);
  }finally{m.dispose();}
 });
+test('150 valve rod ends plainly: no lower eye or cross-pin (pass 93)',()=>{
+ const m=makeSelectableCamValve();try{const names=[];m.root.traverse(o=>{if(o.isMesh)names.push(o.name);});
+  assert.ok(!names.includes('lower-pin')&&!names.includes('lower-pin-retainer'));
+  const rod=m.root.userData.valveParts['pinned-valve-rod'];rod.geometry.computeBoundingBox();assert.ok(rod.geometry.boundingBox.max.x-rod.geometry.boundingBox.min.x<.35);
+ }finally{m.dispose();}
+});

@@ -19,3 +19,11 @@ test('174 completes a continuous six-second baked cycle with finite rendered tra
   assert.equal(Object.keys(parts).length,16);assert.equal(m.root.userData.hideGround,true);
  }finally{m.dispose();}
 });
+test('174 turns both jaws open on withdrawal and shut on the pushed board each cycle',()=>{
+ const m=makeBakedBenchClampModel(bundle);try{
+  const {stateAtTime}=m.root.userData;let upper=[Infinity,-Infinity],lower=[Infinity,-Infinity];
+  for(let i=0;i<=600;i++){const s=stateAtTime(i/100);upper=[Math.min(upper[0],s.upper),Math.max(upper[1],s.upper)];lower=[Math.min(lower[0],s.lower),Math.max(lower[1],s.lower)];}
+  assert.ok(upper[1]-upper[0]>.08,'upper jaw turns on its screw');assert.ok(lower[1]-lower[0]>.08,'lower jaw turns on its screw');
+  const s=stateAtTime(0);assert.ok(Math.abs(s.upper)<.01&&Math.abs(s.lower)<.01,'both jaws clamp the board at the source pose');
+ }finally{m.dispose();}
+});

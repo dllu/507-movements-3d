@@ -766,8 +766,9 @@ test('movement 215 renders separated carrier and locking planes with nominal pro
     'the rear carrier overlaps the Geneva wheel only in projection');
   near(stopWheelBounds.min.z - driverBounds.max.z, geometry.axialLayerGap,
     2e-8, 'rear carrier clears the Geneva wheel axially');
-  near(lockingCamBounds.min.z, stopWheelBounds.min.z, 2e-8,
-    'raised crescent and Geneva wheel share the locking-plane back face');
+  // p93: the crescent runs back through the layer gap into the carrier disk.
+  near(lockingCamBounds.min.z, driverBounds.max.z - 0.005, 2e-6,
+    'raised crescent is seated 0.005 into the carrier disk face');
   near(lockingCamBounds.max.z, stopWheelBounds.max.z, 2e-8,
     'raised crescent and Geneva wheel share the locking-plane front face');
   assert.ok(pinBounds.max.z > driverBounds.max.z + 0.35,

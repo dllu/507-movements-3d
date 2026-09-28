@@ -32,7 +32,9 @@ export function makeReversibleClickGeometry({teeth=24,module=.08944889706458971,
  const pin=add('clickPin',disk(.1107,-.06,.24,96),'carrier',PALETTE.ink);pin.position.set(...f.pawlPivot,0);
  const rodLocal=p=>{const q=local(p);return q.map((v,i)=>v-f.crank[i]);};
  const rodShape=clip.difference(clip.union(poly(circle([0,0],source.circles.rodEye.radius/100,128)),poly([[378,256],[422,259],[418,312],[374,309]].map(rodLocal)),poly([[386,257],[398,75],[405,72],[422,81],[411,259]].map(rodLocal))),poly(circle([0,0],.118,96)));
- add('rod',plate(rodShape,.24,.30),'rod',PALETTE.driver);add('rodEye',ring(.118,source.circles.rodEye.radius/100,.30,.44,128),'rod',PALETTE.driver);blocks.rod.position.set(...f.crank,0);
+ // The reversing lever lies on the orange carrier disk: grey steel so it
+ // reads against the disk, the blue cog and the brass click (p93).
+ add('rod',plate(rodShape,.24,.30),'rod',PALETTE.muted);add('rodEye',ring(.118,source.circles.rodEye.radius/100,.30,.44,128),'rod',PALETTE.muted);blocks.rod.position.set(...f.crank,0);
  const crank=add('crankPin',disk(.11597,-.06,.47,96),'carrier',PALETTE.ink);crank.position.set(...f.crank,0);
  for(const name of ['cog','click']){const {cells:pieces,...description}=segmentClampContactCells(parts[name].geometry,collisionTolerance);cells[name]=pieces;contactApproximation[name]=description;}
  f.rodVector=f.rodEnd.map((v,i)=>v-f.crank[i]);f.rodLength=Math.hypot(...f.rodVector);f.pawlFlip=3.3;

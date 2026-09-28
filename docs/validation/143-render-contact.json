@@ -4,11 +4,11 @@
   "sources": [
     {
       "file": "/dev/shm/143-candidate.json.gz",
-      "sha256": "f6e0c69b5a0c81498ae31a6ab36a2c5eacf1ce11b06f2fba7af8fbcadcca6944"
+      "sha256": "bf83067462c04d64578352078c83e1a53067da18fbac442fe8eb09a54486c6ff"
     },
     {
       "file": "scripts/review-sliding-worm-render-contact.mjs",
-      "sha256": "16acdd3fa946fbc72e76a8cb5c685ed44d1738ec4787d51d8079970e763d122e"
+      "sha256": "c82c7112f865d17bbf7075dc60d1706274a814a90238d640c6e3a2c563ca1743"
     },
     {
       "file": "scripts/lib/star-mangle-pair-distance.mjs",
@@ -16,11 +16,11 @@
     },
     {
       "file": "src/simulation/baked/sliding-worm.js",
-      "sha256": "c1d56a3b97bfb065b82b323dcb1569421f702839ddee1908965f254c25560449"
+      "sha256": "9cb4589aaa461921fd7d282b2ce68e4e780135bf568943589d880d047b4fda0c"
     },
     {
       "file": "src/simulation/sliding-worm-kinematics.js",
-      "sha256": "a3dc3e07c267695f6691ade60bb552bd9db12f45f534ce794d3c55fdf4c15922"
+      "sha256": "aa52736bb4a7be298ec0787bc4e81217c3119ca7788cd047f3bea1718c635e98"
     }
   ],
   "summary": {
@@ -37,7 +37,7 @@
     },
     {
       "name": "wheel-sector",
-      "volume": 0.024689497346950744,
+      "volume": 0.024722210096159596,
       "wrongNormals": 0,
       "unmatchedEdges": 0
     }
@@ -47,391 +47,391 @@
       "input": 0.059255270666170555,
       "separationLowerBound": 0.00001,
       "exactDistance": null,
-      "testedTriangles": 415112
+      "testedTriangles": 429548
     },
     {
       "input": 0.15591966000739496,
       "separationLowerBound": 0.00001,
       "exactDistance": null,
-      "testedTriangles": 497624
+      "testedTriangles": 514177
     },
     {
       "input": 0.25258404934861933,
       "separationLowerBound": 0.00001,
       "exactDistance": null,
-      "testedTriangles": 569582
+      "testedTriangles": 585878
     },
     {
       "input": 0.34924843868984373,
       "separationLowerBound": 0.00001,
       "exactDistance": null,
-      "testedTriangles": 635246
+      "testedTriangles": 651038
     },
     {
       "input": 0.44591282803106813,
       "separationLowerBound": 0.00001,
       "exactDistance": null,
-      "testedTriangles": 686714
+      "testedTriangles": 702275
     },
     {
       "input": 0.5425772173722926,
       "separationLowerBound": 0.00001,
       "exactDistance": null,
-      "testedTriangles": 713463
+      "testedTriangles": 729181
     },
     {
       "input": 0.6392416067135169,
       "separationLowerBound": 0.00001,
       "exactDistance": null,
-      "testedTriangles": 754468
+      "testedTriangles": 771018
     },
     {
       "input": 0.7359059960547414,
       "separationLowerBound": 0.00001,
       "exactDistance": null,
-      "testedTriangles": 781972
+      "testedTriangles": 798489
     },
     {
       "input": 0.8325703853959657,
       "separationLowerBound": 0.00001,
       "exactDistance": null,
-      "testedTriangles": 783037
+      "testedTriangles": 797565
     },
     {
       "input": 0.9292347747371902,
       "separationLowerBound": 0.00001,
       "exactDistance": null,
-      "testedTriangles": 759635
+      "testedTriangles": 765736
     },
     {
       "input": 1.0258991640784145,
       "separationLowerBound": 0.00001,
       "exactDistance": null,
-      "testedTriangles": 712683
+      "testedTriangles": 717015
     },
     {
       "input": 1.122563553419639,
       "separationLowerBound": 0.00001,
       "exactDistance": null,
-      "testedTriangles": 685527
+      "testedTriangles": 688428
     },
     {
       "input": 1.2192279427608632,
       "separationLowerBound": 0.00001,
       "exactDistance": null,
-      "testedTriangles": 639938
+      "testedTriangles": 643586
     },
     {
       "input": 1.315892332102088,
       "separationLowerBound": 0.00001,
       "exactDistance": null,
-      "testedTriangles": 583389
+      "testedTriangles": 587279
     },
     {
       "input": 1.4125567214433121,
       "separationLowerBound": 0.00001,
       "exactDistance": null,
-      "testedTriangles": 512934
+      "testedTriangles": 518618
     },
     {
       "input": 1.5092211107845366,
       "separationLowerBound": 0.00001,
       "exactDistance": null,
-      "testedTriangles": 437194
+      "testedTriangles": 443862
     },
     {
       "input": 1.6058855001257608,
       "separationLowerBound": 0.00001,
       "exactDistance": null,
-      "testedTriangles": 414030
+      "testedTriangles": 421440
     },
     {
       "input": 1.7025498894669855,
       "separationLowerBound": 0.00001,
       "exactDistance": null,
-      "testedTriangles": 505626
+      "testedTriangles": 512040
     },
     {
       "input": 1.7992142788082097,
       "separationLowerBound": 0.00001,
       "exactDistance": null,
-      "testedTriangles": 581352
+      "testedTriangles": 586965
     },
     {
       "input": 1.8958786681494342,
       "separationLowerBound": 0.00001,
       "exactDistance": null,
-      "testedTriangles": 655443
+      "testedTriangles": 661732
     },
     {
       "input": 1.9925430574906586,
       "separationLowerBound": 0.00001,
       "exactDistance": null,
-      "testedTriangles": 710357
+      "testedTriangles": 716138
     },
     {
       "input": 2.0892074468318826,
       "separationLowerBound": 0.00001,
       "exactDistance": null,
-      "testedTriangles": 748607
+      "testedTriangles": 758271
     },
     {
       "input": 2.1858718361731073,
       "separationLowerBound": 0.00001,
       "exactDistance": null,
-      "testedTriangles": 783550
+      "testedTriangles": 796183
     },
     {
       "input": 2.282536225514332,
       "separationLowerBound": 0.00001,
       "exactDistance": null,
-      "testedTriangles": 813720
+      "testedTriangles": 824871
     },
     {
       "input": 2.3792006148555562,
       "separationLowerBound": 0.00001,
       "exactDistance": null,
-      "testedTriangles": 816670
+      "testedTriangles": 826957
     },
     {
       "input": 2.4758650041967805,
       "separationLowerBound": 0.00001,
       "exactDistance": null,
-      "testedTriangles": 790049
+      "testedTriangles": 803540
     },
     {
       "input": 2.572529393538005,
       "separationLowerBound": 0.00001,
       "exactDistance": null,
-      "testedTriangles": 742042
+      "testedTriangles": 756418
     },
     {
       "input": 2.6691937828792294,
       "separationLowerBound": 0.00001,
       "exactDistance": null,
-      "testedTriangles": 711245
+      "testedTriangles": 724914
     },
     {
       "input": 2.765858172220454,
       "separationLowerBound": 0.00001,
       "exactDistance": null,
-      "testedTriangles": 668844
+      "testedTriangles": 683892
     },
     {
       "input": 2.862522561561678,
       "separationLowerBound": 0.00001,
       "exactDistance": null,
-      "testedTriangles": 621027
+      "testedTriangles": 633955
     },
     {
       "input": 2.9591869509029025,
       "separationLowerBound": 0.00001,
       "exactDistance": null,
-      "testedTriangles": 562934
+      "testedTriangles": 576691
     },
     {
       "input": 3.055851340244127,
       "separationLowerBound": 0.00001,
       "exactDistance": null,
-      "testedTriangles": 487625
+      "testedTriangles": 501234
     },
     {
       "input": 3.1525157295853514,
       "separationLowerBound": 0.00001,
       "exactDistance": null,
-      "testedTriangles": 425035
+      "testedTriangles": 439102
     },
     {
       "input": 3.2491801189265757,
       "separationLowerBound": 0.00001,
       "exactDistance": null,
-      "testedTriangles": 523968
+      "testedTriangles": 538660
     },
     {
       "input": 3.3458445082678003,
       "separationLowerBound": 0.00001,
       "exactDistance": null,
-      "testedTriangles": 609166
+      "testedTriangles": 625861
     },
     {
       "input": 3.4425088976090246,
       "separationLowerBound": 0.00001,
       "exactDistance": null,
-      "testedTriangles": 691164
+      "testedTriangles": 706623
     },
     {
       "input": 3.5391732869502492,
       "separationLowerBound": 0.00001,
       "exactDistance": null,
-      "testedTriangles": 752724
+      "testedTriangles": 769107
     },
     {
       "input": 3.635837676291473,
       "separationLowerBound": 0.00001,
       "exactDistance": null,
-      "testedTriangles": 798997
+      "testedTriangles": 815086
     },
     {
       "input": 3.7325020656326977,
       "separationLowerBound": 0.00001,
       "exactDistance": null,
-      "testedTriangles": 831712
+      "testedTriangles": 851063
     },
     {
       "input": 3.8291664549739224,
       "separationLowerBound": 0.00001,
       "exactDistance": null,
-      "testedTriangles": 881771
+      "testedTriangles": 895210
     },
     {
       "input": 3.9258308443151466,
       "separationLowerBound": 0.00001,
       "exactDistance": null,
-      "testedTriangles": 888520
+      "testedTriangles": 906966
     },
     {
       "input": 4.022495233656372,
       "separationLowerBound": 0.00001,
       "exactDistance": null,
-      "testedTriangles": 873791
+      "testedTriangles": 886478
     },
     {
       "input": 4.1191596229975955,
       "separationLowerBound": 0.00001,
       "exactDistance": null,
-      "testedTriangles": 823528
+      "testedTriangles": 838012
     },
     {
       "input": 4.215824012338819,
       "separationLowerBound": 0.00001,
       "exactDistance": null,
-      "testedTriangles": 799266
+      "testedTriangles": 805251
     },
     {
       "input": 4.312488401680044,
       "separationLowerBound": 0.00001,
       "exactDistance": null,
-      "testedTriangles": 756283
+      "testedTriangles": 761706
     },
     {
       "input": 4.409152791021269,
       "separationLowerBound": 0.00001,
       "exactDistance": null,
-      "testedTriangles": 695783
+      "testedTriangles": 700832
     },
     {
       "input": 4.505817180362493,
       "separationLowerBound": 0.00001,
       "exactDistance": null,
-      "testedTriangles": 629753
+      "testedTriangles": 639687
     },
     {
       "input": 4.602481569703717,
       "separationLowerBound": 0.00001,
       "exactDistance": null,
-      "testedTriangles": 541463
+      "testedTriangles": 556096
     },
     {
       "input": 4.699145959044942,
       "separationLowerBound": 0.00001,
       "exactDistance": null,
-      "testedTriangles": 453368
+      "testedTriangles": 470318
     },
     {
       "input": 4.7958103483861665,
       "separationLowerBound": 0.00001,
       "exactDistance": null,
-      "testedTriangles": 519861
+      "testedTriangles": 540093
     },
     {
       "input": 4.89247473772739,
       "separationLowerBound": 0.00001,
       "exactDistance": null,
-      "testedTriangles": 608183
+      "testedTriangles": 629632
     },
     {
       "input": 4.989139127068615,
       "separationLowerBound": 0.00001,
       "exactDistance": null,
-      "testedTriangles": 687547
+      "testedTriangles": 708441
     },
     {
       "input": 5.08580351640984,
       "separationLowerBound": 0.00001,
       "exactDistance": null,
-      "testedTriangles": 752641
+      "testedTriangles": 772544
     },
     {
       "input": 5.182467905751063,
       "separationLowerBound": 0.00001,
       "exactDistance": null,
-      "testedTriangles": 800153
+      "testedTriangles": 819455
     },
     {
       "input": 5.279132295092289,
       "separationLowerBound": 0.00001,
       "exactDistance": null,
-      "testedTriangles": 828241
+      "testedTriangles": 842536
     },
     {
       "input": 5.375796684433513,
       "separationLowerBound": 0.00001,
       "exactDistance": null,
-      "testedTriangles": 875984
+      "testedTriangles": 890375
     },
     {
       "input": 5.472461073774737,
       "separationLowerBound": 0.00001,
       "exactDistance": null,
-      "testedTriangles": 900027
+      "testedTriangles": 911485
     },
     {
       "input": 5.569125463115962,
       "separationLowerBound": 0.00001,
       "exactDistance": null,
-      "testedTriangles": 891999
+      "testedTriangles": 899330
     },
     {
       "input": 5.665789852457186,
       "separationLowerBound": 0.00001,
       "exactDistance": null,
-      "testedTriangles": 851200
+      "testedTriangles": 862809
     },
     {
       "input": 5.76245424179841,
       "separationLowerBound": 0.00001,
       "exactDistance": null,
-      "testedTriangles": 802205
+      "testedTriangles": 820171
     },
     {
       "input": 5.859118631139635,
       "separationLowerBound": 0.00001,
       "exactDistance": null,
-      "testedTriangles": 755784
+      "testedTriangles": 780163
     },
     {
       "input": 5.955783020480859,
       "separationLowerBound": 0.00001,
       "exactDistance": null,
-      "testedTriangles": 676271
+      "testedTriangles": 702732
     },
     {
       "input": 6.052447409822084,
       "separationLowerBound": 0.00001,
       "exactDistance": null,
-      "testedTriangles": 611018
+      "testedTriangles": 638072
     },
     {
       "input": 6.1491117991633075,
       "separationLowerBound": 0.00001,
       "exactDistance": null,
-      "testedTriangles": 532849
+      "testedTriangles": 557591
     },
     {
       "input": 6.245776188504532,
       "separationLowerBound": 0.00001,
       "exactDistance": null,
-      "testedTriangles": 451085
+      "testedTriangles": 471295
     }
   ]
 }

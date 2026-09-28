@@ -7,54 +7,54 @@
       "differences": [
         {
           "name": "carrier",
-          "maximum": 0.000005289438304687151
+          "maximum": 0.000012761870897857325
         },
         {
           "name": "rod",
-          "maximum": 0.000005271383608969511
+          "maximum": 0.000012713028373780022
         },
         {
           "name": "pawl",
-          "maximum": 0.00033869271141696855
+          "maximum": 0.0005493379495890294
         },
         {
           "name": "output",
-          "maximum": 0.000029407123909086508
+          "maximum": 0.000017587232210125592
         },
         {
           "name": "slider",
-          "maximum": 0.000013206055990068466
+          "maximum": 0.00003204955944983989
         }
       ],
-      "maximumReverseExcursion": 0.002565837234210111,
-      "reverseToothFraction": 0.009392410616856856
+      "maximumReverseExcursion": 0.0031221335914746184,
+      "reverseToothFraction": 0.011428768863758067
     },
     {
       "side": "left",
       "differences": [
         {
           "name": "carrier",
-          "maximum": 0.0000022676732914644893
+          "maximum": 0.000013159613627633515
         },
         {
           "name": "rod",
-          "maximum": 0.000002251675502541045
+          "maximum": 0.00001072237373778151
         },
         {
           "name": "pawl",
-          "maximum": 0.00012576097192396052
+          "maximum": 0.00017097295787610323
         },
         {
           "name": "output",
-          "maximum": 0.0000075064904137001065
+          "maximum": 0.00002821118170537318
         },
         {
           "name": "slider",
-          "maximum": 0.000005704494124649656
+          "maximum": 0.00003156568201834187
         }
       ],
-      "maximumReverseExcursion": 0.002591606716122241,
-      "reverseToothFraction": 0.009486741446683208
+      "maximumReverseExcursion": 0.0030694604340750775,
+      "reverseToothFraction": 0.011235955416284997
     }
   ],
   "sources": [
@@ -64,19 +64,19 @@
     },
     {
       "file": "/dev/shm/155-supported-right-samples.json",
-      "sha256": "15d28c2a75a24abe0f6460e193a4105abd362d99f87f52591a43d751e2ddd72a"
+      "sha256": "eeef0462bf763a2f2abee2cc555d7960d4db5176ecdd560c38ce08f6135efb1c"
     },
     {
       "file": "/dev/shm/155-supported-right-fine-samples.json",
-      "sha256": "6cc155165f787ccca90e8b9b6b0c2390e5bacb7757884ce30fbd5569f8b043ce"
+      "sha256": "a3187b40367de498703ecf108ed98c354b5a58c3ef990c7cd1ac1c87a14281b6"
     },
     {
       "file": "/dev/shm/155-supported-left-samples.json",
-      "sha256": "769e73d230a10be39bae0f2694b948c855962fca0feff3dfc4955b5eae07ad21"
+      "sha256": "cc457ce266e9f591865f6f12fafa9ff2eab04a5b3844ffed42dbce1b88d3baac"
     },
     {
       "file": "/dev/shm/155-supported-left-fine-samples.json",
-      "sha256": "5d5fc3d8825f26352cac73772484c15b41d82030be1013303119a33e4f2aa67e"
+      "sha256": "2933d06821fe57ac4fbb4cf169a21167d7cd3db1e2ca4853f2f1a2a5e13df02e"
     }
   ]
 }

@@ -2081,7 +2081,29 @@ function screwThrustLeverClamp() {
   workpieceTopWitness.userData.role = 'white-index-on-workpiece-contact-face';
   workpiece.add(workpieceTopWitness);
 
-  const frameModelPoints = sourceFrameOutline.map(sourcePointToModel);
+  // p93: the standard's rounded head, its right flank and the fillet into
+  // the lower arm are one smooth centripetal Catmull-Rom curve through the
+  // traced points (the straight chords between them shaded as bands); the
+  // straight left edge, the arm top and the ends are unchanged.
+  const smoothSourceSpan = (points, first, last, steps = 10) => {
+    const knot = (i) => points[Math.max(0, Math.min(points.length - 1, i))];
+    const result = [];
+    for (let i = first; i < last; i += 1) {
+      const p0 = knot(i - 1), p1 = knot(i), p2 = knot(i + 1), p3 = knot(i + 2);
+      const t = (a, b) => Math.sqrt(a.distanceTo(b)) || 1e-9;
+      const t1 = t(p0, p1), t2 = t1 + t(p1, p2), t3 = t2 + t(p2, p3);
+      for (let k = 0; k < steps; k += 1) {
+        const u = t1 + (t2 - t1) * k / steps;
+        const lerp = (a, b, ta, tb) => a.clone().multiplyScalar((tb - u) / (tb - ta)).add(b.clone().multiplyScalar((u - ta) / (tb - ta)));
+        const a1 = lerp(p0, p1, 0, t1), a2 = lerp(p1, p2, t1, t2), a3 = lerp(p2, p3, t2, t3);
+        result.push(lerp(lerp(a1, a2, 0, t2), lerp(a2, a3, t1, t3), t1, t2));
+      }
+    }
+    return result;
+  };
+  const smoothFrameOutline = [sourceFrameOutline[0], ...smoothSourceSpan(sourceFrameOutline, 1, 10),
+    ...sourceFrameOutline.slice(10)];
+  const frameModelPoints = smoothFrameOutline.map(sourcePointToModel);
   // 0.005 clear of each holder cheek, which turns on the fulcrum pin beside it.
   const frameDepth = 0.51;
   const fixedFrame = new THREE.Mesh(
@@ -2128,7 +2150,15 @@ function screwThrustLeverClamp() {
   // front of it; behind the head the holder is whole. Its outline runs on
   // straight under the head (source points 307,311 to 249,305) and carries a
   // round boss at the fulcrum, so both cheeks really turn on the pin.
-  const holderFilledLocalPoints = holderLocalPoints.filter((_, index) => index <= 15 || index >= 24);
+  const holderTracedLocalPoints = holderLocalPoints.filter((_, index) => index <= 15 || index >= 24);
+  // p93: the lever's outline from the bottom edge's left end, round the
+  // shoe end and along the arched back to the nose is one smooth curve
+  // through the traced points (chords shaded as 22-degree bands). The nose,
+  // the bearing land and the straight run under the head are unchanged.
+  const holderFilledLocalPoints = [
+    ...smoothSourceSpan([...holderTracedLocalPoints.slice(17), ...holderTracedLocalPoints.slice(0, 11)], 0, 17),
+    ...holderTracedLocalPoints.slice(10, 17),
+  ];
   const holderBossRadius = 0.28;
   const holderCheekRegion = polygonClipping.union(
     poly(holderFilledLocalPoints.map(point => point.toArray())),
@@ -2210,10 +2240,14 @@ function screwThrustLeverClamp() {
   shoe.userData.axis = Z_AXIS.clone();
   shoe.userData.role =
     'gravity-aligned-swiveling-pressure-shoe-on-long-holder-arm';
-  const shoeLocalPoints = sourceShoeOutline.map((point) => new THREE.Vector2(
+  const shoeTracedLocalPoints = sourceShoeOutline.map((point) => new THREE.Vector2(
     (point.x - sourceShoePin.x) * sourceScale,
     (sourceShoePin.y - point.y) * sourceScale,
   ));
+  // p93: the shoe's dome and flared skirt are one smooth curve between the
+  // two sole corners (the sole itself stays straight and flat).
+  const shoeChain = [...shoeTracedLocalPoints.slice(7), ...shoeTracedLocalPoints.slice(0, 7)];
+  const shoeLocalPoints = [...smoothSourceSpan(shoeChain, 0, shoeChain.length - 1), shoeChain.at(-1)];
   // The shoe sits between the holder cheeks (inner faces at z = 0.26) with
   // a 0.01 running clearance each side; no bevel, so the sole seats flush.
   const shoeDepth = 0.50;

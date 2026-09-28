@@ -56,6 +56,18 @@ export function correctGyroscopeParts(root,id) {
     d.reconstructionNote='The disk and ring follow ideal steady horizontal precession, with twelve rotor turns per precession. Masses and dimensions are inferred. Nutation, release transients, bearing friction and stability under disturbance are not simulated.';
     d.dynamics.validationScope='Prescribed horizontal regular-precession solution and spin-angular-momentum balance; no release or contact-dynamics validation.';
   }else{
+    // Brown's pedestal is one turned piece: a broad round foot, a concave
+    // trumpet flare, a slender waist and a collar under the ring's bearing
+    // post (radii from the plate at 0.0135 per pixel). It replaces the
+    // stacked discs; the bored post stays as the upper stem.
+    {
+      const y0=b.baseFoot.position.y,pts=[[0,-2.61],[1.0,-2.61],[1.0,-2.52],[.97,-2.47],[.66,-2.42]];
+      for(let i=1;i<=14;i++){const t=i/14,u=1-t;pts.push([u*u*.66+2*u*t*.36+t*t*.33,u*u*-2.42+2*u*t*-2.36+t*t*-1.98]);}
+      pts.push([.36,-1.62],[.43,-1.60],[.43,-1.48],[0,-1.48]);
+      replace(b.baseFoot,new THREE.LatheGeometry(pts.map(([r,y])=>new THREE.Vector2(r,y-y0)),96));
+      b.baseFoot.userData.role='fixed-turned-trumpet-pedestal-of-Bohnenberger-machine';
+      for(const o of[b.baseTier,b.pedestalNeck])o.removeFromParent();
+    }
     ring(b.outerRing,'outer356');ring(b.middleRing,'middle356');ring(b.innerRing,'inner356');
     b.middlePivotBearings.forEach((h,i)=>bearing(h,b.middlePivotPins[i],g.bearingRadius,.055,.081));
     b.innerPivotBearings.forEach((h,i)=>bearing(h,b.innerPivotPins[i],g.bearingRadius*.91,.20,.074));

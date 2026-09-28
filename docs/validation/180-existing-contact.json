@@ -2,19 +2,16 @@
   "movement": 180,
   "status": "baseline-contact-reconstruction-open",
   "poses": 129,
-  "meshes": 24,
-  "pairs": 131,
-  "queries": 8817378,
+  "meshes": 21,
+  "pairs": 86,
+  "queries": 4364322,
   "intersections": {
     "fixed-bench-bed-under-single-jaw-clamp#0/source-fitted-curved-clamp-jaw-plate#1": 0.007999990582466088,
-    "source-fitted-curved-clamp-jaw-plate#1/single-board-whose-upward-push-self-energizes-clamp#4": 0.030722519651055324,
-    "source-fitted-curved-clamp-jaw-plate#1/one-fixed-straight-side-piece-opposite-pivoted-clamp#8": 0.02199997901916506,
-    "source-fitted-curved-clamp-jaw-plate#1/fixed-screw-shank-through-jaw-and-bench#11": 0.08704254141980457,
-    "dark-exposed-source-outline-of-single-moving-jaw#3/single-board-whose-upward-push-self-energizes-clamp#4": 0.030868729844689358,
-    "dark-exposed-source-outline-of-single-moving-jaw#3/one-fixed-straight-side-piece-opposite-pivoted-clamp#8": 0.04900000393390658,
-    "single-board-whose-upward-push-self-energizes-clamp#4/one-fixed-straight-side-piece-opposite-pivoted-clamp#8": 0.02399998903274536,
-    "dark-source-outline-of-sliding-board#5/one-fixed-straight-side-piece-opposite-pivoted-clamp#8": 0.02958846092224121,
-    "visible-board-contact-with-fixed-side-piece#7/one-fixed-straight-side-piece-opposite-pivoted-clamp#8": 0.09899999755620958
+    "source-fitted-curved-clamp-jaw-plate#1/single-board-whose-upward-push-self-energizes-clamp#3": 0.030722519651055324,
+    "source-fitted-curved-clamp-jaw-plate#1/one-fixed-straight-side-piece-opposite-pivoted-clamp#6": 0.02199997901916506,
+    "source-fitted-curved-clamp-jaw-plate#1/fixed-screw-shank-through-jaw-and-bench#8": 0.08704254141980457,
+    "single-board-whose-upward-push-self-energizes-clamp#3/one-fixed-straight-side-piece-opposite-pivoted-clamp#6": 0.02399998903274536,
+    "visible-board-contact-with-fixed-side-piece#5/one-fixed-straight-side-piece-opposite-pivoted-clamp#6": 0.09899999755620958
   },
   "movingWithoutNominalContact": 51,
   "samples": [
@@ -81,11 +78,11 @@
     },
     {
       "file": "src/simulation/authored-clamps.js",
-      "sha256": "c4991931d5f7cdde25209b39b25430ff078ebe04c29c74eb2f4c7e601653f452"
+      "sha256": "84b59b7763d6384e16dff27e1d3fd4b6d4c1f3b900ec36fb96ccbf4d119533aa"
     },
     {
       "file": "tests/helpers/solid-surface.mjs",
-      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+      "sha256": "8f39335894306bfe77f2d3562e6c2e7ac867dead2e078f2d1da4da7151998b99"
     }
   ]
 }

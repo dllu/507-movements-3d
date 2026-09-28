@@ -21,7 +21,7 @@
   "poses": 129,
   "meshes": 15,
   "pairs": 71,
-  "queries": 5693544,
+  "queries": 5687352,
   "intersections": {},
   "unexpected": {},
   "method": "Bidirectional visible vertices, edge midpoints and triangle centers over the four-second analytic cycle. Same rigid-family joins excluded. No cross-family overlap above 1e-6 world units is permitted.",
@@ -32,7 +32,7 @@
     },
     {
       "file": "src/simulation/variable-radius-crank.js",
-      "sha256": "d07cde9598b494f0a6daa78b65a5a138d272003ae283a9db6f009b2c916976f9"
+      "sha256": "e10ba4f8f5f30f38dc7cddb820b239e93bad80e8b05a48ef0d0f2ea7fa95f43d"
     },
     {
       "file": "src/simulation/variable-radius-crank-motion.js",

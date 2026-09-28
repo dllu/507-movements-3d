@@ -1,12 +1,26 @@
 import * as THREE from 'three';
 import {plate,poly,circle,capsule,polygonClipping as clip} from './finite-plate-geometry.js';
 import {horizontalRing,horizontalTurned} from './horizontal-turbine-solids.js';
+import {smoothShadeExtrusion} from './smooth-extrusion.js';
 import {curvedPipeWall} from './finite-fluid-passages.js';
 import {mirroredForkWall} from './mirrored-fork-pipe.js';
 import {waterFountainGeometry,waterJetMaterial,waterVolumeMaterial} from './water-volume.js';
 import {fitPistonGuide} from './piston-guide-parts.js';
 import {helicalThread,threadAngles} from './mujoco-screw/thread-geometry.js';
 const replace=(o,g)=>{o.geometry.dispose();o.geometry=g;};
+// Centripetal Catmull-Rom through [axial, radius] knots, `steps` samples per
+// span, knots included (end tangents from reflected neighbours).
+function smoothKnots(knots,steps=8){
+ const P=knots.map(([x,y])=>new THREE.Vector2(x,y)),n=P.length,out=[];
+ const at=i=>i<0?P[0].clone().multiplyScalar(2).sub(P[1]):i>=n?P[n-1].clone().multiplyScalar(2).sub(P[n-2]):P[i];
+ for(let i=0;i<n-1;i++){
+  const p0=at(i-1),p1=P[i],p2=P[i+1],p3=at(i+2),t=(a,b)=>Math.sqrt(a.distanceTo(b))||1e-9;
+  const t0=0,t1=t0+t(p0,p1),t2=t1+t(p1,p2),t3=t2+t(p2,p3);
+  for(let k=0;k<steps;k++){const u=t1+(t2-t1)*k/steps,L=(a,b,ta,tb)=>a.clone().multiplyScalar((tb-u)/(tb-ta)).add(b.clone().multiplyScalar((u-ta)/(tb-ta)));
+   const A1=L(p0,p1,t0,t1),A2=L(p1,p2,t1,t2),A3=L(p2,p3,t2,t3),B1=L(A1,A2,t0,t2),B2=L(A2,A3,t1,t3),C=L(B1,B2,t1,t2);out.push([C.x,C.y]);}
+ }
+ out.push(knots[n-1]);return out;
+}
 const add=(parent,g,material,role)=>{const o=new THREE.Mesh(g,material);o.userData.role=role;parent.add(o);return o;};
 
 // A closed wall around a meridian, including finite returns at the explicitly
@@ -216,9 +230,16 @@ export function correctEjectorTrapParts(root,id,update) {
     // flaring out to the flange that clamps the diaphragm. The seat-closing
     // cone (0.775..1.175) and stem are unchanged; the waist and dish replace
     // the former broad bell.
-    const outer=[[-.05,.98],[.02,.97],[.10,.86],[.20,.70],[.30,.58],[.40,.52],[.55,.50],[.62,.56],[.72,.76],[.775,.80],[1.175,.48],[1.20,.40],[2.835,.40],[2.98,.36],[3.12,.22],[3.18,0]];
-    const inner=[[3.12,0],[3.06,.20],[2.94,.30],[2.80,.33],[1.20,.33],[1.10,.41],[.80,.62],[.70,.60],[.60,.44],[.50,.43],[.40,.45],[.30,.51],[.20,.63],[.10,.79],[.02,.90],[-.05,.93]];
-    replace(b.valveStem,horizontalTurned([...outer,...inner]));b.valveStem.position.y=0;
+    // p93: the dished foot, the waist and the domed top are smooth centripetal
+    // Catmull-Rom curves through the same knots (the knots were joined by
+    // straight chords that shaded as bands); the seat cone, the collar edge
+    // and the straight stem stay exact, and the normals are smoothed across
+    // the curves but creased at those real corners.
+    const outer=[...smoothKnots([[-.05,.98],[.02,.97],[.10,.86],[.20,.70],[.30,.58],[.40,.52],[.55,.50],[.62,.56],[.72,.76],[.775,.80]]),
+      [1.175,.48],[1.20,.40],...smoothKnots([[2.835,.40],[2.98,.36],[3.12,.22],[3.18,0]])];
+    const inner=[...smoothKnots([[3.12,0],[3.06,.20],[2.94,.30],[2.80,.33]]),[1.20,.33],[1.10,.41],
+      ...smoothKnots([[.80,.62],[.70,.60],[.60,.44],[.50,.43],[.40,.45],[.30,.51],[.20,.63],[.10,.79],[.02,.90],[-.05,.93]])];
+    {const turnedStem=horizontalTurned([...outer,...inner]);replace(b.valveStem,smoothShadeExtrusion(turnedStem,Math.PI/6));turnedStem.dispose();}b.valveStem.position.y=0;
     for(const o of[b.valveTop,b.valveShoulder,b.valveReservoir,b.valveNeck])o.visible=false;
     replace(b.workingFluidReservoir,new THREE.SphereGeometry(.62,48,24));b.workingFluidReservoir.scale.y=.20;b.workingFluidReservoir.position.y=.05;
     // Pass 57: the sealed liquid fills D's whole cavity (inner profile inset

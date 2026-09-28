@@ -124,7 +124,8 @@ function brownDetachedEscapement(movement) {
     wheelHigh: 0.035,
     leverLow: 0.10,
     leverHigh: 0.17,
-    pinLow: -0.05,
+    headLow: -0.03,
+    headHigh: 0.03,
   };
 
   // ---- Escape wheel: six hooked teeth, tips leading clockwise. ----
@@ -179,7 +180,7 @@ function brownDetachedEscapement(movement) {
   const contactEndTip = -Math.PI / 2 - Math.acos(-nibTop / tipRadius);
   const contactHalfChord = tipRadius * Math.cos(contactStartTip);
 
-  // ---- Lever Q (bell crank) and its lock pin. ----
+  // ---- Lever Q (bell crank) and its hooked head. ----
   const qPivot = fromRaster(raster.qPivot);
   const qBoss = fromRaster(raster.qBoss);
   const qBossRadius = px(5);
@@ -191,7 +192,7 @@ function brownDetachedEscapement(movement) {
   const pinCenterRadius = tipRadius - px(2);
   const clearance = 0.002;
 
-  // Place the lock pin just ahead of the tooth tip locked at 120 degrees.
+  // Place the hook's rounded end just ahead of the tooth tip locked at 120 degrees.
   const lockedWheel = wheelOutlineAt(0);
   let pinAngleLow = 95 * DEG;
   let pinAngleHigh = lockTipAngle(3) - 1 * DEG;
@@ -212,16 +213,57 @@ function brownDetachedEscapement(movement) {
   const qLocal = (point) => [point[0] - qPivot[0], point[1] - qPivot[1]];
   const qPinLocal = qLocal(pinCenter);
   const qBossLocal = qLocal(qBoss);
+  // Q is Brown's broad bell crank on one stud: the long arm down to the boss
+  // at C in the front lever plane, and the head in the wheel's own plane,
+  // running left from the pivot and ending in a downward hook whose rounded
+  // end locks the wheel (the rounded end sits where the lock must be).
+  const qArmRootHalfWidth = px(6);
+  const qHeadHalfWidth = px(5.5);
+  const qHookRootHalfWidth = px(5);
+  const qHookCorner = qLocal(fromRaster([220, 146]));
+  // Convex hull of two discs: tangent quad plus both discs.
+  const taperedBar = (a, ra, b, rb, segments = 48) => {
+    const dx = b[0] - a[0], dy = b[1] - a[1], d = Math.hypot(dx, dy);
+    const base = Math.atan2(dy, dx), turn = Math.PI / 2 + Math.asin((ra - rb) / d);
+    const at = (c, r, angle) => [c[0] + r * Math.cos(angle), c[1] + r * Math.sin(angle)];
+    return polygonClipping.union(
+      poly([at(a, ra, base + turn), at(a, ra, base - turn), at(b, rb, base - turn), at(b, rb, base + turn)]),
+      poly(circle(a, ra, segments)),
+      poly(circle(b, rb, segments)),
+    );
+  };
   const qOutlineLocal = polygonClipping.difference(
     polygonClipping.union(
       poly(circle([0, 0], qEyeRadius, 64)),
-      capsule([0, 0], qPinLocal, qArmHalfWidth, 16),
-      poly(circle(qPinLocal, qArmHalfWidth + px(1.5), 32)),
-      capsule([0, 0], qBossLocal, qArmHalfWidth, 16),
+      taperedBar([0, 0], qArmRootHalfWidth, qBossLocal, qArmHalfWidth),
       poly(circle(qBossLocal, qBossRadius, 48)),
     ),
     poly(circle([0, 0], pivotBore, 32)),
   );
+  const qHeadOutlineLocal = polygonClipping.difference(
+    polygonClipping.union(
+      poly(circle([0, 0], qEyeRadius, 64)),
+      taperedBar([0, 0], qHeadHalfWidth + px(1.5), qHookCorner, qHeadHalfWidth),
+      taperedBar(qHookCorner, qHookRootHalfWidth, qPinLocal, pinRadius),
+    ),
+    poly(circle([0, 0], pivotBore, 32)),
+  );
+  // Discs whose union is the part of the head that can reach the wheel.
+  const qHookDiscs = [];
+  for (let k = 0; k <= 24; k += 1) {
+    const t = k / 24;
+    qHookDiscs.push({
+      centre: [qPinLocal[0] + (qHookCorner[0] - qPinLocal[0]) * t, qPinLocal[1] + (qHookCorner[1] - qPinLocal[1]) * t],
+      radius: pinRadius + (qHookRootHalfWidth - pinRadius) * t,
+    });
+  }
+  for (let k = 1; k <= 12; k += 1) {
+    const t = k / 12;
+    qHookDiscs.push({
+      centre: [qHookCorner[0] * (1 - t), qHookCorner[1] * (1 - t)],
+      radius: qHeadHalfWidth + px(1.5) * t,
+    });
+  }
   // Q rotates clockwise (negative z) by q when lifted.
   const qPoint = (local, q) => {
     const [x, y] = rotateXY(local, -q);
@@ -230,10 +272,13 @@ function brownDetachedEscapement(movement) {
   const pinClearAngle = (() => {
     let low = 0;
     let high = 15 * DEG;
+    const clear = (q) => qHookDiscs.every(({ centre, radius }) => {
+      const [x, y] = qPoint(centre, q);
+      return Math.hypot(x, y) - radius >= tipRadius + clearance;
+    });
     for (let iteration = 0; iteration < 60; iteration += 1) {
       const middle = (low + high) / 2;
-      const [x, y] = qPoint(qPinLocal, middle);
-      if (Math.hypot(x, y) - pinRadius >= tipRadius + clearance) high = middle;
+      if (clear(middle)) high = middle;
       else low = middle;
     }
     return high;
@@ -281,14 +326,15 @@ function brownDetachedEscapement(movement) {
   const qArmClearance = (q, u, c) => {
     // Sample the long arm's centre line away from the boss as well.
     let best = Infinity;
-    // Above 80% of its length the arm stays well clear of the click.
-    for (let k = 0; k <= 5; k += 1) {
-      const t = 0.8 + 0.2 * k / 5;
+    // Above half its length the arm stays well clear of the click.
+    for (let k = 0; k <= 10; k += 1) {
+      const t = 0.5 + 0.5 * k / 10;
       const point = [qBossLocal[0] * t, qBossLocal[1] * t];
+      const halfWidth = qArmRootHalfWidth + (qArmHalfWidth - qArmRootHalfWidth) * t;
       best = Math.min(best, signedDistance(
         worldToCLocal(qPoint(point, q), u, c),
         cOutlineLocal,
-      ) - (t === 1 ? qBossRadius : qArmHalfWidth));
+      ) - (t === 1 ? qBossRadius : halfWidth));
     }
     return best;
   };
@@ -297,7 +343,7 @@ function brownDetachedEscapement(movement) {
   const qClickClearance = (q, u, c) => {
     const [bx, by] = qPoint(qBossLocal, q);
     const far = Math.hypot(bx - cPivotRest[0] - u, by - cPivotRest[1])
-      - clickReach - qBossRadius - 0.2 * Math.hypot(...qBossLocal);
+      - clickReach - qBossRadius - 0.5 * Math.hypot(...qBossLocal);
     if (far > clearance) return far;
     return Math.min(qBossClearance(q, u, c), qArmClearance(q, u, c));
   };
@@ -378,10 +424,14 @@ function brownDetachedEscapement(movement) {
     return best;
   };
   const pinWheelClearance = (lift, advance) => {
-    const centre = qPoint(qPinLocal, lift);
-    const outside = Math.hypot(...centre) - pinRadius - tipRadius;
-    if (outside > clearance) return outside;
-    return signedDistance(rotateXY(centre, advance), wheelOutline) - pinRadius;
+    let best = Infinity;
+    for (const { centre: local, radius } of qHookDiscs) {
+      const centre = qPoint(local, lift);
+      const outside = Math.hypot(...centre) - radius - tipRadius;
+      if (outside > clearance) { best = Math.min(best, outside); continue; }
+      best = Math.min(best, signedDistance(rotateXY(centre, advance), wheelOutline) - radius);
+    }
+    return best;
   };
 
   // Kinematic projection: each step every part tends toward its driven or
@@ -586,10 +636,16 @@ function brownDetachedEscapement(movement) {
   const leverPlate = new THREE.Mesh(plate(qOutlineLocal, Z.leverLow, Z.leverHigh), leverMaterial);
   leverPlate.userData.role = 'Q-bell-crank';
   lever.add(leverPlate);
-  const lockPin = new THREE.Mesh(solidRod(pinRadius, Z.pinLow, Z.leverLow + 0.01), darkMaterial);
-  lockPin.position.set(qPinLocal[0], qPinLocal[1], 0);
-  lockPin.userData.role = 'Q-locking-pin';
-  lever.add(lockPin);
+  const leverHead = new THREE.Mesh(plate(qHeadOutlineLocal, Z.headLow, Z.headHigh), leverMaterial);
+  leverHead.userData.role = 'Q-hooked-head-in-wheel-plane';
+  lever.add(leverHead);
+  // One bored hub joins the head and the arm on the stud.
+  const leverHub = new THREE.Mesh(
+    boredDisk(qEyeRadius * 0.8, pivotBore, Z.headHigh - 0.01, Z.leverLow + 0.01),
+    leverMaterial,
+  );
+  leverHub.userData.role = 'Q-hub-joining-head-and-arm';
+  lever.add(leverHub);
 
   // ---- Pendulum P, P with pallet I, click C and its stop pins. ----
   const pendulum = new THREE.Group();
@@ -603,7 +659,12 @@ function brownDetachedEscapement(movement) {
     const left = barCentre.map(([x, y]) => [x - barHalf, y]);
     const right = barCentre.map(([x, y]) => [x + barHalf, y]);
     const pts = [...left, ...right.reverse()].map(map);
-    return poly(mirror ? pts.reverse() : pts);
+    // A round top concentric with the band's end centre, not a square cut
+    // (the band is near vertical there, so the arc meets both edges).
+    return polygonClipping.union(
+      poly(mirror ? pts.reverse() : pts),
+      poly(circle(map(barCentre[0]), px(barHalf), 48)),
+    );
   };
   const webOutline = poly([
     ...quadraticPoints([66, 190], [72, 272], [130, 275]),
@@ -693,9 +754,10 @@ function brownDetachedEscapement(movement) {
     collet,
     escapeWheel,
     lever,
+    leverHead,
+    leverHub,
     leverPlate,
     leverStud,
-    lockPin,
     nib,
     palletPlate,
     palletScrews,
@@ -711,6 +773,7 @@ function brownDetachedEscapement(movement) {
     clickPivotRest: cPivotRest,
     contactHalfChord,
     leverOutline: qOutlineLocal,
+    leverHeadOutline: qHeadOutlineLocal,
     leverPivot: qPivot,
     lockPinCenter: pinCenter,
     lockPinRadius: pinRadius,
@@ -743,7 +806,7 @@ function brownDetachedEscapement(movement) {
   root.userData.clickLocalToWorld = cLocalToWorld;
   root.userData.mechanism = 'Brown’s detached pendulum escapement: bell-crank Q locks a tooth of the six-toothed hooked escape wheel under its cock; click C on the broad pendulum P, P lifts Q on the leftward swing, the released wheel drops onto the single pallet I and drives it leftward, and Q relocks the next tooth; on the return C pivots aside under Q, leaving the pendulum detached.';
   root.userData.presentation = 'front elevation matching Brown’s plate: pendulum pieces P, P and web, cock with screw, hooked wheel, lever Q, click C with its stop pins, and pallet I';
-  root.userData.reconstructionNote = 'Geometry is traced from Brown’s plate at 0.018 model units per raster pixel. Q lift and C yield are solved from finite outline clearance against the moving pendulum; wheel drop, contact with pallet I’s nib and relock are kinematic. Inferred, not drawn: the nib standing up from pallet I into the wheel plane, the round lock pin on Q, the click’s round tip, the pivot studs, and that the pendulum translates (its suspension is outside the plate). Q’s gravity rest banking and C’s return spring are not drawn and are prescribed; passive impulse energy and impacts are not simulated.';
+  root.userData.reconstructionNote = 'Geometry is traced from Brown’s plate at 0.018 model units per raster pixel. Q lift and C yield are solved from finite outline clearance against the moving pendulum; wheel drop, contact with pallet I’s nib and relock are kinematic. Inferred, not drawn: the nib standing up from pallet I into the wheel plane, that Q’s hooked head lies in the wheel plane on a hub behind its arm, with the hook’s rounded end locking a tooth tip ahead of the deeper position Brown sketches, the click’s round tip, the pivot studs, and that the pendulum translates (its suspension is outside the plate). Q’s gravity rest banking and C’s return spring are not drawn and are prescribed; passive impulse energy and impacts are not simulated.';
   root.userData.sourceAnimation = {
     available: false,
     independentlyReconstructed: true,

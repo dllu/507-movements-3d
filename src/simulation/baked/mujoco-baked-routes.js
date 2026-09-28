@@ -107,6 +107,12 @@ export const bakedMujocoRoutes = {
   109: {
     asset: () => new URL('./assets/mujoco-109.json.gz', import.meta.url),
     geometry: () => import('../mujoco-thread-cutting/geometry.js').then(m => m.makeThreadCuttingGeometry()),
+    // The cut groove follows the tool on each descent, as the live sync does.
+    // Playback time is offset by the recorded loop start to the drive's time.
+    sync: (u, qpos) => {
+      const loop = u.bakedProvenance.variants[u.configuration];
+      u.syncCut(u.state.time + loop.startTime, qpos[1], loop.drivePeriod);
+    },
   },
   110: {
     asset: () => new URL('./assets/mujoco-110.json.gz', import.meta.url),

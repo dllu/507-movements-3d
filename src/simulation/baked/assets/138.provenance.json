@@ -34,7 +34,7 @@
     15
   ],
   "source": {
-    "reportSha256": "a595f565554fcaf95577e2fddc06f8f27b16f3eca39df99c080ac0d3ba55ba14",
+    "reportSha256": "71bfe357a4d170d1dca5f2447e162f41056b23a9609d5b7600674574b5fd8d3d",
     "simulationSources": [
       {
         "file": "src/data/variable-cam-outline.js",
@@ -64,7 +64,7 @@
     "geometrySources": [
       {
         "file": "src/simulation/authored-cams.js",
-        "sha256": "ed428d0c85ab28b4d9ecfe09f29d00eb07b9ac207f7b28fb578ee305dcd5dfea"
+        "sha256": "6e97ba3a804d0131415319e39bbe54ccd96738049628dbbfb9b9d45402771621"
       },
       {
         "file": "src/simulation/mujoco-variable-cam/geometry.js",
@@ -86,6 +86,6 @@
     "maximumPenetrationPixels": 0.06265592250778432
   },
   "samples": 9301,
-  "bytes": 406571,
-  "assetSha256": "fbbff3aeec865210986360729b63e92bbcd17db61a4001e5495632a51a359553"
+  "bytes": 406576,
+  "assetSha256": "f228c5cce60100b7bbb3fd061f8aa2199856a44f639cc8173afd442c4bf026d2"
 }

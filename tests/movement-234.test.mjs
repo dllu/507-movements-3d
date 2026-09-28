@@ -604,3 +604,29 @@ test('movement 234 closes after thirteen teeth and leaves 269 authored', () => {
   disposeModel(model.root);
   disposeModel(model289.root);
 });
+
+test('p93: the toothed cup is one wall between true circles with the saw cut into its top edge', () => {
+  const model = createMovementModel(catalog.movements[233]);
+  let wall = null;
+  const teeth = [];
+  model.root.traverse((object) => {
+    if (object.userData.role === 'crown-wheel-toothed-cup-wall') wall = object;
+    if (object.userData.role === 'axial-saw-tooth') teeth.push(object);
+  });
+  assert.ok(wall, 'one toothed cup wall');
+  assert.equal(teeth.length, 13);
+  assert.ok(teeth.every((tooth) => tooth.visible === false), 'separate teeth hidden');
+  const { toothTipZ, toothBaseZ, bodyDepth } = model.root.userData.geometry;
+  const position = wall.geometry.attributes.position;
+  const radii = new Set();
+  let top = -Infinity, bottom = Infinity;
+  for (let i = 0; i < position.count; i += 1) {
+    radii.add(Math.hypot(position.getX(i), position.getY(i)).toFixed(4));
+    top = Math.max(top, position.getZ(i));
+    bottom = Math.min(bottom, position.getZ(i));
+  }
+  assert.deepEqual([...radii].sort(), ['2.0600', '2.2000'], 'inner and outer faces are true circles');
+  near(top, toothTipZ, 1e-6, 'tooth tips');
+  near(bottom, toothBaseZ - bodyDepth, 1e-6, 'cup bottom');
+  disposeModel(model.root);
+});

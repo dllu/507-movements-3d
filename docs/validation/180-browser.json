@@ -17,15 +17,17 @@
     },
     {
       "file": "src/simulation/model-loader.js",
-      "sha256": "30fb09296b4950b09abf117c1a8c97abc64bf8a8245f45c8de596dd07cb75f13"
+      "sha256": "143b2620ee645b72aeb901c697d644955092d16b965762c14a8e1a8f297577f9"
     },
     {
       "file": "src/simulation/baked/single-clamp.js",
-      "sha256": "cc60bb5a814c0cda9cb1fd4ed9cef1d6327ac3c83affbb31741575002142ab51"
+      "sha256": "ba70e28c514c75699e5c343faa581650a66b2b1d7e11986ae518e125aec8782e"
     },
     {
       "file": "src/simulation/baked/assets/180.json.gz",
-      "sha256": "dc469df620b874177d5e6b27a49678bea4ec5c0cde0dbbe61d32d4383c63fe7d"
+      "sha256": "24babef29f6dc3bf329bacffb26947d634b8b3fd4553a55cd7b2f5e82b5f6d5b"
     }
-  ]
+  ],
+  "recheckedOn": "2026-09-28",
+  "recheckNote": "p93-fc: packaged desktop/mobile spec rerun after the return-spring rebake (both pass); 174 spec waits 1.5 s for the first settled frame (0.3 s captured an unsettled first render; restart equality then failed identically with the HEAD bake). p93-f: packaged desktop/mobile spec rerun (passes) after the 180 rebake for the authored-clamps.js source hash (190 standard smoothing); the rebake differs from the previous one only in object UUIDs and that hash."
 }

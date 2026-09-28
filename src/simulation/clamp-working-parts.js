@@ -149,12 +149,69 @@ function correctProny(root) {
     });
     for(const part of [b.stopPost,...b.stopBridges])part.traverse(o=>{o.visible=false;});
     root.traverse(o=>{if(/^stop-standard-(lower-length|foot)$/.test(o.userData.role??''))o.visible=false;});
+    centreProny244OnDrum(root,b,g,wood);
   }
   root.userData.minimumDisplayCycleSeconds=g.cyclePeriod;
   root.userData.workingClampReview={
     interfaces:'Unbeveled finite friction liners tangent to the drum, connected fixed stops, an open suspension eye and flush rotation index.',
     residual:'The brake illustrates an already balanced steady operating point. Applied clamp load, Coulomb coefficient and scale weight determine the reported torque algebraically; lever equilibrium is prescribed, not a passive contact/thermal solve. Strap articulation, screw adjustment and detailed pressure distribution remain simplified.',
   };
+}
+// p93: Brown's lever D rests on the wooden block, both centred on the pulley.
+// The lever, its nuts and bolts, the scale ring and stops C, C' were all built
+// in a plane 0.3 in front, so D never bore on the block. Move that whole
+// stationary group back to the pulley's mid-plane (z 0), stop the block under
+// D's lower face, and hang the pan centred under its ring. The strap's end
+// links fill the mid-plane, so each bolt now ends in a plain fork whose two
+// cheeks straddle the end link on its hinge pin.
+function centreProny244OnDrum(root,b,g,wood) {
+  const dz=-g.leverPlaneZ,half=g.brakeDepth/2;
+  for(const o of [b.lever,b.hangerEye,...b.clampScrews.map(c=>c.nut),...b.endBolts.map(e=>e.bolt)])o.position.z+=dz;
+  root.traverse(o=>{if(/^scale-ring-hook-(pin|lug-under-beam)$/.test(o.userData.role??''))o.position.z+=dz;});
+  const stopDepth=g.leverDepth+.12;
+  for(const stop of [b.upperStop,b.lowerStop]){replace(stop,new THREE.BoxGeometry(.42,.16,stopDepth));stop.position.z=0;}
+  // The block: flat top under D's lower face, full brake depth.
+  const leverBottom=g.leverCenterY-(g.leverThickness??.14)/2;
+  const shoe=b.upperShoe;shoe.geometry.computeBoundingBox();
+  const {min,max}=shoe.geometry.boundingBox,halfWidth=max.x;
+  const outline=clip.difference(poly([[-halfWidth,min.y],[halfWidth,min.y],[halfWidth,leverBottom],[-halfWidth,leverBottom]]),
+    poly(circle([0,0],g.drumRadius/Math.cos(Math.PI/512),512)));
+  replace(shoe,plate(outline,-half,half));shoe.material=wood;
+  // Forked bolt ends round the strap-end pins, clear of the block's sides.
+  root.updateMatrixWorld(true);
+  const strapBoxes=b.lowerStraps.map(s=>new THREE.Box3().setFromObject(s));
+  const strapBack=Math.min(...strapBoxes.map(box=>box.min.z)),strapFront=Math.max(...strapBoxes.map(box=>box.max.z));
+  const cheek=.03,gap=.012,eyeR=.075,pinR=.043;
+  b.endBolts.forEach(({bolt,eye},index)=>{
+    eye.visible=false;
+    const x=bolt.position.x,pinY=eye.position.y,side=Math.sign(x);
+    const top=pinY+eyeR+.03,boltBottom=bolt.position.y-bolt.geometry.parameters.height/2;
+    // Keep the fork outboard of the block's side (x = ±halfWidth).
+    const inner=poly([[side>0?halfWidth+.006:-2,-2],[side>0?2:-halfWidth-.006,-2],[side>0?2:-halfWidth-.006,2],[side>0?halfWidth+.006:-2,2]]);
+    const cheekOutline=clip.intersection(clip.union(poly(circle([x,pinY],eyeR,96)),poly([[x-.045,pinY],[x+.045,pinY],[x+.045,top],[x-.045,top]])),inner);
+    const holed=clip.difference(cheekOutline,poly(circle([x,pinY],pinR+.002,64)));
+    const front=add(root,plate(holed,strapFront+gap,strapFront+gap+cheek),bolt.material,'strap-end-bolt-fork-cheek');
+    const back=add(root,plate(holed,strapBack-gap-cheek,strapBack-gap),bolt.material,'strap-end-bolt-fork-cheek');
+    const bridge=add(root,plate(poly([[x-.045,top-.03],[x+.045,top-.03],[x+.045,Math.max(top,boltBottom+.01)],[x-.045,Math.max(top,boltBottom+.01)]]),strapBack-gap-cheek,strapFront+gap+cheek),bolt.material,'strap-end-bolt-fork-bridge');
+    b.endBolts[index].fork=[front,back,bridge];
+  });
+  // The strap-end pins span the fork like the other hinge pins.
+  const pinLow=strapBack-gap-cheek-.006,pinHigh=strapFront+gap+cheek+.006;
+  for(const pin of [b.strapPins[0],b.strapPins.at(-1)]){
+    const pinMesh=pin.userData.rotor?.children[0]??pin.children[0];
+    replace(pinMesh,new THREE.CylinderGeometry(pinR,pinR,pinHigh-pinLow,32));pin.position.z=(pinLow+pinHigh)/2;
+  }
+  // Hang the pan centred under the ring.
+  root.updateMatrixWorld(true);
+  const panBox=new THREE.Box3().setFromObject(b.scalePan),panDz=b.hangerEye.position.z-(panBox.min.z+panBox.max.z)/2;
+  for(const o of new Set([b.scalePan,...(b.panRims??[]),...(b.scaleWeights??[])]))if(o.parent===root)o.position.z+=panDz;
+  b.cableAnchor=b.hangerEye.position.clone().add(new THREE.Vector3(0,-.145,0));
+  for(const cable of b.scaleCables){
+    const segment=cable.children[0];
+    const offset=new THREE.Vector3(0,segment.scale.y/2,0).applyQuaternion(segment.quaternion);
+    const low=[segment.position.clone().add(offset),segment.position.clone().sub(offset)].sort((a,c)=>a.y-c.y)[0];
+    low.z+=panDz;cable.userData.setPoints([b.cableAnchor,low]);
+  }
 }
 export function correctClampParts(model,id) {
   if(id===287)correctPickering(model.root);else correctProny(model.root);

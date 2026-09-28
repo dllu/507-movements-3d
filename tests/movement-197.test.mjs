@@ -820,3 +820,16 @@ test('197 source-direction playback has consistent translational and rotational 
   }
   disposeModel(model.root);
 });
+
+test('movement 197 rack pins are brass, cast no hatch-like shadows, and still receive shadows (p93)', () => {
+  const model = createMovementModel(catalog.movements[196]);
+  const pins = model.root.userData.blocks.rackPins;
+  assert.equal(pins.length, 11);
+  for (const pin of pins) pin.traverse((o) => {
+    if (!o.isMesh) return;
+    assert.equal(o.material.color.getHex(), 0xb7863f);
+    assert.equal(o.userData.noShadow, true);
+    assert.equal(o.castShadow, false);
+    assert.equal(o.receiveShadow, true);
+  });
+});

@@ -58,7 +58,7 @@ export function makePumpCatchCompleteGeometry(){
   // crosshead's width.
   for(const [name,x]of [['Left',-.40],['Right',.40]])add('pumpBarrelHanger'+name,verticalCylinder(.04,lowerTop,-1.90),'fixed',PALETTE.muted,[-radius+x,0,z]);
 
-  const rope=add('pumpRope',new THREE.BufferGeometry(),'rope',0xb99b63,[0,0,0],model.root);
+  const rope=add('pumpRope',new THREE.BufferGeometry(),'rope',PALETTE.rope,[0,0,0],model.root);
   rope.material.metalness=0;rope.material.roughness=.93;
   const pixels=new Uint8Array(128*64*4);
   for(let y=0;y<64;y++)for(let x=0;x<128;x++){

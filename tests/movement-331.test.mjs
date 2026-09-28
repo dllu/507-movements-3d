@@ -76,7 +76,7 @@ test('movement 331 is the flywheel Scotch-yoke engine in pillar guides D-D', () 
   assert.equal(blocks.guidePosts[1].parent, blocks.fixedFrame);
   assert.equal(blocks.crankRotor.parent, model.root);
   assert.equal(blocks.flywheelRim.parent, blocks.crankRotor);
-  assert.equal(blocks.flywheelSpokes.length, 6);
+  assert.equal(blocks.flywheelSpokes.length, 4);
   assert.equal(blocks.crankArm.parent, blocks.crankRotor);
   assert.equal(blocks.wristJournal.parent, blocks.crankRotor);
   assert.equal(blocks.crankPinAnchor.parent, blocks.crankRotor);
@@ -98,8 +98,9 @@ test('movement 331 is the flywheel Scotch-yoke engine in pillar guides D-D', () 
 
   const roles = [];
   model.root.traverse((object) => roles.push(object.userData.role ?? ''));
+  // Brown draws a four-spoke (H/V) wheel; the diagonals are fixed braces.
   assert.equal(roles.filter((role) => /flywheel-rigid-spoke-/.test(role)).length,
-    6);
+    4);
   assert.equal(roles.filter((role) => /fixed-pillar-guide-D$/.test(role)).length,
     2);
   assert.equal(roles.filter((role) => /guide-shoe-embracing-pillar-D$/.test(role))
@@ -246,13 +247,12 @@ test('movement 331 solves the exact Scotch-yoke displacement law', () => {
   }
 
   const expectedKeyframes = sourceAnimation.officialKeyframes;
-  const orderedStates = [
-    canonicalStates.crankAtRight,
-    canonicalStates.crankAtTop,
-    canonicalStates.crankAtLeft,
-    canonicalStates.crankAtBottom,
-    canonicalStates.cycleClosure,
-  ];
+  // The model starts at Brown's plate pose, half a turn into the official
+  // animation, so keyframe k occurs at model phase k.phase + offset.
+  const orderedStates = expectedKeyframes.map((keyframe) => stateAtTime(
+    geometry.cyclePeriod * (keyframe.phase + sourceAnimation.plateStartPhaseOffset)));
+  near(canonicalStates.crankAtLeft.crankPin.x, -geometry.crankRadius, 1e-15,
+    'plate pose: wrist pin left of the shaft at t = 0');
   for (let index = 0; index < expectedKeyframes.length; index += 1) {
     const expected = expectedKeyframes[index];
     const state = orderedStates[index];
@@ -260,7 +260,7 @@ test('movement 331 solves the exact Scotch-yoke displacement law', () => {
       `official crank keyframe ${index}`);
     near(state.sliderY / geometry.sourceScale, expected.sliderY, 1.1e-15,
       `official slider keyframe ${index}`);
-    near(state.phase, expected.phase % 1, 0,
+    near(state.phase, (expected.phase + sourceAnimation.plateStartPhaseOffset) % 1, 0,
       `official phase keyframe ${index}`);
   }
   near(canonicalStates.crankAtTop.sliderY
@@ -471,7 +471,7 @@ test('movement 331 renderer binds the rotor, journal, yoke, and piston in 3D', (
   assert.notEqual(model330.root.userData.archetype,
     model.root.userData.archetype);
   assert.ok(model330.root.userData.blocks.forkBody.isMesh);
-  assert.equal(blocks.flywheelSpokes.length, 6);
+  assert.equal(blocks.flywheelSpokes.length, 4);
   disposeModel(model330.root);
   disposeModel(model.root);
 });
@@ -496,7 +496,7 @@ test('movement 331 closes exactly and leaves movement 507 as the next draft', ()
   near(closure.sliderY, start.sliderY, 0, 'crosshead closure');
   near(closure.sliderVelocityY, start.sliderVelocityY, 0,
     'crosshead velocity closure');
-  near(closure.unwrappedCrankAngle, Math.PI * 2, 0,
+  near(closure.unwrappedCrankAngle - start.unwrappedCrankAngle, Math.PI * 2, 0,
     'one unwrapped flywheel turn');
   model.update(canonicalTimes.cycleClosure);
   near(blocks.crankRotor.rotation.z, start.crankAngle, 0,

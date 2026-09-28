@@ -6970,7 +6970,9 @@ function reuleauxCarrierDiskValveMotion() {
     rearBearing,
     shaftBearing,
     shaftFlange,
-    ...rodGuides,
+    // Pass 93: the two rod guides hung in space round the rods; Brown draws
+    // only the hexagonal nut sections on the rods, so the guides are built
+    // (for reference) but not displayed.
     input,
     follower,
     lowerContactMarker,

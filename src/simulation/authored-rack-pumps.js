@@ -7,7 +7,7 @@ import {
   matte,
 } from './primitives.js';
 
-import { rackPinionGeometry, rackToothGeometry, RACK_PRESSURE_ANGLE } from './rack-pinion-parts.js';
+import { rackPinionGeometry, rackToothGeometry } from './rack-pinion-parts.js';
 import { boredCylinderGeometry, boredJournal, fitPistonGuide } from './piston-guide-parts.js';
 import { circle, poly, plate, polygonClipping as clip } from './finite-plate-geometry.js';
 import { standardTurnedHandleGeometry, HANDLE_FOOT_EMBED } from './turned-handle.js';
@@ -91,12 +91,17 @@ function handRockedPinionAndPumpRacks(movement) {
     sourceHandleGrip.y - pinionCenter.y,
     sourceHandleGrip.x - pinionCenter.x,
   );
-  const pinionTeeth = 18;
+  // Pass 93: Brown draws about 16 square-looking pinion teeth and 12-13
+  // teeth per rack. A 20 degree involute pinion of 16 teeth (no undercut at
+  // this addendum) meshes a straight-flanked rack whose teeth keep a broad
+  // flat top land, so both read as Brown's square crenellations.
+  const pinionTeeth = 16;
+  const toothPressureAngle = 20 * Math.PI / 180;
   const pinionAngularPitch = FULL_TURN / pinionTeeth;
   const rackPitch = pinionPitchRadius * pinionAngularPitch;
   const pinionToothHeight = 0.20;
   const pinionOuterRadius = pinionPitchRadius + pinionToothHeight / 2;
-  const rackToothCount = 16;
+  const rackToothCount = 13;
   const rackLength = rackPitch * rackToothCount;
   const rackBodyWidth = 0.18;
   const rackDepth = 0.34;
@@ -291,7 +296,7 @@ function handRockedPinionAndPumpRacks(movement) {
   baseRail.position.set(0, baseTopY + 0.12, -0.23);
   baseRail.userData.role = 'rack-guide-base-rail';
   base.add(baseRail);
-  for (const x of [-3.3, 3.3]) {
+  for (const x of [-3.78, 3.78]) {
     const foot = new THREE.Mesh(
       new THREE.BoxGeometry(0.28, 0.95, 0.58),
       frameMaterial,
@@ -399,11 +404,11 @@ function handRockedPinionAndPumpRacks(movement) {
   const pinionBody=pinionRotor.children[0];
   pinionBody.geometry.dispose();
   pinionBody.geometry=rackPinionGeometry({radius:pinionPitchRadius,teeth:pinionTeeth,
-    addendum:pinionToothHeight/2,depth:.44,bore:.153});
+    addendum:pinionToothHeight/2,depth:.44,bore:.153,pressureAngle:toothPressureAngle});
   // At the reference pose both racks have a tooth on y=0, so the pinion
-  // must present a space at both horizontal pitch points (18 teeth).
+  // must present a space at both horizontal pitch points (16 teeth).
   pinionBody.geometry.rotateZ(pinionAngularPitch/2);
-  Object.assign(pinion.userData,{pressureAngle:RACK_PRESSURE_ANGLE,
+  Object.assign(pinion.userData,{pressureAngle:toothPressureAngle,
     baseRadius:pinionBody.geometry.userData.baseRadius,
     rootRadius:pinionBody.geometry.userData.rootRadius,dedendum:pinionToothHeight/2+.006});
   const hub=pinionRotor.children[1];hub.geometry.dispose();
@@ -464,8 +469,8 @@ function handRockedPinionAndPumpRacks(movement) {
   root.add(pinionAxle);
 
   const rackToothGeometries = {
-    left:rackToothGeometry({pitch:rackPitch,addendum:pinionToothHeight/2,depth:rackDepth}).rotateZ(-Math.PI/2),
-    right:rackToothGeometry({pitch:rackPitch,addendum:pinionToothHeight/2,depth:rackDepth}).rotateZ(Math.PI/2),
+    left:rackToothGeometry({pitch:rackPitch,addendum:pinionToothHeight/2,depth:rackDepth,pressureAngle:toothPressureAngle}).rotateZ(-Math.PI/2),
+    right:rackToothGeometry({pitch:rackPitch,addendum:pinionToothHeight/2,depth:rackDepth,pressureAngle:toothPressureAngle}).rotateZ(Math.PI/2),
   };
 
   const makePumpRack = (side) => {

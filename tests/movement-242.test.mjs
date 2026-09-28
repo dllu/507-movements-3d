@@ -395,7 +395,8 @@ test('movement 242 renderer binds the rigid lever and non-circulating strap', ()
     < Math.min(wheelAxialRange[1], bandAxialRange[1]));
   assert.equal(blocks.brakeBand.userData.isBrakeStrap, true);
   assert.equal(blocks.brakeBand.userData.noShadow, true);
-  assert.equal(bandPositions.count, (geometry.bandArcSamples + 2) * 4);
+  // Eight vertices per section (each face owns its edges) plus two end caps.
+  assert.equal(bandPositions.count, (geometry.bandArcSamples + 2) * 8 + 8);
   let movingBeltMarkerCount = 0;
   model.root.traverse((object) => {
     if (object.userData.markerIndex !== undefined) movingBeltMarkerCount += 1;

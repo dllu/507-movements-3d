@@ -21,7 +21,13 @@ test('226 blind journals clear F and the planet has a genuine journal bore', () 
   const {blocks, geometry} = model.root.userData;
   const f = bounds(blocks.shaftF);
   assert.ok(bounds(blocks.inputShaft).min.y - f.max.y > 0.05);
-  assert.ok(bounds(blocks.planetAxle).min.z - f.max.z > 0.05);
+  // p93-fc: D's stud now stands radially in a spider boss fast on F; its
+  // root clears F's surface and is seated inside that boss.
+  const stud = bounds(blocks.planetAxle);
+  const spider = bounds(blocks.spiderBossD);
+  assert.ok(stud.min.z - f.max.z > 0.015, `stud root ${stud.min.z} clears F`);
+  assert.ok(stud.min.z < spider.max.z - 0.05, 'stud root is seated in the spider boss');
+  assert.ok(stud.min.x >= spider.min.x && stud.max.x <= spider.max.x, 'stud lies over the spider boss');
   const gear = blocks.planetGearD;
   const hub = gear.userData.hub.geometry.attributes.position;
   let minimumRadius = Infinity;
@@ -48,7 +54,7 @@ test('226 blind journals clear F and the planet has a genuine journal bore', () 
     const mesh = blocks.planetAxle.userData.rotor.children[0];
     for (let j = 0; j < positions.count; j++) {
       const p = new THREE.Vector3().fromBufferAttribute(positions, j).applyMatrix4(mesh.matrixWorld);
-      assert.ok(Math.hypot(p.y, p.z) > geometry.centralShaftRadius + 0.05);
+      assert.ok(Math.hypot(p.y, p.z) > geometry.centralShaftRadius + 0.015);
     }
   }
 });

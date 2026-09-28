@@ -610,3 +610,18 @@ test('movement 364 is the reviewed frontier and movement 507 remains authored', 
   disposeModel(model364.root);
   disposeModel(model507.root);
 });
+
+test('movement 364 studs run through the rollers to a retaining head that the groove clears (p93)', () => {
+  const model = createMovementModel(catalog.movements[363]);
+  const { radialStuds, rollerBodies } = model.root.userData.blocks;
+  for (const stud of radialStuds) {
+    stud.geometry.computeBoundingBox();
+    const box = stud.geometry.boundingBox;
+    const outerEnd = stud.position.x + box.max.x;
+    // Roller spans 0.865..1.215 on its mount; the head closes the bore beyond it.
+    assert.ok(outerEnd > 1.215 + 0.05, `stud head ends at ${outerEnd}`);
+    assert.ok(Math.max(box.max.y, box.max.z) >= 0.063, 'head wider than the 0.055 bore');
+  }
+  assert.equal(rollerBodies.length, 8);
+  model.root.traverse((object) => { object.geometry?.dispose(); });
+});

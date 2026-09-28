@@ -7,7 +7,9 @@ import {disposeObject3D} from '../src/simulation/dispose-model.js';
 const catalog=JSON.parse(fs.readFileSync('src/data/movements.json')).movements,results=[];
 for(const id of (process.env.IDS??'502,503,504,505').split(',').map(Number)){
  const model=createAuthoredEpicyclicTrainMovement(catalog[id-1]),u=model.root.userData,b=u.blocks;
- const pairs=id===502?[[b.fixedSunA,b.compoundF],[b.outputD,b.compoundE],[b.compoundE,b.outputB]]:id===503?[[b.lowerC,b.planetB],[b.upperD,b.planetB]]:id===504?[[b.fixedA,b.inputRowB],...['E','F','G'].map((s,i)=>[b.intermediateRows[i+1],b.outputs[s]])]:[[b.sunA,b.planetB],[b.fixedRingC,b.planetB]];
+ // 504: the correction renders one thick B (inputRowB) across all output planes and hides the
+ // per-output rows, so the outputs are paired with the rendered B, as in review-503-504-contact-solids.
+ const pairs=id===502?[[b.fixedSunA,b.compoundF],[b.outputD,b.compoundE],[b.compoundE,b.outputB]]:id===503?[[b.lowerC,b.planetB],[b.upperD,b.planetB]]:id===504?[[b.fixedA,b.inputRowB],...['E','F','G'].map(s=>[b.inputRowB,b.outputs[s]])]:[[b.sunA,b.planetB],[b.fixedRingC,b.planetB]];
  const parts=new Map();
  for(const gear of new Set(pairs.flat())){const rotor=gear.userData.rotor,children=rotor.children.filter((c,i)=>i===0||c.userData.bevelTooth),geometries=children.map(mesh=>{mesh.updateMatrix();let g=mesh.geometry.clone().applyMatrix4(mesh.matrix);if(g.index)g=g.toNonIndexed();for(const name of Object.keys(g.attributes))if(name!=='position')g.deleteAttribute(name);return g;});const geometry=mergeGeometries(geometries);geometries.forEach(g=>g.dispose());parts.set(gear,{rotor,geometry,surface:solidSurface(geometry),points:surfacePoints(geometry)});}
  const row={id,poses:Number(process.env.POSES??33),queries:0,penetrations:0,maxDepth:0,worst:null};

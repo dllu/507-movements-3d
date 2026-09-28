@@ -25,7 +25,12 @@ export function correctGearFingerStop(model){
     g[`${key}RootRadius`]=Math.min(...radii)+clearance;g[`${key}OuterRadius`]=Math.max(...radii)+clearance;
     // Keep the source's stop faces in the same common plane, without bevel
     // growth. The square passage continues through gear, finger and clamp hub.
-    replace(assembly.fingerBody,plate(clip.difference(poly(g[`${key}FingerLocal`].map(p=>p.toArray())),poly(bore.map(p=>p.toArray()))),-g.fingerDepth/2,g.fingerDepth/2));
+    // p93: the finger stood 0.075 proud of its gear face on the clamping hub
+    // alone; run it down to 0.016 above the face, the running margin it keeps
+    // over the opposing gear's face where it sweeps across it, so it reads as
+    // lying on its gear. Its top and the stop plane are unchanged.
+    const fingerBottom=g.gearDepth/2+.016-assembly.fingerBody.position.z;
+    replace(assembly.fingerBody,plate(clip.difference(poly(g[`${key}FingerLocal`].map(p=>p.toArray())),poly(bore.map(p=>p.toArray()))),fingerBottom,g.fingerDepth/2));
     replace(assembly.hub,plate(clip.difference(poly(circle([0,0],.73,96)),poly(bore.map(p=>p.toArray()))),-.17,g.fingerPlaneZ));
     assembly.hub.rotation.set(0,0,0);assembly.hub.position.z=0;
     // Exact keyed shape instead of an axis-aligned block floating in the hole.

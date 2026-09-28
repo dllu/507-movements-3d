@@ -114,7 +114,11 @@ export function makeCrownRatchetGeometry({
 // upward-facing crown teeth. Rotor-local frame: pivot at azimuth +Z, the pawl
 // extends along +X (the recoil direction there) and turns about +Z.
 export const capstanPawlDimensions = Object.freeze({
-  pivotAzimuth: Math.PI / 2, planeRadius: 1.165, thickness: 0.09, pivotHeight: -1.0,
+  // The pivot sits 15° round from the front so that, seated, the nose meets
+  // its tooth face within 4° of Brown's line of sight: the radial face then
+  // shows nearly edge-on and the nose reads as down in the root (with the
+  // pivot dead in front the face's outer edge showed 0.09 beyond the nose).
+  pivotAzimuth: Math.PI / 2 + Math.PI / 12, planeRadius: 1.165, thickness: 0.09, pivotHeight: -1.0,
   length: 0.56, noseRadius: 0.05, bossRadius: 0.12, boreRadius: 0.06, pinRadius: 0.055,
   innerRadius: 1.15, outerRadius: 1.45, lowHeight: -1.50,
   highHeight: -1.27, bottomHeight: -1.61, toothCount: 18, releaseFraction: 0.125, clearance: 0.0005,

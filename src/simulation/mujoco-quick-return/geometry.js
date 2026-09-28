@@ -19,10 +19,13 @@ export function makeQuickReturnGeometry(options={}) {
   attach('shaft',disk(shaftRadius,-.85,-.08,128),'input',PALETTE.ink);
   // Two circular ends and their common exterior tangents give the drawn
   // broad crank. It stays behind the lever so its shaft cannot cut the sweep.
-  const tangent=Math.acos((hubRadius-f.pinRadius)/f.crankRadius),crank=[];
+  // Pass 93: the crank is accent yellow so it reads against the orange disk
+  // it turns with, and the pin sits centred in an end eye 1.35x its radius, so it is
+  // not flush with the crank's edge (Brown's end outline rings the pin).
+  const eyeRadius=1.35*f.pinRadius,tangent=Math.acos((hubRadius-eyeRadius)/f.crankRadius),crank=[];
   for(let i=0;i<=128;i++){const a=tangent+(2*Math.PI-2*tangent)*i/128;crank.push([hubRadius*Math.cos(a),hubRadius*Math.sin(a)]);}
-  for(let i=0;i<=64;i++){const a=-tangent+2*tangent*i/64;crank.push([f.crankRadius+f.pinRadius*Math.cos(a),f.pinRadius*Math.sin(a)]);}
-  attach('crank',plate(clip.difference(poly(crank),poly(circle([0,0],shaftRadius,128))),-.26,-.12),'input',PALETTE.driver);
+  for(let i=0;i<=64;i++){const a=-tangent+2*tangent*i/64;crank.push([f.crankRadius+eyeRadius*Math.cos(a),eyeRadius*Math.sin(a)]);}
+  attach('crank',plate(clip.difference(poly(crank),poly(circle([0,0],shaftRadius,128))),-.26,-.12),'input',PALETTE.accent);
   attach('pin',disk(f.pinRadius,-.12,.26,128),'input',PALETTE.brass,[f.crankRadius,0,0]);
   attach('pinFace',disk(f.pinRadius,.26,.28,128),'input',PALETTE.ink,[f.crankRadius,0,0]);
   const bodyStart=f.local(source.body),bodyAngle=-source.body[2]-f.sourceAngle,axis=rotate([1,0],bodyAngle);

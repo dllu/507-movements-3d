@@ -20,23 +20,24 @@ test('226 crossing hubs clear through a full carrier revolution and shafts occup
  const pairs=[[b.inputGearB,b.shaftGearF],[b.inputGearB,b.hollowDriveGear],[b.planetGearD,b.sideGearC],[b.planetGearD,b.outputGearE]];
  for(let i=0;i<=8;i++){m.update(6*i/8);m.root.updateMatrixWorld(true);for(const[a,z]of pairs){clear(a.userData.hub,z.userData.hub);clear(z.userData.hub,a.userData.hub);}clear(b.planetAxle.userData.rotor.children[0],b.shaftF.userData.rotor.children[0]);}
  for(const[gear,shaftR]of[[b.inputGearB,.09],[b.shaftGearF,.078],[b.planetGearD,.066],[b.sideGearC,.168],[b.outputGearE,.17]])assert.ok(gear.userData.boreRadius>shaftR&&gear.userData.boreRadius-shaftR<.00201);
- assert.equal(b.carrierShaftConnection.length,3);assert.ok(b.carrierShaftConnection.every(p=>p.parent===b.carrierAssembly));disposeObject3D(m.root);
+ // p93: frame A is centred on F; its end-bar bosses and D's spider boss are carried with it.
+ assert.equal(b.frameBossesA.length,2);assert.ok([...b.frameBossesA,b.spiderBossD].every(p=>p.parent===b.carrierAssembly));disposeObject3D(m.root);
 });
 test('saved bevel contact audit matches production and keeps all six meshes close',()=>{
  const r=JSON.parse(fs.readFileSync('docs/validation/200-226-bevel-solids.json'));for(const s of r.sources)assert.equal(createHash('sha256').update(fs.readFileSync(s.file)).digest('hex'),s.sha256,s.file);
  assert.equal(r.results.length,2);for(const row of r.results){assert.equal(row.poses,33);assert.equal(row.penetrations,0);assert.ok(row.queries>500000);for(const p of row.pairs)assert.ok(p.maximumSampledGap<.002);}
 });
 
-test('226 frame A and its carrier arm are one broad flat bar width', () => {
-  const b = createAuthoredGearMovement({id: 226}).root.userData.blocks;
+test('226 frame A is one broad flat frame centred on F with bored bosses on its end bars', () => {
+  const m = createAuthoredGearMovement({id: 226}), b = m.root.userData.blocks, g = m.root.userData.geometry;
   b.flatFrameA.geometry.computeBoundingBox();
   const frame = b.flatFrameA.geometry.boundingBox;
   assert.ok(frame.max.z - frame.min.z > 0.13, 'frame is a bar, not a film');
-  const inner = b.flatFrameA.geometry.parameters.shapes.holes[0].getPoints();
-  const innerHalfHeight = Math.max(...inner.map((p) => p.y));
-  assert.ok(frame.max.y - innerHalfHeight > 0.25, 'broad band');
-  for (const part of b.carrierShaftConnection.slice(1)) {
-    const box = new THREE.Box3().setFromObject(part);
-    assert.ok(box.max.y - box.min.y > 0.25, 'arm matches the band');
+  assert.ok(Math.abs(frame.max.z + frame.min.z) < 1e-9, 'centred on F');
+  assert.ok(g.flatFrameBand > 0.25, 'broad band');
+  for (const boss of b.frameBossesA) {
+    const box = new THREE.Box3().setFromObject(boss);
+    assert.ok(box.max.y - box.min.y > 0.39, 'end-bar boss is round and broad');
   }
+  disposeObject3D(m.root);
 });

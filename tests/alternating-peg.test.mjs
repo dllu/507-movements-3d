@@ -150,3 +150,16 @@ test('077 both hook heads are the same C of true circular arcs, seating the peg 
   for(const q of a)assert.ok(Math.min(...b.map(v=>Math.hypot(v[0]-q[0],v[1]-q[1])))<1e-6,'heads differ');
  dispose(model);
 });
+
+test('077 p93: hook shanks are flat bars about 0.6 of a peg diameter wide; dark steel pegs',()=>{
+ const model=makeAlternatingPegPawlDrive(),u=model.root.userData,r=u.geometry.pinRadius;
+ for(const key of ['upper','lower']){
+  const L=u.geometry.lengths[key],outline=u.profiles[key];
+  // Measure the bar's width half way along the shank (pawl frame: pivot at 0, head at -L).
+  const x=-L/2,ys=[];
+  for(let i=0;i<outline.length;i++){const a=outline[i],b=outline[(i+1)%outline.length];if((a[0]-x)*(b[0]-x)<0)ys.push(a[1]+(b[1]-a[1])*(x-a[0])/(b[0]-a[0]));}
+  assert.equal(ys.length,2);const width=Math.abs(ys[0]-ys[1]);
+  assert.ok(Math.abs(width/(2*r)-.59)<.02,`${key} shank width ${width}`);
+ }
+ for(let i=0;i<24;i++)for(const name of ['wheelPin'+i,'wheelPinCap'+i])assert.ok(u.parts[name].material.color.getHSL({}).l<.4,name);
+});

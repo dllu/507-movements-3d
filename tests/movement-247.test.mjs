@@ -641,3 +641,15 @@ test('movement 247 curled leaf spring bears on the upper arm and loads the catch
   assert.ok(pivot.y + retracted.y - 0.03 > -0.89);
   disposeModel(model.root);
 });
+
+test('p93: the moving sea bottom carries alternating tone bands so its sideways travel reads', () => {
+  const model = createMovementModel(catalog.movements[246]);
+  const slab = model.root.userData.blocks.seabedSlab;
+  const colors = slab.geometry.attributes.color;
+  assert.ok(colors, 'bottom has per-face tones');
+  const shades = new Set();
+  for (let i = 0; i < colors.count; i += 1) shades.add(colors.getX(i));
+  assert.deepEqual([...shades].sort(), [0.8999999761581421, 1]);
+  for (const material of slab.material) assert.equal(material.vertexColors, true);
+  disposeModel(model.root);
+});

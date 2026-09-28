@@ -1,16 +1,17 @@
 import * as THREE from 'three';
-import face from '../data/face-worm-195.js';
+import displaySector from '../data/face-worm-195-mesh.js';
 import {boredLatheGeometry} from './bored-lathe-geometry.js';
 import {markShadows} from './primitives.js';
 
-// One instanced tooth sector of 195's face wheel, built from the baked exact
-// worm envelope (scripts/generate-face-worm-195.mjs). Each grid cell is split
+// The full-resolution tooth sector of 195's face wheel, built from the baked exact
+// worm envelope (src/data/face-worm-195.js, passed in by the offline bake and
+// the tests) (scripts/generate-face-worm-195.mjs). Each grid cell is split
 // along the baked crossings of the land boundary and of the envelope's cliffs,
 // so land edges and cliff walls follow the true curves instead of stepping
 // with the grid. The cut surface is smooth-shaded with creases, computed over
 // the neighbouring sectors too so the instances shade seamlessly; the top
 // land, walls and backing are flat or truly cylindrical.
-export function faceWorm195Geometry(data=face){
+export function faceWorm195Geometry(data){
  const {teeth,innerRadius:RI,outerRadius:RO,back,gridInnerRadius:RG,radialSteps:R,angularSteps:A,heights,crossings}=data;
  const pitch=2*Math.PI/teeth,wrap=j=>((j%A)+A)%A,H=(i,j)=>heights[i*A+wrap(j)];
  const radius=i=>RG+(RO-RG)*i/R,angle=j=>-pitch/2+pitch*j/A;
@@ -120,6 +121,16 @@ export function faceWorm195Geometry(data=face){
  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));g.setAttribute('normal',new THREE.Float32BufferAttribute(normals,3));g.setIndex(index);
  const{heights:_h,crossings:_c,...meta}=data;g.userData={profile:'exact-worm-envelope-face-sector',...meta,crossingCount:crossings.length};return g;
 }
+// The displayed sector: the dense sector adaptively simplified offline
+// (scripts/bake-face-worm-195-mesh.mjs) to a few thousand triangles, dense
+// only where the surface bends or creases. Surviving vertices lie on (or
+// sink slightly below) the dense surface and keep its corner normals, so
+// the look is the dense mesh's at about a twelfth of the triangles.
+export function faceWorm195DisplayGeometry(data=displaySector){
+ const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(data.positions,3));
+ g.setAttribute('normal',new THREE.Float32BufferAttribute(data.normals,3));g.setIndex(data.index);
+ const{positions:_p,normals:_n,index:_i,...meta}=data;g.userData={profile:'adaptive-exact-worm-envelope-face-sector',...meta};return g;
+}
 function bored(mesh,radius,bore,length,replaced){
  replaced.add(mesh.geometry);
  mesh.geometry=boredLatheGeometry([{radial:radius,axial:-length/2},{radial:radius,axial:length/2}],bore,64);mesh.userData.boreRadius=bore;
@@ -129,7 +140,7 @@ export function correctFeedWormAssembly(root,id){
  const d=root.userData,b=d.blocks;
  const journals=[],replaced=new Set();
  if(id===195){
-  const sector=faceWorm195Geometry();
+  const sector=faceWorm195DisplayGeometry(),face=displaySector;
   for(const side of ['upper','lower']){
    const old=b[side+'WheelBody'],rotor=b[side+'WheelRotor'],sign=side==='upper'?1:-1;
    old.visible=false;for(const groove of b[side+'Grooves'])groove.visible=false;b[side+'VisibleRim'].visible=false;
@@ -137,7 +148,9 @@ export function correctFeedWormAssembly(root,id){
    const body=new THREE.InstancedMesh(geometry,old.material,24),matrix=new THREE.Matrix4();
    for(let i=0;i<24;i++)body.setMatrixAt(i,matrix.makeRotationZ(i*Math.PI/12));
    body.userData.role=side+'-generated-face-worm-wheel';rotor.add(body);b[side+'GeneratedFace']=body;
-   const center=new THREE.Mesh(boredLatheGeometry([{radial:face.innerRadius,axial:-.36},{radial:face.innerRadius,axial:0}],.074,64),old.material);
+   // 192 sides: its corners are the display sector's bore-arc vertices
+   // (every pitch/8), so the centre and the teeth ring meet without a crack.
+   const center=new THREE.Mesh(boredLatheGeometry([{radial:face.innerRadius,axial:-.36},{radial:face.innerRadius,axial:0}],.074,192),old.material);
    const back=new THREE.Mesh(boredLatheGeometry([{radial:face.outerRadius,axial:-.364},{radial:face.outerRadius,axial:-.359}],.074,96),old.material);back.rotation.x=sign*Math.PI/2;rotor.add(back);b[side+'SmoothBack']=back;
    center.rotation.x=Math.PI/2;if(sign<0)center.rotation.x=-Math.PI/2;rotor.add(center);b[side+'BoredCenter']=center;
    // Brown draws the same hub on both wheels: a boss about a quarter of the

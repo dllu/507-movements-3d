@@ -16,7 +16,7 @@
     0,
     0
   ],
-  "maximumError": 9.900845405225612e-7,
+  "maximumError": 9.89852537762459e-7,
   "bounds": {
     "min": [
       -1.344000039100647,
@@ -24,13 +24,13 @@
       -0.5500000095367432
     ],
     "max": [
-      5.424084595827036,
+      5.424084595827511,
       2.2800000286102295,
       0.3749999976158142
     ]
   },
   "focus": [
-    2.0400422783631944,
+    2.0400422783634315,
     0.029999971389770508,
     -0.0875000059604645
   ],
@@ -45,7 +45,7 @@
     },
     {
       "file": "src/simulation/mujoco-bench-clamp/physics.js",
-      "sha256": "013f7b319cceff3da7c709c4794e9d79ea3b5e88d1f8e68512c20f78b8310b21"
+      "sha256": "ae135ba9f82418f9ce58f9122eae92beb38bc01eddde5c8704272597dc93fcbb"
     },
     {
       "file": "src/simulation/mujoco-bench-clamp/profile.js",
@@ -64,9 +64,9 @@
       "sha256": "7984734dc15dfec9bd0f1198b9f8544dee4b9b6529a77eec92681927cd63db71"
     }
   ],
-  "nativeHash": "354073e683c888c080b4e83a631288b0bf574c5bf20cde90d119cbf8e9154b1d",
+  "nativeHash": "ed2bd6959893aca872f8d20807d0e2f7219058d0ca0c44b3a866cfb9586975a3",
   "assumptions": "Passive jaw hinges and free board Y; orientation held and X push/withdrawal supplied by a force-limited drive. Inferred masses, resistance, planar guidance and bearing depths. Independently traced jaw outlines.",
-  "samples": 982,
-  "bytes": 278171,
-  "sha256": "cc9683749ef8605d054ff1af7e1c0ba20d4bf92e77e1b094433cad722c4a57d4"
+  "samples": 1156,
+  "bytes": 285857,
+  "sha256": "af3b57120a27f96ba32f7e77de0371eb9640cb0cac6b8b23b79c27c2df944f75"
 }

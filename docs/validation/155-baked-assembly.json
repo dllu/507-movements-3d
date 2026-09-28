@@ -4,26 +4,26 @@
   "results": [
     {
       "side": "right",
-      "parts": 30,
-      "pairs": 390,
+      "parts": 28,
+      "pairs": 333,
       "poses": 129,
-      "checks": 8931638,
+      "checks": 8137824,
       "failures": {},
       "workingContacts": {
         "cog/click": {
           "firstPose": 36,
-          "maximumDepth": 0.00000243497469939643,
-          "points": 2
+          "maximumDepth": 0.000001833897142275494,
+          "points": 1
         }
       },
       "sampleFile": "src/simulation/baked/assets/155.json.gz"
     },
     {
       "side": "left",
-      "parts": 30,
-      "pairs": 390,
+      "parts": 28,
+      "pairs": 333,
       "poses": 129,
-      "checks": 7925916,
+      "checks": 7101084,
       "failures": {},
       "workingContacts": {},
       "sampleFile": "src/simulation/baked/assets/155.json.gz"
@@ -36,7 +36,7 @@
     },
     {
       "file": "src/simulation/mujoco-elbow-pawl/geometry.js",
-      "sha256": "88abfcb1ac38b44777ad1f0a07e6c1adae9b1ec515f98ec9149903793e4de627"
+      "sha256": "ef0739606557596de08409b9b7d2e45db2f3574a0f711e2d3acd204f99e7c9cb"
     },
     {
       "file": "src/simulation/mujoco-elbow-pawl/sync.js",
@@ -44,15 +44,15 @@
     },
     {
       "file": "tests/helpers/solid-surface.mjs",
-      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+      "sha256": "8f39335894306bfe77f2d3562e6c2e7ac867dead2e078f2d1da4da7151998b99"
     },
     {
       "file": "src/simulation/baked/assets/155.json.gz",
-      "sha256": "beb17540f561eaa3fec9c7f5e170d6aa41afe6638da33e38a2405f811658d658"
+      "sha256": "5a6c010e40051e53b46cf6c99bad2bbed372d81efedeb911aac25d7b6c2ef53d"
     },
     {
       "file": "src/simulation/baked/assets/155.json.gz",
-      "sha256": "beb17540f561eaa3fec9c7f5e170d6aa41afe6638da33e38a2405f811658d658"
+      "sha256": "5a6c010e40051e53b46cf6c99bad2bbed372d81efedeb911aac25d7b6c2ef53d"
     }
   ]
 }

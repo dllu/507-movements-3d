@@ -774,6 +774,20 @@ function gigSawWithTensionSpring(movement) {
       rail.geometry.dispose(); rail.geometry = new THREE.BoxGeometry(size.x, top - bottom, size.z);
       rail.position.y = (top + bottom) / 2;
     }
+    // Brown hangs the lower wrist from a round lug under the sliding block:
+    // block and lug are one extrusion, the lug's arc concentric with the pin.
+    // Its radius (0.18) keeps 0.015 above the flywheel rim at bottom stroke.
+    {
+      const block = b.sawAssembly.userData.lowerBlock;
+      const { width: w, height: h, depth: dz } = block.geometry.parameters;
+      const y0 = block.position.y;
+      block.geometry.dispose();
+      block.geometry = plate(clip.union(
+        poly([[-w / 2, -h / 2], [w / 2, -h / 2], [w / 2, h / 2], [-w / 2, h / 2]]),
+        poly(circle([0, -y0], 0.18, 96)),
+      ), -dz / 2, dz / 2);
+      block.userData.pinLugRadius = 0.18;
+    }
     update(0);
   }
   return { cameraDirection: root.userData.cameraDirection, root, update };

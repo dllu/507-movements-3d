@@ -1,11 +1,10 @@
 import fs from 'node:fs';
 import {createHash} from 'node:crypto';
-import {Matrix4} from 'three';
+import {Matrix4,Triangle,Vector3} from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {makeSlidingWormModel} from '../src/simulation/baked/sliding-worm.js';
 import {slidingWormDimensions as g} from '../src/simulation/sliding-worm-kinematics.js';
 import {triangleTree,meshPairDistance} from './lib/star-mangle-pair-distance.mjs';
-import {surfaceTriangles} from '../tests/helpers/solid-surface.mjs';
 const bundle=JSON.parse(fs.readFileSync('/dev/shm/143-candidate.json')),model=makeSlidingWormModel(bundle);
 try{
  const worm=model.root.getObjectByName('bored-worm'),wheel=model.root.getObjectByName('generated-wheel'),pieces=[];
@@ -15,11 +14,16 @@ try{
  const topology=[];
  for(const [name,geometry]of [['worm',worm.geometry],['wheel-sector',wheel.geometry]]){
   const edges=new Map();let volume=0,wrongNormals=0,faceIndex=0;
-  for(const f of surfaceTriangles(geometry)){
+  // Walk every stored triangle so each face is compared with its own stored
+  // normals (surfaceTriangles drops zero-area faces, which would misalign them).
+  const count=(geometry.index?.count??geometry.attributes.position.count)/3,corner=k=>geometry.index?geometry.index.getX(k):k;
+  for(;faceIndex<count;faceIndex++){
+   const f=new Triangle(...[0,1,2].map(j=>new Vector3().fromBufferAttribute(geometry.attributes.position,corner(faceIndex*3+j))));
+   if(f.getArea()<=1e-16)continue;
    volume+=f.a.dot(f.b.clone().cross(f.c))/6;
    const cross=f.b.clone().sub(f.a).cross(f.c.clone().sub(f.a)),normal=cross.clone().set(0,0,0);
-   for(let j=0;j<3;j++)normal.add(cross.clone().fromBufferAttribute(geometry.attributes.normal,geometry.index?geometry.index.getX(faceIndex*3+j):faceIndex*3+j));
-   if(cross.lengthSq()>1e-22&&cross.dot(normal)<=0)wrongNormals++;faceIndex++;
+   for(let j=0;j<3;j++)normal.add(cross.clone().fromBufferAttribute(geometry.attributes.normal,corner(faceIndex*3+j)));
+   if(cross.lengthSq()>1e-22&&cross.dot(normal)<=0)wrongNormals++;
    const keys=[f.a,f.b,f.c].map(v=>v.toArray().map(x=>Math.round(x*1e6)).join(','));if(new Set(keys).size<3)continue;
    for(let j=0;j<3;j++){const a=keys[j],b=keys[(j+1)%3],key=[a,b].sort().join('/'),edge=edges.get(key)??{count:0,direction:0};edge.count++;edge.direction+=a<b?1:-1;edges.set(key,edge);}
   }

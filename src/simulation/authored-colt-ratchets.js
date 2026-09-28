@@ -979,8 +979,13 @@ function coltCylinderRatchet(movement) {
     [[555, 298], [552, 360], [535, 440], [500, 515], [462, 585], [430, 645]],
     [[430, 645], [540, 815]],
     [[540, 815], [542, 860], [520, 905], [470, 935], [390, 955], [310, 955], [230, 935],
-      [160, 895], [110, 850], [100, 835]],
-    [[100, 835], [95, 790], [100, 740], [108, 700], [122, 660], [150, 605], [182, 566],
+      [160, 895], [120, 854]],
+    // Pass 93: Brown's two cocking notches on the tumbler's lower left, one
+    // below dog a's eye and a small one above it, cut with sharp corners.
+    [[120, 854], [103, 864]],
+    [[103, 864], [97, 830], [95, 790], [99, 745], [102, 724]],
+    [[102, 724], [115, 713]],
+    [[115, 713], [107, 700], [122, 660], [150, 605], [182, 566],
       [222, 540], [290, 515]],
     [[290, 515], [318, 490], [340, 437], [358, 370], [362, 310], [345, 250], [308, 205],
       [255, 172], [185, 155]],
@@ -1020,8 +1025,9 @@ function coltCylinderRatchet(movement) {
   const lockPlateFront = hammerZ - hammerHalfDepth - hammerBevel - 0.25;
   const lockPlateBack = lockPlateFront - 0.08;
   const hammerShaftFront = hammerZ + hammerHalfDepth + hammerBevel + 0.03;
+  // Pass 93: the arbor is Brown's hatched circle, 26 px (0.286) in radius.
   const hammerShaft = cylinderAlongZ(
-    0.23,
+    0.285,
     hammerShaftFront - lockPlateBack,
     matte(PALETTE.muted, { metalness: 0.3, roughness: 0.5 }),
     36,
@@ -1066,9 +1072,29 @@ function coltCylinderRatchet(movement) {
   root.add(dog);
 
   const springBlockOutline = sourceRasterSpringBlock.map(rasterToModel);
+  // Pass 93: the block's outer edge is one ideal circular arc (fitted to
+  // Brown's ink within 1.4 px: centre (127.65, 199.67), radius 71.44 px),
+  // finely sampled and smooth-shaded, so it no longer shows facets.
+  const springBlockArc = (() => {
+    const [cx, cy, r] = [127.65, 199.67, 71.44];
+    const a0 = Math.atan2(131 - cy, 142 - cx);
+    const a1 = Math.atan2(222 - cy, 197 - cx);
+    return Array.from({ length: 65 }, (_, i) => {
+      const a = a0 + (a1 - a0) * i / 64;
+      return [cx + r * Math.cos(a), cy + r * Math.sin(a)];
+    });
+  })();
+  const springBlockRaw = plate(poly([...springBlockArc, [152, 209], [146, 205]].map(rasterToModel)),
+    lockPlateFront, dogHigh + 0.06);
+  springBlockRaw.deleteAttribute('normal');
+  springBlockRaw.deleteAttribute('uv');
+  const springBlockGeometry = mergeVertices(springBlockRaw, 1e-7);
+  springBlockRaw.dispose();
+  springBlockGeometry.clearGroups();
+  creaseIndexedNormals(springBlockGeometry, Math.PI / 5);
   const springAnchorBlock = new THREE.Mesh(
     // The block stands out from the lock plate behind to the dog's plane.
-    plate(poly(springBlockOutline), lockPlateFront, dogHigh + 0.06),
+    springBlockGeometry,
     frameMaterial,
   );
   springAnchorBlock.userData.role = 'fixed-spring-c-block-on-lock-plate';
@@ -1263,6 +1289,20 @@ function coltCylinderRatchet(movement) {
   mainspringFrame.rotation.z = mainspringAngle;
   mainspringFrame.userData.role = 'mainspring-root-frame';
   mainspringFrame.add(mainspring);
+  // Pass 93: the leaf ends in a small fixed clamp stud at its root (in the
+  // grip frame past Brown's crop), a round-ended block clasping the last
+  // 0.12 of the leaf, where the cantilever does not bend visibly.
+  const mainspringClampRaw = plate(poly(hullOfCircles([[[-0.1, 0], 0.18], [[0.04, 0], 0.18]])),
+    mainspringLow - 0.035, mainspringHigh + 0.035);
+  mainspringClampRaw.deleteAttribute('normal');
+  mainspringClampRaw.deleteAttribute('uv');
+  const mainspringClampGeometry = mergeVertices(mainspringClampRaw, 1e-7);
+  mainspringClampRaw.dispose();
+  mainspringClampGeometry.clearGroups();
+  creaseIndexedNormals(mainspringClampGeometry, Math.PI / 5);
+  const mainspringClamp = new THREE.Mesh(mainspringClampGeometry, frameMaterial);
+  mainspringClamp.userData.role = 'fixed-mainspring-root-clamp-stud';
+  mainspringFrame.add(mainspringClamp);
   root.add(mainspringFrame);
   let bentMainspring = null;
   const bendMainspring = (thetaTip) => {
@@ -1284,9 +1324,8 @@ function coltCylinderRatchet(movement) {
     mainspringGeometry.computeBoundingBox();
     mainspringGeometry.computeBoundingSphere();
   };
-  // Brown breaks the leaf off at the lower right; its root in the grip
-  // frame is not drawn, so the leaf ends cleanly there with no undrawn
-  // block or lock-plate arm (p62 support policy).
+  // Brown breaks the leaf off at the lower right; its root is the small
+  // clamp stud above, with no lock-plate arm.
 
   // The lock plate (frame side) behind the working parts, kept small and
   // out of sight: a boss round the tumbler arbor with two narrow arms (one
@@ -1305,7 +1344,7 @@ function coltCylinderRatchet(movement) {
       arm(arborLugCentre, blockCentre),
       arm(blockFoot, blockCentre),
     ),
-    [[circle([0, 0], 0.235, 72)]],
+    [[circle([0, 0], 0.29, 72)]],
   );
   const lockPlate = new THREE.Mesh(
     plate(lockPlateOutline, lockPlateBack, lockPlateFront),

@@ -11,9 +11,22 @@ export function correctMarineRotor(root,id){
   for(const rim of b.rims)replace(rim,ring(g.rimInnerRadiusSceneUnit,g.rimOuterRadiusSceneUnit,-.08,.08,128));
   replace(b.hub,horizontalRing(.204,g.hubRadiusSceneUnit,-.79,.79));
   for(const bearing of b.bearings)replace(bearing,ring(.204,.365,-.11,.11,96));
-  for(const a of b.spokeAssemblies)for(const spoke of a.spokes){
-   const low=g.hubRadiusSceneUnit-.025,high=g.paddleInnerRadiusSceneUnit+.12;
-   replace(spoke,new THREE.BoxGeometry(high-low,.105,.105));spoke.position.x=(low+high)/2;
+  // Brown's arms run on through the rim to about 11.1 of the official 13-unit
+  // tip radius, and each float is a board bolted alongside its arm, reaching
+  // in under the rim to about 7.25. The float's origin stays at the working
+  // face's centre (10–13), which the hydrodynamics use; its board is offset
+  // half a thickness so the arm shows beside it, as drawn. Brown's near rim
+  // runs unbroken across every float, so the boards lie between the two
+  // wheel frames: their ends stop inside the rims' thickness (z ±0.60) and
+  // half into the arms, not beyond them.
+  const unit=g.rimOuterRadiusSceneUnit/10,floatInner=7.25*unit,floatOuter=13*unit,floatBreadth=1.20;
+  for(const a of b.spokeAssemblies){
+   for(const spoke of a.spokes){
+    const low=g.hubRadiusSceneUnit-.025,high=11.1*unit;
+    replace(spoke,new THREE.BoxGeometry(high-low,.105,.105));spoke.position.x=(low+high)/2;
+   }
+   replace(a.paddle,new THREE.BoxGeometry(floatOuter-floatInner,g.paddleTangentialThicknessSceneUnit,floatBreadth)
+    .translate((floatInner+floatOuter)/2-a.paddle.position.x,g.paddleTangentialThicknessSceneUnit/2,0));
   }
   for(let i=0;i<2;i++){const z=-1.15-.55*i;b.bearings[i].position.z=z;b.baseRails[i].position.z=z;for(const leg of b.supportLegs.slice(i*2,i*2+2))leg.position.z=z;}
   b.shaftIndex.position.z=.825;

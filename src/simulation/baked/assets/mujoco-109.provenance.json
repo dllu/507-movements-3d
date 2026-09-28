@@ -4,19 +4,19 @@
   "format": "mujoco-loop",
   "version": 1,
   "asset": "src/simulation/baked/assets/mujoco-109.json.gz",
-  "bytes": 99417,
-  "assetSha256": "881992db82a1b6ea3dd5c8b32da4a24f60e0cd19b6f043ef7944f8d9618e9509",
+  "bytes": 28356,
+  "assetSha256": "0dc42be260ae5f5e2bc0939d74efab7316fe1fe0d2737863675a43d1388786d0",
   "motionSources": {
-    "src/simulation/mujoco-thread-cutting/physics.js": "c6eb01371698c176ae7d942efedc8edc9b052d2f61a99df52056453bb486bef3",
-    "src/simulation/mujoco-thread-cutting/profile.js": "9cabc80eef7fc8387e313fc2b97fc784be2642df8a86cbde8ebb677c4fbe94c5",
+    "src/simulation/mujoco-thread-cutting/physics.js": "8683e896192fd092af40a8c4ba4f72cf595ae9e1f52aed7a86dc2ebcfe8e5112",
+    "src/simulation/mujoco-thread-cutting/profile.js": "e8be23750a8e2429c73dfcc2dfacfd1c622b2701ebea3aed1f2a922446e0655c",
     "src/simulation/mujoco-thread-cutting/source.js": "4ab4c377e9797f92afef0e27445d87ad1eae73e3d659c952aa826bdaf547e75a",
     "src/simulation/mujoco-thread-cutting/stock.js": "df5513e4251a6ff5794f69ed8313a41463583ae54de48735f518ba36ed818c1f",
-    "src/simulation/mujoco-thread-cutting/visual.js": "e40de496961c5f0858b668368663e72a7fa87852c7e861487ca03f9427116781",
+    "src/simulation/mujoco-thread-cutting/visual.js": "ec9965977610a15800c25c148060c7139a28bfece83962250c17eb28fa1e322c",
     "src/simulation/mujoco-thread-cutting/workpiece.js": "329f96428299f2918248424a3b7d2f510add0b4fc90aae1a352f556b98b30737",
     "src/simulation/mujoco/simulation.js": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
   },
   "visualSourcesAtBake": {
-    "src/simulation/mujoco-thread-cutting/geometry.js": "672e8df7f3c17e945284cf06dcb7d132715fdef955bd4905952965a6777cff12"
+    "src/simulation/mujoco-thread-cutting/geometry.js": "fb4132cfd001718e589a1f8053518ae1e6d3f56b2c5e260703c782371a17b9ca"
   },
   "physicsXmlSha256": {
     "default": "dbd1e82e43bbdaf7c6d0e2b9c009cf9ad24df3e88c87ff64c6c1af4f6807d0b5"
@@ -33,9 +33,15 @@
     "velocitySamples": 2,
     "minLoopSeconds": 0,
     "cycle": "periodic",
-    "directory": "src/simulation/mujoco-thread-cutting"
+    "directory": "src/simulation/mujoco-thread-cutting",
+    "derivedMeshes": [
+      "parts.workpiece"
+    ],
+    "seamExclude": [
+      "parts.workpiece"
+    ]
   },
-  "cycleDesign": "The lathe drive reverses each period: the tool carriage feeds along the stock cutting the thread and returns, and the geometric cut follows it back; one 24 s period closes the loop.",
+  "cycleDesign": "The lathe drive reverses each period: the tool carriage descends along the stock cutting the thread, leaving the plain blank below it, and returns up its finished groove; a fresh blank replaces the screw at the top reversal. The route sync rebuilds the cut from the recorded work angle and loop time; one 24 s period closes the loop.",
   "variants": {
     "default": {
       "loop": {
@@ -75,5 +81,5 @@
   },
   "extras": [],
   "removed": [],
-  "bakeSeconds": 26.44635182714462
+  "bakeSeconds": 19.6596995306015
 }

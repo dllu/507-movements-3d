@@ -7,12 +7,14 @@ import {disposeObject3D} from '../src/simulation/dispose-model.js';
 const catalog=JSON.parse(fs.readFileSync('src/data/movements.json')).movements,turn=2*Math.PI;
 const model=()=>createAuthoredGearMovement(catalog[199]);
 const near=(a,b,t=1e-12)=>assert.ok(Math.abs(a-b)<t,`${a} != ${b}`);
-test('200 has one inclined driving bevel and two independent loose wheels on one spindle',()=>{
+test('200 has one inclined driving bevel and two wheels on a sleeve and the inner shaft',()=>{
  const m=model(),b=m.root.userData.blocks,u=m.root.userData;
  const gears=[];m.root.traverse(o=>{if(o.userData.toothMeshes)gears.push(o);});assert.equal(gears.length,3);assert.equal(u.transmission.rigidDriverSectionCount,1);
  assert.equal(b.driver.userData.teeth,24);assert.equal(b.upperOutput.userData.teeth,48);assert.equal(b.lowerOutput.userData.teeth,32);
- for(const gear of[b.upperOutput,b.lowerOutput]){assert.equal(gear.userData.looseOnCommonSpindle,true);assert.ok(gear.userData.boreRadius>.115);}
- assert.equal(b.commonSpindle.userData.stationary,true);assert.equal(u.sourceAnimation.available,false);assert.ok(u.geometry.inputAxis.y<0);assert.equal(u.hideGround,true);disposeObject3D(m.root);
+ assert.equal(b.upperOutput.userData.fastOnSleeve,true);assert.equal(b.lowerOutput.userData.fastOnInnerShaft,true);
+ assert.ok(b.upperOutput.userData.boreRadius>.2,'upper wheel bored for the sleeve');
+ for(const t of [0,1.3,2.9]){m.update(t);near(b.sleeve.userData.rotor.rotation.z,b.upperOutput.userData.rotor.rotation.z);near(b.commonSpindle.userData.rotor.rotation.z,b.lowerOutput.userData.rotor.rotation.z);}
+ assert.ok(b.commonSpindle.userData.stationary!==true);assert.equal(u.sourceAnimation.available,false);assert.ok(u.geometry.inputAxis.y<0);assert.equal(u.hideGround,true);disposeObject3D(m.root);
 });
 test('200 three pitch cones share an apex and common module on both contact generators',()=>{
  const m=model(),b=m.root.userData.blocks,g=m.root.userData.geometry;

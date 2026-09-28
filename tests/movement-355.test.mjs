@@ -407,3 +407,19 @@ test('movement 355 closes one precession circuit and leaves 364 authored', () =>
   disposeModel(model507.root);
   disposeModel(model.root);
 });
+
+test('movement 355 ring A is Brown\'s broad flat band clear of disk C (p93)', () => {
+  const model = createMovementModel(catalog.movements[354]);
+  const { ringBody } = model.root.userData.blocks;
+  const position = ringBody.geometry.attributes.position;
+  let inner = Infinity; let outer = 0; let low = Infinity; let high = -Infinity;
+  for (let i = 0; i < position.count; i += 1) {
+    const r = Math.hypot(position.getX(i), position.getZ(i));
+    if (r > 1) { inner = Math.min(inner, r); outer = Math.max(outer, r); }
+    low = Math.min(low, position.getY(i)); high = Math.max(high, position.getY(i));
+  }
+  assert.ok(outer - inner > 0.2, `radial band width ${outer - inner}`);
+  assert.ok(high - low < 0.08, `band depth ${high - low}`);
+  assert.ok(inner > model.root.userData.geometry.diskRadius + 0.02, 'inner edge clears the rim of disk C');
+  disposeModel(model.root);
+});

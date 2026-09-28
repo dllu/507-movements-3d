@@ -26,10 +26,11 @@ export function makeAlternatingPegPawlDrive(){
  const pegGeometry=disk(pinRadius,.055,.185),capGeometry=disk(pinRadius+.006,.185,.205),pinCenters=[];
  for(let i=0;i<24;i++){
   const center=motion.pinAt(i,0);pinCenters.push(center);
-  attach('wheelPin'+i,pegGeometry,'wheel',PALETTE.muted,[...center,0]);
+  attach('wheelPin'+i,pegGeometry,'wheel',PALETTE.frame,[...center,0]);
   // Brown draws each peg end-on as a small open circle. The cap is the
-  // peg's own steel: a white end would read as a hole on the cream page.
-  attach('wheelPinCap'+i,capGeometry,'wheel',PALETTE.muted,[...center,0]);
+  // peg's own steel: a white end would read as a hole on the cream page,
+  // and the darker frame steel reads as a pin even under full light.
+  attach('wheelPinCap'+i,capGeometry,'wheel',PALETTE.frame,[...center,0]);
  }
  attach('wheelAxle',disk(.137,-.32,.10),'fixed',PALETTE.muted);
  attach('wheelAxleCap',disk(.15,.10,.12),'fixed',PALETTE.muted);
@@ -59,8 +60,12 @@ export function makeAlternatingPegPawlDrive(){
   })(),profiles={};
  for(const key of ['upper','lower']){
   const L=p.lengths[key],center=[-L,0],
-   // The rod's rounded end lies wholly inside the hook's back wall.
-   body=clip.union(poly(hookOutline.map(v=>add(center,v))),capsule([0,0],[-L+.07,0],.019),poly(circle([0,0],.056))),
+   // Brown's shank is a flat bar about 0.6 of a peg diameter wide (half-width
+   // 0.029 against the peg's 0.049 radius). Its square end stops 0.075 short
+   // of the socket centre, so both corners (0.080 out) lie inside the head's
+   // back wall (0.058 to 0.090) and the head keeps its 0.09 rim.
+   shankHalf=.029,shankEnd=-L+.075,
+   body=clip.union(poly(hookOutline.map(v=>add(center,v))),poly([[0,-shankHalf],[0,shankHalf],[shankEnd,shankHalf],[shankEnd,-shankHalf]]),poly(circle([0,0],.056))),
    shape=clip.difference(body,poly(circle([0,0],.037))),
    mesh=attach(key+'Pawl',plate(shape,.12,.185),key,PALETTE.brass);
   const outline=mesh.geometry.parameters.shapes[0].getPoints().map(v=>v.toArray());if(outline[0][0]===outline.at(-1)[0]&&outline[0][1]===outline.at(-1)[1])outline.pop();profiles[key]=outline;

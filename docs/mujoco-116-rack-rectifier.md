@@ -207,3 +207,29 @@ TMPDIR=/dev/shm PROBE_PREFIX=/dev/shm/116-new-clearances node scripts/audit-rack
 TMPDIR=/dev/shm node --test tests/mujoco-rack-rectifier.test.mjs tests/shifted-involute.test.mjs tests/mujoco-runtime.test.mjs tests/engine.test.mjs
 TMPDIR=/dev/shm INTEGRATED=1 PROBE_PREFIX=/dev/shm/116-new-views node scripts/capture-rack-rectifier-candidate.mjs
 ```
+
+## Pass 93 revision: crescent pawls and turned stems
+
+Each pawl is now Brown's broad crescent leaf, one flat plate made of these
+parts:
+
+- a bored eye boss, 0.036 in radius;
+- a convex outer arc, tangent to the boss and running to the heel;
+- a concave inner arc, tangent to the boss at −60° and meeting the nose at
+  0.295 from the shaft;
+- a straight nose underside, cut at the tooth's 35° hook angle and joined
+  to the inner arc by a small fillet.
+
+The working face and the claw are unchanged, so the claw still seats in the
+root. A 2D clicking sweep shows that only the claw tip rides the rising back
+(lift 0 to 0.376 radian); the body never touches the ratchet.
+
+Each end stem is now one turned solid:
+
+- The left rod (radius 0.185) flares into the ring's end face.
+- The right stem keeps Brown's collar and bevel before its 0.10 rod.
+
+This replaces the stub plate plus a run-on box. The output shaft is now one
+piece (it had a separate tail). All parts are shadowed. Two native cycles
+give penetration 0.145 pixel (was 0.140) and seated lift 0.0014 radian. The
+bake was regenerated with the same 375-sample loop.

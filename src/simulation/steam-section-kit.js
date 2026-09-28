@@ -199,7 +199,10 @@ export function partPlate(multi, z0, z1, material, role) {
   return mesh;
 }
 
-export const STEAM_COLORS = Object.freeze({ live: 0xf7f4ee, exhaust: 0xc9d4d6 });
+// Pass 93: live steam is a faint warm tint clearly off the page (luminance
+// < 0.85), so it no longer reads as a hole or missing face; exhaust keeps
+// its blue-grey.
+export const STEAM_COLORS = Object.freeze({ live: 0xdcc9a6, exhaust: 0xc9d4d6 });
 export const STEAM_OPACITY = Object.freeze({ live: 0.62, exhaust: 0.2 });
 
 export function steamMaterial(kind = 'live') {

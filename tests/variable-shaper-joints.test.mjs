@@ -7,10 +7,17 @@ import {disposeObject3D} from '../src/simulation/dispose-model.js';
 test('178 rod has through bores, fully engaged pins and retaining heads',()=>{
  const m=createAuthoredVariableCrankMovement({id:178}),b=m.root.userData.blocks;
  try{
-  // Brown breaks the rod off before its output end; the whole rod carries its
-  // output eye on the tool slide's pin beyond the drawing.
-  assert.ok(b.connectingRodOutputEye.parent,'output eye stays on the whole rod');
-  for(const[eye,pin,head]of [[b.connectingRodSliderEye,b.sliderFrontBoss,b.wristRetainer],[b.connectingRodOutputEye,b.outputPin,b.outputRetainer]]){
+  // Brown breaks the rod off before its output end. p93-fc removed the rod's
+  // far eye because the tool slide and its pin are not shown (presentation),
+  // so the eye hung empty; the rod still ends plainly past the plate and its
+  // axis still passes through the hidden slide pin in every pose.
+  assert.equal(b.connectingRodOutputEye.parent,null,'no empty eye at the unshown slide');
+  for(let i=0;i<=64;i++){
+   m.update(m.root.userData.geometry.cyclePeriod*i/64);m.root.updateMatrixWorld(true);
+   const end=b.connectingRod.localToWorld(b.connectingRodOutputEye.position.clone()),pc=b.outputPin.getWorldPosition(new THREE.Vector3());
+   assert.ok(Math.hypot(pc.x-end.x,pc.y-end.y)<1e-9,'rod axis still meets the hidden slide pin');
+  }
+  for(const[eye,pin,head]of [[b.connectingRodSliderEye,b.sliderFrontBoss,b.wristRetainer]]){
    const surface=solidSurface(eye.geometry);
    assert.equal(surface.inside(new THREE.Vector3(0,0,0)),false,'pin bore is open');
    assert.equal(surface.inside(new THREE.Vector3(.35,0,0)),true,'eye has a solid annulus');

@@ -3,7 +3,7 @@ import test from 'node:test';
 import * as THREE from 'three';
 import {createAuthoredReedEscapementMovement as make} from '../src/simulation/authored-reed-escapements.js';
 import {reed396ContactBake as bake} from '../src/simulation/baked/reed-396-contact.js';
-import {reed396Profiles,reed396Pose,reed396Obstacles,reed396Contact} from '../src/simulation/reed-396-contact.js';
+import {reed396,reed396Profiles,reed396Pose,reed396Obstacles,reed396Contact} from '../src/simulation/reed-396-contact.js';
 import {solidSurface,surfacePoints} from './helpers/solid-surface.mjs';
 function audit(){const cache=new Map();let minimum=Infinity,queries=0;const get=m=>{if(!cache.has(m.geometry))cache.set(m.geometry,{points:surfacePoints(m.geometry),solid:solidSurface(m.geometry)});return cache.get(m.geometry)};const one=(a,b)=>{const mat=b.matrixWorld.clone().invert().multiply(a.matrixWorld);let min=Infinity;for(const p of get(a).points){const gap=get(b).solid.signedDistance(p.clone().applyMatrix4(mat),.15);queries++;min=Math.min(min,gap)}minimum=Math.min(minimum,min);return min};return{both:(a,b)=>Math.min(one(a,b),one(b,a)),one,report:()=>({minimum,queries})};}
 test('396 actual pallet solids, necks and bored journals clear at shifted poses and a later tooth cycle',()=>{
@@ -15,11 +15,12 @@ test('396 actual pallet solids, necks and bored journals clear at shifted poses 
 test('396 interpolation stays in the finite admissible region between bake knots',()=>{
  const m=make({id:396}),d=m.root.userData,p=reed396Profiles();let min=Infinity,maxJump=0;
  for(let i=0;i<bake.samples.length-1;i++){for(const offset of[.211,.739]){const t=bake.times[i]+offset*(bake.times[i+1]-bake.times[i]),s=d.stateAtTime(t),c=reed396Contact(s.wheelAngle,reed396Obstacles(s,p.pallets),p.teeth);min=Math.min(min,c.gap);assert.ok(c.gap> -2e-6,`${t}: ${c.gap}`);assert.ok(s.wheelAngularSpeed<=1e-10);}maxJump=Math.max(maxJump,Math.abs(bake.samples[i+1][0]-bake.samples[i][0]));}
- assert.ok(maxJump<.001);console.log({offKnotMinimum:min,maxKnotStep:maxJump});
+ // Knots are 1/1024 s apart; the unloaded wheel drops at most freeDropSpeed per unit time.
+ assert.ok(maxJump<=reed396.freeDropSpeed*reed396.period/4096+1e-12,`${maxJump}`);console.log({offKnotMinimum:min,maxKnotStep:maxJump});
 });
 test('396 actual finite contact normals resist the wheel and assist G and J; F remains explicitly unqualified as a pure detent',()=>{
  const p=reed396Profiles(),m=make({id:396}),d=m.root.userData,stats={G:{count:0,minWheel:Infinity,minPower:Infinity},J:{count:0,minWheel:Infinity,minPower:Infinity}};
- for(let i=1;i<bake.samples.length-1;i++){const t=bake.times[i],s=d.stateAtTime(t);if(!s.impulseActive)continue;const c=reed396Contact(s.wheelAngle,reed396Obstacles(s,p.pallets),p.teeth),[x,y]=c.point,[nx,ny]=c.normal,name=s.finiteContactPallet,center=name==='J'?-2.34:2.18,torque=-((x-center)*ny-y*nx),speed=name==='J'?s.balanceAngularSpeed:s.leverAngularSpeed,st=stats[name];assert.ok(Math.abs(c.gap)<2e-7);assert.ok(x*ny-y*nx>.5);assert.ok(torque*speed>=-1e-10);st.count++;st.minWheel=Math.min(st.minWheel,x*ny-y*nx);st.minPower=Math.min(st.minPower,torque*speed);}
+ for(let i=1;i<bake.samples.length-1;i++){const t=bake.times[i],s=d.stateAtTime(t);if(!s.impulseActive)continue;const c=reed396Contact(s.wheelAngle,reed396Obstacles(s,p.pallets),p.teeth),[x,y]=c.point,[nx,ny]=c.normal,name=s.finiteContactPallet,center=name==='J'?reed396.balanceCenter:reed396.leverPivot,torque=-((x-center)*ny-y*nx),speed=name==='J'?s.balanceAngularSpeed:s.leverAngularSpeed,st=stats[name];assert.ok(Math.abs(c.gap)<2e-7);assert.ok(x*ny-y*nx>.5);assert.ok(torque*speed>=-1e-10);st.count++;st.minWheel=Math.min(st.minWheel,x*ny-y*nx);st.minPower=Math.min(st.minPower,torque*speed);}
  assert.ok(stats.G.count>50);assert.ok(stats.J.count>=5);assert.equal(d.dynamics.detentOnlyFQualified,false);assert.equal(d.dynamics.forkContactSolved,false);assert.match(d.reconstructionNote,/detent-only.*unresolved/);console.log(stats);
 });
 test('396 the anchor and pallet j are single plates in the wheel plane; webs and spokes join their rims',()=>{
@@ -49,4 +50,20 @@ test('396 one-tooth indexing, finite contact metadata and retained buffers survi
  for(const [o,array]of objects){assert.equal(o.geometry.attributes.position.array,array);assert.equal(o.castShadow,true);for(const mat of [].concat(o.material))assert.equal(mat.fog,false);}
  assert.equal(d.hideGround,true);assert.equal(d.minimumDisplayCycleSeconds,6);assert.ok(m.cameraDirection.z>15);assert.equal(d.workingParts396.webs.length,0);
  for(const t of [0,4,8]){const l=d.stateAtTime(t-1e-9),r=d.stateAtTime(t+1e-9);assert.ok(Math.abs(l.wheelAngle-r.wheelAngle)<1e-10);}
+});
+test('396 keeps Brown’s proportions: balance staff 1.8 tip radii out, rim 1.6 tip radii, slender wheel rim and crossings',()=>{
+ const m=make({id:396}),d=m.root.userData,g=d.geometry,b=d.blocks;
+ const tip=g.wheelToothTipRadius,distance=-g.balanceCenter.x;
+ // Plate: staff b 166 px from staff a, balance rim 149 px, tooth tips 91 px.
+ assert.ok(Math.abs(distance/tip-166/91)<.03,`staff spacing ${distance/tip}`);
+ const rim=b.balance.userData.rim.geometry;rim.computeBoundingBox();const rimOuter=rim.boundingBox.max.x;
+ assert.ok(Math.abs(rimOuter/tip-149/91)<.03,`rim ${rimOuter/tip}`);
+ // The rim clears escape-wheel staff a and its boss.
+ assert.ok(distance-rimOuter>.26,`rim clears staff a by ${distance-rimOuter}`);
+ // The wheel's plain rim is about one tooth deep.
+ assert.ok(g.wheelRootRadius-g.wheelInnerRadius<=tip-g.wheelRootRadius,`rim ${g.wheelRootRadius-g.wheelInnerRadius}`);
+ // Crossing arms: narrower than 0.3 anywhere outside the hub.
+ const plate=b.escapeWheel.userData.toothedRim.geometry.userData.plate;assert.equal(plate.polygons.length,1);
+ for(const radius of [.6,.9,1.2]){let inside=0,count=0;for(let k=0;k<3600;k++){const a=2*Math.PI*k/3600,p=[radius*Math.cos(a),radius*Math.sin(a)];const hit=plate.polygons[0].reduce((acc,ring,ri)=>{let c=false;for(let i=0,j=ring.length-1;i<ring.length;j=i++){const [xi,yi]=ring[i],[xj,yj]=ring[j];if((yi>p[1])!==(yj>p[1])&&p[0]<(xj-xi)*(p[1]-yi)/(yj-yi)+xi)c=!c;}return ri===0?c:acc&&!c;},false);if(hit)inside++;count++;}
+  const arcWidth=2*Math.PI*radius*inside/count/3;assert.ok(arcWidth<.3,`crossing arm ${arcWidth} at r ${radius}`);}
 });

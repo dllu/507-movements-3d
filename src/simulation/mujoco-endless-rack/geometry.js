@@ -15,13 +15,18 @@ export function makeEndlessRackGeometry(options={}){
  const holes=[[[158.001129251,300.20837447],.06475987],[[159.500196849,335.53392572],.06553978],[[373.170994793,305.030245396],.06628982],[[371.315153254,334.620062139],.06049939]];
  const holesLocal=holes.map(([p,r])=>{const q=local(p);q[0]-=f.rackOffset;return poly(circle(q,r,64));});
  add('rack',plate(clip.difference(f.body,...holesLocal),-.12,.12),'rack',PALETTE.driven);
- // The hidden shank has a flattened rear mounting seat. Its flat face meets
- // the rack rear with finite area; the two solids have disjoint interiors.
+ // Brown draws only the rod ends, running out of the rack's two ends. Each
+ // end rod has a flattened rear mounting seat that runs in under the rack's
+ // end for 0.35 (its flat face meets the rack rear with finite area; the
+ // solids have disjoint interiors); no rod runs along the rack's back (p93).
  const rodRadius=.145,rodZ=-.24,cut=Math.asin((-.12-rodZ)/rodRadius),section=new THREE.Shape();
  section.absarc(-.015,rodZ,rodRadius,Math.PI-cut,2*Math.PI+cut,false);section.closePath();
- const rod=new THREE.ExtrudeGeometry(section,{depth:5.06,bevelEnabled:false,curveSegments:64});
- rod.applyMatrix4(new THREE.Matrix4().makeBasis(new THREE.Vector3(0,1,0),new THREE.Vector3(0,0,1),new THREE.Vector3(1,0,0)));
- rod.translate((261-axis[0])/100-2.53-f.rackOffset,0,0);add('rod',rod,'rack',PALETTE.driven);
+ const rodStart=(261-axis[0])/100-2.53-f.rackOffset,rodEnd=rodStart+5.06,rackEnd=1.677,seat=.35;
+ for(const [name,x0,x1]of [['rod',rodStart,-rackEnd+seat],['rodRight',rackEnd-seat,rodEnd]]){
+  const rod=new THREE.ExtrudeGeometry(section,{depth:x1-x0,bevelEnabled:false,curveSegments:64});
+  rod.applyMatrix4(new THREE.Matrix4().makeBasis(new THREE.Vector3(0,1,0),new THREE.Vector3(0,0,1),new THREE.Vector3(1,0,0)));
+  rod.translate(x0,0,0);add(name,rod,'rack',PALETTE.driven);
+ }
  const guide=clip.difference(poly([[241.7482,168.26],[297.3911,168.26],[297.3911,440.04],[241.7482,440.04]].map(local)),capsule([0,-f.H],[0,f.H],.1074545,64));
  add('guide',plate(guide,.24,.40),'fixed',PALETTE.frame);
  f.journalRadius=.105;add('journal',ring(.0908,f.journalRadius,.18,.46,96),'carrier',PALETTE.brass);
@@ -40,7 +45,7 @@ export function makeEndlessRackGeometry(options={}){
  // Brown draws the slotted guide as a solid bar in front of the rack, with the
  // pinion shaft showing in its slot; the outline-only section is optional.
  setSectionView(false);
- markShadows(root);root.updateMatrixWorld(true);const bounds=new THREE.Box3();for(const x of [-f.L-f.H,f.L+f.H])for(const y of [-f.H,f.H]){blocks.rack.position.x=x;blocks.pinion.position.y=blocks.carrier.position.y=y;root.updateMatrixWorld(true);for(const [n,mesh]of Object.entries(parts))if(!['rod','topBeam','bottomBeam'].includes(n))bounds.union(new THREE.Box3().setFromObject(mesh,true));}for(const [x,y]of [[65,120],[467,484]]){const [wx,wy]=local([x,y]);bounds.expandByPoint(new THREE.Vector3(wx,wy,0));}blocks.rack.position.x=f.rackOffset;blocks.pinion.position.y=blocks.carrier.position.y=f.H;root.updateMatrixWorld(true);bounds.expandByScalar(.05);root.userData.sampledMotionBounds={min:bounds.min.toArray(),max:bounds.max.toArray()};
+ markShadows(root);root.updateMatrixWorld(true);const bounds=new THREE.Box3();for(const x of [-f.L-f.H,f.L+f.H])for(const y of [-f.H,f.H]){blocks.rack.position.x=x;blocks.pinion.position.y=blocks.carrier.position.y=y;root.updateMatrixWorld(true);for(const [n,mesh]of Object.entries(parts))if(!['rod','rodRight','topBeam','bottomBeam'].includes(n))bounds.union(new THREE.Box3().setFromObject(mesh,true));}for(const [x,y]of [[65,120],[467,484]]){const [wx,wy]=local([x,y]);bounds.expandByPoint(new THREE.Vector3(wx,wy,0));}blocks.rack.position.x=f.rackOffset;blocks.pinion.position.y=blocks.carrier.position.y=f.H;root.updateMatrixWorld(true);bounds.expandByScalar(.05);root.userData.sampledMotionBounds={min:bounds.min.toArray(),max:bounds.max.toArray()};
  // Brown draws the whole toothed rack body; only its end rods and the beams
  // are broken off at the plate edges. Fit the rack body's full sweep (the
  // rods are excluded above) so it never leaves the frame.

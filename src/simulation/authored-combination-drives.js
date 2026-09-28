@@ -448,22 +448,56 @@ function combinationWeightDrive(movement) {
   base.position.set(.625, -3.15, -.2);
   base.userData.role = 'fixed-base-rail';
   const rightPost = new THREE.Mesh(
-    new THREE.BoxGeometry(0.22, 5.8, 0.8),
+    new THREE.BoxGeometry(0.22, 5.8, 1.3),
     frameMaterial,
   );
-  rightPost.position.set(2.17, -0.22, -0.4);
+  // The wall runs forward to just behind arm A's plane, so G's bracket is a
+  // short flange-and-eye casting rather than a long stand-off.
+  rightPost.position.set(2.17, -0.22, -0.15);
   rightPost.userData.role = 'fixed-right-upright';
-  const topBearingArm = makeDynamicLink({
-    color: PALETTE.frame,
-    depth: 0.34,
-    jointRadius: 0.001,
-    thickness: 0.18,
-  });
-  topBearingArm.userData.setEndpoints(
-    new THREE.Vector3(fixedPivotG.x, fixedPivotG.y, -0.28),
-    new THREE.Vector3(2.17, fixedPivotG.y, -0.28),
+  // Brown's wall bracket for G: a small flange on the wall and one lug ending
+  // in a round eye concentric with G, extruded from inside the wall up to
+  // arm A's rear face, so G itself is only a short pin through eye and arm.
+  const gEyeRadius = 0.27;
+  const gLugHalf = 0.17;
+  const gLugAngle = Math.asin(gLugHalf / gEyeRadius);
+  const gFlangeLeft = 1.98;
+  const gFlangeRight = 2.2;
+  const gFlangeHalf = 0.4;
+  const gBracketShape = new THREE.Shape();
+  gBracketShape.moveTo(
+    fixedPivotG.x + gEyeRadius * Math.cos(gLugAngle),
+    fixedPivotG.y + gLugHalf,
   );
-  topBearingArm.userData.role = 'fixed-top-rocker-bearing-arm';
+  gBracketShape.lineTo(gFlangeLeft, fixedPivotG.y + gLugHalf);
+  gBracketShape.lineTo(gFlangeLeft, fixedPivotG.y + gFlangeHalf);
+  gBracketShape.lineTo(gFlangeRight, fixedPivotG.y + gFlangeHalf);
+  gBracketShape.lineTo(gFlangeRight, fixedPivotG.y - gFlangeHalf);
+  gBracketShape.lineTo(gFlangeLeft, fixedPivotG.y - gFlangeHalf);
+  gBracketShape.lineTo(gFlangeLeft, fixedPivotG.y - gLugHalf);
+  gBracketShape.lineTo(
+    fixedPivotG.x + gEyeRadius * Math.cos(gLugAngle),
+    fixedPivotG.y - gLugHalf,
+  );
+  gBracketShape.absarc(
+    fixedPivotG.x,
+    fixedPivotG.y,
+    gEyeRadius,
+    -gLugAngle,
+    gLugAngle - 2 * Math.PI,
+    true,
+  );
+  const gBracketRearZ = 0.3;
+  const gBracketFrontZ = 0.62;
+  const topBearingArm = new THREE.Mesh(
+    new THREE.ExtrudeGeometry(gBracketShape, {
+      bevelEnabled: false,
+      curveSegments: 48,
+      depth: gBracketFrontZ - gBracketRearZ,
+    }).translate(0, 0, gBracketRearZ),
+    frameMaterial,
+  );
+  topBearingArm.userData.role = 'fixed-wall-bracket-eye-carrying-pivot-G';
   // The arm stops at the rear face of B's drum instead of entering it.
   const diskBearingArm = makeDynamicLink({
     color: PALETTE.frame,
@@ -476,6 +510,10 @@ function combinationWeightDrive(movement) {
     new THREE.Vector3(2.17, diskCenter.y, -0.62),
   );
   diskBearingArm.userData.role = 'fixed-disk-bearing-arm';
+  // The link's 0.001 joint spheres are degenerate; drop them.
+  for (const child of [...diskBearingArm.children]) {
+    if (child.geometry?.type === 'SphereGeometry') child.removeFromParent();
+  }
   frame.add(base, rightPost, topBearingArm, diskBearingArm);
 
   const diskAssembly = new THREE.Group();
@@ -624,8 +662,9 @@ function combinationWeightDrive(movement) {
   });
   root.add(cord);
 
-  const fixedPivot = cylinderAlongZ(0.18, 1.14, darkMaterial, 40);
-  fixedPivot.position.set(fixedPivotG.x, fixedPivotG.y, 0.27);
+  // Short pin: from inside the bracket eye through A's eye, 0.05 proud.
+  const fixedPivot = cylinderAlongZ(0.18, 0.42, darkMaterial, 40);
+  fixedPivot.position.set(fixedPivotG.x, fixedPivotG.y, 0.66);
   fixedPivot.userData.role = 'fixed-rocker-pivot-G';
   root.add(fixedPivot);
   // Seated on the crank arm's front face, never at the cord's depth.

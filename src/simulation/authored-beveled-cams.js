@@ -24,15 +24,6 @@ function centeredExtrusion(shape, depth, bevel = 0.008) {
   return geometry;
 }
 
-function annularShape(innerRadius, outerRadius) {
-  const shape = new THREE.Shape();
-  shape.absarc(0, 0, outerRadius, 0, FULL_TURN, false);
-  const hole = new THREE.Path();
-  hole.absarc(0, 0, innerRadius, 0, FULL_TURN, true);
-  shape.holes.push(hole);
-  return shape;
-}
-
 function cylinderAlongX(radius, length, material, segments = 40) {
   const cylinder = new THREE.Mesh(
     new THREE.CylinderGeometry(radius, radius, length, segments),
@@ -47,24 +38,6 @@ function cylinderAlongY(radius, length, material, segments = 32) {
     new THREE.CylinderGeometry(radius, radius, length, segments),
     material,
   );
-}
-
-function sleeveAlongDirection({
-  direction,
-  innerRadius,
-  length,
-  material,
-  outerRadius,
-  role,
-}) {
-  const sleeve = new THREE.Mesh(
-    centeredExtrusion(annularShape(innerRadius, outerRadius), length),
-    material,
-  );
-  sleeve.quaternion.setFromUnitVectors(Z_AXIS, direction.clone().normalize());
-  sleeve.userData.innerRadius = innerRadius;
-  sleeve.userData.role = role;
-  return sleeve;
 }
 
 // Brown's plate 272 shows a thick disk on a horizontal shaft. Its front face
@@ -212,23 +185,36 @@ function beveledDiskInclinedFollower(movement) {
     slope: bevelSlope,
   };
   const camSegments = 128;
-  const shaftRadius = 0.13;
+  // Brown's shaft is about 22 px across on a 280 px disk; his collar is
+  // about 65 px across and 18 px long.
+  const shaftRadius = 0.16;
   const shaftLength = 5.7;
-  const hubRadius = 0.34;
-  const hubLength = 0.36;
+  const hubRadius = 0.46;
+  const hubLength = 0.3;
   // The rod's end is a shallow dome (a cap of a 0.6 sphere across the
   // rod's 0.15 radius, 0.019 high), so it reads as Brown's square end yet
   // bears smoothly on the chamfer as its section tilts with the wave.
+  // Brown's output rod is a broad flat bar (about 26 px across in the plate,
+  // 0.38 of the disk's thickness). Its end is crowned: the same 0.6 sphere
+  // clipped to the bar's section, so the working contact is unchanged. The
+  // bar is 0.30 deep so the contact, which wanders up to 0.127 across the
+  // bar's depth as the wave passes, stays on its end.
   const tipSphereRadius = 0.6;
-  const rodRadius = 0.15;
-  const tipCapHalfAngle = Math.asin(rodRadius / tipSphereRadius);
+  const rodWidth = 0.4;
+  const rodDepth = 0.3;
+  const rodRadius = rodDepth / 2;
+  const tipCapHalfAngle = Math.asin(Math.hypot(rodWidth, rodDepth) / 2 / tipSphereRadius);
   const tipCapBaseOffset = tipSphereRadius * Math.cos(tipCapHalfAngle);
   const rodLength = 4.05;
   const translationIndexDistance = 3.15;
   const guideRunningClearance = 0.025;
   const guideInnerRadius = rodRadius + guideRunningClearance;
-  const guideOuterRadius = 0.34;
-  const guideLength = 0.42;
+  // Square guide blocks: a rectangular frame round the bar, its hatched
+  // blocks about 0.2 thick above and below the bar as Brown draws them.
+  const guideWall = 0.2;
+  const guideSideWall = 0.08;
+  const guideOuterRadius = rodWidth / 2 + guideRunningClearance + guideWall;
+  const guideLength = 0.38;
   // Guide stations measured along the rod from the tip-dome centre (1.34
   // and 2.71 from the rod's end, as drawn).
   const guideDistances = [0.74, 2.11];
@@ -457,13 +443,6 @@ function beveledDiskInclinedFollower(movement) {
   hub.position.x = camBackX + hubLength / 2 - 0.02;
   hub.userData.role = 'cam-clamping-hub-on-horizontal-shaft';
   camRotor.add(hub);
-  // A boss on the face side too, so the shaft passes through a hub on
-  // both faces of the plate.
-  const frontHubLength = 0.3;
-  const frontHub = cylinderAlongX(hubRadius, frontHubLength + 0.04, darkMaterial, 48);
-  frontHub.position.x = faceProfile.centerX - frontHubLength / 2 + 0.02;
-  frontHub.userData.role = 'cam-front-hub-on-horizontal-shaft';
-  camRotor.add(frontHub);
   const rotationIndex = new THREE.Mesh(
     new THREE.SphereGeometry(0.105, 24, 16),
     whiteMaterial,
@@ -481,36 +460,30 @@ function beveledDiskInclinedFollower(movement) {
   follower.userData.role = 'inclined-guided-output-rod-and-rounded-shoe';
   follower.quaternion.setFromUnitVectors(Y_AXIS, followerDirection);
   root.add(follower);
-  // The rod's end: a shallow dome in the rod's own material (Brown draws a
-  // plain square end), centred on the follower origin, facing the disk.
-  const tipCollar = 0.02;
-  const tipProfile = [new THREE.Vector2(0, -tipSphereRadius)];
-  for (let step = 1; step <= 8; step += 1) {
-    const angle = tipCapHalfAngle * step / 8;
-    tipProfile.push(new THREE.Vector2(tipSphereRadius * Math.sin(angle),
-      -tipSphereRadius * Math.cos(angle)));
+  // The bar and its crowned end are one solid, centred on the follower
+  // origin (the crown sphere's centre): a segmented box whose lower face is
+  // pushed onto the sphere.
+  const barTop = rodLength - tipCapBaseOffset + 0.02;
+  const barGeometry = new THREE.BoxGeometry(rodWidth, 1, rodDepth, 16, 1, 12);
+  {
+    const position = barGeometry.attributes.position;
+    for (let i = 0; i < position.count; i += 1) {
+      const x = position.getX(i);
+      const z = position.getZ(i);
+      position.setY(i, position.getY(i) > 0
+        ? barTop
+        : -Math.sqrt(tipSphereRadius ** 2 - x * x - z * z));
+    }
+    barGeometry.computeVertexNormals();
   }
-  tipProfile.push(
-    new THREE.Vector2(rodRadius, -tipCapBaseOffset + tipCollar),
-    new THREE.Vector2(0, -tipCapBaseOffset + tipCollar),
-  );
-  const contactShoe = new THREE.Mesh(
-    creaseIndexedNormals(new THREE.LatheGeometry(tipProfile, 36), Math.PI / 6),
-    drivenMaterial,
-  );
-  contactShoe.userData.role = 'domed-end-of-rod-bearing-on-disk-chamfer';
+  const contactShoe = new THREE.Mesh(barGeometry, drivenMaterial);
+  contactShoe.userData.role = 'flat-output-bar-with-crowned-end-bearing-on-disk-chamfer';
+  contactShoe.userData.width = rodWidth;
+  contactShoe.userData.depth = rodDepth;
   follower.add(contactShoe);
-  const followerRod = cylinderAlongY(
-    rodRadius,
-    rodLength,
-    drivenMaterial,
-    36,
-  );
-  followerRod.position.y = rodLength / 2 - tipCapBaseOffset + tipCollar;
-  followerRod.userData.role = 'straight-output-rod-sliding-only-along-its-axis';
-  follower.add(followerRod);
+  const followerRod = contactShoe;
   const translationIndex = cylinderAlongY(
-    rodRadius + 0.022,
+    rodRadius + 0.022 + rodWidth / 2,
     0.1,
     whiteMaterial,
     36,
@@ -519,15 +492,37 @@ function beveledDiskInclinedFollower(movement) {
   translationIndex.userData.role = 'white-index-on-translating-rod';
   follower.add(translationIndex);
 
+  const guideSection = new THREE.Shape();
+  {
+    const ow = rodWidth / 2 + guideRunningClearance + guideWall;
+    const od = rodDepth / 2 + guideRunningClearance + guideSideWall;
+    guideSection.moveTo(-ow, -od);
+    guideSection.lineTo(ow, -od);
+    guideSection.lineTo(ow, od);
+    guideSection.lineTo(-ow, od);
+    guideSection.closePath();
+    const iw = rodWidth / 2 + guideRunningClearance;
+    const id = rodDepth / 2 + guideRunningClearance;
+    const bore = new THREE.Path();
+    bore.moveTo(-iw, -id);
+    bore.lineTo(-iw, id);
+    bore.lineTo(iw, id);
+    bore.lineTo(iw, -id);
+    bore.closePath();
+    guideSection.holes.push(bore);
+  }
+  const guideWidthAxis = new THREE.Vector3().crossVectors(Z_AXIS, followerDirection).normalize();
+  const guideQuaternion = new THREE.Quaternion().setFromRotationMatrix(
+    new THREE.Matrix4().makeBasis(guideWidthAxis, Z_AXIS, followerDirection),
+  );
   const followerGuides = guideDistances.map((distance, index) => {
-    const guide = sleeveAlongDirection({
-      direction: followerDirection,
-      innerRadius: guideInnerRadius,
-      length: guideLength,
-      material: frameMaterial,
-      outerRadius: guideOuterRadius,
-      role: 'fixed-split-bearing-for-inclined-output-rod',
-    });
+    const guide = new THREE.Mesh(
+      centeredExtrusion(guideSection, guideLength, 0.01),
+      frameMaterial,
+    );
+    guide.quaternion.copy(guideQuaternion);
+    guide.userData.innerRadius = guideInnerRadius;
+    guide.userData.role = 'fixed-square-guide-block-for-inclined-output-bar';
     guide.position.copy(sourceShoeCenter).addScaledVector(
       followerDirection,
       distance,
@@ -558,7 +553,6 @@ function beveledDiskInclinedFollower(movement) {
     followerGuides,
     followerRod,
     hub,
-    frontHub,
     rotationIndex,
     shaft,
     translationIndex,
@@ -587,8 +581,10 @@ function beveledDiskInclinedFollower(movement) {
     hubRadius,
     outputStroke,
     faceProfile: { ...faceProfile },
+    rodDepth,
     rodLength,
     rodRadius,
+    rodWidth,
     shaftLength,
     shaftRadius,
     chamferLength,

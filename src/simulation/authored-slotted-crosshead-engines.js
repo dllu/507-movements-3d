@@ -177,7 +177,7 @@ function makeFlywheelCrank({
   const rotor = new THREE.Group();
   rotor.userData.axis = Z_AXIS.clone();
   rotor.userData.role =
-    'one-rigid-six-spoke-flywheel-crank-and-wrist-journal';
+    'one-rigid-four-spoke-flywheel-crank-and-wrist-journal';
 
   const rim = new THREE.Mesh(
     annulusGeometry(flywheelOuterRadius, flywheelInnerRadius, flywheelDepth),
@@ -190,8 +190,11 @@ function makeFlywheelCrank({
   const spokeLength = flywheelInnerRadius - spokeInnerRadius + 0.05;
   const spokeCenterRadius = (flywheelInnerRadius + spokeInnerRadius) / 2;
   const spokes = [];
-  for (let index = 0; index < 6; index += 1) {
-    const angle = index * FULL_TURN / 6;
+  // Brown shows only the horizontal spokes beside the frame (the vertical
+  // pair is hidden behind the pediment and the piston rod); the diagonals
+  // inside the frame opening are the fixed braces, not spokes.
+  for (let index = 0; index < 4; index += 1) {
+    const angle = index * FULL_TURN / 4;
     const spoke = new THREE.Mesh(
       new THREE.BoxGeometry(
         spokeLength,
@@ -206,7 +209,7 @@ function makeFlywheelCrank({
       flywheelPlaneZ,
     );
     spoke.rotation.z = angle;
-    spoke.userData.role = `flywheel-rigid-spoke-${index + 1}-of-6`;
+    spoke.userData.role = `flywheel-rigid-spoke-${index + 1}-of-4`;
     spokes.push(spoke);
   }
 
@@ -800,10 +803,14 @@ function slottedCrossheadPillarEngine(movement) {
     };
   };
 
+  const plateStartCrankAngle = Math.PI;
   const stateAtTime = (time) => {
     const phase = positiveModulo(time, cyclePeriod) / cyclePeriod;
+    // Brown's plate starts with the wrist pin LEFT of the shaft (the shaft
+    // is the right circle in slot A); the official animation starts it on
+    // the right, so the plate pose is the animation's half-turn.
     const state = stateAtCrankTravel(
-      crankAngularSpeed * time,
+      crankAngularSpeed * time + plateStartCrankAngle,
       crankAngularSpeed,
       0,
     );
@@ -813,10 +820,10 @@ function slottedCrossheadPillarEngine(movement) {
   };
 
   const canonicalTimes = {
-    crankAtRight: 0,
-    crankAtTop: cyclePeriod / 4,
-    crankAtLeft: cyclePeriod / 2,
-    crankAtBottom: cyclePeriod * 3 / 4,
+    crankAtLeft: 0,
+    crankAtBottom: cyclePeriod / 4,
+    crankAtRight: cyclePeriod / 2,
+    crankAtTop: cyclePeriod * 3 / 4,
     cycleClosure: cyclePeriod,
   };
   const canonicalStates = Object.fromEntries(
@@ -1022,6 +1029,8 @@ function slottedCrossheadPillarEngine(movement) {
       slotLeftCenterX: sourceSlotLeftCenterX,
       slotRightCenterX: sourceSlotRightCenterX,
     },
+    // Model phase = official animation phase + this offset (plate pose).
+    plateStartPhaseOffset: 0.5,
     officialKeyframes: [
       { crankPin: new THREE.Vector2(3.75, 0), phase: 0, sliderY: 0 },
       { crankPin: new THREE.Vector2(0, 3.75), phase: 0.25, sliderY: 3.75 },
@@ -1031,7 +1040,7 @@ function slottedCrossheadPillarEngine(movement) {
     ],
     officialPageAnimatedTabDisabled: false,
     referenceScope:
-      'official flywheel radii, six-spoke crank rotor, 3.75-unit crank, 1.25-unit wrist journal and slot, translating crosshead A, piston, and pillar guides D-D',
+      'official flywheel radii, four-spoke crank rotor (plate), 3.75-unit crank, 1.25-unit wrist journal and slot, translating crosshead A, piston, and pillar guides D-D',
     sourceUrl: movement.sourceUrl,
   };
   root.userData.sourceReference = {

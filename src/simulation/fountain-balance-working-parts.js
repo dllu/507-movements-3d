@@ -9,7 +9,11 @@ const rectangle=(w,h,cx=0,cy=0)=>poly([[cx-w/2,cy-h/2],[cx+w/2,cy-h/2],[cx+w/2,c
 const add=(parent,geometry,material,role)=>{const mesh=new THREE.Mesh(geometry,material);mesh.userData.role=role;parent.add(mesh);return mesh;};
 export function correctBalancePumps(root){
  const d=root.userData,b=d.blocks,g=d.geometry;
- replace(b.beamBar,plate(clip.difference(clip.union(rectangle(g.beamHalfLength*2,.14),poly(circle([0,0],.235,64))),poly(circle([0,0],.174,64))),-.12,.12));
+ // Pass 93: round bosses (r 0.14, about twice the pin's radius) at the two
+ // pitman pins, concentric with them, so each pin stands in the middle of
+ // metal instead of filling the 0.14-deep bar edge to edge.
+ replace(b.beamBar,plate(clip.difference(clip.union(rectangle(g.beamHalfLength*2,.14),poly(circle([0,0],.235,64)),
+  ...[-1,1].map(side=>poly(circle([side*g.attachmentRadius,0],.14,64)))),poly(circle([0,0],.174,64))),-.12,.12));
  // A split deck lets the beam rock and its links descend between the treads.
  replace(b.platform,horizontalPlate(clip.difference(rectangle(4.25,1.65,0,-.18),rectangle(4.4,.72)),1.50,1.66));b.platform.position.set(0,0,0);
  replace(b.foundation,horizontalPlate(clip.difference(rectangle(7,3.2),...[-1,1].map(side=>poly(circle([side*g.cylinderOffset,0],.12,64)))),-1.52,-1.37));b.foundation.position.set(0,0,0);

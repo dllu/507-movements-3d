@@ -18,16 +18,19 @@ export function correctWindRotorWorkingParts(root,id) {
  const b=root.userData.blocks,p={};
  if(id===484) {
   replace(b.helicalBlade,finiteSurfaceShell(b.helicalBlade.geometry,0.035));
-  replace(b.coreCylinder,tube(.58,.132,4));
+  const length=root.userData.geometry.cylinderLengthSceneUnit;
+  replace(b.coreCylinder,tube(.58,.132,length));
   for(const collar of b.endCollars)replace(collar,tube(.70,.132,.13));
   replace(b.loadWheel.children[0],tube(.58,.132,.16));
+  // Brown's standards are two plain upright planks from the ground line to
+  // just above the drum, the shaft passing straight through them; no
+  // separate bearing rings or shoulders are drawn.
   b.bearings.forEach((bearing,i)=>{
-   replace(bearing,tube(.245,.134,.18));bearing.rotation.set(0,0,Math.PI/2);
-   const {shoulder,upright}=b.supports[i];
-   replace(shoulder,boredBlock(-.41,-.15,.41,.15,.138,.52,[0,.18]));shoulder.rotation.y=Math.PI/2;
-   replace(upright,new THREE.BoxGeometry(.34,1.88,.64));upright.position.y=-.85;
+   const {shoulder,support,upright}=b.supports[i];
+   bearing.removeFromParent();support.remove(shoulder);
+   replace(upright,boredBlock(-.26,-2.36,.26,.76,.138,.63));upright.position.y=.28;upright.rotation.y=Math.PI/2;
   });
-  b.base.visible=false;
+  b.base.removeFromParent();
   root.userData.cameraDirection=new THREE.Vector3(.6,1.4,15);
   root.userData.minimumDisplayCycleSeconds=6;
  } else if(id===485) {
@@ -56,13 +59,18 @@ export function correctWindRotorWorkingParts(root,id) {
   replace(b.loadFlywheel,tube(.62,.134,.13));
   p.armHub=add(b.rotor,tube(.23,.134,.44),b.hub.material,'lower-arm-root-hub',new THREE.Vector3(0,-.35,0));
   p.sleeves=[];
+  // Brown draws each arm as a flat bar ending in a small square bracket that
+  // carries the sail's pivot, and each sail as one long board (about 1.05
+  // pivot radii) turning on it; the board's own stile is bored for the pin.
+  const R=root.userData.geometry.rotorRadiusSceneUnit,half=root.userData.geometry.sailWidthSceneUnit/2,gap=.06;
+  const armOutline=polygonClipping.union(rect(.20,-.075,R,.075),rect(R-.13,-.13,R+.13,.13));
   for(const assembly of b.armAssemblies) {
    const {arm,armAssembly,hinge,hingePin,panel,topRail,bottomRail}=assembly;
-   arm.position.y=-.52;
+   replace(arm,plate(armOutline,-.04,.04).rotateX(Math.PI/2));arm.position.set(0,-.52,0);arm.quaternion.identity();
    hinge.remove(hingePin);armAssembly.add(hingePin);hingePin.position.x=hinge.position.x;
-   replace(panel,plate([ ...rect(-.64,-.36,-.125,.36), ...rect(.125,-.36,.64,.36)],-.0325,.0325));
-   for(const rail of[topRail,bottomRail])replace(rail,plate([...rect(-.665,-.0225,-.125,.0225),...rect(.125,-.0225,.665,.0225)],-.0425,.0425));
-   p.sleeves.push(add(hinge,tube(.145,.105,.82),hingePin.material,'bored-sail-hinge-sleeve'));
+   replace(panel,plate([ ...rect(-half,-.36,-gap,.36), ...rect(gap,-.36,half,.36)],-.0325,.0325));
+   for(const rail of[topRail,bottomRail])replace(rail,plate([...rect(-half-.025,-.0225,-gap,.0225),...rect(gap,-.0225,half+.025,.0225)],-.0425,.0425));
+   p.sleeves.push(add(hinge,tube(.075,.052,.72),panel.material,'bored-sail-hinge-sleeve'));
   }
   for(const marker of b.sailFaceMarkers)marker.position.x=.24;
   // The source circle is a plan reference, not an additional contact track.

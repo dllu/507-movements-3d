@@ -22,7 +22,12 @@ export function createAuthoredCurveGeneratorMovement(movement) {
   const rodOutline=clip.union(capsule([0,0],[g.length,0],.11),hole([0,0],.30),hole([g.length,0],.22));
   add('rod',plate(clip.difference(rodOutline,hole([0,0],.126),hole([g.length,0],.146),
     hole([g.length*g.fraction,0],.046)),.13,.27),PALETTE.driven,'rod',rod);
-  const tracer=add('tracer',disk(.04,.21,.4),PALETTE.brass,'rod',rod);tracer.position.x=g.length*g.fraction;
+  // Brown's tracing point is a small ring on the rod: a brass eye seated on
+  // the rod's front face round a dark pin in the rod's bore (pass 93; it was
+  // a hardly visible nub).
+  const tracer=add('tracer',disk(.044,.13,.36),PALETTE.ink,'rod',rod);tracer.position.x=g.length*g.fraction;
+  const tracerEye=add('tracerEye',plate(clip.difference(hole([0,0],.1),hole([0,0],.046)),.27,.32),PALETTE.brass,'rod',rod);
+  tracerEye.position.x=g.length*g.fraction;
   add('wristPin',disk(.14,.07,.57),PALETTE.ink,'slider',slider);
   // Brown draws the wrist as a large eye, the crank bosses' size, whose
   // flat-topped end runs on to the right and is broken off: the end of a

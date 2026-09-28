@@ -414,3 +414,22 @@ test('movement 307 p89: the plate is pocketed 0.003 inside pallets A and B, whic
   assert.ok(area(clip.intersection(polygons, square(a.max.x + offset.x + 0.01, a.min.y + offset.y + 0.002, 0.001))) > 3.9e-6);
   disposeModel(model.root);
 });
+
+test('movement 307 p93: impulse pins are Brown’s crescents, seated within their legs and seen on the front face', () => {
+  const model = createMovementModel(catalog.movements[306]);
+  const { blocks, geometry } = model.root.userData;
+  for (const pin of blocks.impulsePins) {
+    const ring = pin.geometry.userData.plate.polygons[0][0];
+    const base = pin.userData.index * geometry.toothPitch + geometry.impulsePinPhaseOffset;
+    for (const [x, y] of ring) {
+      let angle = Math.atan2(y, x) - base;
+      angle = Math.atan2(Math.sin(angle), Math.cos(angle));
+      assert.ok(angle > -1e-6, 'nothing trails ahead of the working edge');
+    }
+    pin.geometry.computeBoundingBox();
+    assert.ok(pin.geometry.boundingBox.max.z > geometry.lockPlaneZ + geometry.wheelDepth / 2,
+      'crescent end stands just proud of the leg face');
+    assert.ok(pin.geometry.boundingBox.max.z < geometry.lockPlaneZ + geometry.wheelDepth / 2 + 0.02);
+  }
+  disposeModel(model.root);
+});

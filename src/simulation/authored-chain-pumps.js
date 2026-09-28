@@ -619,48 +619,37 @@ function chainPump(movement) {
     b.dischargeWater.visible = false;
     b.dischargeWater.material = b.dischargeWater.material.clone();
     b.dischargeWater.material.visible = false;
-    // Brown's delivery ledge: an open trough closed at its right end and
-    // open at the left. It is the top of one solid bank standing on the
-    // pool floor (Brown crops it at the left), so nothing floats; the sheet
-    // leaving its open end falls back into the pool beyond the bank.
-    const flumeLeft = -2.96, flumeRight = -1.55, flumeFloorTop = 0.70;
-    const flumeWallTop = flumeFloorTop + 0.24, flumeHalfWidth = 0.4175, flumeWall = 0.055;
-    const flume = addRole(new THREE.Group(), 'receiving-flume-under-spout-lip');
-    // One U-section (bank, floor and both side walls) extruded along x.
+    // Pass 93: Brown runs the spout level out over the bank: the bank is one
+    // solid standing on the pool floor, its flat top 0.01 above the spout
+    // floor's underside so the spout's open end rests on it (no coincident
+    // face). The lifted water spills over the lip on to the bank and runs
+    // away left over it to Brown's crop of the land; none returns to the
+    // pool. (It poured across a gap into a lower open box, which spilled
+    // back into the pool; the box's old end wall lay buried in the bank.)
+    const bankLeft = -3.50, bankRight = lipX + 0.24, bankTop = floorTop - 0.08, bankHalfWidth = 0.52;
+    const flume = addRole(new THREE.Group(), 'bank-under-spout-lip');
     // Its foot runs 0.01 below the pool floor (no coincident face with the
     // water volume's bottom).
     const bankFoot = groundY - 0.01;
-    const bankSection = poly([
-      [-flumeHalfWidth, bankFoot], [flumeHalfWidth, bankFoot], [flumeHalfWidth, flumeWallTop],
-      [flumeHalfWidth - flumeWall, flumeWallTop], [flumeHalfWidth - flumeWall, flumeFloorTop],
-      [-flumeHalfWidth + flumeWall, flumeFloorTop], [-flumeHalfWidth + flumeWall, flumeWallTop],
-      [-flumeHalfWidth, flumeWallTop],
-    ]);
-    const bank = new THREE.Mesh(plate(bankSection, flumeLeft, flumeRight).rotateY(Math.PI / 2), floor.material);
+    const bank = new THREE.Mesh(plate(poly([[-bankHalfWidth, bankFoot], [bankHalfWidth, bankFoot], [bankHalfWidth, bankTop], [-bankHalfWidth, bankTop]]),
+      bankLeft, bankRight).rotateY(Math.PI / 2), floor.material);
     bank.userData.role = 'solid-bank-carrying-the-delivery-trough';
     flume.add(bank);
-    // The closed right end runs into the floor and side walls, its top just
-    // below theirs (no coincident faces).
-    const flumeEnd = new THREE.Mesh(new THREE.BoxGeometry(flumeWall, 0.24, 2 * (flumeHalfWidth - 0.03)), floor.material);
-    flumeEnd.position.set(flumeRight - flumeWall / 2 - 0.004, flumeFloorTop + 0.115, 0);
-    flume.add(flumeEnd);
     root.add(flume);
     b.flume = flume;
     const sheet = { width: 0.30, widthAxis: new THREE.Vector3(0, 0, 1), cyclePeriod: g.cycleDuration, opacity: 0.5 };
     const spoutY = floorTop + 0.05;
     const lip = new THREE.Vector3(lipX, spoutY, 0);
+    const landY = bankTop + 0.035;
     const spoutStream = addRole(new WaterStream(joinPaths(
       guidedPath([new THREE.Vector3(g.leftLegX - 0.1, spoutY, 0), lip], { speed: 1.2, samples: 12 }),
-      ballisticPath({ origin: lip, velocity: new THREE.Vector3(-1.2, 0, 0), endY: flumeFloorTop + 0.04, samples: 16 }),
+      ballisticPath({ origin: lip, velocity: new THREE.Vector3(-1.2, 0, 0), endY: landY, samples: 16 }),
     ), { ...sheet, thickness: 0.045, widthExponent: 0.3, streakRate: 1.5 }), 'continuous-delivery-sheet-over-spout-lip');
     root.add(spoutStream);
     const landing = spoutStream.path.points.at(-1);
-    const flumeY = flumeFloorTop + 0.04;
-    const flumeLip = new THREE.Vector3(flumeLeft, flumeY, 0);
-    const flumeStream = addRole(new WaterStream(joinPaths(
-      guidedPath([new THREE.Vector3(landing.x + 0.08, flumeY, 0), flumeLip], { speed: 1.0, samples: 12 }),
-      ballisticPath({ origin: flumeLip, velocity: new THREE.Vector3(-1.0, 0, 0), endY: g.reservoirSurfaceY, samples: 20 }),
-    ), { ...sheet, thickness: 0.04, widthExponent: 0.3, streakRate: 1.5 }), 'flume-sheet-returning-to-the-pool');
+    const flumeStream = addRole(new WaterStream(
+      guidedPath([new THREE.Vector3(landing.x + 0.08, landY, 0), new THREE.Vector3(bankLeft, landY, 0)], { speed: 1.0, samples: 16 }),
+      { ...sheet, width: 0.44, thickness: 0.04, widthExponent: 0.3, streakRate: 1.5 }), 'delivered-water-running-away-over-the-bank');
     root.add(flumeStream);
     b.deliveryStreams = [spoutStream, flumeStream];
     root.userData.updateStreams = collectWaterStreams(root);

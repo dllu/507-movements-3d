@@ -85,10 +85,14 @@ export function makeSelectableCamValve(){
  {let sleeve,hub;root.traverse(o=>{if(o.userData.role==='continuous-common-heel-selection-sleeve')sleeve=o;if(o.userData.role==='keyed-hub-rigid-with-all-four-cams')hub=o;});
   if(sleeve&&hub)hub.material=sleeve.material;}
  const rod=new THREE.Group(),slider=new THREE.Group();root.add(rod,slider);
- const rodOutline=clip.union(poly(circle([0,0],.17,96)),poly([[-.09,0],[.09,0],[.09,-.34],[.045,-.34],[.045,-rodLength],[-.045,-rodLength],[-.045,-.34],[-.09,-.34]]),poly(circle([0,-pinDistance],.12,96)));
- add('pinned-valve-rod',plate(clip.difference(rodOutline,poly(circle([0,0],.074,96)),poly(circle([0,-pinDistance],.064,96))),-.08,.08),rod,'brass');
+ // Pass 93: Brown draws the valve rod as a plain rod running off the plate.
+ // The reconstructed lower slide and its guides are not displayed (source
+ // presentation removes them), so the rod ends plainly in a round end: no
+ // lower eye or cross-pin attached to nothing. The slider body still carries
+ // the kinematic lower joint.
+ const rodOutline=clip.union(poly(circle([0,0],.17,96)),poly([[-.09,0],[.09,0],[.09,-.34],[.045,-.34],[.045,-rodLength+.045],[-.045,-rodLength+.045],[-.045,-.34],[-.09,-.34]]),poly(circle([0,-rodLength+.045],.045,48)));
+ add('pinned-valve-rod',plate(clip.difference(rodOutline,poly(circle([0,0],.074,96))),-.08,.08),rod,'brass');
  add('valve-slide',plate(clip.difference(poly([[-.16,-.14],[.16,-.14],[.16,.14],[-.16,.14]]),poly(circle([0,0],.064,96))),-.29,-.11),slider,'driven');
- add('lower-pin',disk(.06,-.29,.10,96),slider,'ink');add('lower-pin-retainer',disk(.09,.10,.13,96),slider,'ink');
  const ys=Array.from({length:257},(_,i)=>stateAtTime(g.demonstrationPeriod*i/256).valve.bottom.y),low=Math.min(...ys)-.19,high=Math.max(...ys)+.19;
  // The valve slide runs between two guide bars. Brown draws no guide, so it
  // is kept minimal: the bars stand on a flat bracket behind the rod whose

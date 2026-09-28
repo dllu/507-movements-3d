@@ -303,3 +303,9 @@ test('046 separate chain portions and spring turns do not pass through one anoth
   }
   console.log('046 chain and spring self-clearance', { poses: 65, chainPairs, springPairs, minChain, minSpring });
 });
+
+test('046 p93: the chain is dark steel, so it does not read as a white dashed line on the page', () => {
+  const model = createMovementModel(catalog.movements[45]);
+  const data = model.root.userData.blocks.chain.userData;
+  for (const mesh of [data.evenPlates, data.oddPlates, data.pins]) assert.ok(mesh.material.color.getHSL({}).l < 0.4);
+});

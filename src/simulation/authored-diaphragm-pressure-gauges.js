@@ -157,7 +157,7 @@ function diaphragmPressureGauge(movement) {
     metalness: 0.20,
     roughness: 0.42,
   });
-  const dialMaterial = matte(PALETTE.paper, {
+  const dialMaterial = matte(0xe6dcc3, { // Pass 93: ivory, not the page colour
     opacity: 0.89,
     roughness: 0.88,
     side: THREE.DoubleSide,

@@ -496,15 +496,6 @@ function grahamDeadbeatPendulumEscapement(movement) {
   });
   const anchorPivotHub = cylinderAlongZ(0.28, 0.82, darkMaterial, 36);
   anchorPivotHub.userData.role = 'Graham-pallet-arbor-C';
-  const pivotCap = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.45, 0.45, 0.12, 3),
-    anchorMaterial,
-  );
-  pivotCap.rotation.x = Math.PI / 2;
-  pivotCap.rotation.z = Math.PI;
-  pivotCap.position.y = 0.06;
-  pivotCap.userData.role = 'triangular-anchor-apex-cap';
-
   // Anchor-local depth of the pendulum plane: world z -0.6, behind the wheel
   // arbor (rear end -0.5) and its bearing, in front of the rear supports.
   const pendulumZ = -0.85;
@@ -514,13 +505,27 @@ function grahamDeadbeatPendulumEscapement(movement) {
   anchorArbor.position.z = -0.495;
   anchorArbor.userData.role = 'Graham-pallet-arbor-to-pendulum';
   const pendulumRodLength = 7.35;
-  const pendulumRod = beamBetween(
-    new THREE.Vector3(0, 0.1, pendulumZ),
-    new THREE.Vector3(0, -pendulumRodLength, pendulumZ),
-    0.12,
-    0.14,
-    anchorMaterial,
-  );
+  // The rod is one flat strap that ends at the top in a round eye
+  // concentric with the pallet arbor, so it hangs on the arbor instead of
+  // butting against its end.
+  const pendulumRodWidth = 0.12, pendulumRodDepth = 0.14, pendulumEyeRadius = 0.24;
+  const pendulumRodShape = (() => {
+    const half = pendulumRodWidth / 2;
+    const join = -Math.sqrt(pendulumEyeRadius ** 2 - half ** 2);
+    const start = Math.atan2(join, half);
+    const shape = new THREE.Shape();
+    shape.moveTo(-half, -pendulumRodLength);
+    shape.lineTo(half, -pendulumRodLength);
+    shape.lineTo(half, join);
+    shape.absarc(0, 0, pendulumEyeRadius, start, Math.PI - start, false);
+    shape.lineTo(-half, -pendulumRodLength);
+    return shape;
+  })();
+  const pendulumRodGeometry = new THREE.ExtrudeGeometry(pendulumRodShape, {
+    bevelEnabled: false, curveSegments: 48, depth: pendulumRodDepth,
+  });
+  pendulumRodGeometry.translate(0, 0, pendulumZ - pendulumRodDepth / 2);
+  const pendulumRod = new THREE.Mesh(pendulumRodGeometry, anchorMaterial);
   pendulumRod.userData.role = 'pendulum-rod-C';
   // Brown marks F only as a dot on the rod; no bob is drawn.
   const pendulumBob = new THREE.Mesh(
@@ -544,7 +549,6 @@ function grahamDeadbeatPendulumEscapement(movement) {
     ...anchorArms,
     leftPallet,
     rightPallet,
-    pivotCap,
     anchorPivotHub,
   );
 
@@ -865,7 +869,6 @@ function grahamDeadbeatPendulumEscapement(movement) {
     pendulumBob,
     pendulumIndex,
     pendulumRod,
-    pivotCap,
     rightPallet,
     anchorArbor,
     spokeMeshes,

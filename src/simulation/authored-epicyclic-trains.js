@@ -362,8 +362,11 @@ function compoundOutputEpicyclic(movement) {
     ['compound-F-E-carrier-pin', compoundCenterRadius],
     ['carried-output-B-pin', outerOutputCenterRadius],
   ].map(([role, y]) => {
+    // Pass 93: the F/E and B pin heads (r 0.13 on 0.091 bores) sit inside
+    // the arm's round eyes (r 0.22 and 0.20) instead of covering them.
+    const radius = y === 0 ? 0.20 : 0.13;
     const pivot = addRole(new THREE.Mesh(
-      new THREE.CylinderGeometry(0.20, 0.20, 0.23, 28),
+      new THREE.CylinderGeometry(radius, radius, 0.23, 28),
       darkMaterial,
     ), role);
     pivot.rotation.x = Math.PI / 2;
@@ -1407,9 +1410,12 @@ function fergusonMechanicalParadox(movement) {
     ['central-carrier-pivot-C', 0],
     ['intermediate-pin-M', carrierPinSpacing],
     ['three-output-common-pin-N', 2 * carrierPinSpacing],
-  ].map(([role, x]) => {
+  ].map(([role, x], index) => {
+    // Pass 93: the nuts under M and N (r 0.13 and 0.17 on 0.091 and 0.131
+    // bores) sit inside round bosses on the arm, not flush with its edges.
+    const radius = [0.19, 0.13, 0.17][index];
     const pivot = addRole(new THREE.Mesh(
-      new THREE.CylinderGeometry(0.19, 0.19, 0.34, 28),
+      new THREE.CylinderGeometry(radius, radius, 0.34, 28),
       darkMaterial,
     ), role);
     pivot.position.set(x, carrierPlaneY - 0.09, 0);

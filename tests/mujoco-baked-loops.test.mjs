@@ -86,7 +86,7 @@ for (const id of Object.keys(bakedMujocoRoutes).map(Number)) {
         for (const time of [0, duration / 3, 7 * duration + duration / 5, 1000 * duration]) {
           baked.update(time);baked.root.traverse(o => assert(o.matrixWorld.elements.every(Number.isFinite)));
         }
-        const seam = seamContinuity(baked, duration, samples);
+        const seam = seamContinuity(baked, duration, samples, bakeConfigs[id].seamExclude);
         assert(seam.seamStepPixels <= seam.interiorStepPixels + .05, JSON.stringify(seam));
         assert(seam.seamSecondPixels <= seam.interiorSecondPixels + .05, JSON.stringify(seam));
       }

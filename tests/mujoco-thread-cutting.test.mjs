@@ -90,3 +90,36 @@ test('109 replay is deterministic and return travel does not restore removed mat
   v.update(2);const early=Array.from(p.data.qpos);v.reset();v.update(2);assert.deepEqual(Array.from(p.data.qpos),early);
  }finally{v.dispose();}
 });
+test('109 cuts the thread only where the tool has passed on its descent, live and baked alike',async()=>{
+ const fs=await import('node:fs'),{gunzipSync}=await import('node:zlib');
+ const {makeBakedMujocoModel}=await import('../src/simulation/baked/mujoco-playback.js');
+ const {bakedMujocoRoutes}=await import('../src/simulation/baked/mujoco-baked-routes.js');
+ const v=makeMujocoThreadCutting(mujoco),p=v.physics,u=v.root.userData,f=u.profile,s=p.stroke;
+ const bundle=JSON.parse(gunzipSync(fs.readFileSync(new URL('../src/simulation/baked/assets/mujoco-109.json.gz',import.meta.url))));
+ const baked=makeBakedMujocoModel(bundle,await bakedMujocoRoutes[109].geometry(),bakedMujocoRoutes[109]),b=baked.root.userData;
+ const volume=g=>inspectWeightedClutchSolid(g).volume,blank=volume(u.workpiece.geometry(-Infinity)),loop=bundle.variants.default.loop;
+ try {
+  let previous=null,descents=0,returns=0,resets=0;
+  for(let i=0;i<=96;i++) {
+   const time=loop.startTime+i*loop.duration/96;v.update(time);baked.update(time-loop.startTime);
+   const now=volume(u.parts.workpiece.geometry),tool=f.armY+p.data.qpos[2];
+   // Baked playback rebuilds the same cut from its recorded work angle.
+   assert(Math.abs(volume(b.parts.workpiece.geometry)-now)<blank*2e-4,'baked cut differs from live at '+time);
+   if(s.descending(time)) {
+    // Brown's state: grooved above the tool, the plain blank below it (the
+    // groove floor, off the end caps, reaches no lower than the cutter).
+    const g=u.parts.workpiece.geometry,pos=g.attributes.position.array;let lowestGroove=Infinity;
+    for(let k=0;k<pos.length;k+=3){const r=Math.hypot(pos[k],pos[k+2]);if(r<f.stock.inner+1e-6&&r>1e-6&&pos[k+1]>f.stock.low+1e-6)lowestGroove=Math.min(lowestGroove,pos[k+1]);}
+    if(Number.isFinite(lowestGroove))assert(lowestGroove>tool-f.grooveWidth/2-f.workPitch*.06,`groove below the tool at ${time}`);
+    if(previous!==null&&s.descending(time-loop.duration/96))assert(now<=previous+blank*1e-9,'descent must only remove stock');
+    else if(previous!==null){resets++;assert(now>previous,'a fresh blank replaces the screw at the top');}
+    descents++;
+   } else {
+    if(previous!==null&&!s.descending(time-loop.duration/96))assert(Math.abs(now-previous)<blank*1e-9,'the tool returns up its finished groove');
+    returns++;
+   }
+   previous=now;
+  }
+  assert(descents>30&&returns>30&&resets===1);
+ }finally{v.dispose();baked.dispose();}
+});

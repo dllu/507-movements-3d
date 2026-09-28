@@ -357,9 +357,11 @@ function hydrostaticPress(movement) {
   // --- Ram cylinder: thick, deep, flanged casting, sectioned. The pressure
   // pipe enters its side at py 394 through a port in the wall. ---
   const ramCylinderProfile = [
-    [0, 502], [43, 502], ...arc(43, 494, 8, -Math.PI / 2, 0, 6).slice(1), [51, 385],
+    // p93: the two round fillets take 24 steps (3.75 degrees) instead of 6,
+    // so they read as arcs, not 15-degree bands.
+    [0, 502], [43, 502], ...arc(43, 494, 8, -Math.PI / 2, 0, 24).slice(1), [51, 385],
     [64, 372], [90, 360], [112, 350], [112, 312], [63, 312], [63, 292], [25, 292],
-    [25, 335], [32.5, 335], [32.5, 474], ...arc(24.5, 474, 8, 0, -Math.PI / 2, 6).slice(1), [0, 482],
+    [25, 335], [32.5, 335], [32.5, 474], ...arc(24.5, 474, 8, 0, -Math.PI / 2, 24).slice(1), [0, 482],
   ];
   const ramCylinder = addRole(sectionedLathe(ramCylinderProfile, ironMaterial, ironCut,
     [{low: Y(399), high: Y(389), side: 1, delta: Math.asin(5 / 32.5)}]), 'large-water-filled-ram-cylinder');
@@ -371,8 +373,8 @@ function hydrostaticPress(movement) {
   const ramAssembly = addRole(new THREE.Group(), 'large-solid-ram-and-moving-lower-platen');
   root.add(ramAssembly);
   const ramProfile = [
-    [11.25, 287], [24, 287], [24, 451], ...arc(0, 451, 24, 0, -Math.PI / 2, 16).slice(1),
-    [0, 460], ...arc(0, 449, 11, -Math.PI / 2, 0, 10).slice(1), [11.25, 449],
+    [11.25, 287], [24, 287], [24, 451], ...arc(0, 451, 24, 0, -Math.PI / 2, 48).slice(1),
+    [0, 460], ...arc(0, 449, 11, -Math.PI / 2, 0, 30).slice(1), [11.25, 449],
   ];
   const ramBody = addRole(new THREE.Mesh(latheSectionGeometry(lathe(ramProfile), {segments: 64}), [ramMaterial, ramCut]), 'large-solid-ram-body');
   ramBody.position.x = ramAxisX;
@@ -677,8 +679,8 @@ function hydrostaticPress(movement) {
   const ramCylinderWater = dynamicLatheWater((lift) => {
     const shift = lift / S;
     return lathe([
-      [24.02, 335], [32.3, 335], [32.3, 474], ...arc(24.5, 474, 7.8, 0, -Math.PI / 2, 6).slice(1), [0, 481.8],
-      ...arc(0, 451 - shift, 24.02, -Math.PI / 2, 0, 16),
+      [24.02, 335], [32.3, 335], [32.3, 474], ...arc(24.5, 474, 7.8, 0, -Math.PI / 2, 24).slice(1), [0, 481.8],
+      ...arc(0, 451 - shift, 24.02, -Math.PI / 2, 0, 48),
     ]);
   }, waterMaterial, 'pressurized-water-under-large-solid-ram');
   ramCylinderWater.position.x = ramAxisX;

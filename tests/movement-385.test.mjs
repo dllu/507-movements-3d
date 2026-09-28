@@ -82,17 +82,28 @@ test('movement 385 is one real door hinge with door and frame socket pins, a two
     blocks.weight,
   ]) assert.ok(component.parent === model.root, `${component.userData.role} parent`);
   assert.ok(blocks.doorPinAssembly.parent === blocks.doorAssembly, 'door pin parent');
-  // The pins' supports stay: the door with its socket block and hinge
-  // knuckles; only the handle and face trim are removed.
+  // Pass 93: Brown draws no door or wall. The door, wall, hinges and socket
+  // blocks are not presented; each pin turns in one plain bearing boss.
   for (const component of [
     blocks.doorPanel,
     blocks.doorSocketBracket,
     ...blocks.hingeBarrels,
-  ]) assert.ok(component.parent !== null, `${component.userData.role} carries a pin or the door`);
-  for (const component of [
     blocks.doorHandle,
     ...blocks.doorTrim,
   ]) assert.ok(component.parent === null, `source presentation removes ${component.userData.role}`);
+  for (const prefix of ['frame-side', 'door-side']) {
+    let socket, pin;
+    model.root.traverse((o) => {
+      if (o.userData.role === `${prefix}-socket-fixed-to-support`) socket = o;
+      if (o.userData.role === `${prefix}-vertical-turning-pin`) pin = o;
+    });
+    socket.geometry.computeBoundingBox();
+    pin.geometry.computeBoundingBox();
+    const socketBox = socket.geometry.boundingBox.clone().translate(socket.position);
+    const pinBottom = pin.geometry.boundingBox.min.y + pin.position.y;
+    assert.ok(Math.abs(socketBox.max.y - socketBox.min.y - 0.55) < 1e-6, `${prefix} boss is 0.55 tall`);
+    assert.ok(pinBottom > socketBox.min.y + 0.05 && pinBottom < socketBox.max.y - 0.2, `${prefix} pin stands in its boss`);
+  }
   assert.ok(blocks.doorPinRotor.parent === blocks.doorPinAssembly, 'blocks.doorPinRotor parent');
   assert.ok(blocks.framePinRotor.parent === blocks.framePinAssembly, 'blocks.framePinRotor parent');
   assert.equal(blocks.doorTrim.length, 4);
@@ -117,11 +128,13 @@ test('movement 385 is one real door hinge with door and frame socket pins, a two
     'vertical-link-from-toggle-joint-to-weight-eye',
   ]) assert.ok(roles.includes(role), role);
   for (const role of [
-    'moving-door-panel',
     'frame-side-socket-fixed-to-support',
     'door-side-socket-fixed-to-support',
   ]) assert.ok(roles.includes(role), `${role} supports the pins`);
   for (const role of [
+    'moving-door-panel',
+    'fixed-wall-beside-door-opening',
+    'one-of-three-fixed-axis-door-hinge-barrels',
     'fixed-door-frame-lintel',
     'white-toggle-height-index',
     'white-weight-height-index',

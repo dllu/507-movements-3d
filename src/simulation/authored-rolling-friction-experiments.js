@@ -612,7 +612,8 @@ function rollingCarriageFrictionExperiment(movement) {
     'didactic-guide-showing-removable-test-weight-motion';
   root.add(weightGuide);
 
-  const dialFace = cylinderAlongZ(0.54, 0.10, whiteMaterial, 64);
+  // Pass 93: an ivory dial, not paper white (white reads as a hole).
+  const dialFace = cylinderAlongZ(0.54, 0.10, matte(0xe2d3a8, { roughness: 0.5 }), 64);
   dialFace.position.copy(indicatorCenter);
   dialFace.userData.fixed = true;
   dialFace.userData.role = 'fixed-face-of-spiral-spring-force-indicator';

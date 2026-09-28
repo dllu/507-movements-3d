@@ -7,6 +7,7 @@ import {
   seatedClickOutline,
 } from './seated-ratchet-click.js';
 import {
+  capsule,
   circle,
   plate,
   poly,
@@ -408,6 +409,11 @@ function harrisonGoingBarrel(movement) {
   const springPreload = 2.20;
   const springStiffness = 0.60;
   const springHairpinExponent = 3;
+  // B's small ratchet and click R lie directly in front of the larger
+  // ratchet, with B's plain face on them, and the wire lies just in front of
+  // that face (0.02 running clearance), so it crosses over B as Brown draws
+  // it, on short studs rather than long posts.
+  const springPlaneZ = 0.375;
   const springReferenceDepth = 1.62;
   const springBendAmplitude = 0.08;
   const goingLoadTorque = 0.30;
@@ -457,7 +463,7 @@ function harrisonGoingBarrel(movement) {
   const springPointAt = (u, greatWheelAngle, sweep, opening) => {
     if (u <= 0 || u >= 1) {
       const anchor = springAnchorsAt(greatWheelAngle, sweep)[u <= 0 ? 0 : 1];
-      return new THREE.Vector3(anchor.x, anchor.y, 1.16);
+      return new THREE.Vector3(anchor.x, anchor.y, springPlaneZ);
     }
     const angle = springOuterBaseAngle + greatWheelAngle
       + sweep * springAngleFraction(u) + springBendAt(u);
@@ -467,7 +473,7 @@ function harrisonGoingBarrel(movement) {
     return new THREE.Vector3(
       THREE.MathUtils.lerp(Math.cos(angle) * radius, chord.x, opening),
       THREE.MathUtils.lerp(Math.sin(angle) * radius, chord.y, opening),
-      1.16,
+      springPlaneZ,
     );
   };
   const springLengthSamples = 2048;
@@ -788,7 +794,8 @@ function harrisonGoingBarrel(movement) {
     role: 'small-ratchet-fixed-to-barrel-B',
     toothCount: barrelRatchetToothCount,
   });
-  barrelRatchet.position.z = 0.50;
+  // World z 0.115-0.275: 0.02 in front of the larger ratchet.
+  barrelRatchet.position.z = 0.195 - barrel.position.z;
   const barrelHub = cylinderAlongZ(
     0.22,
     1.10,
@@ -906,35 +913,36 @@ function harrisonGoingBarrel(movement) {
     root.add(marker);
     return marker;
   });
+  // S' is a short pin hanging from G's arm through the wire's eye; S is a
+  // short stud standing on the larger ratchet's face.
   const springOuterAnchor = cylinderAlongZ(
-    0.11,
-    0.24,
+    0.09,
+    0.12,
     matte(PALETTE.ink, { metalness: 0.20, roughness: 0.48 }),
     20,
   );
   springOuterAnchor.position.set(
     Math.cos(springOuterBaseAngle) * springOuterAnchorRadius,
     Math.sin(springOuterBaseAngle) * springOuterAnchorRadius,
-    1.44,
+    springPlaneZ + 0.02 - greatWheel.position.z,
   );
   springOuterAnchor.userData.role = 'spring-outer-anchor-S-prime-on-G';
   greatWheel.userData.rotor.add(springOuterAnchor);
   const springInnerAnchor = cylinderAlongZ(
-    0.11,
-    0.24,
+    0.09,
+    springPlaneZ + 0.06 - 0.09,
     springOuterAnchor.material,
     20,
   );
   springInnerAnchor.position.set(
     Math.cos(springInnerBaseAngle) * springInnerAnchorRadius,
     Math.sin(springInnerBaseAngle) * springInnerAnchorRadius,
-    1.16,
+    (0.09 + springPlaneZ + 0.06) / 2,
   );
   springInnerAnchor.userData.role = 'spring-inner-anchor-S-on-larger-ratchet';
   largeRatchet.userData.rotor.add(springInnerAnchor);
 
-  // The weight's back face stays just in front of the spring's plane when
-  // winding lifts it past the hairpin.
+  // The weight hangs in the rope's plane behind the wheels.
   const weight = new THREE.Mesh(
     new THREE.BoxGeometry(1.18, weightHalfHeight * 2, 0.56),
     matte(PALETTE.driver, { metalness: 0.08, roughness: 0.74 }),
@@ -1150,6 +1158,7 @@ function harrisonGoingBarrel(movement) {
     springHairpinExponent,
     springReferenceDepth,
     springWireRadius,
+    springPlaneZ,
     referenceWeightY,
     ropeDrumPitchRadius,
     ropePlaneZ,
@@ -1228,6 +1237,34 @@ function harrisonGoingBarrel(movement) {
 
   correctGoingBarrel(root);
   seatGoingBarrelClicks(root);
+  // B's plain face is a thin raised disc on its small ratchet, just
+  // behind the spring's plane; R's journal only spans the gap to R.
+  {
+    barrelBody.updateMatrix();
+    const geometry = barrelBody.geometry.applyMatrix4(barrelBody.matrix);
+    barrelBody.position.set(0, 0, 0);
+    barrelBody.rotation.set(0, 0, 0);
+    barrelBody.scale.set(1, 1, 1);
+    geometry.computeBoundingBox();
+    const minZ = geometry.boundingBox.min.z;
+    const maxZ = geometry.boundingBox.max.z;
+    const faceBack = 0.27 - barrel.position.z;
+    const faceFront = springPlaneZ - springWireRadius - 0.02
+      - barrel.position.z;
+    geometry.translate(0, 0, -minZ);
+    geometry.scale(1, 1, (faceFront - faceBack) / (maxZ - minZ));
+    geometry.translate(0, 0, faceBack);
+    geometry.computeBoundingBox();
+    geometry.computeBoundingSphere();
+    const clickR = root.userData.blocks.finiteClicks
+      .find((follower) => follower.name === 'R');
+    const pinBack = 0.085;
+    const pinFront = clickR.group.position.z + 0.07;
+    clickR.pin.geometry.dispose();
+    clickR.pin.geometry = new THREE.CylinderGeometry(0.08, 0.08,
+      pinFront - pinBack, 32);
+    clickR.pin.position.z = (pinFront + pinBack) / 2;
+  }
 
   // Brown draws no frame, bearing or stud: T turns on a short journal pin
   // through its eye, and the common arbor ends as a plain cut stub just
@@ -1246,45 +1283,38 @@ function harrisonGoingBarrel(movement) {
     // stub just behind the drum.
     const drumBox = new THREE.Box3().setFromObject(blocks.ropeDrum);
     const arborBack = Math.min(wheelBox.min.z - 0.08, drumBox.min.z - 0.06);
-    const arborLength = hubBox.max.z - arborBack;
+    // In front, Brown squares the arbor end flush with B's small ratchet:
+    // a short winding square, the arbor ending inside it.
+    const ratchetFront = new THREE.Box3().setFromObject(barrelBody).max.z;
+    const arborFront = ratchetFront + 0.03;
+    const arborLength = arborFront - arborBack;
     blocks.barrelHub.geometry.dispose();
     blocks.barrelHub.geometry = new THREE.CylinderGeometry(0.14, 0.14, arborLength, 40);
-    blocks.barrelHub.position.z += (hubBox.max.z + arborBack) / 2 - (hubBox.max.z + hubBox.min.z) / 2;
+    blocks.barrelHub.position.z += (arborFront + arborBack) / 2 - (hubBox.max.z + hubBox.min.z) / 2;
+    const windingSquare = new THREE.Mesh(
+      new THREE.BoxGeometry(0.34, 0.34, 0.06),
+      blocks.barrelHub.material,
+    );
+    windingSquare.position.set(0, 0,
+      ratchetFront + 0.02 - barrel.position.z);
+    windingSquare.userData.role = 'common-arbor-winding-square-flush-with-B';
+    barrel.userData.rotor.add(windingSquare);
   }
   // The laid rope already runs round the exposed groove; the helper's
   // separate wrap stays only as a reference.
   root.userData.blocks.ropeWrap.visible = false;
   root.userData.blocks.ropeWrap.userData.retiredDuplicateRope = true;
-  // The spring lies in front of barrel B, its small ratchet and click R, so
-  // each anchor stands on a post from the wheel that carries it. S's post
-  // rises from the larger ratchet's face. S' belongs to G, behind the
-  // ratchet: its post comes up through an arc slot in the ratchet ring
-  // (G runs up to 45 degrees ahead of the ratchet) clear of B's small
-  // ratchet, then a short arm above the wire's plane reaches S'.
+  // The spring lies just in front of the larger ratchet's face, in the
+  // wheels' plane. S is a short stud on the ratchet's face. S' belongs to G,
+  // behind the ratchet: a short post comes up through an arc slot in the
+  // ratchet ring (G runs up to 45 degrees ahead of the ratchet; outside the
+  // ratchet's rim it would strike click T), then a short arm lying just in
+  // front of the wire's plane reaches S'.
   {
     const postRadius = 0.07;
-    // Both anchor pins are placed in their rotor's frame; the ratchet sits
-    // at z = 0 and G behind it.
-    const springPinBottomZ = largeRatchet.position.z
-      + springInnerAnchor.position.z
-      - springInnerAnchor.geometry.parameters.height / 2;
     const springPinTopZ = greatWheel.position.z
       + springOuterAnchor.position.z
       + springOuterAnchor.geometry.parameters.height / 2;
-    const ratchetFrontZ = largeRatchet.position.z
-      + largeRatchetMesh.position.z
-      + largeRatchetMesh.userData.ratchetProfile.depth / 2;
-    const innerPostLength = springPinBottomZ - ratchetFrontZ + 0.02;
-    const innerPost = cylinderAlongZ(postRadius, innerPostLength,
-      largeRatchetMesh.material, 20);
-    innerPost.position.set(
-      springInnerAnchor.position.x,
-      springInnerAnchor.position.y,
-      ratchetFrontZ - 0.01 + innerPostLength / 2 - largeRatchet.position.z,
-    );
-    innerPost.userData.role = 'spring-S-post-on-larger-ratchet';
-    largeRatchet.userData.rotor.add(innerPost);
-
     const outerPostRadius = 1.66;
     const outerPostAngle = THREE.MathUtils.degToRad(192);
     const greatWheelFrontZ = greatWheel.position.z + 0.15;
@@ -1308,16 +1338,13 @@ function harrisonGoingBarrel(movement) {
       springOuterAnchor.position.y,
     );
     const armSpan = anchorPoint.clone().sub(postPoint);
+    // A flat round-ended arm, its ends concentric with the post and S'.
+    const armLow = greatWheelLocalZ(armBottomZ);
     const arm = new THREE.Mesh(
-      new THREE.BoxGeometry(armSpan.length(), 0.14, armDepth),
+      plate(capsule(postPoint.toArray(), anchorPoint.toArray(), 0.10),
+        armLow, armLow + armDepth),
       outerPost.material,
     );
-    arm.position.set(
-      (postPoint.x + anchorPoint.x) / 2,
-      (postPoint.y + anchorPoint.y) / 2,
-      greatWheelLocalZ(armBottomZ + armDepth / 2),
-    );
-    arm.rotation.z = Math.atan2(armSpan.y, armSpan.x);
     arm.userData.role = 'spring-S-prime-arm-on-G';
     greatWheel.userData.rotor.add(arm);
 
@@ -1346,7 +1373,6 @@ function harrisonGoingBarrel(movement) {
       poly(slot),
     ), -profile.depth / 2, profile.depth / 2);
     Object.assign(root.userData.blocks, {
-      springInnerPost: innerPost,
       springOuterArm: arm,
       springOuterPost: outerPost,
     });
@@ -1368,10 +1394,6 @@ function harrisonGoingBarrel(movement) {
   });
   root.userData.materialsIgnoreSceneFog = true;
   markShadows(root);
-  for (const segment of springSegments) {
-    segment.castShadow = false;
-    segment.receiveShadow = false;
-  }
   rope.castShadow = false;
   rope.receiveShadow = false;
   root.userData.fidelity = 'authored';

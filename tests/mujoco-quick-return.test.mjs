@@ -132,3 +132,13 @@ test('100 tail rod runs into the pivot hub with no overhang',()=>{
     assert.ok(Math.hypot(start,r)<hubRadius-.01,'rod end face corners inside the hub');
   }finally{v.dispose();}
 });
+test('100 crank pin sits centred in a 1.35x end eye; crank contrasts with the disk (pass 93)',async()=>{
+  const {PALETTE}=await import('../src/simulation/primitives.js');
+  const v=makeMujocoQuickReturn(mujoco),u=v.root.userData,f=u.profile;
+  try {
+    const pos=u.parts.crank.geometry.attributes.position;
+    const reach=Math.max(...Array.from({length:pos.count},(_,i)=>Math.hypot(pos.getX(i),pos.getY(i))));
+    assert.ok(Math.abs(reach-(f.crankRadius+1.35*f.pinRadius))<2e-3,'end eye radius 1.35x the pin');
+    assert.equal(u.parts.crank.material.color.getHex(),PALETTE.accent);assert.equal(u.parts.disk.material.color.getHex(),PALETTE.driver);
+  }finally{v.dispose();}
+});

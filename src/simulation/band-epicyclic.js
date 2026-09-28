@@ -47,7 +47,9 @@ export function makeBandEpicyclic(options = {}) {
   add('ringPulley', turned(grooveProfile(-0.11, 0.11, 2.10, p.ringOuter, [[0, p.ringDrumPitch]]), 2.10, PALETTE.driven), parts.ring);
   add('sunDrum', turned(grooveProfile(-0.39, -0.21, 0.32, 1.215, [[p.innerBeltZ, p.sunDrumPitch]]), 0.32, 0xb74834), parts.sun);
   add('sunHub', annulus(0.61, 0.32, 0.105, 0.15, PALETTE.driver), parts.sun);
-  add('sunShaft', cylinder(0.32, -1.14, 0.215, PALETTE.muted), parts.sun);
+  // Shafts, collars and the planet cap are black steel: pale grey ends read
+  // as holes on the cream page.
+  add('sunShaft', cylinder(0.32, -1.14, 0.215, PALETTE.ink), parts.sun);
   // The carrier runs between the rear sun drum and the gear plane. Keeping
   // its axle forward of the inner band clears that band throughout an orbit.
   add('carrierSleeve', annulus(0.40, 0.325, -0.205, -0.12, PALETTE.frame), blocks.carrier);
@@ -63,13 +65,13 @@ export function makeBandEpicyclic(options = {}) {
   const armBore = new THREE.Path(); armBore.absarc(d, 0, 0.13, 0, 2 * Math.PI, true); armShape.holes.push(armBore);
   const hubBore = new THREE.Path(); hubBore.absarc(0, 0, 0.36, 0, 2 * Math.PI, true); armShape.holes.push(hubBore);
   add('carrierArm', new THREE.Mesh(bandProfileExtrusion(armShape, -0.195, -0.145), matte(PALETTE.frame)), blocks.carrier);
-  const axle = add('planetAxle', cylinder(0.13, -0.205, 0.20, PALETTE.muted), blocks.carrier); axle.position.x = p.orbitRadius;
-  const rear = add('planetCollar', annulus(0.22, 0.13, -0.15, -0.12, PALETTE.muted), blocks.carrier); rear.position.x = p.orbitRadius;
-  const cap = add('planetCap', cylinder(0.265, 0.14, 0.18, PALETTE.muted), blocks.carrier); cap.position.x = p.orbitRadius;
+  const axle = add('planetAxle', cylinder(0.13, -0.205, 0.20, PALETTE.ink), blocks.carrier); axle.position.x = p.orbitRadius;
+  const rear = add('planetCollar', annulus(0.22, 0.13, -0.15, -0.12, PALETTE.ink), blocks.carrier); rear.position.x = p.orbitRadius;
+  const cap = add('planetCap', cylinder(0.18, 0.14, 0.18, PALETTE.ink), blocks.carrier); cap.position.x = p.orbitRadius;
   const driver = new THREE.Group(); driver.position.set(...p.driverCenter, 0); root.add(driver); blocks.driver = driver;
   add('driverPulley', turned(grooveProfile(-0.41, 0.11, 0.21875, 0.845,
     [[p.innerBeltZ, p.driverPitch], [p.outerBeltZ, p.driverPitch]]), 0.21875, PALETTE.brass), driver);
-  add('driverShaft', cylinder(0.21875, -1.0, 0.24, PALETTE.muted), driver);
+  add('driverShaft', cylinder(0.21875, -1.0, 0.24, PALETTE.ink), driver);
   add('driverHub', annulus(0.39, 0.21875, 0.09, 0.17, PALETTE.brass), driver);
   const crankShape = new THREE.Shape(), point = (x, y) => [(x - 718) / 160, (241 - y) / 160];
   crankShape.moveTo(...point(681, 194)); crankShape.lineTo(...point(587, 151));

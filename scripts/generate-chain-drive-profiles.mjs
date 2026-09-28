@@ -3,6 +3,7 @@
 // chain-drive-working-parts.js) is verified clear of the same link sweep in tests.
 import fs from 'node:fs';
 import {createAuthoredBeltMovement as create} from '../src/simulation/authored-belts.js';
+import {ringArea,trimOutwardCusps} from '../src/simulation/outline-cusps.js';
 import {poly,circle,capsule,rotate,polygonClipping as clip} from '../src/simulation/finite-plate-geometry.js';
 const result={},clearance=.0008,samples=129;
 // Ramer-Douglas-Peucker on two halves of a closed ring; a 0.00002 model-unit
@@ -56,6 +57,10 @@ for(const id of [228,229]){
   shape=clip.difference(shape,poly(circle([0,0],g.shaftHoleRadius,96)));
  }
  shape=shape.map(p=>p.map(simplify));
+ // 229: each sampled link pose leaves its own hollow on the tips, and the
+ // hollows meet in outward cusps 0.0004 apart (a zigzag outline). Cutting
+ // them off only removes material, so the swept clearance still holds.
+ if(id===229)shape=shape.map(p=>p.map((ring,k)=>k?ring:(r=>[...r,r[0]])(trimOutwardCusps(ring.slice(0,-1),{material:Math.sign(ringArea(ring.slice(0,-1))),maxSegment:.01}))));
  result[id]=shape.map(p=>p.map(r=>r.map(p=>p.map(v=>+v.toFixed(8)))));
  console.log(id,shape.length,shape.map(p=>p.map(r=>r.length)));
 }

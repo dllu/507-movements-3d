@@ -520,3 +520,37 @@ test('movement 261 winds cord D on a drum on B\'s front face, with the crank pin
   }
   disposeModel(model.root);
 });
+
+test('movement 261 carries G on a short wall eye bracket, not a long stand-off peg', () => {
+  const model = createMovementModel(catalog.movements[260]);
+  const root = model.root;
+  root.updateMatrixWorld(true);
+  const byRole = (role) => {
+    let found = null;
+    root.traverse((object) => { if (object.userData.role === role) found = object; });
+    return found;
+  };
+  const bracket = byRole('fixed-wall-bracket-eye-carrying-pivot-G');
+  const pin = byRole('fixed-rocker-pivot-G');
+  const post = byRole('fixed-right-upright');
+  assert.ok(bracket?.isMesh && pin?.isMesh && post?.isMesh);
+  assert.equal(byRole('fixed-top-rocker-bearing-arm'), null, 'the old box bearing arm is gone');
+  const bracketBox = new THREE.Box3().setFromObject(bracket);
+  const pinBox = new THREE.Box3().setFromObject(pin);
+  const postBox = new THREE.Box3().setFromObject(post);
+  // The eye is a round boss wider than the pin, and the bracket reaches
+  // into the wall.
+  const pinDiameter = pinBox.max.x - pinBox.min.x;
+  assert.ok(bracketBox.max.y - bracketBox.min.y > 1.5 * pinDiameter);
+  assert.ok(bracketBox.max.x > postBox.min.x + 0.05, 'the bracket is seated in the wall');
+  // G is a short pin: no longer than the bracket-to-arm span it bridges.
+  assert.ok(pinBox.max.z - pinBox.min.z < 0.4, 'G is a short pin');
+  assert.ok(pinBox.min.z < bracketBox.max.z, 'G enters the bracket eye');
+  // No degenerate zero-size meshes remain.
+  root.traverse((object) => {
+    if (!object.isMesh || !object.visible) return;
+    const size = new THREE.Box3().setFromObject(object).getSize(new THREE.Vector3());
+    assert.ok(Math.max(size.x, size.y, size.z) > 1e-3, `${object.userData.role} is not degenerate`);
+  });
+  disposeModel(root);
+});

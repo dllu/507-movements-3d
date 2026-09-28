@@ -31,3 +31,21 @@ test('155 wheel stays still when contact is removed',()=>{
   assert.ok(maximum<1e-12);
  }finally{p.dispose();v.dispose();}
 });
+test('155 pawl prong ends in a round cap past the crop line and the rod ends plainly',()=>{
+ for(const side of ['right','left']){const v=makeElbowPawlGeometry({side});try{
+  const u=v.root.userData,click=u.parts.click.geometry,rod=u.parts.rod.geometry;
+  if(side==='right'){
+   // The prong reaches beyond the plate's crop (source y=0, local y=3.00) and its top is rounded, not a square cut.
+   const p=click.attributes.position,tops=[];let top=-Infinity;for(let i=0;i<p.count;i++)top=Math.max(top,p.getY(i)+u.profile.pawlPivot[1]);
+   for(let i=0;i<p.count;i++)if(p.getY(i)+u.profile.pawlPivot[1]>top-.1&&p.getZ(i)>.1)tops.push(p.getX(i).toFixed(5));
+   // A square cut has two corners there; the semicircular cap has many.
+   assert.ok(top>3.08,`prong top ${top}`);assert.ok(new Set(tops).size>=10,'prong ends in an arc, not a flat cut');
+  }
+  // The rod carries only the crank eye: no top eye, crosshead pin or retainer.
+  assert.ok(!('inputUpperPin' in u.parts)&&!('inputUpperRetainer' in u.parts));
+  const rp=rod.attributes.position,top=Math.max(...Array.from({length:rp.count},(_,i)=>rp.getY(i)));
+  assert.ok(Math.abs(top-(u.profile.rodLength+.15))<1e-3);
+  const ray=new THREE.Raycaster();ray.set(new THREE.Vector3(0,u.profile.rodLength,2),new THREE.Vector3(0,0,-1));
+  assert.ok(ray.intersectObject(new THREE.Mesh(rod,new THREE.MeshBasicMaterial({side:THREE.DoubleSide}))).length>0,'rod end is solid');
+ }finally{v.dispose();}}
+});

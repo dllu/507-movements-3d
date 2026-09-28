@@ -120,7 +120,7 @@
       "board"
     ]
   ],
-  "queries": 2587740,
+  "queries": 1192476,
   "intersections": {},
   "method": "Every cross-rigid-family pair; finite mesh vertices, edge midpoints and face centers. All 16 meshes are physical. Sampled clearance only.",
   "sources": [
@@ -130,7 +130,7 @@
     },
     {
       "file": "src/simulation/baked/single-clamp.js",
-      "sha256": "cc60bb5a814c0cda9cb1fd4ed9cef1d6327ac3c83affbb31741575002142ab51"
+      "sha256": "ba70e28c514c75699e5c343faa581650a66b2b1d7e11986ae518e125aec8782e"
     },
     {
       "file": "src/simulation/mujoco-single-clamp/update-solids.js",
@@ -138,7 +138,7 @@
     },
     {
       "file": "src/simulation/baked/assets/180.json.gz",
-      "sha256": "dc469df620b874177d5e6b27a49678bea4ec5c0cde0dbbe61d32d4383c63fe7d"
+      "sha256": "24babef29f6dc3bf329bacffb26947d634b8b3fd4553a55cd7b2f5e82b5f6d5b"
     },
     {
       "file": "src/simulation/finite-plate-geometry.js",
@@ -146,7 +146,7 @@
     },
     {
       "file": "tests/helpers/solid-surface.mjs",
-      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+      "sha256": "8f39335894306bfe77f2d3562e6c2e7ac867dead2e078f2d1da4da7151998b99"
     }
   ]
 }

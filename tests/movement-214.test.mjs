@@ -627,6 +627,8 @@ test('movement 214 renders coplanar meshing gears, legible rigid rate indices, t
     'stop fingers have equal contact depth');
   assert.ok(driverFingerBounds.min.z > driverBounds.max.z + 0.015,
     'raised stop fingers clear the opposing gear faces');
+  assert.ok(driverFingerBounds.min.z < driverBounds.max.z + 0.02,
+    'p93: the fingers lie just over their gear faces, not 0.075 proud');
 
   const meshPointWorld = new THREE.Vector3();
   blocks.gearMeshMarker.getWorldPosition(meshPointWorld);

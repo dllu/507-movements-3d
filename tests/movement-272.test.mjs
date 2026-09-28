@@ -73,6 +73,7 @@ test('movement 272 is one beveled disk cam driving one inclined sliding rod', ()
     archetype,
     blocks,
     fidelity,
+    geometry,
     mechanism,
     transmission,
   } = model.root.userData;
@@ -127,10 +128,17 @@ test('movement 272 is one beveled disk cam driving one inclined sliding rod', ()
   model.root.traverse((object) => roles.push(object.userData.role ?? ''));
   assert.equal(roles.filter((role) =>
     role === 'solid-disk-with-bevelled-rim-and-wavy-trough-face').length, 1);
+  // p93: Brown's output rod is one broad flat bar with a crowned end, run
+  // in two square guide blocks; the shaft carries only the rear collar.
   assert.equal(roles.filter((role) =>
-    role === 'straight-output-rod-sliding-only-along-its-axis').length, 1);
+    role === 'flat-output-bar-with-crowned-end-bearing-on-disk-chamfer').length, 1);
+  assert.equal(blocks.followerRod, blocks.contactShoe);
+  assert.ok(geometry.rodWidth > geometry.rodDepth);
+  assert.ok(geometry.rodWidth / (geometry.camBackX - geometry.faceProfile.centerX + geometry.troughDepth) > 0.25);
+  assert.ok(geometry.shaftRadius >= 0.16);
+  assert.equal(blocks.frontHub, undefined);
   assert.equal(roles.filter((role) =>
-    role === 'fixed-split-bearing-for-inclined-output-rod').length, 2);
+    role === 'fixed-square-guide-block-for-inclined-output-bar').length, 2);
   assert.equal(roles.filter((role) => /gear|belt|pulley/.test(role)).length, 0);
   disposeModel(model.root);
 });
@@ -466,10 +474,11 @@ test('movement 272 renderer binds one rigid rotor and one fixed-axis follower', 
   let meshCount = 0;
   model.root.traverse((object) => { if (object.isMesh) meshCount += 1; });
   // Only Brown's two rod guides are fixed parts; the disk carries no dark
-  // edge tubes. The plate has a hub on each face.
+  // edge tubes. The plate has one collar, behind the disk; the bar and its
+  // crowned end are one mesh.
   // The coincident working-band skin is gone: the rod bears on the body's
   // own chamfer.
-  assert.equal(meshCount, 11);
+  assert.equal(meshCount, 9);
   const size = new THREE.Box3().setFromObject(model.root)
     .getSize(new THREE.Vector3());
   assert.ok(size.x > 6.9);

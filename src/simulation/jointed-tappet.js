@@ -27,8 +27,8 @@ export function makeJointedTappetCounter({strikeKink=.3,studOverlap=.05,dogBeak=
   // with D at its drawn mid-rim radius (0.27 overlap), the stud flung B
   // round past vertical. The struck arm beyond C is therefore bent down
   // 0.3 rad (17°) so it rests close to the radius, and D keeps its drawn
-  // direction but sits 0.05 inside that arm's resting reach, at the rim's
-  // outer edge. The stud then releases the tappet once B has lifted the
+  // direction but sits 0.05 inside that arm's resting reach (the rim band is
+  // centred on that orbit below). The stud then releases the tappet once B has lifted the
   // ratchet about 1.2 teeth, enough for the holding pawl to drop in; 0.4 rad
   // with a 0.03 overlap releases before a full tooth and loses the count.
   const end=rotate(sub(source([1282,589]),p.C),-strikeKink),barRadius=41/p.scale,restQ=.30,
@@ -37,7 +37,12 @@ export function makeJointedTappetCounter({strikeKink=.3,studOverlap=.05,dogBeak=
   // Brown's broad spoke runs radially about 4.6° below D, so D stands on the
   // rim just above the spoke's upper edge (measured on the plate).
   const spokeBelowStud=THREE.MathUtils.degToRad(4.6);
-  const bore=.106,axleRadius=.103,driverInner=744.8633730551632/p.scale,driverOuter=921.1339022024459/p.scale,
+  // Brown draws D inside the rim band. The strike geometry above moves D's
+  // orbit 0.27 outside its drawn radius, so the band (Brown's measured width,
+  // 744.9 to 921.1 px) is centred on that orbit: D sits mid-band, not on the
+  // rim's outer edge.
+  const rimWidth=(921.1339022024459-744.8633730551632)/p.scale;
+  const bore=.106,axleRadius=.103,driverInner=studOrbit-rimWidth/2,driverOuter=studOrbit+rimWidth/2,
     studVector=studDirection.map(v=>v*studOrbit/Math.hypot(...studDirection)),spokeAngle=Math.atan2(studVector[1],studVector[0])-spokeBelowStud,
     driverRing=clip.difference(poly(circle([0,0],driverOuter,1024)),poly(circle([0,0],driverInner,1024))),
     driverSpokes=Array.from({length:4},(_,i)=>poly([[.12,-.081],[driverInner+.03,-.081],[driverInner+.03,.081],[.12,.081]]

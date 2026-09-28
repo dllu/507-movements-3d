@@ -30,10 +30,13 @@ export function correctCraneBrakeJoints(root) {
     eyes: [{ center: origin, radius: .17 }, { center: lower, radius: .145 }] });
   const long = boredBar(b.leverHandle, origin, handle, { width: .12, depth: .14,
     holes: [{ center: origin, radius: fulcrumBore }], eyes: [{ center: origin, radius: .17 }] });
-  // Both rigid lever arms share the fulcrum eye; show only one coincident cap.
-  // Trim the handle plate inside the common eye without cutting its load path.
-  const handleRegion = clip.difference(long.geometry.userData.plate.polygons, poly(circle(origin, .165, 96)));
-  replace(long, plate(handleRegion, -.069, .069));
+  // Brown draws the lever as one piece: the short arm, the round fulcrum eye
+  // and the handle are a single plate outline, extruded once. The handle's
+  // own plate stays as an invisible record of its arm.
+  replace(short, plate(clip.difference(clip.union(capsule(origin, lower, .06, 32), capsule(origin, handle, .06, 32),
+    poly(circle(origin, .17, 96)), poly(circle(lower, .145, 96))),
+  poly(circle(origin, fulcrumBore, 96)), poly(circle(lower, pinBore, 96))), -.07, .07));
+  long.visible = false;
   const anchor = boredBar(b.upperAnchorLink, g.upperBandEnd.toArray(), g.leverFulcrum.toArray(), { width: .085, depth: .10,
     holes: [{ center: g.upperBandEnd.toArray(), radius: pinBore }, { center: g.leverFulcrum.toArray(), radius: fulcrumBore }],
     eyes: [{ center: g.upperBandEnd.toArray(), radius: .15 }, { center: g.leverFulcrum.toArray(), radius: .17 }] });
@@ -61,7 +64,7 @@ export function correctCraneBrakeJoints(root) {
   // lever's fulcrum eye is a boss reaching back to the link; every pin ends
   // just proud of the stack it joins.
   const bandFront = g.bandPlaneZ + g.bandDepth / 2 + eyeProud, bandBack = g.bandPlaneZ - g.bandDepth / 2 - eyeProud;
-  const gap = .005, leverDepth = .14, linkDepth = .10, proud = .03;
+  const gap = .005, leverDepth = .14, linkDepth = .10, proud = .012;
   const leverZ = bandFront + gap + leverDepth / 2;
   b.lever.position.z = leverZ;
   lowerEye.position.z = g.bandPlaneZ - leverZ;

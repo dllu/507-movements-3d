@@ -136,3 +136,10 @@ test('057 keeps physical differential ratios, repeatable seeking and continuous 
   assert.equal(model.root.userData.animationTiming.authoredCyclePeriod, p.carrierPeriod, 'the display profile covers a full carrier orbit');
   assert.ok(p.carrierPeriod > 200, 'near cancellation is preserved instead of accelerating the carrier independently');
 });
+
+test('057 p93: shafts, collars and the planet cap are black steel; the cap is just larger than the planet bore', () => {
+  const model = makeBandEpicyclic(), parts = model.root.userData.parts;
+  for (const name of ['sunShaft', 'driverShaft', 'planetAxle', 'planetCap']) assert.equal(parts[name].material.color.getHex(), 0x252a2d, name);
+  const cap = parts.planetCap.geometry.parameters.radiusTop;
+  assert.ok(cap > 0.131 && cap <= 0.18);
+});

@@ -7,9 +7,15 @@ by an independent animation track while separated from the board. The
 single-jaw counterpart of 174 and has no available 2D animation.
 
 The board's leading corner turns the jaw into its clamping position. The lower
-lobe and fixed side then constrain the board. Withdrawal releases the load;
-subsequent insertions require only a small jaw rotation. The old repeated
-nine-degree opening exaggerated that motion.
+lobe and fixed side then constrain the board. Withdrawal releases the load.
+
+Pass 93 (p93-fc): the p93 audit found the jaw static over the settled cycle,
+because a rigid jaw has nothing to open it once the board is withdrawn. The
+hinge now carries a light inferred return spring (stiffness 0.5, damping 0.25,
+rest angle 0.12 rad open). Brown draws none; it stands in for the workman
+opening the jaw. Each withdrawal turns the jaw about 0.12 rad open, and each
+insertion turns it shut against the board's corner and face. The clamped pose
+is unchanged (jaw 0.0020 rad).
 
 ## Native contact and assumptions
 
@@ -26,8 +32,8 @@ The source establishes the mechanism and profile, not these dynamic parameters.
 
 The [cycle study](validation/180-native-cycle.json) compares 0.125 ms and
 0.0625 ms timesteps over three withdrawal/reinsertion cycles. For the final
-cycle, maximum timestep differences are 0.000287 radians in jaw angle,
-0.000172 world units in board X and 0.000091 in board Y. Successive cycle
+cycle, maximum timestep differences (pass 93) are 0.000561 radians in jaw angle,
+0.000644 world units in board X and 0.000379 in board Y. Successive cycle
 positions differ by at most 0.000330 world units. No negative native contact
 distances were recorded, with a small contact margin enabled.
 
@@ -51,13 +57,13 @@ had a visible inward bump. [Eleven selected source features](validation/180-sour
 fit within 3.25 pixels in the initial front projection. This is a sparse feature
 check, supported by visual comparison, rather than full contour registration.
 
-- [Bake](validation/180-bake.json): 661 adaptive keys, 291,030 compressed bytes,
+- [Bake](validation/180-bake.json): 746 adaptive keys, 291,839 compressed bytes,
   maximum sampled interpolation error below 0.000005, including loop closure.
 - [Assembly sweep](validation/180-assembly-clearance.json): all 16 meshes,
-  29 cross-body pairs, 129 poses and 2,587,740 finite-surface queries;
+  29 cross-body pairs, 129 poses and 1,192,476 finite-surface queries;
   no sampled intersections.
-- [Dense contact sweep](validation/180-dense-contact.json): 2,641 poses and
-  10,463,642 surface queries for jaw/board and fixed-side/board;
+- [Dense contact sweep](validation/180-dense-contact.json): 2,981 poses and
+  11,560,318 surface queries for jaw/board and fixed-side/board;
   no sampled intersections. These are sampled checks, not continuous proof.
 - Two production tests check source screw positions, actual bores and slots,
   finite transforms, the complete cycle and exact Restart.

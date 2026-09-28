@@ -3727,14 +3727,8 @@ function eccentricCircularGuideVariableSpeedShaper({reference = false} = {}) {
     backing.position.set(fixedDiskCenter.x, fixedDiskCenter.y, -.62);
     backing.userData.role = 'integral-rear-web-of-fixed-guide';
     root.add(backing);root.userData.blocks.guideBacking = backing;
-    // The fixed guide disk is bolted by a plain square flange (hidden behind
-    // it in the plate's view) to the framing behind the mechanism.
-    // Its lower edge stops 0.05 above the input shaft, which passes behind.
-    const flangeBottom = shaftOffset.y + shaftRadius + .05;
-    const guideFlange = new THREE.Mesh(new THREE.BoxGeometry(2.4, 1.2 - flangeBottom, .08), frameMaterial);
-    guideFlange.position.set(fixedDiskCenter.x, fixedDiskCenter.y + (1.2 + flangeBottom) / 2, -.72);
-    guideFlange.userData.role = 'rear-flange-carrying-fixed-guide-disk';
-    root.add(guideFlange);root.userData.blocks.guideFlange = guideFlange;
+    // Pass 93: Brown draws no mounting for the fixed guide disk; the undrawn
+    // square rear flange that showed from behind is gone (as 125, no supports).
     // Brown's inner circles on the fixed disk are ink edges, not raised rings.
     for (const outline of [innerBossOuterOutline, innerBossInnerOutline]) {
       outline.removeFromParent();
@@ -3773,6 +3767,10 @@ function eccentricCircularGuideVariableSpeedShaper({reference = false} = {}) {
     }
     drawnRod.removeFromParent();
     drawnRod.geometry.dispose();
+    // Pass 93: the tool slide and its pin are not shown, so the rod's far
+    // eye hung empty in rotated views. The rod ends plainly instead.
+    connectingRodOutputEye.removeFromParent();
+    connectingRodOutputEye.geometry.dispose();
     root.userData.cameraFitBounds = bounds.expandByScalar(.08);
     root.userData.cameraFov = 8;
     root.userData.sourceFit = 'engraving';

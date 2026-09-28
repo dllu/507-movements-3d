@@ -726,11 +726,27 @@ function entwistlePatentGearing(movement) {
   for (const gear of [fixedGearA, outputGearC, planetGearB]) {
     truncateEntwistleBevel(gear, 0.80, 1.20);
   }
+  // Pass 93: in Brown's section each wheel's boss starts at its toe, so the
+  // space between the three toes is free for the carrier block; the hubs no
+  // longer run in toward the apex (they began 0.19 from it).
+  for (const gear of [fixedGearA, outputGearC, planetGearB]) {
+    const hub = gear.userData.hub;
+    hub.geometry.computeBoundingBox();
+    const box = hub.geometry.boundingBox;
+    const outer = Math.max(box.max.x, box.max.y), center = hub.position.z;
+    const boreRadius = gear === planetGearB ? 0.074 : looseBoreRadius;
+    hub.geometry.dispose();
+    hub.geometry = boredLatheGeometry([{axial: 0.80 - center, radial: outer}, {axial: 1.38 - center, radial: outer}], boreRadius, 64)
+      .rotateX(Math.PI / 2);
+    hub.userData.boreRadius = boreRadius;
+  }
   // Brown's carrier is a square block on D, the stud E rising from it
-  // through B (it was a round collar).
+  // through B. Pass 93: at his proportions it is about 0.37 of B's tip
+  // diameter wide and 0.54 tall, filling the space between the three toes
+  // (0.30 clear of each); it was a 0.40 x 0.28 collar.
   {
-    const side = 0.40, length = 0.28;
-    const square = poly([[-side / 2, -side / 2], [side / 2, -side / 2], [side / 2, side / 2], [-side / 2, side / 2]]);
+    const high = 0.62, low = -0.75, half = 0.50, length = 1.00;
+    const square = poly([[low, -half], [high, -half], [high, half], [low, half]]);
     carrierCollar.geometry.dispose();
     // Bored along its local y, like the collar it replaces (turned onto x).
     carrierCollar.geometry = plate(polygonClipping.difference(square, poly(circle([0, 0], 0.087, 64))), -length / 2, length / 2)

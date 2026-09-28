@@ -639,10 +639,18 @@ function threeLeggedDeadEscapement(movement) {
   // Brown draws two flat pendulum-rod strips behind the plate, running above
   // and below it through the four fastening screws; they swing with it.
   const pendulumStrips = [-1, 1].map((side) => {
-    const strip = new THREE.Mesh(
-      new THREE.BoxGeometry(0.40, plateHeight + 0.90, 0.08),
-      frameMaterial,
-    );
+    // Each strip is one flat bar with round ends, carried a little past the
+    // plate's edges rather than cut off square.
+    const stripHalfWidth = 0.20, stripHalfStraight = (plateHeight + 1.10) / 2 - stripHalfWidth;
+    const stripShape = new THREE.Shape();
+    stripShape.moveTo(stripHalfWidth, -stripHalfStraight);
+    stripShape.lineTo(stripHalfWidth, stripHalfStraight);
+    stripShape.absarc(0, stripHalfStraight, stripHalfWidth, 0, Math.PI, false);
+    stripShape.lineTo(-stripHalfWidth, -stripHalfStraight);
+    stripShape.absarc(0, -stripHalfStraight, stripHalfWidth, Math.PI, FULL_TURN, false);
+    const stripGeometry = new THREE.ExtrudeGeometry(stripShape, { bevelEnabled: false, curveSegments: 32, depth: 0.08 });
+    stripGeometry.translate(0, 0, -0.04);
+    const strip = new THREE.Mesh(stripGeometry, frameMaterial);
     strip.position.set(side * 1.96, 0, 0.04 - palletDepth / 2 - 0.035);
     strip.userData.role = 'pendulum-rod-strip-behind-plate';
     plateCarrier.add(strip);
@@ -1493,7 +1501,7 @@ function longStoppingToothEscapement(movement) {
   ].map(([x, y]) => rotate2(new THREE.Vector2(x, y), angle).toArray()));
   const wheelOutline = clip.difference(
     clip.union(...Array.from({ length: toothCount }, (_, index) => spear(index * toothPitch))),
-    poly(circle([0, 0], arborRadius + 0.005, 64)),
+    poly(circle([0, 0], arborRadius + 0.0015, 64)),
   );
   const wedge = (angle) => poly([
     [0, 0],
@@ -1502,15 +1510,35 @@ function longStoppingToothEscapement(movement) {
       return [3 * Math.cos(a), 3 * Math.sin(a)];
     }),
   ]);
-  // Sharp-edged pin section: the working edge is the outermost and most
-  // clockwise point; the leading flank slopes back so it trails the edge.
+  // Brown's crescents on the leg roots are these pins seen end-on: each is a
+  // circular segment (a flat chord and a shallow arc) whose sharp chord end
+  // is the working edge, outermost and most clockwise. The arc leaves that
+  // edge sloping inward, so nothing trails outside it.
   const r = impulsePinOrbitRadius;
-  const pinSection = [
-    [r, 0],
-    [r - 0.08, 0.10],
-    [r - 0.13, 0.085],
-    [r - 0.12, 0.06],
-  ];
+  const pinChordEnd = [r - 0.13, 0.085];
+  const pinSection = (() => {
+    const [ax, ay] = [r, 0], [bx, by] = pinChordEnd;
+    const chord = Math.hypot(bx - ax, by - ay);
+    const halfAngle = THREE.MathUtils.degToRad(40);
+    const radius = chord / 2 / Math.sin(halfAngle);
+    // Centre on the left of the chord (a to b), so the arc bulges right,
+    // away from the wheel centre's side.
+    const mx = (ax + bx) / 2, my = (ay + by) / 2;
+    const nx = -(by - ay) / chord, ny = (bx - ax) / chord;
+    const offset = radius * Math.cos(halfAngle);
+    const cx = mx + nx * offset, cy = my + ny * offset;
+    const start = Math.atan2(ay - cy, ax - cx);
+    const points = [];
+    for (let i = 0; i <= 16; i += 1) {
+      const angle = start + 2 * halfAngle * i / 16;
+      points.push([cx + radius * Math.cos(angle), cy + radius * Math.sin(angle)]);
+    }
+    points[0] = [ax, ay];
+    points[16] = [bx, by];
+    return points;
+  })();
+  // The pins pass right through the leg and stand just proud of its face.
+  const impulsePinFrontZ = lockPlaneZ + wheelDepth / 2 + 0.012;
   const longToothMeshes = [];
   const impulsePins = [];
   for (let index = 0; index < toothCount; index += 1) {
@@ -1534,7 +1562,7 @@ function longStoppingToothEscapement(movement) {
           index * toothPitch + phi0,
         ).toArray())),
         impulsePinBackZ,
-        lockPlaneZ,
+        impulsePinFrontZ,
       ),
       impulsePinMaterial,
     );
@@ -1548,7 +1576,7 @@ function longStoppingToothEscapement(movement) {
     boredLatheGeometry([
       { axial: -wheelDepth / 2 - 0.03, radial: 0.19 },
       { axial: wheelDepth / 2 + 0.03, radial: 0.19 },
-    ], arborRadius + 0.005, 64),
+    ], arborRadius + 0.0015, 64),
     darkMaterial,
   );
   wheelHub.rotation.x = Math.PI / 2;

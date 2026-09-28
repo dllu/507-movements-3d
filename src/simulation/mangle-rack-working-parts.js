@@ -4,6 +4,7 @@ import { capsule, circle, plate, poly, polygonClipping, ring, sector } from './f
 import { boredPlanarLinkGeometry } from './bored-planar-link.js';
 import { PALETTE, matte, markShadows } from './primitives.js';
 import { backBar, footPillar, supportMaterial } from './back-plate-support.js';
+import { involuteSpurOutline } from './smooth-extrusion.js';
 
 const capsuleOutline = (length, radius) => capsule([0, 0], [length, 0], radius, 128);
 const replace = (mesh, geometry) => { mesh.geometry.dispose(); mesh.geometry = geometry; };
@@ -12,7 +13,20 @@ function clearChildren(group) { for (const child of [...group.children]) { child
 function boredPinion(b, id) {
   const gear = b.pinion.userData.rotor.children[0];
   const radius = id === 197 ? 0.075 : 0.083;
-  const points = id === 197 ? profiles[197].points : gear.geometry.parameters.shapes.getPoints().map(p => p.toArray());
+  // p93: 198's six full-depth involute teeth were thin pointed petals. Brown
+  // draws short, square-topped teeth on a large hub. The count stays six: it
+  // is set by the 36-tooth rack and the pinion pitch circle (2 pi r / pitch
+  // = 6), which the rack path is built on. Cut stub teeth (addendum and
+  // dedendum 0.8 module) instead; the rack is regenerated against them.
+  let points;
+  if (id === 197) points = profiles[197].points;
+  else {
+    const u = b.pinion.userData, m = 2 * u.pitchRadius / u.teeth;
+    u.outerRadius = u.pitchRadius + 0.8 * m; u.rootRadius = u.pitchRadius - 0.8 * m;
+    // Tooth 0 is centred on +x, as the factory's teeth were.
+    points = involuteSpurOutline({ teeth: u.teeth, pitchRadius: u.pitchRadius, rootRadius: u.rootRadius, outerRadius: u.outerRadius,
+      pressureAngle: u.pressureAngle, flankSamples: 24, tipSamples: 12, rootSamples: 12 }).map(p => [p.x, p.y]);
+  }
   if (id === 198) gear.userData.sourceOutline = points;
   replace(gear, plate(polygonClipping.difference(poly(points), poly(circle([0, 0], radius, 96))), id === 197 ? -0.17 : -0.19, id === 197 ? 0.17 : 0.19));
   gear.userData.role = id === 197 ? 'generated-ten-tooth-pin-rack-pinion' : 'bored-six-tooth-endless-rack-pinion';
@@ -31,6 +45,10 @@ function finish197(root) {
   const { blocks: b, geometry: g } = root.userData;
   boredPinion(b, 197);
   for (const rim of b.rackPinRims) { replace(rim, ring(0.065, 0.086, -0.007, 0.007, 64)); rim.position.z = 0.27; }
+  // p93: Brown's pin circles are the rack's working feature, but the pins
+  // were the rack's own blue and read only as faint dots. Turn them in brass.
+  const pinMaterial = matte(PALETTE.brass, { metalness: 0.3, roughness: 0.5 });
+  for (const pin of b.rackPins) pin.traverse(o => { if (o.isMesh) o.material = pinMaterial; });
   for (const [guide, side] of [[b.leftEndGuide, -1], [b.rightEndGuide, 1]]) {
     const start = side > 0 ? -Math.PI / 2 : Math.PI / 2;
     // A deep cast guide (from just in front of the pinion to the collar's
@@ -247,6 +265,9 @@ export function finishMangleRackWorkingParts(root, update, id) {
   wrappedUpdate(0); markShadows(root);
   // Brown draws the rack pins as plain circles on the rack face; their long
   // stems otherwise throw a row of diagonal stripes across it.
-  if (id === 197) for (const pin of [...d.blocks.rackPins, ...d.blocks.rackPinRims]) pin.traverse(o => { o.castShadow = false; });
+  // The render-time shadow policy re-enabled casting (p93 audit: '/////' hatch
+  // across the rack floor), so tag them: they still receive shadows, and they
+  // stand on the rack floor, so they do not read as floating.
+  if (id === 197) for (const pin of [...d.blocks.rackPins, ...d.blocks.rackPinRims]) pin.traverse(o => { o.castShadow = false; if (o.isMesh) { o.receiveShadow = true; o.userData.noShadow = true; } });
   return { root, update: wrappedUpdate, cameraDirection: new THREE.Vector3(1.2, 0.7, 18) };
 }

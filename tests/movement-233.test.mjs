@@ -365,3 +365,15 @@ test('movement 233 closes every cycle two trundles on and leaves 269 authored', 
   disposeModel(model.root);
   disposeModel(movement507.root);
 });
+
+test('p93: the fixed pivots are short studs through their own parts', () => {
+  const model = createMovementModel(catalog.movements[232]);
+  model.root.updateMatrixWorld(true);
+  for (const role of ['roller-stop-fixed-pivot', 'latch-stop-fixed-pivot']) {
+    let box = null;
+    model.root.traverse((object) => { if (object.userData.role === role) box = new THREE.Box3().setFromObject(object); });
+    assert.ok(box, role);
+    assert.ok(box.max.z - box.min.z < 0.26, `${role} is a short stud`);
+    assert.ok(box.min.z > 0.4, `${role} does not run behind the wheel`);
+  }
+});

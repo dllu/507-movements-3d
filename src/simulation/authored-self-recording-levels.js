@@ -278,10 +278,38 @@ function selfRecordingLevel(movement) {
     roughness: 0.44,
   });
   const whiteMaterial = matte(PALETTE.white, { roughness: 0.40 });
-  const paperMaterial = matte(0xe8e2cf, {
+  // Brown rules the paper in sections: fine lines round the drum, every
+  // fifth a little heavier. They are a texture on the drum's own surface (no
+  // extra line meshes); the paper is a warm off-white, clearly not the
+  // background.
+  const paperRuling = (() => {
+    const width = 1024;
+    const data = new Uint8Array(width * 4);
+    const sections = 25;
+    for (let x = 0; x < width; x += 1) {
+      const v = (x + 0.5) / width;
+      const s = v * sections;
+      const distance = Math.abs(s - Math.round(s)) / sections * width;
+      const major = Math.round(s) % 5 === 0;
+      const onPaper = v > 0.012 && v < 0.988;
+      const line = onPaper && distance < (major ? 1.6 : 1.0);
+      const shade = line ? (major ? 118 : 150) : 255;
+      data.set([shade, shade, shade, 255], x * 4);
+    }
+    const texture = new THREE.DataTexture(data, width, 1, THREE.RGBAFormat);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.magFilter = THREE.LinearFilter;
+    texture.minFilter = THREE.LinearMipmapLinearFilter;
+    texture.generateMipmaps = true;
+    texture.anisotropy = 8;
+    texture.needsUpdate = true;
+    return texture;
+  })();
+  const paperMaterial = matte(0xd2c6a5, {
     metalness: 0,
     roughness: 0.91,
   });
+  paperMaterial.map = paperRuling;
   const terrainMaterial = matte(0x77766f, {
     metalness: 0.02,
     roughness: 0.92,
@@ -436,7 +464,23 @@ function selfRecordingLevel(movement) {
   drumCarrier.add(drumRotor);
   drumShaft.position.sub(drumCenter);
   drumRotor.add(drumShaft);
-  const paperDrum = new THREE.Mesh(boredCylinderGeometry(drumRadius, 0.068, drumLength), paperMaterial);
+  const paperDrumGeometry = boredCylinderGeometry(drumRadius, 0.068, drumLength);
+  {
+    // v is unused; u runs along the drum's axis on the paper face only (the
+    // end faces and bore sample the plain margin).
+    const position = paperDrumGeometry.attributes.position;
+    const normal = paperDrumGeometry.attributes.normal;
+    const uv = new Float32Array(position.count * 2);
+    for (let i = 0; i < position.count; i += 1) {
+      const radial = Math.hypot(position.getX(i), position.getZ(i));
+      uv[2 * i + 1] = 0.5;
+      uv[2 * i] = Math.abs(radial - drumRadius) < 1e-4 && Math.abs(normal.getY(i)) < 0.5
+        ? position.getY(i) / drumLength + 0.5
+        : 0.001;
+    }
+    paperDrumGeometry.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+  }
+  const paperDrum = new THREE.Mesh(paperDrumGeometry, paperMaterial);
   paperDrum.rotation.z = Math.PI / 2;
   paperDrum.userData.role =
     'cylindrical-sectionally-ruled-recording-paper';

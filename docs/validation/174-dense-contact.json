@@ -1,6 +1,6 @@
 {
   "movement": 174,
-  "poses": 3925,
+  "poses": 4621,
   "meshes": 16,
   "pairs": [
     [
@@ -12,7 +12,7 @@
       "board"
     ]
   ],
-  "queries": 27427900,
+  "queries": 32291548,
   "intersections": {},
   "method": "Both jaw-board pairs at four subinterval samples per adaptive motion interval; finite mesh vertices, edge midpoints and face centers. All 16 meshes are physical. Sampled clearance only.",
   "sources": [
@@ -30,7 +30,7 @@
     },
     {
       "file": "src/simulation/baked/assets/174.json.gz",
-      "sha256": "cc9683749ef8605d054ff1af7e1c0ba20d4bf92e77e1b094433cad722c4a57d4"
+      "sha256": "af3b57120a27f96ba32f7e77de0371eb9640cb0cac6b8b23b79c27c2df944f75"
     },
     {
       "file": "src/simulation/finite-plate-geometry.js",
@@ -38,7 +38,7 @@
     },
     {
       "file": "tests/helpers/solid-surface.mjs",
-      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+      "sha256": "8f39335894306bfe77f2d3562e6c2e7ac867dead2e078f2d1da4da7151998b99"
     }
   ]
 }

@@ -651,9 +651,11 @@ test('movement 196 is fully three-dimensional as the review queue advances throu
   const size = physicalBounds.getSize(new THREE.Vector3());
   assert.ok(size.x > 5.1);
   assert.ok(size.y > 3.5);
-  assert.ok(size.z > 1.3);
-  assert.ok(physicalBounds.min.z < -0.7);
-  assert.ok(physicalBounds.max.z > 0.61);
+  // p93: wheel A's shaft is trimmed to its hub and strap, and the pedestal
+  // stands in the arm's plane; pinion B's axle still reaches back.
+  assert.ok(size.z > 1.15);
+  assert.ok(physicalBounds.min.z < -0.65);
+  assert.ok(physicalBounds.max.z > 0.5);
   let meshCount = 0;
   let irregularWheelToothCount = 0;
   model.root.traverse((object) => {

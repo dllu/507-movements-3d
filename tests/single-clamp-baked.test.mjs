@@ -23,12 +23,15 @@ test('180 plays a continuous contact-driven six-second cycle and restarts exactl
  const m=makeBakedSingleClampModel(bundle),u=m.root.userData;
  try{
   const initial=Object.fromEntries(Object.entries(u.parts).map(([n,p])=>[n,[...p.matrixWorld.elements]]));
-  let lo=Infinity,hi=-Infinity;
+  let lo=Infinity,hi=-Infinity,jawLo=Infinity,jawHi=-Infinity;
   for(let i=0;i<=180;i++){
    m.update(i/30);lo=Math.min(lo,u.kinematics.boardY);hi=Math.max(hi,u.kinematics.boardY);
+   jawLo=Math.min(jawLo,u.kinematics.jaw);jawHi=Math.max(jawHi,u.kinematics.jaw);
    for(const p of Object.values(u.parts)){assert.ok(p.matrixWorld.elements.every(Number.isFinite));assert.equal(p.material.fog,false);}
   }
   assert.ok(hi-lo>.79&&hi-lo<.82,'board withdraws and returns to the clamp');
+  assert.ok(jawHi-jawLo>.1,'the jaw visibly opens on withdrawal and turns shut as the board is pushed in');
+  assert.ok(Math.abs(u.stateAtTime(0).jaw)<.01,'the jaw is closed on the board at the source pose');
   assert.equal(u.simulationBackend,'baked-mujoco');assert.equal(u.hideGround,true);assert.equal(Object.keys(u.parts).length,16);
   for(const[n,p]of Object.entries(u.parts))p.matrixWorld.elements.forEach((v,i)=>assert.ok(Math.abs(v-initial[n][i])<1e-12));
   m.update(2);m.reset();for(const[n,p]of Object.entries(u.parts))assert.deepEqual(p.matrixWorld.elements,initial[n]);

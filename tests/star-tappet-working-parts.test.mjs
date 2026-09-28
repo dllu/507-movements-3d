@@ -88,7 +88,7 @@ test('235 tappet is one flat beak blade with a notched back, not an even-width r
   assert.equal(polygons[0].length,2,'outline plus the hinge bore');
   const field=solidSurface(d.blocks.tappetBody.geometry),inside=(x,y)=>field.signedDistance(new THREE.Vector3(x,y,0))<0;
   // The notch: a point between its two sides is open, the blade either side is solid.
-  const [nx,ny]=B.notch;assert.ok(!inside(nx,ny-.06),'the notch is open');
+  const nx=B.notch[0]*g.tappetLength/2.0808,ny=B.notch[1];assert.ok(!inside(nx,ny-.06),'the notch is open');
   assert.ok(inside(nx-.3,ny-.05)&&inside(nx,ny+.08),'blade material round the notch');
   // Broad behind the beak (wider than the arm's half width), narrow at the beak.
   let wide=0;for(let y=-.3;y<=.6;y+=.005)if(inside(1.0,y))wide+=.005;

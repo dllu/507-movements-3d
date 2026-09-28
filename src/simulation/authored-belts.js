@@ -126,6 +126,20 @@ function castSpokedHub(pulley) {
   return pulley;
 }
 
+// Brown's small guide sheaves (3, 4) show only a ring hub in the wheel's own
+// metal, like the cast spoked pulleys: the solid sheave's hub is cast in the
+// tread material just proud of its faces, and callers cut the shaft to a
+// short stub (spokedStubLength).
+function castGuideHub(pulley) {
+  const data = pulley.userData;
+  if (data.tread?.userData.role !== 'solid-pulley-drum') return pulley;
+  const hub = data.hub, hubLength = hub.geometry.parameters.height;
+  hub.scale.y = (data.width + 0.04) / hubLength;
+  hub.material = data.tread.material;
+  hub.userData.role = 'cast-ring-hub';
+  return pulley;
+}
+
 function setBeltActive(belt, active) {
   belt.visible = active;
   belt.userData.active = active;
@@ -487,9 +501,12 @@ function rightAngleGuides() {
   const belt = makeMovingBelt(beltCurve, { radius: ropeRadius, laid: true, markerCount: 0 });
   root.add(driver, driven, guideA, guideB, belt);
   addKeyedShaft(driver, driverWidth + 0.3);
-  addKeyedShaft(driven, 1.45);
-  addKeyedShaft(guideA, 0.32);
-  addKeyedShaft(guideB, 0.32);
+  castSpokedHub(driven);
+  castGuideHub(guideA);
+  castGuideHub(guideB);
+  addKeyedShaft(driven, spokedStubLength(driven));
+  addKeyedShaft(guideA, spokedStubLength(guideA));
+  addKeyedShaft(guideB, spokedStubLength(guideB));
   root.userData.mechanism = 'right-angle-guide-pulley-drive';
   root.userData.blocks = { driver, driven, guideA, guideB, belt };
   // Brown draws the weight drum flat, as a square block with no end faces or
@@ -678,8 +695,10 @@ function rightAngleCrossed() {
   castSpokedHub(driver);
   addKeyedShaft(driver, spokedStubLength(driver));
   addKeyedShaft(driven, 1.15);
-  addKeyedShaft(guideLeft, 0.74);
-  addKeyedShaft(guideRight, 0.74);
+  castGuideHub(guideLeft);
+  castGuideHub(guideRight);
+  addKeyedShaft(guideLeft, spokedStubLength(guideLeft));
+  addKeyedShaft(guideRight, spokedStubLength(guideRight));
   root.userData.mechanism = 'crossed-right-angle-guide-drive';
   root.userData.drivenWrapTurns = Math.abs(wrapSweep) / (Math.PI * 2);
   root.userData.crossoverClearance = crossingGap - 2 * ropeRadius;
@@ -10176,35 +10195,32 @@ function leverContractedCraneBandBrake(movement) {
 
   const makeDynamicFlatBand = () => {
     const pointCount = bandArcSamples + 2;
-    const positions = new Float32Array(pointCount * 4 * 3);
-    const normals = new Float32Array(pointCount * 4 * 3);
-    for (let index = 0; index < pointCount; index += 1) {
-      normals.set([
-        0, 0, 1,
-        0, 0, 1,
-        0, 0, -1,
-        0, 0, -1,
-      ], index * 12);
-    }
+    // Each of the strap's four faces (and each end) owns its vertices, so the
+    // 90-degree edges stay sharp: a flat band, not a rounded cord. Per
+    // section: 0/1 front face, 2/3 back face, 4/5 outer side, 6/7 inner side.
+    const ringSize = 8;
+    const capBase = pointCount * ringSize;
+    const positions = new Float32Array((capBase + 8) * 3);
+    const normals = new Float32Array((capBase + 8) * 3);
     const indices = [];
     for (let index = 0; index < pointCount - 1; index += 1) {
-      const first = index * 4;
-      const second = (index + 1) * 4;
+      const a = index * ringSize;
+      const b = (index + 1) * ringSize;
       indices.push(
-        first, second, second + 1,
-        first, second + 1, first + 1,
-        first + 2, second + 3, second + 2,
-        first + 2, first + 3, second + 3,
-        first, first + 2, second + 2,
-        first, second + 2, second,
-        first + 1, second + 1, second + 3,
-        first + 1, second + 3, first + 3,
+        a, b, b + 1,
+        a, b + 1, a + 1,
+        a + 2, b + 3, b + 2,
+        a + 2, a + 3, b + 3,
+        a + 4, a + 5, b + 5,
+        a + 4, b + 5, b + 4,
+        a + 6, b + 6, b + 7,
+        a + 6, b + 7, a + 7,
       );
     }
-    const last = (pointCount - 1) * 4;
+    const endCap = capBase + 4;
     indices.push(
-      0, 1, 3, 0, 3, 2,
-      last, last + 2, last + 3, last, last + 3, last + 1,
+      capBase, capBase + 1, capBase + 3, capBase, capBase + 3, capBase + 2,
+      endCap, endCap + 2, endCap + 3, endCap, endCap + 3, endCap + 1,
     );
     const geometry = new THREE.BufferGeometry();
     const positionAttribute = new THREE.BufferAttribute(positions, 3);
@@ -10240,13 +10256,19 @@ function leverContractedCraneBandBrake(movement) {
           .addScaledVector(normal, bandWidth / 2);
         const minus = center.clone()
           .addScaledVector(normal, -bandWidth / 2);
-        const base = index * 12;
+        const front = bandPlaneZ + bandDepth / 2;
+        const back = bandPlaneZ - bandDepth / 2;
+        const corners = [
+          plus.x, plus.y, front, minus.x, minus.y, front,
+          plus.x, plus.y, back, minus.x, minus.y, back,
+        ];
         positions.set([
-          plus.x, plus.y, bandPlaneZ + bandDepth / 2,
-          minus.x, minus.y, bandPlaneZ + bandDepth / 2,
-          plus.x, plus.y, bandPlaneZ - bandDepth / 2,
-          minus.x, minus.y, bandPlaneZ - bandDepth / 2,
-        ], base);
+          ...corners,
+          plus.x, plus.y, front, plus.x, plus.y, back,
+          minus.x, minus.y, front, minus.x, minus.y, back,
+        ], index * ringSize * 3);
+        if (index === 0) positions.set(corners, capBase * 3);
+        if (index === pointCount - 1) positions.set(corners, (capBase + 4) * 3);
       }
       positionAttribute.needsUpdate = true;
       geometry.computeVertexNormals();
@@ -10714,8 +10736,14 @@ function horizontalDriverToTwinVerticalShafts(movement) {
     Y_AXIS,
     X_AXIS.clone().negate(),
   );
+  // The quarter twist is finished a quarter-span before the guide, so the
+  // band arrives flat and centred on the guide's face instead of crossing
+  // it still twisted.
+  const twistSpan = 0.75;
   const quarterTurnWidth = (from, to, progress) => {
-    const angle = Math.PI / 2 * smoothStep01(progress);
+    const angle = Math.PI / 2 * smoothStep01(from === Y_AXIS
+      ? Math.min(1, progress / twistSpan)
+      : Math.max(0, (progress - (1 - twistSpan)) / twistSpan));
     return from.clone().multiplyScalar(Math.cos(angle))
       .addScaledVector(to, Math.sin(angle));
   };
@@ -10842,7 +10870,11 @@ function horizontalDriverToTwinVerticalShafts(movement) {
     }
     sectionDistances.push(beltLength);
     const ribbonSamples = sectionDistances.length - 1;
-    const vertexCount = (ribbonSamples + 1) * 4;
+    // Each face of the band's rectangular section owns its vertices, so the
+    // 90-degree edges stay sharp and the band shades flat, not as a cord.
+    // Per section: 0/1 outer face, 2/3 inner face, 4/5 and 6/7 the two edges.
+    const ringSize = 8;
+    const vertexCount = (ribbonSamples + 1) * ringSize;
     const positions = new Float32Array(vertexCount * 3);
     for (let sample = 0; sample <= ribbonSamples; sample += 1) {
       const frame = beltFrameAtDistance(
@@ -10854,27 +10886,28 @@ function horizontalDriverToTwinVerticalShafts(movement) {
         .multiplyScalar(beltThickness / 2);
       const plusWidth = frame.point.clone().add(widthOffset);
       const minusWidth = frame.point.clone().sub(widthOffset);
-      const base = sample * 12;
+      const plusOut = plusWidth.clone().add(thicknessOffset).toArray();
+      const minusOut = minusWidth.clone().add(thicknessOffset).toArray();
+      const plusIn = plusWidth.clone().sub(thicknessOffset).toArray();
+      const minusIn = minusWidth.clone().sub(thicknessOffset).toArray();
       positions.set([
-        ...plusWidth.clone().add(thicknessOffset).toArray(),
-        ...minusWidth.clone().add(thicknessOffset).toArray(),
-        ...plusWidth.clone().sub(thicknessOffset).toArray(),
-        ...minusWidth.clone().sub(thicknessOffset).toArray(),
-      ], base);
+        ...plusOut, ...minusOut, ...plusIn, ...minusIn,
+        ...plusOut, ...plusIn, ...minusOut, ...minusIn,
+      ], sample * ringSize * 3);
     }
     const indices = [];
     for (let sample = 0; sample < ribbonSamples; sample += 1) {
-      const first = sample * 4;
-      const second = (sample + 1) * 4;
+      const a = sample * ringSize;
+      const b = (sample + 1) * ringSize;
       indices.push(
-        first, second, second + 1,
-        first, second + 1, first + 1,
-        first + 2, second + 3, second + 2,
-        first + 2, first + 3, second + 3,
-        first, first + 2, second + 2,
-        first, second + 2, second,
-        first + 1, second + 1, second + 3,
-        first + 1, second + 3, first + 3,
+        a, b, b + 1,
+        a, b + 1, a + 1,
+        a + 2, b + 3, b + 2,
+        a + 2, a + 3, b + 3,
+        a + 4, a + 5, b + 5,
+        a + 4, b + 5, b + 4,
+        a + 6, b + 6, b + 7,
+        a + 6, b + 7, a + 7,
       );
     }
     const geometry = new THREE.BufferGeometry();

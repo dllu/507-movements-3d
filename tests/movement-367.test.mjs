@@ -468,3 +468,21 @@ test('movement 367 closes only until the right link pin meets the brass arc, whi
   assert.ok(minimumClearance < 0.02, `the arc is the closing stop: ${minimumClearance}`);
   disposeModel(model.root);
 });
+
+test('movement 367 ivory scale is tinted off-paper and carries inlaid graduations sunk below its face', () => {
+  const model = createMovementModel(catalog.movements[366]);
+  const { blocks } = model.root.userData;
+  const ivory = blocks.ivoryScale;
+  const color = ivory.material.color;
+  const luminance = 0.2126 * color.r + 0.7152 * color.g + 0.0722 * color.b;
+  assert.ok(luminance < 0.6, `ivory luminance ${luminance} is off-paper`);
+  ivory.geometry.computeBoundingBox();
+  const faceTop = ivory.geometry.boundingBox.max.y + ivory.position.y;
+  for (const tick of blocks.scaleTicks) {
+    assert.equal(tick.visible, true);
+    tick.geometry.computeBoundingBox();
+    const top = tick.geometry.boundingBox.max.y + tick.position.y;
+    assert.ok(top < faceTop - 0.003 && top > faceTop - 0.006, 'tick sunk just below the ivory face');
+  }
+  disposeModel(model.root);
+});

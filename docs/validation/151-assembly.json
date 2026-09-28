@@ -2,10 +2,10 @@
   "movement": 151,
   "method": "All visible mesh pairs belonging to different rigid bodies, bidirectional vertices/edge midpoints/face centers, 17 poses spanning both travel directions. Worm/wheel working mesh excluded and audited separately. Same-body mating interfaces excluded. No continuous collision proof.",
   "summary": {
-    "parts": 37,
-    "pairs": 413,
+    "parts": 33,
+    "pairs": 377,
     "poses": 17,
-    "checks": 84943575,
+    "checks": 90424325,
     "failingPairs": 0
   },
   "failures": {},
@@ -16,7 +16,7 @@
     },
     {
       "file": "src/simulation/opposed-screw-nuts.js",
-      "sha256": "933bba3b5380c28e4aa06cc86341c35fdce290db8a8a12f6e1db8a3888aaa05f"
+      "sha256": "ff6724dd1b82b344149b12318206e71f306bb99d7e3a27948af5124be586889d"
     },
     {
       "file": "src/simulation/finite-plate-geometry.js",

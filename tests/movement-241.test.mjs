@@ -543,3 +543,14 @@ test('movement 241 closes after nineteen indexes and leaves movement 507 authore
   disposeModel(model.root);
   disposeModel(model289.root);
 });
+
+test('p93: the holding click is a broad horn swelling from its eye', () => {
+  const model = createMovementModel(catalog.movements[240]);
+  const body = model.root.userData.blocks.holdingClickBody;
+  const outline = body.geometry.userData.plate.polygons[0][0];
+  // Width across the horn a third of the way out, from the eye's centre.
+  const near = outline.filter(([x, y]) => Math.abs(Math.hypot(x, y) - 0.5) < 0.05);
+  const angles = near.map(([x, y]) => Math.atan2(y, x));
+  const spread = (Math.max(...angles) - Math.min(...angles)) * 0.5;
+  assert.ok(spread > 0.28, `horn width ${spread}`);
+});

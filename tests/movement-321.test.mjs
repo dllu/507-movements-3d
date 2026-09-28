@@ -428,14 +428,14 @@ test('movement 321 flexes one constant-material-length spring between live G and
         + Math.atan2(0.50, -2.55)) * geometry.springOuterAnchorRadius,
       Math.sin(state.greatWheelAngle
         + Math.atan2(0.50, -2.55)) * geometry.springOuterAnchorRadius,
-      1.16,
+      geometry.springPlaneZ,
     );
     const expectedInner = new THREE.Vector3(
       Math.cos(state.largeRatchetAngle
         + Math.atan2(1.65, -1.10)) * geometry.springInnerAnchorRadius,
       Math.sin(state.largeRatchetAngle
         + Math.atan2(1.65, -1.10)) * geometry.springInnerAnchorRadius,
-      1.16,
+      geometry.springPlaneZ,
     );
     vectorNear(spring.pointAtMaterialFraction(0), expectedOuter, 1e-14,
       `outer S-prime anchor at ${sample}`);
@@ -593,4 +593,27 @@ test('movement 321 closes all asymmetric members and leaves movement 507 as the 
   assert.equal(model507.root.userData.fidelity, 'authored');
   disposeModel(model507.root);
   disposeModel(model.root);
+});
+
+test('movement 321 lays spring S-S-prime on the larger ratchet on short studs, casting a shadow', () => {
+  const model = createMovementModel(catalog.movements[320]);
+  const { blocks, geometry } = model.root.userData;
+  model.root.updateMatrixWorld(true);
+  const box = (object) => new THREE.Box3().setFromObject(object);
+  const ratchet = box(blocks.largeRatchetMesh);
+  const wire = box(blocks.springSegments[0]);
+  const small = box(blocks.barrelRatchet);
+  const face = box(blocks.barrelBody);
+  assert.ok(small.min.z > ratchet.max.z + 0.015, 'B sits just in front of the larger ratchet');
+  assert.ok(small.min.z < ratchet.max.z + 0.03);
+  assert.ok(wire.min.z > Math.max(small.max.z, face.max.z) + 0.01, 'wire crosses over B');
+  assert.ok(wire.max.z < ratchet.max.z + 0.35, 'wire lies close to the wheels');
+  assert.ok(blocks.springSegments[0].castShadow);
+  for (const part of [blocks.springInnerAnchor, blocks.springOuterAnchor,
+    blocks.springOuterPost, blocks.springOuterArm]) {
+    assert.ok(box(part).max.z < 0.56, `${part.userData.role} is short`);
+  }
+  assert.equal(blocks.springInnerPost, undefined);
+  // The arbor ends inside a winding square just proud of B's face.
+  assert.ok(box(blocks.barrelHub).max.z < box(blocks.barrelBody).max.z + 0.06);
 });

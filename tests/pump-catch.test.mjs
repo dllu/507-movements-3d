@@ -153,3 +153,8 @@ test('086 actual rope stays attached and constant in length, reuses its buffers 
  }
  assert.ok(counts.size>4,'Must exercise changing wrap topology');dispose(model);
 });
+test('086 pump rope uses the shared hemp-brown rope colour (pass 93)',async()=>{
+ const {PALETTE}=await import('../src/simulation/primitives.js');
+ const model=makePumpCatchDrive(),u=model.root.userData;
+ assert.equal(u.parts.pumpRope.material.color.getHex(),PALETTE.rope);assert.equal(u.parts.inputDriveRope.material.color.getHex(),PALETTE.rope);
+});

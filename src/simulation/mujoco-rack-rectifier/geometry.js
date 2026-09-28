@@ -1,12 +1,11 @@
 import * as THREE from 'three';
 import {rackRectifierSource as s} from './source.js';
 import {roundedRackGear} from '../coaxial-gear-geometry.js';
-import {plate,poly,polygonClipping as clip,circle,disk} from '../finite-plate-geometry.js';
+import {plate,poly,polygonClipping as clip,circle,disk,turned} from '../finite-plate-geometry.js';
 import {convexPlateCells} from '../mujoco/convex-plate.js';
 import {PALETTE,matte,markShadows} from '../primitives.js';
-import {addStubRunOns} from '../rack-frame-guides.js';
 export {THREE};
-export function makeRackRectifierGeometry({samples=96,cutterSteps=2048,ratchetSamples=64,pawlSeat=.0002,hook=35*Math.PI/180,ratchetPhase=s.ratchet.phase}={}){
+export function makeRackRectifierGeometry({samples=96,cutterSteps=2048,ratchetSamples=64,pawlSeat=.0002,hook=35*Math.PI/180,innerMeet=.295,pawlUp=100*Math.PI/180,pawlDown=-60*Math.PI/180,ratchetPhase=s.ratchet.phase}={}){
  if(!Number.isInteger(samples)||samples<32||!Number.isInteger(cutterSteps)||cutterSteps<256||!Number.isInteger(ratchetSamples)||ratchetSamples<16||!Number.isFinite(pawlSeat)||pawlSeat<=0||pawlSeat>.002||!Number.isFinite(ratchetPhase))throw new RangeError('Invalid 116 geometry options');
  const root=new THREE.Group(),parts={},families={},blocks={},cells={},m=s.pinion.module,R=s.pinion.teeth*m/2,pitch=Math.PI*m,cutterR=R+s.pinion.profileShift*m,alpha=14.5*Math.PI/180,corner=.12*m,clearance=.001,rackAddendum=1.25,rackDedendum=0.62,rootY=cutterR+rackDedendum*m,tipY=cutterR-rackAddendum*m+clearance,amplitude=R*Math.PI/2;
  const f={source:s,axis:s.axis,pitchRadius:R,cutterPitchRadius:cutterR,pitch,module:m,pressureAngle:alpha,rootY,rackTipY:tipY,amplitude,origins:s.pinion.origins,counts:{upper:12,lower:12},samples,cutterSteps,ratchetSamples,pawlSeat,ratchetPhase,gearZ:.18,pawlZ:.38,pawlPivot:s.pawlPivot};
@@ -34,28 +33,45 @@ export function makeRackRectifierGeometry({samples=96,cutterSteps=2048,ratchetSa
  }
  // Three disjoint axial interiors meet at welded faces.
  add('middleFrame',plate(body,-.10,.10),'frame',PALETTE.driven);
- for(const [name,ps]of [['leftStub',[[8,274],[35,273],[36,312],[8,314]]],['rightStub',[[505,273],[511,273],[514,280],[514,300],[510,307],[505,306]]]])add(name,plate(poly(ps.map(local)),-.08,.08),'frame',PALETTE.driven);
  const rp=2*Math.PI/s.ratchet.teeth,rs=[],aTip=ratchetPhase+(1-s.ratchet.faceFraction)*rp,aRoot=ratchetPhase+rp;
  for(let i=0;i<s.ratchet.teeth;i++)for(let j=0;j<=ratchetSamples;j++){
   const t=j/ratchetSamples,a=ratchetPhase+i*rp+t*(1-s.ratchet.faceFraction)*rp,r=s.ratchet.rootRadius+(s.ratchet.tipRadius-s.ratchet.rootRadius)*t;rs.push([r*Math.cos(a),r*Math.sin(a)]);
  }
  const shape=clip.difference(poly(rs),poly(circle([0,0],s.shaftRadius,96))),a=[s.ratchet.tipRadius*Math.cos(aTip),s.ratchet.tipRadius*Math.sin(aTip)],b=[s.ratchet.rootRadius*Math.cos(aRoot),s.ratchet.rootRadius*Math.sin(aRoot)];
- // Pass 86 pawl: one flat plate in the ratchet's plane, a bored boss and a
- // smooth hooked body (Brown's banana outline arching over the ratchet). Its
- // working face lies along the ratchet's locking face, and its claw tip
- // nests in the root between that face and the next tooth's rising back.
- // The underside is one straight edge from the boss to the short claw, so a
- // passing tooth tip slides along a single flat face while the pawl clicks.
- // Built in the seated pose (pawl hinge 0), pawlSeat clear of both flanks.
- const P=s.pawlPivot,rel=q=>[q[0]-P[0],q[1]-P[1]],len=Math.hypot(a[0]-b[0],a[1]-b[1]),u=[(a[0]-b[0])/len,(a[1]-b[1])/len],normal=[-u[1],u[0]],rot=(v,t)=>[v[0]*Math.cos(t)-v[1]*Math.sin(t),v[0]*Math.sin(t)+v[1]*Math.cos(t)],along=(q,d,k)=>[q[0]+k*d[0],q[1]+k*d[1]];
- const rise=(s.ratchet.tipRadius-s.ratchet.rootRadius)/((1-s.ratchet.faceFraction)*rp),back=[rise*Math.cos(aRoot)-s.ratchet.rootRadius*Math.sin(aRoot),rise*Math.sin(aRoot)+s.ratchet.rootRadius*Math.cos(aRoot)].map((v,_,w)=>v/Math.hypot(...w));
- const tip=along(along(rel(b),normal,pawlSeat),u,pawlSeat),heel=along(tip,u,.6*len),under=rot(back,-hook),top=rot(normal,-28*Math.PI/180),bossRadius=.032,boreRadius=.013,up=95*Math.PI/180,claw=along(tip,under,.03),down=Math.atan2(claw[1],claw[0])-Math.acos(bossRadius/Math.hypot(...claw));
- const cubic=(p0,p1,p2,p3,n=40)=>Array.from({length:n},(_,i)=>{const t=i/n,m=1-t;return[0,1].map(k=>m*m*m*p0[k]+3*m*m*t*p1[k]+3*m*t*t*p2[k]+t*t*t*p3[k]);});
- const bossTop=[bossRadius*Math.cos(up),bossRadius*Math.sin(up)],bossBottom=[bossRadius*Math.cos(down),bossRadius*Math.sin(down)],outline=[tip,...cubic(heel,along(heel,top,.07),along(bossTop,[Math.sin(up),-Math.cos(up)],.07),bossTop)];
- for(let i=0;i<48;i++){const t=up+(down+2*Math.PI-up)*i/48;outline.push([bossRadius*Math.cos(t),bossRadius*Math.sin(t)]);}
- const into=[claw[0]-bossBottom[0],claw[1]-bossBottom[1]].map((v,_,w)=>v/Math.hypot(...w)),out=[tip[0]-claw[0],tip[1]-claw[1]].map((v,_,w)=>v/Math.hypot(...w)),k0=along(claw,into,-.009),k2=along(claw,out,.009);
- outline.push(bossBottom,...Array.from({length:9},(_,i)=>{const t=i/8,m=1-t;return[0,1].map(k=>m*m*k0[k]+2*m*t*claw[k]+t*t*k2[k]);}));outline.splice(1,0,...Array.from({length:8},(_,i)=>along(tip,u,.6*len*(i+1)/9)));
+ // Pass 93 pawl: Brown's broad crescent leaf, one flat plate in the ratchet's
+ // plane. A bored eye boss at the pivot; a convex outer arc tangent to the
+ // boss runs to the heel; the inner edge is the arc concentric with the shaft
+ // that just touches the boss (it clears the ratchet tips by rc - tipRadius);
+ // a straight nose underside, cut at the tooth's valley (hook) angle, drops
+ // from that arc to the claw tip, which nests in the root. The working face
+ // lies along the ratchet's locking face from the tip to the heel. Built in
+ // the seated pose (pawl hinge 0), pawlSeat clear of both flanks.
+ const P=s.pawlPivot,rel=q=>[q[0]-P[0],q[1]-P[1]],len=Math.hypot(a[0]-b[0],a[1]-b[1]),u=[(a[0]-b[0])/len,(a[1]-b[1])/len],normal=[-u[1],u[0]],rot=(v,t)=>[v[0]*Math.cos(t)-v[1]*Math.sin(t),v[0]*Math.sin(t)+v[1]*Math.cos(t)],along=(q,d,k)=>[q[0]+k*d[0],q[1]+k*d[1]],unit=w=>{const l=Math.hypot(...w);return[w[0]/l,w[1]/l];};
+ const rise=(s.ratchet.tipRadius-s.ratchet.rootRadius)/((1-s.ratchet.faceFraction)*rp),back=unit([rise*Math.cos(aRoot)-s.ratchet.rootRadius*Math.sin(aRoot),rise*Math.sin(aRoot)+s.ratchet.rootRadius*Math.cos(aRoot)]);
+ const tip=along(along(rel(b),normal,pawlSeat),u,pawlSeat),heel=along(tip,u,.6*len),under=rot(back,-hook),bossRadius=.036,boreRadius=.013,up=pawlUp,down=pawlDown;
+ // The nose underside (tip + t*under) rises to radius innerMeet about the
+ // shaft; from there the concave inner arc runs to the boss, tangent to it at
+ // angle down (external tangency, so the underside bulges away from the
+ // ratchet and the tooth tips pass under it while the pawl clicks).
+ const C=rel([0,0]),dx=tip[0]-C[0],dy=tip[1]-C[1],B2=dx*under[0]+dy*under[1],tMeet=-B2+Math.sqrt(B2*B2-(dx*dx+dy*dy-innerMeet*innerMeet)),meet=along(tip,under,tMeet);
+ const e=[Math.cos(down),Math.sin(down)],bossBottom=[bossRadius*e[0],bossRadius*e[1]],wi=[bossBottom[0]-meet[0],bossBottom[1]-meet[1]],Ri=-(wi[0]*wi[0]+wi[1]*wi[1])/(2*(e[0]*wi[0]+e[1]*wi[1])),Ci=[bossBottom[0]+Ri*e[0],bossBottom[1]+Ri*e[1]];
+ if(!(Ri>0))throw new RangeError('116 pawl inner arc must be concave');
+ const arcAt=t=>[Ci[0]+Ri*Math.cos(t),Ci[1]+Ri*Math.sin(t)],aBoss=Math.atan2(bossBottom[1]-Ci[1],bossBottom[0]-Ci[0]),aMeet=Math.atan2(meet[1]-Ci[1],meet[0]-Ci[0]);
+ // Outer convex arc: tangent to the boss at angle up, through the heel.
+ const d=[Math.cos(up),Math.sin(up)],bossTop=[bossRadius*d[0],bossRadius*d[1]],w=[bossTop[0]-heel[0],bossTop[1]-heel[1]],Ro=(w[0]*w[0]+w[1]*w[1])/(2*(d[0]*w[0]+d[1]*w[1])),Co=[bossTop[0]-Ro*d[0],bossTop[1]-Ro*d[1]];
+ const aHeel=Math.atan2(heel[1]-Co[1],heel[0]-Co[0]),aTop=Math.atan2(bossTop[1]-Co[1],bossTop[0]-Co[0]);
+ const outline=[tip];
+ for(let i=1;i<=8;i++)outline.push(along(tip,u,.6*len*i/8));
+ for(let i=1;i<=48;i++){const t=aHeel+(aTop-aHeel)*i/48;outline.push([Co[0]+Ro*Math.cos(t),Co[1]+Ro*Math.sin(t)]);}
+ {let t0=up,t1=down;while(t1<=t0)t1+=2*Math.PI;for(let i=1;i<64;i++){const t=t0+(t1-t0)*i/64;outline.push([bossRadius*Math.cos(t),bossRadius*Math.sin(t)]);}}
+ // Inner arc from the boss to a small fillet into the nose underside.
+ let aM=aMeet;while(aM-aBoss>Math.PI)aM-=2*Math.PI;while(aM-aBoss<-Math.PI)aM+=2*Math.PI;
+ const fillet=.01,aK0=aM-Math.sign(aM-aBoss)*fillet/Ri,k0=arcAt(aK0),k2=along(meet,under,-fillet);
+ for(let i=0;i<=48;i++)outline.push(arcAt(aBoss+(aK0-aBoss)*i/48));
+ for(let i=1;i<8;i++){const t=i/8,m=1-t;outline.push([0,1].map(k=>m*m*k0[k]+2*m*t*meet[k]+t*t*k2[k]));}
+ for(let i=0;i<8;i++)outline.push(along(k2,under,-(tMeet-fillet)*i/8));
  const pawl=clip.difference(poly(outline),poly(circle([0,0],boreRadius,48)));
+ f.pawlInnerArc={radius:Ri,meetRadius:innerMeet};
  f.pawlTip=tip;f.pawlHeel=heel;f.pawlBoss={radius:bossRadius,bore:boreRadius};f.ratchetFace={a,b,normal};
  for(const [name,z]of [['upper',-f.pawlZ],['lower',f.pawlZ]]){
   add(name+'Ratchet',plate(shape,z-.045,z+.045),'output',PALETTE.brass);
@@ -63,23 +79,28 @@ export function makeRackRectifierGeometry({samples=96,cutterSteps=2048,ratchetSa
   blocks[name+'Pawl'].position.set(...s.pawlPivot,0);
   const pin=add(name+'PawlPin',disk(.0125,z>0?.26:z-.046,z>0?z+.046:-.26,48),name,PALETTE.ink);pin.position.set(...s.pawlPivot,0);
  }
- add('shaft',disk(s.shaftRadius,-.50,.50,96),'output',PALETTE.ink);
+ // One plain shaft, its rear end part of the output's native inertia.
+ add('shaft',disk(s.shaftRadius,-.696,.50,96),'output',PALETTE.ink);
  const cellParts=Object.entries(parts).filter(([name])=>!name.includes('Pin')&&name!=='shaft'&&!name.includes('Stub')).map(([name,mesh])=>[name,mesh.geometry]),buildCells=()=>{for(const [name,geometry] of cellParts){const c=convexPlateCells(geometry);cells[name]={family:families[name],vertices:c.cells.map(p=>[c.low,c.high].flatMap(z=>p.map(q=>[...q,z])))};}};
  Object.assign(root.userData,{parts,families,blocks,profile:f,hideGround:true,shadowCameraHalfExtent:4,shadowBias:-.00002,shadowNormalBias:.0005});
  // Collision cells are for the live simulation only; baked playback never
  // reads them, so they are decomposed on first use (as in 113).
  Object.defineProperty(root.userData,'cells',{configurable:true,enumerable:true,get(){buildCells();Object.defineProperty(root.userData,'cells',{value:cells,writable:true,configurable:true,enumerable:true});return cells;}});
- markShadows(root);root.updateMatrixWorld(true);
- const bounds=new THREE.Box3().setFromObject(root,true);bounds.expandByVector(new THREE.Vector3(amplitude+.06,.08,.02));root.userData.cameraFitBounds=bounds;
- // Brown breaks the frame's end stubs off at the plate edge. They run on
- // straight, as one piece with the frame, far enough that their clean ends
- // never enter the drawn view; no guides or floor posts are added (p60).
- addStubRunOns({add,movingFamily:'frame',travel:{left:amplitude+.04,right:amplitude+.04},
-  stubs:[{tipX:local([8,294])[0],y:local([0,294])[1],halfHeight:(314-274)/200,halfDepth:.08,sign:-1},
-   {tipX:local([514,290])[0],y:local([0,290])[1],halfHeight:(300-280)/200,halfDepth:.08,sign:1}]});
- // The output shaft keeps its plain rear stub (part of its native inertia).
- add('shaftTail0',disk(s.shaftRadius,-.696,-.499,96),'output',PALETTE.ink);
  root.updateMatrixWorld(true);
+ const bounds=new THREE.Box3().setFromObject(root,true);bounds.expandByVector(new THREE.Vector3(amplitude+.06,.08,.02));root.userData.cameraFitBounds=bounds;
+ // Brown's end stems are round rods broken off at the plate edge. Each is
+ // one turned solid on the frame's mid-plane: the left rod flares into the
+ // ring's end face; the right one keeps Brown's collar and bevel before its
+ // thinner rod. They run on straight far enough that their clean ends never
+ // enter the drawn view over the frame's travel; no guides or posts (p60).
+ const run=amplitude+.04+.05,lx=local([36,0])[0],rx=local([505,0])[0],px=x=>(x-s.axis[0])/100;
+ const stem=(name,profile,y)=>add(name,turned(profile,96).rotateY(Math.PI/2).translate(0,local([0,y])[1],0),'frame',PALETTE.driven);
+ {const r0=.185,fr=.01,x1=lx+.02,x0=px(8)-run,flare=Array.from({length:9},(_,i)=>{const t=Math.PI/2*i/8;return[lx-fr+fr*Math.sin(t),r0+fr*(1-Math.cos(t))];});
+  stem('leftStub',[[x0,0],[x0,r0],...flare,[x1,r0+fr],[x1,0]],292.5);}
+ {const x0=rx-.02,x1=px(514)+run;stem('rightStub',[[x0,0],[x0,.16],[px(511),.16],[px(514),.10],[x1,.10],[x1,0]],290);}
+ // Framing keeps the drawn stems (x 8 to 514), not their run-ons.
+ for(const [x,sign] of [[8,-1],[514,1]])bounds.expandByPoint(new THREE.Vector3(px(x)+sign*(amplitude+.06),0,0));
+ markShadows(root);root.updateMatrixWorld(true);
  // The frame slides a full amplitude each way; keep both ends in view.
  root.userData.cameraDistanceScale=1.22;
  // Brown draws the frame and pinions in a flat face view.

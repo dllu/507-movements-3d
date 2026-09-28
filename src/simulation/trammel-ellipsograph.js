@@ -32,7 +32,9 @@ export function makeTrammelEllipsograph(){
  b.ellipseTrace.geometry.dispose();
  b.ellipseTrace.geometry=plate(clip.difference(poly(ellipse(ea+.02,eb+.02)),poly(ellipse(ea-.02,eb-.02))),paperTop,paperTop+.004).rotateX(-Math.PI/2);
  b.ellipseTrace.material.color.set(PALETTE.ink);b.ellipseTrace.castShadow=false;b.ellipseTrace.receiveShadow=true;
- const boardMaterial=matte(PALETTE.paper,{roughness:.9});boardMaterial.fog=false;
+ // Pass 93: the sheet is a parchment tint, not the page background colour
+ // (#f3f0e9), so it reads as a sheet rather than only by its shadow.
+ const boardMaterial=matte(0xe9e1cf,{roughness:.9});boardMaterial.fog=false;
  // Brown draws only the ellipse, no board edge: the paper is an elliptical
  // sheet with a plain margin round the line (and round the cross), not an
  // undrawn rectangular board.

@@ -405,3 +405,36 @@ test('p92: the scale-ring hook pin stands centred in a round lug end, not on a s
   assert.ok(0.05 >= 1.6 * pinRadius, 'end arc radius at least 1.6 pin radii');
   disposeModel(model.root);
 });
+
+test('p93: lever D rests on the wooden block, centred on the pulley, with the pan hung under its ring', () => {
+  const model = createMovementModel(catalog.movements[243]);
+  try {
+    model.update(0);
+    model.root.updateMatrixWorld(true);
+    const box = (role) => {
+      const result = new THREE.Box3();
+      model.root.traverse((object) => {
+        if (!object.isMesh || !object.visible) return;
+        let owner = object;
+        while (owner && !owner.userData.role) owner = owner.parent;
+        if (owner?.userData.role === role) result.union(new THREE.Box3().setFromObject(object));
+      });
+      assert.ok(!result.isEmpty(), role);
+      return result;
+    };
+    const lever = box('horizontal-dynamometer-torque-arm-D');
+    const block = box('upper-wooden-brake-block-under-lever-D');
+    const drum = box('smooth-turned-friction-pulley-A');
+    const ring = box('scale-B-suspension-eye');
+    const pan = box('hanging-scale-pan-B');
+    near((lever.min.z + lever.max.z) / 2, (drum.min.z + drum.max.z) / 2, 1e-6, 'lever centred on the pulley plane');
+    near(block.max.y, lever.min.y, 1e-6, 'block top meets the lever underside');
+    assert.ok(block.min.z < lever.min.z && block.max.z > lever.max.z, 'lever lies over the block, not in front of it');
+    near((pan.min.z + pan.max.z) / 2, (ring.min.z + ring.max.z) / 2, 1e-6, 'pan centred under its ring');
+    let forks = 0;
+    model.root.traverse((object) => { if (/^strap-end-bolt-fork-/.test(object.userData.role ?? '')) forks += 1; });
+    assert.equal(forks, 6, 'two forked bolt ends, each two cheeks and a bridge');
+  } finally {
+    disposeModel(model.root);
+  }
+});

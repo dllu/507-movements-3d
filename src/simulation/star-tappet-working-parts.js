@@ -29,13 +29,16 @@ export function starTappetState(s,g,profileClearanceAt){
 // in a rounded nose seated in the root of a space, against the next point's
 // almost radial face. Set out at rest in the star's frame (wheel angle 0);
 // returned in the click's frame (pivot at the origin, nose centre on +x).
-export const CLICK_BAND_HALF_WIDTH=.1,CLICK_BAND_CLEARANCE=.05,CLICK_EYE_RADIUS=.14,CLICK_HOOK_TURN=0;
+// Brown's click is a broad crescent: it swells from the nose into a large
+// round eye concentric with the pivot, pierced by the pin hole.
+export const CLICK_BAND_HALF_WIDTH=.1,CLICK_BAND_CLEARANCE=.05,CLICK_EYE_RADIUS=.22,CLICK_EYE_HALF_WIDTH=.17,CLICK_HOOK_TURN=0;
+const clickHalfWidth=(f,rc)=>CLICK_EYE_HALF_WIDTH+(rc-CLICK_EYE_HALF_WIDTH)*f**1.3;
 export function holdingClickOutline(g){
   const P=[g.holdingClickPivot.x,g.holdingClickPivot.y],a0=g.holdingClickRestAngle,Lc=g.holdingClickLength,rc=g.holdingClickRadius-.0005,w=CLICK_BAND_HALF_WIDTH;
   const C=[P[0]+Lc*Math.cos(a0),P[1]+Lc*Math.sin(a0)];
   // The arc's apex stands just outside the tip circle midway round.
   let aP=Math.atan2(P[1],P[0]),aC=Math.atan2(C[1],C[0]);while(aC<aP)aC+=2*Math.PI;
-  const aM=(aP+aC)/2,Rm=g.ratchetOuterRadius+CLICK_BAND_CLEARANCE+w,M=[Rm*Math.cos(aM),Rm*Math.sin(aM)];
+  const aM=(aP+aC)/2,Rm=g.ratchetOuterRadius+CLICK_BAND_CLEARANCE+clickHalfWidth(.5,rc),M=[Rm*Math.cos(aM),Rm*Math.sin(aM)];
   // Circle through P, M and C.
   const d=2*(P[0]*(M[1]-C[1])+M[0]*(C[1]-P[1])+C[0]*(P[1]-M[1])),s2=q=>q[0]*q[0]+q[1]*q[1];
   const Q=[(s2(P)*(M[1]-C[1])+s2(M)*(C[1]-P[1])+s2(C)*(P[1]-M[1]))/d,(s2(P)*(C[0]-M[0])+s2(M)*(P[0]-C[0])+s2(C)*(M[0]-P[0]))/d];
@@ -46,7 +49,7 @@ export function holdingClickOutline(g){
   const sweep=ccw(tP,tM)<ccw(tP,tC)?ccw(tP,tC):-ccw(tC,tP);
   const n=72,local=[];
   for(let i=0;i<=n;i++){const f=i/n,t=tP+sweep*f,p=[Q[0]+R*Math.cos(t),Q[1]+R*Math.sin(t)];
-   const half=w+(rc-w)*Math.max(0,(f-.55)/.45)**1.5;local.push([rotate(sub(p,P),-a0),half]);}
+   const half=clickHalfWidth(f,rc);local.push([rotate(sub(p,P),-a0),half]);}
   const upper=[],lower=[];
   local.forEach(([p,r],i)=>{const q=local[Math.min(local.length-1,i+1)][0],o=local[Math.max(0,i-1)][0],dd=sub(q,o),l=Math.hypot(...dd),nx=-dd[1]/l,ny=dd[0]/l;upper.push([p[0]+nx*r,p[1]+ny*r]);lower.push([p[0]-nx*r,p[1]-ny*r]);});
   const [tip]=local.at(-1),dt=sub(tip,local.at(-2)[0]),ta=Math.atan2(dt[1],dt[0]),nose=[];
@@ -56,7 +59,10 @@ export function holdingClickOutline(g){
 }
 export const TAPPET_BLADE_235={back:[[.02,-.19],[1.3,-.12],[1.42,-.04]],notch:[1.76,.19],beakBack:[1.99,.08],front:[[2.0,.25],[1.55,.45],[.52,.3]],eye:.15};
 export function tappetBladeOutline(g){
-  const L=g.tappetLength,rn=g.tappetNoseRadius-.0005,B=TAPPET_BLADE_235;
+  // The blade was set out for a 2.0808 hinge-to-nose length; it scales along
+  // the tappet with the nose on Brown's dashed swing arc.
+  const L=g.tappetLength,rn=g.tappetNoseRadius-.0005,k=L/2.0808,sx=([x,y])=>[x*k,y];
+  const B={...TAPPET_BLADE_235,back:TAPPET_BLADE_235.back.map(sx),notch:sx(TAPPET_BLADE_235.notch),beakBack:sx(TAPPET_BLADE_235.beakBack),front:TAPPET_BLADE_235.front.map(sx)};
   // Along the arm's edge, then the notch's two straight sides: the star's
   // point sits in the notch while the nose drives its face.
   const points=[...B.back,B.notch,B.beakBack];

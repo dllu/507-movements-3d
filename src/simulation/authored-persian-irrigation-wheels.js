@@ -489,14 +489,15 @@ function persianIrrigationWheel(movement) {
       `gravity-level-water-load-in-bucket-${index + 1}`;
     bucket.add(bucketWater);
     bucketWaters.push(bucketWater);
-    // The trip lug: a flat shoe beside the bucket, out in front of it at the
-    // pin's plane, carried by one arm from the bucket's rim.
-    const lugZ = trip.pin.z - bucketPlaneZ;
-    const lugArm = new THREE.CylinderGeometry(.03, .03, lugZ + .03, 24).rotateX(Math.PI / 2).translate(trip.shoeX + .01, -.14, lugZ / 2);
-    const tripLug = new THREE.Mesh(mergeGeometries([
-      plate(capsule([trip.shoeX,trip.shoeBottom],[trip.shoeX,trip.shoeTop],trip.shoeRadius,48),-.03,.03).translate(0,0,lugZ).toNonIndexed(),
-      lugArm.toNonIndexed(),
-    ].map((g)=>{for(const k of Object.keys(g.attributes))if(!['position','normal'].includes(k))g.deleteAttribute(k);return g;})),darkMaterial);
+    // Pass 93: the trip lug is one flat tab welded flush to the bucket's
+    // side in its own mid-plane (it was a black shoe held out in front on a
+    // rod). Its outer edge is the same capsule shoe the trip contact uses;
+    // its inner edge is buried in the tapered wall, and above the wall it
+    // runs into the rolled rim. The stationary pin reaches back to it.
+    const tripLug = new THREE.Mesh(plate(polygonClipping.union(
+      capsule([trip.shoeX,trip.shoeBottom],[trip.shoeX,trip.shoeTop],trip.shoeRadius,48),
+      poly([[trip.shoeX,trip.shoeBottom],[-.22,trip.shoeBottom],[-.28,-.14],[trip.shoeX,-.14]]),
+    ),-.03,.03),bucketMaterial);
     tripLug.userData.role = `stationary-pin-trip-lug-${index + 1}`;
     bucket.add(tripLug);tripLugs.push(tripLug);
 
@@ -597,10 +598,13 @@ function persianIrrigationWheel(movement) {
   }
 
   const tripPinPosition = trip.pin.clone();
-  const stationaryTripPin = cylinderAlongZ(trip.pinRadius, .40,
+  // It runs from its arm back to 0.04 behind the buckets' mid-plane, where
+  // it meets each bucket's welded tab.
+  const tripPinBack = bucketPlaneZ - .04, tripPinFront = 1.31;
+  const stationaryTripPin = cylinderAlongZ(trip.pinRadius, tripPinFront - tripPinBack,
     darkMaterial, 64);
   stationaryTripPin.position.copy(tripPinPosition);
-  stationaryTripPin.position.z=1.11;
+  stationaryTripPin.position.z=(tripPinBack + tripPinFront) / 2;
   // Pass 90: the caption's stationary pin is shown (it and its bracket had
   // been removed from the presentation, so the buckets tipped by themselves).
   stationaryTripPin.userData.role =

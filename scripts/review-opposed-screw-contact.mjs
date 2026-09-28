@@ -26,12 +26,12 @@ try{
   topology.push({name,volume,wrongNormals,unmatchedEdges:[...edges.values()].filter(e=>e.count!==2||e.direction!==0).length});
  }
  for(let i=0;i<count;i++){
-  const input=2*Math.PI*(i+.613)/count;model.root.userData.blocks.worm.rotation.x=input;model.root.userData.blocks.wheel.rotation.z=input/18;model.root.updateMatrixWorld(true);
+  const input=2*Math.PI*(i+.613)/count;model.root.userData.blocks.worm.rotation.x=input;model.root.userData.blocks.wheel.rotation.z=input/36;model.root.updateMatrixWorld(true);
   const contact=meshPairDistance(trees[0],trees[1],wheel.matrixWorld.clone().invert().multiply(worm.matrixWorld),threshold);
   rows.push({input,separationLowerBound:contact.distance,exactDistance:contact.witness?contact.distance:null,testedTriangles:contact.testedTriangles,witness:contact.witness});
   if(i%8===0)console.log(rows.at(-1));
  }
- const files=['scripts/review-opposed-screw-contact.mjs','scripts/lib/star-mangle-pair-distance.mjs','src/simulation/opposed-screw-nuts.js','src/simulation/worm-gear-geometry.js','src/simulation/instanced-worm-wheel.js','src/simulation/mujoco-worm-saddle/wheel-data.js'];
- const report={movement:151,method:'Actual candidate worm skin against all triangles of the rendered wheel (its 18 sectors welded into one closed mesh, end caps included). Closest-point traversal is bounded at 1e-5; a null exactDistance means separation is at least that bound, not that an exact distance was measured. 65 offset poses span one input turn; generating geometry repeats each wheel tooth.',sources:files.map(file=>({file,sha256:createHash('sha256').update(fs.readFileSync(file)).digest('hex')})),summary:{poses:count,intersections:rows.filter(r=>r.separationLowerBound===0).length,minimumSeparationLowerBound:Math.min(...rows.map(r=>r.separationLowerBound))},topology,rows};
+ const files=['scripts/review-opposed-screw-contact.mjs','scripts/lib/star-mangle-pair-distance.mjs','src/simulation/opposed-screw-nuts.js','src/simulation/worm-gear-geometry.js','src/simulation/instanced-worm-wheel.js','src/simulation/opposed-screw-wheel-data.js','src/simulation/opposed-screw-profile.js','src/simulation/mujoco-worm-saddle/hob.js'];
+ const report={movement:151,method:'Actual candidate worm skin against all triangles of the rendered wheel (its 36 sectors welded into one closed mesh, end caps included). Closest-point traversal is bounded at 1e-5; a null exactDistance means separation is at least that bound, not that an exact distance was measured. 65 offset poses span one input turn; generating geometry repeats each wheel tooth.',sources:files.map(file=>({file,sha256:createHash('sha256').update(fs.readFileSync(file)).digest('hex')})),summary:{poses:count,intersections:rows.filter(r=>r.separationLowerBound===0).length,minimumSeparationLowerBound:Math.min(...rows.map(r=>r.separationLowerBound))},topology,rows};
  fs.writeFileSync('docs/validation/151-render-contact.json',JSON.stringify(report,null,2)+'\n');console.log({summary:report.summary,topology});whole.dispose();
 }finally{model.dispose();}

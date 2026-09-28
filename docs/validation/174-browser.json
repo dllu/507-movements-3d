@@ -13,7 +13,7 @@
   "sources": [
     {
       "file": "tests/e2e/twin-bench-clamp.spec.mjs",
-      "sha256": "ff60a80fa3017b37b8ed8b49860cf780a3064467623688c4336c5797e58285da"
+      "sha256": "a24f0fcf7b399d0814dc7abc7cfede9827803a07d3af40f36b65c2ef723a5e5b"
     },
     {
       "file": "src/simulation/baked/bench-clamp.js",
@@ -21,7 +21,7 @@
     },
     {
       "file": "src/simulation/baked/assets/174.json.gz",
-      "sha256": "cc9683749ef8605d054ff1af7e1c0ba20d4bf92e77e1b094433cad722c4a57d4"
+      "sha256": "af3b57120a27f96ba32f7e77de0371eb9640cb0cac6b8b23b79c27c2df944f75"
     },
     {
       "file": "src/simulation/mujoco-bench-clamp/update-solids.js",
@@ -29,7 +29,9 @@
     },
     {
       "file": "src/simulation/model-loader.js",
-      "sha256": "937eccd1678fd320d9cafbb2ff00d5c09457236a34f7939ab9ac99cc6eeff3ba"
+      "sha256": "143b2620ee645b72aeb901c697d644955092d16b965762c14a8e1a8f297577f9"
     }
-  ]
+  ],
+  "recheckedOn": "2026-09-28",
+  "recheckNote": "p93-fc: packaged desktop/mobile spec rerun after the return-spring rebake (both pass); 174 spec waits 1.5 s for the first settled frame (0.3 s captured an unsettled first render; restart equality then failed identically with the HEAD bake)."
 }

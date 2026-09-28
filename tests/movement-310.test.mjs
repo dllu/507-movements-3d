@@ -83,7 +83,7 @@ test('movement 310 is one three-legged wheel with three shared lifting pins and 
   assert.equal(blocks.lockingLegMeshes.length, 3);
   assert.equal(blocks.lockingLegTipMeshes.length, 3);
   assert.equal(blocks.liftingPinMeshes.length, 3);
-  assert.equal(blocks.flyVanes.length, 2);
+  assert.equal(blocks.flyVanes.length, 0);
 
   const roles = [];
   model.root.traverse((object) => roles.push(object.userData.role ?? ''));

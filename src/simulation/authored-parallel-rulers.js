@@ -1527,10 +1527,6 @@ function graduatedArcParallelRuler(movement) {
     upperBlade.add(tick);
     return tick;
   });
-  // The ivory strip is shown plain: at this scale Brown's hatched
-  // divisions read only as faint marks (painted or finely incised alike),
-  // so no division is drawn. The tick bars stay as hidden calibration
-  // references for the arc's incidence reading.
   {
     // Inlaid: the strip fills a 0.032-deep pocket, its face flush with the blade.
     const top = bladeThickness / 2, bottom = top - 0.032, base = bottom + 0.018;
@@ -1538,11 +1534,26 @@ function graduatedArcParallelRuler(movement) {
     const x0 = scaleLeftX;
     const x1 = scaleRightX;
     const strip = poly([[x0, zCenter - halfWidth], [x1, zCenter - halfWidth], [x1, zCenter + halfWidth], [x0, zCenter + halfWidth]]);
-    const face = strip;
-    for (const tick of scaleTicks) {
-      tick.visible = false;
-      tick.userData.retiredPaintedTick = true;
-    }
+    // Pass 93: Brown hatches the ivory with graduations. The calibrated
+    // ticks are inlaid dark bars rising from the scale's reading edge (the
+    // edge the arc crosses), sunk 0.004 below the ivory face in slots cut
+    // through the face layer, so nothing is coplanar with the ivory.
+    const nearZ = zCenter - halfWidth, tickHalfWidth = 0.009;
+    const tickRects = scaleTicks.map((tick) => {
+      const length = tick.userData.role.startsWith('major') ? 0.105 : 0.07;
+      const x = tick.position.x;
+      return poly([[x - tickHalfWidth, nearZ - 0.001], [x + tickHalfWidth, nearZ - 0.001], [x + tickHalfWidth, nearZ + length], [x - tickHalfWidth, nearZ + length]]);
+    });
+    const face = polygonClipping.difference(strip, ...tickRects);
+    scaleTicks.forEach((tick, index) => {
+      const length = tick.userData.role.startsWith('major') ? 0.105 : 0.07;
+      tick.geometry.dispose();
+      tick.geometry = new THREE.BoxGeometry(tickHalfWidth * 2, top - 0.004 - base, length);
+      tick.position.set(tick.position.x, (top - 0.004 + base) / 2, nearZ + length / 2);
+      tick.visible = true;
+      tick.userData.inlaidGraduation = true;
+      tick.userData.index = index;
+    });
     // plate() extrudes along +z; rotateX(pi/2) turns plate y into world z and
     // the extrusion into -y, so heights are passed negated.
     const baseLayer = plate(strip, -base, -bottom).rotateX(Math.PI / 2);
@@ -1553,7 +1564,7 @@ function graduatedArcParallelRuler(movement) {
     ivoryScale.geometry = merged;
     // Ivory, not paper white: a plain warm cream strip.
     ivoryScale.material = ivoryMaterial.clone();
-    ivoryScale.material.color.set(0xe3d6b4);
+    ivoryScale.material.color.set(0xd6c089);
     ivoryScale.position.set(0, 0, 0);
     const body = upperBlade.userData.body;
     const outline = polygonClipping.difference(poly([[-bladeLength/2, -bladeWidth/2], [bladeLength/2, -bladeWidth/2], [bladeLength/2, bladeWidth/2], [-bladeLength/2, bladeWidth/2]]),

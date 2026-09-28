@@ -860,7 +860,7 @@ test('movement 205 seats every tooth into the wheel rim on a root key the cams n
   disposeModel(model.root);
 });
 
-test('movement 205 front teeth are single plain bars running in across the face, clear of the front cam', () => {
+test('movement 205 teeth are plain rectangular bars running in across the face, never entered by the front cam', () => {
   const model = createMovementModel(catalog.movements[204]);
   const { blocks, geometry } = model.root.userData;
   const shank = geometry.frontSeriesShank;
@@ -870,6 +870,9 @@ test('movement 205 front teeth are single plain bars running in across the face,
     assert.equal(tooth.children.filter((child) => /face-bar/.test(child.userData.role ?? '')).length, 0);
     tooth.geometry.computeBoundingBox();
     near(tooth.geometry.boundingBox.min.x, shank.inner, 1e-6, 'shank inner radius');
+    // p93: one plain rectangle (four outline corners), as Brown draws the bars.
+    assert.equal(tooth.userData.plainRectangularBar, true);
+    assert.equal(tooth.geometry.parameters.shapes.getPoints?.().length ?? [tooth.geometry.parameters.shapes].flat()[0].getPoints().length, 4);
     assert.ok(tooth.geometry.boundingBox.max.x > geometry.wheelOuterRadius - 1e-3);
   }
   assert.ok(shank.high - shank.low > 0.25);
@@ -891,6 +894,8 @@ test('movement 205 front teeth are single plain bars running in across the face,
       closest = Math.min(closest, Math.hypot(dx, dy));
     }
   }
-  assert.ok(closest > 0.02, `cam comes within ${closest} of a front shank`);
+  // The cam is generated against the bars, so it may run along a bar's
+  // straight side; it must never enter it (0 overlap in the planar report).
+  assert.ok(closest > 0.001, `cam comes within ${closest} of a front shank`);
   disposeModel(model.root);
 });

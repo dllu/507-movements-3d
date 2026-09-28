@@ -65,3 +65,44 @@ test('426: both pistons follow the wall and are driven at once by steam behind t
     for (const banned of [/marker/, /indicator/, /foundation/]) assert.ok(!roles.some((r) => banned.test(r)), String(banned));
   } finally { disposeObject3D(model.root); }
 });
+
+test('426: loaded as the browser does, the steam draws the normals it computes each frame', async () => {
+  const { loadMovementModel } = await import('../src/simulation/model-loader.js');
+  const loaded = await loadMovementModel(movement);
+  const direct = createAuthoredRadialPistonRotaryEngineMovement(movement);
+  try {
+    assert.ok(loaded.root.userData.sourcePresentation, 'presentation pass applied');
+    const period = (m) => m.root.userData.geometry?.mechanismCyclePeriod ?? m.root.userData.animationTiming?.authoredCyclePeriod;
+    const steam = (m) => {
+      const found = [];
+      m.root.traverse((o) => { if (o.isMesh && o.userData.steamVolume) found.push(o); });
+      return found.sort((a, b) => a.userData.role.localeCompare(b.userData.role));
+    };
+    // Two frames, so a detached normal array would already be stale.
+    for (const m of [loaded, direct]) { m.update(0.3 * period(m)); m.update(0.66 * period(m)); }
+    const a = steam(loaded);
+    const b = steam(direct);
+    assert.ok(a.length > 0);
+    assert.equal(a.length, b.length);
+    let caps = 0;
+    for (let i = 0; i < a.length; i += 1) {
+      const ga = a[i].geometry;
+      const gb = b[i].geometry;
+      assert.equal(ga.drawRange.count, gb.drawRange.count, a[i].userData.role);
+      const pa = ga.attributes.position.array;
+      const na = ga.attributes.normal.array;
+      const nb = gb.attributes.normal.array;
+      for (let v = 0; v < ga.drawRange.count * 3; v += 1) {
+        assert.ok(Math.abs(na[v] - nb[v]) < 1e-6, `${a[i].userData.role} normal ${v}`);
+      }
+      // Cap triangles (all three vertices in one z plane) face straight out.
+      for (let t = 0; t < ga.drawRange.count; t += 3) {
+        const z = pa[t * 3 + 2];
+        if (Math.abs(pa[t * 3 + 5] - z) > 1e-9 || Math.abs(pa[t * 3 + 8] - z) > 1e-9) continue;
+        caps += 1;
+        for (let k = 0; k < 3; k += 1) assert.ok(Math.abs(Math.abs(na[(t + k) * 3 + 2]) - 1) < 1e-6, `${a[i].userData.role} cap normal`);
+      }
+    }
+    assert.ok(caps > 50, `cap triangles checked: ${caps}`);
+  } finally { disposeObject3D(loaded.root); disposeObject3D(direct.root); }
+});

@@ -428,8 +428,9 @@ function warrenCentralDischargeTurbine(movement) {
     THREE.MathUtils.clamp((radius - runnerInnerRadius) / (runnerOuterRadius - runnerInnerRadius), 0, 1));
   const flowSheets = Array.from({length: fixedGuideCount}, (_, index) => {
     const passage = (index + 0.5) * FULL_TURN / fixedGuideCount;
+    // Pass 93: each sheet starts at the guide ring's outer edge (it began
+    // 0.33 outside it, so sixteen short tabs of water stood off the ring).
     const points = [
-      polarPoint(3.78, guideAngleAt(passage, 1), 0.24),
       ...Array.from({length: 13}, (_, k) => {
         const s = 1 - k / 12;
         return polarPoint(THREE.MathUtils.lerp(guideInnerRadius, guideOuterRadius, s),

@@ -4,8 +4,8 @@
   "format": "mujoco-loop",
   "version": 1,
   "asset": "src/simulation/baked/assets/mujoco-093.json.gz",
-  "bytes": 6468,
-  "assetSha256": "0cc602c5ca22675e6d2f3c28ca012e30d5c3d4967fc9ebba8e5c7176c05bcb6b",
+  "bytes": 3881,
+  "assetSha256": "deb9e8e775fcd23b3aad86fd3065556120e4b0222fa47387f389b2a4a34aa196",
   "motionSources": {
     "src/simulation/mujoco-scotch-yoke/physics.js": "cdd6cff287ab3e0c53a846f7e75644b85cf757afc4d79ac4fa80b05758571bd3",
     "src/simulation/mujoco-scotch-yoke/source.js": "2d781bb8ade8ebc0f303174119b8d7b5ebd7fca6451d0b3579c9060b84d327b4",
@@ -13,13 +13,13 @@
     "src/simulation/mujoco/simulation.js": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
   },
   "visualSourcesAtBake": {
-    "src/simulation/mujoco-scotch-yoke/geometry.js": "76ae11d32d30988c4c03e453d444384f6e900e0e97d6a10099ad12d82a511b1f"
+    "src/simulation/mujoco-scotch-yoke/geometry.js": "2dc0dc896d1fe5b5eea01f219d2cee83d092bb3c603675835a4fbf76255d3c88"
   },
   "physicsXmlSha256": {
     "default": "8f791c3c3c6a354d046c69e1eed5b6242aae337b0d1adff9d15ff7c06f3d69f7"
   },
   "fullXmlSha256": {
-    "default": "88d4bec5096a4df0856fc2968d780aacf4a6005ccedb1c8f4b73b44bb5faa0ea"
+    "default": "0c67d56707423c32849356b9831319e452e1ca8e9f593717e04e0bb5432d931c"
   },
   "config": {
     "sampleRate": 60,
@@ -40,32 +40,32 @@
         "duration": 4,
         "samples": 250,
         "dt": 0.016,
-        "startTime": 12,
+        "startTime": 24,
         "periods": 1,
         "drivePeriod": 4
       },
       "closure": {
-        "rawSeamPixels": 3.253841640571409e-10,
-        "maximumCorrectionPixels": 3.185007813044649e-10,
-        "maximumRotationCorrection": 2.9802322387695312e-8,
+        "rawSeamPixels": 7.241540700420046e-10,
+        "maximumCorrectionPixels": 7.016387471026064e-10,
+        "maximumRotationCorrection": 0,
         "wraps": [
           {
             "key": "blocks.input",
-            "angle": 6.2831853071762716,
-            "rawAngle": 6.2831853071762716
+            "angle": 6.283185307187443,
+            "rawAngle": 6.283185307187443
           }
         ]
       },
-      "roundTripPixels": 0.000003840152971106151,
+      "roundTripPixels": 0.004511437368703852,
       "seam": {
-        "seamStepPixels": 3.4843886223644147,
-        "interiorStepPixels": 3.485801867673551,
-        "seamSecondPixels": 0.08778523179036642,
-        "interiorSecondPixels": 0.09682178497318894
+        "seamStepPixels": 3.483164109806018,
+        "interiorStepPixels": 3.487955066438506,
+        "seamSecondPixels": 0.08759569978052674,
+        "interiorSecondPixels": 0.12001991271972656
       }
     }
   },
   "extras": [],
   "removed": [],
-  "bakeSeconds": 0.7679644961357117
+  "bakeSeconds": 0.8415393385887145
 }

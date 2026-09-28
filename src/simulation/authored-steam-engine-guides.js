@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {boredLatheGeometry} from './bored-lathe-geometry.js';
-import {capsule, plate, poly, polygonClipping} from './finite-plate-geometry.js';
+import {capsule, circle, plate, poly, polygonClipping} from './finite-plate-geometry.js';
 import {
   PALETTE,
   markShadows,
@@ -108,6 +108,25 @@ function verticalCapsuleCurve(
   return new THREE.CatmullRomCurve3(points, true, 'centripetal');
 }
 
+// The shoulder is a cubic span tangent to the standard's straight taper at
+// its foot (the old quadratic met the taper with a 15 degree kink) and
+// keeping the old quadratic's tangent under the cap's overhang; its handles
+// keep the hollow no narrower than before where the connecting rod swings.
+const SHOULDER_START = [3.004629, -6.353234];
+const SHOULDER_END = [4.5, -3.25];
+const SHOULDER_CONTROLS = (() => {
+  const taper = [SHOULDER_START[0] - 6, SHOULDER_START[1] + 24.625];
+  const taperLength = Math.hypot(...taper);
+  const overhang = [SHOULDER_END[0] - 3.28, SHOULDER_END[1] + 3.75];
+  const overhangLength = Math.hypot(...overhang);
+  return [
+    [SHOULDER_START[0] + 0.5 * taper[0] / taperLength,
+      SHOULDER_START[1] + 0.5 * taper[1] / taperLength],
+    [SHOULDER_END[0] - 0.8 * overhang[0] / overhangLength,
+      SHOULDER_END[1] - 0.8 * overhang[1] / overhangLength],
+  ];
+})();
+
 function sourceFrameShape(scale) {
   const s = (value) => value * scale;
   const shape = new THREE.Shape();
@@ -115,24 +134,28 @@ function sourceFrameShape(scale) {
   // Brown's frame is a broad engine standard with a narrow crown beneath
   // the crank bearing.  The numeric landmarks are those published by the
   // official canvas model; the short curved shoulders are reconstructed as
-  // tangent quadratic spans between its published endpoints.
+  // tangent cubic spans between its published endpoints.
   shape.moveTo(s(-7), s(-27.625));
   shape.lineTo(s(7), s(-27.625));
   shape.lineTo(s(7), s(-24.625));
   shape.lineTo(s(6), s(-24.625));
   shape.lineTo(s(3.004629), s(-6.353234));
-  shape.quadraticCurveTo(
-    s(3.28),
-    s(-3.75),
+  shape.bezierCurveTo(
+    s(SHOULDER_CONTROLS[0][0]),
+    s(SHOULDER_CONTROLS[0][1]),
+    s(SHOULDER_CONTROLS[1][0]),
+    s(SHOULDER_CONTROLS[1][1]),
     s(4.5),
     s(-3.25),
   );
   shape.lineTo(s(4.5), s(-2.25));
   shape.lineTo(s(-4.5), s(-2.25));
   shape.lineTo(s(-4.5), s(-3.25));
-  shape.quadraticCurveTo(
-    s(-3.28),
-    s(-3.75),
+  shape.bezierCurveTo(
+    s(-SHOULDER_CONTROLS[1][0]),
+    s(SHOULDER_CONTROLS[1][1]),
+    s(-SHOULDER_CONTROLS[0][0]),
+    s(SHOULDER_CONTROLS[0][1]),
     s(-3.004629),
     s(-6.353234),
   );
@@ -152,24 +175,26 @@ function sourceFrameShape(scale) {
 // Brown dots 326's connecting rod inside the standard between the cap and
 // the slot, so the standard is hollow: a front skin with a window over the
 // planed slot, joined to the slotted back plate by thin side walls. The walls
-// stop at the shoulders, leaving the cap open for the rod and crank sweep.
+// stop at the shoulders; a cap set down inside them (below the crank's
+// sweep) closes the top, and they have no floor: the foot is the floor,
+// bored for the piston rod.
 function hollowStandardOutlines(scale, wall, windowRadius) {
   const s = (value) => value * scale;
   const shoulder = (t) => {
     const u = 1 - t;
-    return [
-      u * u * 3.004629 + 2 * u * t * 3.28 + t * t * 4.5,
-      u * u * -6.353234 + 2 * u * t * -3.75 + t * t * -3.25,
-    ];
+    const points = [SHOULDER_START, ...SHOULDER_CONTROLS, SHOULDER_END];
+    const weights = [u * u * u, 3 * u * u * t, 3 * u * t * t, t * t * t];
+    return [0, 1].map((axis) => points.reduce(
+      (sum, point, index) => sum + weights[index] * point[axis], 0));
   };
   const taperX = (y) => 6 + (y + 24.625) * (3.004629 - 6) / (24.625 - 6.353234);
   const rightOuter = [[7, -27.625], [7, -24.625], [6, -24.625],
-    ...Array.from({length: 17}, (_, i) => shoulder(i / 16)), [4.5, -2.25]];
+    ...Array.from({length: 49}, (_, i) => shoulder(i / 48)), [4.5, -2.25]];
   const outer = [...rightOuter, ...rightOuter.slice().reverse()
     .map(([x, y]) => [-x, y])].map(([x, y]) => [s(x), s(y)]);
-  const innerBottom = -24.625 + wall;
+  const innerBottom = -24.625 - wall;
   const rightInner = [[taperX(innerBottom) - wall, innerBottom],
-    ...Array.from({length: 17}, (_, i) => shoulder(i / 16))
+    ...Array.from({length: 49}, (_, i) => shoulder(i / 48))
       .map(([x, y]) => [x - wall, y]), [4.5 - wall, -1.5]];
   const inner = [...rightInner, ...rightInner.slice().reverse()
     .map(([x, y]) => [-x, y])].map(([x, y]) => [s(x), s(y)]);
@@ -179,7 +204,7 @@ function hollowStandardOutlines(scale, wall, windowRadius) {
     polygonClipping.intersection(poly(outer), lowerBody), poly(inner));
   const slotWindow = capsule([0, s(-9.875)], [0, s(-21.125)], s(windowRadius), 48);
   const skin = polygonClipping.difference(poly(outer), slotWindow);
-  return {skin, walls};
+  return {inner: poly(inner), skin, walls};
 }
 
 function annulusGeometry(outerRadius, innerRadius, depth) {
@@ -599,23 +624,66 @@ function verticalPlanedSlotPistonGuide(movement) {
   );
   standardSideWalls.userData.fixed = true;
   standardSideWalls.userData.role =
-    'hollow-standard-side-walls-open-at-the-cap';
+    'hollow-standard-side-walls-under-the-cap';
 
-  const foundationFoot = new THREE.Mesh(
-    new THREE.BoxGeometry(
-      14 * sourceScale,
-      3 * sourceScale,
-      standardSkinFrontZ + 0.03 - frameBackZ,
-    ),
+  // The crank dips below the standard's top edge, so the cap is set down
+  // inside the walls, just below the crank's sweep: it closes the hollow
+  // standard except for a narrow transverse slot in front of it, through
+  // which the connecting rod swings. Its outline is the walls' own inner
+  // outline, so it meets them exactly.
+  const capTopY = -(crankRadius + crankPinRadius * 1.65) - 0.065;
+  const capThickness = 0.06;
+  const connectingRodSlotBackZ = connectingRodPlaneZ
+    - connectingRodDepth / 2 - 0.04;
+  const capHalfWidth = 5 * sourceScale;
+  const standardCap = new THREE.Mesh(
+    plate(polygonClipping.intersection(hollowStandard.inner, poly([
+      [-capHalfWidth, capTopY - capThickness], [capHalfWidth, capTopY - capThickness],
+      [capHalfWidth, capTopY], [-capHalfWidth, capTopY],
+    ])), frameFrontZ, connectingRodSlotBackZ),
     frameMaterial,
   );
-  foundationFoot.position.set(
-    0,
-    (frameBaseTopY + frameBaseBottomY) / 2,
-    (standardSkinFrontZ + 0.03 + frameBackZ) / 2,
+  standardCap.userData.fixed = true;
+  standardCap.userData.role =
+    'hollow-standard-recessed-cap-with-connecting-rod-slot-in-front';
+
+  // The piston rod runs down inside the hollow standard into a bore in the
+  // foot. The foot is deep enough to hide the rod's end at the bottom of
+  // the stroke; at the top of the stroke the end is below the skin window.
+  const pistonRodRadius = 0.07;
+  const pistonRodZ = frameFrontZ + 0.16;
+  const topStrokeWristY = -(sourceConnectingRodLength - sourceCrankRadius)
+    * sourceScale;
+  const bottomStrokeWristY = -(sourceConnectingRodLength + sourceCrankRadius)
+    * sourceScale;
+  const windowBottomY = guideSlotLowerCenterY - 1.6 * sourceScale;
+  const pistonRodBottomLocal = windowBottomY - 0.10 - topStrokeWristY;
+  const footBoreBottomY = bottomStrokeWristY + pistonRodBottomLocal - 0.03;
+  const footBottomY = footBoreBottomY - 0.05;
+  const footOutline = poly([
+    [-7 * sourceScale, frameBackZ], [7 * sourceScale, frameBackZ],
+    [7 * sourceScale, standardSkinFrontZ + 0.03],
+    [-7 * sourceScale, standardSkinFrontZ + 0.03],
+  ]);
+  const footGeometry = (outline, bottom, top) => {
+    const geometry = plate(outline, -top, -bottom);
+    geometry.rotateX(Math.PI / 2);
+    return geometry;
+  };
+  const foundationFoot = new THREE.Mesh(
+    footGeometry(polygonClipping.difference(footOutline,
+      poly(circle([0, pistonRodZ], pistonRodRadius + 0.012, 48))),
+    footBoreBottomY, frameBaseTopY),
+    frameMaterial,
   );
   foundationFoot.userData.fixed = true;
   foundationFoot.userData.role = 'deep-engine-standard-foundation-foot';
+  const foundationSole = new THREE.Mesh(
+    footGeometry(footOutline, footBottomY, footBoreBottomY),
+    frameMaterial,
+  );
+  foundationSole.userData.fixed = true;
+  foundationSole.userData.role = 'foundation-foot-sole-closing-the-rod-bore';
 
   const straightGuideLength = guideSlotUpperCenterY
     - guideSlotLowerCenterY;
@@ -690,7 +758,9 @@ function verticalPlanedSlotPistonGuide(movement) {
     framePlate,
     standardFrontSkin,
     standardSideWalls,
+    standardCap,
     foundationFoot,
+    foundationSole,
     leftPlanedFace,
     rightPlanedFace,
     ...bearingSupports,
@@ -777,15 +847,6 @@ function verticalPlanedSlotPistonGuide(movement) {
   crossheadBridge.position.z = frameFrontZ + 0.16;
   crossheadBridge.userData.role =
     'rigid-crosshead-bridge-between-the-two-slide-shoes';
-  const lowerSlideBridge = new THREE.Mesh(
-    new THREE.BoxGeometry(2.5 * sourceScale, 0.70 * sourceScale, 0.16),
-    accentMaterial,
-  );
-  lowerSlideBridge.position.set(0, -slideHeight / 2,
-    frameBackZ - 0.095);
-  lowerSlideBridge.userData.role =
-    'rear-lower-slide-bridge-attaching-piston-rod-behind-the-standard';
-
   const wristBoss = cylinderAlongZ(
     wristPinRadius * 1.45,
     0.20,
@@ -795,23 +856,15 @@ function verticalPlanedSlotPistonGuide(movement) {
   wristBoss.position.z = frameFrontZ + 0.22;
   wristBoss.userData.role = 'slide-A-central-wrist-boss';
 
-  // Brown shows the rod only through the slot, so it runs behind the
-  // standard and stops short of the foot's lower edge at bottom stroke.
-  const renderedPistonRodBottomLocalY = -7.7 * sourceScale;
-  const pistonRodLength = pistonRodTopLocalY - renderedPistonRodBottomLocalY;
+  // A round rod from the crosshead bridge down inside the standard.
+  const pistonRodTopLocal = 0.05;
   const pistonRod = new THREE.Mesh(
-    new THREE.BoxGeometry(
-      0.75 * sourceScale,
-      pistonRodLength,
-      0.13,
-    ),
+    new THREE.CylinderGeometry(pistonRodRadius, pistonRodRadius,
+      pistonRodTopLocal - pistonRodBottomLocal, 40),
     accentMaterial,
   );
-  pistonRod.position.set(
-    0,
-    (pistonRodTopLocalY + renderedPistonRodBottomLocalY) / 2,
-    frameBackZ - 0.095,
-  );
+  pistonRod.position.set(0, (pistonRodTopLocal + pistonRodBottomLocal) / 2,
+    pistonRodZ);
   pistonRod.userData.role = 'rigid-piston-rod-carried-by-slide-A';
 
   const wristPinAnchor = new THREE.Object3D();
@@ -823,7 +876,6 @@ function verticalPlanedSlotPistonGuide(movement) {
     rightShoe,
     pistonRod,
     crossheadBridge,
-    lowerSlideBridge,
     wristBoss,
     wristPinAnchor,
   );
@@ -1041,7 +1093,7 @@ function verticalPlanedSlotPistonGuide(movement) {
     pistonRodBottomLocalY,
     pistonRodTopLocalY,
     pistonStroke,
-    renderedPistonRodBottomLocalY,
+    renderedPistonRodBottomLocalY: pistonRodBottomLocal,
     slideHeight,
     sourceConnectingRodLength,
     sourceCrankRadius,
@@ -1125,7 +1177,8 @@ function verticalPlanedSlotPistonGuide(movement) {
     rightSlideShoe: rightShoe,
     slideA,
     slideBridge: crossheadBridge,
-    lowerSlideBridge,
+    standardCap,
+    foundationSole,
     standardFrontSkin,
     standardSideWalls,
     wristBoss,
@@ -1145,7 +1198,7 @@ function verticalPlanedSlotPistonGuide(movement) {
   root.userData.engravingPointToModelFront = engravingPointToModelFront;
   root.userData.fidelity = 'authored';
   root.userData.geometry = geometry;
-  root.userData.groundFloorY = frameBaseBottomY - 0.025;
+  root.userData.groundFloorY = footBottomY - 0.025;
   root.userData.mechanism =
     'one-rigid-flywheel-crank-finite-connecting-rod-slide-A-in-one-real-planed-vertical-slot';
   root.userData.modelPointToOfficialAnimationRaster =

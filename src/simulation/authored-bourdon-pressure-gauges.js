@@ -219,16 +219,21 @@ function bourdonPressureGauge(movement) {
 
   // Pass 56: an opaque paper dial plate behind the working parts, closed by
   // a plain metal case back, instead of a translucent face with nothing
-  // behind it.
+  // behind it. (Pass 93: a light ivory, not the page colour, so the plate
+  // reads as a part; the graduated band is a deeper ivory, like 498 and
+  // 501's scales.)
   const dialFace = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(3.40, 3.40, 0.08, 96).rotateX(Math.PI / 2),
-    matte(PALETTE.paper, { roughness: 0.88 }),
+    // Pass 93: bored at C (r 0.13) for the feed, which now runs behind it.
+    plate(clip.difference(poly(circle([0, 0], 3.40, 192)), poly(circle([fixedMidpoint.x, fixedMidpoint.y], 0.13, 48))), -0.04, 0.04),
+    matte(0xece4d1, { roughness: 0.88 }),
   ), 'opaque-dial-plate-behind-working-parts');
   dialFace.position.z = -0.46;
   const caseBack = addRole(new THREE.Mesh(
     mergeGeometries([
-      new THREE.CylinderGeometry(3.48, 3.48, 0.08, 96).rotateX(Math.PI / 2).translate(0, 0, -0.54).toNonIndexed(),
-      new THREE.LatheGeometry([[3.40, -0.50], [3.48, -0.50], [3.48, -0.34], [3.40, -0.34], [3.40, -0.50]]
+      // Pass 93: the case is 0.26 deeper behind the dial, leaving room for
+      // the feed passage between dial plate and back.
+      new THREE.CylinderGeometry(3.48, 3.48, 0.08, 96).rotateX(Math.PI / 2).translate(0, 0, -0.80).toNonIndexed(),
+      new THREE.LatheGeometry([[3.40, -0.76], [3.48, -0.76], [3.48, -0.34], [3.40, -0.34], [3.40, -0.76]]
         .map(([r, y]) => new THREE.Vector2(r, y)), 96).rotateX(Math.PI / 2).toNonIndexed(),
     ]),
     frameMaterial,
@@ -284,11 +289,19 @@ function bourdonPressureGauge(movement) {
   centerClamp.position.set(fixedMidpoint.x, fixedMidpoint.y + 0.04, 0);
   centerClamp.userData.sourceLabel = 'C';
 
+  // Pass 93: the feed runs up behind the dial plate (z -0.63, between the
+  // plate's back at -0.50 and the case back at -0.76) and turns forward
+  // through the plate's bore at C into the clamp; it crossed the dial face
+  // and the needle before.
+  const feedZ = -0.63;
   const pressurePassagePoints = [
-    new THREE.Vector3(0, -3.78, -0.29),
-    new THREE.Vector3(0, -2.92, -0.29),
-    new THREE.Vector3(-0.18, -0.42, -0.29),
-    new THREE.Vector3(-0.12, 1.72, -0.29),
+    new THREE.Vector3(0, -4.00, feedZ),
+    new THREE.Vector3(0, -2.90, feedZ),
+    new THREE.Vector3(0, 0.00, feedZ),
+    new THREE.Vector3(0, fixedMidpoint.y - 0.40, feedZ),
+    new THREE.Vector3(0, fixedMidpoint.y - 0.08, feedZ + 0.03),
+    new THREE.Vector3(0, fixedMidpoint.y, feedZ + 0.16),
+    new THREE.Vector3(0, fixedMidpoint.y, -0.25),
     new THREE.Vector3(0, fixedMidpoint.y, -0.10),
   ];
   const pressurePassageCurve = new THREE.CatmullRomCurve3(
@@ -308,12 +321,13 @@ function bourdonPressureGauge(movement) {
     new THREE.CylinderGeometry(0.31, 0.31, 1.28, 32),
     frameMaterial,
   ), 'bottom-process-pressure-inlet-socket');
-  inletSocket.position.set(0, -3.62, -0.25);
+  // Below the case, under the feed.
+  inletSocket.position.set(0, -4.08, feedZ);
   const inletCollar = addRole(new THREE.Mesh(
     new THREE.CylinderGeometry(0.44, 0.44, 0.30, 32),
     inkMaterial,
   ), 'threaded-pressure-inlet-collar');
-  inletCollar.position.set(0, -3.13, -0.25);
+  inletCollar.position.set(0, -3.62, feedZ);
 
   const sector = addRole(new THREE.Group(),
     'single-differential-toothed-sector-connected-to-both-tube-ends');
@@ -449,7 +463,7 @@ function bourdonPressureGauge(movement) {
     poly([[-4, scaleCenter.y], [4, scaleCenter.y], [4, 4], [-4, 4]]),
   );
   const bandEnds = clip.difference(bandShape, poly(circle([0, 0], scaleBand.bezelRadius, 256)));
-  const bandMaterial = matte(PALETTE.paper, { roughness: 0.82 });
+  const bandMaterial = matte(0xe6dcc3, { roughness: 0.82 });
   const scaleArc = addRole(new THREE.Mesh(
     mergeGeometries([
       plate(bandShape, scaleBand.back, scaleBand.front),
@@ -713,6 +727,16 @@ function bourdonPressureGauge(movement) {
   update(0);
   root.userData.fidelity = 'authored';
   correctElasticGaugeParts(root,499,update);
+  // Pass 93: each free tube end carries a round eye (r 0.085, standing
+  // 0.008 proud of both tube faces so no face lies on the tube's) concentric
+  // with its link pin, so the pin stands in metal rather than on the very
+  // tip of the tube.
+  root.userData.blocks.tubeEndEyes = tubeEndPins.map((pin, index) => {
+    const eye = addRole(new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.085, 0.16, 40), tubeMaterial),
+      index === 0 ? 'left-free-tube-end-eye' : 'right-free-tube-end-eye');
+    pin.add(eye);
+    return eye;
+  });
   // The bored socket now ends at the collar's lower face, and the collar
   // carries the inlet up to its top. They used to overlap through the collar
   // with one shared .115 bore wall and top face, which z-fought (p88).

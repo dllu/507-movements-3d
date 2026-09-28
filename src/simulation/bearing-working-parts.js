@@ -127,7 +127,10 @@ function correctRollerBearing(root) {
   replace(b.belt, plate(poly(outline), -g.beltDepth / 2, g.beltDepth / 2));
   if (root.userData.sourceReference?.plate270) twistedRope(root);
   replace(b.innerRace, new THREE.CylinderGeometry(g.innerRaceRadius, g.innerRaceRadius, g.innerRaceDepth, 256));
-  replace(b.cagePlate, ring(g.innerRaceRadius + .08, g.outerRaceInnerRadius - .08,
+  // The rear retaining plate lies wholly behind the pulley web, so it can
+  // run from just clear of the fixed journal to past the pulley bore and
+  // close the bearing from behind (no open annulus round the rollers).
+  replace(b.cagePlate, ring(g.innerRaceRadius + .012, g.outerRaceInnerRadius + .1,
     -g.cageDepth / 2, g.cageDepth / 2, 256));
   b.cageIndex.visible = false;
   b.cagePins = [];
@@ -339,6 +342,25 @@ function addAssembledView(model) {
   const coverPlate = new THREE.Mesh(plate(section, front + 0.001, front + 0.05), b.cagePlate.material);
   coverPlate.userData.role = 'assembled-view-cover-with-six-pin-holes';
   cover.add(coverPlate);
+  // The holes are blind: a backing disc closes them, and each shows Brown's
+  // centre dot, the end of a retainer pin, a little below the cover face.
+  const coverBack = new THREE.Mesh(
+    ring(g.innerRaceRadius + 0.004, coverRadius - 0.004, front - 0.05, front + 0.01, 256),
+    b.cagePlate.material,
+  );
+  coverBack.userData.role = 'assembled-view-cover-backing-closing-the-pin-holes';
+  cover.add(coverBack);
+  for (let index = 0; index < 6; index += 1) {
+    const angle = Math.PI / 2 + index * Math.PI / 3;
+    const pinEnd = new THREE.Mesh(
+      new THREE.CylinderGeometry(pinHoleRadius * 0.45, pinHoleRadius * 0.45, 0.06, 24),
+      b.innerRace.material,
+    );
+    pinEnd.rotation.x = Math.PI / 2;
+    pinEnd.position.set(pinHoleCircle * Math.cos(angle), pinHoleCircle * Math.sin(angle), front - 0.01);
+    pinEnd.userData.role = `assembled-view-retainer-pin-end-${index + 1}`;
+    cover.add(pinEnd);
+  }
   const journal = new THREE.Mesh(b.innerRace.geometry, b.innerRace.material);
   journal.position.copy(b.innerRace.position);
   journal.rotation.copy(b.innerRace.rotation);

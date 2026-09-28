@@ -745,8 +745,11 @@ function groovedCamWoolComberRollerMotion(movementId) {
   outputHubRing.userData.role = 'H-source-face-bearing-ring';
   outputHubRing.visible = !outputPlateFocus;
   outputRotor.add(outputHubRing);
-  const outputShaft = cylinderAlongZ(0.16, 1.62, darkMaterial, 36);
-  outputShaft.position.z = 0.34;
+  // p93: the fixed H shaft stood 0.58 proud of the rocker and 0.52 behind
+  // the wheel, a long black stub in every rotated view. It now runs from just
+  // behind the hub (z 0.05) to just proud of the rocker's boss (z 0.57).
+  const outputShaft = cylinderAlongZ(0.16, 0.6, darkMaterial, 36);
+  outputShaft.position.z = 0.32;
   outputShaft.userData.role = 'H-detaching-roller-shaft';
   outputRotor.add(outputShaft);
   const wheelIndex = new THREE.Mesh(

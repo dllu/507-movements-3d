@@ -310,3 +310,23 @@ test('movement 226 runtime binds all rigid assemblies while 262 stays authored',
   disposeModel(movement507.root);
   disposeModel(model.root);
 });
+
+test('p93: frame A is one flat frame centred on F in the plate plane, and D stands on a stud in F\'s boss', () => {
+  const model = createMovementModel(catalog.movements[225]);
+  const { blocks } = model.root.userData;
+  model.update(0);
+  model.root.updateMatrixWorld(true);
+  const frame = new THREE.Box3().setFromObject(blocks.flatFrameA);
+  near((frame.min.z + frame.max.z) / 2, 0, 1e-9, 'frame centred on F');
+  near((frame.min.y + frame.max.y) / 2, 0, 0.02, 'frame centred on F vertically');
+  assert.equal(blocks.frameBossesA.length, 2);
+  for (const boss of blocks.frameBossesA) assert.equal(boss.parent, blocks.carrierAssembly);
+  assert.equal(blocks.spiderBossD.parent, blocks.carrierAssembly);
+  let hiddenStruts = 0;
+  model.root.traverse((object) => {
+    if (/^inferred-planet-journal-/.test(object.userData.role ?? '')) { assert.equal(object.visible, false); hiddenStruts += 1; }
+    assert.notEqual(object.userData.role, 'carrier-fixed-shaft-collar');
+  });
+  assert.equal(hiddenStruts, 2);
+  disposeModel(model.root);
+});

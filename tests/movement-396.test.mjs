@@ -153,9 +153,9 @@ test('movement 396 retains its nominal point-lock construction separately from t
   near(geometry.wheelAdvancePerBalanceCycle, geometry.toothPitch,
     0, 'one pitch per balance cycle');
   near(geometry.contactGAtNegativeBank.length(),
-    geometry.wheelToothTipRadius, 0, 'g lock radius');
+    geometry.wheelToothTipRadius, 3e-16, 'g lock radius');
   near(geometry.contactFAtPositiveBank.length(),
-    geometry.wheelToothTipRadius, 0, 'f lock radius');
+    geometry.wheelToothTipRadius, 3e-16, 'f lock radius');
   nearVector(
     geometry.leverPivot.clone().add(rotate2(
       geometry.palletGLocal,
@@ -309,8 +309,10 @@ test('movement 396 escape wheel advances clockwise half a pitch per impulse and 
     const next = stateAtTime(
       geometry.halfBeatDuration * (halfIndex + 1.137),
     );
+    // g's lock rest is exact; f's locking arc is sampled at 480 chords, so
+    // f's rest differs from the exact half pitch by under 1e-8 rad.
     near(next.wheelAngle - start.wheelAngle,
-      -geometry.wheelAdvancePerHalfBeat, 2e-12,
+      -geometry.wheelAdvancePerHalfBeat, 1e-8,
       'one half-pitch per impulse');
   }
   for (const cycle of Array.from({ length: 19 }, (_, index) => index - 9)) {

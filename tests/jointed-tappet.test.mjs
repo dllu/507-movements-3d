@@ -23,6 +23,8 @@ test('076 locates C, the hinged end B, the holding pawl and D on a complete coax
   const restEnd=[p.C[0]+Math.cos(p.restQ)*p.end[0]-Math.sin(p.restQ)*p.end[1],p.C[1]+Math.sin(p.restQ)*p.end[0]+Math.cos(p.restQ)*p.end[1]];
   near(Math.hypot(...restEnd)+p.barRadius+p.studRadius-p.studOrbit,.05,1e-12);
   assert.ok(p.studOrbit+p.studRadius<=p.driverOuter&&p.studOrbit-p.studRadius>=p.driverInner,'D must stay on the rim');
+  // p93: D sits on the rim band's centreline (Brown's width), not on its outer edge.
+  near((p.driverInner+p.driverOuter)/2,p.studOrbit,1e-12);near((p.driverOuter-p.driverInner)*p.scale,921.1339022024459-744.8633730551632,1e-9);
   // One stud on each of the four spokes: the same stud a quarter turn apart.
   assert.equal(p.studCount,4);
   for(let i=1;i<4;i++){const other=u.parts[`driverStud${i}`].position,angle=Math.atan2(stud.y,stud.x)+i*Math.PI/2;

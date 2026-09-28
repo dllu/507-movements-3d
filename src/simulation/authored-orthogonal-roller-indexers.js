@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { toCreasedNormals } from 'three/addons/utils/BufferGeometryUtils.js';
 import grooveData from './baked/roller-indexer-grooves.js';
 import { radialGroovedWheelGeometry, finishGrooveDrive, boreCylinder } from './groove-drive-working-parts.js';
 import {
@@ -438,7 +439,20 @@ function orthogonalRollerGrooveIndexer(movement) {
     mount.userData.mountAngle = mountAngle;
     mount.userData.role = 'radial-stud-and-free-friction-roller-mount';
 
-    const stud = cylinderAlongX(0.052, 0.64, darkMaterial, 20);
+    // One turned pin: the stud runs through the roller's bore and ends in
+    // Brown's small head just clear of the roller's outer end, which closes
+    // the sleeve and retains the roller.
+    const studGeometry = new THREE.LatheGeometry([
+      new THREE.Vector2(0, -0.32),
+      new THREE.Vector2(0.052, -0.32),
+      new THREE.Vector2(0.052, rollerOuterRadius + 0.004 - 0.89),
+      new THREE.Vector2(0.064, rollerOuterRadius + 0.004 - 0.89),
+      new THREE.Vector2(0.064, rollerOuterRadius + 0.066 - 0.89),
+      new THREE.Vector2(0, rollerOuterRadius + 0.066 - 0.89),
+    ], 32);
+    studGeometry.rotateZ(-Math.PI / 2);
+    const stud = new THREE.Mesh(toCreasedNormals(studGeometry, Math.PI / 6), darkMaterial);
+    studGeometry.dispose();
     stud.position.x = 0.89;
     stud.userData.index = index;
     stud.userData.role = 'radial-stud-on-small-driver-wheel';

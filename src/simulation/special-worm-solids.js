@@ -64,9 +64,15 @@ function hindleyWormGeometry(p,halfLength,boreRadius){
 }
 export function correctGloboidalWorm(root){
  const b=root.userData.blocks,p=specialWormParameters[202];
- const geometry=hindleyWormGeometry(p,p.wormLength/2,.086);
+ // p93: Brown's worm shaft is a stout round shaft, about 0.09 of the wheel's
+ // diameter (the old 0.084 radius read as a wire). Bore the worm for a 0.196
+ // shaft; the worm's root (0.308 at its waist) keeps a 0.1 wall.
+ const shaftRadius=.196,bore=shaftRadius+.004;
+ const geometry=hindleyWormGeometry(p,p.wormLength/2,bore);
  b.wormThread.geometry.dispose();b.wormThread.geometry=geometry;b.wormThread.material.color.copy(b.wormBody.material.color);
- b.wormThread.userData.integralThread=true;b.wormThread.userData.boreRadius=.086;
+ b.wormThread.userData.integralThread=true;b.wormThread.userData.boreRadius=bore;
+ root.traverse(o=>{if(o.isMesh&&o.geometry.type==='CylinderGeometry'){let r=o;while(r&&!r.userData.role)r=r.parent;
+  if(r?.userData.role==='fixed-center-input-shaft-keyed-to-globoidal-worm'){const q=o.geometry.parameters;o.geometry.dispose();o.geometry=new THREE.CylinderGeometry(shaftRadius,shaftRadius,q.height,48);}}});
  b.wormBody.visible=false;b.wormBody.userData.replacedByIntegralThread=true;
  const rotor=b.wheel.userData.rotor,old=rotor.children[0];
  const wheel=makeSpecialWormWheel(202,.107,old.material);old.removeFromParent();old.geometry.dispose();rotor.add(wheel);b.generatedWheel=wheel;

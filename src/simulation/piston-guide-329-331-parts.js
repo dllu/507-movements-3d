@@ -92,17 +92,23 @@ export function correctSlottedGuide(root){
   const cover=new THREE.Mesh(plate(clip.difference(poly(circle([0,0],barrelOuter+.04,96)),rect(.26,.18)),coverBottom,coverTop).rotateX(-Math.PI/2),b.lowerCrossBase.material);
   cover.position.set(0,0,rodZ);cover.userData.role='cylinder-cover-under-crossbase-with-rod-passage';
   const barrel=new THREE.Mesh(tube(barrelOuter,barrelInner,coverBottom+.005-barrelBottom).translate(0,(coverBottom+.005+barrelBottom)/2,0),b.lowerCrossBase.material);
-  barrel.position.set(0,0,rodZ);barrel.userData.role='closed-steam-cylinder-enclosing-piston-stroke';
+  barrel.position.set(0,0,rodZ);barrel.userData.role='closed-cylinder-barrel-enclosing-piston-stroke';
   const end=new THREE.Mesh(new THREE.CylinderGeometry(barrelOuter+.04,barrelOuter+.04,.06,96),b.lowerCrossBase.material);
   end.position.set(0,barrelBottom+.005-.03,rodZ);end.userData.role='cylinder-bottom-cover';
   // The default view frames the stroke as before; the barrel's foot may crop.
-  barrel.userData.cameraFitGuide=true;end.userData.cameraFitGuide=true;
+  // (Excluded from the fit only: cameraFitGuide would also drop its shadow.)
+  barrel.userData.excludeFromCameraFit=true;end.userData.excludeFromCameraFit=true;
+  // Pillars D and the crossbase legs run on down (Brown crops them) to the
+  // cylinder's bottom cover, so no frame member stops short in mid-air.
+  const floorY=barrelBottom+.005-.06;
+  for(const post of[...b.guidePosts,...b.lowerLegs]){const p=post.geometry.parameters,top=post.position.y+p.height/2;
+    replace(post,new THREE.BoxGeometry(p.width,top-floorY,p.depth));post.position.y=(top+floorY)/2;}
   b.fixedFrame.add(cover,barrel,end);b.cylinderCover=cover;b.cylinderBarrel=barrel;b.cylinderEnd=end;
   d.finiteGuideReview={cylinderTop:coverTop,cylinderBottom:barrelBottom-.055,barrelInnerRadius:barrelInner,pistonClearanceAtTop:coverBottom-(headTop+half),slotRunningClearance:.0005,guideRunningClearance:.002,qualification:'Exact source crank/slot motion; finite running allowances, inferred rear braces, rod/gland depth and closed cylinder below the crossbase. No steam, bearing loads or friction simulation.'};
 }
 export function finishPistonGuides(root,update){
   const d=root.userData;d.hideGround=true;d.minimumDisplayCycleSeconds=d.geometry.cyclePeriod;
   root.traverse(o=>{for(const m of[].concat(o.material??[]))m.fog=false;});
-  const box=new THREE.Box3();for(let i=0;i<=64;i++){update(d.geometry.cyclePeriod*i/64);root.updateMatrixWorld(true);root.traverse(o=>{if(!o.isMesh||!o.visible||o.userData.cameraFitGuide)return;o.geometry.computeBoundingBox();box.union(o.geometry.boundingBox.clone().applyMatrix4(o.matrixWorld));});}
+  const box=new THREE.Box3();for(let i=0;i<=64;i++){update(d.geometry.cyclePeriod*i/64);root.updateMatrixWorld(true);root.traverse(o=>{if(!o.isMesh||!o.visible||o.userData.cameraFitGuide||o.userData.excludeFromCameraFit)return;o.geometry.computeBoundingBox();box.union(o.geometry.boundingBox.clone().applyMatrix4(o.matrixWorld));});}
   d.cameraFitBounds=box.expandByScalar(.04);d.cameraDistanceScale=1.08;update(0);
 }

@@ -177,7 +177,9 @@ test('movement 240 preserves the measured comparison plate and spring joint', ()
   assert.equal(source.activeAlternativeCount, 1);
   assert.equal(source.pawls[0].mode, 'reverse-locked-on-steep-face');
   assert.equal(source.pawls[0].contact.edge.type, 'reverse-lock-face');
-  assert.equal(source.pawls[1].parked, true);
+  // p93: the straight stop is down on its steep face too, as drawn.
+  assert.equal(source.pawls[1].parked, false);
+  assert.equal(source.pawls[1].mode, 'reverse-locked-on-steep-face');
   assert.equal(source.pawls[2].parked, false);
   assert.equal(source.pawls[2].engaged, true);
   disposeModel(model.root);
@@ -246,7 +248,7 @@ test('movement 240 reconstructs eighteen asymmetric three-face ratchet teeth', (
   disposeModel(model.root);
 });
 
-test('movement 240 never selects more than one alternative in 32,769 states', () => {
+test('movement 240 keeps all three stops riding the teeth in 32,769 states', () => {
   const model = createMovementModel(catalog.movements[239]);
   const {
     pointInsideWheelAtAngle,
@@ -257,16 +259,11 @@ test('movement 240 never selects more than one alternative in 32,769 states', ()
   let maximumContactCoincidenceError = 0;
   for (let index = 0; index <= 32768; index += 1) {
     const state = stateAtCycleCoordinate(index / 32768);
-    // Stop C stays down through every stroke; the hook and straight stops
-    // alternate one at a time.
-    assert.equal(state.pawls[2].engaged, true);
-    const engaged = state.pawls.slice(0, 2).filter((pawl) => pawl.engaged);
-    const contacts = state.pawls.slice(0, 2)
-      .filter((pawl) => pawl.contact !== null);
-    assert.ok(engaged.length <= 1);
-    assert.ok(contacts.length <= 1);
-    if (engaged.length === 1) {
-      assert.equal(state.activeAlternative, engaged[0].key);
+    // p93: every stop stays down through every stroke, riding the ramps and
+    // dropping into each root; none is parked above the tips.
+    for (const pawl of state.pawls) {
+      assert.equal(pawl.engaged, true);
+      assert.ok(pawl.finiteContact.normalClearance < .06, `${pawl.key} rides the teeth`);
     }
     for (const pawl of state.pawls) {
       for (const value of [
@@ -299,6 +296,7 @@ test('movement 240 never selects more than one alternative in 32,769 states', ()
   }
   assert.ok(maximumContactCoincidenceError > .0645 && maximumContactCoincidenceError < .073,
     'the finite nose center is a radius away from its working face');
+  // The demonstration labels still cycle through the three forms.
   assert.ok(parkedStates > 11000);
   for (const key of [
     'hook-gravity-stop',

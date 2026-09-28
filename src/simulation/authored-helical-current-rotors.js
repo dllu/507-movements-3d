@@ -126,17 +126,21 @@ function makeFlowArrow({ material, position, role }) {
 
 function helicalCurrentRotor(movement) {
   const root = new THREE.Group();
-  const helixHandedness = 1;
+  // Brown's front crossing of the blade over the drum runs down-left from the
+  // right-hand lobe (his hidden, dashed back crossing runs down-right on the
+  // left), which is a left-handed winding about +X.
+  const helixHandedness = -1;
   const helixTurns = 1;
   const helixStartAngleRadian = 0;
-  const cylinderLengthSceneUnit = 4.00;
+  const cylinderLengthSceneUnit = 3.60;
   const coreRadiusSceneUnit = 0.58;
-  const outerRadiusSceneUnit = 1.34;
+  // Plate: blade radius about 2.65 drum radii; drum length about 6.2 radii.
+  const outerRadiusSceneUnit = 1.54;
   const helixSegments = 192;
   const axisHeightSceneUnit = 0.28;
   const physicalPitchMetre = 0.80;
   const physicalCoreRadiusMetre = 0.14;
-  const physicalOuterRadiusMetre = 0.32;
+  const physicalOuterRadiusMetre = 0.37;
   const axialFlowSpeedMetrePerSecond = 0.80;
   const axialToRotorCoupling = 1 / 6;
   const workingFluidDensityKilogramPerCubicMetre = 998;
@@ -233,7 +237,7 @@ function helicalCurrentRotor(movement) {
   ), 'fixed-base-under-helical-current-rotor');
   base.position.y = -1.82;
   root.add(base);
-  const supportXs = [-2.34, 2.34];
+  const supportXs = [-2.24, 2.24];
   const supports = supportXs.map((x, index) => {
     const support = addRole(new THREE.Group(),
       `fixed-bearing-pedestal-${index + 1}`);
@@ -268,7 +272,7 @@ function helicalCurrentRotor(movement) {
   rotor.position.y = axisHeightSceneUnit;
   root.add(rotor);
   const shaft = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(0.13, 0.13, 5.72, 28),
+    new THREE.CylinderGeometry(0.13, 0.13, 5.48, 28),
     darkMaterial,
   ), 'single-horizontal-output-shaft-through-both-bearings');
   shaft.rotation.z = Math.PI / 2;
@@ -391,7 +395,7 @@ function helicalCurrentRotor(movement) {
 
   const loadWheel = addRole(new THREE.Group(),
     'rigid-load-wheel-on-output-shaft');
-  loadWheel.position.x = 2.77;
+  loadWheel.position.x = 2.66;
   const loadWheelDisc = new THREE.Mesh(
     new THREE.CylinderGeometry(0.58, 0.58, 0.16, 44),
     coreMaterial,
@@ -552,11 +556,11 @@ function helicalCurrentRotor(movement) {
       assumptionScope:
         'The engraving gives no dimensions, flow speed, load, pitch, efficiency, or absolute rate. The displayed water-current operating point uses a quasi-steady torque coefficient and a disclosed axial-to-rotor coupling; it is a mechanically signed demonstration rather than CFD.',
       energyBalance:
-        'At the displayed steady speed, current torque and shaft angular velocity have the same negative-X sign, so tau_x*omega_x is positive extracted shaft power. An equal opposite load torque represents the driven machine.',
+        'At the displayed steady speed, current torque and shaft angular velocity have the same positive-X sign, so tau_x*omega_x is positive extracted shaft power. An equal opposite load torque represents the driven machine.',
       markerContinuity:
         'White current packets advance from the analytic integral U*t of axial fluid speed and use getPointAt arc-length sampling on uninterrupted positive-X paths, with smooth endpoint fades.',
       reciprocalScrewAction:
-        'For the rendered right-handed helix, positive-X axial flow produces negative-X shaft rotation. Reversing either flow or handedness reverses the rotation sign.',
+        'For the rendered left-handed helix, positive-X axial flow produces positive-X shaft rotation. Reversing either flow or handedness reverses the rotation sign.',
       singleFlight:
         'Exactly one radial helical ribbon makes exactly one turn from the left end of the central cylinder to the right; no duplicate or hidden second flight is present.',
     },
@@ -569,11 +573,11 @@ function helicalCurrentRotor(movement) {
     geometry,
     helixPointScene,
     mechanism:
-      'One continuous radial spiral flight is wound exactly once around one horizontal cylinder and is rigid with its shaft. A positive-X axial stream meets the inclined helical surface and supplies torque about the same axis; for the displayed right-handed winding the shaft turns in the negative-X sense. Both journals and the external load wheel share the rotor angle exactly. White packets show the uninterrupted axial current, while fixed arrows distinguish stream direction from rotor direction.',
+      'One continuous radial spiral flight is wound exactly once around one horizontal cylinder and is rigid with its shaft. A positive-X axial stream meets the inclined helical surface and supplies torque about the same axis; for the displayed left-handed winding (Brown’s crossing sense) the shaft turns in the positive-X sense. Both journals and the external load wheel share the rotor angle exactly. White packets show the uninterrupted axial current, while fixed arrows distinguish stream direction from rotor direction.',
     motion: {
       axialFlowDirection: new THREE.Vector3(1, 0, 0),
       rotationAxis: new THREE.Vector3(1, 0, 0),
-      rotationSenseViewedFromPositiveX: 'clockwise',
+      rotationSenseViewedFromPositiveX: 'counterclockwise',
       shaftAngularVelocityVector: new THREE.Vector3(
         shaftAngularVelocityRadianPerSecond,
         0,
@@ -608,11 +612,11 @@ function helicalCurrentRotor(movement) {
           'the output is rotary motion',
         ],
         engravingEvidence:
-          'Brown’s elevation shows one horizontal cylindrical core on a through-shaft in two pedestal bearings and one broad spiral sheet whose outer edge is high at both ends and low near midspan, the projection of one complete turn.',
+          'Brown’s elevation shows one horizontal cylindrical core on a through-shaft carried by two plain upright standards and one broad spiral sheet whose outer edge is high at both ends and low near midspan, the projection of one complete turn.',
         fullerCorroboration:
           'John Douglas Pitts Fuller’s 1834 Key to the Analytical Table of Mechanical Movements, items 23–24, states that a spiral wound round a cylinder converts wind or a stream into circular motion. Brown’s caption is a near-verbatim later statement of that earlier kinematic example.',
         reconstructionDisclosure:
-          'The one spiral, one cylinder, horizontal supported shaft, full-turn projected shape, and wind-or-water-to-rotation function are source-grounded. Right-handedness, positive-X water demonstration, radial flight profile, physical pitch and radii, flow speed, torque coefficient, coupling, power, dimensions, load wheel, particles, colors, and timing are independently engineered and exposed.',
+          'The one spiral, one cylinder, horizontal supported shaft, full-turn projected shape, and wind-or-water-to-rotation function are source-grounded. The left-handed winding is read from the plate’s front and hidden crossings. The positive-X water demonstration, radial flight profile, physical pitch and radii, flow speed, torque coefficient, coupling, power, dimensions, load wheel, particles, colors, and timing are independently engineered and exposed.',
       },
       fullerKeyUrl:
         'https://books.google.com/books/about/A_Key_to_the_Analytical_Table_of_Mechani.html?id=zfbIl5EO76AC',
@@ -635,12 +639,12 @@ function helicalCurrentRotor(movement) {
     update,
   };
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-3.78, -2.05, -2.05),
-    new THREE.Vector3(3.78, 2.30, 2.05),
+    new THREE.Vector3(-3.20, -2.12, -1.62),
+    new THREE.Vector3(3.20, 1.90, 1.62),
   );
   root.userData.cameraDistanceScale = 1.14;
   root.userData.cameraDirection = new THREE.Vector3(8.4, 4.4, 11.5);
-  root.userData.groundFloorY = -2.05;
+  root.userData.groundFloorY = -2.08;
   correctWindRotorWorkingParts(root, 484);
   markShadows(root);
   helicalBlade.castShadow = false;

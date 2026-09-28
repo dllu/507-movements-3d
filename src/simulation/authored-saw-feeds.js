@@ -2,7 +2,6 @@ import * as THREE from 'three';
 import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { creaseIndexedNormals } from './crease-normals.js';
 import { circle, plate, poly, polygonClipping as clip } from './finite-plate-geometry.js';
-import { rackPinionGeometry, rackToothGeometry } from './rack-pinion-parts.js';
 import { spokedWheelGeometry } from './spoked-wheel.js';
 import { PALETTE, markShadows, matte } from './primitives.js';
 
@@ -62,7 +61,46 @@ const R_TIP = px(PLATE.ratchetTipRadius);
 const R_ROOT = px(PLATE.ratchetRootRadius);
 const PINION_PITCH_RADIUS = px(PLATE.pinionTeeth * PLATE.rackPitch / TAU);
 const RACK_PITCH = px(PLATE.rackPitch);
-const RACK_ADDENDUM = 0.1;
+// Pass 93: Brown cuts the carriage rack with square teeth, flat lands and
+// flat-bottomed gaps about as wide as the teeth, a third of a pitch deep.
+// The rack flanks stand RACK_FLANK_ANGLE off square and the eight-tooth
+// pinion is generated as the rolling envelope of that rack (see
+// generatedPinionOutline), so it is exactly conjugate, undercut included.
+const RACK_ADDENDUM = 0.08; // rack tip below the pitch line
+const RACK_DEDENDUM = 0.09; // rack root above the pitch line
+const PINION_ADDENDUM = 0.075;
+const RACK_FLANK_ANGLE = 12 * Math.PI / 180;
+const RACK_BACKLASH = 0.006;
+// Rack tooth (tips toward -y), pitch line y = 0, centred on x = 0.
+function rackToothOutline(top = RACK_DEDENDUM + 0.004) {
+  const half = RACK_PITCH / 4 - RACK_BACKLASH / 2;
+  const w = (y) => half + y * Math.tan(RACK_FLANK_ANGLE);
+  return [[-w(-RACK_ADDENDUM), -RACK_ADDENDUM], [w(-RACK_ADDENDUM), -RACK_ADDENDUM],
+    [w(top), top], [-w(top), top]];
+}
+// The pinion as the rack generates it: rolling the rack tooth over the pitch
+// circle (carriage x = -r theta while the wheel turns theta) sweeps one tooth
+// space; the eight spaces are cut from the tip disc.
+function generatedPinionOutline(boreRadius) {
+  const r = PINION_PITCH_RADIUS;
+  const tooth = rackToothOutline();
+  const sweeps = [];
+  for (let i = -160; i <= 160; i += 1) {
+    const theta = i * 0.0075;
+    const c = Math.cos(-theta), s = Math.sin(-theta);
+    sweeps.push([tooth.map(([x, y]) => {
+      const wx = x - r * theta, wy = y + r;
+      return [c * wx - s * wy, s * wx + c * wy];
+    })]);
+  }
+  const space = clip.union(...sweeps);
+  const spaces = [];
+  for (let j = 0; j < PLATE.pinionTeeth; j += 1) {
+    const a = j * TAU / PLATE.pinionTeeth, c = Math.cos(a), s = Math.sin(a);
+    spaces.push(space.map((polygon) => polygon.map((ring) => ring.map(([x, y]) => [c * x - s * y, s * x + c * y]))));
+  }
+  return clip.difference(poly(circle([0, 0], r + PINION_ADDENDUM, 256)), ...spaces, poly(circle([0, 0], boreRadius, 64)));
+}
 const FULCRUM = P(...PLATE.fulcrumA);
 const ROCKER_LENGTH = len(sub(P(...PLATE.rockerJoint), FULCRUM));
 const INPUT = P(...PLATE.inputShaft);
@@ -227,10 +265,12 @@ function arcThrough(a, b, c, count) {
 }
 
 function clickOutlineRaster(tip = PLATE.clickTip) {
-  const leftEdge = arcThrough([64, 236], [57.3, 262], tip, 40);
-  const rightEdge = arcThrough(tip, [69.5, 263], [81.5, 236], 40);
+  // Pass 93: Brown's click is a round eye (about 12 px) and a finger bowed
+  // out to the left, concave on the wheel side.
+  const leftEdge = arcThrough([62.5, 238], [55.6, 264], tip, 48);
+  const rightEdge = arcThrough(tip, [66.8, 265], [82, 238], 48);
   const finger = poly([...leftEdge, ...rightEdge.slice(1), [73, 228]]);
-  const eye = poly(circle(PLATE.clickPivot, 9, 64));
+  const eye = poly(circle(PLATE.clickPivot, 12, 96));
   return clip.difference(clip.union(finger, eye), poly(circle(PLATE.clickPivot, 4, 48)));
 }
 
@@ -695,8 +735,9 @@ function crankRockerPullCatchSawFeed(movement) {
   const rightPost = named(new THREE.Mesh(smoothPlate(box(455, 400, 505, 506), ...Z.carriage), frameMaterial),
     'right-frame-post-under-carriage');
   // Bracket carrying fulcrum a off the left post, behind the bell crank.
-  const fulcrumBracket = named(new THREE.Mesh(smoothPlate(clip.union(box(100, 112, 141, 132),
-    poly(circle(P(...PLATE.fulcrumA), px(10), 48))), Z.leftPost[1], -0.02), frameMaterial),
+  // Pass 93: one tapered lug from the post face to a round boss about a.
+  const fulcrumBracket = named(new THREE.Mesh(smoothPlate(
+    hullOfCircles(P(93, 122), px(16), P(...PLATE.fulcrumA), px(11)), Z.leftPost[1], -0.02), frameMaterial),
   'fulcrum-bracket-on-left-post');
   // Shaft hanger: a flat arm from under the carriage (bolted to the left
   // post, whose foot block is also the carriage's left way) up to the
@@ -725,19 +766,19 @@ function crankRockerPullCatchSawFeed(movement) {
   const bedRail = named(new THREE.Mesh(smoothPlate(box(12, 270, 518, 283), Z.carriage[1], Z.carriage[1] + 0.06),
     carriageMaterial), 'saw-bed-top-rail');
   const rackPitchY = PINION_PITCH_RADIUS;
-  const rackRootY = rackPitchY + RACK_ADDENDUM + 0.006;
+  const rackRootY = rackPitchY + RACK_DEDENDUM;
   const rackBar = named(new THREE.Mesh(smoothPlate(poly([
     [P(27, 0)[0], P(0, 283)[1]], [P(490, 0)[0], P(0, 283)[1]],
     [P(490, 0)[0], rackRootY], [P(27, 0)[0], rackRootY]]), ...Z.rack), rackMaterial), 'carriage-rack-bar');
   carriage.add(bed, bedRail, rackBar);
-  const rackTooth = rackToothGeometry({ pitch: RACK_PITCH, addendum: RACK_ADDENDUM, depth: Z.rack[1] - Z.rack[0] });
+  const rackTooth = smoothPlate(poly(rackToothOutline()), Z.rack[0] - (Z.rack[0] + Z.rack[1]) / 2,
+    Z.rack[1] - (Z.rack[0] + Z.rack[1]) / 2);
   const rackTeeth = [];
   for (let i = -4; i <= 14; i += 1) {
     const x = i * RACK_PITCH;
     if (x < P(27, 0)[0] + RACK_PITCH / 2 || x > P(490, 0)[0] - RACK_PITCH / 2) continue;
     const tooth = named(new THREE.Mesh(rackTooth, rackMaterial), 'downward-carriage-rack-tooth');
     tooth.position.set(x, rackPitchY, (Z.rack[0] + Z.rack[1]) / 2);
-    tooth.rotation.z = Math.PI;
     rackTeeth.push(tooth);
     carriage.add(tooth);
   }
@@ -773,13 +814,9 @@ function crankRockerPullCatchSawFeed(movement) {
   }), wheelMaterial), 'forty-four-tooth-four-spoke-ratchet');
   ratchetBody.position.z = (Z.wheel[0] + Z.wheel[1]) / 2;
   ratchetBody.userData.noRotationIndicator = true;
-  const pinion = named(new THREE.Mesh(rackPinionGeometry({
-    radius: PINION_PITCH_RADIUS, teeth: PLATE.pinionTeeth, addendum: RACK_ADDENDUM,
-    depth: Z.pinion[1] - Z.pinion[0], bore: shaftRadius + 0.004,
-  }), wheelMaterial), 'eight-tooth-feed-pinion');
-  // A pinion tooth space sits under the rack tooth above the shaft.
-  pinion.rotation.z = Math.PI / 2 + Math.PI / PLATE.pinionTeeth;
-  pinion.position.z = (Z.pinion[0] + Z.pinion[1]) / 2;
+  const pinion = named(new THREE.Mesh(smoothPlate(generatedPinionOutline(shaftRadius + 0.004),
+    Z.pinion[0], Z.pinion[1]), wheelMaterial), 'eight-tooth-feed-pinion');
+  pinion.position.z = 0;
   const shaft = named(cylinderZ(shaftRadius, Z.pinion[0] - 0.01, Z.wheel[1] + 0.06, inkMaterial),
     'ratchet-and-pinion-shaft');
   ratchet.add(ratchetBody, pinion, shaft);
@@ -855,9 +892,12 @@ function crankRockerPullCatchSawFeed(movement) {
   const clickBody = named(new THREE.Mesh(smoothPlate(solution.clickOutline, ...Z.wheel), pawlMaterial),
     'holding-click-body');
   click.add(clickBody);
-  const clickPin = named(cylinderZ(px(4) - 0.004, Z.leftPost[1], Z.wheel[1] + 0.04, inkMaterial), 'click-pivot-pin');
+  // Pass 93: the click's pin stands in a round boss on the post face, so
+  // only a short pin shows between the boss and the click.
+  const clickBoss = named(cylinderZ(px(10), Z.leftPost[1], Z.wheel[0] - 0.004, frameMaterial), 'click-pin-boss-on-left-post');
+  const clickPin = named(cylinderZ(px(4) - 0.004, Z.wheel[0] - 0.06, Z.wheel[1] + 0.04, inkMaterial), 'click-pivot-pin');
   const clickCap = named(cylinderZ(px(6), Z.wheel[1], Z.wheel[1] + 0.04, inkMaterial), 'click-pin-cap');
-  for (const mesh of [clickPin, clickCap]) {
+  for (const mesh of [clickBoss, clickPin, clickCap]) {
     mesh.position.set(CLICK_PIVOT[0], CLICK_PIVOT[1], mesh.position.z);
     root.add(mesh);
   }

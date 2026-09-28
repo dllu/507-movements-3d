@@ -39,8 +39,12 @@ test('191 and 196 baked envelopes are smooth: no per-pose stair-step zigzags',()
 });
 test('201 finite follower fits its slot at every sampled input pose',()=>{
  const m=create(201),b=m.root.userData.blocks,period=m.root.userData.transmission.inputCyclePeriod;
- for(let i=0;i<=16;i++){m.update(period*i/16);m.root.updateMatrixWorld(true);for(const rail of b.slotRails)clear(b.slotFollower,rail.children[0]);}
- assert.equal(b.slotFollower.geometry.parameters.radiusTop,.125);assert.ok(.17-.085/2-.125>.002);
+ const slot=b.carrierBody.userData.slot,r=b.slotFollower.geometry.parameters.radiusTop;assert.equal(r,.125);
+ for(let i=0;i<=16;i++){m.update(period*i/16);m.root.updateMatrixWorld(true);
+  // The pin's centre, in the bell-crank's frame, stays inside the slot with clearance.
+  const c=b.slotFollower.getWorldPosition(new THREE.Vector3()).applyMatrix4(b.carrierBody.matrixWorld.clone().invert());
+  assert.ok(Math.abs(c.y)+r<slot.halfWidth-.002,`slot side ${c.y}`);assert.ok(c.x-r>slot.start-slot.halfWidth+.002&&c.x+r<slot.end+slot.halfWidth-.002,`slot end ${c.x}`);
+  const z=b.slotFollower.getWorldPosition(new THREE.Vector3()).z,h=b.slotFollower.geometry.parameters.height/2;assert.ok(z-h<slot.low&&z+h>slot.high,'pin spans the eye');}
 });
 test('196 carrier eye and fixed bearing clear their actual shafts and each other',()=>{
  const m=create(196),b=m.root.userData.blocks;
@@ -63,7 +67,11 @@ test('196 strap arm is one flat tapered extrusion and the stand pivot is a plain
   const size = strap.geometry.boundingBox.getSize(new THREE.Vector3());
   assert.ok(size.y > 0.49 && size.z < 0.151, `strap ${size.toArray()}`);
   const eye = new THREE.Box3().setFromObject(b.carrierBearing);
-  assert.ok(eye.max.z - eye.min.z < 0.25 && eye.max.z < -0.45, 'stand eye stays in the pedestal plane');
+  // p93: pedestal, stand eye and pin stand in the strap's plane, just behind it.
+  assert.ok(eye.max.z - eye.min.z < 0.25 && eye.max.z < strap.position.z - 0.075 && eye.min.z > 0, 'stand eye sits just behind the strap');
+  const pedestal = new THREE.Box3().setFromObject(b.carrierStandard);
+  assert.ok(pedestal.max.z <= eye.max.z && pedestal.min.z > 0, 'pedestal in the arm plane');
   const pin = b.carrierPivotPin.geometry.parameters;
+  assert.ok(b.carrierPivotPin.position.z - pin.height / 2 >= eye.min.z - 1e-5, 'pin spans only the eye and strap');
   assert.ok(pin.radiusTop < 0.08 && b.carrierPivotPin.position.z + pin.height / 2 < 0.51);
 });

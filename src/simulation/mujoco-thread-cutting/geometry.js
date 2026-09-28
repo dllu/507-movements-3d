@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {makeThreadCuttingProfile} from './profile.js';
+import {makeThreadCuttingProfile,makeThreadCuttingStroke} from './profile.js';
 import {threadTool} from './stock.js';
 import {makeCutWorkpiece} from './workpiece.js';
 import {threadAngles,helicalThread,polygonCylinder} from '../mujoco-screw/thread-geometry.js';
@@ -21,6 +21,12 @@ export function makeThreadCuttingGeometry(options={}) {
  let lastCut=f.contactAngle-toolHalfAngle;
  add('workpiece',alongY(workpiece.geometry(lastCut)),'work',PALETTE.driven);
  const setCutAngle=angle=>{if(angle===lastCut)return;lastCut=angle;const g=alongY(workpiece.geometry(angle)),m=parts.workpiece;m.geometry.dispose();m.geometry=g;};
+ // The groove exists only where the tool has passed on the current descent
+ // (Brown: cut above the tool, plain blank below). Live and baked playback
+ // both call this with the drive time and the work spindle angle.
+ const strokes=new Map(),syncCut=(time,workAngle,period=24)=>{
+  if(!strokes.has(period))strokes.set(period,makeThreadCuttingStroke(f,period));
+  setCutAngle(f.contactAngle-toolHalfAngle-strokes.get(period).cutWorkAngle(time,workAngle));};
  for(const [i,name]of ['lead','work'].entries()) {
   const r=f.shaftRadii[i],thread=name==='lead'?f.external:f.workThread,color=name==='lead'?PALETTE.driver:PALETTE.driven;
   add(name+'LowerShaft',alongY(disk(r,f.y(f.source.shaftEnds[1]),thread.low,128)),name,color);
@@ -55,7 +61,7 @@ export function makeThreadCuttingGeometry(options={}) {
  add('arm',alongY(plate(armSection,f.armY-f.armHeight/2,f.armY+f.armHeight/2)),'carriage',PALETTE.accent);
  const blade=threadTool({...f.stock,inner:f.workCoreRadius+f.clearance,outer,width:f.grooveWidth-2*f.clearance},f.contactAngle,toolHalfAngle);
  add('cutter',alongY(blade).translate(f.dx,0,-f.dz),'carriage',PALETTE.accent);
- Object.assign(root.userData,{source:f.source,profile:f,parts,families,blocks,leadAngles,nutAngles,workAngles,workpiece,setCutAngle,toolHalfAngle,guideSection,keySection,
+ Object.assign(root.userData,{source:f.source,profile:f,parts,families,blocks,leadAngles,nutAngles,workAngles,workpiece,setCutAngle,syncCut,toolHalfAngle,guideSection,keySection,
   hideGround:true,shadowCameraHalfExtent:3,shadowBias:-.00002,shadowNormalBias:.001});
  markShadows(root);root.updateMatrixWorld(true);
  return {root,focus:new THREE.Vector3(0,0,0),cameraDirection:new THREE.Vector3(1,1,10)};

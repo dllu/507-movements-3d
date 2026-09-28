@@ -80,7 +80,7 @@ export function correctEpicyclicFamily(root,id){
   boredCylinder(b.intermediateSleeve,.091);
   // Brown's arm supports the wheels from below.
   for(const part of[b.carrierHandle,b.carrierIndex,...b.carrierPivots])part.position.y-=1.68;
-  arm(b.carrierBar,[[-.12,-.135],[3.6,-.135],[3.6,.135],[-.12,.135]],[[0,0,.22],[g.carrierPinSpacing,0,.20],[2*g.carrierPinSpacing,0,.20]],[[0,0,.121],[g.carrierPinSpacing,0,.091],[2*g.carrierPinSpacing,0,.131]],-.085,.085,'y');b.carrierBar.position.y=-.84;
+  arm(b.carrierBar,[[-.12,-.135],[3.6,-.135],[3.6,.135],[-.12,.135]],[[0,0,.22],[g.carrierPinSpacing,0,.22],[2*g.carrierPinSpacing,0,.26]],[[0,0,.121],[g.carrierPinSpacing,0,.091],[2*g.carrierPinSpacing,0,.131]],-.085,.085,'y');b.carrierBar.position.y=-.84;
   boredCylinder(b.carrierPivots[0],.121);
   spindle(b.carrierCD,g.carrierPinSpacing,-.21,0,.09,1.78,'y',b.intermediateSleeve.material);
   replaceGeometry(b.outputPin,new THREE.CylinderGeometry(.13,.13,1.85,48));b.outputPin.position.y=-.20;
