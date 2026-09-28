@@ -44,3 +44,13 @@ test('baked initial ball centers agree with the source within three pixels', () 
     }
   } finally { model.dispose(); }
 });
+
+test('baked fork bridge spans only between the fork plates (no coplanar faces)', () => {
+  const model = makeCrossedGovernorModel(bundle);
+  try {
+    const {pivotForkBridge, pivotForkFront, pivotForkRear} = model.root.userData.parts;
+    const box = mesh => new THREE.Box3().setFromBufferAttribute(mesh.geometry.attributes.position).translate(mesh.position);
+    const [bridge, front, rear] = [pivotForkBridge, pivotForkFront, pivotForkRear].map(box);
+    assert.ok(Math.abs(bridge.max.z - front.min.z) < 1e-6 && Math.abs(bridge.min.z - rear.max.z) < 1e-6);
+  } finally { model.dispose(); }
+});

@@ -4160,6 +4160,11 @@ function debaufreFrictionalRestEscapement(
   const lipHalfWidth = baked.lipHalfWidth;
   const inLip = (z) => Math.abs(Math.abs(z) - wheelPlaneOffset)
     <= lipHalfWidth + 1e-9;
+  // Under the flanges the band's carved top is sunk this far below the
+  // flange's (the baked 0.002 skin left the steep carved faces of the two
+  // within a z-fighting distance of each other); it lies wholly inside the
+  // flange, and the flange carries the working surface there.
+  const bandSkinUnderLip = Math.max(baked.flangeSkin, 0.005);
   const palletSweptBands = [-1, 1].map((side) => {
     const zs = side > 0 ? bandZs : bandZs.map((z) => -z).reverse();
     const column = (j) => (side > 0 ? j : baked.z.count - 1 - j);
@@ -4168,7 +4173,7 @@ function debaufreFrictionalRestEscapement(
         bandXs,
         zs,
         (i, j) => Math.min(0, sweptHeight(i, column(j)))
-          - (inLip(zs[j]) ? baked.flangeSkin : 0),
+          - (inLip(zs[j]) ? bandSkinUnderLip : 0),
         baked.bandFloor - 0.005,
       ),
       palletMaterial,
@@ -4197,6 +4202,13 @@ function debaufreFrictionalRestEscapement(
   // through the whole impulse instead of lifting off the flat halfway.
   const lipZs = bandZs.filter((z) => inLip(z));
   const lipStart = bandZs.indexOf(lipZs[0]);
+  // The flange's two end walls stand lipEndInset inside the band's. They
+  // were coplanar with the band's end walls, which run on through the
+  // flange's width, and the two z-fought there. The band's rest face at
+  // palletX0 is unchanged.
+  const lipEndInset = 0.002;
+  const lipXs = bandXs.map((x, i) => (i === 0 ? x + lipEndInset
+    : i === bandXs.length - 1 ? x - lipEndInset : x));
   const impulseLips = [-1, 1].map((side) => {
     const zs = side > 0
       ? lipZs.map((z) => z - wheelPlaneOffset)
@@ -4204,7 +4216,7 @@ function debaufreFrictionalRestEscapement(
     const column = (j) => lipStart + (side > 0 ? j : lipZs.length - 1 - j);
     const lip = new THREE.Mesh(
       debaufreHeightfieldSolid(
-        bandXs,
+        lipXs,
         zs,
         (i, j) => Math.min(baked.flangeCap, sweptHeight(i, column(j))),
         baked.bandFloor + 0.005,

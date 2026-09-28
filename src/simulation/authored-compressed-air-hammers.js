@@ -1470,6 +1470,15 @@ function grimshawCompressedAirHammer(movement) {
     valveKinematicsAtHammerPhase,
   };
   correctHammerWorkingParts(root, 472);
+  // The shared correction runs shell B 0.08 past each inner end, through the
+  // full-radius heads, so the shell's outer wall and its section faces lay on
+  // the heads' and z-fought (p88). Shell B is now only the barrel between the
+  // heads; the heads close its ends face to face.
+  hammerCylinderShell.geometry.dispose();
+  hammerCylinderShell.geometry = boredLatheGeometry([
+    {radial: hammerInnerRadius + 0.085, axial: -hammerCylinderHalfHeight},
+    {radial: hammerInnerRadius + 0.085, axial: hammerCylinderHalfHeight},
+  ], hammerInnerRadius, 64);
   // The shared correction bores the friction wheel to its full radius; keep
   // the leather tyre as its bearing face (bored wheel body inside it).
   frictionWheel.geometry.dispose();

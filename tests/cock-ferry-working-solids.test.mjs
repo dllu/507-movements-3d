@@ -88,3 +88,16 @@ for(const[id,create,period]of[[395,cock,8],[447,ferry,6.2]])test(`${id} keeps ge
   assert.equal(m.root.userData.minimumDisplayCycleSeconds,period);assert.equal(m.root.userData.hideGround,true);
  }finally{disposeObject3D(m.root);}
 });
+
+test('447 deck, stock bearing and water share no coplanar faces with hull or banks',()=>{
+ const model=ferry({id:447}),r=model.root,b=r.userData.blocks;
+ try{
+  model.update(0);r.updateMatrixWorld(true);
+  const box=o=>new T.Box3().setFromObject(o);
+  let hull,deck,bearing,river,bank;
+  r.traverse(o=>{const role=o.userData.role;if(role==='boat-hull-radial-to-anchor')hull=o;if(role==='ferry-deck')deck=o;if(role==='bored-rudder-stock-bearing')bearing=o;if(role==='river-current-driving-rudder-downstream')river=o;if(role==='fixed-river-bank')bank=o;});
+  assert.ok(Math.abs(box(deck).min.y-box(hull).max.y)<1e-6,'deck stands on the hull top');
+  assert.ok(Math.abs(box(bearing).max.y-(box(hull).max.y-.17))<1e-6,'bearing hangs from the band');
+  assert.ok(Math.abs(box(bank).max.x-box(river).max.x-.004)<1e-6,'water ends inside the banks');
+ }finally{disposeObject3D(r);}
+});

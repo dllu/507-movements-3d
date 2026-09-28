@@ -95,6 +95,11 @@ test('036 generated teeth clear and engage on both circular runs and both revers
 
 test('036 has an open recessed groove, a clear guide pin, and a shaft that fits the upright slot', () => {
   const model = createMovementModel(catalog.movements[35]);
+  // No flat overlay lies on (and z-fights with) the disk face: the ink rim
+  // ring is a shallow extrusion standing on it.
+  model.root.traverse((object) => {
+    if (object.isMesh && object.visible) assert.notEqual(object.geometry.type, 'ShapeGeometry');
+  });
   const { guidePin, grooveWalls, stationaryBar, toothStrip, backing, pinion } = model.root.userData.blocks;
   const geometry = model.root.userData.geometry;
   for (let pose = 0; pose < 96; pose += 1) {

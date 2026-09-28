@@ -506,10 +506,12 @@ test('movement 373 retained spring state keeps its outer anchor fixed, turns its
     // fraction (hidden, seated, when unloaded) instead of hanging above it.
     const heapFraction = expected.loadFraction > 1e-4 ? expected.loadFraction : 1;
     near(blocks.testWeight.position.y,
-      data.testLoadHeap.bedTop
+      data.testLoadHeap.bedTop + data.testLoadHeap.baseLift
         + heapFraction * blocks.testWeight.geometry.parameters.height / 2,
       1e-12, 'rendered heaped test load');
     assert.equal(blocks.testWeight.visible, expected.loadFraction > 1e-4);
+    // The heap's flat base stands just above the bed, not coplanar with it.
+    assert.equal(data.testLoadHeap.baseLift, 0.003);
     near(blocks.pointerPivot.rotation.z, expected.pointerAngle, 0,
       'rendered indicator angle');
     const positions = blocks.spiralSpring.geometry.attributes.position;

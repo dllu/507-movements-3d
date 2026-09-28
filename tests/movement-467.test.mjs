@@ -346,7 +346,7 @@ test('movement 467 renderer moves only the outer cylinder assembly and maps cham
     vectorNear(blocks.hollowBase.position, basePosition, 0,
       'hollow base remains fixed');
     near(blocks.pressureChamber.scale.y,
-      state.pressureChamberHeight, 1e-12,
+      state.pressureChamberHeight - 2 * geometry.chamberWaterGap, 1e-12,
       `pressure chamber height at phase ${phase}`);
     near(blocks.pressureChamber.position.y,
       geometry.fixedRamTopY + state.pressureChamberHeight / 2,

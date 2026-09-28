@@ -11,7 +11,7 @@ import {
 } from './movement-429-source-profiles.js';
 
 import hollyMate from './generated-holly-mate.js';
-import { multiArea, pointInPolygon, safeClip, sectionPlate, steamVolume } from './steam-section-kit.js';
+import { multiArea, pointInPolygon, safeClip, sectionPlate, setSteamRegions, steamVolume } from './steam-section-kit.js';
 
 const FULL_TURN = Math.PI * 2;
 
@@ -420,15 +420,13 @@ function doubleEllipticalRotaryEngine(movement) {
   // pressure until they open into the bottom throat and are released there.
   const steamZ = [zBack + 0.015, zCut - 0.015];
   const steam = {
-    live: steamVolume('live-steam-between-the-pistons-at-the-top', ...steamZ),
-    carried: steamVolume('steam-carried-round-between-the-lobes-and-the-bore', ...steamZ),
-    exhaust: steamVolume('exhaust-steam-between-the-pistons-at-the-bottom', ...steamZ),
-    induction: steamVolume('live-steam-in-top-induction-channel', ...steamZ),
-    eduction: steamVolume('exhaust-steam-in-bottom-eduction-channel', ...steamZ),
+    live: steamVolume('live-steam-between-the-pistons-at-the-top', ...steamZ, { sealed: true }),
+    carried: steamVolume('steam-carried-round-between-the-lobes-and-the-bore', ...steamZ, { sealed: true }),
+    exhaust: steamVolume('exhaust-steam-between-the-pistons-at-the-bottom', ...steamZ, { sealed: true }),
+    induction: steamVolume('live-steam-in-top-induction-channel', ...steamZ, { sealed: true }),
+    eduction: steamVolume('exhaust-steam-in-bottom-eduction-channel', ...steamZ, { sealed: true }),
   };
   for (const mesh of Object.values(steam)) root.add(mesh);
-  steam.induction.userData.setRegion(portChannels.induction, 1);
-  steam.eduction.userData.setRegion(portChannels.eduction, 0);
   // The working faces run with small clearances (up to 0.0134 at the mesh),
   // so the outlines are grown by 0.012 and the bores shrunk by 0.012 to
   // divide the space where the faces seal.
@@ -456,6 +454,13 @@ function doubleEllipticalRotaryEngine(movement) {
   const placeOutline = (outline, center, angle) => [[outline.map(([x, y]) => [
     center.x + x * Math.cos(angle) - y * Math.sin(angle), center.y + x * Math.sin(angle) + y * Math.cos(angle)])]];
   const throatY = Math.sqrt(innerHousingRadius ** 2 - halfCenterDistance ** 2);
+  // The channel steam runs down to the working space's own outline, across
+  // the 0.012 strip in each mouth, so a piece open to a throat and the
+  // channel above or below it draw as one body of steam (no double sheet).
+  const channelSteam = {
+    induction: safeClip('difference', rectangle(-portBore, 0, portBore, neckTop + 0.01), workingSpace),
+    eduction: safeClip('difference', rectangle(-portBore, -neckTop - 0.01, portBore, 0), workingSpace),
+  };
   const topMouth = rectangle(-portBore, throatY - 0.12, portBore, throatY + 0.2);
   const bottomMouth = rectangle(-portBore, -throatY - 0.2, portBore, -throatY + 0.12);
   const opens = (piece, mouth) => multiArea(safeClip('intersection', [piece], mouth)) > 1e-4;
@@ -506,9 +511,14 @@ function doubleEllipticalRotaryEngine(movement) {
   const steamReport = { releaseAngles, releaseFractions };
   const updateSteam = (state) => {
     const pieces = piecesAt(state);
-    steam.live.userData.setRegion(pieces.live, 1);
-    steam.carried.userData.setRegion(pieces.carried, 1);
-    steam.exhaust.userData.setRegion(pieces.exhaust, exhaustPressure(THREE.MathUtils.euclideanModulo(state.inputAngle, FULL_TURN)));
+    // Set together, so abutting volumes draw as one closed body of steam.
+    setSteamRegions([
+      { mesh: steam.live, region: pieces.live, pressure: 1 },
+      { mesh: steam.carried, region: pieces.carried, pressure: 1 },
+      { mesh: steam.exhaust, region: pieces.exhaust, pressure: exhaustPressure(THREE.MathUtils.euclideanModulo(state.inputAngle, FULL_TURN)) },
+      { mesh: steam.induction, region: channelSteam.induction, pressure: 1 },
+      { mesh: steam.eduction, region: channelSteam.eduction, pressure: 0 },
+    ]);
     steamReport.last = { carried: pieces.carried.length };
   };
 

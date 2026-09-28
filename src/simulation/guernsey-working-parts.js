@@ -43,7 +43,9 @@ export function correctGuernseyWorkingParts(root) {
     replace(rack.children[0], plate(sector(
       radius + (internal ? addendum + .005 : -.162),
       radius + (internal ? .162 : -addendum - .005),
-      angle - span / 2, angle + span / 2), -.09, .09));
+      angle - span / 2, angle + span / 2), -.088, .088));
+    // The body is 0.002 thinner each side than the teeth, whose roots it
+    // overlaps: equal faces there z-fought.
     for (const tooth of rack.userData.teeth) {
       replace(tooth, geometry);
       const angle = tooth.rotation.z;
@@ -58,9 +60,15 @@ export function correctGuernseyWorkingParts(root) {
       baseRadius: r * Math.cos(pressure),
       baseHalfAngle: Math.PI / (2 * g.pinionTeeth) + involute(1 / Math.cos(pressure)) - .001 / (2 * r),
       rootRadius: r - addendum - .006, tipRadius: r + addendum,
-      boreRadius: .074, depth: .18, flankSamples: 48 }), b.externalRack.userData.teeth[0].material);
+      // The left hub runs right through its pinion, so that pinion is bored
+      // clear of the hub's bore wall (the two shared it and z-fought); the
+      // pinion's bore lies inside the hub.
+      boreRadius: balance === b.leftBalance ? .13 : .074, depth: .18, flankSamples: 48 }), b.externalRack.userData.teeth[0].material);
     mesh.userData.role = 'finite-involute-balance-pinion'; pinion.add(mesh); balance.workingPinion = mesh;
     bore(balance.hub, .074, .19, .32); bore(balance.bearing, .074, .245, .24);
+    // The upper hub ends on its pinion's back face instead of running 0.06
+    // into the pinion's bore (a shared bore wall that z-fought).
+    if (balance === b.upperBalance) { bore(balance.hub, .074, .19, .26); balance.hub.position.z -= .03; }
     balance.spokes.forEach(spoke => { spoke.scale.x = 1.93 / 1.82; });
   }
   // Overlapping projected balance rims occupy separate axial planes. Their

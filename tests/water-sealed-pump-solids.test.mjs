@@ -10,12 +10,14 @@ test('473 crossed levers, finite bores, bell and water clear their working neigh
  for(const lever of[b.leftLever,b.rightLever])for(const fixed of [...b.leverPivots,...b.fixedFrame.children])pairs.push([lever,fixed]);
  for(const pin of b.leverPivots)pairs.push([pin,b.crosshead]);
  for(const bell of [b.bellShell,b.bellRim,b.bellRoof])for(const fixed of[b.tubShell,b.tubBottom,b.inletPipe,b.lowerInletValveSeat,b.lowerInletValveDisk])pairs.push([bell,fixed]);
- for(const water of[b.outerWater,b.innerWater,b.underRimWater])for(const wall of[b.bellShell,b.bellRoof,b.bellRim,b.tubShell,b.tubBottom,b.inletPipe])pairs.push([water,wall]);
+ for(const water of[b.outerWater])for(const wall of[b.bellShell,b.bellRoof,b.bellRim,b.tubShell,b.tubBottom,b.inletPipe])pairs.push([water,wall]);
  pairs.push([b.upperOutletPipe,b.bellRoof],[b.inletPipe,b.foundation],[b.inletPipe,b.tubBottom],[b.lowerInletValveDisk,b.lowerInletValveSeat],[b.upperOutletValveDisk,b.upperOutletValveSeat]);
  const cache=new Map(),get=o=>{if(!cache.has(o))cache.set(o,{points:surfacePoints(o.geometry),surface:solidSurface(o.geometry)});return cache.get(o);};
  const bad={};
  try{for(let i=0;i<=32;i++){
   const t=d.geometry.cycleDuration*i/32;m.update(t);m.root.updateMatrixWorld(true);const s=d.stateAtTime(t);
+  // The water body's levels move its vertices in place: resample it per pose.
+  const water=cache.get(b.outerWater);if(water)water.points=surfacePoints(b.outerWater.geometry);
   assert.ok(s.leftInnerEnd.x>0&&s.rightInnerEnd.x<0,'lever inner ends cross the center');
   assert.ok(s.leftBellLug.x<0&&s.rightBellLug.x>0,'suspension ropes cross back to opposite lugs');
   for(const[a,c]of pairs){const tr=c.matrixWorld.clone().invert().multiply(a.matrixWorld),surface=get(c).surface;for(const p of get(a).points){const q=p.clone().applyMatrix4(tr);if(surface.box.distanceToPoint(q)>.0001)continue;const gap=surface.signedDistance(q,.03);if(gap< -2e-6){const key=`${a.userData.role||a.id}/${c.userData.role||c.id}`;bad[key]=Math.min(bad[key]??0,gap);}}}

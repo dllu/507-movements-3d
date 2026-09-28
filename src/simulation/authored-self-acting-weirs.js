@@ -632,8 +632,14 @@ function selfActingWeir(movement) {
       // Full width below the notch sill; the two shoulders rise beside the
       // notch to the leaf top.
       const sill = notchBottomLocal;
-      const below = polygonClipping.intersection(bored, poly([[-1, offset - length / 2 - 1],
-        [1, offset - length / 2 - 1], [1, sill], [-1, sill]]));
+      // The brass contact strip along the upstream bottom edge is let into
+      // a rebate in the plank, so the strip alone owns the faces there (a
+      // strip laid flush over the plank's faces z-fights with them).
+      const strip = upperContactEdge.geometry.parameters, at = upperContactEdge.position;
+      const rebate = poly([[at.x - strip.width / 2 - 0.05, at.y - strip.height / 2 - 0.05], [at.x + strip.width / 2, at.y - strip.height / 2 - 0.05],
+        [at.x + strip.width / 2, at.y + strip.height / 2], [at.x - strip.width / 2 - 0.05, at.y + strip.height / 2]]);
+      const below = polygonClipping.difference(polygonClipping.intersection(bored, poly([[-1, offset - length / 2 - 1],
+        [1, offset - length / 2 - 1], [1, sill], [-1, sill]])), rebate);
       const shoulder = poly([[x0 - thickness / 2, sill], [x0 + thickness / 2, sill],
         [x0 + thickness / 2, upperTopLocal], [x0 - thickness / 2, upperTopLocal]]);
       body.geometry = plate(below, -gateWidth / 2, gateWidth / 2);
@@ -651,40 +657,108 @@ function selfActingWeir(movement) {
   // down to where the upper leaf's bottom edge bears on it, and up the upper
   // leaf's upstream face to the free surface, so when the upper leaf leans
   // the water follows it instead of standing as an unsupported vertical face.
-  // The tail water starts at the closed lower leaf's face. The notch overflow
-  // is a falling sheet the width of the notch, and the scour flow fills the
-  // passage opened under the lower leaf.
+  // The tail water starts at the lower leaf's downstream face. The notch
+  // overflow is a falling sheet the width of the notch.
+  // Pass 88: every water face that meets a solid (the bed, the leaves' faces
+  // and the channel-wall planes that bound the leaves' ends) stands 0.008
+  // off it inside the water, so no water face is coplanar with a solid face
+  // (z-fighting). When the lower leaf lifts off the bed, head water, scour
+  // passage and tail water are one connected body, so they are drawn as one
+  // closed section: the head body's outline then runs down the lower leaf's
+  // downstream face, under its bottom edge and out along the bed to the tail
+  // (no separate scour volume sharing faces with them).
   // (Every piece keeps its geometry object; only vertices and transforms move.)
   {
     const water = waterVolumeMaterial();
-    const halfWidth = gateWidth / 2;
+    const wet = 0.008;
+    const halfWidth = gateWidth / 2 - wet;
     const onLeaf = (pivot, angle, x, y) => new THREE.Vector2(
       pivot.x + x * Math.cos(angle) - y * Math.sin(angle),
       pivot.y + x * Math.sin(angle) + y * Math.cos(angle));
-    const headSection = Array.from({ length: 8 }, () => new THREE.Vector2());
-    const headTriangles = 6;
-    const headPositions = new Float32Array((2 * headTriangles + 2 * headSection.length) * 9);
+    const maxSection = 13;
+    const sectionBody = () => {
+      const geometry = new THREE.BufferGeometry();
+      geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array((4 * maxSection - 4) * 9), 3));
+      return geometry;
+    };
     upstreamWater.geometry.dispose();
-    upstreamWater.geometry = new THREE.BufferGeometry();
-    upstreamWater.geometry.setAttribute('position', new THREE.BufferAttribute(headPositions, 3));
+    upstreamWater.geometry = sectionBody();
     upstreamWater.material = water;
     upstreamWater.renderOrder = 1;
     upstreamWater.position.set(0, 0, 0);
-    downstreamWater.geometry.dispose();
-    downstreamWater.geometry = waterVolumeGeometry({ xMin: 0, xMax: 3.40, surfaceY: downstreamWaterLevel, bottomY: channelFloorY, zMin: -halfWidth, zMax: halfWidth });
-    downstreamWater.material = water;
-    downstreamWater.renderOrder = 1;
-    downstreamWater.scale.set(1, 1, 1);
-    downstreamWater.position.set(0, 0, 0);
-    const headLeftX = -3.30;
+    // The tail water and the scour flow are drawn by the one water mesh
+    // (above); their separate volumes are retired.
+    downstreamWater.removeFromParent();
+    bedFlow.removeFromParent();
+    const headLeftX = -3.30, tailRightX = 3.40;
     const lineAtY = (point, direction, y) => point.clone()
       .addScaledVector(direction, (y - point.y) / direction.y);
+    // Offsets a counter-clockwise outline: each edge flagged wet (lying on a
+    // solid) moves `wet` into the water, and each corner becomes the meeting
+    // of its neighbouring (moved) edges; zero-length edges are skipped. Where
+    // the neighbouring edges are so nearly parallel that their meeting runs
+    // off (a leaf a hair off upright beside the vertical rise to the surface,
+    // not a fold-back wedge), the corner just moves by both edges' offsets.
+    const insetOutline = (points, wetEdges) => {
+      const n = points.length, lines = [];
+      for (let i = 0; i < n; i += 1) {
+        const a = points[i], b = points[(i + 1) % n], d = b.clone().sub(a), length = d.length();
+        if (length < 1e-9) { lines.push(null); continue; }
+        d.divideScalar(length);
+        const normal = new THREE.Vector2(-d.y, d.x);
+        lines.push({ point: a.clone().addScaledVector(normal, wetEdges[i] ? wet : 0), d, normal, offset: wetEdges[i] ? wet : 0 });
+      }
+      const find = (i, step) => { for (let k = 0; k < n; k += 1) { const line = lines[(i + step * k + n) % n]; if (line) return line; } return null; };
+      return points.map((p, i) => {
+        const before = find(i - 1, -1), after = find(i, 1);
+        const cross = before.d.x * after.d.y - before.d.y * after.d.x;
+        if (Math.abs(cross) < 1e-9) return p.clone().addScaledVector(after.normal, Math.max(before.offset, after.offset));
+        const w = after.point.clone().sub(before.point);
+        const t = (w.x * after.d.y - w.y * after.d.x) / cross;
+        const meet = before.point.clone().addScaledVector(before.d, t);
+        // (A fold-back wedge's meeting is its true inset apex, far or not.)
+        if (meet.distanceTo(p) <= 4 * wet || before.d.dot(after.d) < 0) return meet;
+        return p.clone().addScaledVector(before.normal, before.offset).addScaledVector(after.normal, after.offset);
+      });
+    };
+    // Fills one mesh with the closed prisms of one or more disjoint sections.
+    const fillSection = (mesh, sections) => {
+      const positions = mesh.geometry.attributes.position.array;
+      let k = 0;
+      const put = (point, z) => { positions[k++] = point.x; positions[k++] = point.y; positions[k++] = z; };
+      for (const section of sections) {
+        let triangles = THREE.ShapeUtils.triangulateShape(section, []);
+        const ccw = !THREE.ShapeUtils.isClockWise(section);
+        if (!ccw) triangles = triangles.map(([a, b, c]) => [a, c, b]);
+        for (const [a, b, c] of triangles) {
+          put(section[a], halfWidth); put(section[b], halfWidth); put(section[c], halfWidth);
+          put(section[a], -halfWidth); put(section[c], -halfWidth); put(section[b], -halfWidth);
+        }
+        for (let i = 0; i < section.length; i += 1) {
+          const p = section[i], q = section[(i + 1) % section.length];
+          const [m, n] = ccw ? [p, q] : [q, p];
+          put(m, -halfWidth); put(n, -halfWidth); put(n, halfWidth);
+          put(m, -halfWidth); put(n, halfWidth); put(m, halfWidth);
+        }
+      }
+      const used = k;
+      // Unused slots collapse onto the first corner (no stray bounds).
+      while (k < positions.length) put(sections[0][0], halfWidth);
+      mesh.geometry.setDrawRange(0, used / 3);
+      mesh.geometry.attributes.position.needsUpdate = true;
+      mesh.geometry.computeVertexNormals();
+      mesh.geometry.computeBoundingBox();
+      mesh.geometry.computeBoundingSphere();
+    };
+    const bedPoint = (x) => new THREE.Vector2(x, channelFloorY);
     const updateHeadWater = (state) => {
       const ua = state.upperAngle, la = state.lowerAngle;
       const lowerAxis = new THREE.Vector2(-Math.sin(la), Math.cos(la));
       const upperAxis = new THREE.Vector2(-Math.sin(ua), Math.cos(ua));
       const lowerTopUp = onLeaf(lowerPivot, la, lowerCentreOffset - lowerThickness / 2, lowerTopLocal);
       const lowerTopDown = onLeaf(lowerPivot, la, lowerCentreOffset + lowerThickness / 2, lowerTopLocal);
+      const lowerBottomUp = onLeaf(lowerPivot, la, lowerCentreOffset - lowerThickness / 2, -lowerPivotFromBottom);
+      const lowerBottomDown = onLeaf(lowerPivot, la, lowerCentreOffset + lowerThickness / 2, -lowerPivotFromBottom);
       const upperBottomUp = onLeaf(upperPivot, ua, -upperThickness / 2, -upperPivotFromBottom);
       // Where the upper leaf's upstream face meets the lower leaf's
       // downstream face (the bearing contact); when the two faces are
@@ -695,40 +769,68 @@ function selfActingWeir(movement) {
         const d = upperBottomUp.clone().sub(lowerTopDown);
         const t = (d.x * upperAxis.y - d.y * upperAxis.x) / det;
         if (t < 0) corner = lowerTopDown.clone().addScaledVector(lowerAxis, t);
+        // A wedge between the leaves too thin to hold water once both faces
+        // are inset (its inset apex would rise past the lower leaf's top) is
+        // left dry: the water crosses its mouth at the lower leaf's top level
+        // to the upper leaf's face, and the wedge fills from the mouth down
+        // as it opens.
+        const halfAngle = Math.acos(THREE.MathUtils.clamp(lowerAxis.dot(upperAxis), -1, 1)) / 2;
+        if (wet / Math.max(Math.tan(halfAngle), 1e-12) >= corner.distanceTo(lowerTopDown)) corner = lineAtY(corner, upperAxis, lowerTopDown.y);
       }
       // Up the upper leaf's upstream face to its crest, then straight up to
       // the free surface standing over the crest (the head that spills);
       // the water never overhangs the turned leaf's downstream side.
       const upperTopUp = onLeaf(upperPivot, ua, -upperThickness / 2, upperTopLocal);
-      const faceTop = lineAtY(corner, upperAxis, Math.min(upperTopUp.y, state.waterLevel - 0.002));
+      const faceTop = lineAtY(corner, upperAxis, Math.min(upperTopUp.y, state.waterLevel - 0.002 - 2 * wet));
       const surface = new THREE.Vector2(faceTop.x, state.waterLevel);
-      const section = [
-        new THREE.Vector2(headLeftX, channelFloorY),
-        lineAtY(lowerTopUp, lowerAxis, channelFloorY),
-        lowerTopUp, lowerTopDown, corner, faceTop, surface,
-        new THREE.Vector2(headLeftX, state.waterLevel),
-      ];
-      section.forEach((point, index) => headSection[index].copy(point));
-      let triangles = THREE.ShapeUtils.triangulateShape(headSection, []);
-      if (THREE.ShapeUtils.isClockWise(headSection)) triangles = triangles.map(([a, b, c]) => [a, c, b]);
-      let k = 0;
-      const put = (point, z) => { headPositions[k++] = point.x; headPositions[k++] = point.y; headPositions[k++] = z; };
-      for (let i = 0; i < headTriangles; i += 1) {
-        const [a, b, c] = triangles[i] ?? [0, 0, 0];
-        put(headSection[a], halfWidth); put(headSection[b], halfWidth); put(headSection[c], halfWidth);
-        put(headSection[a], -halfWidth); put(headSection[c], -halfWidth); put(headSection[b], -halfWidth);
+      const head = [lowerTopUp, lowerTopDown, corner, faceTop, surface, new THREE.Vector2(headLeftX, state.waterLevel)];
+      // The short rise from the crest face to the surface lies on the upper
+      // leaf's face plane while that leaf stands upright, so it is wet too.
+      const headWet = [true, true, true, true, false, false];
+      const tailTop = lineAtY(lowerTopDown, lowerAxis, downstreamWaterLevel);
+      const tail = [new THREE.Vector2(tailRightX, downstreamWaterLevel), tailTop];
+      const passage = Math.min(lowerBottomUp.y, lowerBottomDown.y) - channelFloorY;
+      // One body: bed, tail, down the lower leaf's downstream face, under
+      // its bottom edge, up its upstream face and on round the head. It is
+      // used once the inset passage under the (tilted) bottom edge is open at
+      // both corners, so the outline never crosses the inset bed.
+      const joined = passage > 2 * wet + 1e-4 ? insetOutline(
+        [bedPoint(headLeftX), bedPoint(tailRightX), ...tail, lowerBottomDown, lowerBottomUp, ...head],
+        [true, false, false, true, true, true, ...headWet]) : null;
+      if (joined && Math.min(joined[4].y, joined[5].y) > channelFloorY + wet + 1e-4) {
+        fillSection(upstreamWater, [joined]);
+      } else {
+        // Head and tail are two bodies parted by the seated lower leaf, drawn
+        // in the same mesh, so the water does not switch meshes (or pop) as
+        // the passage opens; the tail region is the same in both cases.
+        // The tail runs down the lower leaf's downstream face and in under
+        // its raised bottom edge (the turned leaf rests on, or has just
+        // lifted from, its upstream bottom corner) to where that edge's line
+        // meets the bed; once inset, the recess's apex lies under the leaf
+        // and reaches the upstream corner just as the passage opens, so the
+        // passage opens into water already standing there. A recess too thin
+        // to hold water once inset (its apex would pass the downstream
+        // corner) is left dry: the tail then drops straight from that corner
+        // to the bed (or, with the corner within the inset of the bed, its
+        // downstream face runs on down to the bed).
+        let tailSection, tailWet;
+        const recessDepth = (lowerBottomDown.y - channelFloorY) / Math.max(Math.sin(la), 1e-12);
+        if (lowerBottomDown.y - channelFloorY < 2 * wet) {
+          tailSection = [lineAtY(lowerTopDown, lowerAxis, channelFloorY), bedPoint(tailRightX), ...tail];
+          tailWet = [true, false, false, true];
+        } else if (wet / Math.tan(la / 2) >= recessDepth) {
+          tailSection = [bedPoint(lowerBottomDown.x), bedPoint(tailRightX), ...tail, lowerBottomDown];
+          tailWet = [true, false, false, true, false];
+        } else {
+          const contact = lowerBottomDown.clone().addScaledVector(
+            lowerBottomUp.clone().sub(lowerBottomDown).normalize(), recessDepth);
+          tailSection = [contact, bedPoint(tailRightX), ...tail, lowerBottomDown];
+          tailWet = [true, false, false, true, true];
+        }
+        fillSection(upstreamWater, [insetOutline(
+          [bedPoint(headLeftX), lineAtY(lowerTopUp, lowerAxis, channelFloorY), ...head],
+          [true, true, ...headWet]), insetOutline(tailSection, tailWet)]);
       }
-      const ccw = !THREE.ShapeUtils.isClockWise(headSection);
-      for (let i = 0; i < headSection.length; i += 1) {
-        const p = headSection[i], q = headSection[(i + 1) % headSection.length];
-        const [m, n] = ccw ? [p, q] : [q, p];
-        put(m, -halfWidth); put(n, -halfWidth); put(n, halfWidth);
-        put(m, -halfWidth); put(n, halfWidth); put(m, halfWidth);
-      }
-      upstreamWater.geometry.attributes.position.needsUpdate = true;
-      upstreamWater.geometry.computeVertexNormals();
-      upstreamWater.geometry.computeBoundingBox();
-      upstreamWater.geometry.computeBoundingSphere();
     };
     // Falling sheet over the notch crest, the notch wide. Its depth over the
     // crest follows the notch discharge (depth ~ q^(2/3), with q the scheduled
@@ -800,26 +902,11 @@ function selfActingWeir(movement) {
       notchFlow.geometry.computeBoundingBox();
       notchFlow.geometry.computeBoundingSphere();
     };
-    bedFlow.geometry.dispose();
-    bedFlow.geometry = new THREE.BoxGeometry(1, 1, gateWidth);
-    bedFlow.material = water.clone();
-    bedFlow.renderOrder = 1;
     const shared = root.userData.updateWorkingParts;
     root.userData.updateWorkingParts = (state) => {
       shared?.(state);
       updateHeadWater(state);
       updateNappe(state);
-      if (bedFlow.visible) {
-        const la = state.lowerAngle;
-        const lowerBottomUp = onLeaf(lowerPivot, la, lowerCentreOffset - lowerThickness / 2, -lowerPivotFromBottom);
-        const lowerBottomDown = onLeaf(lowerPivot, la, lowerCentreOffset + lowerThickness / 2, -lowerPivotFromBottom);
-        const x0 = lowerBottomUp.x, x1 = Math.max(0, lowerBottomDown.x);
-        const top = Math.min(lowerBottomUp.y, lowerBottomDown.y) - 0.001;
-        bedFlow.scale.set(Math.max(0.001, x1 - x0), Math.max(0.001, top - channelFloorY), 1);
-        // The scour sheet thickens from nothing as the passage opens.
-        bedFlow.material.opacity = water.opacity * THREE.MathUtils.smoothstep(top - channelFloorY, 0, 0.02);
-        bedFlow.position.set((x0 + x1) / 2, (top + channelFloorY) / 2, 0);
-      }
     };
     // The bed's top is the channel floor the water and the closed lower
     // leaf stand on.
@@ -840,6 +927,9 @@ function selfActingWeir(movement) {
   root.userData.cameraFov = 9;
   root.userData.groundFloorY = groundY;
   markShadows(root);
+  // The translucent head and tail water cast no opaque shadow (their
+  // shadow striped the bed beneath them with acne).
+  upstreamWater.castShadow = false;
   foundation.receiveShadow = true;
   update(0);
   return {

@@ -9,6 +9,7 @@ import {
   ringPolygon,
   safeClip,
   sectionPlate,
+  setSteamRegions,
   steamVolume,
 } from './steam-section-kit.js';
 
@@ -141,15 +142,15 @@ function eccentricRotaryEngine(movement) {
 
   // ---- steam --------------------------------------------------------------------------------------
   const steamZ = [zBack + 0.015, -0.015];
+  // Sealed volumes set together: where a crescent piece meets a neck at its
+  // mouth the two draw as one closed body of steam (no sheet across the mouth).
   const steam = {
-    live: steamVolume('steam-in-space-from-D-to-the-contact-line', ...steamZ),
-    swept: steamVolume('steam-in-space-from-the-contact-line-to-D', ...steamZ),
-    inlet: steamVolume('live-steam-in-right-induction-neck', ...steamZ),
-    eduction: steamVolume('exhaust-steam-in-left-eduction-neck', ...steamZ),
+    live: steamVolume('steam-in-space-from-D-to-the-contact-line', ...steamZ, { sealed: true }),
+    swept: steamVolume('steam-in-space-from-the-contact-line-to-D', ...steamZ, { sealed: true }),
+    inlet: steamVolume('live-steam-in-right-induction-neck', ...steamZ, { sealed: true }),
+    eduction: steamVolume('exhaust-steam-in-left-eduction-neck', ...steamZ, { sealed: true }),
   };
   for (const mesh of Object.values(steam)) root.add(mesh);
-  steam.inlet.userData.setRegion(channels.inlet, 1);
-  steam.eduction.userData.setRegion(channels.eduction, 0);
   const report = { pieces: [] };
   const updateSteam = (state) => {
     const [dx, dy] = state.direction;
@@ -174,8 +175,12 @@ function eccentricRotaryEngine(movement) {
     for (const piece of pieces) {
       (pointInPolygon(probe, piece) ? live : swept).push(piece);
     }
-    steam.live.userData.setRegion(live, state.livePressure);
-    steam.swept.userData.setRegion(swept, 0);
+    setSteamRegions([
+      { mesh: steam.live, region: live, pressure: state.livePressure },
+      { mesh: steam.swept, region: swept, pressure: 0 },
+      { mesh: steam.inlet, region: channels.inlet, pressure: 1 },
+      { mesh: steam.eduction, region: channels.eduction, pressure: 0 },
+    ]);
     report.pieces = pieces.length;
   };
 

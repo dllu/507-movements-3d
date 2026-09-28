@@ -4,6 +4,7 @@ import { correctFlexiblePumpParts } from './flexible-pump-working-parts.js';
 import {horizontalRing as solidRing, horizontalTurned, horizontalPlate} from './horizontal-turbine-solids.js';
 import {curvedPipeWall, mergePassageParts} from './finite-fluid-passages.js';
 import {circle, plate, poly, polygonClipping} from './finite-plate-geometry.js';
+import {latheAtAngles, stackedFluidGeometry, withoutPlaneFaces} from './stacked-fluid-volume.js';
 import {
   PALETTE,
   markShadows,
@@ -380,15 +381,15 @@ function doubleLanternBellowsPump(movement) {
         return skin;
       },
     );
+    // Pass 88: a unit-height column whose floor is an annulus round the
+    // chest opening (the chest water continues through it), sheared each
+    // frame so the floor stays level on the chest.
+    const openingAngles = Array.from({length: 128}, (_, i) => 2 * Math.PI * i / 128);
     const water = addRole(new THREE.Mesh(
-      new THREE.CylinderGeometry(
-        bellowsWaterRadius,
-        bellowsWaterRadius,
-        1,
-        40,
-      ),
+      latheAtAngles([[0, 0.45 - 0.008], [0, bellowsWaterRadius], [1, bellowsWaterRadius], [1, 0]], openingAngles),
       waterMaterial,
     ), `${side}-water-volume-inside-lantern-bellows`);
+    water.matrixAutoUpdate = false;
     group.add(water);
     return { group, rings, skins, water };
   };
@@ -508,32 +509,70 @@ function doubleLanternBellowsPump(movement) {
   // Water: one body from the suction pipe through the channel and mouths to
   // the chest, its three chambers, ports and bellows openings, and one body
   // up the riser. It is all primed and incompressible.
+  // Pass 88: every water surface stands `waterGap` (about 7e-4 of the model
+  // diagonal) off the walls, floor, partitions and top it lies against, so
+  // no water face is coplanar with a solid one, and the pieces are built as
+  // open surfaces that continue one another (suction water -> chest stack ->
+  // bellows and riser), so no internal water sheet is drawn.
+  const waterGap = 0.008;
   const channelWater = polygonClipping.union(
-    polygonClipping.intersection(ringAbout(chest.channelInner, chest.channelOuter), belowFloor),
-    rect(-chest.bossHalfWidth, chest.bossHigh, chest.bossHalfWidth, -2.15),
-    rect(-chest.mouthOuter, chest.floorLow - 0.02, -chest.mouthInner, chest.floorHigh),
-    rect(chest.mouthInner, chest.floorLow - 0.02, chest.mouthOuter, chest.floorHigh));
-  const chestWaterSection = polygonClipping.difference(rect(-chest.inner, chest.floorHigh, chest.inner, chest.topLow),
-    rect(-chest.partitionOuter, chest.floorHigh - 1, -chest.partitionInner, chest.topLow + 1),
-    rect(chest.partitionInner, chest.floorHigh - 1, chest.partitionOuter, chest.topLow + 1));
+    polygonClipping.intersection(ringAbout(chest.channelInner + waterGap, chest.channelOuter - waterGap), belowFloor),
+    rect(-chest.bossHalfWidth + waterGap, chest.bossHigh + waterGap, chest.bossHalfWidth - waterGap, -2.15));
+  // The channel water's top edges at the floor are the mouths the chest
+  // water rises from.
+  const mouthXs = [];
+  for (const [outer] of channelWater) for (const [x, y] of outer) if (Math.abs(y - chest.floorLow) < 1e-9 && x > 0) mouthXs.push(Math.fround(x));
+  const mouthX = [Math.min(...mouthXs), Math.max(...mouthXs)];
+  const waterDepth = chest.channelDepth - waterGap;
+  const suctionRadius = chest.suctionInner - waterGap;
+  const suctionAngles = Array.from({length: 64}, (_, i) => 2 * Math.PI * i / 64);
+  let channelGeometry = plate(channelWater, -waterDepth, waterDepth);
+  channelGeometry = withoutPlaneFaces(channelGeometry, 'y', Math.fround(chest.floorLow), 1);
+  channelGeometry = withoutPlaneFaces(channelGeometry, 'y', Math.fround(chest.bossHigh + waterGap), -1);
   const suctionWater = addRole(new THREE.Mesh(mergePassageParts([
-    new THREE.CylinderGeometry(chest.suctionInner, chest.suctionInner, chest.bossHigh - chest.suctionBottom, 64)
-      .translate(0, (chest.bossHigh + chest.suctionBottom) / 2, 0),
-    plate(channelWater, -chest.channelDepth + 0.005, chest.channelDepth - 0.005),
-  ]), waterMaterial), 'water-in-common-suction-pipe');
-  const chestWater = addRole(new THREE.Mesh(mergePassageParts([
-    plate(chestWaterSection, -chest.innerDepth + 0.005, chest.innerDepth - 0.005),
-    ...[-1, 1].map(side => new THREE.BoxGeometry(chest.partitionOuter - chest.partitionInner, chest.portHigh - chest.portLow, 2 * chest.portDepth)
-      .translate(side * (chest.partitionInner + chest.partitionOuter) / 2, (chest.portLow + chest.portHigh) / 2, 0)),
-    ...[bellowsCenterXs.left, bellowsCenterXs.right].map(x => new THREE.CylinderGeometry(0.45, 0.45, bellowsFloorY + 0.05 - chest.topLow, 64)
-      .translate(x, (bellowsFloorY + 0.05 + chest.topLow) / 2, 0)),
-  ]), waterMaterial), 'water-filling-valve-chest-chambers');
-  const riserWaterProfile = [[chest.topLow, 0], ...flare(chest.partitionInner, chest.partitionInner - chest.riserInner).map(([y, r]) => [y, r - 0.005]),
-    [chest.riserStraightTop, chest.riserInner - 0.005], [chest.riserStraightTop, 0]];
-  riserWaterProfile[1] = [chest.topLow, chest.partitionInner - 0.005];
-  const dischargeWater = addRole(new THREE.Mesh(mergePassageParts([
-    horizontalTurned(riserWaterProfile), new THREE.TubeGeometry(riserBend, 160, chest.riserInner - 0.005, 32, false)]), waterMaterial),
-  'water-in-common-discharge-riser');
+    latheAtAngles([[chest.suctionBottom, 0], [chest.suctionBottom, suctionRadius], [chest.bossHigh + waterGap, suctionRadius]], suctionAngles),
+    channelGeometry,
+    stackedFluidGeometry([], {caps: [{region: polygonClipping.difference(
+      rect(-chest.bossHalfWidth + waterGap, -waterDepth, chest.bossHalfWidth - waterGap, waterDepth),
+      poly(suctionAngles.map((a) => [suctionRadius * Math.cos(a), suctionRadius * Math.sin(a)]))), y: chest.bossHigh + waterGap, up: false}]}),
+  ]), waterMaterial), 'water-in-common-suction-channel-and-inlet');
+
+  // The riser water is a surface of revolution meeting its tube ring for
+  // ring, and both stand open into the chest water below.
+  const riserTube = new THREE.TubeGeometry(riserBend, 160, chest.riserInner - 0.005, 64, false);
+  const riserAngles = Array.from({length: 64}, (_, j) => {
+    const p = riserTube.attributes.position;
+    return Math.atan2(p.getZ(j), p.getX(j));
+  });
+  const riserFoot = chest.partitionInner - 1.5 * waterGap;
+  const riserWaterProfile = [[chest.topLow - waterGap, riserFoot], [chest.topHigh, riserFoot],
+    ...flare(chest.partitionInner, chest.partitionInner - chest.riserInner).slice(1).map(([y, r]) => [y, r - 0.005]),
+    [chest.riserStraightTop, chest.riserInner - 0.005]];
+  const riserOpening = poly(riserAngles.map((a) => [riserFoot * Math.cos(a), riserFoot * Math.sin(a)]));
+  const dischargeWater = addRole(new THREE.Mesh(mergePassageParts([latheAtAngles(riserWaterProfile, riserAngles), riserTube]), waterMaterial),
+    'water-in-common-discharge-riser');
+
+  // The chest water: a stack of plan layers from the mouths up to the
+  // bellows openings, the ports bridging the partitions in the middle one.
+  const bellowsOpeningRadius = 0.45 - waterGap;
+  const bellowsOpeningAngles = Array.from({length: 128}, (_, i) => 2 * Math.PI * i / 128);
+  const bellowsOpenings = polygonClipping.union(...[bellowsCenterXs.left, bellowsCenterXs.right].map((x) =>
+    poly(bellowsOpeningAngles.map((a) => [x + bellowsOpeningRadius * Math.cos(a), bellowsOpeningRadius * Math.sin(a)]))));
+  const partitionStrips = [-1, 1].map((side) => side > 0
+    ? rect(chest.partitionInner - waterGap, -1, chest.partitionOuter + waterGap, 1)
+    : rect(-chest.partitionOuter - waterGap, -1, -chest.partitionInner + waterGap, 1));
+  const chamberPlan = polygonClipping.difference(
+    rect(-chest.inner + waterGap, -chest.innerDepth + waterGap, chest.inner - waterGap, chest.innerDepth - waterGap), ...partitionStrips);
+  const portPlan = polygonClipping.union(chamberPlan, ...[-1, 1].map((side) => polygonClipping.intersection(partitionStrips[(side + 1) / 2],
+    rect(-3, -chest.portDepth + waterGap, 3, chest.portDepth - waterGap))));
+  const mouthPlan = polygonClipping.union(rect(mouthX[0], -waterDepth, mouthX[1], waterDepth), rect(-mouthX[1], -waterDepth, -mouthX[0], waterDepth));
+  const chestWater = addRole(new THREE.Mesh(stackedFluidGeometry([
+    {region: mouthPlan, y0: chest.floorLow, y1: chest.floorHigh + waterGap},
+    {region: chamberPlan, y0: chest.floorHigh + waterGap, y1: chest.portLow + waterGap},
+    {region: portPlan, y0: chest.portLow + waterGap, y1: chest.portHigh - waterGap},
+    {region: chamberPlan, y0: chest.portHigh - waterGap, y1: chest.topLow - waterGap, open: riserOpening},
+    {region: bellowsOpenings, y0: chest.topLow - waterGap, y1: bellowsFloorY + 0.05},
+  ], {openBottom: mouthPlan, openTop: bellowsOpenings}), waterMaterial), 'water-filling-valve-chest-chambers');
   root.add(suctionWater, chestWater, dischargeWater);
   const commonSuction = {shell: suctionPipe, water: suctionWater};
   const commonDischarge = {shell: dischargeShell, water: dischargeWater};
@@ -550,7 +589,8 @@ function doubleLanternBellowsPump(movement) {
     const flap = new THREE.Mesh(plate(shape, -halfDepth, halfDepth), material);
     flap.userData.role = `${role}-flap`;
     valve.add(flap);
-    const pin = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 2 * journalDepth[1], 24).rotateX(Math.PI / 2), darkMaterial);
+    // Pass 88: the pin ends stand 0.006 inside the journals' outer faces.
+    const pin = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 2 * journalDepth[1] - 0.012, 24).rotateX(Math.PI / 2), darkMaterial);
     pin.userData.role = `${role}-fixed-hinge-pin`;pin.position.copy(pivot);
     const journals = new THREE.Mesh(mergePassageParts([-1, 1].map(s => new THREE.BoxGeometry(...journal.size)
       .translate(journal.offset[0], journal.offset[1], s * (journalDepth[0] + journalDepth[1]) / 2))), plumbingMaterial);
@@ -592,7 +632,9 @@ function doubleLanternBellowsPump(movement) {
     waterBottom.y += 0.05;
     const waterTop = top.clone();
     waterTop.y -= 0.05;
-    setCylinderBetween(bellows.water, waterBottom, waterTop);
+    const shear = waterTop.clone().sub(waterBottom);
+    bellows.water.matrix.set(1, shear.x, 0, waterBottom.x, 0, shear.y, 0, waterBottom.y, 0, shear.z, 1, waterBottom.z, 0, 0, 0, 1);
+    bellows.water.matrixWorldNeedsUpdate = true;
   };
 
   const update = (time) => {

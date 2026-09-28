@@ -16,6 +16,7 @@ import {
   ringPolygon,
   safeClip,
   sectionPlate,
+  setSteamRegions,
   steamVolume,
 } from './steam-section-kit.js';
 
@@ -232,7 +233,7 @@ function radialPistonRotaryEngine(movement) {
   const steamMeshes = [];
   for (const chamber of chambers) {
     chamber.meshes = [0, 1].map((k) => {
-      const mesh = steamVolume(`steam-in-${chamber.name}-chamber-born-behind-piston-A-${k + 1}`, ...steamZ);
+      const mesh = steamVolume(`steam-in-${chamber.name}-chamber-born-behind-piston-A-${k + 1}`, ...steamZ, { sealed: true });
       root.add(mesh);
       steamMeshes.push(mesh);
       return mesh;
@@ -252,8 +253,8 @@ function radialPistonRotaryEngine(movement) {
   const channelOnly = Object.fromEntries(Object.entries(channels).map(([name, channel]) => [name,
     safeClip('difference', polygonClipping.intersection(channel, outerOutline), chamberPolygon)]));
   const channelMeshes = Object.entries(channelOnly).map(([name, region]) => {
-    const mesh = steamVolume(`steam-in-${name.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)}-channel`, ...steamZ);
-    mesh.userData.setRegion(region, /Induction/.test(name) ? 1 : 0);
+    const mesh = steamVolume(`steam-in-${name.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)}-channel`, ...steamZ, { sealed: true });
+    mesh.userData.steamChannel = { region, pressure: /Induction/.test(name) ? 1 : 0 };
     root.add(mesh);
     steamMeshes.push(mesh);
     return mesh;
@@ -300,7 +301,12 @@ function radialPistonRotaryEngine(movement) {
         steamReport.pieces.push({ chamber: chamber.name, behind: key === inside && mine.length > 1, pressure, area: multiArea([piece]) });
       }
     }
-    for (const [mesh, { region, pressure }] of assigned) mesh.userData.setRegion(region, pressure);
+    // All volumes are set together, so a chamber body and the channel it
+    // opens into draw as one closed body of steam (no sheet at the mouth).
+    setSteamRegions([
+      ...[...assigned].map(([mesh, { region, pressure }]) => ({ mesh, region, pressure })),
+      ...channelMeshes.map((mesh) => ({ mesh, ...mesh.userData.steamChannel })),
+    ]);
   };
 
   const update = (time) => {

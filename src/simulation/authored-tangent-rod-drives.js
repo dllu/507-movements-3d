@@ -159,16 +159,13 @@ function crankTangentOscillatingRod(movement) {
     drivenMaterial,
   );
 
+  // One extrusion: the body owns the crank-pin eye (r 0.215, bore 0.156) and
+  // the straight lower working face. The separate dark eye journal and
+  // lower-face strip shared the body's rim, bore and lower face and z-fought
+  // (p88), so they are gone; Brown draws neither as a separate part.
   rodBody.userData.role = 'constant-length-tangent-oscillating-rod-body';
-  const rodWorkingFace = new THREE.Mesh(
-    plate(clip.difference(poly([[-rodLength + 0.04, -rodHalfWidth],
-      [-0.04, -rodHalfWidth], [-0.04, -rodHalfWidth + 0.025],
-      [-rodLength + 0.04, -rodHalfWidth + 0.025]]), poly(circle([0, 0], 0.156, 64))),
-    -rodDepth / 2 - 0.001, rodDepth / 2 + 0.001),
-    darkMaterial,
-  );
-
-  rodWorkingFace.userData.role = 'straight-lower-face-tangent-to-guide-roller';
+  rodBody.userData.includes = ['rod-eye-on-moving-crank-pin',
+    'straight-lower-face-tangent-to-guide-roller'];
   const rodLeftEnd = cylinderAlongZ(
     rodHalfWidth,
     rodDepth,
@@ -177,15 +174,13 @@ function crankTangentOscillatingRod(movement) {
   );
   rodLeftEnd.position.x = -rodLength;
   rodLeftEnd.userData.role = 'free-reciprocating-rod-end';
-  const rodEye = boredJournal(0.215, 0.156, rodDepth + 0.012, darkMaterial);
-  rodEye.userData.role = 'rod-eye-on-moving-crank-pin';
   const rodIndex = new THREE.Mesh(
     new THREE.BoxGeometry(0.52, 0.05, 0.045),
     whiteMaterial,
   );
   rodIndex.position.set(-rodLength + 0.5, 0, rodDepth / 2 + 0.045);
   rodIndex.userData.role = 'white-rigid-rod-reciprocation-index';
-  rod.add(rodBody, rodWorkingFace, rodLeftEnd, rodEye, rodIndex);
+  rod.add(rodBody, rodLeftEnd, rodIndex);
 
   const contactMarker = new THREE.Mesh(
     new THREE.SphereGeometry(0.055, 18, 12),
@@ -446,10 +441,8 @@ function crankTangentOscillatingRod(movement) {
     guideTread,
     rod,
     rodBody,
-    rodEye,
     rodIndex,
     rodLeftEnd,
-    rodWorkingFace,
   };
   root.userData.canonicalTimes = {
     cycleClosure: demonstrationPeriod,

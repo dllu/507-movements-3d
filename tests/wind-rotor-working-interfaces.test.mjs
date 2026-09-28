@@ -51,3 +51,9 @@ for(const id of[484,485,486]){
   assert.equal(model.root.userData.hideGround,true);assert.ok(model.root.userData.minimumDisplayCycleSeconds>=3);assert.match(model.root.userData.reconstructionNote,/prescribed/);
  });
 }
+test('486: boss and lower bearing seat on hub and supports without sharing their bores',()=>{
+ const model=make(486),b=model.root.userData.blocks;model.root.updateMatrixWorld(true);
+ const box=o=>new THREE.Box3().setFromObject(o);
+ assert.ok(Math.abs(box(b.squareShaftBoss).min.y-box(b.hub).max.y)<1e-6);
+ for(const support of b.supportCross)assert.ok(Math.abs(box(b.lowerBearing).min.y-box(support).max.y)<1e-6);
+});

@@ -1062,7 +1062,10 @@ export function createAuthoredRollingFrictionExperimentMovement(movement) {
   // The test load is shown heaped in the wagon in proportion to the added
   // load, never hanging in the air above it (Brown draws a loaded wagon).
   const bedTop = b.wagonBed.position.y + 0.09;
-  root.userData.testLoadHeap = {bedTop, law: 'heap top = bed top + load fraction * full heap height; hidden when unloaded'};
+  // The heap's flat stone bases stand 0.003 above the bed, as the fixed
+  // stones do (lying in its top face, the two z-fought as yellow blotches).
+  const baseLift = 0.003;
+  root.userData.testLoadHeap = {bedTop, baseLift, law: 'heap base = bed top + base lift; heap top = base + load fraction * full heap height; hidden when unloaded'};
   const heapHeight = b.testWeight.geometry.parameters.height;
   // Brown heaps rough stones in the wagon, not boards: the four fixed loads
   // become angular stones standing on the bed on either side of the centre,
@@ -1201,7 +1204,7 @@ export function createAuthoredRollingFrictionExperimentMovement(movement) {
     const shown = fraction > 1e-4 ? fraction : 1;
     b.testWeight.visible = fraction > 1e-4;
     b.testWeight.scale.y = shown;
-    b.testWeight.position.y = bedTop + shown * heapHeight / 2;
+    b.testWeight.position.y = bedTop + baseLift + shown * heapHeight / 2;
   };
   const bounds = new THREE.Box3();
   for (let i = 0; i <= 64; i += 1) {

@@ -754,6 +754,14 @@ test('movement 190 rendered transforms preserve both pin joints, the screw axis,
   }
   assert.equal(fulcrumPin.userData.fixed, true);
   assert.equal(nutBody.userData.fixed, true);
+  // The screw core ends just inside the handle hub, below its top face.
+  {
+    const hubTop = blocks.handleHub.position.y
+      + blocks.handleHub.geometry.parameters.height / 2;
+    const coreTop = blocks.screwCore.position.y
+      + blocks.screwCore.geometry.parameters.height / 2;
+    assert.ok(coreTop < hubTop - 0.005 && coreTop > hubTop - 0.02);
+  }
   // Flat side elevation, as the plate.
   assert.ok(Math.abs(model.cameraDirection.x) < 1e-12);
   assert.ok(model.cameraDirection.y > 0);

@@ -31,16 +31,6 @@ function centeredExtrusion(shape, depth, options = {}) {
   return geometry;
 }
 
-function rectangularShape(width, height) {
-  const shape = new THREE.Shape();
-  shape.moveTo(-width / 2, -height / 2);
-  shape.lineTo(width / 2, -height / 2);
-  shape.lineTo(width / 2, height / 2);
-  shape.lineTo(-width / 2, height / 2);
-  shape.closePath();
-  return shape;
-}
-
 function makeFaceLine(start, end, material, z) {
   const geometry = new THREE.BufferGeometry().setFromPoints([
     new THREE.Vector3(start.x, start.y, z),
@@ -482,12 +472,9 @@ function gravityDropStamp(movement) {
     0,
   );
   stampDie.userData.role = 'heavy-falling-polygonal-stamp-head';
-  const dieFace = new THREE.Mesh(
-    centeredExtrusion(rectangularShape(0.76, 0.055), 0.74),
-    inkMaterial,
-  );
-  dieFace.position.set(rackCenterX, stampFaceRestY + 0.0275, 0);
-  dieFace.userData.role = 'flat-lower-impact-face-of-stamp';
+  // The flat impact face is the head's own lower face. A separate dark face
+  // plate (undrawn by Brown) lay flush on it and z-fought (p88); it is gone.
+  stampDie.userData.includes = ['flat-lower-impact-face-of-stamp'];
   const rackTravelIndicator = new THREE.Mesh(
     new THREE.BoxGeometry(0.085, 0.56, rackDepth + 0.035),
     whiteMaterial,
@@ -524,7 +511,6 @@ function gravityDropStamp(movement) {
     topRodCap,
     lowerCollar,
     stampDie,
-    dieFace,
     rackTravelIndicator,
     stampFaceAnchor,
     rackPitchContactAnchor,
@@ -773,7 +759,6 @@ function gravityDropStamp(movement) {
     bearingBridge,
     blankSectorIndicator,
     contactMarker,
-    dieFace,
     fixedFrame,
     gearBody,
     gearRootOutline,
@@ -1291,9 +1276,6 @@ function matchBrownStampProportions(model) {
   b.stampDie.geometry.dispose();
   b.stampDie.geometry = centeredExtrusion(headShape, 0.72);
   b.stampDie.position.set(centerX, faceY + headHeight / 2, b.stampDie.position.z);
-  b.dieFace.geometry.dispose();
-  b.dieFace.geometry = centeredExtrusion(rectangularShape(1.04, 0.055), 0.74);
-  b.dieFace.position.x = centerX;
   // Brown's narrow neck joins the lower collar to the head.
   const collarBottom = b.lowerCollar.position.y - 0.36;
   const headTop = faceY + headHeight;

@@ -93,6 +93,14 @@ test('movement 220 is two offset parallel shafts joined only by one wrist and ra
   assert.equal(blocks.inputShaft.parent, model.root);
   assert.equal(blocks.outputShaft.parent, model.root);
   assert.equal(blocks.wristPin.userData.parallelCouplingWrist, true);
+  // The output shaft ends inside its hub, short of the hub's front face
+  // (a flush end face z-fought with it).
+  {
+    const hubFront = blocks.outputHub.position.z
+      + blocks.outputHub.geometry.parameters.height / 2;
+    const shaftEnd = blocks.outputShaft.userData.axialSpan[1];
+    assert.ok(shaftEnd < hubFront - 0.005 && shaftEnd > hubFront - 0.02);
+  }
 
   for (const object of [
     blocks.inputCrank,

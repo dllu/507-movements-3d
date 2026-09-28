@@ -86,7 +86,7 @@ test('movement 351 is one gravity-drop stamp driven by one mutilated pinion', ()
   assert.equal(blocks.pinionPitchContactAnchor.parent, blocks.pinion);
   assert.equal(blocks.rackBar.parent, blocks.rack);
   assert.equal(blocks.stampDie.parent, blocks.rack);
-  assert.equal(blocks.dieFace.parent, blocks.rack);
+  assert.equal(blocks.dieFace, undefined, 'the impact face is the head\'s own lower face');
   assert.equal(blocks.stampFaceAnchor.parent, blocks.rack);
   assert.equal(blocks.rackPitchContactAnchor.parent, blocks.rack);
   assert.equal(blocks.gearTeeth.length, 8);

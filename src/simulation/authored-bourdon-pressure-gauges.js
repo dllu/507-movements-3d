@@ -1,4 +1,5 @@
 import {correctElasticGaugeParts} from './elastic-gauge-working-parts.js';
+import {horizontalRing} from './horizontal-turbine-solids.js';
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import {
@@ -692,6 +693,17 @@ function bourdonPressureGauge(movement) {
   update(0);
   root.userData.fidelity = 'authored';
   correctElasticGaugeParts(root,499,update);
+  // The bored socket now ends at the collar's lower face, and the collar
+  // carries the inlet up to its top. They used to overlap through the collar
+  // with one shared .115 bore wall and top face, which z-fought (p88).
+  {
+    const collarBottom = inletCollar.position.y - 0.15;
+    const socketBottom = inletSocket.position.y - 0.64;
+    const height = collarBottom - socketBottom;
+    inletSocket.geometry.dispose();
+    inletSocket.geometry = horizontalRing(0.115, 0.31, -height / 2, height / 2, 64);
+    inletSocket.position.y = (collarBottom + socketBottom) / 2;
+  }
   // The fixed journal stops just behind the pointer hub: the pointer is keyed
   // to the pinion it carries, so the journal no longer runs through the
   // unbored hub, needle and counterweight arm.

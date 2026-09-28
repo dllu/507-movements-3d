@@ -82,8 +82,12 @@ export function correctStampParts(model){
 function finish(model,seconds,direction){const d=model.root.userData;d.hideGround=true;d.minimumDisplayCycleSeconds=seconds;d.cameraFov=8;d.cameraDistanceScale=1;const bounds=d.geometry.cyclePeriod?[[-.9,-7.6,-.65],[2.4,7.5,1]]:[[-4.6,-.96,-.92],[4.4,4.7,.9]];d.cameraFitBounds=new THREE.Box3(new THREE.Vector3(...bounds[0]),new THREE.Vector3(...bounds[1]));model.cameraDirection=direction;model.root.traverse(o=>{for(const m of[].concat(o.material??[]))m.fog=false;});}
 export function correctTripHammerParts(model){
  const {root}=model,d=root.userData,b=d.blocks,g=d.geometry;
+ const hubRadius=b.movingPivotHub.geometry.parameters.radiusTop;
  for(const name of['camDisk','camHub','movingPivotHub']){const o=b[name],p=o.geometry.parameters;replace(o,ring(.123,p.radiusTop,-p.height/2,p.height/2,64));o.rotation.set(0,0,0);}
- replace(b.camHub,ring(.123,.26,-.18,.18,64));b.camPost.position.z=-.49;
+ replace(b.camHub,ring(.123,.26,-.20,.18,64));b.camPost.position.z=-.49;
+ // The wiper wheel's body wraps its hub (bore = hub radius); the hub stands
+ // .01 proud behind it. Shared .123 bore walls z-fought (p88).
+ {const box=new THREE.Box3().setFromBufferAttribute(b.camDisk.geometry.attributes.position);replace(b.camDisk,ring(.26,box.max.x,box.min.z,box.max.z,64));}
  for(const name of['rearCamBearing','frontPivotBearing','rearPivotBearing']){const o=b[name];replace(o,ring(.123,.27,-.08,.08,64));o.rotation.set(0,0,0);}
  for(const name of['camPost','pivotPost','pivotBridge']){
   const o=b[name],p=o.geometry.parameters,axis=name==='camPost'?g.camCenter:g.hammerPivot;
@@ -91,7 +95,9 @@ export function correctTripHammerParts(model){
  }
  replace(b.camPostCap,plate(clip.difference(capsule([0,-.23],[0,.23],.32,32),poly(circle([0,.21],.123,64))),-.32,.32));
  b.frontPivotBearing.userData.role='fixed-fulcrum-shaft-end-retainer';
- for(const name of['movingJournalBlock']){const o=b[name],p=o.geometry.parameters;replace(o,plate(clip.difference(rect(p.width,p.height),poly(circle([0,0],.123,64))),-p.depth/2,p.depth/2));}
+ // The journal block wraps the moving hub (bore = hub radius) rather than
+ // sharing the hub's .123 bore wall through its depth, which z-fought (p88).
+ for(const name of['movingJournalBlock']){const o=b[name],p=o.geometry.parameters;replace(o,plate(clip.difference(rect(p.width,p.height),poly(circle([0,0],hubRadius,64))),-p.depth/2,p.depth/2));}
  // The helve crosses the same fulcrum and therefore needs the same bore.
  const outer=poly(hull([[-3.26,.39],[-3.26,.82],...circle(g.followerCenterLocal.toArray(),g.followerRadius,96)]));replace(b.helve,plate(clip.difference(outer,poly(circle([0,0],.123,64))),-g.hammerDepth/2,g.hammerDepth/2));
  // The round wear nose projects from the helve face; coincident caps flicker.
@@ -111,9 +117,12 @@ export function correctTripHammerParts(model){
  {const o=b.camPost,box=new THREE.Box3().setFromBufferAttribute(o.geometry.attributes.position),w=box.max.x-box.min.x,h=box.max.y-box.min.y;
   replace(o,plate(clip.difference(rect(w,h),poly(circle([g.camCenter.x-o.position.x,g.camCenter.y-o.position.y],.123,64))),-postDepth/2,postDepth/2));o.position.z=postZ;}
  replace(b.camPostCap,plate(clip.difference(capsule([0,-.23],[0,.23],.32,32),poly(circle([0,.21],.123,64))),-postDepth/2,postDepth/2));b.camPostCap.position.z=postZ;
- for(const brace of[b.camBraceLeft,b.camBraceRight])brace.position.z+=postZ+.48;
- const helveFront=.365,helveBack=.23,helveOutline=poly(hull([[-3.26,.39],[-3.26,.82],...circle(g.followerCenterLocal.toArray(),g.followerRadius,96)]));
- replace(b.helve,plate(clip.difference(helveOutline,poly(circle([0,0],.123,64))),-(helveFront-helveBack)/2,(helveFront-helveBack)/2));root.updateMatrixWorld(true);{const box=new THREE.Box3().setFromObject(b.helve);b.helve.position.z+=(helveFront+helveBack)/2-(box.min.z+box.max.z)/2;}
+ // The braces run into the post .004 inside its faces (coplanar faces z-fought, p88).
+ for(const brace of[b.camBraceLeft,b.camBraceRight]){brace.position.z+=postZ+.48;brace.traverse(o=>{if(o.isMesh)o.scale.z*=(postDepth-.008)/postDepth;});}
+ // The helve's rounded tail stops .01 inside the proud wear nose, and its
+ // notch wraps the hub inside the journal block, so neither shares a face (p88).
+ const helveFront=.365,helveBack=.23,helveOutline=poly(hull([[-3.26,.39],[-3.26,.82],...circle(g.followerCenterLocal.toArray(),g.followerRadius-.01,96)]));
+ replace(b.helve,plate(clip.difference(helveOutline,poly(circle([0,0],hubRadius,64))),-(helveFront-helveBack)/2,(helveFront-helveBack)/2));root.updateMatrixWorld(true);{const box=new THREE.Box3().setFromObject(b.helve);b.helve.position.z+=(helveFront+helveBack)/2-(box.min.z+box.max.z)/2;}
  const postBox=new THREE.Box3().setFromBufferAttribute(b.camPost.geometry.attributes.position),groundY=b.camPost.position.y+postBox.min.y;
  const postBase=new THREE.Mesh(new THREE.BoxGeometry(2.1,.20,1.3),b.camPost.material);postBase.position.set(g.camCenter.x,groundY-.10,-.10);postBase.userData.fixed=true;postBase.userData.role='fixed-base-block-under-cam-post';b.camPost.parent.add(postBase);b.postBase=postBase;
  d.stampTripParts={};

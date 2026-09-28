@@ -13,6 +13,7 @@ import {
   ringPolygon,
   safeClip,
   sectionPlate,
+  setSteamRegions,
   steamVolume,
 } from './steam-section-kit.js';
 
@@ -104,12 +105,19 @@ function eccentricShaftRadialPistonEngine(movement) {
   const foot = castFootPolygon({ casingRadius, padHalfWidth: 6.4, neckHalfWidth: 4.6, footY: -casingRadius - 0.45, padHeight: 0.55 });
   const outline = polygonClipping.union(body, ...necks, foot);
   const bore = circlePolygon([0, 0], boreRadius, 360);
+  const channelRects = {
+    inlet: rect(channelInner, 3, channelOuter, neckTop + 0.2),
+    eduction: rect(-channelOuter, 3, -channelInner, neckTop + 0.2),
+  };
   const channels = {
-    inlet: polygonClipping.difference(rect(channelInner, 3, channelOuter, neckTop + 0.2), bore),
-    eduction: polygonClipping.difference(rect(-channelOuter, 3, -channelInner, neckTop + 0.2), bore),
+    inlet: polygonClipping.difference(channelRects.inlet, bore),
+    eduction: polygonClipping.difference(channelRects.eduction, bore),
   };
   const recess = rect(-3.6, -casingRadius - 0.5, 3.6, -casingRadius - 0.3);
-  const casing = sectionPlate(polygonClipping.difference(outline, bore, channels.inlet, channels.eduction, recess),
+  // The casing is cut by the whole channel rectangles (the same cavity):
+  // cutting by the channels, which share the bore's edges, left a
+  // zero-area spike along the bore chord at each mouth's inner corner.
+  const casing = sectionPlate(polygonClipping.difference(outline, bore, channelRects.inlet, channelRects.eduction, recess),
     zBack, 0, frameMaterial, 'sectioned-cylinder-with-two-port-necks-on-cast-foot');
   root.add(casing);
   const back = sectionPlate(polygonClipping.difference(polygonClipping.union(body, ...necks),
@@ -174,18 +182,24 @@ function eccentricShaftRadialPistonEngine(movement) {
 
   // ---- steam ------------------------------------------------------------------------------------
   const steamZ = [zBack + 0.015, -0.015];
+  // Either side of the contact line the crescent thins to nothing between
+  // the hub and the bore; its tips are cut off where the gap is still
+  // 0.025 (about 1e-3 of the model diagonal), so the steam's hub-side face
+  // never lies on the bore face.
+  const tipGap = 0.025;
+  const gapAt = (x) => Math.sqrt(boreRadius ** 2 - x * x) - B[1] - Math.sqrt((hubRadius + 0.008) ** 2 - x * x);
+  let tipHalf = 0;
+  while (gapAt(tipHalf) < tipGap) tipHalf += 0.002;
   const crescent = polygonClipping.difference(bore, circlePolygon(B, hubRadius + 0.008, 256),
-    rect(-0.015, boreRadius - 0.3, 0.015, boreRadius + 0.1));
+    rect(-tipHalf, boreRadius - 0.3, tipHalf, boreRadius + 0.1));
   const steam = {
-    behind: steamVolume('steam-behind-the-piston-past-the-contact-line', ...steamZ),
-    between: steamVolume('steam-between-the-pistons', ...steamZ),
-    ahead: steamVolume('steam-ahead-of-the-leading-piston', ...steamZ),
-    inlet: steamVolume('live-steam-in-right-neck', ...steamZ),
-    eduction: steamVolume('exhaust-steam-in-left-neck', ...steamZ),
+    behind: steamVolume('steam-behind-the-piston-past-the-contact-line', ...steamZ, { sealed: true }),
+    between: steamVolume('steam-between-the-pistons', ...steamZ, { sealed: true }),
+    ahead: steamVolume('steam-ahead-of-the-leading-piston', ...steamZ, { sealed: true }),
+    inlet: steamVolume('live-steam-in-right-neck', ...steamZ, { sealed: true }),
+    eduction: steamVolume('exhaust-steam-in-left-neck', ...steamZ, { sealed: true }),
   };
   for (const mesh of Object.values(steam)) root.add(mesh);
-  steam.inlet.userData.setRegion(channels.inlet, 1);
-  steam.eduction.userData.setRegion(channels.eduction, 0);
   const placed = (outlineMulti, angle) => outlineMulti.map((polygon) => polygon.map((ring) => ring.map(([x, y]) => [
     x * Math.cos(angle) - y * Math.sin(angle), x * Math.sin(angle) + y * Math.cos(angle)])));
   const splitPieces = (state) => safeClip('difference', crescent,
@@ -246,7 +260,13 @@ function eccentricShaftRadialPistonEngine(movement) {
   const updateSteam = (state) => {
     const regions = regionsOf(state);
     const p = pressures(regions);
-    for (const name of ['behind', 'between', 'ahead']) steam[name].userData.setRegion(regions[name], p[name]);
+    // Set together: a crescent piece and the neck it opens into draw as one
+    // closed body of steam (no sheet across the mouth).
+    setSteamRegions([
+      ...['behind', 'between', 'ahead'].map((name) => ({ mesh: steam[name], region: regions[name], pressure: p[name] })),
+      { mesh: steam.inlet, region: channels.inlet, pressure: 1 },
+      { mesh: steam.eduction, region: channels.eduction, pressure: 0 },
+    ]);
     report.lastPressures = p;
     report.lastRegions = { lo: regions.lo, hi: regions.hi };
   };

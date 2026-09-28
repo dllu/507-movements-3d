@@ -68,8 +68,8 @@ test('movement 268 is the crank-driven fixed-roller tangent rod', () => {
   assert.equal(blocks.crankArm.parent, blocks.crankRotor);
   assert.equal(blocks.crankPin.parent, blocks.crankRotor);
   assert.equal(blocks.rodBody.parent, blocks.rod);
-  assert.equal(blocks.rodEye.parent, blocks.rod);
-  assert.equal(blocks.rodWorkingFace.parent, blocks.rod);
+  assert.equal(blocks.rodEye, undefined, 'the eye is part of the rod-body extrusion');
+  assert.equal(blocks.rodWorkingFace, undefined, 'the lower face is the rod body\'s own face');
   assert.equal(blocks.guideRotor.parent, blocks.guideAssembly);
   assert.equal(blocks.guideAxle.parent, blocks.guideAssembly);
   assert.notEqual(blocks.guideAxle.parent, blocks.guideRotor);

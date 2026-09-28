@@ -108,3 +108,19 @@ test('402 effective camera, scene flags, separate balances and buffers remain st
  const after=counts();assert.equal(after.n,before.n);assert.deepEqual(after.g,before.g);
  r.traverse(o=>{for(const mat of[o.material].flat().filter(Boolean))assert.equal(mat.fog,false);if(o.isMesh)assert.equal(o.castShadow,!o.userData.seeThrough);});
 });
+
+test('402 hubs, pinions and sector bodies share no coplanar faces',()=>{
+ r.updateMatrixWorld(true);
+ const box=o=>new THREE.Box3().setFromObject(o);
+ // The upper hub ends on its pinion's back face; the left hub runs through
+ // its pinion, which is bored clear inside it.
+ assert.ok(Math.abs(box(b.upperBalance.hub).max.z-box(b.upperBalance.workingPinion).min.z)<1e-6);
+ const hubZ=box(b.leftBalance.hub),pinZ=box(b.leftBalance.workingPinion);
+ assert.ok(hubZ.min.z<pinZ.min.z&&hubZ.max.z>pinZ.max.z);
+ const radial=g=>{const p=g.attributes.position;let lo=Infinity;for(let i=0;i<p.count;i++)lo=Math.min(lo,Math.hypot(p.getX(i),p.getY(i)));return lo;};
+ assert.ok(radial(b.leftBalance.workingPinion.geometry)>.12&&radial(b.leftBalance.workingPinion.geometry)<.19);
+ for(const rack of [b.externalRack,b.internalRack]){
+  const body=box(rack.children[0]),tooth=box(rack.userData.teeth[0]);
+  assert.ok(Math.abs(tooth.max.z-body.max.z-.002)<1e-6&&Math.abs(body.min.z-tooth.min.z-.002)<1e-6);
+ }
+});

@@ -625,15 +625,19 @@ function verticalPlanedSlotPistonGuide(movement) {
     new THREE.BoxGeometry(0.024, straightGuideLength, 0.075),
     darkMaterial,
   );
+  // Each strip is set 0.003 back from the slot wall into the frame and
+  // stands 0.003 proud of the frame's front face. Flush, both faces lay in
+  // the frame's own and z-fought; the frame's slot wall is the sliding face.
+  const planedFaceOffset = 0.003;
   leftPlanedFace.position.set(
-    -guideSlotHalfWidth - .012,
+    -guideSlotHalfWidth - .012 - planedFaceOffset,
     guideCenterY,
-    frameFrontZ - .0375,
+    frameFrontZ - .0375 + planedFaceOffset,
   );
   leftPlanedFace.userData.fixed = true;
   leftPlanedFace.userData.role = 'left-planed-true-guide-surface';
   const rightPlanedFace = leftPlanedFace.clone();
-  rightPlanedFace.position.x = guideSlotHalfWidth + .012;
+  rightPlanedFace.position.x = guideSlotHalfWidth + .012 + planedFaceOffset;
   rightPlanedFace.userData.fixed = true;
   rightPlanedFace.userData.role = 'right-planed-true-guide-surface';
 
@@ -1429,15 +1433,18 @@ function rollerGuidedFrenchEngineCrosshead(movement) {
     group.userData.role =
       `${side < 0 ? 'left' : 'right'}-straight-guide-bar-A`;
 
+    // The column's inner face stands 0.003 behind the strap's working edge
+    // (both lay on the contact line and z-fought); the strap alone carries it.
+    const columnFaceRelief = 0.003;
     const body = new THREE.Mesh(
       new THREE.BoxGeometry(
-        columnWidth,
+        columnWidth - columnFaceRelief,
         guideBarHeight,
         frameDepth,
       ),
       frameMaterial,
     );
-    body.position.set(centerX, guideBarCenterY, frameCenterZ);
+    body.position.set(centerX + side * columnFaceRelief / 2, guideBarCenterY, frameCenterZ);
     body.userData.fixed = true;
     body.userData.role = `${group.userData.role}-column-body`;
     // Brown's A is a round-ended guide strap on the column's inner face,
@@ -1503,12 +1510,16 @@ function rollerGuidedFrenchEngineCrosshead(movement) {
   cylinderTopCap.position.set(0, -24 * sourceScale - cylinderDrop, crossheadPlaneZ);
   cylinderTopCap.userData.fixed = true;
   cylinderTopCap.userData.role = 'fixed-cylinder-top-and-piston-rod-gland';
+  // The stuffing box starts on the cap's top face rather than running down
+  // into it (the two shared the rod bore wall there and z-fought).
+  const glandCenterY = -23.45 * sourceScale - cylinderDrop;
+  const glandLow = cylinderTopCap.position.y + .065 - glandCenterY;
   const gland = new THREE.Mesh(
-    boredLatheGeometry([{axial: -.095, radial: 2.1 * sourceScale},
+    boredLatheGeometry([{axial: glandLow, radial: 2.1 * sourceScale},
       {axial: .095, radial: 2.1 * sourceScale}], .115, 64),
     accentMaterial,
   );
-  gland.position.set(0, -23.45 * sourceScale - cylinderDrop, crossheadPlaneZ);
+  gland.position.set(0, glandCenterY, crossheadPlaneZ);
   gland.userData.fixed = true;
   gland.userData.role = 'fixed-piston-rod-stuffing-box';
 

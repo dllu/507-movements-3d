@@ -482,10 +482,12 @@ function claytonSlidingJournalBox(movement) {
   });
   const clampCaps = [-1, 1].map((side) => {
     const cap = new THREE.Mesh(
-      new THREE.BoxGeometry(0.76, 0.22, 0.34),
+      // Back face 0.01 in front of the gib's back face; the two used to lie
+      // in one plane where the gib enters the cap and z-fought (p88).
+      new THREE.BoxGeometry(0.76, 0.22, 0.33),
       boxMaterial,
     );
-    cap.position.set(side * 0.48, 1.02, 0.42);
+    cap.position.set(side * 0.48, 1.02, 0.425);
     cap.userData.role = side < 0
       ? 'left-gib-adjustment-cap'
       : 'right-gib-adjustment-cap';

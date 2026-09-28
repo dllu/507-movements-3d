@@ -1,5 +1,5 @@
 {
-  "bakedAssetHash": "6e496036e58910259f7b25ffeb02f13f82e6750c2259b6ef8dcb0f4dc59c8c09",
+  "bakedAssetHash": "5b5f6c92fd36597154022f6c28246b40ad1b5021ac8906c60231005f05474bdd",
   "movement": 170,
   "status": "baked-solid-diagnostic",
   "parameters": {
@@ -28,7 +28,7 @@
   "sources": [
     {
       "file": "src/simulation/baked/assets/170.json.gz",
-      "sha256": "6e496036e58910259f7b25ffeb02f13f82e6750c2259b6ef8dcb0f4dc59c8c09"
+      "sha256": "5b5f6c92fd36597154022f6c28246b40ad1b5021ac8906c60231005f05474bdd"
     },
     {
       "file": "src/simulation/baked/crossed-governor.js",
@@ -44,7 +44,7 @@
     },
     {
       "file": "src/simulation/mujoco-crossed-governor/solids.js",
-      "sha256": "b4a52fbdcae443e7be5706389d6b42f9067f942f41099d5590220ff006c0c9fc"
+      "sha256": "2b629a5726f547d349684deabb46146d8621b656fe65b773b140eee6109e7066"
     },
     {
       "file": "src/simulation/mujoco-crossed-governor/update-solids.js",

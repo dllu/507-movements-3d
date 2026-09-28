@@ -83,6 +83,13 @@ test('300/301 working solids are closed, outward and connected', () => {
   for (const mesh of [blocks.palletBody, ...blocks.palletSweptBands, ...blocks.impulseLips]) {
     assert.ok(signedVolume(mesh.geometry) > 0, `${mesh.userData.role} is outward-wound`);
   }
+  // The flanges' end walls stand 0.002 inside the bands' (were coplanar).
+  for (const [band, lip] of blocks.palletSweptBands.map((b, i) => [b, blocks.impulseLips[i]])) {
+    band.geometry.computeBoundingBox(); lip.geometry.computeBoundingBox();
+    const [bb, lb] = [band.geometry.boundingBox, lip.geometry.boundingBox];
+    assert.ok(Math.abs(lb.min.x - bb.min.x - 0.002) < 1e-6);
+    assert.ok(Math.abs(bb.max.x - lb.max.x - 0.002) < 1e-6);
+  }
   for (const wheel of [blocks.frontWheel, blocks.rearWheel]) {
     // One closed plate: rim, spokes meeting the rim's inside, boss, teeth.
     const plate = wheel.userData.plate;

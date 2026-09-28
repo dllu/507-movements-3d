@@ -80,3 +80,12 @@ test('clock clicks have converging tooth-handoff paths and periodic seams',()=>{
     }
   }
 });
+
+test('320: ratchet is bored to its hub radius and the hub runs through it (no shared bore wall)',()=>{
+  const m=chain({id:320,description:''}),b=m.root.userData.blocks,hub=b.ratchetPulley.userData.workingHub;
+  const wheel=b.finiteClicks[0].wheel;hub.geometry.computeBoundingBox();
+  const box=hub.geometry.boundingBox,pos=hub.geometry.attributes.position;let hubRadius=0;
+  for(let i=0;i<pos.count;i++)hubRadius=Math.max(hubRadius,Math.hypot(pos.getX(i),pos.getZ(i)));
+  assert.ok(Math.abs(wheel.userData.ratchetProfile.bore-hubRadius)<1e-6);
+  assert.ok(Math.abs(box.max.y-(wheel.position.z+wheel.userData.ratchetProfile.depth/2+.01))<1e-6);
+});

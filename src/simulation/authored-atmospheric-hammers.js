@@ -924,6 +924,11 @@ function atmosphericHammer(movement) {
     update,
   };
   correctHammerWorkingParts(root, 471);
+  // The shared helper ends crank pin A flush with the crank arm's back face,
+  // where the two z-fought; the pin ends 0.01 inside the arm instead.
+  crankPinVisual.geometry.dispose();
+  crankPinVisual.geometry = new THREE.CylinderGeometry(0.095, 0.095, 0.39, 32);
+  crankPinVisual.position.z = -0.055;
   buildLoopColumn(root, fixedFrame, frameMaterial, groundY, {
     anvilBottomY: anvilTopY - 0.47,
     axisX: cylinderAxisX,

@@ -11,7 +11,7 @@
   "sources": [
     {
       "file": "src/simulation/authored-double-elliptical-rotary-engines.js",
-      "sha256": "9988364f02bb4a8a6c6a66ff77114e70cbd852341bd8dc4f12ae083694dae932"
+      "sha256": "417be29a8c1203d8c6833c32991f7085fdb46d4552d37c43a87bfe120efa476b"
     },
     {
       "file": "src/simulation/movement-429-source-profiles.js",

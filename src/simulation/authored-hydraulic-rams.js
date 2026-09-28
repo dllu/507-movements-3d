@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {stackedFluidGeometry} from './stacked-fluid-volume.js';
 import {horizontalRing,horizontalPlate} from './horizontal-turbine-solids.js';
 import {poly,circle,plate,polygonClipping} from './finite-plate-geometry.js';
 import {curvedPipeWall,mergePassageParts} from './finite-fluid-passages.js';
@@ -903,10 +904,16 @@ function hydraulicRam(movement) {
   // topped up, and the tail water fills the sectioned tank round the ram.
   const liveWater = [];
   {
-    const R = chamberRadius - 0.04;
+    // Pass 88: the water globe stands vesselWaterGap inside the shell's bore
+    // and behind the drawing plane, so it lies on neither the shell nor the
+    // cut face of the riser standing in it.
+    const vesselWaterGap = 0.006;
+    root.userData.geometry.vesselWaterGap = vesselWaterGap;
+    const R = chamberRadius - 0.04 - vesselWaterGap;
     const vesselWater = sectionedSphereWater(R, waterVolumeMaterial({opacity: 0.42}));
     vesselWater.userData.role = 'water-in-globular-air-vessel-below-the-air';
     vesselWater.position.copy(chamberCenter);
+    vesselWater.position.z -= vesselWaterGap;
     root.add(vesselWater);
     const sphereVolume = 4 / 3 * Math.PI * R ** 3;
     const setVesselLevel = (fraction) => {
@@ -1020,7 +1027,8 @@ function hydraulicRam(movement) {
     // The head box and tank are cut on the same plane (their walls and water
     // used to run on in front of it with no front wall to hold the water).
     for (const mesh of [ramBody, drivePipe, shoulder, wasteCollar, wasteSeat, outputPipe, ...tankParts, reservoirBottom, ...reservoirWalls]) sectionMeshInPlace(mesh, root);
-    const bodyWater = new THREE.Mesh(new THREE.BoxGeometry(bodyX1 - bodyX0 - 2 * t, bodyY1 - bodyY0 - 2 * t, bodyZ - t)
+    // Pass 88: 0.006 inside the body's walls and behind the drawing plane.
+    const bodyWater = new THREE.Mesh(new THREE.BoxGeometry(bodyX1 - bodyX0 - 2 * t - 0.012, bodyY1 - bodyY0 - 2 * t - 0.012, bodyZ - t - 0.012)
       .translate((bodyX0 + bodyX1) / 2, (bodyY0 + bodyY1) / 2, -(bodyZ - t) / 2), waterVolumeMaterial({opacity: 0.4}));
     bodyWater.userData.role = 'water-filling-ram-body';
     bodyWater.renderOrder = 1;
@@ -1090,13 +1098,22 @@ function hydraulicRam(movement) {
     // Pass 70: it is cut on the drawing plane like the tank, and stops at the
     // ram body and the sectioned neck, so it no longer tints their insides
     // (the neck's own water shows there alone).
+    // Pass 88: it stands `gap` off the tank's floor, walls and back, the
+    // ram body and the neck, and `gap` behind the drawing plane, so none of
+    // its faces lies on a wall, on the body, or on the cut faces of the drive
+    // pipe, waste collar and neck flange standing in it; the deep layer and
+    // the layer round the body are one stacked surface (no internal sheet).
     {
-      const tankRect = poly([[-3.35, tankFloorTop], [2.58, tankFloorTop], [2.58, tankWaterLevel], [-3.35, tankWaterLevel]]);
+      const gap = 0.006;
+      const tankRect = poly([[-3.35 + gap, tankFloorTop + gap], [2.58 - gap, tankFloorTop + gap], [2.58 - gap, tankWaterLevel], [-3.35 + gap, tankWaterLevel]]);
       const around = polygonClipping.difference(tankRect,
-        poly([[bodyX0, tankFloorTop - 1], [bodyX1, tankFloorTop - 1], [bodyX1, bodyY1], [bodyX0, bodyY1]]),
-        poly([[chamberCenter.x - .30, bodyY1 - .01], [chamberCenter.x + .30, bodyY1 - .01], [chamberCenter.x + .30, tankWaterLevel + 1], [chamberCenter.x - .30, tankWaterLevel + 1]]));
-      // Like the tank itself it is cut on the drawing plane (z = 0).
-      tankWater.geometry = mergePassageParts([plate(tankRect, -0.9, -bodyZ), plate(around, -bodyZ, 0)]);
+        poly([[bodyX0 - gap, tankFloorTop - 1], [bodyX1 + gap, tankFloorTop - 1], [bodyX1 + gap, bodyY1 + gap], [bodyX0 - gap, bodyY1 + gap]]),
+        poly([[chamberCenter.x - .30 - gap, bodyY1 - .01], [chamberCenter.x + .30 + gap, bodyY1 - .01], [chamberCenter.x + .30 + gap, tankWaterLevel + 1], [chamberCenter.x - .30 - gap, tankWaterLevel + 1]]));
+      // Stacked along depth: plan (x, y), level = -z, turned into place.
+      tankWater.geometry = stackedFluidGeometry([
+        {region: around, y0: gap, y1: bodyZ + gap},
+        {region: tankRect, y0: bodyZ + gap, y1: 0.9 - gap},
+      ]).rotateX(-Math.PI / 2);
     }
     tankWater.position.set(0, 0, 0);
     tankWater.material = waterVolumeMaterial({opacity: 0.3});

@@ -331,7 +331,7 @@ test('movement 444 update moves only valve disks and stems while chamber renderi
     near(blocks.deliveryDisk.position.y, .04 + state.deliveryValveLift, 0,
       `moving delivery disk at ${phase}`);
     // The drawn segment holds the vessel's share of water by volume.
-    const R = geometry.chamberRadius - 0.04, P = blocks.vesselWater.geometry.attributes.position.array;
+    const R = geometry.chamberRadius - 0.04 - geometry.vesselWaterGap, P = blocks.vesselWater.geometry.attributes.position.array;
     let top = -Infinity;
     for (let i = 1; i < P.length; i += 3) top = Math.max(top, P[i]);
     const h = top + R;

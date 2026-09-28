@@ -589,7 +589,11 @@ function valveReliefGuide(movement) {
   };
   for (const mesh of Object.values(steam)) root.add(mesh);
   const seatTop = -2.0;
-  const portColumn = ([x0, x1]) => poly([[x0, seatBottom + 0.03], [x1, seatBottom + 0.03], [x1, seatTop], [x0, seatTop]]);
+  // The port steam stops 0.01 (about 1e-3 of the model diagonal) below the
+  // seat's top face: its passage volume runs in front of the ports, inside
+  // the seat, where its top face lay on the seat's and flickered.
+  const portSteamTop = seatTop - 0.01;
+  const portColumn = ([x0, x1]) => poly([[x0, seatBottom + 0.03], [x1, seatBottom + 0.03], [x1, portSteamTop], [x0, portSteamTop]]);
   steam.left.userData.base = clip.union(passages.left, portColumn(ports.left));
   steam.right.userData.base = clip.union(passages.right, portColumn(ports.right));
   steam.exhaust.userData.setRegion(clip.union(passages.exhaust, portColumn(ports.exhaust)), 0);

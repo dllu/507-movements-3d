@@ -570,7 +570,9 @@ function hydrostaticPress(movement) {
   inletValve.position.set(pumpSliderX, Y(379), 0);
   root.add(inletValve);
   const barrelWater = dynamicLatheWater((tipY) => [
-    [0, Y(380)], [7 * S, Y(380)], [7 * S, Y(354)], [8 * S, Y(352)], [8 * S, Y(227)], [pumpPlungerRadius + 0.002, Y(227)],
+    // Pass 88: the column's foot stands 0.006 above the seat, off the
+    // closed inlet disk's underside.
+    [0, Y(380) + 0.006], [7 * S, Y(380) + 0.006], [7 * S, Y(354)], [8 * S, Y(352)], [8 * S, Y(227)], [pumpPlungerRadius + 0.002, Y(227)],
     ...Array.from({length: 13}, (_, i) => {
       const a = Math.PI / 2 * i / 12;
       return [(pumpPlungerRadius + 0.002) * Math.cos(a), tipY + pumpPlungerRadius - (pumpPlungerRadius + 0.002) * Math.sin(a)];
@@ -597,9 +599,72 @@ function hydrostaticPress(movement) {
   backWall.userData.role = 'fixed-back-wall-of-pump-cistern';
   pumpReservoir.add(backWall);
   const waterTop = Y(400), waterBottom = Y(482);
-  const reservoirWater = addRole(new THREE.Mesh(new THREE.BoxGeometry(X(467) - X(322), 1, -cisternBack), waterMaterial), 'hand-pump-reservoir-water');
-  reservoirWater.geometry.translate(0, 0.5, 0);
-  reservoirWater.position.set((X(322) + X(467)) / 2, waterBottom, cisternBack / 2);
+  // Pass 88: the cistern water stands `gap` off the cistern's walls, floor
+  // and back, and is the water round the pump's foot only: its mid-plane
+  // face is notched and its surface bored for the barrel, and a back-half
+  // surface of revolution `gap` outside the barrel's outer profile closes it
+  // there. It no longer runs through the barrel's section and its bore (the
+  // water inside the barrel is the inlet water), so no face lies on the
+  // barrel's cut face or the inlet water's.
+  const reservoirWaterGeometry = (level) => {
+    const gap = 0.006, steps = 32, bottom = waterBottom + gap;
+    const x0 = X(322) + gap, x1 = X(467) - gap, z0 = cisternBack + gap;
+    const outer = [[9, 390], [9, 425], [18, 438], [18, 452], [0, 482]].map(([r, py]) => [r * S, Y(py)]);
+    const radiusAt = (y) => {
+      for (let i = 0; i + 1 < outer.length; i += 1) {
+        const [ra, ya] = outer[i], [rb, yb] = outer[i + 1];
+        if (y <= ya + 1e-12 && y >= yb - 1e-12) return (ya === yb ? Math.max(ra, rb) : ra + (rb - ra) * (y - ya) / (yb - ya)) + gap;
+      }
+      return gap;
+    };
+    const levels = [level, ...outer.map(([, y]) => y).filter((y) => y < level - 1e-9 && y > bottom + 1e-9), bottom];
+    const positions = [], normals = [];
+    const push = (points, normal) => {for (const q of points) {positions.push(...q);normals.push(...normal);}};
+    const halfCircle = (radius) => Array.from({length: steps + 1}, (_, k) => {
+      const phi = Math.PI / 2 + Math.PI * k / steps;
+      return [pumpSliderX + radius * Math.sin(phi), radius * Math.cos(phi)];
+    });
+    // Barrel side: open back-half bands between the profile levels.
+    for (let i = 0; i + 1 < levels.length; i += 1) {
+      const a = halfCircle(radiusAt(levels[i])), b = halfCircle(radiusAt(levels[i + 1]));
+      for (let k = 0; k < steps; k += 1) {
+        const phi = Math.PI / 2 + Math.PI * (k + 0.5) / steps, n = [-Math.sin(phi), 0, -Math.cos(phi)];
+        const p = (c, y) => [c[0], y, c[1]];
+        push([p(a[k], levels[i]), p(b[k], levels[i + 1]), p(b[k + 1], levels[i + 1]),
+          p(a[k], levels[i]), p(b[k + 1], levels[i + 1]), p(a[k + 1], levels[i])], n);
+      }
+    }
+    const fill = (polygons, map, normal) => {
+      for (const [outerRing, ...holes] of polygons) {
+        const ring = (r) => r.slice(0, -1).map(([u, v]) => new THREE.Vector2(u, v));
+        const contour = ring(outerRing), hs = holes.map(ring), all = [...contour, ...hs.flat()];
+        for (const t of THREE.ShapeUtils.triangulateShape(contour, hs)) push(t.map((i) => map(all[i])), normal);
+      }
+    };
+    const plan = poly([[x0, z0], [x1, z0], [x1, 0], [x0, 0]]);
+    const bore = (radius) => poly(halfCircle(radius));
+    fill(clip.difference(plan, bore(radiusAt(level))), (v) => [v.x, level, v.y], [0, 1, 0]);
+    fill(clip.difference(plan, bore(radiusAt(bottom))), (v) => [v.x, bottom, v.y], [0, -1, 0]);
+    const notch = poly([...levels.map((y) => [pumpSliderX + radiusAt(y), y]), ...levels.slice().reverse().map((y) => [pumpSliderX - radiusAt(y), y]),
+      [pumpSliderX - radiusAt(level), level + 1], [pumpSliderX + radiusAt(level), level + 1]].reverse());
+    fill(clip.difference(poly([[x0, bottom], [x1, bottom], [x1, level], [x0, level]]), notch), (v) => [v.x, v.y, 0], [0, 0, 1]);
+    push([[x0, bottom, z0], [x1, level, z0], [x1, bottom, z0], [x0, bottom, z0], [x0, level, z0], [x1, level, z0]], [0, 0, -1]);
+    for (const [x, sign] of [[x0, -1], [x1, 1]]) push([[x, bottom, z0], [x, bottom, 0], [x, level, 0], [x, bottom, z0], [x, level, 0], [x, level, z0]], [sign, 0, 0]);
+    // Orient each triangle to its normal.
+    for (let t = 0; t < positions.length; t += 9) {
+      const v = (k) => new THREE.Vector3(positions[t + 3 * k], positions[t + 3 * k + 1], positions[t + 3 * k + 2]);
+      const face = new THREE.Vector3().subVectors(v(1), v(0)).cross(new THREE.Vector3().subVectors(v(2), v(0)));
+      if (face.dot(new THREE.Vector3(normals[t], normals[t + 1], normals[t + 2])) < 0) {
+        for (let k = 0; k < 3; k += 1) [positions[t + 3 + k], positions[t + 6 + k]] = [positions[t + 6 + k], positions[t + 3 + k]];
+      }
+    }
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
+    return geometry;
+  };
+  const reservoirWater = addRole(new THREE.Mesh(reservoirWaterGeometry(waterTop), waterMaterial), 'hand-pump-reservoir-water');
+  reservoirWater.userData.level = waterTop;
   pumpReservoir.add(reservoirWater);
   const cisternArea = (X(467) - X(322)) * 2 * -cisternBack;
   const returnStream = addRole(new THREE.Mesh(new THREE.CylinderGeometry(2.4 * S, 2.8 * S, 1, 16, 1, true).translate(0, -0.5, 0), waterMaterial.clone()),
@@ -644,7 +709,20 @@ function hydrostaticPress(movement) {
     safetyValve.position.y = safetyValveRestY + 3 * S * flow;
     lastCord = updateCord(state.fulcrum, safetyValve.position.y - safetyValveRestY);
     const level = levelAt(state);
-    reservoirWater.scale.y = level - waterBottom;
+    if (Math.abs(level - reservoirWater.userData.level) > 1e-7) {
+      // The level stays in the barrel's straight 9 px stretch, so the
+      // surface keeps its layout and is copied into the same buffers.
+      const next = reservoirWaterGeometry(level), current = reservoirWater.geometry;
+      if (next.attributes.position.count !== current.attributes.position.count) throw new Error('466 cistern water layout changed');
+      for (const name of ['position', 'normal']) {
+        current.attributes[name].array.set(next.attributes[name].array);
+        current.attributes[name].needsUpdate = true;
+      }
+      current.computeBoundingBox();
+      current.computeBoundingSphere();
+      next.dispose();
+      reservoirWater.userData.level = level;
+    }
     releaseWater.visible = returnStream.visible = flow > 1e-4;
     releaseWater.material.opacity = returnStream.material.opacity = 0.34 * Math.min(1, flow * 4);
     returnStream.scale.y = Y(320) - level;

@@ -94,6 +94,16 @@ test('movement 311 is two offset three-legged wheels, one lifting-pin set, and t
     userData.label), ['a', 'b', 'c']);
   assert.equal(blocks.liftingPinMeshes.length, 3);
   assert.equal(blocks.flyVanes.length, 2);
+  {
+    // The fly crossarm ends on each vane's inner edge (it used to run on to
+    // the vane centre with coplanar faces).
+    let crossarm = null;
+    model.root.traverse((o) => { if (o.userData.role === 'long-fan-fly-crossarm') crossarm = o; });
+    for (const vane of blocks.flyVanes) {
+      const inner = Math.abs(vane.position.x) - vane.geometry.parameters.width / 2;
+      assert.ok(Math.abs(crossarm.geometry.parameters.width / 2 - inner) < 1e-9);
+    }
+  }
 
   const roles = [];
   model.root.traverse((object) => roles.push(object.userData.role ?? ''));

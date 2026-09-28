@@ -266,6 +266,14 @@ test('movement 326 constrains slide A between two planed slot faces with no roll
     blocks.rightSlideShoe);
   assert.equal(contacts.leftPlanedSlidingPair.type,
     'zero-clearance-planed-prismatic-contact');
+  // The dark planed strips stand 0.003 clear of the slot wall and 0.003
+  // proud of the frame front (flush, they z-fought with the frame).
+  for (const [face, side] of [[blocks.leftPlanedFace, -1], [blocks.rightPlanedFace, 1]]) {
+    const inner = face.position.x - side * face.geometry.parameters.width / 2;
+    assert.ok(Math.abs(side * inner - geometry.guideSlotHalfWidth - 0.003) < 1e-9);
+    assert.ok(Math.abs(face.position.z + face.geometry.parameters.depth / 2
+      - geometry.frameFrontZ - 0.003) < 1e-9);
+  }
   assert.equal(degreesOfFreedom.output,
     'one vertical translation of slide A and its piston-rod');
 

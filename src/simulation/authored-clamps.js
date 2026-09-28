@@ -1683,7 +1683,9 @@ function screwThrustLeverClamp() {
   const threadLocalMinimumY = -0.61;
   const screwCoreLocalMinimumY = -0.70;
   const handleLocalY = clampedHandleCenterY - clampedScrewOriginY;
-  const screwCoreLocalMaximumY = handleLocalY + 0.09;
+  // The core stops 0.01 below the hub's top face (it ended flush in it and
+  // the two caps z-fought).
+  const screwCoreLocalMaximumY = handleLocalY + 0.08;
   // Brown hatches the screw right up to the handle block.
   const threadLocalMaximumY = handleLocalY - 0.14;
   const nutThreadMinimumY = nutCenterY - 0.17;
@@ -2256,7 +2258,9 @@ function screwThrustLeverClamp() {
   holder.add(shoePin);
 
   const nutBody = new THREE.Mesh(
-    chamferedHex({ radius: 0.34, bore: threadCrestRadius + 0.004,
+    // The nut lies within the drilled arm; its bore stands just outside the
+    // arm's (they shared one bore wall), so the arm's bore carries the thread.
+    chamferedHex({ radius: 0.34, bore: threadCrestRadius + 0.008,
       low: -0.17, high: 0.17, phase: 0, bottomBevel: 0.02, topBevel: 0.02 },
     Array.from({ length: 193 }, (_, i) => i * FULL_TURN / 192)).rotateX(-Math.PI / 2),
     darkMaterial,

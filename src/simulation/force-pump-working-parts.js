@@ -93,9 +93,16 @@ export function correctForcePumpParts(root,id){
   const taper=(r0,r1,h)=>r0+(r1-r0)*(pipeTop+p.height/2)/h;
   replace(b.suctionPipe,horizontalTurned([[-p.height/2,p.radiusBottom-.045],[-p.height/2,p.radiusBottom],
     [pipeTop,taper(p.radiusBottom,p.radiusTop,p.height)],[pipeTop,taper(p.radiusBottom,p.radiusTop,p.height)-.045]]));
-  {const w=b.suctionWater.geometry.parameters,bottom=-w.height/2,height=pipeTop-bottom,top=w.radiusBottom+(w.radiusTop-w.radiusBottom)*height/w.height;
+  // Pass 88: the water column stops 0.006 under the seat ring, so its top
+  // face does not lie on the seat's underside.
+  {const w=b.suctionWater.geometry.parameters,bottom=-w.height/2,height=pipeTop-.006-bottom,top=w.radiusBottom+(w.radiusTop-w.radiusBottom)*height/w.height;
    replace(b.suctionWater,new THREE.CylinderGeometry(top,w.radiusBottom,height,48).translate(0,bottom+height/2,0));}
   replace(b.suctionValveSeat,horizontalRing(.30,.704,-.065,.035));b.suctionValveSeat.rotation.set(0,0,0);
+  // Pass 88: the piston's dark packing was a torus round the body's top
+  // edge that ran into the body and 0.03 into the barrel wall; it is now a
+  // flat packing ring seated on the body's top face, 0.005 clear of the bore.
+  {const packing=b.piston.children.find(o=>o.geometry?.type==='TorusGeometry');
+   if(packing){replace(packing,horizontalRing(.56,.70,0,.04));packing.rotation.set(0,0,0);}}
   // Brown's handle is a flat bar pinned straight to the rod top; its left
   // end rides on a swing link hung from a lug cast on the barrel side
   // (Movement 450; 451 is "the same as above"). Layers along z: handle
@@ -199,7 +206,9 @@ export function correctForcePumpParts(root,id){
     // Pass 70: the open dip tube's water stands at the side mouth's level
     // (the same air pressure lifts both takeoffs), from its foot in the
     // chamber water; nothing rises above that level, so its open top is dry.
-    {const foot=1.25,top=2.75;replace(b.alternativeOutletWater,latheSectionGeometry([[0,foot],[.145,foot],[.145,top],[0,top]],{segments:64}).translate(0,0,-.004));b.alternativeOutletWater.position.set(x,0,0);d.dipTubeWaterTop=top;}
+    // Pass 88: the column stands 0.006 inside the tube's bore (it lay on
+    // the bore and on the tube's end face).
+    {const foot=1.25,top=2.75;replace(b.alternativeOutletWater,latheSectionGeometry([[0,foot],[.139,foot],[.139,top],[0,top]],{segments:64}).translate(0,0,-.004));b.alternativeOutletWater.position.set(x,0,0);d.dipTubeWaterTop=top;}
     for(const o of root.children)if(o.geometry?.type==='TorusGeometry'&&o.position.x===x)o.visible=false;
   }
   // Pass 82: Brown draws both checks as clack flaps with a raised knob,

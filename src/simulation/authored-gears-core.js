@@ -3029,8 +3029,12 @@ function mangleWheel() {
   const rimHole = new THREE.Path();
   rimHole.absarc(0, 0, bodyRadius - 0.048, 0, fullTurn, true);
   rimShape.holes.push(rimHole);
-  const rimIndex = new THREE.Mesh(new THREE.ShapeGeometry(rimShape, 192), matte(PALETTE.ink));
-  rimIndex.position.z = 0.1002;
+  // A shallow inlaid ring standing 0.004 proud of the face. As a flat
+  // overlay 0.0002 above the face it z-fought with it.
+  const rimIndex = new THREE.Mesh(new THREE.ExtrudeGeometry(rimShape, {
+    depth: 0.004, bevelEnabled: false, curveSegments: 192,
+  }), matte(PALETTE.ink));
+  rimIndex.position.z = 0.10;
   wheelRotor.add(rimIndex);
   const wheelHub = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, 0.22, 48), matte(PALETTE.ink));
   wheelHub.rotation.x = Math.PI / 2;
@@ -29430,7 +29434,9 @@ function partialLanternPinionMangleRack() {
         axis: Z_AXIS,
         color: PALETTE.frame,
         // Brown draws each guide roller as a plain disc with a center dot.
-        bore: 0.059,
+        // The drum's bore lies inside its hub (r 0.0795), which runs through
+        // it on the 0.059 shaft bore; sharing that bore wall z-fought.
+        bore: 0.07,
         grooves: 0,
         radius: guideRollerRadius,
         spokes: 0,
@@ -29676,7 +29682,9 @@ function partialLanternPinionMangleRack() {
   // still clear of the rack teeth between the plates.
   for (const sideRing of pinionSideRings) {
     sideRing.geometry.dispose();
-    sideRing.geometry = slotRing(0.079, pinionBodyRadius, -ringTubeRadius, ringTubeRadius, 128);
+    // Bored to the hub radius: the hub (0.05 half-depth) runs through the
+    // plate (0.042), which used to share the hub's 0.079 bore wall.
+    sideRing.geometry = slotRing(0.16, pinionBodyRadius, -ringTubeRadius, ringTubeRadius, 128);
     sideRing.userData.role = 'solid-side-plate-of-partial-lantern-pinion';
   }
   // The pin ends stand just proud of the front plate; a brass finish keeps

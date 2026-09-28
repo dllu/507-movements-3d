@@ -15,6 +15,7 @@ import {
   ringPolygon,
   safeClip,
   sectionPlate,
+  setSteamRegions,
   steamVolume,
 } from './steam-section-kit.js';
 
@@ -385,7 +386,7 @@ function rubberLinedRotaryEngine(movement) {
   // the half it ends in), so each changes shape smoothly as B turns.
   const steamKeys = ['roller-0', 'roller-1', 'roller-2', 'end-upper', 'end-lower'];
   const steamMeshes = steamKeys.map((key) => {
-    const mesh = steamVolume(`steam-space-between-rubber-and-bore-${key}`, steamZ[0], steamZ[1]);
+    const mesh = steamVolume(`steam-space-between-rubber-and-bore-${key}`, steamZ[0], steamZ[1], { sealed: true });
     root.add(mesh);
     return mesh;
   });
@@ -429,8 +430,8 @@ function rubberLinedRotaryEngine(movement) {
       const cy = ring.reduce((sum, p) => sum + p[1], 0) / ring.length;
       const admitting = (cx < 0 && cy > 0) || (cx > 0 && cy < 0);
       const name = `${cx < 0 ? 'left' : 'right'}-${cy > 0 ? 'upper' : 'lower'}`;
-      const mesh = steamVolume(`steam-in-${name}-${admitting ? 'admission' : 'exhaust'}-channel`, steamZ[0], steamZ[1]);
-      mesh.userData.setRegion([polygon], admitting ? 1 : 0);
+      const mesh = steamVolume(`steam-in-${name}-${admitting ? 'admission' : 'exhaust'}-channel`, steamZ[0], steamZ[1], { sealed: true });
+      mesh.userData.steamChannel = { region: [polygon], pressure: admitting ? 1 : 0 };
       root.add(mesh);
       return mesh;
     });
@@ -468,6 +469,7 @@ function rubberLinedRotaryEngine(movement) {
   const updateSteam = (rollers, spans) => {
     steamReport.spans = [];
     const used = new Set();
+    const entries = [];
     drawIntervals(rollers, spans).forEach((span) => {
       const mesh = steamMeshes[steamKeys.indexOf(span.key)];
       used.add(mesh);
@@ -487,16 +489,27 @@ function rubberLinedRotaryEngine(movement) {
           outer.push([cavityRadius[i] * Math.cos(angle), cavityRadius[i] * Math.sin(angle)]);
           inner.push(outerPoints[i]);
         }
-        if (outer.length >= 2) region.push([[...outer, ...inner.reverse(), outer[0]]]);
+        // Near a clamp the rubber's V leg lies beyond the cavity outline, so
+        // the sampled ring folds over itself and out into the channel: keep
+        // only its part inside the cavity outline (no steam drawn twice).
+        if (outer.length >= 2) {
+          region.push(...safeClip('intersection', safeClip('union', [[[...outer, ...inner.reverse(), outer[0]]]]), starRegion)
+            .filter((polygon) => multiArea([polygon]) > 1e-6));
+        }
         for (const corner of hiddenCorners) {
           const u = wrap(span.inlet - corner.angle);
           if (u >= span.from && u <= span.to) region.push(corner.polygon);
         }
       }
-      mesh.userData.setRegion(region, span.pressure, visibility);
-      steamReport.spans.push({ half: span.half, kind: span.kind, key: span.key, pressure: span.pressure, area: mesh.userData.area, from: span.from, to: span.to });
+      entries.push({ mesh, region, pressure: span.pressure, visibility, span });
     });
-    for (const mesh of steamMeshes) if (!used.has(mesh)) mesh.userData.setRegion([], 0);
+    for (const mesh of steamMeshes) if (!used.has(mesh)) entries.push({ mesh, region: [], pressure: 0 });
+    // Set together, so a span and the channel it opens into draw as one
+    // closed body of steam (no sheet across the channel mouth).
+    setSteamRegions([...entries, ...channelMeshes.map((mesh) => ({ mesh, ...mesh.userData.steamChannel }))]);
+    for (const { mesh, span } of entries) {
+      if (span) steamReport.spans.push({ half: span.half, kind: span.kind, key: span.key, pressure: span.pressure, area: mesh.userData.area, from: span.from, to: span.to });
+    }
   };
 
   const update = (time) => {

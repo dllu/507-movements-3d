@@ -219,7 +219,7 @@ export function steamMaterial(kind = 'live') {
 // A translucent steam volume between z0 and z1 whose outline is set every
 // frame from a multipolygon (fixed-capacity buffer, no per-frame allocation
 // of GPU buffers). `pressure` in [0, 1] blends exhaust to live appearance.
-export function steamVolume(role, z0, z1, { capacity = 24000 } = {}) {
+export function steamVolume(role, z0, z1, { capacity = 24000, sealed = false } = {}) {
   const geometry = new THREE.BufferGeometry();
   const positions = new Float32Array(capacity * 3);
   const normals = new Float32Array(capacity * 3);
@@ -235,6 +235,7 @@ export function steamVolume(role, z0, z1, { capacity = 24000 } = {}) {
   mesh.renderOrder = 2;
   mesh.frustumCulled = false;
   let count = 0;
+  let high = 0; // sealed volumes: vertices written by earlier frames
   const vertex = (x, y, z, nx, ny, nz) => {
     if (count >= capacity) return;
     positions[count * 3] = x; positions[count * 3 + 1] = y; positions[count * 3 + 2] = z;
@@ -243,14 +244,20 @@ export function steamVolume(role, z0, z1, { capacity = 24000 } = {}) {
   };
   const live = new THREE.Color(STEAM_COLORS.live);
   const exhaust = new THREE.Color(STEAM_COLORS.exhaust);
-  const setRegion = (multi, pressure = 1, visibility = 1) => {
+  // `shared` (from steamEdgeIndex, see setSteamRegions) drops the stretches
+  // of side wall where another steam region abuts this one, so abutting
+  // regions draw as one closed volume with no internal sheet.
+  const setRegion = (multi, pressure = 1, visibility = 1, { shared = null } = {}) => {
     count = 0;
     let area = 0;
     for (const polygon of multi ?? []) {
+      const sources = [];
       const rings = polygon.map((ring) => {
         const points = ring.slice(0, ring.length - (ring.length > 1
           && ring[0][0] === ring.at(-1)[0] && ring[0][1] === ring.at(-1)[1] ? 1 : 0));
-        return points.map(([x, y]) => new THREE.Vector2(x, y));
+        const vectors = points.map(([x, y]) => new THREE.Vector2(x, y));
+        vectors.source = ring;
+        return vectors;
       }).filter((ring) => ring.length >= 3);
       if (!rings.length) continue;
       const [outer, ...holes] = rings;
@@ -278,14 +285,31 @@ export function steamVolume(role, z0, z1, { capacity = 24000 } = {}) {
           // Outer ring counter-clockwise, holes clockwise: outward is right.
           const nx = dy / length;
           const ny = -dx / length;
-          vertex(a.x, a.y, z0, nx, ny, 0); vertex(b.x, b.y, z0, nx, ny, 0); vertex(b.x, b.y, z1, nx, ny, 0);
-          vertex(a.x, a.y, z0, nx, ny, 0); vertex(b.x, b.y, z1, nx, ny, 0); vertex(a.x, a.y, z1, nx, ny, 0);
+          if (!shared) {
+            vertex(a.x, a.y, z0, nx, ny, 0); vertex(b.x, b.y, z0, nx, ny, 0); vertex(b.x, b.y, z1, nx, ny, 0);
+            vertex(a.x, a.y, z0, nx, ny, 0); vertex(b.x, b.y, z1, nx, ny, 0); vertex(a.x, a.y, z1, nx, ny, 0);
+            continue;
+          }
+          for (const [t0, t1] of shared.uncovered(a.x, a.y, b.x, b.y, ring.source)) {
+            const p = [a.x + dx * t0, a.y + dy * t0];
+            const q = [a.x + dx * t1, a.y + dy * t1];
+            vertex(p[0], p[1], z0, nx, ny, 0); vertex(q[0], q[1], z0, nx, ny, 0); vertex(q[0], q[1], z1, nx, ny, 0);
+            vertex(p[0], p[1], z0, nx, ny, 0); vertex(q[0], q[1], z1, nx, ny, 0); vertex(p[0], p[1], z1, nx, ny, 0);
+          }
         }
       }
     }
+    const written = count;
     // A space squeezed to nothing (rubber on the bore, a piston at its end)
     // is not drawn.
     if (area < 1e-4 || visibility <= 1e-3) count = 0;
+    if (sealed) {
+      // Clear what earlier, larger frames left past the draw range, so the
+      // buffer holds only the drawn volume.
+      const end = Math.max(high, written);
+      if (end > count) { positions.fill(0, count * 3, end * 3); normals.fill(0, count * 3, end * 3); }
+      high = count;
+    }
     geometry.setDrawRange(0, count);
     geometry.attributes.position.needsUpdate = true;
     geometry.attributes.normal.needsUpdate = true;
@@ -300,6 +324,113 @@ export function steamVolume(role, z0, z1, { capacity = 24000 } = {}) {
   };
   mesh.userData.setRegion = setRegion;
   return mesh;
+}
+
+// Index of the boundary edges of several steam regions (multipolygons in
+// the section plane, all extruded over the same z range), each ring oriented
+// with its region on the left. `uncovered(ax, ay, bx, by, ring)` returns the
+// parameter spans of edge a-b that no edge of another ring runs back along
+// (within `tolerance`): the stretches of wall that bound steam, rather than
+// separate two abutting steam regions.
+export function steamEdgeIndex(regions, { tolerance = 1e-5, cells = 96 } = {}) {
+  const segments = [];
+  let minX = Infinity; let minY = Infinity; let maxX = -Infinity; let maxY = -Infinity;
+  for (const multi of regions) {
+    for (const polygon of multi ?? []) {
+      polygon.forEach((ring, index) => {
+        const closed = ring.length > 1 && ring[0][0] === ring.at(-1)[0] && ring[0][1] === ring.at(-1)[1];
+        let points = ring.slice(0, ring.length - (closed ? 1 : 0));
+        if (points.length < 3) return;
+        let signed = 0;
+        for (let i = 0, j = points.length - 1; i < points.length; j = i, i += 1) {
+          signed += (points[j][0] - points[i][0]) * (points[j][1] + points[i][1]);
+        }
+        // signed > 0: counter-clockwise. Outer rings CCW, holes CW.
+        if ((signed > 0) !== (index === 0)) points = points.slice().reverse();
+        for (let i = 0; i < points.length; i += 1) {
+          const a = points[i];
+          const b = points[(i + 1) % points.length];
+          segments.push({ ring, ax: a[0], ay: a[1], bx: b[0], by: b[1] });
+          minX = Math.min(minX, a[0]); maxX = Math.max(maxX, a[0]);
+          minY = Math.min(minY, a[1]); maxY = Math.max(maxY, a[1]);
+        }
+      });
+    }
+  }
+  const size = Math.max(maxX - minX, maxY - minY, 1e-9) / cells;
+  const grid = new Map();
+  const cellRange = (x0, y0, x1, y1) => [
+    Math.floor((Math.min(x0, x1) - tolerance - minX) / size), Math.floor((Math.min(y0, y1) - tolerance - minY) / size),
+    Math.floor((Math.max(x0, x1) + tolerance - minX) / size), Math.floor((Math.max(y0, y1) + tolerance - minY) / size),
+  ];
+  segments.forEach((segment, index) => {
+    const [i0, j0, i1, j1] = cellRange(segment.ax, segment.ay, segment.bx, segment.by);
+    for (let i = i0; i <= i1; i += 1) {
+      for (let j = j0; j <= j1; j += 1) {
+        const key = i * 65536 + j;
+        if (!grid.has(key)) grid.set(key, []);
+        grid.get(key).push(index);
+      }
+    }
+  });
+  const seen = new Set();
+  const uncovered = (ax, ay, bx, by, ring) => {
+    const dx = bx - ax;
+    const dy = by - ay;
+    const lengthSquared = dx * dx + dy * dy;
+    if (!(lengthSquared > 0) || !segments.length) return [[0, 1]];
+    const length = Math.sqrt(lengthSquared);
+    const spans = [];
+    seen.clear();
+    const [i0, j0, i1, j1] = cellRange(ax, ay, bx, by);
+    for (let i = i0; i <= i1; i += 1) {
+      for (let j = j0; j <= j1; j += 1) {
+        for (const index of grid.get(i * 65536 + j) ?? []) {
+          if (seen.has(index)) continue;
+          seen.add(index);
+          const s = segments[index];
+          if (s.ring === ring) continue;
+          const sx = s.bx - s.ax;
+          const sy = s.by - s.ay;
+          if (sx * dx + sy * dy >= 0) continue; // must run back along a-b
+          const offA = Math.abs((s.ax - ax) * dy - (s.ay - ay) * dx) / length;
+          const offB = Math.abs((s.bx - ax) * dy - (s.by - ay) * dx) / length;
+          if (offA > tolerance || offB > tolerance) continue;
+          const tA = ((s.ax - ax) * dx + (s.ay - ay) * dy) / lengthSquared;
+          const tB = ((s.bx - ax) * dx + (s.by - ay) * dy) / lengthSquared;
+          const lo = Math.max(0, Math.min(tA, tB));
+          const hi = Math.min(1, Math.max(tA, tB));
+          if (hi - lo > 1e-9) spans.push([lo, hi]);
+        }
+      }
+    }
+    if (!spans.length) return [[0, 1]];
+    spans.sort((p, q) => p[0] - q[0]);
+    const open = [];
+    let at = 0;
+    const gap = tolerance / length;
+    for (const [lo, hi] of spans) {
+      if (lo - at > gap) open.push([at, lo]);
+      at = Math.max(at, hi);
+    }
+    if (1 - at > gap) open.push([at, 1]);
+    return open;
+  };
+  return { uncovered, segments: segments.length };
+}
+
+// Sets several steam volumes at once (entries { mesh, region, pressure,
+// visibility }), dropping the walls between abutting regions: each connected
+// body of steam is then bounded by one closed surface, with its pieces'
+// shades meeting edge to edge on the front and back faces. Regions too small
+// to be drawn do not open their neighbours' walls.
+export function setSteamRegions(entries, options) {
+  const drawn = entries.filter(({ region, visibility = 1 }) => visibility > 1e-3 && multiArea(region ?? []) >= 1e-4);
+  const shared = steamEdgeIndex(drawn.map(({ region }) => region), options);
+  for (const { mesh, region, pressure = 1, visibility = 1 } of entries) {
+    mesh.userData.setRegion(region, pressure, visibility, { shared });
+  }
+  return shared;
 }
 
 // Robust difference/intersection wrappers: polygon-clipping can throw on

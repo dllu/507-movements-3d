@@ -79,6 +79,13 @@ test('439: rendered valve stem meets the anvil continuously and inlet water ends
       const water = new THREE.Box3().setFromObject(b.fallingWater);
       const bottom = new THREE.Box3().setFromObject(b.bucketBottom);
       assert.ok(water.min.y > bottom.max.y, 'inlet stream does not continue through closed bucket floor');
+      // Pass 88: the fall ends inside the pool, not on its surface (an
+      // internal water sheet), and the pool stands clear of the bottom.
+      if (b.bucketWater.visible && state.waterFill > 0.05) {
+        const pool = new THREE.Box3().setFromObject(b.bucketWater, true);
+        assert.ok(water.min.y < pool.max.y - 0.01 && water.min.y > pool.min.y, 'inlet stream plunges into the pool');
+        assert.ok(pool.min.y > bottom.max.y + 0.005, 'pool floor clear of the bucket bottom and valve disk');
+      }
     }
     assert.ok(engaged > 20);
   } finally { disposeObject3D(model.root); }

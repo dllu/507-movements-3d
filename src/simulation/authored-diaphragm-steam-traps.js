@@ -193,26 +193,29 @@ function condensateWater(root, stateAtTime, cycleDuration, liftScale) {
     root.add(mesh);
     return mesh;
   };
-  const seatWater = addWater(halfLatheBuffer(5), 'condensate-sealing-the-seat-bore-of-A');
-  writeHalfLathe(seatWater.geometry, [[seatBore[0], 1.50], [seatBore[1], 1.50], [seatBore[1], seatTop], [seatBore[0], seatTop], [seatBore[0], 1.50]]);
-  const pool = addWater(halfLatheBuffer(5), 'condensate-gathering-in-A-on-the-seat');
+  // Pass 88: the water sealing the seat bore and the pool standing on the
+  // seat are one connected body, so they are one half lathe (two bodies
+  // shared the face at the seat top and drew an internal sheet there).
+  const pool = addWater(halfLatheBuffer(7), 'condensate-gathering-in-A-on-the-seat-and-sealing-its-bore');
   const film = addWater(halfLatheBuffer(10), 'condensate-running-down-D-to-the-box-floor', true);
   const outlet = addWater(halfLatheBuffer(5), 'condensate-leaving-through-B', true);
   writeHalfLathe(outlet.geometry, [[0.001, -1.70], [0.66, -1.70], [0.66, -3.18], [0.001, -3.18], [0.001, -1.70]]);
   const store = { area, levelAt, levelRange, lowestLevel, mean };
   const update = (time, state) => {
     const level = levelAt(time);
-    writeHalfLathe(pool.geometry, [[annulus[0], seatTop], [annulus[1], seatTop], [annulus[1], level], [annulus[0], level], [annulus[0], seatTop]]);
+    writeHalfLathe(pool.geometry, [[seatBore[0], 1.50], [seatBore[1], 1.50], [seatBore[1], seatTop], [annulus[1], seatTop],
+      [annulus[1], level], [annulus[0], level], [seatBore[0], 1.50]]);
     const lift = state.valveLiftMetre * liftScale;
     // Over D's shoulder edge, its waist and dished foot to the flange rim,
-    // down to the floor and in to the mouth of B.
-    writeHalfLathe(film.geometry, [[0.82, 1.10], [0.815, 0.775 + lift], [0.83, 0.62 + lift], [0.90, 0.30 + lift],
+    // down to the floor and in to the mouth of B. It starts 0.005 under the
+    // seat's lower face (y 1.10), so no film face lies on it as D closes.
+    writeHalfLathe(film.geometry, [[0.82, 1.095], [0.815, 0.775 + lift], [0.83, 0.62 + lift], [0.90, 0.30 + lift],
       [0.995, 0.08 + lift], [1.025, -0.07 + lift], [1.03, -1.40], [1.02, -1.665], [0.85, -1.672], [0.70, -1.69]]);
     const flow = THREE.MathUtils.clamp(state.flowFraction, 0, 1);
     film.material.opacity = material.opacity * THREE.MathUtils.smoothstep(flow, 0, 0.25);
     outlet.material.opacity = material.opacity * THREE.MathUtils.smoothstep(flow, 0, 0.25);
   };
-  Object.assign(b, { condensateFilm: film, condensateOutlet: outlet, condensatePool: pool, condensateSeat: seatWater });
+  Object.assign(b, { condensateFilm: film, condensateOutlet: outlet, condensatePool: pool });
   return { store, update };
 }
 

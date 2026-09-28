@@ -648,6 +648,25 @@ function expandingPulley(movement) {
   };
   update(0);
   correctVariableFaceGear(root, 224);
+  // Wheel c is one body: the raised slotted face now starts on the gear's
+  // front face instead of overlapping the gear through its depth, and wears
+  // the gear's material. The two used to share slot and bore walls through
+  // 0.14 of depth and z-fought faintly (p88). The front face stays 0.04 proud.
+  {
+    const gearBody = wheelGear.userData.rotor.children[0];
+    const gearFront = gearBody.geometry.boundingBox
+      ?? (gearBody.geometry.computeBoundingBox(), gearBody.geometry.boundingBox);
+    const plateFront = slotPlate.position.z + 0.09;
+    const raisedDepth = plateFront - gearFront.max.z;
+    const plateShapes = slotPlate.geometry.parameters.shapes;
+    slotPlate.geometry.dispose();
+    slotPlate.geometry = new THREE.ExtrudeGeometry(plateShapes, {
+      bevelEnabled: false, curveSegments: 64, depth: raisedDepth,
+    }).translate(0, 0, -raisedDepth / 2);
+    slotPlate.position.z = gearFront.max.z + raisedDepth / 2;
+    slotPlate.userData.raisedDepth = raisedDepth;
+    slotPlate.material = gearBody.material;
+  }
   // Move the shared guide channels behind wheel c with the arms, narrow the
   // front lips, and drop undrawn phase marks.
   const guideShift = armZ - 0.5;

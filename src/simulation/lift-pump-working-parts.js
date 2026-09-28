@@ -84,6 +84,13 @@ export function addDome(disk,radius){
 }
 export function clackHinge({pivot,frame,side,disk,seatMaterial,pinRadius,pinLength,boss,arm,journal,journalZ}){
   const flip=side<0?Math.PI:0;
+  // Pass 88: where the pin would pass through the flap's rim (448/449), the
+  // rim is trimmed flat just clear of the pin's bore; the lug alone carries
+  // the flap round the pin, and no pin face lies in the flap's section.
+  {const par=disk.geometry.parameters,r=par.radiusTop,h=par.height,px=-disk.position.x,edge=Math.abs(px)-(pinRadius+.003);
+   if(edge<r){const x0=Math.sign(px)*edge,x1=Math.sign(px)*(r+.1);
+     const g=horizontalPlate(polygonClipping.difference(poly(circle([0,0],r,128)),poly([[x0,-r-.1],[x1,-r-.1],[x1,r+.1],[x0,r+.1]])),-h/2,h/2);
+     g.parameters={...par};disk.geometry.dispose();disk.geometry=g;}}
   const pin=new THREE.Mesh(new THREE.CylinderGeometry(pinRadius,pinRadius,pinLength,32),seatMaterial);
   pin.rotation.x=Math.PI/2;pin.userData.role=`${disk.userData.role}-hinge-pin`;pivot.add(pin);
   const bore=pinRadius+.003;
@@ -99,6 +106,35 @@ export function clackHinge({pivot,frame,side,disk,seatMaterial,pinRadius,pinLeng
   return {pin,lug,bearings};
 }
 
+// Pass 88: waters stand this far off the section plane and the faces they
+// would otherwise share with a solid.
+const WATER_GAP=.006;
+
+// 448's water above the bucket and in the pump head as one closed body,
+// already sectioned: the back half of the stepped surface of revolution
+// (barrel radius from `bottom` to the step, head radius from the step to
+// the spout level) and its cut face, set back WATER_GAP behind the plane.
+// The vertex layout is independent of `bottom`, so updates copy positions.
+function bucketAndHeadWater({barrelRadius:r1,headRadius:r2,step,top},bottom,segments=64){
+  const positions=[],normals=[],profile=[[bottom,0],[bottom,r1],[step,r1],[step,r2],[top,r2],[top,0]];
+  const faceNormal=[[0,-1],null,[0,-1],null,[0,1]];
+  for(let i=0;i<profile.length-1;i++){
+    const [y0,a0]=profile[i],[y1,a1]=profile[i+1];
+    for(let k=0;k<segments;k++){
+      const t0=Math.PI*(1+k/segments),t1=Math.PI*(1+(k+1)/segments);
+      const v=(t,y,r)=>[r*Math.cos(t),y,r*Math.sin(t)-WATER_GAP];
+      const n=t=>faceNormal[i]?[0,faceNormal[i][1],0]:[Math.cos(t),0,Math.sin(t)];
+      for(const [t,y,r] of [[t0,y0,a0],[t1,y0,a0],[t1,y1,a1],[t0,y0,a0],[t1,y1,a1],[t0,y1,a1]]){positions.push(...v(t,y,r));normals.push(...n(t));}
+    }
+  }
+  const cut=[[-r1,bottom],[r1,bottom],[r1,step],[-r1,step],[-r2,step],[r2,step],[r2,top],[-r2,top]];
+  for(const [a,b,c] of [[0,1,2],[0,2,3],[4,5,6],[4,6,7]])for(const q of [a,b,c]){positions.push(cut[q][0],cut[q][1],-WATER_GAP);normals.push(0,0,1);}
+  const geometry=new THREE.BufferGeometry();
+  geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
+  geometry.setAttribute('normal',new THREE.Float32BufferAttribute(normals,3));
+  return geometry;
+}
+
 export function correctLiftPumpParts(root, id) {
   const d=root.userData,b=d.blocks,g=d.geometry,modern=id===449;
   b.base.visible=false;
@@ -107,18 +143,24 @@ export function correctLiftPumpParts(root, id) {
   if(b.spoutWater)b.spoutWater.material.opacity=.45;
   for(const o of root.children)if(o.userData.role?.includes('source-water') ||
     (!o.userData.role && o.geometry?.type==='TorusGeometry' && o.position.y < -1.8))o.visible=false;
-  const shellBottom=modern?-1.37:-1.39,shellTop=modern?2.03:2.53;
+  // Pass 88: 449's barrel stops under the enclosed head (0.07 below its
+  // centre) instead of running up inside it.
+  const shellBottom=modern?-1.37:-1.39,shellTop=modern?b.topCover.position.y-.07:2.53;
   // Pass 80: 449's rising main passes through a round port that it fills
   // (0.24 bore, 0.30 outside), where a larger square port left a gap round it.
   replace(b.barrel,modern?roundPortedBarrel(.70,.78,shellBottom,shellTop,1.487,.27,1)
     :portedBarrel(.70,.78,shellBottom,shellTop,2.18,.30,-1));
   b.barrel.position.y=0;
   const p=b.suctionPipe.geometry.parameters;
+  const footTop=.08-b.footValveDisk.geometry.parameters.height/2;
+  // Pass 88: the pipe ends under the seat ring (0.10 deep) instead of
+  // running up inside it, so their sections do not overlap.
+  const pipeTop=Math.min(p.height/2,b.footValveSeat.position.y+footTop-.10-b.suctionPipe.position.y);
+  const pipeTopRadius=p.radiusBottom+(p.radiusTop-p.radiusBottom)*(pipeTop+p.height/2)/p.height;
   replace(b.suctionPipe,horizontalTurned([
     [-p.height/2,p.radiusBottom-.045],[-p.height/2,p.radiusBottom],
-    [p.height/2,p.radiusTop],[p.height/2,p.radiusTop-.045],
+    [pipeTop,pipeTopRadius],[pipeTop,pipeTopRadius-.045],
   ]));
-  const footTop=.08-b.footValveDisk.geometry.parameters.height/2;
   replace(b.footValveSeat,horizontalRing(.32,.70,footTop-.10,footTop));
   b.footValveSeat.rotation.set(0,0,0);
   replace(b.pistonBody,horizontalRing(.24,g.pistonRadius,-g.pistonThickness/2,g.pistonThickness/2));
@@ -132,10 +174,16 @@ export function correctLiftPumpParts(root, id) {
   const yoke=new THREE.Mesh(new THREE.TubeGeometry(yokeCurve,64,.055,10,false),b.pumpRod.material);
   yoke.userData.role='bucket-yoke-clearing-moving-check';b.piston.add(yoke);b.yoke=yoke;
   if(modern) {
-    replace(b.topCover,horizontalRing(.071,.77,-.07,.07));
     const [body,bore]=b.stuffingBox.children;
     replace(body,horizontalTurned([[-.21,.071],[-.21,.33],[.21,.27],[.21,.071]]));
     replace(bore,horizontalRing(.071,.185,-.045,.045));bore.rotation.set(0,0,0);
+    // Pass 88: the head covers the barrel's full width and is bored to the
+    // stuffing box's taper where the box passes through it; the gland ring
+    // sits on the box's top face instead of sinking into it.
+    const bodyBottom=b.stuffingBox.position.y+body.position.y-.21-b.topCover.position.y;
+    const bodyRadius=y=>.33-.06*(y-bodyBottom)/.42;
+    replace(b.topCover,horizontalTurned([[-.07,.071],[-.07,.78],[.07,.78],[.07,bodyRadius(.07)],[bodyBottom,.33],[bodyBottom,.071]]));
+    bore.position.y=body.position.y+.21+.045;
     // The rising main opens into the enlarged flap chamber instead of running
     // an unbroken narrow pipe through the moving flap.
     const lower=new THREE.CatmullRomCurve3([
@@ -189,8 +237,11 @@ export function correctLiftPumpParts(root, id) {
       horizontalRing(headInner,1.24,headTop-.08,headTop),
     ]));
     d.pumpHead={shoulderY,headTop,headInner,headOuter};
-    const headWater=new THREE.Mesh(new THREE.CylinderGeometry(headInner-.05,headInner-.05,g.spoutWaterLevelY-shoulderY,96).translate(0,(g.spoutWaterLevelY+shoulderY)/2,0),b.upperChamberWater.material);
-    headWater.userData.role='water-standing-in-pump-head-at-spout-level';root.add(headWater);b.headWater=headWater;
+    // Pass 88: the water above the bucket and the head water are one body:
+    // one sectioned surface from the bucket up the barrel, out over a step
+    // standing WATER_GAP above the shoulder, to the spout level (see
+    // bucketAndHeadWater), rebuilt as the bucket moves.
+    d.pumpHeadWater={barrelRadius:g.barrelWaterRadius,headRadius:headInner-.05,step:shoulderY+WATER_GAP,top:g.spoutWaterLevelY};
     const linkGeometry=boredPlanarLinkGeometry({length:g.connectingRodLength,width:.10,eyeRadius:.15,boreRadius:.075,depth:.08});
     linkGeometry.translate(-g.connectingRodLength/2,0,0).rotateZ(Math.PI/2).scale(1,1/g.connectingRodLength,1);
     replace(b.connectingRod,linkGeometry);
@@ -244,14 +295,23 @@ export function correctLiftPumpParts(root, id) {
   if(b.flapBearings)b.flapBearings[1].visible=false; // its cut-away half would float in front of the section
   if(b.footFlapBearings)b.footFlapBearings[1].visible=false;
   if(b.pistonFlapBearings)b.pistonFlapBearings[1].visible=false;
-  const waters=[b.suctionWater,b.lowerChamberWater,b.upperChamberWater,b.headWater,b.spoutWater,b.deliveryWater].filter(Boolean);
+  const waters=[b.suctionWater,b.lowerChamberWater,modern?b.upperChamberWater:null,b.spoutWater,b.deliveryWater].filter(Boolean);
   for(const mesh of shells)sectionMeshInPlace(mesh,root);
   if(!modern){b.spout.material=b.barrel.material[0];b.spout.castShadow=b.spout.receiveShadow=true;}
-  for(const mesh of waters){const m=mesh.material;sectionMeshInPlace(mesh,root);mesh.material=[m,m];}
+  // Pass 88: each water section stands WATER_GAP behind the plane, so its
+  // cut face does not lie on the cut faces of the checks, seats and pipes
+  // inside it (they flickered through it).
+  for(const mesh of waters){const m=mesh.material;sectionMeshInPlace(mesh,root);mesh.geometry.translate(0,0,-WATER_GAP);mesh.material=[m,m];}
+  if(!modern){
+    const w=b.upperChamberWater,h=d.pumpHeadWater;
+    w.geometry.dispose();w.geometry=bucketAndHeadWater(h,h.step-.5);w.position.set(0,0,0);w.scale.set(1,1,1);
+  }
   for(const rails of [b.barrelRearFrame,b.barrelRails])if(rails)rails.visible=false;
   d.updateSolids=state=>{if(!modern){b.connectingRod.position.z=.27;
     // The bucket water stops where the head water (with its neck) begins.
-    const bottom=state.pistonTopY+.04,top=d.pumpHead.shoulderY;b.upperChamberWater.position.y=(bottom+top)/2;b.upperChamberWater.scale.y=Math.max(.001,top-bottom);b.upperChamberWater.visible=top>bottom;}};
+    const h=d.pumpHeadWater,w=b.upperChamberWater,next=bucketAndHeadWater(h,Math.min(state.pistonTopY+.04,h.step-.001));
+    w.geometry.attributes.position.array.set(next.attributes.position.array);w.geometry.attributes.position.needsUpdate=true;
+    w.geometry.computeBoundingBox();w.geometry.computeBoundingSphere();next.dispose();w.position.set(0,0,0);w.scale.set(1,1,1);w.visible=true;}};
   d.animationTiming.targetCycleDuration=g.cycleDuration;
   d.minimumDisplayCycleSeconds=g.cycleDuration;
   d.hideGround=true;

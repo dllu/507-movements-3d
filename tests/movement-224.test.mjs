@@ -163,7 +163,11 @@ test('movement 224 has real cut-through slots and collision-free endpoint margin
   );
   const plateCenterZ = blocks.wheelGear.position.z
     + blocks.slotPlate.position.z;
-  const plateHalfDepth = 0.18 / 2;
+  const plateHalfDepth = blocks.slotPlate.userData.raisedDepth / 2;
+  assert.ok(Math.abs(blocks.slotPlate.userData.raisedDepth - 0.04) < 1e-9);
+  // The raised face sits on the gear's front face; it no longer shares the
+  // gear's slot walls through its depth (p88 coincident-face fix).
+  assert.ok(Math.abs(plateCenterZ - plateHalfDepth - (blocks.wheelGear.position.z + 0.11)) < 1e-9);
   const studBottomZ = geometry.studCenterZ - geometry.studLength / 2;
   const studTopZ = geometry.studCenterZ + geometry.studLength / 2;
   assert.ok(studBottomZ < plateCenterZ + plateHalfDepth);

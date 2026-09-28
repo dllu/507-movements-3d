@@ -96,7 +96,9 @@ export function correctFriction413(model){
  replace(b.threadedEnd,thread(external));b.threadedEnd.rotation.set(0,0,0);
  replace(b.nutBody,chamferedHex({radius:.27,bore:.165,low:-.11,high:.11,phase:0,bottomBevel:.02,topBevel:.02},Array.from({length:97},(_,i)=>2*Math.PI*i/96)).rotateY(Math.PI/2));b.nutBody.rotation.set(0,0,0);
  const nutThread=mesh(b.adjustmentNut,thread(internal),b.nutBody.material,'mating-internal-adjustment-thread');b.internalThread=nutThread;
- replace(role('adjustment-nut-threaded-collar'),bore(.20,.165,.22));
+ // The collar would lie wholly inside the hex nut, repeating its bore and end
+ // faces (a hidden coincident-face fight); the nut's own bore carries the thread.
+ {const collar=role('adjustment-nut-threaded-collar');replace(collar,bore(.20,.165,.22));collar.visible=false;}
  replace(b.nutHandle,plate(clip.difference(poly([[-.06,-.39],[.06,-.39],[.06,.39],[-.06,.39]]),poly(circle([0,0],.165,96))),-.08,.08).rotateY(Math.PI/2));
  replace(b.leftClampPlate,bore(.72,.164,.14));replace(b.rightClampPlate,bore(.72,.134,.14));
  for(const[name,r]of[['fixed-upper-shaft-bearing',.134],['fixed-lower-shaft-bearing',.154]]){const bearing=role(name);replace(bearing,bore(name.includes('upper')?.24:.27,r,.38));bearing.position.z=0;
@@ -104,8 +106,15 @@ export function correctFriction413(model){
  }
  // The two rigid V flanks now have the same axial stations as the uncompressed
  // rubber V, rather than an unrelated wider pair separated by a torus.
- replace(b.lowerLeftHalf,new T.CylinderGeometry(g.lowerGrooveRootRadius,g.lowerGrooveLipRadius,.25,128));b.lowerLeftHalf.position.x=-.125;
- replace(b.lowerRightHalf,new T.CylinderGeometry(g.lowerGrooveLipRadius,g.lowerGrooveRootRadius,.25,128));b.lowerRightHalf.position.x=.125;
+ // The rendered flanks stand 0.005 radially inside that V (about 0.004
+ // normal to it): exactly mated, their facets lay in the unloaded rubber's
+ // along the contact line and z-fought there.
+ // Their outer ends stop .003 short of the rubber's end planes (on the same
+ // cone), where the two end faces lay in one plane.
+ const grooveRelief=.005,flank=.247,lipAt=g.lowerGrooveRootRadius+(g.lowerGrooveLipRadius-g.lowerGrooveRootRadius)*flank/.25;
+ d.geometry.renderedGrooveRelief=grooveRelief;
+ replace(b.lowerLeftHalf,new T.CylinderGeometry(g.lowerGrooveRootRadius-grooveRelief,lipAt-grooveRelief,flank,128));b.lowerLeftHalf.position.x=-flank/2;
+ replace(b.lowerRightHalf,new T.CylinderGeometry(lipAt-grooveRelief,g.lowerGrooveRootRadius-grooveRelief,flank,128));b.lowerRightHalf.position.x=flank/2;
  b.grooveRoot.visible=false;role('rubber-v-edge-crown').visible=false;
  b.contactIndicators.forEach(o=>o.visible=false);b.compressionGuide.visible=false;
  d.threadProfiles={external,internal};d.workingPartsReview={qualification:'Closed mating screw/nut threads follow the displayed advance, with real shaft journals and matching unloaded V profiles. Rubber remains a free-expansion volume proxy: its loaded groove penetration is not a validated deformation or traction solution.'};return model;

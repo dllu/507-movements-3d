@@ -509,12 +509,15 @@ function breastWaterWheel(movement) {
 
   // Tail water: its surface stands against the lower wheel as Brown rules
   // it, filling the bottom of the breast pit and running away left over the
-  // tail bed; the emptying cells discharge into it.
+  // tail bed; the emptying cells discharge into it. Its sides stand 0.015
+  // outside the wheel rims' outer faces (z ±0.55), so no water face lies on
+  // a rim face (coplanar faces z-fight).
+  const tailHalfWidth = channelHalfWidth + 0.015;
   const tailMeetAngle = -Math.acos(Math.sqrt(breastInnerRadius ** 2 - tailSurfaceY ** 2) / breastInnerRadius);
   const tailrace = new THREE.Mesh(plate([[[
     [raceLeftX, tailSurfaceY], [breastInnerRadius * Math.cos(tailMeetAngle), tailSurfaceY],
     ...arc(breastInnerRadius - 0.003, tailMeetAngle, breastEndAngle, 48).slice(1), [raceLeftX, tailBedLeftY + 0.003],
-  ]]], -channelHalfWidth, channelHalfWidth), waterVolumeMaterial({opacity: 0.42}));
+  ]]], -tailHalfWidth, tailHalfWidth), waterVolumeMaterial({opacity: 0.42}));
   tailrace.renderOrder = 1;
   tailrace.userData.role = 'free-tailwater-after-breast-cell-discharge';
   root.add(tailrace);

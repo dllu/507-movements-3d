@@ -57,6 +57,15 @@ test('movement 471 separates the crank-driven cylinder from the free piston-rod-
   assert.equal(data.archetype, ARCHETYPE);
   assert.equal(data.fidelity, 'authored');
   assert.equal(blocks.crankAssembly.parent, model.root);
+  // Crank pin A ends 0.01 inside the crank arm, not flush with its back face.
+  {
+    const arm = blocks.crankAssembly.children.find((o) => o.geometry?.type === 'BoxGeometry');
+    const side = Math.sign(arm.position.z);
+    const armOuter = arm.position.z + side * arm.geometry.parameters.depth / 2;
+    const pin = blocks.crankPinVisual;
+    const pinEnd = pin.position.z + side * pin.geometry.parameters.height / 2;
+    assert.ok(Math.abs(pinEnd - (armOuter - side * 0.01)) < 1e-9);
+  }
   assert.equal(blocks.movingCylinder.parent, model.root);
   assert.equal(blocks.cylinderShell.parent, blocks.movingCylinder);
   assert.equal(blocks.hammerAssembly.parent, model.root);

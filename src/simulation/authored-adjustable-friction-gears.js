@@ -440,8 +440,10 @@ function adjustableFrictionGear(movement) {
   lowerHubNut.userData.role = 'lower-wheel-hub-nut';
   lowerRotor.add(lowerHubNut);
   const handleRadius = lowerGrooveLipRadius - 0.26;
-  const handleStem = cylinderAlongX(0.055, 0.42, darkMaterial, 20);
-  handleStem.position.set(-0.46, -handleRadius, 0);
+  // The stem reaches the rendered flank's end face (x -0.247; see
+  // correctFriction413), which stops just short of the rubber's end plane.
+  const handleStem = cylinderAlongX(0.055, 0.423, darkMaterial, 20);
+  handleStem.position.set(-0.4585, -handleRadius, 0);
   handleStem.userData.role = 'lower-wheel-crank-handle-stem';
   lowerRotor.add(handleStem);
   const handleGrip = new THREE.Mesh(

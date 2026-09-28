@@ -45,10 +45,14 @@ export function correctWindRotorWorkingParts(root,id) {
   root.userData.minimumDisplayCycleSeconds=3;
  } else {
   b.base.visible=false;
-  replace(b.lowerBearing,tube(.28,.134,.15));b.lowerBearing.rotation.x=0;b.lowerBearing.position.y=-.25;
+  // The bearing seats on the cross supports' top face (y -.30) instead of
+  // running .025 down into their bore, which it shared (a coincident wall).
+  replace(b.lowerBearing,tube(.28,.134,.125));b.lowerBearing.rotation.x=0;b.lowerBearing.position.y=-.2375;
   for(const support of b.supportCross)replace(support,boredBlock(-.80,-.10,.80,.10,.134,.14).rotateX(Math.PI/2));
   replace(b.hub,tube(.43,.134,.31));
-  replace(b.squareShaftBoss,boredBlock(-.20,-.20,.20,.20,.134,.36).rotateX(Math.PI/2));
+  // The boss stands on the hub's top face (y .155) rather than sinking into
+  // the hub's bore, which it shared; its top stays at .36.
+  replace(b.squareShaftBoss,boredBlock(-.20,-.20,.20,.20,.134,.205).rotateX(Math.PI/2));b.squareShaftBoss.position.y=.2575;
   replace(b.loadFlywheel,tube(.62,.134,.13));
   p.armHub=add(b.rotor,tube(.23,.134,.44),b.hub.material,'lower-arm-root-hub',new THREE.Vector3(0,-.35,0));
   p.sleeves=[];

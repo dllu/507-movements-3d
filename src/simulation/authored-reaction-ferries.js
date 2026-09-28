@@ -199,8 +199,10 @@ function reactionFerry(movement) {
   // surface down to a bed below the rudder; the banks are solid earth rising
   // a little above the water.
   const bedY = riverBedY;
+  // The water's cropped ends stand 0.004 inside the banks' (their end faces
+  // overlapped in one plane where the banks' inner faces run into it).
   const river = addRole(new THREE.Mesh(
-    new THREE.BoxGeometry(10.0, waterY - bedY, riverHalfWidth * 2),
+    new THREE.BoxGeometry(10.0 - 0.008, waterY - bedY, riverHalfWidth * 2),
     waterMaterial,
   ), 'river-current-driving-rudder-downstream');
   river.position.set(0, (waterY + bedY) / 2, 0);

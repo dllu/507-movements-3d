@@ -179,6 +179,7 @@ function textileDressingElements(movement) {
     spacing: centerSpacing,
   });
   const webWidth = 1.72;
+  const webRelief = 0.002;
   const webSpeed = 0.72;
   const webCircuitPeriod = webPath.length / webSpeed;
   const demonstrationPeriod = 2 * webCircuitPeriod;
@@ -403,7 +404,9 @@ function textileDressingElements(movement) {
       128,
     );
     rollBody.geometry.dispose();
-    rollBody.geometry = boredRollGeometry(rollRadius, webWidth + 0.12, 0.112);
+    // The roll and brush surfaces stand webRelief under the web's path
+    // (the zero-thickness web lay in them and z-fought).
+    rollBody.geometry = boredRollGeometry(rollRadius - webRelief, webWidth + 0.12, 0.112);
     rollBody.userData.role = 'cloth-wound-roll-body';
     roller.add(rollBody);
     const rollRims = [];
@@ -458,7 +461,7 @@ function textileDressingElements(movement) {
   for (let index = 0; index < brushCount; index += 1) {
     const angle = index * FULL_TURN / brushCount;
     const brush = new THREE.Mesh(
-      textileBrushGeometry(dressingCoreRadius - 0.015, dressingContactRadius - 0.0002, webWidth * 0.90),
+      textileBrushGeometry(dressingCoreRadius - 0.015, dressingContactRadius - webRelief, webWidth * 0.90),
       brushMaterial,
     );
     brush.rotation.z = angle;

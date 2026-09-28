@@ -69,7 +69,17 @@ export function mergeInstances(mesh) {
 export function snapshotGeometry(geometry) {
   const copy = new THREE.BufferGeometry();
   copy.setAttribute('position', geometry.attributes.position.clone());
-  if (geometry.index) copy.setIndex(geometry.index.clone());
+  // Honour the draw range: dynamic meshes (e.g. steam volumes) shrink it and
+  // leave stale triangles from earlier frames beyond it in their buffers.
+  const { start, count } = geometry.drawRange;
+  const total = geometry.index ? geometry.index.count : geometry.attributes.position.count;
+  const end = Math.min(total, Number.isFinite(count) ? start + count : total);
+  if (start > 0 || end < total) {
+    const source = geometry.index?.array;
+    const indices = new Uint32Array(Math.max(0, end - start));
+    for (let i = start; i < end; i += 1) indices[i - start] = source ? source[i] : i;
+    copy.setIndex(new THREE.BufferAttribute(indices, 1));
+  } else if (geometry.index) copy.setIndex(geometry.index.clone());
   return copy;
 }
 export const CONNECTOR = /rope|cord|belt|chain|string|thong|cable|wire|band(?!-?saw)|thread(?!ed)|twine|line(?!ar|r)|tape|lash|spring|strap-?loop/i;

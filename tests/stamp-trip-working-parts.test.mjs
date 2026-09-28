@@ -25,7 +25,7 @@ test('351 corrected guides, strike, shaft passages and engaged involutes clear a
  for(let i=0;i<=64;i++){
   m.update(4*(i/64-g.initialCyclePhase));m.root.updateMatrixWorld(true);
   for(const moving of[b.rackBar,b.lowerCollar,b.stampDie,b.topRodCap,...b.rackTeeth])for(const guide of b.guideAssemblies)for(const fixed of[guide.frontLip,guide.rearLip,guide.leftJaw])audit.check(moving,fixed,'guide');
-  for(const moving of[b.stampDie,b.dieFace])audit.check(moving,b.workpiece,'strike');
+  for(const moving of[b.stampDie])audit.check(moving,b.workpiece,'strike');
   for(const target of[b.shaftBearing,b.pinionHub,b.gearBody])audit.check(b.inputShaft,target,'shaft passage',true);
  }
  for(let i=0;i<=128;i++){

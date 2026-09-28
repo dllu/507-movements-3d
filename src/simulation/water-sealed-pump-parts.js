@@ -62,15 +62,30 @@ export function correctWaterSealedPump(root){
   replace(pivot,new THREE.CylinderGeometry(.095,.095,high-low,32));pivot.position.z=(high+low)/2;
  }
  // Water occupies the annulus outside the bell and the central bore, not its wall.
- const outerHeight=g.externalWaterLineY-g.outerTubBottomY;
  // Radii follow the barrels: inside the bell's narrowest bore, outside its
- // widest belly and its hoops and inside the tub's narrow foot, so no water enters a wall.
- const bellBore=barrels.bellInner(g.bellHeight/2)-.003,bellBelly=barrels.bellOuter(0)+.035,tubFoot=barrels.tubInner(g.outerTubBottomY)-.005;
- replace(b.outerWater,horizontalRing(bellBelly,tubFoot,-outerHeight/2,outerHeight/2));
- replace(b.outerWaterSurface,new THREE.RingGeometry(bellBelly,tubFoot,64));
- replace(b.internalWaterSurface,new THREE.RingGeometry(.09,bellBore,64));
- b.innerWater=new THREE.Mesh(horizontalRing(.09,bellBore,0,1),b.outerWater.material);root.add(b.innerWater);b.innerWater.userData.role='water-below-internal-hydrostatic-interface';
- b.underRimWater=new THREE.Mesh(horizontalRing(bellBore,bellBelly,0,1),b.outerWater.material);root.add(b.underRimWater);b.underRimWater.userData.role='water-below-moving-bell-rim';
+ // widest belly and its hoops, and 0.005 inside the tub's staves at every
+ // height, so no water enters a wall.
+ const bellBore=barrels.bellInner(g.bellHeight/2)-.003,bellBelly=barrels.bellOuter(0)+.035;
+ // Pass 88: the water is one closed body of revolution (the outer annulus,
+ // the pool under the bell rim and the column inside the bell are one
+ // connected region), so no internal faces are drawn between them, and it
+ // floats 0.007 above the tub floor so its underside is not coplanar with the
+ // floor (z-fighting). Its surfaces are its own top faces: the separate
+ // surface sheets that doubled them are removed. Only the rim level (under
+ // the rim torus) and the internal level move; their vertices are found by
+ // building the profile at two trial levels and are moved in place.
+ const floor=g.outerTubBottomY+.007,rimGap=.046,barrel=[];
+ for(let k=0;k<=12;k++){const y=floor+(g.externalWaterLineY-floor)*k/12;barrel.push([y,barrels.tubInner(y)-.005]);}
+ const waterProfile=(rim,inner)=>[[floor,.09],...barrel,[g.externalWaterLineY,bellBelly],[rim,bellBelly],[rim,bellBore],[inner,bellBore],[inner,.09]];
+ const s0=d.gasStateAtPhase(0),rim0=s0.bellRimY-rimGap,inner0=s0.internalWaterLineY;
+ const waterGeometry=horizontalTurned(waterProfile(rim0,inner0)),trial=horizontalTurned(waterProfile(rim0+.0123,inner0+.0456));
+ const waterY=waterGeometry.attributes.position,trialY=trial.attributes.position,rimVertices=[],innerVertices=[];
+ for(let i=0;i<waterY.count;i++){const dy=trialY.getY(i)-waterY.getY(i);if(Math.abs(dy-.0123)<1e-4)rimVertices.push(i);else if(Math.abs(dy-.0456)<1e-4)innerVertices.push(i);}
+ trial.dispose();
+ replace(b.outerWater,waterGeometry);b.outerWater.position.y=0;b.outerWater.userData.role='water-in-tub-round-and-under-the-bell';
+ const setWaterLevels=(rim,inner)=>{for(const i of rimVertices)waterY.setY(i,rim);for(const i of innerVertices)waterY.setY(i,inner);waterY.needsUpdate=true;};
+ for(const sheet of[b.outerWaterSurface,b.internalWaterSurface]){sheet.removeFromParent();sheet.geometry.dispose();}
+ delete b.outerWaterSurface;delete b.internalWaterSurface;
  // Ideal check thresholds determine the event; finite display lift eases at each event.
  const event=(low,high,key)=>{for(let i=0;i<48;i++){const mid=(low+high)/2;if(d.gasStateAtPhase(mid)[key])high=mid;else low=mid;}return(high+low)/2;};
  const exhaust=event(1e-8,.5,'upperOutletValveOpen'),intake=event(.50000001,1-1e-8,'lowerInletValveOpen');
@@ -79,8 +94,7 @@ export function correctWaterSealedPump(root){
   const lift=d.valveLiftAtPhase(state.phase);
   b.lowerInletValveDisk.position.y=g.inletPipeTopY+.05+.10*lift.lower;
   b.upperOutletValveDisk.position.y=g.bellHeight/2+.2885+.10*lift.upper;
-  b.innerWater.position.y=g.outerTubBottomY;b.innerWater.scale.y=state.internalWaterLineY-g.outerTubBottomY;
-  b.underRimWater.position.y=g.outerTubBottomY;b.underRimWater.scale.y=Math.max(.001,state.bellRimY-.046-g.outerTubBottomY);
+  setWaterLevels(state.bellRimY-rimGap,state.internalWaterLineY);
  };
  d.reconstructionNote='Crossing mirrored levers and constant-length ropes reproduce the engraved suspension. Finite walls and bored checks expose the air path. The ideal pressure thresholds retain the analytical polytropic/hydrostatic law; eased valve lift is illustrative, not integrated valve dynamics. External water level remains prescribed, so finite-tub water conservation and water inertia are not solved; gas volumes/plumes are schematic.';
  d.minimumDisplayCycleSeconds=g.cycleDuration;fitPistonGuide(root,d.update,g.cycleDuration);

@@ -336,14 +336,17 @@ function waterBucketReciprocator(movement) {
   root.add(pulley);
   const pulleyDisk = cylinderAlongZ(pulleyOuterRadius, 0.42,
     pulleyMaterial, 48);
-  pulleyDisk.geometry.dispose();pulleyDisk.geometry=turned([[-.21,.224],[-.21,pulleyOuterRadius],[-.10,pulleyOuterRadius],[-.055,pulleyPitchRadius-.045],[.055,pulleyPitchRadius-.045],[.10,pulleyOuterRadius],[.21,pulleyOuterRadius],[.21,.224]]);pulleyDisk.rotation.set(0,0,0);
+  pulleyDisk.geometry.dispose();pulleyDisk.geometry=turned([[-.21,.224],[-.21,pulleyOuterRadius],[-.10,pulleyOuterRadius],[-.055,pulleyPitchRadius-.045],[-.055,pulleyPitchRadius-.051],[.055,pulleyPitchRadius-.051],[.055,pulleyPitchRadius-.045],[.10,pulleyOuterRadius],[.21,pulleyOuterRadius],[.21,.224]]);pulleyDisk.rotation.set(0,0,0);
   pulleyDisk.userData.role = 'grooved-pulley-wheel';
   pulley.add(pulleyDisk);
   const pulleyGroove = new THREE.Mesh(
     new THREE.TorusGeometry(pulleyPitchRadius, 0.07, 9, 96),
     darkMaterial,
   );
-  pulleyGroove.geometry.dispose();pulleyGroove.geometry=ring(pulleyPitchRadius-.051,pulleyPitchRadius-.045,-.05,.05);
+  // The dark groove floor is its own ring, seated in a 0.006 recess cut in
+  // the sheave across the full floor width, so its face is the only surface
+  // at the floor radius (a floor painted over the sheave's floor z-fights).
+  pulleyGroove.geometry.dispose();pulleyGroove.geometry=ring(pulleyPitchRadius-.051,pulleyPitchRadius-.045,-.055,.055);
   pulleyGroove.userData.role = 'single-rope-pitch-groove';
   pulley.add(pulleyGroove);
   const pulleyMarker = new THREE.Mesh(
@@ -448,7 +451,10 @@ function waterBucketReciprocator(movement) {
   // through the shell when part full).
   const bucketWaterGeometry = new THREE.CylinderGeometry(1, 1, 1, 34, 1).translate(0, 0.5, 0);
   const bucketWaterBase = bucketWaterGeometry.attributes.position.array.slice();
-  const bucketWaterFloorY = -0.98, bucketWaterFullRise = 0.78;
+  // The floor stands 0.009 above the bottom's top face (y -0.98), where the
+  // seated valve disk's lower face also lies, so no water face is coplanar
+  // with the disk (z-fighting); the full surface stays at y -0.20.
+  const bucketWaterFloorY = -0.971, bucketWaterFullRise = 0.771;
   const bucketInnerRadiusAt = (y) => 0.45 + 0.14 * (y + 1.05) - 0.006;
   const bucketWater = new THREE.Mesh(bucketWaterGeometry, waterVolumeMaterial({opacity: 0.5}));
   bucketWater.renderOrder = 1;
@@ -596,11 +602,15 @@ function waterBucketReciprocator(movement) {
   flumeEnd.position.set(flumeLength / 2 - flumeWall / 2, flumeWall / 2, 0);
   flumeEnd.userData.role = 'closed-upper-end-of-open-trough-spout';
   flume.add(flumeEnd);
+  // The sheet runs 0.01 down into the trough floor, side walls and closed
+  // end, and stops 0.01 short of the open lip, so none of its faces lies on
+  // a trough face (coplanar faces z-fight); the buried faces are hidden.
+  const flumeWaterSink = 0.01;
   const flumeWater = new THREE.Mesh(
-    new THREE.BoxGeometry(flumeLength - flumeWall, 0.10, flumeWidth - 2 * flumeWall - 0.004),
+    new THREE.BoxGeometry(flumeLength - flumeWall, 0.10 + flumeWaterSink, flumeWidth - 2 * flumeWall + 2 * flumeWaterSink),
     waterMaterial,
   );
-  flumeWater.position.set(-flumeWall / 2, -flumeHeight / 2 + flumeWall + 0.05, 0);
+  flumeWater.position.set(-flumeWall / 2 + flumeWaterSink, -flumeHeight / 2 + flumeWall + (0.10 - flumeWaterSink) / 2, 0);
   flumeWater.renderOrder = 2;
   flumeWater.userData.role = 'water-running-down-open-trough-spout';
   flume.add(flumeWater);
@@ -683,7 +693,14 @@ function waterBucketReciprocator(movement) {
     );
     ropeMarker.position.copy(state.ropeMarker.position);
     layRope(state.counterweightAttachmentY, state.bucketAttachmentY);
-    const streamBottom = state.bucketAttachmentY + bucketWaterFloorY + bucketWaterFullRise * state.waterFill;
+    // The fall plunges into the bucket's pool (0.02, or half the depth of a
+    // shallow pool), so its end does not lie on the pool surface (an
+    // internal water sheet). Into a film under 0.004 deep it runs on through
+    // to 0.002 above the bottom's top face (y -0.98), under the film's floor,
+    // so its end never lies on the film's floor or surface either.
+    const poolDepth = bucketWater.visible ? bucketWaterFullRise * state.waterFill : 0;
+    const streamBottom = state.bucketAttachmentY + (poolDepth >= 0.004
+      ? bucketWaterFloorY + poolDepth - Math.min(0.02, poolDepth / 2) : -0.978);
     const streamLength = 1.80 - streamBottom;
     fallingWater.position.y = (1.80 + streamBottom) / 2;
     fallingWater.scale.y = streamLength / 4.70;

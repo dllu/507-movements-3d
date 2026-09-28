@@ -211,7 +211,10 @@ function parallelOffsetSlottedCranks(movement) {
   inputShaft.userData.role = 'first-offset-parallel-crank-shaft';
   root.add(inputShaft);
   const outputShaft = makeCouplingShaft({
-    color: PALETTE.ink, radius: 0.105, startZ: -1.915, endZ: -0.165,
+    // The shaft end stops just inside the hub (its face was flush with the
+    // hub's front face and z-fought there). The length, 1.734375, keeps the
+    // half-length exact in float32 so the far end stays on the framing bound.
+    color: PALETTE.ink, radius: 0.105, startZ: -1.915, endZ: -0.180625,
   });
   outputShaft.position.x = outputCenter.x;
   outputShaft.userData.role = 'second-offset-parallel-slotted-crank-shaft';

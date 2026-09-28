@@ -3694,9 +3694,14 @@ function doubleThreeLeggedGravityEscapement(movement) {
   flyRotor.userData.role = 'large-friction-spring-fly-on-common-arbor';
   escapeWheelAssembly.add(flyRotor);
   const flyRadius = 3.05;
+  const flyVaneWidth = 0.48;
+  // The crossarm ends on each vane's inner edge. Running on to the vane
+  // centre, its front and back faces lay in the vane's (same 0.075 depth)
+  // and z-fought there.
+  const flyBarReach = flyRadius - flyVaneWidth / 2;
   const flyBar = beamBetween(
-    new THREE.Vector3(-flyRadius, 0, 0),
-    new THREE.Vector3(flyRadius, 0, 0),
+    new THREE.Vector3(-flyBarReach, 0, 0),
+    new THREE.Vector3(flyBarReach, 0, 0),
     0.090,
     0.075,
     darkMaterial,
@@ -3705,7 +3710,7 @@ function doubleThreeLeggedGravityEscapement(movement) {
   flyRotor.add(flyBar);
   const flyVanes = [-1, 1].map((side) => {
     const vane = new THREE.Mesh(
-      new THREE.BoxGeometry(0.48, 0.34, 0.075),
+      new THREE.BoxGeometry(flyVaneWidth, 0.34, 0.075),
       frameMaterial,
     );
     vane.position.x = side * flyRadius;

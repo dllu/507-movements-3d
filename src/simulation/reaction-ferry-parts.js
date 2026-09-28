@@ -57,7 +57,9 @@ export function correctReactionFerry(root){
   ...lowerHull(),
  ]));
  b.hull.position.y=-.03;
- replace(b.deck,plate(clip.difference(rectangle(.77,-.3445,2.39,.3445),...wells),0,.1));
+ // The deck (top unchanged) stands on the hull's top face instead of sinking
+ // 0.03 into it, where its well walls lay in the hull's and z-fought.
+ replace(b.deck,plate(clip.difference(rectangle(.77,-.3445,2.39,.3445),...wells),0,.07));
  b.deck.position.set(0,.04,0);b.deck.rotation.x=Math.PI/2;
  for(let i=0;i<2;i++){
   const [x0,x1]=i?[1.67,2.14]:[.92,1.38];
@@ -72,7 +74,9 @@ export function correctReactionFerry(root){
  const tiller=add(b.rudderPivot,new T.BoxGeometry(1.12,.07,.12),b.rudderBlade.material,'rudder-tiller',new T.Vector3(.50,.08,0));
  // Brown's tiller ends flat; the former white ball tip is not drawn.
  const rudderTip=b.rudderPivot.children[2];b.rudderPivot.remove(rudderTip);rudderTip.geometry.dispose();
- const bearing=add(b.boat,horizontalRing(.075,.135,-.07,.07,64),post.material,'bored-rudder-stock-bearing',new T.Vector3(g.sternFromBow,-.20,0));
+ // The bearing hangs from the band's lower face (y -.20) rather than running
+ // up into the band's stock hole, whose bore wall it shared.
+ const bearing=add(b.boat,horizontalRing(.075,.135,-.035,.035,64),post.material,'bored-rudder-stock-bearing',new T.Vector3(g.sternFromBow,-.235,0));
  // Inferred compact swivels join the taut line to fixed anchor and bow.
  // The anchor stock runs down to the river bed, so the fixed centre is held.
  // Brown's anchor lies on the bed: shank from the ring upstream to the

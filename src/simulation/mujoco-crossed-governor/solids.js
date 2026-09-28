@@ -22,7 +22,9 @@ export function makeCrossedGovernorSolids() {
   };
   const hole = (p, r) => poly(circle(p, r, 96)), y = geometry => geometry.rotateX(-Math.PI / 2);
   add('spindle', y(disk(.10, (160 - 512) * g.scale, -.34, 96)), 'rotor', PALETTE.ink);
-  add('pivotForkBridge', new THREE.BoxGeometry(.14, .08, .58), 'rotor', PALETTE.ink, [0, -.36, 0]);
+  // The bridge spans only between the fork plates' inner faces; running on
+  // through them, its ends and sides lay in the plates' faces and z-fought.
+  add('pivotForkBridge', new THREE.BoxGeometry(.14, .08, .42), 'rotor', PALETTE.ink, [0, -.36, 0]);
   const forkStem = poly([[-.07, -.40], [.07, -.40], [.07, 0], [-.07, 0]]);
   const forkFront = clip.difference(clip.union(forkStem, hole([0, 0], .30)), hole([0, 0], .104));
   add('pivotForkFront', plate(forkFront, .21, .29), 'rotor', PALETTE.brass);

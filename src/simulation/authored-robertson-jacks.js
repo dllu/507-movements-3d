@@ -472,9 +472,10 @@ function robertsonJack(movement) {
     horizontalRing(0.077, 0.10, pipeBottomY, fixedRamTopY + 0.06),
     darkMaterial, 'finite-internal-pressure-pipe-wall');
   const internalPressurePipe = mesh(fixedRam,
+    // Pass 88: its foot stands 0.005 above the return passage's end face.
     new THREE.CylinderGeometry(0.075, 0.075,
-      fixedRamTopY + 0.06 - pipeBottomY, 20)
-      .translate(0, (fixedRamTopY + 0.06 + pipeBottomY) / 2, 0),
+      fixedRamTopY + 0.06 - pipeBottomY - 0.005, 20)
+      .translate(0, (fixedRamTopY + 0.06 + pipeBottomY + 0.005) / 2, 0),
     waterMaterial, 'water-pipe-running-up-inside-stationary-ram');
 
   // Pump barrel and gland on the oblique plunger axis (local y along it,
@@ -559,8 +560,9 @@ function robertsonJack(movement) {
     .translate(baseLeftX - 0.125, swingLinkPivot.y, -0.36),
   frameMaterial, 'lug-on-base-carrying-swing-link');
   const swingLinkAxle = mesh(root,
-    new THREE.CylinderGeometry(0.06, 0.06, 0.28, 32).rotateX(Math.PI / 2)
-      .translate(swingLinkPivot.x, swingLinkPivot.y, -0.44),
+    // Pass 88: the pin end stands 0.006 inside the lug's front face.
+    new THREE.CylinderGeometry(0.06, 0.06, 0.274, 32).rotateX(Math.PI / 2)
+      .translate(swingLinkPivot.x, swingLinkPivot.y, -0.443),
     darkMaterial, 'fixed-swing-link-pivot-pin');
 
   // Long straight lever behind the cylinder: fulcrum, plunger pin, handle.
@@ -660,6 +662,7 @@ function robertsonJack(movement) {
   ), 'cut-face-of-rising-cylinder-head-and-claw', movingMaterial);
   movingCylinder.add(cylinderSection);
 
+  const chamberWaterGap = 0.005;
   const pressureChamber = mesh(root,
     new THREE.CylinderGeometry(fixedRamRadius * 0.95, fixedRamRadius * 0.95,
       1, 48, 1, false, Math.PI / 2, Math.PI),
@@ -726,7 +729,9 @@ function robertsonJack(movement) {
       .addScaledVector(deliveryValveDirection,
         0.004 * state.deliveryOpenAmount);
     movingCylinder.position.y = state.cylinderLift;
-    pressureChamber.scale.y = state.pressureChamberHeight;
+    // Pass 88: the water stands chamberWaterGap off the ram top and the
+    // cap underside so neither face is coplanar with a solid one.
+    pressureChamber.scale.y = state.pressureChamberHeight - 2 * chamberWaterGap;
     pressureChamber.position.set(
       0,
       fixedRamTopY + state.pressureChamberHeight / 2,
@@ -746,6 +751,7 @@ function robertsonJack(movement) {
 
   const sourceState = stateAtPhase(sourcePhase);
   const geometry = {
+    chamberWaterGap,
     baseInitialWaterVolume,
     baseWaterCapacity,
     cycleDuration,

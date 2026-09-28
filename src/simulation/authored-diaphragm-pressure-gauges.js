@@ -254,19 +254,34 @@ function brownSectionView({ frameMaterial, diaphragmMaterial, sectorMaterial, in
     return mesh;
   };
   const holeY = axisY - 8;
+  // Coincident faces: every part here is a half solid closed by cut faces on
+  // one plane, drawn double-sided. Parts that merely touched (clamp ring,
+  // nipple, foot, boss, disk rim, glass and dial rims) showed both faces at
+  // one depth and flickered, while parts of different materials that
+  // overlapped showed two cut faces in one plane. Joints of one material now
+  // overlap by half a plate pixel (their cut faces are then one look, and
+  // the touching faces lie inside the other part); the disk rim, glass and
+  // dial sit in pockets 0.1 px larger than themselves.
+  const sink = 0.5, pocket = 0.1;
   const caseShell = aboutGaugeAxis([[1200, 213], [1312, 213], [1312, holeY], [1302, holeY],
-    [1302, 223], [1210, 223], [1210, 236], [1200, 236]], caseMaterials,
+    [1302, 223], [1224 + pocket, 223], [1224 + pocket, 222 - pocket], [1221 - pocket, 222 - pocket],
+    [1221 - pocket, 223], [1217 + pocket, 223], [1217 + pocket, 222 - pocket], [1213 - pocket, 222 - pocket],
+    [1213 - pocket, 223], [1210, 223], [1210, 236], [1200, 236]], caseMaterials,
   'fixed-case-of-diaphragm-gauge-in-section');
-  const clampRing = aboutGaugeAxis([[1266, 236], [1302, 236], [1302, 249], [1266, 249]],
-    caseMaterials, 'rim-clamp-ring-of-disk-A-in-section');
+  // Disk A's rim (x 1288-1292 at rows 247-249) sits in a pocket in the ring.
+  const clampRing = aboutGaugeAxis([[1266, 236], [1302 + sink, 236], [1302 + sink, 249],
+    [1292 + pocket, 249], [1292 + pocket, 247 - pocket], [1288 - pocket, 247 - pocket], [1288 - pocket, 249],
+    [1266, 249]], caseMaterials, 'rim-clamp-ring-of-disk-A-in-section');
   // The passage leaves the back of the case on the axis through a short
   // nipple seated in the pipe wall, and the pipe runs down to the foot.
-  const nipple = aboutGaugeAxis([[1312, holeY], [1320, holeY], [1320, axisY - 14], [1312, axisY - 14]],
+  // Its bore is 0.3 px wider than the case's hole, so the two walls do not
+  // coincide where the nipple is sunk into the case.
+  const nipple = aboutGaugeAxis([[1312 - sink, holeY - 0.3], [1320, holeY - 0.3], [1320, axisY - 14], [1312 - sink, axisY - 14]],
     caseMaterials, 'passage-nipple-behind-case-in-section');
   const pipe = aboutPipeAxis([[pipeX, 349.5], [1352, 349.5], [1352, 600], [1340, 600],
     [1340, 361.5], [pipeX, 361.5]], caseMaterials,
   'pressure-pipe-down-back-of-case-in-section');
-  const foot = aboutPipeAxis([[1340, 600], [1366, 600], [1366, 610], [1340, 610]], caseMaterials,
+  const foot = aboutPipeAxis([[1340.3, 600 - sink], [1366, 600 - sink], [1366, 610], [1340.3, 610]], caseMaterials,
     'pipe-foot-flange-in-section');
   // Brown carries the glass and the dial plate across the whole case: both
   // run out into the case wall (its inner face is row 223), where they are
@@ -310,8 +325,9 @@ function brownSectionView({ frameMaterial, diaphragmMaterial, sectorMaterial, in
   const spindleGroup = addRole(new THREE.Group(), 'pointer-spindle-assembly-in-section');
   spindleGroup.position.set(0, Y(axisY), 0);
   const alongX = (geometry) => geometry.rotateZ(-Math.PI / 2);
-  const spindle = addRole(new THREE.Mesh(alongX(new THREE.CylinderGeometry(px(1.2), px(1.2), px(1233 - 1218.2), 32))
-    .translate(X((1233 + 1218.2) / 2), 0, 0), inkMaterial), 'pointer-spindle-on-gauge-axis-in-section');
+  // The spindle's front end stops inside the hub (it was flush with the hub's face).
+  const spindle = addRole(new THREE.Mesh(alongX(new THREE.CylinderGeometry(px(1.2), px(1.2), px(1233 - 1218.4), 32))
+    .translate(X((1233 + 1218.4) / 2), 0, 0), inkMaterial), 'pointer-spindle-on-gauge-axis-in-section');
   const needleHub = addRole(new THREE.Mesh(alongX(new THREE.CylinderGeometry(px(2.6), px(2.6), px(2.1), 32))
     .translate(X(1219.25), 0, 0), sectorMaterial), 'pointer-hub-in-section');
   const needleBody = addRole(new THREE.Mesh(new THREE.BoxGeometry(px(1.5), px(85 + 30), px(2))
@@ -394,14 +410,16 @@ function brownSectionView({ frameMaterial, diaphragmMaterial, sectorMaterial, in
     'corrugated-disk-A-in-section');
   diaphragmSection.rotation.z = -Math.PI / 2;
   diaphragmSection.position.y = (375 - axisY) * s;
-  const boss = aboutGaugeAxis([[-6, axisY], [-2, axisY], [-2, axisY - 10], [-6, axisY - 10]].map(([x, y]) => [x + 1029, y]),
+  const boss = aboutGaugeAxis([[-6, axisY], [-2 + sink, axisY], [-2 + sink, axisY - 10], [-6, axisY - 10]].map(([x, y]) => [x + 1029, y]),
     diaphragmMaterials, 'centre-boss-of-disk-A-in-section');
   const lugZ = [-0.195, -0.155];
   boss.position.y = 0;
-  const lug = addRole(new THREE.Mesh(new THREE.BoxGeometry(L(3.6), L(4.4), lugZ[1] - lugZ[0])
-    .translate(L(-7.8), 0, (lugZ[0] + lugZ[1]) / 2), diaphragmMaterial), 'rod-lug-on-boss-of-disk-A-in-section');
-  const lugPin = addRole(new THREE.Mesh(new THREE.CylinderGeometry(L(1.0), L(1.0), 0.09, 24)
-    .rotateX(Math.PI / 2).translate(L(-7.8), 0, -0.15), inkMaterial), 'pin-in-rod-lug-in-section');
+  // The lug runs 0.3 px into the boss, and the pin's back end stops inside
+  // the lug (both were flush).
+  const lug = addRole(new THREE.Mesh(new THREE.BoxGeometry(L(3.9), L(4.4), lugZ[1] - lugZ[0])
+    .translate(L(-7.8 + 0.15), 0, (lugZ[0] + lugZ[1]) / 2), diaphragmMaterial), 'rod-lug-on-boss-of-disk-A-in-section');
+  const lugPin = addRole(new THREE.Mesh(new THREE.CylinderGeometry(L(1.0), L(1.0), 0.085, 24)
+    .rotateX(Math.PI / 2).translate(L(-7.8), 0, -0.1475), inkMaterial), 'pin-in-rod-lug-in-section');
   const lugPinHead = addRole(new THREE.Mesh(new THREE.CylinderGeometry(L(1.8), L(1.8), 0.012, 24)
     .rotateX(Math.PI / 2).translate(L(-7.8), 0, -0.105 + 0.006), inkMaterial), 'pin-head-on-rod-lug-in-section');
   const bossGroup = addRole(new THREE.Group(), 'moving-centre-of-disk-A-in-section');

@@ -1668,6 +1668,7 @@ function diskEngine(movement) {
   const tmpD = new THREE.Vector3(), edge1 = new THREE.Vector3(), edge2 = new THREE.Vector3();
   const faceNormal = new THREE.Vector3(), hintVector = new THREE.Vector3();
   const tmpE = new THREE.Vector3(), tmpF = new THREE.Vector3();
+  const collapseA = new THREE.Vector3(), collapseB = new THREE.Vector3();
   // Azimuth of the diaphragm face at (r, lambda) on the admission (+) or
   // eduction (-) side, and of the section plane z = 0.
   const partitionU = (r, sign) => {
@@ -1689,17 +1690,19 @@ function diskEngine(movement) {
       count += 1;
     };
     // Quads wound outward: `hint` points out of the cell at this face.
-    const quad = (a, b, c, d, hint) => {
+    // `drop` leaves out triangle a-b-c (bit 1) and/or a-c-d (bit 2).
+    const quad = (a, b, c, d, hint, drop = 0) => {
       edge1.subVectors(c, a); edge2.subVectors(d, b);
       faceNormal.crossVectors(edge1, edge2);
       if (faceNormal.lengthSq() < 1e-12) return;
       faceNormal.normalize();
       const order = faceNormal.dot(hint) < 0 ? [a, c, b, a, d, c] : [a, b, c, a, c, d];
       if (faceNormal.dot(hint) < 0) faceNormal.negate();
-      for (const v of order) {
+      order.forEach((v, index) => {
+        if (drop & (index < 3 ? 1 : 2)) return;
         normals[count * 3] = faceNormal.x; normals[count * 3 + 1] = faceNormal.y; normals[count * 3 + 2] = faceNormal.z;
         push(v);
-      }
+      });
     };
     for (const [uStart, uEnd, pressure] of pieces) {
       pieceColor.copy(exhaustColor).lerp(liveColor, pressure);
@@ -1724,7 +1727,15 @@ function diskEngine(movement) {
       }
       // Disk face and cone face (their outward sense from the radial
       // direction of latitude, which stays defined where a cell pinches).
+      // Where the disk has closed on the cone the cell has no thickness and
+      // its disk and cone faces coincide: those triangles are left out (they
+      // bound nothing), so no double sheet lies on the cone.
+      const shut = (ci, ck) => point(ci / nu, 0, ck / nr, collapseA)
+        .distanceToSquared(point(ci / nu, 1, ck / nr, collapseB)) < 1e-12;
       for (const b of [0, 1]) for (let i = 0; i < nu; i += 1) for (let k = 0; k < nr; k += 1) {
+        const corners = [shut(i, k), shut(i + 1, k), shut(i + 1, k + 1), shut(i, k + 1)];
+        const drop = (corners[0] && corners[1] && corners[2] ? 1 : 0) | (corners[0] && corners[2] && corners[3] ? 2 : 0);
+        if (drop === 3) continue;
         const lambdaSign = b === 1 ? 1 : -1;
         point((i + 0.5) / nu, b, (k + 0.5) / nr, tmpE);
         const radial = Math.hypot(tmpE.y, tmpE.z) || 1;
@@ -1733,7 +1744,7 @@ function diskEngine(movement) {
         hintVector.set(radial / r, -tmpE.x * tmpE.y / (r * radial), -tmpE.x * tmpE.z / (r * radial))
           .multiplyScalar(lambdaSign);
         quad(point(i / nu, b, k / nr, tmpA), point((i + 1) / nu, b, k / nr, tmpB),
-          point((i + 1) / nu, b, (k + 1) / nr, tmpC), point(i / nu, b, (k + 1) / nr, tmpD), hintVector);
+          point((i + 1) / nu, b, (k + 1) / nr, tmpC), point(i / nu, b, (k + 1) / nr, tmpD), hintVector, drop);
       }
       // Diaphragm, section-plane or pinch ends (outward along -/+ azimuth).
       for (const a of [0, 1]) for (let j = 0; j < nl; j += 1) for (let k = 0; k < nr; k += 1) {
@@ -1744,6 +1755,13 @@ function diskEngine(movement) {
       }
     }
     const geometry = cell.mesh.geometry;
+    // Clear what earlier, larger frames left past the draw range, so the
+    // buffer holds only the drawn volume.
+    const end = Math.max(cell.high ?? cellCapacity, count);
+    positions.fill(0, count * 3, end * 3);
+    normals.fill(0, count * 3, end * 3);
+    colors.fill(0, count * 4, end * 4);
+    cell.high = count;
     geometry.setDrawRange(0, count);
     geometry.attributes.position.needsUpdate = true;
     geometry.attributes.normal.needsUpdate = true;
@@ -1757,9 +1775,12 @@ function diskEngine(movement) {
     const upper = [(r) => partitionU(r, 1), Math.PI / 2];
     const lower = [3 * Math.PI / 2, (r) => partitionU(r, -1)];
     for (const cell of steamCells) {
-      // Side +1 is pinched where the disk meets the -X cone (phi = psi),
-      // side -1 where it meets the +X cone (phi = psi + pi).
-      const pinchPhi = cell.side > 0 ? psi : psi + Math.PI;
+      // Side +1 is pinched where the disk meets the -X cone (phi = psi + pi),
+      // side -1 where it meets the +X cone (phi = psi). (Before pass 88 the
+      // two were swapped, so each cell was split into live and eduction
+      // pieces across its widest section instead of at the pinch, drawing a
+      // sheet there.)
+      const pinchPhi = cell.side > 0 ? psi + Math.PI : psi;
       const pinchU = positiveModulo(pinchPhi + Math.PI / 2, FULL_TURN);
       const pieces = [];
       const clampPiece = ([s0, s1], lo, hi, pressure) => {

@@ -41,8 +41,10 @@ export function finishPartialLanternRack(root, update) {
   for (const pin of b.lanternPins) replace(pin, new THREE.CylinderGeometry(g.lanternPinRadius, g.lanternPinRadius, .61, 96));
   for (const hub of b.lanternHubs) replace(hub, ring(.079, .16, -.05, .05, 128), true);
   const reach = g.pinionBodyRadius - .042;
+  // The spokes' centre hole lies inside the hub (r .16), clear of the hub's
+  // .079 bore wall, which they used to share.
   for (const spoke of b.lanternSpokes) replace(spoke,
-    plate(clip.difference(capsule([-reach, 0], [reach, 0], .0325, 16), poly(circle([0, 0], .079, 128))), -.026, .026));
+    plate(clip.difference(capsule([-reach, 0], [reach, 0], .0325, 16), poly(circle([0, 0], .12, 128))), -.026, .026));
   replace(b.pinionBearing, ring(.079, .26, -.055, .055, 128), true);
   for (const roller of b.guideRollers) {
     const p = roller.userData;

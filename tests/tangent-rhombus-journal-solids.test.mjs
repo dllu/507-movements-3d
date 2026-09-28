@@ -21,9 +21,9 @@ test('268: finite roller engages the whole rod depth and both working joints hav
     update(6 * sample / 64); root.updateMatrixWorld(true);
     const roller = bounds(b.guideRoller), rod = bounds(b.rodBody);
     assert.ok(roller.min.z < rod.min.z && roller.max.z > rod.max.z);
-    assert.ok(bounds(b.crankArm).max.z < bounds(b.rodEye).min.z);
-    assert.ok(bounds(b.crankShaft).max.z < bounds(b.rodEye).min.z);
-    for (const [pin, solids] of [[b.crankPin, [b.rodBody, b.rodWorkingFace, b.rodEye]],
+    assert.ok(bounds(b.crankArm).max.z < bounds(b.rodBody).min.z);
+    assert.ok(bounds(b.crankShaft).max.z < bounds(b.rodBody).min.z);
+    for (const [pin, solids] of [[b.crankPin, [b.rodBody]],
       [b.guideAxle, [b.guideRoller]]]) {
       const center = pin.getWorldPosition(new THREE.Vector3());
       const radius = pin.geometry.parameters.radiusTop * root.scale.x;

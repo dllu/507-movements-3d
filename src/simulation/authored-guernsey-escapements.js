@@ -1177,7 +1177,7 @@ export function createAuthoredGuernseyEscapementMovement(movement) {
 // escape wheel's centre, in front of the wheel: the teeth it covers are
 // dotted. It is read as the fixed bridge (cock) that carries the two fixed
 // arbors. It lies in front of every moving part, so it takes the shared
-// see-through style and the arbors end flush in its bores.
+// see-through style and the arbors end just inside its bores.
 function addGuernseyBridge(root) {
   const find = (role) => {
     let found = null;
@@ -1203,12 +1203,14 @@ function addGuernseyBridge(root) {
   bridge.material.fog = false;
   makeSeeThrough(bridge);
   root.add(bridge);
-  // Each fixed arbor runs from its rear bearing to the bridge's front face.
+  // Each fixed arbor runs from its rear bearing to just inside the bridge's
+  // front face (flush, its end z-fought with the see-through face).
+  const arborEnd = front - 0.005;
   for (const arbor of [leverArbor, wheelArbor]) {
     const radius = arbor.geometry.parameters.radiusTop;
     const low = arbor.position.z - arbor.geometry.parameters.height / 2;
     arbor.geometry.dispose();
-    arbor.geometry = new THREE.CylinderGeometry(radius, radius, front - low, 28);
-    arbor.position.z = (front + low) / 2;
+    arbor.geometry = new THREE.CylinderGeometry(radius, radius, arborEnd - low, 28);
+    arbor.position.z = (arborEnd + low) / 2;
   }
 }

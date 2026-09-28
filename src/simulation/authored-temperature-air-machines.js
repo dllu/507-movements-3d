@@ -590,7 +590,9 @@ function temperatureAirMachine(movement) {
   wheelHub.position.z = wheelPlaneZ;
   waterWheelRotor.add(wheelHub);
   // The wheel turns on a stub axle carried by the warm cistern's back wall.
-  const axleBack = -tankDepth / 2, axleFront = -0.10;
+  // Its back end stops 0.04 inside the 0.14 wall, so the end cap is buried
+  // (an end flush with the wall's outer face z-fights with it).
+  const axleBack = -tankDepth / 2 + 0.04, axleFront = -0.10;
   const fixedWheelAxle = addRole(cylinderAlongZ(
     0.055,
     axleFront - axleBack,

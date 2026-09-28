@@ -89,7 +89,9 @@ test('movement 463 is one unequal two-leaf self-acting weir with a notch and a b
   }
   assert.equal(blocks.upperContactEdge.parent, blocks.upperLeaf);
   assert.equal(blocks.notchFlow.parent, model.root);
-  assert.equal(blocks.bedFlow.parent, model.root);
+  // The scour flow and tail water are drawn by the one water mesh.
+  assert.equal(blocks.bedFlow.parent, null);
+  assert.equal(blocks.downstreamWater.parent, null);
   assert.ok(geometry.upperLength > geometry.lowerLength * 2);
   assert.equal(degreesOfFreedom.independentPrescribedInputs, 1);
   assert.equal(degreesOfFreedom.operatingDegreesOfFreedom, 1);
@@ -357,14 +359,39 @@ test('movement 463 renderer follows the contact solution, changes flow routes, a
     blocks.upstreamWater.geometry.computeBoundingBox();
     near(blocks.upstreamWater.geometry.boundingBox.max.y,
       state.waterLevel, 1e-6, `upstream water surface at phase ${phase}`);
+    // The water stands 0.008 off the bed (no face coplanar with it).
     near(blocks.upstreamWater.geometry.boundingBox.min.y,
-      geometry.channelFloorY, 1e-6, `upstream water bed at phase ${phase}`);
+      geometry.channelFloorY + 0.008, 1e-6, `upstream water bed at phase ${phase}`);
     // The notch sheet dwindles with the scheduled notch flow instead of
     // switching off when the leaves start to turn.
     assert.equal(blocks.notchFlow.visible,
       state.notchFlowFraction / 0.48 > 1e-3);
-    assert.equal(blocks.bedFlow.visible,
-      state.contactDrive > 1e-4 && state.lowerBottomCenter.y - geometry.lowerThickness/2*Math.abs(Math.sin(state.lowerAngle)) - geometry.channelFloorY > 1e-4);
+    // One water mesh draws head and tail water: two closed prisms (8- and
+    // 4-corner sections) while the seated lower leaf parts them, one prism
+    // (a 12-corner section running under the leaf) once the scour passage
+    // opens. The separate tail and scour volumes are retired.
+    const passage = state.lowerBottomCenter.y - geometry.lowerThickness/2*Math.abs(Math.sin(state.lowerAngle)) - geometry.channelFloorY;
+    const merged = passage > 0.016 + 1e-4;
+    assert.equal(blocks.downstreamWater.parent, null, `no separate tail body at phase ${phase}`);
+    assert.ok(blocks.upstreamWater.geometry.boundingBox.max.x > 3, `water reaches the tail end at phase ${phase}`);
+    {
+      // Connected pieces of the drawn water (triangles joined by shared
+      // corners): the two bodies, or the one.
+      const geometryOfWater = blocks.upstreamWater.geometry, position = geometryOfWater.attributes.position;
+      const ids = new Map(), parent = [];
+      const find = (i) => (parent[i] === i ? i : (parent[i] = find(parent[i])));
+      const idOf = (i) => {
+        const key = [position.getX(i), position.getY(i), position.getZ(i)].map(v => v.toFixed(5)).join();
+        if (!ids.has(key)) { ids.set(key, parent.length); parent.push(parent.length); }
+        return ids.get(key);
+      };
+      for (let i = 0; i < geometryOfWater.drawRange.count; i += 3) {
+        const a = find(idOf(i));
+        for (const j of [i + 1, i + 2]) parent[find(idOf(j))] = a;
+      }
+      const pieces = new Set(parent.map((_, i) => find(i))).size;
+      assert.equal(pieces, merged ? 1 : 2, `water bodies at phase ${phase}`);
+    }
     near(blocks.sedimentBank.scale.x,
       1.45 * state.sedimentRemainingFraction, 1e-12,
       `sediment render scale at phase ${phase}`);

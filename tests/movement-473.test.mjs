@@ -321,9 +321,17 @@ test('movement 473 renderer maps exact levers, ropes, bell, pressure surface, ch
       `right rendered rope at ${phase}`);
     near(blocks.trappedGas.scale.y, state.chamberHeight, 1e-12,
       `gas chamber scale at ${phase}`);
-    near(blocks.internalWaterSurface.position.y,
-      state.internalWaterLineY, 1e-12,
-      `internal water surface at ${phase}`);
+    // The one water body's top inside the bell stands at the internal level.
+    {
+      const position = blocks.outerWater.geometry.attributes.position;
+      const inBell = [];
+      for (let i = 0; i < position.count; i += 1) {
+        const r = Math.hypot(position.getX(i), position.getZ(i)), y = position.getY(i);
+        if (r < 0.2 && y > geometry.outerTubBottomY + 0.1) inBell.push(y);
+      }
+      assert.ok(inBell.length > 0);
+      for (const y of inBell) near(y, state.internalWaterLineY, 1e-6, `internal water surface at ${phase}`);
+    }
     near(blocks.lowerInletValveDisk.position.y,
       geometry.inletPipeTopY + 0.05
         + 0.10 * model.root.userData.valveLiftAtPhase(state.phase).lower,

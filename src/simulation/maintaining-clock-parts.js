@@ -97,7 +97,13 @@ export function correctEndlessMaintainingChain(root){
   const center=[b.ratchetPulley.position.x,b.ratchetPulley.position.y];
   b.pawl.position.z=g.chainPlaneZ+mesh.position.z;
   const length=b.pawl.children[0].geometry.parameters.width,p=turn([length,0],b.pawl.rotation.z),angle=Math.atan2(b.pawl.position.y-center[1]+p[1],b.pawl.position.x-center[0]+p[0]);
-  const outline=ratchet(mesh,{radius:.76,bore:.132,teeth:g.ratchetToothCount,hand:1,phase:angle+.05*g.ratchetToothPitch,depth:.16});
+  // The ratchet is bored to its hub's radius and the hub runs on through it,
+  // 0.01 proud of its front face: the two shared one bore wall and z-fought.
+  const hubA=b.ratchetPulley.userData.workingHub,hubRadiusA=Math.max(.13,g.radii.A*.19);
+  hubA.geometry.computeBoundingBox();
+  const hubBackA=hubA.geometry.boundingBox.min.y,hubFrontA=mesh.position.z+.16/2+.01;
+  replace(hubA,boredLatheGeometry([{radial:hubRadiusA,axial:hubBackA},{radial:hubRadiusA,axial:hubFrontA}],.132,64));
+  const outline=ratchet(mesh,{radius:.76,bore:hubRadiusA,teeth:g.ratchetToothCount,hand:1,phase:angle+.05*g.ratchetToothPitch,depth:.16});
   const follower=makeFollower(b.pawl,mesh,center,outline,.12,'320-p');b.finiteClicks=[follower];
   replace(follower.pin,new THREE.CylinderGeometry(.08,.08,1.05,32));follower.pin.position.z=.125;
   const support=new THREE.Mesh(new THREE.BoxGeometry(.16,.35,.20),b.fixedFrame.children[0].children[0].material);
