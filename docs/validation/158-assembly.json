@@ -4,7 +4,7 @@
   "parts": 16,
   "pairs": 99,
   "poses": 129,
-  "checks": 4561814,
+  "checks": 4431726,
   "failures": {},
   "sources": [
     {
@@ -17,7 +17,7 @@
     },
     {
       "file": "src/simulation/source-treadle-motion.js",
-      "sha256": "5d89ca0dcb8a1aa9c35e02c454cbd51ef2d1d0b380130042e0636a7adabd53d2"
+      "sha256": "4dd844e8a470010fdc0d71c7fd8c07d1d9846773c09ed1030d5f9807c6d21eb0"
     },
     {
       "file": "tests/helpers/solid-surface.mjs",

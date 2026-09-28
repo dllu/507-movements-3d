@@ -41,6 +41,8 @@ import { thinRibWormGeometry } from './thin-rib-worm-geometry.js';
 import { conicalStudMotion, conicalStudToothGeometry, conicalStudHeadGeometry, conicalStudParameters } from './conical-stud-geometry.js';
 import { steppedSectorCut, steppedSectorMotion } from './stepped-sector-geometry.js';
 import { mangleToothOutline } from './mangle-gear-geometry.js';
+import { makeIrregularDrive201, irregularDriver201 } from './irregular-gear-201.js';
+import { smoothExtrudeGeometry } from './smooth-extrusion.js';
 import { spokedWheelGeometry } from './spoked-wheel.js';
 import {
   PALETTE,
@@ -22683,6 +22685,12 @@ function threeRatioPinWheelAndSlidingSlottedPinion() {
     metalness: 0.18,
     roughness: 0.55,
   });
+  // Steel drive pins: white pins would read as holes in the disc on the
+  // cream page.
+  const drivePinMaterial = matte(PALETTE.muted, {
+    metalness: 0.2,
+    roughness: 0.5,
+  });
   const frameMaterial = matte(PALETTE.frame, {
     metalness: 0.13,
     roughness: 0.67,
@@ -22745,7 +22753,7 @@ function threeRatioPinWheelAndSlidingSlottedPinion() {
       const localAngle = Math.PI + pinIndex * fullTurn / pinCount;
       const pin = new THREE.Mesh(
         new THREE.CylinderGeometry(pinRadius, pinRadius, pinLength, 22),
-        pinIndex === 0 ? inkMaterial : whiteMaterial,
+        pinIndex === 0 ? inkMaterial : drivePinMaterial,
       );
       pin.rotation.x = Math.PI / 2;
       pin.position.set(
@@ -29769,120 +29777,48 @@ function eccentricGearCarriedPinionRocker() {
     carrierPivot.y + (sourcePivotPixel.y - point.y) * sourceScale,
   );
   const sourceDriverShaftPixel = new THREE.Vector2(207, 65);
-  const sourceDriverPitchCenterPixel = new THREE.Vector2(176, 86);
   const sourcePinionCenterPixel = new THREE.Vector2(269, 74);
   const sourceRodPinPixel = new THREE.Vector2(90, 361);
   const driverShaftCenter = sourceToModel(sourceDriverShaftPixel);
-  const sourceDriverPitchCenter = sourceToModel(
-    sourceDriverPitchCenterPixel,
-  );
   const sourcePinionCenter = sourceToModel(sourcePinionCenterPixel);
-  const driverEccentricOffset = sourceDriverPitchCenter.clone().sub(
-    driverShaftCenter,
-  );
   const carrierLength = sourcePinionCenter.distanceTo(carrierPivot);
-  const pitchCenterDistance = sourceDriverPitchCenter.distanceTo(
-    sourcePinionCenter,
-  );
-  const driverTeeth = 16;
-  const pinionTeeth = 8;
-  const pinionPitchRadius = pitchCenterDistance
-    * pinionTeeth / (driverTeeth + pinionTeeth);
-  const driverPitchRadius = pitchCenterDistance - pinionPitchRadius;
-  const module = 2 * pinionPitchRadius / pinionTeeth;
-  const circularPitch = Math.PI * module;
-  const toothHeight = module * 1.55;
+  const inputAngularSpeed = -0.92;
+  const inputCyclePeriod = fullTurn / Math.abs(inputAngularSpeed);
+  // Brown's irregular 18-tooth driver (traced pitch curve) rolls the carried
+  // 8-tooth pinion; see irregular-gear-201.js.
+  const drive = makeIrregularDrive201({
+    shaft: driverShaftCenter,
+    pivot: carrierPivot,
+    carrierLength,
+    platePinionCenter: sourcePinionCenter,
+    inputAngularSpeed,
+  });
+  const driverTeeth = drive.driverTeeth;
+  const pinionTeeth = drive.pinionTeeth;
+  const pinionPitchRadius = drive.pinionPitchRadius;
+  const module = drive.module;
+  const circularPitch = drive.circularPitch;
+  const toothHeight = module * (irregularDriver201.addendum + irregularDriver201.pinionDedendum);
   const smallPulleyRadius = 0.5;
   const largePulleyRadius = 1.62;
   const pulleyRatio = smallPulleyRadius / largePulleyRadius;
   const rodGuideX = sourceToModel(sourceRodPinPixel).x;
   const slotMinimumRadius = 0.42;
   const slotMaximumRadius = 2.64;
-  const inputAngularSpeed = -0.92;
-  const inputCyclePeriod = fullTurn / Math.abs(inputAngularSpeed);
-  const pinionMeshPhase = -Math.PI / (2 * pinionTeeth);
-
-  const rotateVector = (vector, angle) => new THREE.Vector2(
-    vector.x * Math.cos(angle) - vector.y * Math.sin(angle),
-    vector.x * Math.sin(angle) + vector.y * Math.cos(angle),
-  );
-  const planarCross = (angularSpeed, vector) => new THREE.Vector2(
-    -angularSpeed * vector.y,
-    angularSpeed * vector.x,
-  );
-  const quarterToothPhaseError = (coordinate) => {
-    const nearestQuarterTooth = Math.round(coordinate - 0.25) + 0.25;
-    return coordinate - nearestQuarterTooth;
-  };
 
   const stateAtDriverAngle = (
     driverAngle,
     driverAngularSpeed = inputAngularSpeed,
   ) => {
-    const eccentricVector = rotateVector(
-      driverEccentricOffset,
-      driverAngle,
-    );
-    const driverPitchCenter = driverShaftCenter.clone().add(
-      eccentricVector,
-    );
-    const centerVector = driverPitchCenter.clone().sub(carrierPivot);
-    const centerDistance = centerVector.length();
-    const centerDirection = centerVector.clone().divideScalar(centerDistance);
-    const centerPerpendicular = new THREE.Vector2(
-      -centerDirection.y,
-      centerDirection.x,
-    );
-    const intersectionAlong = (
-      carrierLength ** 2
-        - pitchCenterDistance ** 2
-        + centerDistance ** 2
-    ) / (2 * centerDistance);
-    const intersectionAcross = Math.sqrt(Math.max(
-      0,
-      carrierLength ** 2 - intersectionAlong ** 2,
-    ));
-    const pinionCenter = carrierPivot.clone()
-      .addScaledVector(centerDirection, intersectionAlong)
-      .addScaledVector(centerPerpendicular, -intersectionAcross);
-    const carrierAngle = Math.atan2(
-      pinionCenter.y - carrierPivot.y,
-      pinionCenter.x - carrierPivot.x,
-    );
+    const mesh = drive.stateAt(driverAngle, driverAngularSpeed);
+    const {
+      carrierAngle,
+      carrierAngularSpeed,
+      pinionAngle,
+      pinionAngularSpeed,
+      pinionCenter,
+    } = mesh;
     const carrierRotation = carrierAngle - Math.PI / 2;
-    const contactNormal = pinionCenter.clone()
-      .sub(driverPitchCenter)
-      .divideScalar(pitchCenterDistance);
-    const contactAngle = Math.atan2(contactNormal.y, contactNormal.x);
-    const driverPitchCenterVelocity = planarCross(
-      driverAngularSpeed,
-      eccentricVector,
-    );
-    const carrierTangent = new THREE.Vector2(
-      -Math.sin(carrierAngle),
-      Math.cos(carrierAngle),
-    );
-    const carrierAngularSpeed = contactNormal.dot(
-      driverPitchCenterVelocity,
-    ) / (carrierLength * contactNormal.dot(carrierTangent));
-    const pinionCenterVelocity = carrierTangent.clone().multiplyScalar(
-      carrierLength * carrierAngularSpeed,
-    );
-    const contactTangent = new THREE.Vector2(
-      -contactNormal.y,
-      contactNormal.x,
-    );
-    const contactAngularSpeed = pinionCenterVelocity.clone()
-      .sub(driverPitchCenterVelocity)
-      .dot(contactTangent) / pitchCenterDistance;
-    const pinionAngle = pitchCenterDistance / pinionPitchRadius
-      * contactAngle
-      - driverPitchRadius / pinionPitchRadius * driverAngle
-      + pinionMeshPhase;
-    const pinionAngularSpeed = (
-      pitchCenterDistance * contactAngularSpeed
-        - driverPitchRadius * driverAngularSpeed
-    ) / pinionPitchRadius;
     const relativePinionAngle = pinionAngle - carrierRotation;
     const relativePinionAngularSpeed = pinionAngularSpeed
       - carrierAngularSpeed;
@@ -29899,25 +29835,8 @@ function eccentricGearCarriedPinionRocker() {
     const rodY = carrierPivot.y + slotCoordinate * Math.sin(armAngle);
     const rodVelocity = (rodGuideX - carrierPivot.x)
       / Math.sin(carrierAngle) ** 2 * carrierAngularSpeed;
-    const gearContactPoint = driverPitchCenter.clone().addScaledVector(
-      contactNormal,
-      driverPitchRadius,
-    );
-    const driverSurfaceVelocity = planarCross(
-      driverAngularSpeed,
-      gearContactPoint.clone().sub(driverShaftCenter),
-    );
-    const pinionSurfaceVelocity = pinionCenterVelocity.clone().add(
-      planarCross(
-        pinionAngularSpeed,
-        gearContactPoint.clone().sub(pinionCenter),
-      ),
-    );
-    const meshCoordinate = driverTeeth
-      * (contactAngle - driverAngle) / fullTurn
-      + pinionTeeth
-      * (contactAngle + Math.PI - pinionAngle) / fullTurn;
     return {
+      ...mesh,
       armAngle,
       beltDistance,
       beltLinearSpeed,
@@ -29926,34 +29845,15 @@ function eccentricGearCarriedPinionRocker() {
           - largePulleyRadius
             * (largePulleyAngularSpeed - carrierAngularSpeed),
       ),
-      carrierAngle,
-      carrierAngularSpeed,
       carrierRotation,
-      contactAngle,
-      contactAngularSpeed,
-      contactNormal,
-      contactTangent,
       driverAngle,
       driverAngularSpeed,
-      driverPitchCenter,
-      driverPitchCenterVelocity,
-      driverSurfaceVelocity,
-      eccentricVector,
-      gearCenterDistanceError: driverPitchCenter.distanceTo(pinionCenter)
-        - pitchCenterDistance,
-      gearContactPoint,
+      gearContactPoint: mesh.contactPoint,
       largePulleyAngle,
       largePulleyAngularSpeed,
-      meshCoordinate,
-      meshPhaseError: quarterToothPhaseError(meshCoordinate),
-      meshSurfaceVelocityError: driverSurfaceVelocity.distanceTo(
-        pinionSurfaceVelocity,
+      meshSurfaceVelocityError: mesh.driverSurfaceVelocity.distanceTo(
+        mesh.pinionSurfaceVelocity,
       ),
-      pinionAngle,
-      pinionAngularSpeed,
-      pinionCenter,
-      pinionCenterVelocity,
-      pinionSurfaceVelocity,
       relativePinionAngle,
       relativePinionAngularSpeed,
       rockerLengthError: pinionCenter.distanceTo(carrierPivot)
@@ -29978,43 +29878,21 @@ function eccentricGearCarriedPinionRocker() {
   const makeEccentricGear = () => {
     const gearRoot = makeAxialRotor(Z_AXIS);
     const rotor = gearRoot.userData.rotor;
-    const shape = new THREE.Shape();
-    const pointsPerTooth = 4;
-    const rootRadius = driverPitchRadius - toothHeight * 0.5;
-    const outerRadius = driverPitchRadius + toothHeight * 0.5;
-    for (let index = 0; index < driverTeeth * pointsPerTooth; index += 1) {
-      const toothPhase = index % pointsPerTooth;
-      const radius = toothPhase === 1 || toothPhase === 2
-        ? outerRadius
-        : rootRadius;
-      const angle = index / (driverTeeth * pointsPerTooth) * fullTurn;
-      const x = driverEccentricOffset.x + Math.cos(angle) * radius;
-      const y = driverEccentricOffset.y + Math.sin(angle) * radius;
-      if (index === 0) shape.moveTo(x, y);
-      else shape.lineTo(x, y);
-    }
-    shape.closePath();
+    // Blank: the pitch curve offset by the addendum. irregular-gear-family.js
+    // replaces it with the teeth the rolling pinion generates.
     const boreRadius = 0.13;
+    const shape = new THREE.Shape(drive.blankOutline(1024));
     const bore = new THREE.Path();
     bore.absarc(0, 0, boreRadius, 0, fullTurn, true);
     shape.holes.push(bore);
     const depth = 0.34;
-    const geometry = new THREE.ExtrudeGeometry(shape, {
-      bevelEnabled: true,
-      bevelSegments: 1,
-      bevelSize: 0.026,
-      bevelThickness: 0.026,
-      curveSegments: 32,
-      depth,
-      steps: 1,
-    });
-    geometry.translate(0, 0, -depth / 2);
+    const geometry = smoothExtrudeGeometry(shape, depth, { low: -depth / 2 });
     const body = new THREE.Mesh(
       geometry,
       matte(PALETTE.driver, { metalness: 0.12, roughness: 0.66 }),
     );
     body.userData.actualEccentricBore = true;
-    body.userData.role = 'sixteen-tooth-gear-body-with-eccentric-bore';
+    body.userData.role = 'eighteen-tooth-irregular-gear-body-with-eccentric-bore';
     const hubRing = new THREE.Mesh(
       new THREE.TorusGeometry(0.23, 0.055, 10, 44),
       matte(PALETTE.ink, { metalness: 0.2, roughness: 0.52 }),
@@ -30028,17 +29906,13 @@ function eccentricGearCarriedPinionRocker() {
       new THREE.BoxGeometry(0.28, 0.065, 0.026),
       matte(PALETTE.white, { roughness: 0.48 }),
     );
-    indicator.position.set(
-      driverEccentricOffset.x - driverPitchRadius * 0.48,
-      driverEccentricOffset.y,
-      depth * 0.59,
-    );
+    indicator.position.set(drive.centre.x - 0.3, drive.centre.y, depth * 0.59);
     indicator.userData.role = 'eccentric-driver-rotation-index';
     rotor.add(body, hubRing, indicator);
     gearRoot.userData.boreRadius = boreRadius;
-    gearRoot.userData.eccentricOffset = driverEccentricOffset.clone();
+    gearRoot.userData.eccentricOffset = drive.centre.clone();
     gearRoot.userData.fixedShaftCenter = true;
-    gearRoot.userData.pitchRadius = driverPitchRadius;
+    gearRoot.userData.pitchCurve = 'traced-five-harmonic-closed-curve';
     gearRoot.userData.role = 'continuously-rotating-eccentric-driving-gear';
     gearRoot.userData.teeth = driverTeeth;
     gearRoot.userData.toothHeight = toothHeight;
@@ -30260,7 +30134,8 @@ function eccentricGearCarriedPinionRocker() {
   rodStem.userData.role = 'rod-A-stem';
   const slotFollower = new THREE.Mesh(
     new THREE.CylinderGeometry(0.165, 0.165, 0.36, 30),
-    matte(PALETTE.white, { metalness: 0.04, roughness: 0.5 }),
+    // Brass, not white: a white roller would read as a hole.
+    matte(PALETTE.brass, { metalness: 0.18, roughness: 0.52 }),
   );
   slotFollower.rotation.x = Math.PI / 2;
   slotFollower.position.z = 0.29;
@@ -30390,10 +30265,8 @@ function eccentricGearCarriedPinionRocker() {
 
   const sourceAnchors = {
     carrierPivot: sourcePivotPixel.clone(),
-    driverPitchCenter: sourceDriverPitchCenterPixel.clone(),
     driverShaftCenter: sourceDriverShaftPixel.clone(),
     modeledSourceCarrierPivot: carrierPivot.clone(),
-    modeledSourceDriverPitchCenter: sourceState.driverPitchCenter.clone(),
     modeledSourceDriverShaftCenter: driverShaftCenter.clone(),
     modeledSourcePinionCenter: sourceState.pinionCenter.clone(),
     modeledSourceRodPin: new THREE.Vector2(rodGuideX, sourceState.rodY),
@@ -30435,7 +30308,7 @@ function eccentricGearCarriedPinionRocker() {
   root.userData.mechanism =
     'fixed-axis-eccentric-gear-rolls-eight-tooth-pinion-on-rocker-and-drives-one-open-belt-plus-slotted-rod-A';
   root.userData.variant =
-    'sixteen-to-eight-external-mesh-with-continuously-rotating-pinion-and-variable-rocker-output';
+    'eighteen-to-eight-irregular-external-mesh-with-continuously-rotating-pinion-and-variable-rocker-output';
   root.userData.blocks = {
     armJunctions,
     baseRail,
@@ -30476,15 +30349,18 @@ function eccentricGearCarriedPinionRocker() {
     carrierLength,
     carrierPivot,
     circularPitch,
-    driverEccentricOffset,
-    driverPitchRadius,
     driverShaftCenter,
+    pitchCurveCentre: drive.centre.clone(),
+    pitchCurveCoefficients: drive.radiusCoefficients,
+    pitchPerimeter: drive.perimeter,
+    minimumPitchRadiusFromShaft: drive.minimumPitchRadiusFromShaft,
+    maximumPitchRadiusFromShaft: drive.maximumPitchRadiusFromShaft,
+    addendum: drive.addendum,
     driverTeeth,
     largePulleyRadius,
     module,
     pinionPitchRadius,
     pinionTeeth,
-    pitchCenterDistance,
     rodGuideX,
     slotMaximumRadius,
     slotMinimumRadius,
@@ -30502,6 +30378,7 @@ function eccentricGearCarriedPinionRocker() {
   root.userData.transmission = {
     beltCount: 1,
     driverToPinionNominalRatio: -driverTeeth / pinionTeeth,
+    irregularDrive: drive,
     inputAngularSpeed,
     inputCyclePeriod,
     openBelt: true,
@@ -34874,8 +34751,9 @@ function sourceIndexFree(model) {
   return model;
 }
 
-// White parts Brown does draw: 208's axial pins and 201's slot roller. Every
-// other white index stripe, dot, belt marker and contact marker in these
+// Parts Brown draws as open (white) circles: 208's axial pins and 201's slot
+// roller, now coloured steel and brass so they do not read as holes on the
+// cream page. Every other white index stripe, dot, belt marker and contact marker in these
 // factories is a turning aid the plates never show, so the production and
 // registry routes both remove them after construction.
 const SOURCE_DRAWN_WHITE_ROLE = /axial-drive-pin|roller-sliding-in-horizontal-arm-slot/;

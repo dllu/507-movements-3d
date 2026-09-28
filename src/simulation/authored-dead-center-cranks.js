@@ -369,7 +369,8 @@ function brownellDeadCenterCrank(movement) {
     metalness: 0.14,
     roughness: 0.65,
   });
-  const whiteMaterial = matte(PALETTE.white, { roughness: 0.48 });
+  // Steel pins: white ones would read as holes on the cream page.
+  const steelPinMaterial = matte(PALETTE.muted, { metalness: 0.2, roughness: 0.48 });
 
   const base = beamBetween(
     new THREE.Vector3(-2.22, -2.72, -0.46),
@@ -499,7 +500,7 @@ function brownellDeadCenterCrank(movement) {
   tangentSlide.add(wristPin);
 
   const guidePins = [-slotCenterX, slotCenterX].map((x, index) => {
-    const pin = cylinderAlongZ(guidePinRadius, .52, whiteMaterial, 30);
+    const pin = cylinderAlongZ(guidePinRadius, .52, steelPinMaterial, 30);
     pin.position.set(x, crankRadius, .32);
     pin.userData.role =
       `faceplate-fixed-guide-pin-${index + 1}-through-slide-slot`;
@@ -523,19 +524,21 @@ function brownellDeadCenterCrank(movement) {
   treadleBeam.position.x = (treadleRearArm - treadleForwardArm) / 2;
   const beamCenterX=treadleBeam.position.x;
   treadleBeam.geometry.dispose();
-  treadleBeam.geometry=plate(clip.difference(poly([
+  // Pass 92: the rear end is a round eye concentric with the pitman pin
+  // (r .14 round the .09 pin), as Brown rounds the treadle's end there.
+  treadleBeam.geometry=plate(clip.difference(clip.union(poly([
     [-treadleForwardArm-beamCenterX,-.03],
     [treadleRearArm-beamCenterX,-.065],
     [treadleRearArm-beamCenterX,.065],
     [-treadleForwardArm-beamCenterX,.03],
-  ]),poly(circle([-beamCenterX,0],.10,64))),-.075,.075);
+  ]),poly(circle([treadleRearArm-beamCenterX,0],.14,64))),poly(circle([-beamCenterX,0],.10,64))),-.075,.075);
   treadleBeam.userData.role = 'rigid-treadle-rocker';
   treadle.add(treadleBeam);
   const treadlePivotBoss = boredJournal(.18,.094,.38,inkMaterial);
   treadlePivotBoss.userData.role = 'treadle-fulcrum-boss';
   treadle.add(treadlePivotBoss);
   // From just behind the treadle to just proud of the pitman's front face.
-  const rearJointBoss = cylinderAlongZ(.09, .675, whiteMaterial, 30);
+  const rearJointBoss = cylinderAlongZ(.09, .675, steelPinMaterial, 30);
   rearJointBoss.position.z = .2425;
   rearJointBoss.position.x = treadleRearArm;
   rearJointBoss.userData.role = 'pitman-to-treadle-pin';

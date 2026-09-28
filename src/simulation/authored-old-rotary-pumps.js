@@ -234,7 +234,9 @@ function oldRotaryPump(movement) {
   const rotorMaterial = matte(PALETTE.driver, { metalness: 0.14, roughness: 0.54 });
   const valveMaterial = matte(PALETTE.accent, { metalness: 0.14, roughness: 0.5 });
   const darkMaterial = matte(PALETTE.ink, { metalness: 0.22, roughness: 0.48 });
-  const paperMaterial = matte(PALETTE.white, { roughness: 0.8 });
+  // The blank faces behind the section plane (case back, rotor web) take a
+  // plain muted finish: white would read as holes on the cream page.
+  const paperMaterial = matte(PALETTE.muted, { roughness: 0.8 });
   const waterMaterial = waterVolumeMaterial({ opacity: 0.34 });
 
   const named = (mesh, role) => { mesh.userData.role = role; return mesh; };

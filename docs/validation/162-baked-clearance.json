@@ -31,7 +31,7 @@
     },
     {
       "file": "src/simulation/baked/assets/162.json.gz",
-      "sha256": "0a174b3fbc29836f7909734f3d743a85202818e776773f0bb342f743e0b85173"
+      "sha256": "a2dafa5b13686ff4943841c6115b3d8ffc19131c64b811017fb7dacf7c0c8958"
     },
     {
       "file": "src/simulation/baked/playback.js",

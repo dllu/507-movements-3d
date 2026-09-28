@@ -6,7 +6,8 @@ for(const id of[205,209]){const model=createAuthoredGearMovement(catalog[id-1]),
  const row={id,pairs:pairs.map(({first,second})=>[project(first),project(second)]),generationPairs:pairs.map(({first,second})=>[project(first,true),project(second,true)]),poses:[],generation:[]},period=u.transmission.inputPeriod??u.transmission.inputCyclePeriod;
  const pose=time=>{model.update(time);model.root.updateMatrixWorld(true);return pairs.map(({a,b})=>{const e=a.userData.rotor.matrixWorld.clone().invert().multiply(b.userData.rotor.matrixWorld).elements;return[e[0],e[4],e[1],e[5],e[12],e[13]];});};
  for(let i=0;i<513;i++)row.poses.push(pose(period*(i+.371)/513));
- for(let i=0;i<=4096;i++)row.generation.push(pose(period*i/4096)[0]);
+ // Fine generation poses keep per-pose cusps far below the finishing ease.
+ for(let i=0;i<=32768;i++)row.generation.push(pose(period*i/32768)[0]);
  rows.push(row);
 }
 fs.writeFileSync('/dev/shm/205-209-contact.json',JSON.stringify(rows));

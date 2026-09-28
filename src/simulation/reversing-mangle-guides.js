@@ -4,6 +4,7 @@ import {markShadows, PALETTE} from './primitives.js';
 import {circle, poly, plate, polygonClipping as clip} from './finite-plate-geometry.js';
 import {boredCylinderGeometry} from './piston-guide-parts.js';
 import {addMangleUniversalDrive} from './mangle-universal-drive.js';
+import {involuteSpurOutline, smoothExtrudeGeometry} from './smooth-extrusion.js';
 
 function area(points) {
   return Math.abs(points.reduce((sum,p,i)=>{const q=points[(i+1)%points.length];return sum+p[0]*q[1]-p[1]*q[0];},0));
@@ -73,15 +74,20 @@ export function finishReversingMangleGuides(root,update,id) {
     const hub=b.wheelRotor.children.find(o=>o.userData.role?.includes('mangle-wheel-hub'));
     if(hub)hub.position.z=.25;
   }
-  // The factory's pinion carried a one-segment chamfer (bevel inset 0.035)
-  // round a coarse polyline, so each tooth shaded as a faceted petal. Extrude
-  // the same involute outline (the cavity's cutter) flat, over the same
-  // depth, with flat end faces and creased flank normals.
+  // The factory's pinion was a chord polyline (seven straight segments per
+  // involute flank, a flat chord across each tip and root) with flat-shaded
+  // side triangles, so it read as low-poly. Rebuild the same involute tooth
+  // (pitch, pressure angle, root, base and tip radii and tooth thickness)
+  // exactly: finely sampled involutes, arcs concentric with the pinion at tip
+  // and root, one flat extrusion over the same depth with flat end faces,
+  // smooth flank normals and creased edges. The cavity is cut by this outline.
   {
-    const gear=b.pinion.userData.rotor.children[0],old=gear.geometry;
+    const gear=b.pinion.userData.rotor.children[0],old=gear.geometry,u=b.pinion.userData;
     old.computeBoundingBox();const {min,max}=old.boundingBox;
-    const shapes=old.parameters.shapes,flat=new THREE.ExtrudeGeometry(shapes,{depth:max.z-min.z,bevelEnabled:false,curveSegments:1,steps:1});
-    flat.translate(0,0,min.z);flat.userData={...old.userData,pinionOutlineShapes:shapes};
+    const outline=involuteSpurOutline({teeth:u.teeth,pitchRadius:u.pitchRadius,rootRadius:u.rootRadius,outerRadius:u.outerRadius,pressureAngle:u.pressureAngle});
+    const shapes=new THREE.Shape(outline),flat=smoothExtrudeGeometry(shapes,max.z-min.z,{low:min.z,curveSegments:1});
+    flat.userData={...old.userData,pinionOutlineShapes:shapes,pinionOutline:outline.map(p=>[p.x,p.y]),toothProfile:'exact-involute-tip-and-root-arcs'};
+    flat.parameters={shapes,options:{depth:max.z-min.z,bevelEnabled:false}};
     gear.geometry=flat;old.dispose();
     gear.userData.role??='flat-involute-mangle-pinion';
   }

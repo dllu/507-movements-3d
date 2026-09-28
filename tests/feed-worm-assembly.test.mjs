@@ -38,8 +38,20 @@ for(const id of[195,207]){
 }
 test('195 face teeth have real valleys, a closed backing, and consistently outward volume',()=>{
  assert.ok(Math.min(...data.heights)<-.20);assert.ok(Math.max(...data.heights)===0);assert.ok(data.heights.every(h=>h>data.back+.02));
- for(let r=0;r<=data.radialSteps;r++)assert.equal(data.heights[r*(data.angularSteps+1)],data.heights[r*(data.angularSteps+1)+data.angularSteps]);
- const g=faceWorm195Geometry(),triangles=surfaceTriangles(g);let volume=0;for(const t of triangles)volume+=t.a.dot(t.b.clone().cross(t.c))/6;assert.ok(volume>.015&&volume<.05,`signed volume ${volume}`);g.dispose();
+ // The periodic grid's first row is uncut land, and every land edge and cliff is a baked crossing.
+ for(let j=0;j<data.angularSteps;j++)assert.equal(data.heights[j],0);
+ assert.ok(data.crossings.length>100);for(const[kind,i,j,t,ha,hb]of data.crossings){assert.ok(kind===0||kind===1);assert.ok(t>=0&&t<=1);assert.ok(ha===0||hb===0||ha!==hb);assert.ok(ha<=0&&hb<=0);}
+ const g=faceWorm195Geometry(),triangles=surfaceTriangles(g);let volume=0;for(const t of triangles)volume+=t.a.dot(t.b.clone().cross(t.c))/6;assert.ok(volume>.015&&volume<.05,`signed volume ${volume}`);
+ // Closed apart from zero-area collinear junction loops: every edge off the
+ // flat land is matched by an opposite edge.
+ const p=g.attributes.position,index=g.index.array,key=k=>[p.getX(k),p.getY(k),p.getZ(k)].map(v=>Math.round(v*1e6)).join(),edges=new Map();
+ for(let f=0;f<index.length;f+=3)for(let e=0;e<3;e++){const a=key(index[f+e]),b=key(index[f+(e+1)%3]);if(a!==b)edges.set(a+'|'+b,(edges.get(a+'|'+b)??0)+1);}
+ let open=0;for(const[k,c]of edges){const[a,b]=k.split('|');if((edges.get(b+'|'+a)??0)!==c)open++;}assert.ok(open<=12,`open edges ${open}`);
+ // Smooth faces carry smooth normals: every vertex normal agrees with its faces.
+ const n=g.attributes.normal;let bad=0;
+ for(let f=0;f<index.length;f+=3){const v=[0,1,2].map(e=>new THREE.Vector3().fromBufferAttribute(p,index[f+e])),fn=v[1].clone().sub(v[0]).cross(v[2].clone().sub(v[0]));if(fn.length()<1e-10)continue;fn.normalize();
+  for(let e=0;e<3;e++)if(fn.dot(new THREE.Vector3().fromBufferAttribute(n,index[f+e]))<.2)bad++;}
+ assert.ok(bad<20,`normals opposing their faces ${bad}`);g.dispose();
 });
 test('195 full opposed finite-solid sweep has no sampled penetration',()=>{
  const report=JSON.parse(fs.readFileSync('docs/validation/feed-worm-195-solids.json'));verifySources(report);assert.equal(report.poses,17);assert.equal(report.status,'sampled-flanks-clear');for(const r of report.results){assert.equal(r.penetrations,0);assert.ok(r.queries>200000);assert.ok(r.minimumGap>.002);}

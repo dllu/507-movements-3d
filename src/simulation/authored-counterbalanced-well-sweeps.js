@@ -284,7 +284,7 @@ function counterbalancedWellSweep(movement) {
     transparent: true,
   });
   wellMaterial.depthWrite = false;
-  const ropeMaterial = matte(PALETTE.ink, { roughness: 0.72 });
+  const ropeMaterial = matte(PALETTE.rope, { roughness: 0.72 });
 
   const base = addRole(new THREE.Mesh(
     new THREE.BoxGeometry(8.5, 0.14, 3.1),

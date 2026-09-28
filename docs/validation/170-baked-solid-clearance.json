@@ -1,5 +1,5 @@
 {
-  "bakedAssetHash": "5b5f6c92fd36597154022f6c28246b40ad1b5021ac8906c60231005f05474bdd",
+  "bakedAssetHash": "53df0b76785a8a1a907c034fd11ffb78fafef01cc78e8f5333e291a398d2d2bd",
   "movement": 170,
   "status": "baked-solid-diagnostic",
   "parameters": {
@@ -28,7 +28,7 @@
   "sources": [
     {
       "file": "src/simulation/baked/assets/170.json.gz",
-      "sha256": "5b5f6c92fd36597154022f6c28246b40ad1b5021ac8906c60231005f05474bdd"
+      "sha256": "53df0b76785a8a1a907c034fd11ffb78fafef01cc78e8f5333e291a398d2d2bd"
     },
     {
       "file": "src/simulation/baked/crossed-governor.js",
@@ -72,7 +72,7 @@
     },
     {
       "file": "src/simulation/primitives.js",
-      "sha256": "c09dbdfc48b4680ae1194d6b1471ff33d437bc8e8a28f6b290044eba746c9367"
+      "sha256": "e28fda6a3c9e228a8af6601dbe7728e8fd7812ff947073ee5562a3fe0478bb93"
     },
     {
       "file": "tests/helpers/solid-surface.mjs",

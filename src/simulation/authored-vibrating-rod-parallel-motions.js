@@ -356,7 +356,7 @@ function midpointVibratingRodParallelMotion(movement) {
     metalness: 0.09,
     roughness: 0.61,
   });
-  const whiteMaterial = matte(PALETTE.white, { roughness: 0.47 });
+  // Working pins are ink (white pins would read as holes on the cream page).
 
   // Brown's plate shows only the beam boss and shaft end at O and a bare
   // pin at F; the engine bed, standards and piston guides are not drawn.
@@ -515,10 +515,10 @@ function midpointVibratingRodParallelMotion(movement) {
   // Each working pin is rigid with one member and turns in true bores of the
   // others: B in the beam, C in the crosshead and D in the radius rod.
   const jointPins = {
-    B: cylinderAlongZ(0.22 * sourceScale, 0.45, whiteMaterial, 30),
+    B: cylinderAlongZ(0.22 * sourceScale, 0.45, darkMaterial, 30),
     // C stands just proud of the crosshead face (never coplanar with it).
-    C: cylinderAlongZ(0.20 * sourceScale, 0.60, whiteMaterial, 30),
-    D: cylinderAlongZ(0.22 * sourceScale, 0.415, whiteMaterial, 30),
+    C: cylinderAlongZ(0.20 * sourceScale, 0.60, darkMaterial, 30),
+    D: cylinderAlongZ(0.22 * sourceScale, 0.415, darkMaterial, 30),
   };
   jointPins.B.position.set(-beamPinRadius, 0, 0.215);
   beam.add(jointPins.B);
@@ -1029,7 +1029,7 @@ function upperRadiusVibratingRodParallelMotion(movement) {
     metalness: 0.09,
     roughness: 0.61,
   });
-  const whiteMaterial = matte(PALETTE.white, { roughness: 0.47 });
+  // Working pins are ink (white pins would read as holes on the cream page).
 
   // As in 337, Brown draws only the beam boss and shaft at O and a bare pin
   // at F; no bed, standards or piston guides appear on the plate.
@@ -1178,9 +1178,9 @@ function upperRadiusVibratingRodParallelMotion(movement) {
   // Pins are rigid with one member and pass through true bores of the rest:
   // L in the crosshead, R in the beam and U in the radius bar.
   const jointPins = {
-    L: cylinderAlongZ(0.19 * sourceScale, 0.38, whiteMaterial, 30),
-    R: cylinderAlongZ(0.22 * sourceScale, 0.55, whiteMaterial, 30),
-    U: cylinderAlongZ(0.20 * sourceScale, 0.67, whiteMaterial, 30),
+    L: cylinderAlongZ(0.19 * sourceScale, 0.38, darkMaterial, 30),
+    R: cylinderAlongZ(0.22 * sourceScale, 0.55, darkMaterial, 30),
+    U: cylinderAlongZ(0.20 * sourceScale, 0.67, darkMaterial, 30),
   };
   jointPins.L.position.set(0, 0, 0.47);
   output.add(jointPins.L);

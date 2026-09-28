@@ -6,7 +6,7 @@
     },
     {
       "file": "src/simulation/authored-gears-core.js",
-      "sha256": "35dbc46879f1a0ff0e7d1f27f305535aa880b1365cb83a90fd691b6218534fdd"
+      "sha256": "76c271f4f15c12052c331e549e8130d20d4ecfce15194a20b18a93f055254d71"
     },
     {
       "file": "src/simulation/miter-gear.js",
@@ -14,11 +14,19 @@
     },
     {
       "file": "src/simulation/irregular-gear-family.js",
-      "sha256": "36bbb4505d5f6d8e6f7b46ea0f8cb4b981c6e55d9014246f1a124b9d64ca9336"
+      "sha256": "bc8b85557b2d8a78b982d46fc736b31268c476275c6c8e698628b0194d682e5a"
+    },
+    {
+      "file": "src/simulation/irregular-gear-201.js",
+      "sha256": "d8885b8cd16379efdd26789f7bc1d21d985cdfcd57f1df187c173f441e0ba2e1"
+    },
+    {
+      "file": "src/simulation/smooth-extrusion.js",
+      "sha256": "80cdff664adc3868d7b1c90ee85d7ab8d5dc6b2da518d1522c70a980e1d6b6b9"
     },
     {
       "file": "src/simulation/generated-irregular-gear-profiles.js",
-      "sha256": "ce7bf686d29cce0ab49d46223ece9756890d11be22ea6571acbe95891a5f9b7b"
+      "sha256": "5c3214d1c49c5ac0738f821381868544d0af67f53bd56de36c5b10ee33c31610"
     },
     {
       "file": "src/simulation/band-epicyclic-geometry.js",
@@ -26,11 +34,11 @@
     },
     {
       "file": "src/simulation/primitives.js",
-      "sha256": "c09dbdfc48b4680ae1194d6b1471ff33d437bc8e8a28f6b290044eba746c9367"
+      "sha256": "e28fda6a3c9e228a8af6601dbe7728e8fd7812ff947073ee5562a3fe0478bb93"
     },
     {
       "file": "scripts/review-irregular-gear-contact.mjs",
-      "sha256": "df6b1ffb44b2e192006770a4769e05f93d83028480d2d9172af4b2fac0c73bb9"
+      "sha256": "e5e1c51ccbba4de2b3d13b4c9102d352929342eac522cff5a1649e0ef4f22d45"
     },
     {
       "file": "scripts/review-irregular-gear-contact.py",
@@ -43,31 +51,31 @@
       "id": 191,
       "poses": 513,
       "period": 12,
-      "projectedTriangles": 44188,
+      "projectedTriangles": 9960,
       "maximumOverlapArea": 0.0,
       "penetratingPoses": 0,
-      "minimumGap": 0.002440088510431133,
-      "maximumGap": 0.009514336378627126
+      "minimumGap": 0.0026480690427815637,
+      "maximumGap": 0.009524612610999576
     },
     {
       "id": 196,
       "poses": 513,
       "period": 15.3588974175501,
-      "projectedTriangles": 9186,
+      "projectedTriangles": 5054,
       "maximumOverlapArea": 0.0,
       "penetratingPoses": 0,
-      "minimumGap": 0.0006161330958185193,
-      "maximumGap": 0.0008219304145087446
+      "minimumGap": 0.0006328600013922684,
+      "maximumGap": 0.0008607218829517451
     },
     {
       "id": 201,
       "poses": 513,
       "period": 6.829549246934333,
-      "projectedTriangles": 5152,
+      "projectedTriangles": 9124,
       "maximumOverlapArea": 0.0,
       "penetratingPoses": 0,
-      "minimumGap": 0.001386125462141142,
-      "maximumGap": 0.001449766117721355
+      "minimumGap": 0.0007115361977057851,
+      "maximumGap": 0.0008136364524204028
     }
   ]
 }

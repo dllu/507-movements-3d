@@ -604,10 +604,14 @@ function treadleBevelDrillingMachine(movement) {
     const p=beam.geometry.parameters;
     let outline=poly([[-p.width/2,-p.height/2],[p.width/2,-p.height/2],[p.width/2,p.height/2],[-p.width/2,p.height/2]]);
     const holes=[poly(circle([-beam.position.x,0],.084,64))];
+    // Pass 92: round eye at the left end, concentric with the link pin (as
+    // Brown draws both lever ends), so the pin no longer stands on the
+    // beam's square end: radius 0.095 about the 0.06 pin, just inside the link's own 0.099 eye.
+    outline=clip.union(outline,poly(circle([-p.width/2,0],.095,96)));
     if(beam===upperLeverBeam){
       // Round eye at the right end, concentric with the slot, as one plate.
       const eye=slotCentre-beam.position.x;
-      outline=clip.union(poly([[-p.width/2,-p.height/2],[eye,-p.height/2],[eye,p.height/2],[-p.width/2,p.height/2]]),poly(circle([eye,0],.15,96)));
+      outline=clip.union(poly([[-p.width/2,-p.height/2],[eye,-p.height/2],[eye,p.height/2],[-p.width/2,p.height/2]]),poly(circle([eye,0],.15,96)),poly(circle([-p.width/2,0],.095,96)));
       const a=eye-slotHalfTravel,b=eye+slotHalfTravel,r=slotPinRadius+.004,slot=[];
       for(let i=0;i<=24;i++){const t=Math.PI/2+Math.PI*i/24;slot.push([a+r*Math.cos(t),r*Math.sin(t)]);}
       for(let i=0;i<=24;i++){const t=-Math.PI/2+Math.PI*i/24;slot.push([b+r*Math.cos(t),r*Math.sin(t)]);}

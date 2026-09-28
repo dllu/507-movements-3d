@@ -67,7 +67,8 @@ export function makeHaulingHand(ropeDirection, ropeRadius, { armDirection: armDi
   arm.position.copy(wrist);
   arm.quaternion.setFromUnitVectors(new THREE.Vector3(0, -1, 0), armDirection);
   arm.name = 'hand-forearm';
-  const cuffMaterial = matte(0xe9e1d2, { roughness: 0.85 });
+  // Linen-tan cloth: a white cuff would read as a hole on the cream page.
+  const cuffMaterial = matte(0xb9a88a, { roughness: 0.85 });
   const cuff = new THREE.Mesh(figureGeometry('hand-cuff'), cuffMaterial);
   cuff.position.copy(wrist);
   cuff.quaternion.copy(arm.quaternion);

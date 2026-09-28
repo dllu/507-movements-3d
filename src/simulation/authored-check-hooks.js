@@ -298,8 +298,9 @@ function centrifugalMineDrumCheckHooks(movement) {
     metalness: 0.14,
     roughness: 0.68,
   });
-  // Brown draws framework A as a plain opaque plate.
-  const backingMaterial = matte(0xd8d2c4, {
+  // Brown draws framework A as a plain opaque plate: a warm stone tone, dark
+  // enough not to read as the cream page.
+  const backingMaterial = matte(0xbfb6a0, { // the ground-block.js stone
     roughness: 0.8,
     side: THREE.DoubleSide,
   });
@@ -503,7 +504,7 @@ function centrifugalMineDrumCheckHooks(movement) {
   // mid-air, they run on down the shaft to a return sheave beyond the crop,
   // so the travelling rope is one endless loop with no loose ends.
   const ropeStrandLength = 8.6;
-  const ropeMaterial = matte(0x3b3632, { roughness: 0.9 });
+  const ropeMaterial = matte(PALETTE.rope, { roughness: 0.9 });
   // One continuous laid rope: up the left strand, over the drum top, down
   // the right strand and back round the return sheave. Brown hatches it as a
   // laid rope.

@@ -55,13 +55,17 @@ test('movement 184 hangs both back-weight rods down from Brown\'s mid-height pin
     }
     for (const [rod, pin] of [[b.lowerWeightRod, ballPin], [b.upperWeightRod, wingPin]]) {
       const box = new THREE.Box3().setFromObject(rod);
-      assert.ok(box.max.y <= pin.y + 1e-6 && box.min.y < pin.y - 1, `rod hangs down from its pin at t=${t}`);
+      // The rod's round eye is concentric with the pin; the bar hangs below.
+      assert.ok(box.max.y <= pin.y + 0.11 && box.min.y < pin.y - 1, `rod hangs down from its pin at t=${t}`);
       // Each weight keeps turning its handle the same way as in 183: the pin
       // stays on the same side of its shaft through the swing.
     }
     assert.ok(ballPin.x > ballShaft.x);
     assert.ok(wingPin.x < wingShaft.x);
   }
-  // The wing's tip carries no eye: its only eye hole is on the hidden arm.
+  // The wing's tip carries no eye: its only eye hole is on the hidden arm,
+  // which lies with the other weight arm in the rear plane.
   assert.equal(b.upperWeightArm.userData.role, 'upper-handle-weightArm');
+  b.upperWeightArm.geometry.computeBoundingBox(); b.pistonRod.geometry.computeBoundingBox();
+  assert.ok(b.upperWeightArm.geometry.boundingBox.max.z < b.pistonRod.geometry.boundingBox.min.z);
 });

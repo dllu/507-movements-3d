@@ -276,11 +276,17 @@ function trunkEngine(movement) {
   crankWheel.add(crankWheel.userData.rotor);
   crankWheel.position.copy(crankCenter);
   crankWheel.userData.role = 'continuously-rotating-upper-crank';
+  // Pass 92: Brown's crank is a flat lever with round ends: one extrusion,
+  // the hull of a boss about the shaft (r .19) and an eye about the pin
+  // (r .15 round the .085 pin), not a box ending at the pin's axis.
   const crankArm = new THREE.Mesh(
-    new THREE.BoxGeometry(crankRadius, 0.11, 0.19),
+    plate(polygonClipping.union(
+      poly(circle([0, 0], 0.19, 64)), poly(circle([crankRadius, 0], 0.15, 64)),
+      poly([[0, -0.19], [crankRadius, -0.15], [crankRadius, 0.15], [0, 0.19]]),
+    ), -0.095, 0.095),
     pitmanMaterial,
   );
-  crankArm.position.set(crankRadius / 2, 0, -0.20);
+  crankArm.position.set(0, 0, -0.20);
   crankArm.userData.role = 'crank-throw-to-pitman';
   crankWheel.userData.rotor.add(crankArm);
   // The crankshaft turns with its throw and ends behind the pitman's plane.

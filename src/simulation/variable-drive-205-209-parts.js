@@ -1,11 +1,12 @@
 import profiles from './generated-variable-drive-205-209.js';
 import pinSlotOutline from './generated-pin-slot-208.js';
 import * as THREE from 'three';
+import {smoothExtrudeGeometry} from './smooth-extrusion.js';
 import {boredLatheGeometry} from './bored-lathe-geometry.js';
 import {plate,poly,circle,polygonClipping as clip} from './finite-plate-geometry.js';
 const replace=(mesh,geometry)=>{mesh.geometry.dispose();mesh.geometry=geometry;};
 const ring=(radius,bore,depth)=>boredLatheGeometry([{radial:radius,axial:-depth/2},{radial:radius,axial:depth/2}],bore,64);
-const outlined=(points,depth,bore)=>{const shape=new THREE.Shape(points.map(p=>new THREE.Vector2(...p))),hole=new THREE.Path();hole.absarc(0,0,bore,0,2*Math.PI,false);shape.holes.push(hole);return new THREE.ExtrudeGeometry(shape,{depth,bevelEnabled:false,curveSegments:64}).translate(0,0,-depth/2);};
+const outlined=(points,depth,bore)=>{const shape=new THREE.Shape(points.map(p=>new THREE.Vector2(...p))),hole=new THREE.Path();hole.absarc(0,0,bore,0,2*Math.PI,false);shape.holes.push(hole);return smoothExtrudeGeometry(shape,depth,{low:-depth/2});};
 const flat=(mesh,bore=null)=>{const p=mesh.geometry.parameters,shape=p.shapes.clone();if(bore!==null){const hole=new THREE.Path();hole.absarc(0,0,bore,0,Math.PI*2,false);shape.holes.push(hole);}replace(mesh,new THREE.ExtrudeGeometry(shape,{depth:p.options.depth,bevelEnabled:false,curveSegments:64}).translate(0,0,-p.options.depth/2));};
 // 208's slotted pinion runs from its outer (working) face at -0.055 inward
 // to +0.205 along its shaft (local z points toward the wheel centre): Brown

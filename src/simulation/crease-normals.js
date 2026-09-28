@@ -159,9 +159,12 @@ export function creaseLatheNormals(geometry, creaseAngle = Math.PI / 6) {
 }
 
 // Load-time pass for parts authored directly with three's generators: lathes
-// get creased profiles, and cylinders or cones with at most six sides (hex
+// get creased profiles, cylinders or cones with at most six sides (hex
 // nuts, square and triangular pyramids) get flat side faces, since so few
-// sides are a prism, not a coarse round. Each geometry is treated once.
+// sides are a prism, not a coarse round, and extrusions get smooth side walls
+// along sampled curves (smoothFacetNormals). Each geometry is treated once.
+// three's parametric generators author their own (smooth or flat) normals.
+const PARAMETRIC = /^(Box|Plane|Circle|Ring|Cylinder|Cone|Sphere|Torus|TorusKnot|Tube|Capsule|Lathe|Icosahedron|Octahedron|Tetrahedron|Dodecahedron|Polyhedron|Edges|Wireframe)Geometry$/;
 export function creaseNormalsIn(root) {
   const seen = new Set();
   root.traverse((object) => {
@@ -173,7 +176,8 @@ export function creaseNormalsIn(root) {
       && geometry.parameters?.radialSegments <= 6 && !geometry.userData.prismCreased) {
       creaseIndexedNormals(geometry, Math.PI / 6);
       geometry.userData.prismCreased = true;
-    }
+    } else if (!PARAMETRIC.test(geometry.type) && !geometry.isInstancedBufferGeometry
+      && ![].concat(object.material ?? []).some((material) => material?.flatShading)) smoothFacetNormals(geometry);
   });
   return root;
 }
@@ -292,5 +296,155 @@ export function creaseIndexedNormals(geometry, creaseAngle = Math.PI * 2 / 9) {
   geometry.setIndex(Array.from(remap));
   geometry.boundingBox = null;
   geometry.boundingSphere = null;
+  return geometry;
+}
+
+// three's ExtrudeGeometry is non-indexed and gives every side triangle its own
+// normal, so an outline sampled from an arc, involute or spline shades as a
+// row of flat bands; custom builders that emit one vertex per face corner and
+// flat normals do the same. This rewrites only the normal attribute
+// (positions, UVs, groups, index and vertex count are untouched): each corner
+// takes the area-weighted normal of the faces round its vertex that it
+// reaches across smooth edges. An edge is smooth when its faces meet at less
+// than creaseAngle and either the kink is slight (under kinkAngle, invisible
+// either way) or both faces are narrow across it (under narrowFraction of the
+// part's size), i.e. a sampled curve rather than two long flat walls meeting
+// at a real corner. Caps (90 degrees to the walls), chamfers and polygonal
+// corners stay sharp; flat faces stay flat. Geometry whose vertices are shared
+// between faces already has authored smooth normals and is left alone.
+// Geometries already treated. A WeakSet, not a userData flag: some builders
+// share one userData object between geometries, which made the flag skip
+// every geometry after the first.
+const facetsSmoothed = new WeakSet();
+export function smoothFacetNormals(geometry, { creaseAngle = Math.PI * 25 / 180, kinkAngle = Math.PI * 4 / 180, narrowFraction = 0.06 } = {}) {
+  const position = geometry?.attributes?.position;
+  if (!position || facetsSmoothed.has(geometry) || geometry.morphAttributes.position?.length) return geometry;
+  facetsSmoothed.add(geometry);
+  if (Object.values(geometry.attributes).some((attribute) => attribute.isInterleavedBufferAttribute)) return geometry;
+  const index = geometry.index;
+  const cornerCount = index ? index.count : position.count;
+  const faceCount = Math.floor(cornerCount / 3);
+  if (!faceCount) return geometry;
+  const vertexOf = index ? (k) => index.getX(k) : (k) => k;
+  if (index) {
+    // Only corner-per-vertex geometry (each vertex used by one face corner).
+    const used = new Uint8Array(position.count);
+    for (let k = 0; k < cornerCount; k += 1) { const v = vertexOf(k); if (used[v]) return geometry; used[v] = 1; }
+  }
+  geometry.computeBoundingBox();
+  const size = geometry.boundingBox.getSize(new THREE.Vector3()).length() || 1;
+  const faceVectors = new Float64Array(faceCount * 3); const faceUnits = new Float64Array(faceCount * 3);
+  const area2 = new Float64Array(faceCount);
+  const a = new THREE.Vector3(); const b = new THREE.Vector3(); const c = new THREE.Vector3();
+  const e1 = new THREE.Vector3(); const e2 = new THREE.Vector3();
+  for (let f = 0; f < faceCount; f += 1) {
+    a.fromBufferAttribute(position, vertexOf(3 * f)); b.fromBufferAttribute(position, vertexOf(3 * f + 1)); c.fromBufferAttribute(position, vertexOf(3 * f + 2));
+    e1.subVectors(b, a).cross(e2.subVectors(c, a));
+    const length = e1.length(); area2[f] = length;
+    faceVectors[3 * f] = e1.x; faceVectors[3 * f + 1] = e1.y; faceVectors[3 * f + 2] = e1.z;
+    if (length > 0) { faceUnits[3 * f] = e1.x / length; faceUnits[3 * f + 1] = e1.y / length; faceUnits[3 * f + 2] = e1.z / length; }
+  }
+  // Only geometry drawn flat: every corner normal is its face's normal.
+  const normalAttribute = geometry.attributes.normal;
+  if (normalAttribute) {
+    for (let k = 0; k < cornerCount; k += 1) {
+      const f = Math.floor(k / 3);
+      if (!area2[f]) continue;
+      const v = vertexOf(k);
+      const dot = normalAttribute.getX(v) * faceUnits[3 * f] + normalAttribute.getY(v) * faceUnits[3 * f + 1] + normalAttribute.getZ(v) * faceUnits[3 * f + 2];
+      if (dot < 0.9999) return geometry;
+    }
+  }
+  // Weld on a grid of size / 50000 (each coordinate within 2^16 steps of the
+  // box centre, so the packed key stays an exact integer).
+  const quantum = size * 2e-5;
+  const centre = geometry.boundingBox.getCenter(new THREE.Vector3());
+  const ids = new Map(); const weld = new Int32Array(cornerCount);
+  for (let k = 0; k < cornerCount; k += 1) {
+    const i = vertexOf(k);
+    const key = ((Math.round((position.getX(i) - centre.x) / quantum) + 65536) * 131072
+      + Math.round((position.getY(i) - centre.y) / quantum) + 65536) * 131072
+      + Math.round((position.getZ(i) - centre.z) / quantum) + 65536;
+    let id = ids.get(key);
+    if (id === undefined) { id = ids.size; ids.set(key, id); }
+    weld[k] = id;
+  }
+  const vertexCount = ids.size;
+  // Edges on welded vertices, each with the faces that use it.
+  const edgeFaces = new Map();
+  for (let f = 0; f < faceCount; f += 1) {
+    if (!area2[f]) continue;
+    for (let j = 0; j < 3; j += 1) {
+      const u = weld[3 * f + j]; const v = weld[3 * f + (j + 1) % 3];
+      if (u === v) continue;
+      const key = u < v ? u * vertexCount + v : v * vertexCount + u;
+      const list = edgeFaces.get(key);
+      if (list) list.push(f); else edgeFaces.set(key, [f]);
+    }
+  }
+  const cosCrease = Math.cos(creaseAngle); const cosKink = Math.cos(kinkAngle); const narrow = size * narrowFraction;
+  const p = new THREE.Vector3(); const q = new THREE.Vector3();
+  // Smooth joins: (welded vertex, face, face) for both ends of each smooth edge.
+  const joinVertex = []; const joinFaces = [];
+  for (const [key, list] of edgeFaces) {
+    if (list.length !== 2) continue;
+    const [f, g] = list;
+    const dot = faceUnits[3 * f] * faceUnits[3 * g] + faceUnits[3 * f + 1] * faceUnits[3 * g + 1] + faceUnits[3 * f + 2] * faceUnits[3 * g + 2];
+    if (dot < cosCrease) continue;
+    const u = Math.floor(key / vertexCount); const v = key - u * vertexCount;
+    if (dot < cosKink) {
+      // Width of each face across the edge: twice its area over the edge length.
+      for (let j = 0; j < 3; j += 1) {
+        if (weld[3 * f + j] === u) p.fromBufferAttribute(position, vertexOf(3 * f + j));
+        if (weld[3 * f + j] === v) q.fromBufferAttribute(position, vertexOf(3 * f + j));
+      }
+      const length = p.distanceTo(q) || 1e-12;
+      if (area2[f] / length > narrow || area2[g] / length > narrow) continue;
+    }
+    joinVertex.push(u, v); joinFaces.push(f, g, f, g);
+  }
+  if (!joinVertex.length) return geometry;
+  const normal = new Float32Array(position.count * 3);
+  if (normalAttribute) normal.set(normalAttribute.array.subarray(0, position.count * 3));
+  for (let k = 0; k < cornerCount; k += 1) {
+    const f = Math.floor(k / 3); const v = vertexOf(k);
+    if (area2[f]) { normal[3 * v] = faceUnits[3 * f]; normal[3 * v + 1] = faceUnits[3 * f + 1]; normal[3 * v + 2] = faceUnits[3 * f + 2]; }
+  }
+  // Compressed per-vertex lists of corners and of joins.
+  const csr = (count, keyOf) => {
+    const start = new Int32Array(vertexCount + 1);
+    for (let n = 0; n < count; n += 1) start[keyOf(n) + 1] += 1;
+    for (let w = 0; w < vertexCount; w += 1) start[w + 1] += start[w];
+    const fill = start.slice(0, vertexCount); const items = new Int32Array(count);
+    for (let n = 0; n < count; n += 1) items[fill[keyOf(n)]++] = n;
+    return { start, items };
+  };
+  const joined = new Uint8Array(vertexCount);
+  for (const w of joinVertex) joined[w] = 1;
+  const cornersAt = csr(cornerCount, (k) => weld[k]);
+  const joinsAt = csr(joinVertex.length, (n) => joinVertex[n]);
+  const parent = new Int32Array(faceCount).fill(-1);
+  const find = (x) => { while (parent[x] !== x) { parent[x] = parent[parent[x]]; x = parent[x]; } return x; };
+  const sums = new Float64Array(faceCount * 3);
+  for (let w = 0; w < vertexCount; w += 1) {
+    if (!joined[w]) continue;
+    const c0 = cornersAt.start[w]; const c1 = cornersAt.start[w + 1];
+    for (let n = c0; n < c1; n += 1) { const f = Math.floor(cornersAt.items[n] / 3); parent[f] = f; sums[3 * f] = sums[3 * f + 1] = sums[3 * f + 2] = 0; }
+    for (let n = joinsAt.start[w]; n < joinsAt.start[w + 1]; n += 1) {
+      const j = joinsAt.items[n]; const f = joinFaces[2 * j]; const g = joinFaces[2 * j + 1];
+      if (parent[f] >= 0 && parent[g] >= 0) { const rf = find(f); const rg = find(g); if (rf !== rg) parent[rf] = rg; }
+    }
+    for (let n = c0; n < c1; n += 1) {
+      const f = Math.floor(cornersAt.items[n] / 3); const r = find(f);
+      sums[3 * r] += faceVectors[3 * f]; sums[3 * r + 1] += faceVectors[3 * f + 1]; sums[3 * r + 2] += faceVectors[3 * f + 2];
+    }
+    for (let n = c0; n < c1; n += 1) {
+      const k = cornersAt.items[n]; const r = find(Math.floor(k / 3)); const v = vertexOf(k);
+      const length = Math.hypot(sums[3 * r], sums[3 * r + 1], sums[3 * r + 2]);
+      if (length > 0) { normal[3 * v] = sums[3 * r] / length; normal[3 * v + 1] = sums[3 * r + 1] / length; normal[3 * v + 2] = sums[3 * r + 2] / length; }
+    }
+    for (let n = c0; n < c1; n += 1) parent[Math.floor(cornersAt.items[n] / 3)] = -1;
+  }
+  geometry.setAttribute('normal', new THREE.BufferAttribute(normal, 3));
   return geometry;
 }

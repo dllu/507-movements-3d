@@ -9,7 +9,11 @@ const movement=JSON.parse(fs.readFileSync('src/data/movements.json')).movements[
 const box=(mesh,reflection)=>{mesh.geometry.computeBoundingBox();const matrix=mesh.matrixWorld.clone();if(reflection)matrix.premultiply(new THREE.Matrix4().makeScale(1,1,-1));return new OBB().fromBox3(mesh.geometry.boundingBox).applyMatrix4(matrix);};
 test('132 handle clears both frame columns, while the former rearward sweep intersects',()=>{
  const v=createMovementModel(movement),u=v.root.userData,d=u.geometry,b=u.blocks,meshes=[];
- for(const group of [b.handLever,b.handleGrip])group.traverse(o=>{if(o.isMesh)meshes.push(o);});
+ b.handLever.traverse(o=>{if(o.isMesh)meshes.push(o);});
+ // Brown's lever is one turned rod, swelling to a rounded end: no square bar
+ // or grip whose corners could poke out of an end ball.
+ assert.equal(meshes.length,1);assert.equal(meshes[0].geometry.type,'LatheGeometry');assert.equal(b.handleGrip,undefined);
+ assert(d.handleTipRadius>d.handleRootRadius);
  let oldCollision=false;
  try{
   for(let i=0;i<=720;i++){

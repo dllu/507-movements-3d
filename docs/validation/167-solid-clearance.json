@@ -29,11 +29,11 @@
     },
     {
       "file": "src/simulation/reversing-groove-drum.js",
-      "sha256": "65013377192161732f134addf7ba1e6016ed9b4f3edb2f21d4b07cf8b7b8df91"
+      "sha256": "9dd2f5b9ca6c48596b677f38cab225159d8e7ae8f66d03d0ac9bcd67bb199f0f"
     },
     {
       "file": "src/simulation/primitives.js",
-      "sha256": "c09dbdfc48b4680ae1194d6b1471ff33d437bc8e8a28f6b290044eba746c9367"
+      "sha256": "e28fda6a3c9e228a8af6601dbe7728e8fd7812ff947073ee5562a3fe0478bb93"
     },
     {
       "file": "tests/helpers/solid-surface.mjs",

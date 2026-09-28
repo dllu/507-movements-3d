@@ -8,6 +8,7 @@ import {
 import {boredCylinderGeometry,fitPistonGuide} from './piston-guide-parts.js';
 import {boreBoxY,replaceYJournal,closeFeedThread} from './drill-feed-parts.js';
 import {plate,poly} from './finite-plate-geometry.js';
+import {crankArmGeometry, turnedHandleGeometry, HANDLE_FOOT_EMBED} from './turned-handle.js';
 
 // The C-shaped cramp frame is one flat extrusion of Brown's outline: the back
 // and both arms share one section thickness. Each arm ends buried inside its
@@ -26,60 +27,8 @@ const FULL_TURN = Math.PI * 2;
 // is the hull of two circles, one concentric with the handle's axis and one
 // buried in the spindle hub, so the handle's foot stands wholly on the bar
 // and no bar edge overhangs it.
-function convexHull2(points) {
-  const sorted = [...points].sort((a, b) => a[0] - b[0] || a[1] - b[1]);
-  const cross = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
-  const lower = [];
-  for (const point of sorted) {
-    while (lower.length >= 2 && cross(lower.at(-2), lower.at(-1), point) <= 0) lower.pop();
-    lower.push(point);
-  }
-  const upper = [];
-  for (const point of sorted.reverse()) {
-    while (upper.length >= 2 && cross(upper.at(-2), upper.at(-1), point) <= 0) upper.pop();
-    upper.push(point);
-  }
-  return [...lower.slice(0, -1), ...upper.slice(0, -1)];
-}
-
-function crankArmGeometry({ handleX, handleEndRadius, hubEndRadius, bottomY, topY }) {
-  const circlePoints = (cx, radius) => Array.from({ length: 96 }, (_, index) => {
-    const angle = index * FULL_TURN / 96;
-    return [cx + radius * Math.cos(angle), radius * Math.sin(angle)];
-  });
-  const outline = convexHull2([
-    ...circlePoints(handleX, handleEndRadius),
-    ...circlePoints(0, hubEndRadius),
-  ]);
-  // plate() extrudes along z; turning it about x stands the plan in the
-  // horizontal plane with its thickness along y.
-  return plate(poly(outline), bottomY, topY).rotateX(-Math.PI / 2);
-}
-
-// A turned handle: a flared foot, a slim neck and a bulb closed by an
-// elliptical dome. `side` lists [radius, height fraction] stations from the
-// foot to the bulb's widest point; the profile is one smooth spline.
-function turnedHandleGeometry({ height, side }) {
-  const [bulbRadius, bulbAt] = side.at(-1);
-  const dome = [20, 40, 60, 78, 90].map((degrees) => {
-    const angle = THREE.MathUtils.degToRad(degrees);
-    return [bulbRadius * Math.cos(angle), bulbAt + (1 - bulbAt) * Math.sin(angle)];
-  });
-  const curve = new THREE.CatmullRomCurve3(
-    [...side, ...dome].map(([radius, fraction]) => new THREE.Vector3(radius, fraction * height, 0)),
-    false,
-    'centripetal',
-  );
-  const profile = [
-    new THREE.Vector2(0, 0),
-    ...curve.getSpacedPoints(64).map((point) => new THREE.Vector2(Math.max(0, point.x), point.y)),
-  ];
-  profile[profile.length - 1].x = 0;
-  return new THREE.LatheGeometry(profile, 40);
-}
-
-// The handle's foot is sunk this far into the bar's top face.
-const HANDLE_FOOT_EMBED = 0.012;
+// (Pass 92: the builders now live in turned-handle.js, shared with other
+// movements that draw the usual turned crank handle.)
 
 class VerticalHelixCurve extends THREE.Curve {
   constructor({ maximumY, minimumY, phase = 0, radius, turns }) {

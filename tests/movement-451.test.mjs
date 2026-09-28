@@ -379,3 +379,25 @@ test('movement 451 open central dip tube stands full to the side mouth level wit
   }
   disposeModel(model.root);
 });
+
+test('movement 451 pass 92: both handle pins stand centred in round eyes of the flat handle', () => {
+  const model = createMovementModel(catalog.movements[450]);
+  const lever = model.root.userData.blocks.lever;
+  const bar = lever.children.find((o) => o.userData.role === 'hand-lever-flat-bar-pinned-to-rod-top');
+  const pins = lever.children.filter((o) => /handle-fulcrum-pin|rod-top-pin/.test(o.userData.role ?? ''));
+  assert.equal(pins.length, 2);
+  const p = bar.geometry.attributes.position;
+  for (const pin of pins) {
+    pin.updateMatrix();
+    const axis = new THREE.Vector3(0, 1, 0).applyQuaternion(pin.quaternion);
+    near(Math.abs(axis.z), 1, 1e-9, `${pin.userData.role} axis lies along the handle's thickness`);
+    const r = pin.geometry.parameters.radiusTop;
+    let margin = Infinity;
+    for (let i = 0; i < p.count; i += 1) {
+      const d = Math.hypot(p.getX(i) - pin.position.x, p.getY(i) - pin.position.y);
+      if (d > r + 0.01) margin = Math.min(margin, d);
+    }
+    assert.ok(margin >= 2 * r, `${pin.userData.role}: eye margin ${margin} >= 2 r (${2 * r})`);
+  }
+  disposeModel(model.root);
+});

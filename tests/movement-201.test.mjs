@@ -94,7 +94,7 @@ test('movement 201 is Brown\'s eccentric gear, carried pinion, one open belt, ro
   );
   assert.equal(
     model.root.userData.variant,
-    'sixteen-to-eight-external-mesh-with-continuously-rotating-pinion-and-variable-rocker-output',
+    'eighteen-to-eight-irregular-external-mesh-with-continuously-rotating-pinion-and-variable-rocker-output',
   );
 
   assert.equal(blocks.carrier.parent, model.root);
@@ -158,14 +158,13 @@ test('movement 201 is Brown\'s eccentric gear, carried pinion, one open belt, ro
   assert.deepEqual(sourceRaster.imageSize.toArray(), [525, 525]);
   assert.equal(sourceRaster.sourceUrl, movement.sourceUrl);
   assert.deepEqual(sourceAnchors.driverShaftCenter.toArray(), [207, 65]);
-  assert.deepEqual(sourceAnchors.driverPitchCenter.toArray(), [176, 86]);
   assert.deepEqual(sourceAnchors.pinionCenter.toArray(), [269, 74]);
   assert.deepEqual(sourceAnchors.carrierPivot.toArray(), [268, 360]);
   assert.deepEqual(sourceAnchors.rodPin.toArray(), [90, 361]);
   disposeModel(model.root);
 });
 
-test('movement 201 source pose and 16:8 pitch geometry reproduce the engraving anchors', () => {
+test('movement 201 source pose and 18:8 irregular pitch geometry reproduce the engraving anchors', () => {
   const model = createMovementModel(catalog.movements[200]);
   const {
     geometry,
@@ -174,118 +173,46 @@ test('movement 201 source pose and 16:8 pitch geometry reproduce the engraving a
     transmission,
   } = model.root.userData;
   const sourceState = stateAtDriverAngle(0);
+  const drive = transmission.irregularDrive;
 
-  assert.equal(geometry.driverTeeth, 16);
+  // Brown draws 18 teeth on the irregular gear and 8 on the pinion.
+  assert.equal(geometry.driverTeeth, 18);
   assert.equal(geometry.pinionTeeth, 8);
-  near(
-    geometry.driverPitchRadius / geometry.pinionPitchRadius,
-    2,
-    1e-15,
-    'sixteen-to-eight pitch-radius ratio',
-  );
-  near(
-    geometry.driverPitchRadius,
-    geometry.driverTeeth * geometry.module / 2,
-    1e-15,
-    'driver pitch radius follows common module',
-  );
-  near(
-    geometry.pinionPitchRadius,
-    geometry.pinionTeeth * geometry.module / 2,
-    1e-15,
-    'pinion pitch radius follows common module',
-  );
-  near(
-    geometry.circularPitch,
-    Math.PI * geometry.module,
-    1e-15,
-    'common circular pitch',
-  );
-  near(
-    geometry.pitchCenterDistance,
-    geometry.driverPitchRadius + geometry.pinionPitchRadius,
-    1e-15,
-    'externally meshing pitch circles are tangent',
-  );
-  near(
-    transmission.driverToPinionNominalRatio,
-    -2,
-    1e-15,
-    'nominal tooth-count ratio',
-  );
-  near(
-    transmission.pulleyRatio,
-    geometry.smallPulleyRadius / geometry.largePulleyRadius,
-    1e-15,
-    'open-belt pulley ratio',
-  );
+  near(geometry.pitchPerimeter, 18 * geometry.circularPitch, 1e-12, 'pitch curve carries 18 whole pitches');
+  near(geometry.pinionPitchRadius, 8 * geometry.circularPitch / FULL_TURN, 1e-15, 'pinion pitch circle carries 8 pitches');
+  near(geometry.circularPitch, Math.PI * geometry.module, 1e-15, 'common circular pitch');
+  near(transmission.driverToPinionNominalRatio, -18 / 8, 1e-15, 'nominal tooth-count ratio');
+  near(transmission.pulleyRatio, geometry.smallPulleyRadius / geometry.largePulleyRadius, 1e-15, 'open-belt pulley ratio');
+  // Traced pitch curve: an irregular oval about 3:1 in its radii from the shaft.
+  assert.ok(geometry.minimumPitchRadiusFromShaft > 0.44 && geometry.minimumPitchRadiusFromShaft < 0.48);
+  assert.ok(geometry.maximumPitchRadiusFromShaft > 1.42 && geometry.maximumPitchRadiusFromShaft < 1.46);
+  // The arc-length table integrates the smooth Fourier curve exactly.
+  let polyline = 0;
+  const outline = drive.pitchOutline(20000);
+  outline.forEach((point, index) => { polyline += point.distanceTo(outline[(index + 1) % outline.length]); });
+  near(polyline, geometry.pitchPerimeter, 1e-6, 'pitch perimeter');
+  // Star-shaped about its centre with at most mild concavity (radius of
+  // curvature well above the pinion's), so the pinion can roll all round it.
+  for (let index = 0; index < 4096; index += 1) {
+    const point = drive.pitchPoint(FULL_TURN * index / 4096);
+    assert.ok(point.normal.dot(point.point.clone().sub(geometry.pitchCurveCentre)) > 0);
+    assert.ok(point.curvature > -1 / (3 * geometry.pinionPitchRadius), `curvature ${point.curvature}`);
+  }
 
-  vector2Near(
-    sourceAnchors.modeledSourceDriverShaftCenter,
-    geometry.driverShaftCenter,
-    1e-15,
-    'fixed driver shaft anchor',
-  );
-  vector2Near(
-    sourceAnchors.modeledSourceDriverPitchCenter,
-    sourceState.driverPitchCenter,
-    1e-15,
-    'source-pose eccentric pitch center',
-  );
-  vector2Near(
-    sourceAnchors.modeledSourcePinionCenter,
-    sourceState.pinionCenter,
-    1e-15,
-    'source-pose carried pinion center',
-  );
-  vector2Near(
-    sourceState.driverPitchCenter,
-    new THREE.Vector2(-1.242, 2.799),
-    1e-15,
-    'pixel-fitted eccentric pitch center',
-  );
-  vector2Near(
-    sourceState.pinionCenter,
-    new THREE.Vector2(0.0135, 2.961),
-    2e-15,
-    'pixel-fitted pinion center',
-  );
-  vector2Near(
-    geometry.carrierPivot,
-    new THREE.Vector2(0, -0.9),
-    1e-15,
-    'pixel-fitted lower pivot',
-  );
-  near(
-    sourceState.rodY,
-    sourceAnchors.modeledSourceRodPin.y,
-    1e-15,
-    'modeled rod pin source height',
-  );
-  near(
-    sourceState.rodY,
-    -0.9 + (360 - 361) * geometry.sourceScale,
-    0.023,
-    'rod pin is within two source pixels of engraving',
-  );
-  near(
-    sourceState.driverPitchCenter.distanceTo(sourceState.pinionCenter),
-    geometry.pitchCenterDistance,
-    2e-15,
-    'source-pose gear center distance',
-  );
-  near(
-    sourceState.pinionCenter.distanceTo(geometry.carrierPivot),
-    geometry.carrierLength,
-    2e-15,
-    'source-pose rocker length',
-  );
+  vector2Near(sourceAnchors.modeledSourceDriverShaftCenter, geometry.driverShaftCenter, 1e-15, 'fixed driver shaft anchor');
+  vector2Near(sourceAnchors.modeledSourcePinionCenter, sourceState.pinionCenter, 1e-15, 'source-pose carried pinion center');
+  vector2Near(sourceState.pinionCenter, new THREE.Vector2(0.0135, 2.961), 0.3 * geometry.sourceScale, 'pinion within 0.3 source px of the engraving');
+  vector2Near(geometry.carrierPivot, new THREE.Vector2(0, -0.9), 1e-15, 'pixel-fitted lower pivot');
+  near(sourceState.rodY, sourceAnchors.modeledSourceRodPin.y, 1e-15, 'modeled rod pin source height');
+  near(sourceState.rodY, -0.9 + (360 - 361) * geometry.sourceScale, 0.023, 'rod pin is within two source pixels of engraving');
+  near(sourceState.pitchTangencyError, 0, 2e-15, 'source-pose pitch tangency');
+  near(sourceState.pinionCenter.distanceTo(geometry.carrierPivot), geometry.carrierLength, 2e-15, 'source-pose rocker length');
   assert.ok(Math.abs(sourceState.carrierAngle - Math.PI / 2) < 0.004);
-  assert.ok(geometry.driverEccentricOffset.length() > geometry.pinionPitchRadius);
+  assert.ok(geometry.pitchCurveCentre.length() > geometry.pinionPitchRadius);
   disposeModel(model.root);
 });
 
-test('movement 201 exactly closes its gear, rocker, belt, slot, and one-turn constraints at 32,769 input poses', () => {
+test('movement 201 exactly closes its rolling mesh, rocker, belt, slot, and one-turn constraints at 32,769 input poses', () => {
   const model = createMovementModel(catalog.movements[200]);
   const {
     geometry,
@@ -310,31 +237,28 @@ test('movement 201 exactly closes its gear, rocker, belt, slot, and one-turn con
     );
     if (index % 1024 === 0) finiteStateNumbers(state);
     near(state.rockerLengthError, 0, 2e-15, 'fixed rocker length');
-    near(state.gearCenterDistanceError, 0, 4e-15, 'tangent pitch circles');
+    near(state.pitchTangencyError, 0, 4e-15, 'pinion pitch circle touches the pitch curve');
     near(
       state.meshSurfaceVelocityError,
       0,
       4e-15,
       'external mesh no-slip velocity',
     );
-    near(state.meshPhaseError, 0, 4e-13, 'external mesh tooth phase');
     near(
-      state.meshCoordinate,
-      sourceState.meshCoordinate,
+      state.rollingInvariant,
+      sourceState.rollingInvariant,
       4e-13,
-      'constant external mesh coordinate',
+      'pinion rolls without slip along the pitch curve',
     );
-    near(state.beltNoSlipError, 0, 5e-16, 'open-belt no-slip relation');
-    near(state.rodGuideError, 0, 1e-15, 'rod remains in vertical guide');
-    near(state.slotRangeError, 0, 1e-15, 'follower remains within slot');
     near(
-      state.pinionCenterVelocity.clone().sub(
-        state.driverPitchCenterVelocity,
-      ).dot(state.contactNormal),
+      state.contactPoint.clone().sub(state.pinionCenter).dot(state.contactTangent),
       0,
       2e-15,
-      'gear-center relative velocity is tangent to center-distance circle',
+      'contact lies on the common pitch normal',
     );
+    near(state.beltNoSlipError, 0, 2e-15, 'open-belt no-slip relation');
+    near(state.rodGuideError, 0, 1e-15, 'rod remains in vertical guide');
+    near(state.slotRangeError, 0, 1e-15, 'follower remains within slot');
     near(
       state.pinionCenterVelocity.dot(
         state.pinionCenter.clone().sub(geometry.carrierPivot),
@@ -343,7 +267,7 @@ test('movement 201 exactly closes its gear, rocker, belt, slot, and one-turn con
       3e-15,
       'pinion center velocity is tangent to fixed-length rocker circle',
     );
-    assert.ok(state.driverAngularSpeed < 0, 'eccentric driver turns clockwise');
+    assert.ok(state.driverAngularSpeed < 0, 'irregular driver turns clockwise');
     assert.ok(state.pinionAngularSpeed > 0, 'pinion rotates continually counterclockwise');
     assert.ok(
       state.largePulleyAngularSpeed > 0,
@@ -372,16 +296,16 @@ test('movement 201 exactly closes its gear, rocker, belt, slot, and one-turn con
     rodYMaximum = Math.max(rodYMaximum, state.rodY);
   }
 
-  assert.ok(carrierAngleMaximum - carrierAngleMinimum > 0.26);
-  assert.ok(carrierAngleMaximum - carrierAngleMinimum < 0.27);
-  assert.ok(carrierAngleMinimum > 1.32);
-  assert.ok(carrierAngleMaximum < 1.60);
-  assert.ok(pinionAngularSpeedMinimum > 0.72);
-  assert.ok(pinionAngularSpeedMaximum > 2.95);
-  assert.ok(pinionAngularSpeedMaximum / pinionAngularSpeedMinimum > 4);
-  assert.ok(largePulleyAngularSpeedMinimum > 0.22);
-  assert.ok(rodYMaximum - rodYMinimum > 0.64);
-  assert.ok(rodYMaximum - rodYMinimum < 0.65);
+  assert.ok(carrierAngleMaximum - carrierAngleMinimum > 0.25);
+  assert.ok(carrierAngleMaximum - carrierAngleMinimum < 0.26);
+  assert.ok(carrierAngleMinimum > 1.31);
+  assert.ok(carrierAngleMaximum < 1.58);
+  assert.ok(pinionAngularSpeedMinimum > 1.1);
+  assert.ok(pinionAngularSpeedMaximum > 4.0);
+  assert.ok(pinionAngularSpeedMaximum / pinionAngularSpeedMinimum > 3.5);
+  assert.ok(largePulleyAngularSpeedMinimum > 0.34);
+  assert.ok(rodYMaximum - rodYMinimum > 0.62);
+  assert.ok(rodYMaximum - rodYMinimum < 0.63);
   near(
     carrierAngleMinimum,
     transmission.sampledExtrema.carrierAngleMinimum,
@@ -396,12 +320,6 @@ test('movement 201 exactly closes its gear, rocker, belt, slot, and one-turn con
   );
 
   const afterOneClockwiseTurn = stateAtDriverAngle(-FULL_TURN);
-  vector2Near(
-    afterOneClockwiseTurn.driverPitchCenter,
-    sourceState.driverPitchCenter,
-    1e-15,
-    'eccentric center returns after one input turn',
-  );
   vector2Near(
     afterOneClockwiseTurn.pinionCenter,
     sourceState.pinionCenter,
@@ -422,14 +340,14 @@ test('movement 201 exactly closes its gear, rocker, belt, slot, and one-turn con
   );
   near(
     afterOneClockwiseTurn.pinionAngle - sourceState.pinionAngle,
-    2 * FULL_TURN,
-    8e-15,
-    'eight-tooth pinion completes two turns per sixteen-tooth input cycle',
+    2.25 * FULL_TURN,
+    2e-13,
+    'eight-tooth pinion turns 18/8 per eighteen-tooth input cycle',
   );
   near(
     afterOneClockwiseTurn.beltDistance - sourceState.beltDistance,
-    -geometry.smallPulleyRadius * 2 * FULL_TURN,
-    4e-15,
+    -geometry.smallPulleyRadius * 2.25 * FULL_TURN,
+    2e-13,
     'belt travel follows two pinion turns relative to returned carrier',
   );
   disposeModel(model.root);
@@ -492,12 +410,6 @@ test('movement 201 analytic velocities match finite differences throughout the i
       state.rodVelocity,
       3e-9,
       'rod linear speed derivative',
-    );
-    vector2Near(
-      vectorDerivative('driverPitchCenter'),
-      state.driverPitchCenterVelocity,
-      2e-9,
-      'eccentric pitch-center velocity derivative',
     );
     vector2Near(
       vectorDerivative('pinionCenter'),

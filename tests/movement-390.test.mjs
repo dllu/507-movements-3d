@@ -505,3 +505,34 @@ test('movement 390 bands pass through no part: only the fastened ends stand up i
   }
   disposeModel(model.root);
 });
+
+test('movement 390 fulcrum a stands centred in the lever boss, not on its edge (pass 92)', () => {
+  const model = createMovementModel(catalog.movements[389]);
+  let lever, pin;
+  model.root.traverse((o) => {
+    if (o.userData.role === 'operating-lever-rigid-with-piece-A') lever = o;
+    if (o.userData.role === 'fixed-fulcrum-a') pin = o;
+  });
+  pin.geometry.computeBoundingBox();
+  const size = pin.geometry.boundingBox.getSize(new THREE.Vector3());
+  const pinRadius = Math.min(size.x, size.y, size.z) / 2;
+  for (const time of [0, 1.3, 2.9]) {
+    model.update(time);
+    model.root.updateMatrixWorld(true);
+    const axis = new THREE.Vector3(0, 0, 1).transformDirection(pin.matrixWorld);
+    const leverNormal = new THREE.Vector3(0, 0, 1).transformDirection(lever.matrixWorld);
+    near(Math.abs(axis.dot(leverNormal)), 1, 1e-9, 'pin normal to the lever plate');
+    const centre = new THREE.Vector3().setFromMatrixPosition(pin.matrixWorld)
+      .applyMatrix4(lever.matrixWorld.clone().invert());
+    const p = lever.geometry.attributes.position;
+    let outer = Infinity, bore = 0;
+    for (let n = 0; n < p.count; n += 1) {
+      const d = Math.hypot(p.getX(n) - centre.x, p.getY(n) - centre.y);
+      if (d < pinRadius * 1.1) bore = Math.max(bore, d);
+      else outer = Math.min(outer, d);
+    }
+    assert.ok(bore > pinRadius, `bored for the pin: ${bore}`);
+    assert.ok(outer >= 1.5 * pinRadius, `boss margin ${outer} vs pin ${pinRadius}`);
+  }
+  disposeModel(model.root);
+});

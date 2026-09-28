@@ -82,10 +82,10 @@ test('186 t=0 places the parts on Brown\'s plate landmarks', () => {
     const strap = d.strapPointsWorld(k).map((p) => d.sourceRasterFromPoint(p.x, p.y));
     const bottom = strap.reduce((a, p) => (p.y > a.y ? p : a));
     expectRaster(bottom, 455, 490, 8, 'loop bottom');
-    expectRaster(strap.at(-1), 476, d.geometry.tipRestY, 1e-6, 'free end under notch a');
+    expectRaster(strap.at(-1), 484, d.geometry.tipRestY, 1e-6, 'free end under notch a');
     near(d.geometry.tipRestY, 320, 1, 'free end height');
     const leverBox = new THREE.Box3().setFromObject(b.leverBody);
-    near(d.sourceRasterFromPoint(leverBox.max.x, 0).x, 497, 1, 'drop outer edge');
+    near(d.sourceRasterFromPoint(leverBox.max.x, 0).x, 495.5, 1, 'drop outer edge');
     near(d.sourceRasterFromPoint(0, leverBox.max.y).y, 145, 1.5, 'claw knuckle');
   } finally { disposeObject3D(model.root); }
 });

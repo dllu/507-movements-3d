@@ -451,3 +451,45 @@ test('movement 356 closes its handling cycle and leaves 364 authored', () => {
   disposeModel(model507.root);
   disposeModel(model.root);
 });
+
+// p92: a pin carried by a ring stands centred in a round pad of that ring
+// (the ring's own annulus, thickened round the pivot axis), not on a band
+// narrower than the pin. Every point of a circle of 1.4 pin radii about the
+// pin axis, at the ring's mid-radius, lies inside the ring solid.
+test('movement 356 ring pins stand centred in round pads of their rings', () => {
+  const model = createMovementModel(catalog.movements[355]);
+  const { blocks, geometry } = model.root.userData;
+  const inside = (mesh, point) => {
+    const raycaster = new THREE.Raycaster(point, new THREE.Vector3(0.31, 0.53, 0.79).normalize());
+    const material = mesh.material;
+    const side = material.side;
+    material.side = THREE.DoubleSide;
+    const hits = raycaster.intersectObject(mesh, false);
+    material.side = side;
+    return hits.length % 2 === 1;
+  };
+  const cases = [
+    { ring: blocks.middleRing, pins: blocks.middlePivotPins, axis: Y_AXIS, radius: geometry.middleRadius },
+    { ring: blocks.innerRing, pins: blocks.innerPivotPins, axis: X_AXIS, radius: geometry.innerRadius },
+  ];
+  model.update(0);
+  model.root.updateMatrixWorld(true);
+  for (const { ring, pins, axis, radius } of cases) {
+    for (const pin of pins) {
+      assert.equal(pin.parent, ring.parent, 'pin is rigid with its ring');
+      const pinRadius = pin.geometry.parameters.radiusTop;
+      const side = Math.sign(pin.position.dot(axis));
+      const u = axis.equals(Y_AXIS) ? X_AXIS : Y_AXIS;
+      const v = new THREE.Vector3().crossVectors(axis, u);
+      for (let k = 0; k < 24; k += 1) {
+        const angle = (k / 24) * Math.PI * 2;
+        const local = axis.clone().multiplyScalar(side * radius)
+          .addScaledVector(u, 1.4 * pinRadius * Math.cos(angle))
+          .addScaledVector(v, 1.4 * pinRadius * Math.sin(angle));
+        assert.ok(inside(ring, ring.parent.localToWorld(local)),
+          `${ring.userData.role} surrounds its pin at ${k}`);
+      }
+    }
+  }
+  disposeModel(model.root);
+});

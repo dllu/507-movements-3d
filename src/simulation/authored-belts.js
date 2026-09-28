@@ -151,6 +151,14 @@ function tangentPointsFromExternal(center, external, radius, axis) {
   ];
 }
 
+// Tangent points on a pulley rim for straight lines to an external point
+// anywhere in space: the rim radius is perpendicular to the line there, which
+// is the planar tangent from the point's projection onto the pulley plane.
+function rimTangentPoints(center, radius, axis, external) {
+  const offset = external.clone().sub(center);
+  return tangentPointsFromExternal(center, external.clone().addScaledVector(axis, -axis.dot(offset)), radius, axis);
+}
+
 function tangentFillet(vertex, fromPoint, toPoint, radius) {
   const incoming = vertex.clone().sub(fromPoint).normalize();
   const outgoing = toPoint.clone().sub(vertex).normalize();
@@ -267,6 +275,48 @@ class AxialShiftWrapCurve3 extends CircularArcCurve3 {
   }
 }
 
+// A wrap that meets straight free runs arriving and leaving at a fleet angle
+// (off the pulley's mid-plane). The rope's axial position on the tread is a
+// cubic Hermite in the wrap parameter, from `from` to `to`, whose end slopes
+// match the runs, so straight taut spans join the wrap tangent-continuously.
+class FleetWrapCurve3 extends CircularArcCurve3 {
+  constructor(arc, incoming, outgoing, from = 0, to = 0) {
+    super(arc.center, arc.radialStart, arc.axis, arc.sweep);
+    this.from = from;
+    this.to = to;
+    this.arcLength = Math.abs(arc.sweep) * arc.radialStart.length();
+    const slope = (direction, t) => {
+      const inPlane = super.getTangent(t, new THREE.Vector3());
+      return direction.dot(this.axis) / direction.dot(inPlane);
+    };
+    this.startRate = slope(incoming.clone().normalize(), 0) * this.arcLength;
+    this.endRate = slope(outgoing.clone().normalize(), 1) * this.arcLength;
+  }
+
+  axial(t) {
+    const t2 = t * t;
+    const t3 = t2 * t;
+    return this.from * (2 * t3 - 3 * t2 + 1) + this.to * (-2 * t3 + 3 * t2)
+      + this.startRate * (t3 - 2 * t2 + t) + this.endRate * (t3 - t2);
+  }
+
+  axialRate(t) {
+    const t2 = t * t;
+    return (this.to - this.from) * (6 * t - 6 * t2)
+      + this.startRate * (3 * t2 - 4 * t + 1) + this.endRate * (3 * t2 - 2 * t);
+  }
+
+  getPoint(t, target = new THREE.Vector3()) {
+    super.getPoint(t, target);
+    return target.addScaledVector(this.axis, this.axial(t));
+  }
+
+  getTangent(t, target = new THREE.Vector3()) {
+    super.getTangent(t, target).multiplyScalar(this.arcLength);
+    return target.addScaledVector(this.axis, this.axialRate(t)).normalize();
+  }
+}
+
 function tautCrossedRopeCurve(centerA, centerB, radius, offset) {
   const [firstSpan, secondArc, secondSpan, firstArc] = beltCurveCrossed(centerA, centerB, radius, radius).curves;
   const at = (point, z) => point.clone().setZ(z);
@@ -356,29 +406,30 @@ function rightAngleGuides() {
   // drum's axis is X, so sliding it along X leaves the belt path unchanged.
   driver.position.x -= 0.09 * driverWidth;
 
-  const drivenTangents = tangentPointsFromExternal(
-    drivenCenter,
-    guideVertex,
-    drivenRadius,
-    Z_AXIS,
-  ).sort((first, second) => second.y - first.y);
-  const driverTangents = tangentPointsFromExternal(
-    driverCenter,
-    guideVertex,
-    driverRadius,
-    X_AXIS,
-  ).sort((first, second) => second.z - first.z);
+  // Brown places the guide wheels side by side, one for each leaf. Pass 92:
+  // each guide's vertex is set off axially (in front / behind) before the
+  // tangents are solved, so every free leaf is one straight 3D common tangent
+  // from pulley to guide, as a taut rope runs; the guide planes follow the
+  // leaves they carry. (The former leaves were Bezier ribbons that bowed to
+  // absorb the offset, which read as slack rope.)
+  const guideSetback = 0.40;
+  const rimTangents = rimTangentPoints;
+  const firstVertex = guideVertex.clone().setZ(guideSetback);
+  const drivenTangents = rimTangents(drivenCenter, drivenRadius, Z_AXIS, firstVertex)
+    .sort((first, second) => second.y - first.y);
+  const driverTangents = rimTangents(driverCenter, driverRadius, X_AXIS, firstVertex)
+    .sort((first, second) => second.z - first.z);
   const firstGuide = tangentFillet(
-    guideVertex,
+    firstVertex,
     drivenTangents[0],
     driverTangents[0],
     guideRadius,
   );
   const returnGuideAt = (height) => {
-    const vertex = guideVertex.clone().setY(height);
-    const fromDriver = tangentPointsFromExternal(driverCenter, vertex, driverRadius, X_AXIS)
+    const vertex = guideVertex.clone().setY(height).setZ(-guideSetback);
+    const fromDriver = rimTangents(driverCenter, driverRadius, X_AXIS, vertex)
       .sort((a, b) => a.z - b.z)[0];
-    const toDriven = tangentPointsFromExternal(drivenCenter, vertex, drivenRadius, Z_AXIS)
+    const toDriven = rimTangents(drivenCenter, drivenRadius, Z_AXIS, vertex)
       .sort((a, b) => a.y - b.y)[0];
     return { guide: tangentFillet(vertex, fromDriver, toDriven, guideRadius), fromDriver, toDriven };
   };
@@ -400,39 +451,21 @@ function rightAngleGuides() {
     X_AXIS,
     driverTangents[0].clone().sub(firstGuide.end).normalize(),
   );
-  const drivenArc = circularArcThrough(
+  const drivenArc = new FleetWrapCurve3(circularArcThrough(
     drivenCenter,
     drivenTangents[1],
     drivenTangents[0],
     Z_AXIS,
     drivenTangents[1].clone().sub(secondGuide.end).normalize(),
-  );
-  // Brown places the guide wheels side by side, one for each leaf. Give
-  // their complete rims axial clearance and distribute the resulting skew
-  // over the free ribbon leaves, preserving every pulley-entry tangent.
-  const guideOffsets = [new THREE.Vector3(0, 0, 0.30), new THREE.Vector3(0, 0, -0.30)];
-  const freeLeaf = (start, end, startOffset = new THREE.Vector3(), endOffset = new THREE.Vector3()) => {
-    const handle = end.clone().sub(start).multiplyScalar(1 / 3);
-    const a = start.clone().add(startOffset);
-    const b = end.clone().add(endOffset);
-    return new TangentCubicBezierCurve3(a, a.clone().add(handle), b.clone().sub(handle), b);
-  };
-  const firstStart = firstGuide.start.clone();
-  const firstEnd = firstGuide.end.clone();
-  const secondStart = secondGuide.start.clone();
-  const secondEnd = secondGuide.end.clone();
-  for (const [index, guide] of [firstGuide, secondGuide].entries()) {
-    guide.center.add(guideOffsets[index]);
-    guide.arc.center.add(guideOffsets[index]);
-  }
+  ), drivenTangents[1].clone().sub(secondGuide.end), firstGuide.start.clone().sub(drivenTangents[0]));
   const beltCurve = new THREE.CurvePath();
-  beltCurve.add(freeLeaf(drivenTangents[0], firstStart, undefined, guideOffsets[0]));
+  beltCurve.add(new THREE.LineCurve3(drivenTangents[0], firstGuide.start));
   beltCurve.add(firstGuide.arc);
-  beltCurve.add(freeLeaf(firstEnd, driverTangents[0], guideOffsets[0]));
+  beltCurve.add(new THREE.LineCurve3(firstGuide.end, driverTangents[0]));
   beltCurve.add(driverArc);
-  beltCurve.add(freeLeaf(driverTangents[1], secondStart, undefined, guideOffsets[1]));
+  beltCurve.add(new THREE.LineCurve3(driverTangents[1], secondGuide.start));
   beltCurve.add(secondGuide.arc);
-  beltCurve.add(freeLeaf(secondEnd, drivenTangents[1], guideOffsets[1]));
+  beltCurve.add(new THREE.LineCurve3(secondGuide.end, drivenTangents[1]));
   beltCurve.add(drivenArc);
 
   const guideA = makePulley({
@@ -536,16 +569,38 @@ function rightAngleCrossed() {
     drivenRadius,
     Y_AXIS,
   ).sort((first, second) => second.z - first.z)[0];
+  // Pass 92: the crossed leaves are straight and taut. Each leaves the driver
+  // in its own layer (the left leaf in front, the right one behind) and runs
+  // straight to its guide in the pulley mid-plane; the rope drifts across the
+  // driver's tread over the wrap. The layer offset is the least that parts the
+  // strands by a rope diameter plus clearance where their projections cross.
+  // (The leaves formerly bowed apart at the crossing, which read as slack.)
+  const ropeRadius = 0.05;
+  const crossingParameters = (() => {
+    const leftStart = tangentFillet(leftVertex, driverLeftTangent, drivenLeftTangent, guideRadius).start;
+    const rightEnd = tangentFillet(rightVertex, drivenRightTangent, driverRightTangent, guideRadius).end;
+    const p = driverLeftTangent;
+    const r = leftStart.clone().sub(p);
+    const q = rightEnd;
+    const s = driverRightTangent.clone().sub(q);
+    const cross = (u, v) => u.x * v.y - u.y * v.x;
+    const d = q.clone().sub(p);
+    return [cross(d, s) / cross(r, s), cross(d, r) / cross(r, s)];
+  })();
+  const crossingGap = 2 * ropeRadius + 0.04;
+  const layer = crossingGap / (1 - crossingParameters[0] + crossingParameters[1]);
+  const driverLeftLeaf = driverLeftTangent.clone().setZ(layer);
+  const driverRightLeaf = driverRightTangent.clone().setZ(-layer);
   const leftGuideContact = tangentFillet(
     leftVertex,
-    driverLeftTangent,
+    driverLeftLeaf,
     drivenLeftTangent,
     guideRadius,
   );
   const rightGuideContact = tangentFillet(
     rightVertex,
     drivenRightTangent,
-    driverRightTangent,
+    driverRightLeaf,
     guideRadius,
   );
   const drivenEntryArc = circularArcThrough(
@@ -563,13 +618,13 @@ function rightAngleCrossed() {
     wrapSweep,
     0.30,
   );
-  const driverArc = circularArcThrough(
+  const driverArc = new FleetWrapCurve3(circularArcThrough(
     driverCenter,
     driverRightTangent,
     driverLeftTangent,
     Z_AXIS,
     driverRightTangent.clone().sub(rightGuideContact.end).normalize(),
-  );
+  ), driverRightLeaf.clone().sub(rightGuideContact.end), leftGuideContact.start.clone().sub(driverLeftLeaf), -layer, layer);
   const tangentTransition = (start, end, startTangent, endTangent) => {
     const handleLength = Math.min(0.34, start.distanceTo(end) * 0.36);
     return new TangentCubicBezierCurve3(
@@ -581,24 +636,8 @@ function rightAngleCrossed() {
   };
   const wrapStart = drivenWrap.getPoint(0);
   const wrapEnd = drivenWrap.getPoint(1);
-  // The leaves bow apart axially where their projections cross.
-  const crossingParameters = (() => {
-    const p = driverLeftTangent;
-    const r = leftGuideContact.start.clone().sub(p);
-    const q = rightGuideContact.end;
-    const s = driverRightTangent.clone().sub(q);
-    const cross = (a, b) => a.x * b.y - a.y * b.x;
-    const d = q.clone().sub(p);
-    return [cross(d, s) / cross(r, s), cross(d, r) / cross(r, s)];
-  })();
   const beltCurve = new THREE.CurvePath();
-  beltCurve.add(new BowedSpanCurve3(
-    driverLeftTangent,
-    leftGuideContact.start,
-    0.22,
-    Z_AXIS,
-    crossingParameters[0],
-  ));
+  beltCurve.add(new THREE.LineCurve3(driverLeftLeaf, leftGuideContact.start));
   beltCurve.add(leftGuideContact.arc);
   beltCurve.add(tangentTransition(
     leftGuideContact.end,
@@ -614,13 +653,7 @@ function rightAngleCrossed() {
     rightGuideContact.arc.getTangent(0),
   ));
   beltCurve.add(rightGuideContact.arc);
-  beltCurve.add(new BowedSpanCurve3(
-    rightGuideContact.end,
-    driverRightTangent,
-    -0.22,
-    Z_AXIS,
-    crossingParameters[1],
-  ));
+  beltCurve.add(new THREE.LineCurve3(rightGuideContact.end, driverRightLeaf));
   beltCurve.add(driverArc);
 
   const guideLeft = makePulley({
@@ -640,7 +673,7 @@ function rightAngleCrossed() {
   guideLeft.position.copy(leftGuideContact.center);
   guideRight.position.copy(rightGuideContact.center);
   // Brown hatches the band as a laid rope lying on each tread.
-  const belt = makeMovingBelt(beltCurve, { radius: 0.05, laid: true, markerCount: 0 });
+  const belt = makeMovingBelt(beltCurve, { radius: ropeRadius, laid: true, markerCount: 0 });
   root.add(driver, driven, guideLeft, guideRight, belt);
   castSpokedHub(driver);
   addKeyedShaft(driver, spokedStubLength(driver));
@@ -649,7 +682,7 @@ function rightAngleCrossed() {
   addKeyedShaft(guideRight, 0.74);
   root.userData.mechanism = 'crossed-right-angle-guide-drive';
   root.userData.drivenWrapTurns = Math.abs(wrapSweep) / (Math.PI * 2);
-  root.userData.crossoverClearance = 0.44;
+  root.userData.crossoverClearance = crossingGap - 2 * ropeRadius;
   root.userData.cameraFov = 18;
   root.userData.shaftIntersection = driverCenter.clone();
   root.userData.beltContacts = [
@@ -874,10 +907,14 @@ function oscillatingSector() {
   sector.position.copy(sectorPivot);
   const sectorShape = new THREE.Shape();
   const innerRadius = sectorRimRadius * 0.80;
-  sectorShape.moveTo(-outerRadius, 0);
-  sectorShape.absarc(0, 0, outerRadius, Math.PI, Math.PI * 2, false);
-  sectorShape.lineTo(innerRadius, 0);
-  sectorShape.absarc(0, 0, innerRadius, 0, -Math.PI, true);
+  // Pass 92: the rim's ends stop 0.01 inside the lever bar's underside (the
+  // bar is 0.14 high and shallower than the rim), as Brown draws them meeting
+  // the bar, instead of standing up in front of the bar's face to its axis.
+  const rimTop = 0.07 - 0.01;
+  const outerEnd = Math.asin(rimTop / outerRadius);
+  const innerEnd = Math.asin(rimTop / innerRadius);
+  sectorShape.absarc(0, 0, outerRadius, Math.PI + outerEnd, Math.PI * 2 - outerEnd, false);
+  sectorShape.absarc(0, 0, innerRadius, -innerEnd, -Math.PI + innerEnd, true);
   sectorShape.closePath();
   const sectorPlate = new THREE.Mesh(
     new THREE.ExtrudeGeometry(sectorShape, {
@@ -916,9 +953,10 @@ function oscillatingSector() {
     arm.userData.role = 'sector-arm-under-lever';
     sector.add(arm);
   }
-  // The rope ends are fastened to the rim just under the lever bar (half
-  // height 0.07) rather than inside it.
-  const attachmentDrop = Math.asin((0.074 + ropeRadius) / sectorRadius);
+  // Pass 92: the rope ends run up the rim into the lever bar (half height
+  // 0.07) and are fastened there, as Brown draws them meeting the bar; each
+  // end is buried 0.03 in the bar's underside so no cut end shows.
+  const attachmentDrop = Math.asin((0.07 - 0.03) / sectorRadius);
   const leftAttachmentLocal = new THREE.Vector3(
     -sectorRadius * Math.cos(attachmentDrop), -sectorRadius * Math.sin(attachmentDrop), beltZ);
   const rightAttachmentLocal = new THREE.Vector3(
@@ -929,8 +967,11 @@ function oscillatingSector() {
     matte(PALETTE.ink, { metalness: 0.28, roughness: 0.44 }));
   sectorShaft.rotation.x = Math.PI / 2;
   sector.add(sectorPlate, lever, hub, sectorShaft);
+  // Round ball grips, twice the bar's height as Brown draws them; at 0.14
+  // they enclose the bar's end corners (0.130 from the ball centre), which
+  // poked through the former 0.115 balls.
   for (const x of [-2.2, 2.2]) {
-    const grip = new THREE.Mesh(new THREE.SphereGeometry(0.115, 20, 12), matte(PALETTE.ink));
+    const grip = new THREE.Mesh(new THREE.SphereGeometry(0.14, 40, 24), matte(PALETTE.ink));
     grip.position.x = x;
     sector.add(grip);
   }
@@ -1689,40 +1730,20 @@ function addHookStaple(parent, shoulder, { width = 2.4, offset = 0, x = 0, eyeBo
   return { staple, ceiling, shank, underside: stapleY + 0.097 };
 }
 
-// On a quarter-turn belt each run must approach its pulley in that pulley's
-// mid-plane. Pass 58 makes both runs of 11 taut straight lines: the drum's
-// belt plane touches the pulley's pitch circle at its left (so the left run is
-// vertical, as Brown draws it), and the drum stands forward of the pulley
-// plane by its pitch radius, so the pulley's plane touches the drum's pitch
-// cylinder where the right run leaves it. Each run leaves its pulley at the
-// delivery angle; the belt eases across the tread just before it leaves, so
-// the path stays smooth. A tangent-continuous wrap ending in a skewed
-// tangent to the pitch cylinder.
-class SkewedDeliveryWrapCurve3 extends CircularArcCurve3 {
-  constructor(arc, offsetAxis, amplitude) {
-    super(arc.center, arc.radialStart, arc.axis, arc.sweep);
-    this.offsetAxis = offsetAxis.clone().normalize();
-    this.amplitude = amplitude;
-    this.arcLength = Math.abs(arc.sweep) * arc.radialStart.length();
-  }
-
-  getPoint(t, target = new THREE.Vector3()) {
-    super.getPoint(t, target);
-    return target.addScaledVector(this.offsetAxis, this.amplitude * (t ** 8 - t ** 7));
-  }
-
-  getTangent(t, target = new THREE.Vector3()) {
-    super.getTangent(t, target).multiplyScalar(this.arcLength);
-    return target.addScaledVector(this.offsetAxis, this.amplitude * (8 * t ** 7 - 7 * t ** 6)).normalize();
-  }
-}
-
+// Quarter-turn belt 11. Pass 58 set the drum forward of the pulley plane by
+// its pitch radius so each run approached its pulley in that pulley's
+// mid-plane, which left the band leaving the pulley at its very edge. Pass 92
+// (the user's review) centres the drum in the pulley's plane instead: both
+// runs are straight common tangents of the two rims and the band runs centred
+// on both faces, at the cost of a symmetric 9.6-degree fleet angle.
 function rightAngleWithoutGuides() {
   const root = new THREE.Group();
   const topPitchRadius = 0.76;
   const bottomPitchRadius = 0.96;
   const beltPlaneX = -bottomPitchRadius;
-  const topCenter = new THREE.Vector3(beltPlaneX, 2.25, topPitchRadius);
+  // Pass 92: the drum is centred in the pulley's plane (it stood 0.76 in
+  // front of it), so the band runs centred on both faces.
+  const topCenter = new THREE.Vector3(beltPlaneX, 2.25, 0);
   const bottomCenter = new THREE.Vector3(0, -2.25, 0);
   const driver = makePulley({
     radius: topPitchRadius - 0.012,
@@ -1741,25 +1762,38 @@ function rightAngleWithoutGuides() {
   driver.position.copy(topCenter);
   driven.position.copy(bottomCenter);
 
-  // The right run leaves the drum's back line (in the pulley plane) and
-  // meets the pulley's right side; the left run leaves the pulley's left
-  // point (in the drum's belt plane) and meets the drum's front.
-  const drumDelivery = new THREE.Vector3(beltPlaneX, topCenter.y, 0);
-  const pulleyDelivery = new THREE.Vector3(beltPlaneX, bottomCenter.y, 0);
-  const bottomRight = tangentPointsFromExternal(bottomCenter, drumDelivery, bottomPitchRadius, Z_AXIS)
-    .reduce((best, point) => (point.x > best.x ? point : best));
-  const topFront = tangentPointsFromExternal(topCenter, pulleyDelivery, topPitchRadius, X_AXIS)
-    .reduce((best, point) => (point.z > best.z ? point : best));
+  // Each free run is one straight common tangent of the two rims: the right
+  // run from the drum's back to the pulley's right side, the left run from
+  // the pulley's left side (vertical in Brown's elevation) to the drum's
+  // front. Both meet the pulley in its mid-plane and the drum in its belt
+  // plane, and climb symmetrically across the pulley plane between them.
+  const commonTangent = (drumSide, pulleySide) => {
+    let onPulley = bottomCenter.clone().addScaledVector(X_AXIS, pulleySide * bottomPitchRadius);
+    let onDrum;
+    for (let i = 0; i < 40; i += 1) {
+      onDrum = rimTangentPoints(topCenter, topPitchRadius, X_AXIS, onPulley)
+        .reduce((best, point) => (drumSide * point.z > drumSide * best.z ? point : best));
+      onPulley = rimTangentPoints(bottomCenter, bottomPitchRadius, Z_AXIS, onDrum)
+        .reduce((best, point) => (pulleySide * point.x > pulleySide * best.x ? point : best));
+    }
+    return { onDrum, onPulley };
+  };
+  const right = commonTangent(-1, 1);
+  const left = commonTangent(1, -1);
+  const drumDelivery = right.onDrum;
+  const bottomRight = right.onPulley;
+  const pulleyDelivery = left.onPulley;
+  const topFront = left.onDrum;
   const rightRun = new THREE.LineCurve3(drumDelivery, bottomRight);
   const leftRun = new THREE.LineCurve3(pulleyDelivery, topFront);
   const rightDirection = bottomRight.clone().sub(drumDelivery).normalize();
   const leftDirection = topFront.clone().sub(pulleyDelivery).normalize();
-  const bottomCircle = circularArcThrough(bottomCenter, bottomRight, pulleyDelivery, Z_AXIS, rightDirection);
-  const topCircle = circularArcThrough(topCenter, topFront, drumDelivery, X_AXIS, leftDirection);
-  const bottomArc = new SkewedDeliveryWrapCurve3(bottomCircle, Z_AXIS,
-    Math.abs(bottomCircle.sweep) * bottomPitchRadius * leftDirection.z / leftDirection.y);
-  const topArc = new SkewedDeliveryWrapCurve3(topCircle, X_AXIS,
-    Math.abs(topCircle.sweep) * topPitchRadius * rightDirection.x / -rightDirection.y);
+  const bottomArc = new FleetWrapCurve3(
+    circularArcThrough(bottomCenter, bottomRight, pulleyDelivery, Z_AXIS, rightDirection),
+    rightDirection, leftDirection);
+  const topArc = new FleetWrapCurve3(
+    circularArcThrough(topCenter, topFront, drumDelivery, X_AXIS, leftDirection),
+    leftDirection, rightDirection);
   const beltCurve = new THREE.CurvePath();
   beltCurve.add(rightRun);
   beltCurve.add(bottomArc);
@@ -4561,7 +4595,7 @@ function fixedPulleyBellCrankForceRedirector() {
   // end, so the cables carry no white flow markers.
   const inputCable = makeDynamicMovingBelt(sourceInputCableGeometry.curve, {
     closed: false,
-    color: PALETTE.driven,
+    color: PALETTE.rope,
     markerCount: 0,
     radius: cableRadius,
     tubularSegments: 150,
@@ -4575,7 +4609,7 @@ function fixedPulleyBellCrankForceRedirector() {
   const inputCableMesh = inputCable.userData.mesh;
   const outputCable = makeDynamicMovingBelt(sourceOutputCableGeometry.curve, {
     closed: false,
-    color: PALETTE.driven,
+    color: PALETTE.rope,
     markerCount: 0,
     radius: cableRadius,
     tubularSegments: 72,
@@ -5765,7 +5799,7 @@ function chineseDifferentialWindlass() {
   // rope's material coordinate (both ends are fast), so the lay is not shifted.
   const rope = makeDynamicMovingBelt(sourceRopeGeometry.curve, {
     closed: false,
-    color: PALETTE.driven,
+    color: PALETTE.rope,
     markerCount: 0,
     radius: ropeRadius,
     tubularSegments: ropeTubularSegments,
@@ -6407,7 +6441,7 @@ function singleWrappedRopeDrumDrive() {
   // Brown hatches the rope as laid rope; its lay runs with the rope travel.
   const rope = makeDynamicMovingBelt(ropeCurve, {
     closed: false,
-    color: PALETTE.driven,
+    color: PALETTE.rope,
     markerCount: 0,
     radius: ropeRadius,
     tubularSegments: 420,
@@ -6646,7 +6680,7 @@ function singleWrappedRopeDrumDrive() {
     const endPoint = cropEnd.clone().addScaledVector(outward, ropeLeadLength);
     const lead = makeDynamicMovingBelt(
       side < 0 ? new THREE.LineCurve3(endPoint, cropEnd) : new THREE.LineCurve3(cropEnd, endPoint),
-      { closed: false, color: PALETTE.driven, markerCount: 0, radius: ropeRadius, laid: true },
+      { closed: false, color: PALETTE.rope, markerCount: 0, radius: ropeRadius, laid: true },
     );
     lead.userData.role = side < 0 ? 'rope-running-on-beyond-left-crop' : 'rope-running-on-beyond-right-crop';
     root.add(lead);
@@ -8025,7 +8059,7 @@ function alternatingPlaneLinkChainPulley(movement) {
     return geometry;
   };
   const linkGeometry = makeLinkLoopGeometry();
-  const chainMaterial = matte(PALETTE.belt, {
+  const chainMaterial = matte(PALETTE.driven, {
     metalness: 0.18,
     roughness: 0.5,
   });
@@ -8644,7 +8678,7 @@ function ladderRungChainPulley() {
   );
   rungGeometry.rotateX(Math.PI / 2);
   rungGeometry.computeVertexNormals();
-  const sideLinkMaterial = matte(PALETTE.belt, {
+  const sideLinkMaterial = matte(PALETTE.driven, {
     metalness: 0.2,
     roughness: 0.47,
   });
@@ -9316,7 +9350,7 @@ function toothedLinkChainWheel() {
   );
   pivotPinGeometry.rotateX(Math.PI / 2);
   pivotPinGeometry.computeVertexNormals();
-  const linkMaterial = matte(PALETTE.belt, {
+  const linkMaterial = matte(PALETTE.driven, {
     metalness: 0.21,
     roughness: 0.46,
   });

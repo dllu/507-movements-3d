@@ -1,11 +1,11 @@
 {
   "status": "sampled-assembly-clear",
-  "scope": "Movements 186-189: every visible mesh against every mesh of another declared rigid body over 129 poses of one cycle; penetrations under 0.0025 units (seated contact) are ignored, and the 186 strap and its riveted blade are one joined spring. Sampled rendered-solid evidence, not continuous collision proof.",
+  "scope": "Movements 186-189: every visible mesh against every mesh of another declared rigid body over 129 poses of one cycle; penetrations under 0.0025 units (seated contact) are ignored, the 186 strap and its riveted blade are one joined spring, and the 188 leaf is set in the handle head tab. Sampled rendered-solid evidence, not continuous collision proof.",
   "method": "Bidirectional triangle vertices, edge midpoints and centroids against independent surface-containment BVHs, with bounding-box rejection.",
   "sources": [
     {
       "file": "scripts/review-gab-cam-solids.mjs",
-      "sha256": "102fc9e061c2101f33fa015f61b438ea8549d672c2d517591797158bb3171b8f"
+      "sha256": "b135aaaec588d36b62d5491de118f2c6a29369771da5b36026b38d0f976265f6"
     },
     {
       "file": "src/simulation/authored-gab-disengagers.js",
@@ -13,7 +13,7 @@
     },
     {
       "file": "src/simulation/gab-disengager-186.js",
-      "sha256": "8b97173a60b32f68b4ae951086e2c751115a18b5fa7a2f8e099f7eef1bc59a70"
+      "sha256": "a51f4fc3d6989b9fdb334f193c483c0b8d2457881e5076417a077115e025f811"
     },
     {
       "file": "src/simulation/gab-disengager-187.js",
@@ -21,7 +21,7 @@
     },
     {
       "file": "src/simulation/gab-disengager-188.js",
-      "sha256": "8df04fc72c0fb96aa11b23a8944d01ec828904e8175f74aab149f5b4f3f6a9d4"
+      "sha256": "26b1d904a9a24aa1d14224455dd10e5e6553357e91becd04a20f1d4c407210c7"
     },
     {
       "file": "src/simulation/gab-disengager-189.js",
@@ -39,7 +39,7 @@
       "bodies": 4,
       "meshes": 26,
       "pairs": 221,
-      "queries": 5330394,
+      "queries": 5382234,
       "intersections": {}
     },
     {
@@ -56,8 +56,8 @@
       "poses": 129,
       "bodies": 4,
       "meshes": 28,
-      "pairs": 229,
-      "queries": 7523374,
+      "pairs": 228,
+      "queries": 7118056,
       "intersections": {}
     },
     {

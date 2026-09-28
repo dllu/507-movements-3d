@@ -412,7 +412,7 @@ function springAssistedTreadle(movement) {
     metalness: 0.34,
     roughness: 0.38,
   });
-  const whiteMaterial = matte(PALETTE.white, { roughness: 0.40 });
+  const steelPinMaterial = matte(PALETTE.muted, { metalness: 0.2, roughness: 0.40 });
 
   // Brown draws no frame. The fixed arbor A (with the key slot that holds the
   // spring's inner end), the crankshaft and the treadle pivot pin are short
@@ -466,7 +466,9 @@ function springAssistedTreadle(movement) {
   crankArm.userData.role = 'rigid-crank-B-arm';
   flywheelRotor.add(crankArm);
   const crankHub = crankArm;
-  const crankPin = cylinderAlongZ(0.075, 0.44, whiteMaterial, 28);
+  // Steel pins (the role names are historical): white ones would read as
+  // holes on the cream page.
+  const crankPin = cylinderAlongZ(0.075, 0.44, steelPinMaterial, 28);
   crankPin.position.set(crankRadius, 0, 0.52);
   crankPin.userData.role = 'white-crank-B-pin-and-spring-attachment';
   flywheelRotor.add(crankPin);
@@ -499,7 +501,7 @@ function springAssistedTreadle(movement) {
   treadleBeam.userData.role = 'rigid-treadle-lever-with-intermediate-pivot-lug';
   treadleRotor.add(treadleBeam);
   const treadleHub = treadleBeam;
-  const treadleJointPin = cylinderAlongZ(0.075, 0.24, whiteMaterial, 24);
+  const treadleJointPin = cylinderAlongZ(0.075, 0.24, steelPinMaterial, 24);
   treadleJointPin.position.set(treadleJointRadius, 0, 0.44);
   treadleJointPin.userData.role = 'white-treadle-to-pitman-joint';
   treadleRotor.add(treadleJointPin);

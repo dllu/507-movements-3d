@@ -4,6 +4,7 @@ import { correctEpicyclicFamily } from './epicyclic-family-corrections.js';
 import * as THREE from 'three';
 import { bevelBodyGeometry } from './bevel-geometry.js';
 import { boredLatheGeometry } from './bored-lathe-geometry.js';
+import { crankArmOutline, HANDLE_FOOT_EMBED, standardTurnedHandleGeometry } from './turned-handle.js';
 import {
   circle,
   plate,
@@ -2454,17 +2455,38 @@ function dualEndDrivenCompoundBevelDifferential(movement) {
   driverShaftA.position.x = -3.05;
   driverShaftA.userData.sourceLabel = 'A';
   driverShaftA.userData.rigidAssembly = 'A-a-h';
+  // Pass 92: Brown draws crank A with the usual turned handle standing out
+  // from the crank's end. The crank is one flat plate (0.15 thick along A)
+  // whose ends are circular arcs, concentric with the handle axis (radius
+  // 0.17, a 0.07 margin round the handle's 0.10 foot) and with shaft A
+  // (radius 0.13, round the 0.12 shaft). The handle (the shared turned
+  // handle, 0.46 long, bulb 0.12) stands on the crank's outer face, its foot
+  // sunk HANDLE_FOOT_EMBED into it.
+  const CRANK_THROW = 1.02, CRANK_X = -4.49, CRANK_HALF_THICKNESS = 0.075;
+  const crankArmPlan = plate(poly(crankArmOutline({
+    handleX: CRANK_THROW, handleEndRadius: 0.17, hubEndRadius: 0.13,
+  })), -CRANK_HALF_THICKNESS, CRANK_HALF_THICKNESS);
+  // Plan x runs along the crank (world y), plan y across it (world z), and
+  // the extrusion along shaft A (world x).
+  crankArmPlan.applyMatrix4(new THREE.Matrix4().makeBasis(
+    new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, 1), new THREE.Vector3(1, 0, 0),
+  ));
   const crankArm = addRole(new THREE.Mesh(
-    new THREE.BoxGeometry(0.15, 1.12, 0.14),
+    crankArmPlan,
     matte(PALETTE.driver, { metalness: 0.15, roughness: 0.54 }),
   ), 'hand-crank-rigid-with-driver-A');
-  crankArm.position.set(-4.49, 0.50, 0);
+  crankArm.position.x = CRANK_X;
   const crankGrip = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(0.12, 0.12, 0.58, 24),
+    standardTurnedHandleGeometry({ height: 0.46, bulbRadius: 0.12, footRadius: 0.10 }),
     darkMaterial,
   ), 'driver-A-hand-grip');
+  // The lathe axis (+y) turned to point out along -x, away from the machine.
   crankGrip.rotation.z = Math.PI / 2;
-  crankGrip.position.set(-4.72, 1.02, 0);
+  // Offset of the handle's foot from the crank's mid-plane along A (kept
+  // when the source-support correction moves the crank along A).
+  crankGrip.userData.armOffsetX = -CRANK_HALF_THICKNESS + HANDLE_FOOT_EMBED;
+  crankGrip.position.set(CRANK_X + crankGrip.userData.armOffsetX, CRANK_THROW, 0);
+  crankGrip.userData.turnedHandle = { axis: [-1, 0, 0], foot: 0.10, height: 0.46, bulb: 0.12 };
   const inputIndex = addRole(new THREE.Mesh(
     new THREE.BoxGeometry(0.06, 0.74, 0.055),
     whiteMaterial,

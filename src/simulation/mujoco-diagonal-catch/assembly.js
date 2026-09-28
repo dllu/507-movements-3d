@@ -5,152 +5,162 @@ import {plate,poly,circle,ring,polygonClipping as clip} from '../finite-plate-ge
 import {disposeObject3D} from '../dispose-model.js';
 import {makeDiagonalCatchUpdater,DIAGONAL_CATCH_ROD_EDGE_Y} from './update-solids.js';
 
-// Convex hull (monotone chain) of 2D points.
-function convexHull(points){
+// Brown 181/182: the visible assembly around the qualified planar contact
+// profiles (catch outline, the two catching faces and the two working arms
+// the tappet strikes). Every part is a plain extrusion in one plane, placed
+// where Brown's hidden lines put it (back to front):
+//   W  the lower back-weight arm, dashed behind the piston rod;
+//   R  the piston rod, its tappet projecting forward through U and L;
+//   U  the upper handle's working arm, dashed behind the catch;
+//   L  the lower handle's working arm;
+//   C  the catch, with the upper handle's horn and weight arm and the lower
+//      handle's beak: each catching face is simply the end of its own casting,
+//      joined to its boss in the catch's plane.
+// The joints between each face and its boss are carved from the region the
+// catch can occupy relative to that handle over its whole range, so nothing
+// in plane C but the qualified faces ever meets the catch; no rear plates,
+// axial webs, sleeves, rollers or pin heads are added. The back-weight rods
+// hang just behind the eyes they hang from.
+const Z=Object.freeze({
+ rodsW:[-.585,-.54],W:[-.525,-.425],R:[-.405,-.265],U:[-.245,-.145],L:[-.125,-.025],rodsC:[-.005,.04],C:[.055,.165],
+});
+const PROUD=.015,HUB=.40,BORE=.21,SHAFT=.2,EYE=.14,EYE_HOLE=.062,PIN=.06,ROD_EYE=.11,ROD_HALF=.05;
+export const DIAGONAL_CATCH_PLANES=Z;
+
+function hull(points){
  const p=[...points].sort((a,b)=>a[0]-b[0]||a[1]-b[1]),cross=(o,a,b)=>(a[0]-o[0])*(b[1]-o[1])-(a[1]-o[1])*(b[0]-o[0]),lower=[],upper=[];
  for(const q of p){while(lower.length>1&&cross(lower.at(-2),lower.at(-1),q)<=0)lower.pop();lower.push(q);}
  for(const q of p.reverse()){while(upper.length>1&&cross(upper.at(-2),upper.at(-1),q)<=0)upper.pop();upper.push(q);}
- return [...lower.slice(0,-1),...upper.slice(0,-1)];
+ return poly([...lower.slice(0,-1),...upper.slice(0,-1)]);
+}
+const rotate=([x,y],a)=>[x*Math.cos(a)-y*Math.sin(a),x*Math.sin(a)+y*Math.cos(a)];
+const tangentLever=(a,ra,b,rb)=>hull([...circle(a,ra,96),...circle(b,rb,64)]);
+
+// Brown's lower beak: the crescent rising from the boss to the catching face
+// (plate 181 px), in the lower handle's frame.
+function lowerCrescent(fit){
+ const local=([x,y])=>[(x-271)*.0125-fit.pivot[0],(234-y)*.0125-fit.pivot[1]];
+ const s=new THREE.Shape();s.moveTo(295,323);
+ s.bezierCurveTo(312,319,326,315,329,288);
+ s.bezierCurveTo(340,319,338,343,317,365);
+ s.quadraticCurveTo(306,376,289,375);s.lineTo(285,351);s.closePath();
+ return poly(s.getPoints(16).map(p=>local(p.toArray())));
 }
 
-function lowerBacking(finger){
- const local=([x,y])=>[(x-271)*.0125-finger.fit.pivot[0],(234-y)*.0125-finger.fit.pivot[1]];
- // One continuous crescent supports the same face during trip and retention.
- // Its tip compromises between the two inconsistent engraved positions.
- const crescent=new THREE.Shape();crescent.moveTo(295,323);
- crescent.bezierCurveTo(312,319,326,315,329,288);
- crescent.bezierCurveTo(340,319,338,343,317,365);
- crescent.quadraticCurveTo(306,376,289,375);crescent.lineTo(285,351);crescent.closePath();
- return clip.union(poly(circle([0,0],.38,96)),poly(crescent.getPoints(16).map(p=>local(p.toArray()))),finger.polygons);
+// Remove from `shape` (a handle's frame) every place the catch, with its eye
+// boss and a running clearance, can reach over the handle's and the catch's
+// full angular ranges.
+function carveCatchSweep(shape,pivot,[h0,h1],catchPolygons,gap=.015){
+ const offsets=[[0,0],...Array.from({length:8},(_,k)=>[gap*Math.cos(k*Math.PI/4),gap*Math.sin(k*Math.PI/4)])];
+ let free=shape;
+ for(const c of [0,.019,.038,.057])for(let h=h0;h<=h1+1e-9;h+=.005)for(const [ox,oy]of offsets){
+  free=clip.difference(free,catchPolygons.map(p=>p.map(r=>r.map(pt=>{
+   const w=rotate(pt,c),v=rotate([w[0]-pivot[0],w[1]-pivot[1]],-h);return[v[0]+ox,v[1]+oy];}))));
+ }
+ return free;
 }
 
-// Complete visible assembly around the qualified planar contact profiles.
-// Back plates and axial webs connect the contact fingers to their bored hubs.
-// Their depths are inferred; audit the serialized assembly separately from
-// the isolated contact trajectory whenever this geometry changes.
+let cachedPlates=null;
+function castingOutlines(scaffold){
+ if(cachedPlates)return cachedPlates;
+ const b=scaffold.root.userData.blocks,catchOutline=diagonalCatchProfile().polygons.map(p=>[p[0]]);
+ const catchEye=[b.catchWeightAnchor.position.x,b.catchWeightAnchor.position.y];
+ const catchWithEye=clip.union(catchOutline,poly(circle(catchEye,EYE,96)));
+ const plates={catchEye,catch:catchWithEye};
+ for(const [side,range]of [['upper',[-1.0,.0014]],['lower',[-.947,.003]]]){
+  const finger=diagonalLatchFinger(side),fit=finger.fit,weight=[b[side+'HandleWeightAnchor'].position.x,b[side+'HandleWeightAnchor'].position.y];
+  const hub=poly(circle([0,0],HUB,128));
+  // The face's casting: Brown's horn (the hull of face and boss) above the
+  // upper boss; his crescent beak beside the lower one.
+  const body=side==='upper'?hull([...finger.polygons.flat(2),...circle([0,0],HUB,128)]):clip.union(lowerCrescent(fit),hull([...finger.polygons.flat(2),...circle([0,0],.2,64)]));
+  const carved=clip.union(carveCatchSweep(body,fit.pivot,range,catchWithEye),finger.polygons,hub);
+  const working=clip.union(b[side+'HandleWorkingArm'].children[0].geometry.userData.plate.polygons,
+   poly(circle([b[side+'HandleWorkingTip'].position.x,b[side+'HandleWorkingTip'].position.y],.10,64)),hub);
+  const weightArm=tangentLever([0,0],HUB,weight,EYE);
+  plates[side]={pivot:fit.pivot,weight,face:carved,working,weightArm};
+ }
+ return cachedPlates=plates;
+}
+
 export function createDiagonalCatchAssembly(){
- const legacy=createDiagonalCatchScaffold({id:181}),root=legacy.root,b=root.userData.blocks,g=root.userData.geometry;
- const catchMaterial=b.catchHub.material,handleMaterial=b.upperHandleHub.material;
- const remove=object=>{object.removeFromParent();object.traverse(o=>o.geometry?.dispose());};
- for(const name of ['catchBackbone','catchWeightArm','upperHook','lowerHook',
-  'upperHandleLatchArm','lowerHandleLatchArm','upperHandleLatchRoller','lowerHandleLatchRoller'])remove(b[name]);
- const catchPlate=new THREE.Mesh(plate(diagonalCatchProfile().polygons,-g.catchDepth/2,g.catchDepth/2),catchMaterial);
- catchPlate.userData.role='continuous-source-diagonal-catch';b.catchGroup.add(catchPlate);
+ const scaffold=createDiagonalCatchScaffold({id:181}),sb=scaffold.root.userData.blocks,g=scaffold.root.userData.geometry;
+ const outlines=castingOutlines(scaffold);
+ const shoe={left:g.tappetShoeLeftX,right:g.tappetShoeRightX},pistonRodX=(177-271)*.0125,source181PistonY=g.source181PistonY;
+ const catchMaterial=sb.catchHub.material.clone(),handleMaterial=sb.upperHandleHub.material.clone();
+ disposeObject3D(scaffold.root);
+ const steel=new THREE.MeshStandardMaterial({color:'#9aa19d',roughness:.45,metalness:.3});
+ const rodSteel=new THREE.MeshStandardMaterial({color:'#6f7773',roughness:.5,metalness:.2});
+ const tappetMaterial=new THREE.MeshStandardMaterial({color:'#c9563d',roughness:.62,metalness:.1});
+ const pistonMaterial=new THREE.MeshStandardMaterial({color:'#de5a3f',roughness:.62,metalness:.1});
+ const root=new THREE.Group(),groups={};
+ const bored=(polygons,center,radius)=>clip.difference(polygons,poly(circle(center,radius,96)));
+ const mesh=(geometry,material,role,parent)=>{const m=new THREE.Mesh(geometry,material);m.userData.role=role;parent.add(m);return m;};
+ const body=(name,x,y)=>{const o=new THREE.Group();o.name='body:'+name;o.position.set(x,y,0);root.add(o);groups[name]=o;return o;};
+ const span=(...planes)=>[Math.min(...planes.map(p=>Z[p][0]))-PROUD,Math.max(...planes.map(p=>Z[p][1]))+PROUD];
+ const shaft=(name,center,[low,high])=>{const s=new THREE.Mesh(new THREE.CylinderGeometry(SHAFT,SHAFT,high-low,64),steel);
+  s.rotation.x=Math.PI/2;s.position.set(center[0],center[1],(low+high)/2);s.userData.role=`fixed-${name}-pivot-shaft`;s.userData.fixed=true;root.add(s);};
+
+ // Catch: one plate in C, bored for its shaft and its weight pin.
+ const catchBody=body('catch',0,0);
+ mesh(plate(bored(bored(outlines.catch,[0,0],BORE),outlines.catchEye,EYE_HOLE),...Z.C),catchMaterial,'continuous-source-diagonal-catch',catchBody);
+ shaft('central-diagonal-catch',[0,0],[Z.C[0],Z.C[1]]);
+
+ // Handles: boss through all of a casting's plates; each plate one outline.
+ const handles={upper:{planes:{face:'C',working:'U',weightArm:'C'}},lower:{planes:{face:'C',working:'L',weightArm:'W'}}};
+ const anchors={};
  for(const side of ['upper','lower']){
-  const body=b[side+'Handle'],finger=diagonalLatchFinger(side),front=g.catchPlaneZ-body.position.z;
-  const tip=b[side+'HandleWorkingTip'];tip.geometry.dispose();
-  tip.geometry=plate(poly(circle([0,0],.10,64)),-g.handleDepth*.52,g.handleDepth*.52);
-  tip.rotation.set(0,0,0);
-  const patch=new THREE.Mesh(plate(finger.polygons,front-.1,front+.1),handleMaterial);
-  patch.userData.role=side+'-finite-catching-finger';body.add(patch);
-  // Plate 182 reveals the upper horn above the hub. In the closed position
-  // its end falls behind the piston rod. The offset is inferred;
-  // the already-qualified front catching face remains in the catch plane.
-  // A clean horn: one smooth tapered web from the hub round to Brown's tip
-  // (the hull of the hub and the horn), without the stepped notch and the
-  // corner spike that read as scrap.
-  const horn=side==='upper'?[[219,50],[233,68],[252,109],[231,122],[219,89]].map(([x,y])=>{
-   const dx=(x-270)*.0125-finger.fit.pivot[0],dy=(236-y)*.0125-finger.fit.pivot[1],a=-finger.fit.angle;
-   return[dx*Math.cos(a)-dy*Math.sin(a),dx*Math.sin(a)+dy*Math.cos(a)];
-  }):[];
-  const backingOutline=side==='upper'
-   ?clip.union(poly(convexHull([...horn,...circle([0,0],.38,96)])),finger.polygons)
-   :lowerBacking(finger);
-  const backing=clip.difference(backingOutline,poly(circle([0,0],.12,96)));
-  const backLow=side==='upper'?-.46:-.09,backHigh=side==='upper'?-.34:.09;
-  const support=new THREE.Mesh(plate(backing,backLow,backHigh),handleMaterial);
-  support.userData.role=side+'-continuous-finger-back-plate';body.add(support);
-  if(side==='upper'){
-   const sleeve=new THREE.Mesh(ring(.12,.19,backLow,.01,96),handleMaterial);
-   sleeve.userData.role='upper-finger-bored-offset-sleeve';body.add(sleeve);
-  }
-  for(const [index,polygon]of finger.polygons.entries()){
-   const points=polygon[0].slice(0,-1),center=points.reduce((s,p)=>[s[0]+p[0]/points.length,s[1]+p[1]/points.length],[0,0]);
-   const web=points.map(p=>p.map((v,i)=>center[i]+(v-center[i])*.5));
-   // Keep the axial web inside its (possibly non-convex) finger outline.
-   const stem=new THREE.Mesh(plate(clip.intersection(poly(web),[polygon]),backHigh-.01,front-.08),handleMaterial);
-   stem.userData.role=side+'-finger-axial-web-'+index;body.add(stem);
-  }
+  const o=outlines[side],b=body(side,...o.pivot),planes=handles[side].planes;
+  const [low,high]=span(...Object.values(planes));
+  mesh(ring(BORE,HUB,low,high,128),handleMaterial,`${side}-handle-bored-boss`,b);
+  const face=side==='upper'&&planes.weightArm===planes.face?clip.union(o.face,o.weightArm):o.face;
+  const eyeHole=poly(circle(o.weight,EYE_HOLE,64)),center=[0,0];
+  mesh(plate(bored(clip.difference(face,eyeHole),center,BORE),...Z[planes.face]),handleMaterial,
+   side==='upper'?'upper-handle-horn-and-weight-arm':'lower-handle-beak',b);
+  mesh(plate(bored(o.working,center,BORE),...Z[planes.working]),handleMaterial,`${side}-handle-curved-tappet-arm-plate`,b);
+  if(planes.weightArm!==planes.face)mesh(plate(bored(clip.difference(o.weightArm,eyeHole),center,BORE),...Z[planes.weightArm]),handleMaterial,`${side}-handle-back-weight-arm`,b);
+  shaft(`${side}-valve-handle`,o.pivot,[low,high]);
+  anchors[side+'Weight']={parent:b,at:o.weight,armPlane:planes.weightArm};
  }
- // Brown's plates draw rod eyes, shaft ends and the tappet face with ink
- // notation (dark eye outlines, section hatching, broken rod ends). The model
- // shows the parts themselves: plain steel shaft heads, rods and eyes of one
- // steel, a whole piston rod that travels with its tappet, and each back-weight
- // rod hanging whole from its eye to the weight it carries below the picture.
- const steel=new THREE.MeshStandardMaterial({color:'#c3c7c1',roughness:.55,metalness:.15});
- const rodSteel=new THREE.MeshStandardMaterial({color:'#7d8581',roughness:.5,metalness:.2});
- const iron=new THREE.MeshStandardMaterial({color:'#4a5150',roughness:.7,metalness:.1});
- const eyes=[];root.traverse(o=>{if(o.isMesh&&/back-weight-eye$/.test(o.userData.role??''))eyes.push(o);});
- for(const eye of eyes)remove(eye);
- root.traverse(o=>{
-  if(!o.isMesh)return;
-  if(o.userData.role==='back-weight-rod-hinge-pin'){
-   const p=o.geometry.parameters;o.geometry.dispose();
-   o.geometry=new THREE.CylinderGeometry(.06,.06,p.height,40);o.material=steel;
-  }else if(/fixed-round-head$/.test(o.userData.role??''))o.material=steel;
-  else if(/-bored-rod-eye$/.test(o.userData.role??'')){
-   // Brown's eye (outer r .14) runs on its .06 pin with a .002 running fit.
-   o.geometry.dispose();o.geometry=ring(.062,.14,-.035,.035,64);o.material=rodSteel;
-  }
- });
- // Each fixed shaft runs right through the bore of the body it carries and
- // ends flush with that body's rearmost bored face, so no bore is left open
- // behind (or pierced beyond) its hub, sleeve or back plate.
- root.updateMatrixWorld(true);
- const pinSteel=new THREE.MeshStandardMaterial({color:'#c3c7c1',roughness:.55,metalness:.15});
- for(const [shaft,body]of [[b.upperPivotShaft,b.upperHandle],[b.lowerPivotShaft,b.lowerHandle],[b.catchPivotShaft,b.catchGroup]]){
-  let back=Infinity;
-  body.traverse(o=>{if(!o.isMesh||!o.visible)return;o.geometry.computeBoundingBox();
-   const box=o.geometry.boundingBox.clone().applyMatrix4(body.matrixWorld.clone().invert().multiply(o.matrixWorld));
-   if(box.min.x<=0&&box.max.x>=0&&box.min.y<=0&&box.max.y>=0)back=Math.min(back,body.position.z+box.min.z);});
-  const {radiusTop:radius,radialSegments,height}=shaft.geometry.parameters,top=shaft.position.z+height/2;
-  shaft.geometry.dispose();shaft.geometry=new THREE.CylinderGeometry(radius,radius,top-back,radialSegments);
-  shaft.position.z=(top+back)/2;
-  // One steel with its round head, so the flush rear end reads as the pin's
-  // end rather than as an open black bore.
-  shaft.material=pinSteel;
+ anchors.catchWeight={parent:catchBody,at:outlines.catchEye,armPlane:'C'};
+
+ // Piston rod and the hatched tappet on its front face.
+ const piston=body('piston',0,0);
+ {const top=(234-23)*.0125+1.65+.8,bottom=(234-500)*.0125-1.96-.8,x0=pistonRodX-33*.0125/2,x1=pistonRodX+33*.0125/2;
+  const rod=mesh(plate(poly([[x0,bottom],[x1,bottom],[x1,top],[x0,top]]),...Z.R),pistonMaterial,'whole-piston-rod',piston);rod.name='piston-rod';
+  // The rendered shoe is a hair inside the solved one on its working faces.
+  const inset=.002;
+  mesh(plate(poly([[shoe.left+inset,-.25+inset],[shoe.right-inset,-.25+inset],[shoe.right-inset,.25-inset],[shoe.left+inset,.25-inset]]),Z.R[1]-.01,Z.L[1]),
+   tappetMaterial,'source-projecting-piston-rod-tappet-shoe',piston);}
+
+ // Back-weight rods: a flat bar and its round eye in one outline, hanging on
+ // a pin through the arm's eye, just behind it; the bar runs straight past the
+ // lower edge of the drawing to its (undrawn) weight.
+ const rodPlane={W:Z.rodsW,C:Z.rodsC};
+ for(const [name,a]of Object.entries(anchors)){
+  const rz=rodPlane[a.armPlane],anchor=new THREE.Object3D();anchor.name='anchor:'+name;
+  // update-solids hangs each rod group 0.24 in front of its anchor.
+  anchor.position.set(a.at[0],a.at[1],(rz[0]+rz[1])/2-.24);a.parent.add(anchor);
+  const pin=new THREE.Mesh(new THREE.CylinderGeometry(PIN,PIN,Z[a.armPlane][1]-rz[0],40),steel);
+  pin.rotation.x=Math.PI/2;pin.position.set(a.at[0],a.at[1],(Z[a.armPlane][1]+rz[0])/2);pin.userData.role='back-weight-rod-hinge-pin';a.parent.add(pin);
+  const group=body(name,0,0);root.updateMatrixWorld(true);
+  const eyeY=a.parent.localToWorld(new THREE.Vector3(...a.at,0)).y;
+  const length=eyeY-DIAGONAL_CATCH_ROD_EDGE_Y+2.4,t=(rz[1]-rz[0])/2;
+  const outline=clip.difference(clip.union(poly([[-ROD_HALF,0],[ROD_HALF,0],[ROD_HALF,-length],[-ROD_HALF,-length]]),poly(circle([0,0],ROD_EYE,64))),poly(circle([0,0],EYE_HOLE,48)));
+  mesh(plate(outline,-t,t),rodSteel,`${name}-hanging-back-weight-vertical-rod`,group);
  }
- const groups={upper:b.upperHandle,lower:b.lowerHandle,catch:b.catchGroup,piston:b.pistonGroup,
-  upperWeight:b.upperWeightAssembly,lowerWeight:b.lowerWeightAssembly,catchWeight:b.catchWeightAssembly};
- for(const [name,object]of Object.entries(groups))object.name='body:'+name;
- // The shoe is fixed to the rod's front face (z=-.27): seat it there rather
- // than burying .01 of it in the rod it slides past.
- {const p=b.tappet.geometry.parameters;b.tappet.geometry.dispose();
-  b.tappet.geometry=new THREE.BoxGeometry(p.width,p.height,.55);b.tappet.position.z=.005;}
- b.tappet.material=b.tappet.material.clone();b.tappet.material.color.set('#c9563d');
- // Whole piston rod with square ends, long enough that neither end enters
- // Brown's picture over the stroke (piston y -1.64..1.96).
- {const top=(234-23)*.0125+1.65+.8,bottom=(234-500)*.0125-1.96-.8;
-  b.pistonRod.geometry.dispose();
-  b.pistonRod.geometry=new THREE.BoxGeometry(33*.0125,top-bottom,.17);b.pistonRod.geometry.translate(0,(top+bottom)/2,0);
-  b.pistonRod.position.y=0;b.pistonRod.userData.role='whole-piston-rod';delete b.pistonRod.userData.sectioned;}
- root.updateMatrixWorld(true);
- for(const name of ['upperWeight','lowerWeight','catchWeight']){
-  const group=groups[name],rod=group.children.find(o=>o.isMesh&&/vertical-rod/.test(o.userData.role??''));
-  const anchor={upperWeight:b.upperHandleWeightAnchor,lowerWeight:b.lowerHandleWeightAnchor,catchWeight:b.catchWeightAnchor}[name];
-  const eyeY=root.worldToLocal(anchor.getWorldPosition(new THREE.Vector3())).y;
-  // Fixed rod length: its lower end stays below the drawing edge in every pose.
-  const length=eyeY-.14-DIAGONAL_CATCH_ROD_EDGE_Y+2.4,p=rod.geometry.parameters;
-  // The weight (radius .16) clears the piston rod by about .03 at its closest.
-  rod.geometry.dispose();rod.geometry=new THREE.BoxGeometry(p.width,length,p.depth);
-  rod.scale.set(1,1,1);rod.position.y=-.14-length/2;rod.material=rodSteel;
-  const weight=new THREE.Mesh(new THREE.CylinderGeometry(.16,.16,1,40),iron);
-  weight.position.y=-.14-length-.5;weight.userData.role=name+'-cast-back-weight';group.add(weight);
- }
+
  const parts={},families={};
  root.traverse(o=>{if(o.isMesh){
-  const name=o===b.pistonRod?'piston-rod':(o.userData.role??'part')+'#'+Object.keys(parts).length;o.name=name;parts[name]=o;
+  const name=o.name==='piston-rod'?'piston-rod':(o.userData.role??'part')+'#'+Object.keys(parts).length;o.name=name;parts[name]=o;
   o.castShadow=true;o.receiveShadow=true;
   let parent=o;while(parent&&!parent.name.startsWith('body:'))parent=parent.parent;
   families[name]=parent?.name.slice(5)??'fixed';
  }});
- root.userData={parts,families,blocks:groups,geometry:g,hideGround:true,materialsIgnoreSceneFog:true,
+ root.userData={parts,families,blocks:groups,geometry:{...g,planes:Z},hideGround:true,materialsIgnoreSceneFog:true,
   cameraFov:8,cameraDistanceScale:1.02,supportsRestart:true,reconstructionStatus:'under-review',
   simulationBackend:'offline-projected-mujoco-candidate',mechanism:'passive-diagonal-catch',
   animationTiming:{authoredCyclePeriod:18,displayCycleDuration:18,playbackTimeScale:1}};
- const anchors={upperWeight:b.upperHandleWeightAnchor,lowerWeight:b.lowerHandleWeightAnchor,catchWeight:b.catchWeightAnchor};
- for(const [name,object]of Object.entries(anchors))object.name='anchor:'+name;
  const update=makeDiagonalCatchUpdater(root);
- update([0,0,0,g.source181PistonY]);
+ update([0,0,0,source181PistonY]);
  return {root,parts,families,update,dispose:()=>disposeObject3D(root)};
 }

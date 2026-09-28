@@ -2,6 +2,7 @@ import { assertReadableTiming } from './helpers/display-timing.mjs';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
+import { turnedHandleMount } from './helpers/turned-handle-mount.mjs';
 import * as THREE from 'three';
 import { createMovementModel } from '../src/simulation/registry.js';
 
@@ -543,4 +544,46 @@ test('movement 368 closes its complete pass and reverse exactly before movement 
   assert.equal(model507.root.userData.fidelity, 'authored');
   disposeModel(model507.root);
   disposeModel(model368.root);
+});
+
+test('movement 368 (pass 92): the crank carries the shared turned handle, centred in an arc-ended arm with a margin round its foot', () => {
+  const model = createMovementModel(catalog.movements[367]);
+  try {
+    let handle = null, arm = null;
+    model.root.traverse((object) => {
+      if (object.userData.role === 'free-turning-hand-crank-turned-knob') handle = object;
+      if (object.userData.role === 'input-crank-arm') arm = object;
+    });
+    for (const time of [0, 1.3, 4.1]) {
+      model.update(time, 0.01);
+      model.root.updateMatrixWorld(true);
+      assert.equal(handle.geometry.type, 'LatheGeometry');
+      const mount = turnedHandleMount(handle, arm);
+      assert.ok(mount.margin > 1.2 * mount.footRadius, `foot ${mount.footRadius} in an arm end of radius ${mount.margin}`);
+      assert.ok(mount.endArcSpread < 1e-4, `arm end is an arc about the handle axis (${mount.endArcSpread})`);
+    }
+    model.root.traverse((object) => {
+      if (object.isMesh && object.visible && /knob/.test(object.userData.role ?? '')) assert.notEqual(object.geometry.type, 'SphereGeometry', `${object.userData.role} is a separate ball knob`);
+    });
+  } finally {
+    model.root.traverse((object) => object.geometry?.dispose?.());
+  }
+});
+
+test('movement 368 (pass 92): at the default pose the crank hangs below the shaft with its knob at the bottom, as Brown draws it', () => {
+  const model = createMovementModel(catalog.movements[367]);
+  try {
+    let handle = null, rotor = null;
+    model.root.traverse((object) => {
+      if (object.userData.role === 'free-turning-hand-crank-turned-knob') handle = object;
+      if (object.userData.role === 'hand-crank-keyed-to-input-shaft') rotor = object;
+    });
+    model.update(0, 0.01);
+    model.root.updateMatrixWorld(true);
+    const knob = handle.getWorldPosition(new THREE.Vector3());
+    const shaft = rotor.getWorldPosition(new THREE.Vector3());
+    assert.ok(shaft.y - knob.y > 0.6, `knob ${knob.y} hangs below the shaft ${shaft.y}`);
+  } finally {
+    model.root.traverse((object) => object.geometry?.dispose?.());
+  }
 });

@@ -470,3 +470,27 @@ test('movement 366 closes one crank turn, two drill turns, and one complete trea
   disposeModel(model507.root);
   disposeModel(model366.root);
 });
+
+test('movement 366 (pass 92): both lever ends are round eyes about their link pins', () => {
+  const model = createMovementModel(catalog.movements[365]);
+  try {
+    const { treadleBeam } = model.root.userData.blocks;
+    const rotor = treadleBeam.parent;
+    const pin = rotor.children.find((o) => o.geometry?.type === 'CylinderGeometry'
+      && Math.abs(o.geometry.parameters.radiusTop - 0.06) < 1e-9);
+    assert.ok(pin, 'link pin carried by the treadle');
+    const p = treadleBeam.geometry.attributes.position, v = new THREE.Vector3();
+    let reach = 0;
+    for (let i = 0; i < p.count; i += 1) {
+      v.fromBufferAttribute(p, i).add(treadleBeam.position);
+      if (v.x < pin.position.x - 1e-9) {
+        const r = Math.hypot(v.x - pin.position.x, v.y - pin.position.y);
+        reach = Math.max(reach, r);
+        near(r, 0.095, 1e-6, 'end is an arc about the pin');
+      }
+    }
+    assert.ok(reach > 1.5 * 0.06, 'eye leaves a margin round the pin');
+  } finally {
+    disposeModel(model.root);
+  }
+});

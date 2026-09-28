@@ -510,7 +510,8 @@ function brownDetachedEscapement(movement) {
   const leverMaterial = matte(PALETTE.accent, { metalness: 0.4, roughness: 0.34 });
   const cockMaterial = matte(PALETTE.frame, { metalness: 0.3, roughness: 0.5 });
   const darkMaterial = matte(PALETTE.ink, { metalness: 0.36, roughness: 0.42 });
-  const palletMaterial = matte(PALETTE.white, { metalness: 0.25, roughness: 0.4 });
+  // Steel pallet I: a white plate would read as a hole on the cream page.
+  const palletMaterial = matte(PALETTE.muted, { metalness: 0.25, roughness: 0.4 });
 
   // ---- Fixed cock with its screw, and the lever stud. ----
   const [cockLeft, cockRight, cockTop, cockNeck] = raster.cockTop;

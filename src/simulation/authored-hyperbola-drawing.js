@@ -115,6 +115,12 @@ function hyperbolaDrawingInstrument(movement) {
     roughness: 0.49,
   });
   const whiteMaterial = matte(PALETTE.white, { roughness: 0.42 });
+  // The thread's end and bight take the thread's ink: white ones would read
+  // as holes on the cream page and the pale board.
+  // The thread, its knot and its bight are the shared hemp brown (pass 92),
+  // as every rope and cord.
+  const cordMaterial = matte(PALETTE.rope, { roughness: 0.78 });
+  const threadMaterial = cordMaterial;
   const boardMaterial = matte(0xdadad4, {
     metalness: 0.02,
     roughness: 0.92,
@@ -263,18 +269,18 @@ function hyperbolaDrawingInstrument(movement) {
   rule.add(ruleEndCap);
   const threadAnchor = new THREE.Mesh(
     new THREE.SphereGeometry(0.075, 18, 12),
-    whiteMaterial,
+    threadMaterial,
   );
   threadAnchor.position.set(0, -ruleLength, 0.220);
   threadAnchor.userData.role = 'thread-end-fixed-to-free-end-of-rule';
   rule.add(threadAnchor);
   root.add(rule);
 
-  const focusCord = makeDynamicCord(0.025, darkMaterial);
+  const focusCord = makeDynamicCord(0.025, cordMaterial);
   focusCord.userData.role =
     'taut-thread-segment-from-lower-focus-loop-to-pencil-bight';
   root.add(focusCord);
-  const ruleCord = makeDynamicCord(0.025, darkMaterial);
+  const ruleCord = makeDynamicCord(0.025, cordMaterial);
   ruleCord.userData.role =
     'taut-thread-segment-from-pencil-bight-to-rule-end';
   root.add(ruleCord);
@@ -300,7 +306,7 @@ function hyperbolaDrawingInstrument(movement) {
   pencilPoint.userData.role = 'pencil-point-on-hyperbola';
   const bightCollar = new THREE.Mesh(
     new THREE.TorusGeometry(0.12, 0.026, 10, 36),
-    whiteMaterial,
+    threadMaterial,
   );
   bightCollar.position.z = 0.255;
   bightCollar.userData.role = 'white-thread-bight-around-pencil';

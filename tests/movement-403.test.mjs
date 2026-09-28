@@ -387,3 +387,38 @@ test('movement 403 rules are Brown’s broad laths and lie on each other where t
   assert.ok(rb.min.z >= lb.max.z - 1e-9, 'right rule rests on the left rule');
   disposeModel(model.root);
 });
+
+test('movement 403 crossing fastening is centred on both rules where they cross (pass 92)', () => {
+  const model = createMovementModel(catalog.movements[402]);
+  const find = (role) => {
+    let found;
+    model.root.traverse((o) => { if (o.userData.role === role) found = o; });
+    return found;
+  };
+  const fastener = find('fastened-crossing-of-the-two-sloping-rules');
+  const rules = [
+    find('left-sloping-rule-guided-by-left-chord-pin-straight-rigid-body'),
+    find('right-sloping-rule-guided-by-right-chord-pin-straight-rigid-body'),
+  ];
+  const { radiusTop, height } = fastener.geometry.parameters;
+  for (const time of [0, 1.7, 4.4]) {
+    model.update(time);
+    model.root.updateMatrixWorld(true);
+    const centre = new THREE.Vector3().setFromMatrixPosition(fastener.matrixWorld);
+    const axis = new THREE.Vector3(0, 1, 0).transformDirection(fastener.matrixWorld);
+    near(Math.abs(axis.z), 1, 1e-9, 'fastening normal to the rules');
+    for (const rule of rules) {
+      const { width, height: ruleWidth, depth } = rule.geometry.parameters;
+      const local = centre.clone().applyMatrix4(rule.matrixWorld.clone().invert());
+      near(local.y, 0, 1e-9, `${rule.userData.role}: on the centreline`);
+      assert.ok(ruleWidth / 2 >= 2 * radiusTop, 'margin of at least one radius each side');
+      assert.ok(Math.abs(local.x) + 3 * radiusTop < width / 2, 'well inside the rule length');
+      assert.ok(height / 2 > Math.abs(local.z) + depth / 2, 'passes through the rule');
+    }
+  }
+  // Brown's rules run on past the crossing (tails about a sixth of each rule).
+  const [left] = rules;
+  const tail = new THREE.Vector3().setFromMatrixPosition(fastener.matrixWorld)
+    .applyMatrix4(left.matrixWorld.clone().invert()).x + left.geometry.parameters.width / 2;
+  assert.ok(tail > 1.2, `tail past the crossing ${tail}`);
+});

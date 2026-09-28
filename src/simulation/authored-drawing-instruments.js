@@ -1063,6 +1063,8 @@ function adjustablePantograph(movement) {
     roughness: 0.68,
   });
   const whiteMaterial = matte(PALETTE.white, { roughness: 0.5 });
+  // Brass washers: white ones would read as holes on the cream page.
+  const washerMaterial = matte(PALETTE.brass, { metalness: 0.18, roughness: 0.5 });
   const makeJointPin = (role) => {
     const group = new THREE.Group();
     const shaft = cylinderAlongY(
@@ -1072,9 +1074,9 @@ function adjustablePantograph(movement) {
       28,
     );
     shaft.position.y = jointCenterY;
-    const lowerWasher = ringAroundY(0.155, 0.032, whiteMaterial, 36);
+    const lowerWasher = ringAroundY(0.155, 0.032, washerMaterial, 36);
     lowerWasher.position.y = lowerLayerY - 0.075;
-    const upperWasher = ringAroundY(0.155, 0.032, whiteMaterial, 36);
+    const upperWasher = ringAroundY(0.155, 0.032, washerMaterial, 36);
     upperWasher.position.y = upperLayerY + 0.075;
     group.add(shaft, lowerWasher, upperWasher);
     group.userData.role = role;

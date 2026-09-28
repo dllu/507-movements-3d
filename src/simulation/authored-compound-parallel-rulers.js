@@ -110,7 +110,9 @@ function makeVerticalPin({
   shaft.userData.role = `${role}-vertical-shaft`;
   const washer = new THREE.Mesh(
     new THREE.TorusGeometry(radius, 0.032, 10, 36),
-    matte(PALETTE.white, { metalness: 0.08, roughness: 0.48 }),
+    // Brass (the role name is historical): a white washer would read as a
+    // hole on the cream page.
+    matte(PALETTE.brass, { metalness: 0.18, roughness: 0.48 }),
   );
   washer.rotation.x = Math.PI / 2;
   washer.position.y = washerY;

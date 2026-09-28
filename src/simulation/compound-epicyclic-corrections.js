@@ -56,7 +56,7 @@ function sourceSupports506(b){
  replace(b.driverBearingPedestal,new THREE.BoxGeometry(.24,.30,1.58));b.driverBearingPedestal.position.set(-2.92,0,-.95);
  b.driverBearingPedestal.userData.role='driver-bearing-bridge-to-curved-standard';
  replace(b.driverShaftA,new THREE.CylinderGeometry(.12,.12,1.95,32));b.driverShaftA.position.x=-2.525;
- b.crankArm.position.x=-3.49;b.crankGrip.position.x=-3.72;b.inputIndex.position.set(-3.49,.50,.071);
+ b.crankArm.position.x=-3.49;b.crankGrip.position.x=-3.49+b.crankGrip.userData.armOffsetX;b.inputIndex.position.set(-3.49,.50,.071);
  replace(b.radialAxle,new THREE.CylinderGeometry(.105,.105,1.68,32));b.radialAxle.position.x=.74;
  replace(b.outerCarrierHead,new THREE.CylinderGeometry(.22,.22,.30,32));b.outerCarrierHead.position.x=1.58;
  b.carrierIndex.position.x=1.741;

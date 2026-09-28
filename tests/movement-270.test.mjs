@@ -314,9 +314,10 @@ test('movement 270 derives all race, cage, and roller rates from no slip', () =>
     3e-16,
     'outer contact speed identity',
   );
-  assert.ok(state.outerRaceAngularSpeed < 0);
-  assert.ok(state.cageAngularSpeed < 0);
-  assert.ok(state.rollerAngularSpeed < 0);
+  // Brown's arrow runs anticlockwise (pass 91).
+  assert.ok(state.outerRaceAngularSpeed > 0);
+  assert.ok(state.cageAngularSpeed > 0);
+  assert.ok(state.rollerAngularSpeed > 0);
   assert.ok(Math.abs(state.cageAngularSpeed)
     < Math.abs(state.outerRaceAngularSpeed));
   assert.ok(Math.abs(state.rollerAngularSpeed)
@@ -385,7 +386,7 @@ test('movement 270 belt and white markers traverse tangent-continuously', () => 
       'belt/pulley tread no slip');
     for (const marker of state.beltMarkers) {
       if (!marker.visible) continue;
-      near(marker.velocity.length(), transmission.beltLinearSpeed,
+      near(marker.velocity.length(), Math.abs(transmission.beltLinearSpeed),
         6e-16, 'constant marker material speed');
       near(marker.tangent.length(), 1, 2e-15,
         'unit marker tangent');
@@ -529,8 +530,10 @@ test('movement 270 closes all marked members and leaves movement 507 authored', 
     );
   }
   for (let index = 0; index < geometry.beltMarkerCount; index += 1) {
-    near(closure.beltMarkers[index].routeDistance,
-      source.beltMarkers[index].routeDistance,
+    const loop = geometry.beltMarkerLoopLength;
+    const drift = closure.beltMarkers[index].routeDistance
+      - source.beltMarkers[index].routeDistance;
+    near(drift - loop * Math.round(drift / loop), 0,
       4.5e-13, `belt marker ${index} full closure`);
   }
   assert.equal(timeline.fullMarkedAssemblyClosure, 1026);

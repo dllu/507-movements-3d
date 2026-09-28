@@ -1058,17 +1058,38 @@ function shapeLyreGuidesToPlate(root) {
     depth,
   });
   bandGeometry.translate(0, 0, -depth / 2);
+  // Each shoulder is built in its guide side's frame (side 2 is side 1 turned
+  // half round the spindle), so shoulder, band, eye and pin are one rigid arm.
   blocks.shoulderCurves.forEach((shoulder, sideIndex) => {
-    const sign = sideIndex === 0 ? 1 : -1;
     const shoulderCurve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(sign * 0.1, 4.24, 0),
-      new THREE.Vector3(sign * 0.62, 4.2, 0),
-      new THREE.Vector3(sign * 1.05, 3.92, 0),
-      new THREE.Vector3(sign * geometry.guideStart.x, geometry.guideStart.y, 0),
+      new THREE.Vector3(0.1, 4.24, 0),
+      new THREE.Vector3(0.62, 4.2, 0),
+      new THREE.Vector3(1.05, 3.92, 0),
+      new THREE.Vector3(geometry.guideStart.x, geometry.guideStart.y, 0),
     ]);
     shoulder.geometry.dispose();
     shoulder.geometry = new THREE.TubeGeometry(shoulderCurve, 40, 0.095, 12, false);
+    blocks.sideAssemblies[sideIndex].side.add(shoulder);
   });
+  // Brown draws a round eye (the outer of his two circles) where the shoulder
+  // meets the curled top of the lyre band. The eye is concentric with the top
+  // fastening pin and deep enough to take the shoulder's round end; the pin's
+  // head ring sits on its front face.
+  const eyeRadius = 0.21;
+  const eyeDepth = 0.24;
+  const eyeGeometry = new THREE.CylinderGeometry(eyeRadius, eyeRadius, eyeDepth, 56);
+  eyeGeometry.rotateX(Math.PI / 2);
+  blocks.sideAssemblies.forEach((assembly, sideIndex) => {
+    const eye = new THREE.Mesh(eyeGeometry, material);
+    eye.position.set(geometry.guideStart.x, geometry.guideStart.y, 0);
+    eye.userData.role = `round-eye-of-guide-arm-B-${sideIndex + 1}-about-its-top-pin`;
+    assembly.side.add(eye);
+    assembly.topEye = eye;
+    const headRing = assembly.guidePin.children[1];
+    headRing.position.z = eyeDepth / 2 + 0.02;
+  });
+  geometry.topEyeRadius = eyeRadius;
+  geometry.topEyeDepth = eyeDepth;
   blocks.sideAssemblies.forEach((assembly, sideIndex) => {
     const band = new THREE.Mesh(bandGeometry, material);
     band.userData.role = `outer-lyre-band-of-guide-arm-B-${sideIndex + 1}`;

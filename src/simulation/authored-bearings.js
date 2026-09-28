@@ -717,7 +717,9 @@ function sixRollerPulleyBearing(movement) {
   const beltMarkerCount = 8;
 
   const demonstrationPeriod = 6;
-  const outerRaceAngularSpeed = -FULL_TURN / demonstrationPeriod;
+  // Brown's arrow on the left figure runs counter-clockwise (down the
+  // left side), so the pulley turns anticlockwise seen from the front.
+  const outerRaceAngularSpeed = FULL_TURN / demonstrationPeriod;
   const cageToOuterSpeedRatio = outerRaceInnerRadius
     / (innerRaceRadius + outerRaceInnerRadius);
   const rollerToOuterSpeedRatio = outerRaceInnerRadius

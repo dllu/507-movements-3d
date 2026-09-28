@@ -586,6 +586,10 @@ function threeLeggedDeadEscapement(movement) {
     metalness: 0.02,
     roughness: 0.32,
   });
+  const slotMaterial = matte(PALETTE.muted, {
+    metalness: 0.2,
+    roughness: 0.4,
+  });
   const frameMaterial = matte(PALETTE.frame, {
     metalness: 0.30,
     roughness: 0.55,
@@ -659,10 +663,11 @@ function threeLeggedDeadEscapement(movement) {
     screw.userData.index = index;
     screw.userData.role = 'pallet-plate-fastening-screw';
     // The screw's local y is the world z axis (cylinderAlongZ), so the slot
-    // is a thin dark cut in the head face, turned about that axis.
+    // is a thin cut in the head face, turned about that axis. Steel grey on
+    // the ink head (a white slot would read as a hole on the cream page).
     const slot = new THREE.Mesh(
       new THREE.BoxGeometry(0.17, 0.02, 0.028),
-      markerMaterial,
+      slotMaterial,
     );
     slot.position.y = screwLength / 2;
     slot.rotation.y = index % 2 === 0
@@ -1251,9 +1256,15 @@ function longStoppingToothEscapement(movement) {
     metalness: 0.02,
     roughness: 0.30,
   });
-  const stopMaterial = matte(PALETTE.white, {
-    metalness: 0.12,
+  // Steel stops and impulse pins: white ones would read as holes on the
+  // cream page.
+  const stopMaterial = matte(PALETTE.muted, {
+    metalness: 0.2,
     roughness: 0.5,
+  });
+  const impulsePinMaterial = matte(PALETTE.muted, {
+    metalness: 0.2,
+    roughness: 0.4,
   });
   const frameMaterial = matte(PALETTE.frame, {
     metalness: 0.30,
@@ -1525,7 +1536,7 @@ function longStoppingToothEscapement(movement) {
         impulsePinBackZ,
         lockPlaneZ,
       ),
-      markerMaterial,
+      impulsePinMaterial,
     );
     pin.userData.index = index;
     pin.userData.pointsBackward = true;

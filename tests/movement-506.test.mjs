@@ -338,3 +338,36 @@ test('movement 506 is continuous, fits every carrier pose, and leaves 507 next',
   disposeModel(nextModel.root);
   disposeModel(model.root);
 });
+
+test('movement 506 (pass 92): crank A carries the shared turned handle centred in a round crank end', () => {
+  const { model } = movementModel();
+  const { blocks } = model.root.userData;
+  const { crankArm, crankGrip, driverShaftA } = blocks;
+  assert.equal(crankGrip.geometry.type, 'LatheGeometry', 'turned handle, not a plain cylinder');
+  model.update(0);
+  model.root.updateMatrixWorld(true);
+  // Handle axis in the crank's local frame (crank plate spans x +-0.075).
+  const toArm = crankArm.matrixWorld.clone().invert().multiply(crankGrip.matrixWorld);
+  const foot = new THREE.Vector3(0, 0, 0).applyMatrix4(toArm);
+  const tip = new THREE.Vector3(0, 1, 0).applyMatrix4(toArm);
+  const axis = tip.clone().sub(foot).normalize();
+  near(axis.x, -1, 1e-9, 'handle stands out along -x, away from the machine');
+  near(foot.x, -0.075 + 0.012, 1e-9, 'foot sunk 0.012 into the crank face');
+  near(foot.z, 0, 1e-9, 'handle on the crank centreline');
+  // Every crank vertex beyond the handle axis lies on the end arc about it.
+  let beyond = 0;
+  const position = crankArm.geometry.attributes.position;
+  const footRadius = 0.10;
+  for (let i = 0; i < position.count; i += 1) {
+    const y = position.getY(i), z = position.getZ(i);
+    const r = Math.hypot(y - foot.y, z - foot.z);
+    if (y > foot.y + 1e-9) { beyond += 1; near(r, 0.17, 1e-6, 'end arc concentric with handle'); }
+  }
+  assert.ok(beyond > 10, 'crank has a round end past the handle');
+  assert.ok(0.17 - footRadius >= 0.05, 'margin round the handle foot');
+  // The crank's hub end is centred on shaft A.
+  const shaftInArm = driverShaftA.getWorldPosition(new THREE.Vector3()).applyMatrix4(crankArm.matrixWorld.clone().invert());
+  near(shaftInArm.y, 0, 1e-9, 'hub on A');
+  near(shaftInArm.z, 0, 1e-9, 'hub on A');
+  disposeModel(model.root);
+});

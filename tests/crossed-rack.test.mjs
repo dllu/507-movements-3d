@@ -10,7 +10,9 @@ const near=(a,b,tolerance=1e-9)=>assert(Math.abs(a-b)<=tolerance,`${a} != ${b}`)
 
 test('080 follows the measured finite rack, joint centers and crossed pawl layers',()=>{
  const model=makeCrossedRackDrive(),u=model.root.userData,p=u.geometry;
- assert.equal(p.teeth,16);assert.equal(Object.keys(u.parts).length,16);assert.equal(u.hideGround,true);assert.equal(u.fidelity,'authored');
+ assert.equal(p.teeth,16);assert.equal(Object.keys(u.parts).length,14);
+ // Pass 91: each pawl is a flat plate with nothing in front; its pin stops inside the eye.
+ for(const key of ['left','right']){assert.equal(u.parts[key+'PinFrontCap'],undefined);const g=u.parts[key+'PawlPin'].geometry;g.computeBoundingBox();assert(g.boundingBox.max.z<p.layers[key][1]);}assert.equal(u.hideGround,true);assert.equal(u.fidelity,'authored');
  near(p.pitch,35.77748215444516/175.59899774689143);near(p.scale,175.59899774689143);
  for(const [key,pixel]of [['left',[453.144903726183,286.2500598318096]],['right',[804.3428992199658,296.14622830981034]]]){
   u.source(pixel).forEach((v,i)=>near(p.anchors[key][i],v));

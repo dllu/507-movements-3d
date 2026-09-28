@@ -242,7 +242,7 @@ function pendulumTreeSaw(movement) {
     metalness: 0.16,
     roughness: 0.51,
   });
-  const ropeMaterial = matte(0x28704c, {
+  const ropeMaterial = matte(PALETTE.rope, {
     metalness: 0.04,
     roughness: 0.72,
   });

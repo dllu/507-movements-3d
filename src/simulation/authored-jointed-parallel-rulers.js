@@ -449,6 +449,7 @@ function jointedParallelRuler(movement) {
     roughness: 0.47,
   });
   const whiteMaterial = matte(PALETTE.white, { roughness: 0.45 });
+  const capMaterial = matte(PALETTE.muted, { metalness: 0.2, roughness: 0.45 });
 
   const makeRuler = (points, role) => {
     const group = new THREE.Group();
@@ -598,7 +599,9 @@ function jointedParallelRuler(movement) {
   };
   const pivotCaps = Object.fromEntries(
     Object.entries(pivotPins).map(([name]) => {
-      const cap = cylinderAlongY(0.065, 0.035, whiteMaterial, 28);
+      // Steel (the role name is historical): a white cap would read as a
+      // hole on the cream page.
+      const cap = cylinderAlongY(0.065, 0.035, capMaterial, 28);
       cap.userData.role = `${name}-white-pivot-cap`;
       return [name, cap];
     }),

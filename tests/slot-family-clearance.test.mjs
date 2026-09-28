@@ -25,7 +25,7 @@ test('203: rendered curved slot and output eye clear the finite follower through
   for (let i = 0; i <= 64; i += 1) {
     model.update(8 * i / 64); model.root.updateMatrixWorld(true);
     const center = b.followerPin.getWorldPosition(new THREE.Vector3());
-    for (const mesh of [b.curvedPlate, b.outputArmBody, b.followerBoss]) {
+    for (const mesh of [b.curvedPlate, b.outputArmBody]) {
       assertOpenDisc(mesh, center, g.followerPinRadius * 0.999, `203 t=${i / 8} ${mesh.userData.role}`);
     }
   }

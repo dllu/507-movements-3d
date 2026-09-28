@@ -483,7 +483,7 @@ function sideLeverRockshaftParallelMotion(movement) {
     metalness: 0.09,
     roughness: 0.61,
   });
-  const whiteMaterial = matte(PALETTE.white, { roughness: 0.47 });
+  // Working pins are ink (white pins would read as holes on the cream page).
 
   // Brown's elevation: a casing with bands and flanges behind the lever and
   // side rod, a standard carrying rockshaft F, one diagonal frame member,
@@ -787,7 +787,7 @@ function sideLeverRockshaftParallelMotion(movement) {
   root.add(output);
 
   const pinOn = (parent, name, radius, x, low, high) => {
-    const pin = cylinderAlongZ(radius, high - low, whiteMaterial, 30);
+    const pin = cylinderAlongZ(radius, high - low, darkMaterial, 30);
     pin.position.set(x, 0, (low + high) / 2);
     pin.userData.role = `common-working-pin-${name}`;
     parent.add(pin);
@@ -1402,7 +1402,7 @@ function sideLeverMarineParallelMotion(movement) {
     metalness: 0.09,
     roughness: 0.61,
   });
-  const whiteMaterial = matte(PALETTE.white, { roughness: 0.48 });
+  // Working pins are ink (white pins would read as holes on the cream page).
 
   // Brown's elevation: side lever A on a sectioned shaft, the vessel and its
   // lid behind the right link, and a gooseneck bracket on the lid carrying F.
@@ -1647,7 +1647,7 @@ function sideLeverMarineParallelMotion(movement) {
   root.add(crossheadOutput);
 
   const pinOn = (parent, radius, x, low, high, role) => {
-    const pin = cylinderAlongZ(radius, high - low, whiteMaterial, 32);
+    const pin = cylinderAlongZ(radius, high - low, darkMaterial, 32);
     pin.position.set(x, 0, (low + high) / 2);
     pin.userData.role = role;
     parent.add(pin);
@@ -2234,7 +2234,7 @@ function doubleParallelMotion(movement) {
     metalness: 0.09,
     roughness: 0.61,
   });
-  const whiteMaterial = matte(PALETTE.white, { roughness: 0.48 });
+  // Working pins are ink (white pins would read as holes on the cream page).
 
   // Brown's plate: a broad beam P-M-W with a large boss at M, plain bars, two
   // small bearings on hatched ground, and a cut-off rod below P. The official
@@ -2424,7 +2424,7 @@ function doubleParallelMotion(movement) {
   root.add(leftPiston);
 
   const pinOn = (parent, name, x, low, high) => {
-    const pin = cylinderAlongZ(pinRadius[name], high - low, whiteMaterial, 30);
+    const pin = cylinderAlongZ(pinRadius[name], high - low, darkMaterial, 30);
     pin.position.set(x, 0, (low + high) / 2);
     pin.userData.role = `common-working-pin-${name}`;
     parent.add(pin);

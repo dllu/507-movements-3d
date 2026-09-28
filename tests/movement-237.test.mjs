@@ -454,3 +454,38 @@ test('movement 237 renderer binds the coaxial rotors and closes before movement 
   disposeModel(model.root);
   disposeModel(model289.root);
 });
+
+test('movement 237 p92: the arm is a round rod on the pawl hinge axis, centred in the barrel', () => {
+  const model = createMovementModel(catalog.movements[236]);
+  const { blocks } = model.root.userData;
+  const barrel = blocks.pawlHingeBarrel;
+  const barrelRadius = barrel.geometry.parameters.radiusTop;
+  const halfLength = barrel.geometry.parameters.height / 2;
+  const axisX = barrel.position.x;
+  const armMeshes = [];
+  blocks.arm.userData.rotor.traverse((object) => {
+    if (object.isMesh && object.userData.role === 'source-radial-top-arm-and-handle') armMeshes.push(object);
+  });
+  assert.equal(armMeshes.length, 3);
+  for (const rod of armMeshes) {
+    assert.equal(rod.geometry.type, 'CylinderGeometry');
+    const radius = rod.geometry.parameters.radiusTop;
+    assert.ok(radius <= 0.7 * barrelRadius, `rod ${radius} vs barrel ${barrelRadius}`);
+    // The rod's centreline and surface where it crosses each barrel face.
+    const direction = new THREE.Vector3(0, 1, 0).applyQuaternion(rod.quaternion);
+    for (const face of [axisX - halfLength, axisX + halfLength]) {
+      const t = (face - rod.position.x) / direction.x;
+      if (Math.abs(t) > rod.geometry.parameters.height / 2) continue;
+      const offset = Math.hypot(rod.position.y + t * direction.y, rod.position.z + t * direction.z);
+      const cosTilt = Math.abs(direction.x);
+      assert.ok(offset < 0.2 * barrelRadius, `rod enters the barrel off centre by ${offset}`);
+      assert.ok(offset + radius / cosTilt < barrelRadius, 'rod stays inside the barrel face');
+    }
+    if (rod.userData.hingeEntry) {
+      near(rod.userData.hingeEntry.y, 0, 1e-12, 'entry on hinge axis (y)');
+      near(rod.userData.hingeEntry.z, 0, 1e-12, 'entry on hinge axis (z)');
+      assert.ok(Math.abs(rod.userData.hingeEntry.x - axisX) < halfLength);
+    }
+  }
+  disposeModel(model.root);
+});

@@ -340,7 +340,8 @@ function bentShaftSlide(movement) {
   slideBridge.userData.role = 'rigid-body-of-slide-C';
   slideC.add(slideBody, slideFront, slideBridge);
   // The swivel ball turns with B, which slides through its bore.
-  const lowerBall = new THREE.Mesh(boredBall(0.17, 0.105), whiteMaterial);
+  // Brass (the role name is historical): a white ball would read as a hole.
+  const lowerBall = new THREE.Mesh(boredBall(0.17, 0.105), matte(PALETTE.brass, { metalness: 0.2, roughness: 0.42 }));
   lowerBall.userData.role = 'white-lower-swivel-ball-B-slides-through';
   slideC.add(lowerBall);
   // Seat: a spherical band round the ball's equator, carried by the web.

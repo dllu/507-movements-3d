@@ -8,11 +8,11 @@
   "sources": [
     {
       "file": "src/simulation/feed-worm-assembly-parts.js",
-      "sha256": "974f311ff099aee50bae8824206c35d13efc296c6f53c5d783d99702597d009b"
+      "sha256": "08ce8187e8a089148ad4559f1b0d8c3f29dc7121fe8a650e2a93d0080d219b35"
     },
     {
       "file": "src/data/face-worm-195.js",
-      "sha256": "6de4408f58fe4496e845f72fb68443dd70fe6094fd04a6a0ba8862bf064f3fb0"
+      "sha256": "97c6c55d2c4835ed76527768dec2374cdfea7b77a782b48ee76c4e923a4f6e68"
     },
     {
       "file": "src/simulation/solid-worm.js",

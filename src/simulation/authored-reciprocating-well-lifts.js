@@ -646,13 +646,21 @@ function reciprocatingWellLift(movement) {
   // Pass 80: Brown's central post rises from the bottom line of his
   // elevation to the tappet block, so it stands on the well floor (it ended
   // in mid-air at y -0.63, leaving the frame carried by nothing).
-  const tappetStandTop = 0.825;
+  // Pass 92: the post's head is a round boss concentric with the tappet
+  // pivot (r 0.17 against the pin's 0.12), in the post's one extrusion, so
+  // the pivot no longer stands wider than the post's square top; the pin's
+  // end stands 0.04 proud of the head's face and the tappet's hub (r 0.20)
+  // still shows round the head.
   const tappetStandBottom = wellFloorY;
+  const tappetStandHead = 0.17;
   const tappetStand = new THREE.Mesh(
-    new THREE.BoxGeometry(0.18, tappetStandTop - tappetStandBottom, 0.22),
+    plate(polygonClipping.union(
+      poly([[-0.09, tappetStandBottom], [0.09, tappetStandBottom], [0.09, tappetPivot.y], [-0.09, tappetPivot.y]]),
+      poly(circle([0, tappetPivot.y], tappetStandHead, 64)),
+    ), 0.19, 0.41),
     frameMaterial,
   );
-  tappetStand.position.set(0, (tappetStandTop + tappetStandBottom) / 2, 0.30);
+  tappetStand.userData.role = 'fixed-central-post-with-round-head-at-tappet-pivot';
   support.add(tappetStand);
 
   const windRotor = addRole(new THREE.Group(),
@@ -1081,7 +1089,7 @@ function reciprocatingWellLift(movement) {
     tappet.add(lug, crankPin);
   }
   const tappetPivotAxle = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(0.12, 0.12, 0.56, 24),
+    new THREE.CylinderGeometry(0.12, 0.12, 0.66, 24).translate(0, 0.05, 0),
     darkMaterial,
   ), 'fixed-tappet-pivot');
   tappetPivotAxle.rotation.x = Math.PI / 2;

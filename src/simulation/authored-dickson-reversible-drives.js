@@ -616,12 +616,13 @@ function dicksonReversibleDrive(movement) {
     roughness: 0.50,
   });
   // Brown draws wheel D as a plain light disc: a slim rim round an opaque
-  // web, no spokes.
-  const wheelMaterial = matte(0xe0e1da, {
+  // web, no spokes. It takes the driven blue: a near-white wheel would read
+  // as a hole in the cream page.
+  const wheelMaterial = matte(PALETTE.driven, {
     metalness: 0.20,
     roughness: 0.48,
   });
-  const wheelBackMaterial = matte(0xe0e1da, {
+  const wheelBackMaterial = matte(PALETTE.driven, {
     metalness: 0.12,
     roughness: 0.56,
     side: THREE.DoubleSide,
@@ -842,7 +843,9 @@ function dicksonReversibleDrive(movement) {
   root.add(inputSlider);
   // The pin stands from lever A's back face (from z 0.26, just inside it), in front of wheel
   // D's web, to the rod's eye.
-  const leverInputPin = cylinderAlongZ(0.11, inputRodZ + 0.06 - 0.26, whiteMaterial, 24);
+  // Steel pin: a white one would read as a hole on the cream page.
+  const leverInputPin = cylinderAlongZ(0.11, inputRodZ + 0.06 - 0.26,
+    matte(PALETTE.muted, { metalness: 0.2, roughness: 0.42 }), 24);
   leverInputPin.position.copy(inputPinLocal);
   leverInputPin.position.z = (inputRodZ + 0.06 + 0.26) / 2;
   leverInputPin.userData.role = 'white-input-pin-on-tail-of-lever-A';

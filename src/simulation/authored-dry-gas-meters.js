@@ -331,7 +331,8 @@ function dryGasMeter(movement) {
   const caseMaterial = matte(PALETTE.frame, {metalness: 0.2, roughness: 0.55});
   const boardMaterial = matte(PALETTE.muted, {metalness: 0.12, roughness: 0.6});
   const leatherMaterial = matte(0x7b5b3e, {metalness: 0.02, roughness: 0.85, side: THREE.DoubleSide});
-  const backMaterial = matte(PALETTE.paper, {roughness: 0.95});
+  // Stone rather than paper: a paper-coloured back panel reads as a hole.
+  const backMaterial = matte(0xbfb6a0, {roughness: 0.95}); // the ground-block.js stone
   const plateAMaterial = matte(PALETTE.driven, {metalness: 0.17, roughness: 0.42});
   const plateAPrimeMaterial = matte(PALETTE.accent, {metalness: 0.17, roughness: 0.42});
   const valveMaterial = matte(PALETTE.driver, {metalness: 0.23, roughness: 0.38});

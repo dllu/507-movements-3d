@@ -545,7 +545,7 @@ function slottedDiskLeverRackAndWeight(movement) {
     roughness: 0.68,
   });
   const whiteMaterial = matte(PALETTE.white, { roughness: 0.43 });
-  const cordMaterial = matte(0x26363c, {
+  const cordMaterial = matte(PALETTE.rope, {
     metalness: 0.02,
     roughness: 0.82,
   });

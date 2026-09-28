@@ -4022,8 +4022,8 @@ function debaufreFrictionalRestEscapement(
   commonEscapeArbor.userData.worldAxis = Z_AXIS.clone();
   // Brown's side elevation closes the space between the wheel planes with a
   // drum edge 0.76 below the arbor and hides the arbor there. He leaves the
-  // drum white between the wheel strips, so it is a pale turned drum rather
-  // than a dark one.
+  // drum white between the wheel strips; it is a turned brass drum here,
+  // since a white one reads as a gap on the cream page.
   const spacerDrum = new THREE.Mesh(
     new THREE.CylinderGeometry(
       spacerDrumRadius,
@@ -4031,7 +4031,7 @@ function debaufreFrictionalRestEscapement(
       2 * wheelPlaneOffset - wheelDepth + 0.02,
       48,
     ),
-    matte(0xe4ddcc, { metalness: 0.05, roughness: 0.7 }),
+    matte(PALETTE.brass, { metalness: 0.16, roughness: 0.55 }),
   );
   spacerDrum.rotation.x = Math.PI / 2;
   spacerDrum.userData.role = 'common-arbor-wheel-spacer-drum';

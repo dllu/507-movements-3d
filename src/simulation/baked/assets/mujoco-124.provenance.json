@@ -14,7 +14,7 @@
     "src/simulation/mujoco/simulation.js": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
   },
   "visualSourcesAtBake": {
-    "src/simulation/mujoco-bow-drill/geometry.js": "22ec48bb9daa7fd42babc9a5829f53412dded8f9bcc32fb5fdf5dda0c3cceaa8"
+    "src/simulation/mujoco-bow-drill/geometry.js": "d7c5b7687ff3b23557496cce4aa038c9a8dcfb1efabdf5615dfb8e2d018fe00a"
   },
   "physicsXmlSha256": {
     "default": "5dcd4ef629acff2a48609bab624717189d90976320313b724764b033b866c6a5"
@@ -64,5 +64,5 @@
   },
   "extras": [],
   "removed": [],
-  "bakeSeconds": 207.79727097606659
+  "bakeSeconds": 217.79665662765504
 }

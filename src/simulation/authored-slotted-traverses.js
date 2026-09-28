@@ -450,6 +450,8 @@ function slottedTraverse(movement) {
     roughness: 0.53,
   });
   const whiteMaterial = matte(PALETTE.white, { roughness: 0.44 });
+  // Pins O, D and C are steel: white pins on the cream ground read as holes.
+  const pinMaterial = matte(PALETTE.muted, { metalness: 0.3, roughness: 0.42 });
 
   const fixedFrame = new THREE.Group();
   fixedFrame.userData.role =
@@ -578,7 +580,7 @@ function slottedTraverse(movement) {
 
   const outputBar = new THREE.Group();
   outputBar.userData.role =
-    'guided-output-bar-with-offset-riser-clearing-fixed-pin';
+    'guided-output-bar-with-centred-standard-carrying-joint-C';
   const outputRail = new THREE.Mesh(
     new THREE.BoxGeometry(
       plateOutputRailHalfLength * 2 * sourceScale,
@@ -593,44 +595,17 @@ function slottedTraverse(movement) {
     0,
   );
   outputRail.userData.role = 'horizontal-traversing-rail-in-guides-a-a';
-  const riserOffsetX = 0.46 * sourceScale;
-  const riserTopY = -0.36 * sourceScale;
-  const riserBottomY = (sourceOutputRailYFromC + 0.12) * sourceScale;
-  const outputRiser = new THREE.Mesh(
-    new THREE.BoxGeometry(
-      0.26,
-      riserTopY - riserBottomY,
-      barDepth,
-    ),
-    barMaterial,
-  );
-  outputRiser.position.set(
-    riserOffsetX,
-    (riserTopY + riserBottomY) / 2,
-    0,
-  );
-  outputRiser.userData.role =
-    'source-corrected-offset-vertical-riser-avoiding-fixed-pin-O';
-  const jointToRiser = beamBetween3D(
-    new THREE.Vector3(0, 0, 0),
-    new THREE.Vector3(riserOffsetX, riserTopY, 0),
-    0.25,
-    barDepth,
-    barMaterial,
-  );
-  boreRectangularMember(jointToRiser, -jointToRiser.geometry.parameters.width / 2, 0, 0.136);
-  jointToRiser.userData.role =
-    'angled-neck-from-output-joint-C-to-clearance-riser';
-  const riserToRail = beamBetween3D(
-    new THREE.Vector3(riserOffsetX, riserBottomY, 0),
-    new THREE.Vector3(0, sourceOutputRailYFromC * sourceScale, 0),
-    0.25,
-    barDepth,
-    barMaterial,
-  );
-  riserToRail.userData.role = 'lower-neck-joining-riser-to-output-rail';
-  const outputJointBoss = boredJournal(0.24, 0.136, barDepth * 1.12, barMaterial);
-  outputJointBoss.userData.role = 'output-bar-joint-boss-C';
+  // Brown carries the lever's centre pin C on the broad standard's own
+  // centreline. One plain round boss stands forward from the standard's
+  // front face to just behind the lever, centred on C and bored for the
+  // pin. It stays 0.59 or more from pin O, so it clears O's bearing (which
+  // lies between the standard and the lever) at every pose.
+  const standardFrontLocalZ = -0.61;
+  const bossFrontLocalZ = leverPlaneZ - leverDepth / 2 - 0.012 - outputBarPlaneZ;
+  const outputJointBoss = boredJournal(0.24, 0.136,
+    bossFrontLocalZ - standardFrontLocalZ + 0.01, barMaterial);
+  outputJointBoss.position.z = (bossFrontLocalZ + standardFrontLocalZ - 0.01) / 2;
+  outputJointBoss.userData.role = 'centred-plain-boss-on-standard-carrying-joint-C';
   const outputJointAnchor = new THREE.Object3D();
   outputJointAnchor.position.z = jointPlaneZ - outputBarPlaneZ;
   outputJointAnchor.userData.role = 'output-bar-analytic-joint-anchor-C';
@@ -689,9 +664,6 @@ function slottedTraverse(movement) {
   standardWeb.userData.role = 'web-joining-broad-standard-to-rail-back';
   outputBar.add(
     outputRail,
-    outputRiser,
-    jointToRiser,
-    riserToRail,
     outputJointBoss,
     outputJointAnchor,
     broadStandard,
@@ -770,9 +742,9 @@ function slottedTraverse(movement) {
   );
   root.add(leverAssembly);
 
-  const fixedPinO = cylinderAlongZ(0.112, 0.76, whiteMaterial, 32);
+  const fixedPinO = cylinderAlongZ(0.112, 0.76, pinMaterial, 32);
   fixedPinO.position.copy(fixedPinWorld).setZ(0.09);
-  fixedPinO.userData.role = 'stationary-white-pin-in-upper-lever-slot-O';
+  fixedPinO.userData.role = 'stationary-steel-pin-in-upper-lever-slot-O';
   const fixedPinCap = cylinderAlongZ(0.065, 0.035, inkMaterial, 28);
   fixedPinCap.position.copy(fixedPinWorld).setZ(0.4825); // seated 0.005 into the pin end face (was 0.0175 proud of it)
   fixedPinCap.userData.role = 'fixed-pin-O-front-index';
@@ -787,9 +759,9 @@ function slottedTraverse(movement) {
   );
   inputShoe.position.z = -0.05;
   inputShoe.userData.role = 'lower-input-horizontal-guide-shoe';
-  const movingPinD = cylinderAlongZ(0.112, 0.72, whiteMaterial, 32);
+  const movingPinD = cylinderAlongZ(0.112, 0.72, pinMaterial, 32);
   movingPinD.position.z = 0.23;
-  movingPinD.userData.role = 'moving-white-pin-in-lower-lever-slot-D';
+  movingPinD.userData.role = 'moving-steel-pin-in-lower-lever-slot-D';
   const movingPinCap = cylinderAlongZ(0.065, 0.035, inputMaterial, 28);
   movingPinCap.position.z = 0.61;
   movingPinCap.userData.role = 'moving-pin-D-green-front-index';
@@ -804,8 +776,9 @@ function slottedTraverse(movement) {
   );
   root.add(movingInput);
 
-  const centralJointPin = cylinderAlongZ(0.13, 0.74,
-    whiteMaterial, 34);
+  // The pin runs from inside the standard, through the boss, to the front.
+  const centralJointPin = cylinderAlongZ(0.13, 1.26,
+    pinMaterial, 34);
   centralJointPin.userData.role =
     'shared-revolute-pin-lever-to-output-bar-at-C';
   const centralJointCap = cylinderAlongZ(0.075, 0.035,
@@ -876,7 +849,7 @@ function slottedTraverse(movement) {
     );
     movingInput.userData.velocity = state.input.velocity.clone();
     movingInput.userData.acceleration = state.input.acceleration.clone();
-    centralJointPin.position.copy(state.output.jointC).setZ(0.27);
+    centralJointPin.position.copy(state.output.jointC).setZ(0.01);
     centralJointCap.position.copy(state.output.jointC).setZ(0.60);
 
     contacts.fixedPinOInUpperLeverSlot.point
@@ -926,7 +899,6 @@ function slottedTraverse(movement) {
     inputGuideDashes,
     inputGuideRail,
     inputShoe,
-    jointToRiser,
     leverAssembly,
     leverJointAnchor,
     lowerNeck,
@@ -941,9 +913,7 @@ function slottedTraverse(movement) {
     outputJointAnchor,
     outputJointBoss,
     outputRail,
-    outputRiser,
     railIndexes,
-    riserToRail,
     upperNeck,
     upperSlottedEnd,
   };
@@ -990,7 +960,7 @@ function slottedTraverse(movement) {
   };
   root.userData.groundFloorY = 0;
   root.userData.mechanism =
-    'stationary-upper-pin-O-in-upper-lever-slot-driven-lower-pin-D-in-horizontal-guide-and-lower-lever-slot-collinear-output-joint-C-on-horizontal-guided-bar-with-source-corrected-clearance-riser';
+    'stationary-upper-pin-O-in-upper-lever-slot-driven-lower-pin-D-in-horizontal-guide-and-lower-lever-slot-collinear-output-joint-C-on-horizontal-guided-bar-carried-by-centred-standard-boss';
   root.userData.modelPointToOfficialAnimationRaster =
     modelPointToOfficialAnimationRaster;
   root.userData.officialSourceStateAtTime = officialSourceStateAtTime;
@@ -1026,9 +996,9 @@ function slottedTraverse(movement) {
     },
     officialKeyframePhases: sourceKeyframePhases,
     officialWebsiteCorrection: {
-      applied: true,
+      applied: false,
       note:
-        'Brown’s illustrated bar riser appears to interfere with the fixed pin; the official animation reroutes the riser and adds motion ribs, and the 3D model follows that corrected construction.',
+        'The official animation reroutes the bar riser to one side of the fixed pin; the 3D model instead follows Brown: pin C rides on a plain boss centred on the broad standard, and pin O stands in front of the standard, so the two never meet.',
     },
     referenceScope:
       'official fixed and moving pin paths, finite upper/lower slot ranges, lever pose, corrected guided-bar outline, guides a,a, view, four animation keyframes, and 15-cpm timing',

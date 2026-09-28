@@ -10,11 +10,11 @@
     },
     {
       "file": "src/simulation/variable-idler-gear-parts.js",
-      "sha256": "233802be969c6f491453931f4224ff5e14119623c6d06dadd97718093a38e9a5"
+      "sha256": "fb3e98e1b181ba9fe1f7ae0a3d14d8e8cb4ee27e20f03bb066ae48f6ce8be633"
     },
     {
       "file": "src/simulation/generated-elliptical-idler-profile.js",
-      "sha256": "61388c4cdeadca85a52c70228013076dd475d5ab91e0fd4f844b43b91f121cdc"
+      "sha256": "3ef5dbfa65d3916fe07c15e8dd66467e2079e7cf6c9c2c6cc38fd1ca0156ff68"
     },
     {
       "file": "src/simulation/band-epicyclic-geometry.js",
@@ -22,15 +22,15 @@
     },
     {
       "file": "src/simulation/primitives.js",
-      "sha256": "c09dbdfc48b4680ae1194d6b1471ff33d437bc8e8a28f6b290044eba746c9367"
+      "sha256": "e28fda6a3c9e228a8af6601dbe7728e8fd7812ff947073ee5562a3fe0478bb93"
     },
     {
       "file": "src/simulation/variable-sector-parts.js",
-      "sha256": "50e4edb3fbaebc095930bb41605d62334bbe0badecf1e42b7a28e7eba8e1e79f"
+      "sha256": "a7dc906d85bb95772d512768b9eee56314dad77c943462e6ce0c7911765994da"
     },
     {
       "file": "src/simulation/generated-stepped-sector-relief.js",
-      "sha256": "8a262335503dc587ab8fe6a59e451ea28550d031e9cc09c5daf9d02bd73a65e4"
+      "sha256": "773f9d6837ebf0ca667a6e9caf682b1f4b0419da5d0d97624582cc0900351332"
     },
     {
       "file": "src/simulation/bored-lathe-geometry.js",
@@ -46,7 +46,7 @@
     },
     {
       "file": "scripts/export-variable-idler-contact.mjs",
-      "sha256": "dfd1a8ec520ef3b82e6a13e8c5ca8285025b62065850eac0946cd319d4079e63"
+      "sha256": "777f86d41d5292501b2e8417a47a5978d59821f9605b2db17e00f886764cf88f"
     }
   ],
   "method": "Intersection of actual rendered gear triangle projections over full cycles and 223 transition-neighborhood poses; parallel planar gear solids. Includes sector webs and hubs; excludes other hubs, guides, links and journals, which have scoped finite-solid tests. Max active gap compares each continuously meshing 221/222 pair and the active 223 pair.",
@@ -57,7 +57,7 @@
       "penetratingPairPoses": 0,
       "maximumOverlapArea": 0.0,
       "maximumClosestGap": 0.000940106005654525,
-      "maximumActiveGap": 0.0010124492669559037,
+      "maximumActiveGap": 0.0010750173564994937,
       "worst": {
         "phase": 0.0007246093749999999,
         "pair": 0,
@@ -82,8 +82,8 @@
       "poses": 538,
       "penetratingPairPoses": 0,
       "maximumOverlapArea": 0.0,
-      "maximumClosestGap": 0.00474964777309152,
-      "maximumActiveGap": 0.006702002760200717,
+      "maximumClosestGap": 0.004757742211768557,
+      "maximumActiveGap": 0.006789478057976285,
       "worst": {
         "phase": 0.0007246093749999999,
         "pair": 0,

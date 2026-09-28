@@ -194,8 +194,10 @@ test('movement 269 matches the measured source proportions and source pose', () 
     0.03,
     'upper rack pitch-line radius',
   );
+  // The model inserts a toothless handoff gap between successive groups;
+  // two of them lie between the open end and the source engagement.
   near(
-    modelSourceLeft / geometry.pinionOuterRadius,
+    (modelSourceLeft + 2 * geometry.handoffGap) / geometry.pinionOuterRadius,
     (plate.rasterFrameOuterBounds.left - plate.rasterPinionCenter.x)
       / plate.rasterPinionOuterRadius,
     0.42,
@@ -268,15 +270,15 @@ test('movement 269 lays out exactly four staggered rack groups on one pitch', ()
   // each end group, so the gear stays inside the frame.
   near(
     geometry.contactCoordinateMaximum - geometry.contactCoordinateMinimum,
-    (11 + 2 * 0.6) * geometry.circularPitch,
+    (11 + 2 * 0.6) * geometry.circularPitch + 3 * geometry.handoffGap,
     2e-15,
     'frame stroke within the yoke',
   );
   near(
     geometry.rackLayoutMaximum - geometry.rackLayoutMinimum,
-    17 * geometry.circularPitch,
+    17 * geometry.circularPitch + 3 * geometry.handoffGap,
     2e-15,
-    'seventeen-pitch rack layout',
+    'seventeen-pitch rack layout plus three handoff gaps',
   );
   assert.ok(geometry.contactCoordinateMinimum - geometry.pinionOuterRadius > geometry.frameLeft,
     'gear stays inside the open end');
@@ -310,8 +312,9 @@ test('movement 269 lays out exactly four staggered rack groups on one pitch', ()
     near(
       tooth.position.x,
       geometry.rackLayoutMinimum
-        + (index + 0.5) * geometry.circularPitch,
-      1e-15,
+        + (index + 0.5) * geometry.circularPitch
+        + [4, 8, 15].filter((start) => index >= start).length * geometry.handoffGap,
+      1e-14,
       `rack tooth ${index} pitch position`,
     );
     assert.equal(tooth.userData.index, index);
@@ -351,10 +354,10 @@ test('movement 269 lays out exactly four staggered rack groups on one pitch', ()
     near(group.end - group.start,
       group.toothCount * geometry.circularPitch,
       2e-15, `${group.id} span`);
-    expectedStart = group.end;
+    expectedStart = group.end + geometry.handoffGap;
     expectedTheta = group.endTheta;
   }
-  near(expectedStart, geometry.rackLayoutMaximum,
+  near(expectedStart - geometry.handoffGap, geometry.rackLayoutMaximum,
     2e-15, 'rack sequence closes at the right end of the layout');
   disposeModel(model.root);
 });
@@ -762,8 +765,14 @@ test('movement 269 rack teeth are single full-depth extrusions with in-plane cha
     else assert.ok(!tooth.userData.relievedForHandoff || true);
   }
   assert.equal(relievedCount, conjugateTeeth.rackTeethRelieved);
-  // Only the teeth either side of the three handoffs are shortened.
-  assert.ok(relievedCount >= 6 && relievedCount <= 12);
+  // Only the six teeth either side of the three handoff gaps are shortened,
+  // and each keeps over half its height (pass 91: no low stubs).
+  assert.equal(relievedCount, 6);
+  for (const tooth of blocks.rackTeeth) {
+    const low = Math.min(...tooth.userData.reliefChamferHeights);
+    if (tooth.userData.relievedForHandoff) assert.ok(low > 0.55 * geometry.pinionToothHeight, `tooth ${tooth.userData.index} keeps ${low}`);
+    else near(low, geometry.pinionToothHeight, 1e-9, `tooth ${tooth.userData.index} is full`);
+  }
   disposeModel(model.root);
 });
 

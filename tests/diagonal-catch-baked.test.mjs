@@ -12,14 +12,15 @@ for(const id of [181,182])test(`${id} baked assembly repeats, retains its weight
  const model=makeBakedDiagonalCatchModel(bundle,id),root=model.root,u=root.userData;
  try{
   const initial=snapshot(model),rod=root.getObjectByName('piston-rod');
-  const rodOffset=new THREE.Box3().setFromObject(rod).min.y-new THREE.Box3().setFromObject(u.parts['source-projecting-piston-rod-tappet-shoe#24']).min.y;
+  const shoe=Object.entries(u.parts).find(([n])=>/^source-projecting-piston-rod-tappet-shoe/.test(n))[1];
+  const rodOffset=new THREE.Box3().setFromObject(rod).min.y-new THREE.Box3().setFromObject(shoe).min.y;
   assert.ok(!/hatch/.test(JSON.stringify(Object.keys(u.parts))),'no hatch notation');
   root.traverse(o=>assert.ok(!o.isLine,'no line notation'));
   for(let i=0;i<=360;i++){
    model.update(i/20);assert.ok(snapshot(model).every(Number.isFinite));
    const rb=new THREE.Box3().setFromObject(rod);
    assert.ok(rb.max.y>2.64+.5&&rb.min.y<-3.325-.5,'whole piston rod runs past both picture edges');
-   const tappet=new THREE.Box3().setFromObject(u.parts['source-projecting-piston-rod-tappet-shoe#24']);
+   const tappet=new THREE.Box3().setFromObject(shoe);
    assert.ok(Math.abs((rb.min.y-tappet.min.y)-rodOffset)<1e-9,'rod travels with its tappet');
    for(const name of ['upperWeight','lowerWeight','catchWeight']){
     const anchor=root.getObjectByName('anchor:'+name).getWorldPosition(new THREE.Vector3());
@@ -58,18 +59,33 @@ function contains(polygons,p){
 }
 test('serialized working solids stay inside the qualified planar contact envelopes',()=>{
  const model=makeBakedDiagonalCatchModel(bundle),projector=createDiagonalContactProjector();
- const selectors=[[/^upper-.*-curved-tappet-arm-plate/,/^upper-.*-rounded-working-handle-tip/],
-  [/^lower-.*-curved-tappet-arm-plate/,/^lower-.*-rounded-working-handle-tip/],
-  [/^upper-finite-catching-finger/],[/^lower-finite-catching-finger/],[/^continuous-source-diagonal-catch/],[/^source-projecting-piston-rod-tappet-shoe/]];
+ // Plate outlines of the displayed working solids: each must lie inside its
+ // qualified contact envelope, apart from the bored bosses and eyes, which
+ // never come near the tappet or the catch.
+ const selectors=[[/^upper-handle-curved-tappet-arm-plate/,0],[/^lower-handle-curved-tappet-arm-plate/,1],
+  [/^continuous-source-diagonal-catch/,4],[/^source-projecting-piston-rod-tappet-shoe/,5]];
+ const find=re=>{const m=Object.entries(model.root.userData.parts).filter(([name])=>re.test(name));assert.equal(m.length,1);return m[0][1];};
+ const bosses=[['upper',.4],['lower',.4],['catchEye',.14]];
  try{
   for(const time of [0,3.8,4.5,8.1,12.65,13.05,13.6,17.1]){
-   model.update(time);const polygons=projector.polygons(model.root.userData.stateAtTime(time));
-   for(let i=0;i<selectors.length;i++)for(const selector of selectors[i]){
-    const matches=Object.entries(model.root.userData.parts).filter(([name])=>selector.test(name));assert.equal(matches.length,1);
-    const mesh=matches[0][1],positions=mesh.geometry.attributes.position;
+   model.update(time);const q=model.root.userData.stateAtTime(time),polygons=projector.polygons(q);
+   const centres={upper:model.root.getObjectByName('body:upper').position,lower:model.root.getObjectByName('body:lower').position,
+    catchEye:model.root.getObjectByName('anchor:catchWeight').getWorldPosition(new THREE.Vector3())};
+   const inBoss=p=>bosses.some(([k,r])=>Math.hypot(p.x-centres[k].x,p.y-centres[k].y)<=r+1e-6);
+   for(const [selector,i]of selectors){
+    const mesh=find(selector),positions=mesh.geometry.attributes.position;
     for(let j=0;j<positions.count;j++){
      const p=new THREE.Vector3().fromBufferAttribute(positions,j).applyMatrix4(mesh.matrixWorld);
-     assert.ok(contains(polygons[i],[p.x,p.y]),`${mesh.name} leaves its contact envelope at ${time}`);
+     assert.ok(inBoss(p)||contains(polygons[i],[p.x,p.y]),`${mesh.name} leaves its contact envelope at ${time}`);
+    }
+   }
+   // The catching faces are the ends of the horn and beak plates in the
+   // catch's plane: those plates may touch the catch only at the faces.
+   for(const [selector,side]of [[/^upper-handle-horn-and-weight-arm/,'upper'],[/^lower-handle-beak/,'lower']]){
+    const mesh=find(selector),positions=mesh.geometry.attributes.position;
+    for(let j=0;j<positions.count;j++){
+     const p=new THREE.Vector3().fromBufferAttribute(positions,j).applyMatrix4(mesh.matrixWorld);
+     if(contains(polygons[4],[p.x,p.y]))assert.ok(contains(polygons[side==='upper'?2:3],[p.x,p.y]),`${mesh.name} meets the catch away from its face at ${time}`);
     }
    }
   }

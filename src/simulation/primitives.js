@@ -11,7 +11,13 @@ export const PALETTE = Object.freeze({
   driver: 0xde5a3f,
   driven: 0x315f78,
   accent: 0xd8a533,
-  belt: 0x315f78,
+  // Pass 92: ropes, cords and bands are hemp/leather brown so they read
+  // against the orange driver, blue driven and brass/yellow pulleys they run
+  // on (they were the driven blue). CIE76 distance >= 28 from every other
+  // palette colour. `belt` is the same brown for flat bands and legacy
+  // callers; chains keep a metal or part colour of their own.
+  rope: 0x7a4f2e,
+  belt: 0x7a4f2e,
   brass: 0xb7863f,
   fluid: 0x4a93a8,
   frame: 0x59605f,
@@ -799,7 +805,7 @@ export function circularArcThrough(
   return new CircularArcCurve3(center, radialStart, normalizedAxis, sweep);
 }
 
-function makeTube(path, { radius = 0.055, color = PALETTE.belt, closed = true, width, thickness, widthDirection, laid = false } = {}) {
+function makeTube(path, { radius = 0.055, color = PALETTE.rope, closed = true, width, thickness, widthDirection, laid = false } = {}) {
   const fromPoints = Array.isArray(path);
   const curve = fromPoints
     ? new THREE.CatmullRomCurve3(path, closed, 'centripetal', 0.35)
@@ -842,7 +848,7 @@ function placeBeltMarker(marker, curve, u, width, widthDirection) {
 
 export function makeMovingBelt(path, {
   radius = 0.055,
-  color = PALETTE.belt,
+  color = PALETTE.rope,
   markerColor = PALETTE.white,
   markerCount = 8,
   closed = true,
@@ -884,7 +890,7 @@ export function makeMovingBelt(path, {
 
 export function makeDynamicMovingBelt(initialCurve, {
   radius = 0.055,
-  color = PALETTE.belt,
+  color = PALETTE.rope,
   markerColor = PALETTE.white,
   markerCount = 8,
   tubularSegments = 128,
@@ -1109,7 +1115,7 @@ export function makeDynamicLink({
 export function makeDynamicCable({
   maxSegments = 32,
   radius = 0.045,
-  color = PALETTE.belt,
+  color = PALETTE.rope,
   laid = false,
 } = {}) {
   const group = new THREE.Group();

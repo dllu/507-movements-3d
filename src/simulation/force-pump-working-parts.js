@@ -114,8 +114,11 @@ export function correctForcePumpParts(root,id){
     poly(circle([0,0],.15,64)),poly(circle([L1,0],.15,64)));
   replace(b.lever.children[0],plate(polygonClipping.difference(bar,poly(circle([0,0],bore,48)),poly(circle([L1,0],bore,48))),-.10,.10));
   b.lever.children[0].userData.role='hand-lever-flat-bar-pinned-to-rod-top';
-  const zPin=(mesh,radius,low,high)=>{const geometry=new THREE.CylinderGeometry(radius,radius,high-low,32).rotateX(Math.PI/2).translate(0,0,(low+high)/2);
-    mesh.scale.set(1,1,1);mesh.rotation.set(0,0,0);replace(mesh,geometry);};
+  // Pass 92: each pin is a plain cylinder whose axis the mesh turns onto z
+  // (was baked into the buffer), so the pin's round axis is its own; the
+  // handle's eyes (r 0.15) stand 1.5 pin radii round both handle pins.
+  const zPin=(mesh,radius,low,high)=>{const geometry=new THREE.CylinderGeometry(radius,radius,high-low,32).translate(0,(low+high)/2,0);
+    mesh.scale.set(1,1,1);mesh.rotation.set(Math.PI/2,0,0);replace(mesh,geometry);};
   const fulcrumPin=b.lever.children[1],rodPin=b.lever.children[2];
   fulcrumPin.position.set(0,0,0);zPin(fulcrumPin,.06,-.21,.11);fulcrumPin.userData.role='handle-fulcrum-pin-through-swing-link';
   zPin(rodPin,.06,-.19,.19);rodPin.userData.role='rod-top-pin-through-handle-and-clevis';

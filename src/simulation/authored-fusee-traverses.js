@@ -1,6 +1,7 @@
 import {correctCordTraverseParts} from './cord-traverse-working-parts.js';
 import { LAID_ROPE, replaceWithLaidRope } from './laid-rope.js';
 import * as THREE from 'three';
+import { crankArmGeometry, turnedHandleGeometry, HANDLE_FOOT_EMBED } from './turned-handle.js';
 import {
   PALETTE,
   makeBeam,
@@ -513,14 +514,25 @@ function fuseeCarriageTraverse(movement) {
   const crankHub = cylinderAlongY(0.12, 0.12, darkMaterial, 24);
   crankHub.position.y = 2.19;
   crankHub.userData.role = 'fusee-crank-hub';
+  // Pass 92: Brown's crank is a flat arm carrying the usual turned handle
+  // (a slim neck swelling to a bulb, about 0.32 of the crank radius long).
+  // The arm is one extrusion whose ends are arcs concentric with the handle
+  // and the shaft, so the handle's foot stands inside the arm's end with a
+  // margin all round; its top lies 0.005 under the hub's top face.
+  const crankArmTopY = 2.245;
   const crankArm = new THREE.Mesh(
-    new THREE.BoxGeometry(crankRadius + 0.1, 0.10, 0.10),
+    crankArmGeometry({ handleX: -crankRadius, handleEndRadius: 0.075,
+      hubEndRadius: 0.075, bottomY: crankArmTopY - 0.10, topY: crankArmTopY }),
     fuseeMaterial,
   );
-  crankArm.position.set(-crankRadius / 2, 2.20, 0);
   crankArm.userData.role = 'source-visible-fusee-crank-arm';
-  const crankHandle = cylinderAlongY(0.075, 0.34, darkMaterial, 20);
-  crankHandle.position.set(-crankRadius, 2.36, 0);
+  const crankHandle = new THREE.Mesh(
+    turnedHandleGeometry({ height: 0.41 + HANDLE_FOOT_EMBED, side: [
+      [0.05, 0], [0.038, 0.12], [0.036, 0.42], [0.06, 0.62], [0.082, 0.8],
+    ] }),
+    darkMaterial,
+  );
+  crankHandle.position.set(-crankRadius, crankArmTopY - HANDLE_FOOT_EMBED, 0);
   crankHandle.userData.role = 'source-visible-fusee-crank-handle';
   fuseeRotor.add(crankHub, crankArm, crankHandle);
   carriage.add(fuseeRotor);

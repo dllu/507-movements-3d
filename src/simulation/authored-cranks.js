@@ -6695,7 +6695,6 @@ function twinObliqueRodTogglePressMotion() {
   const upperNeckHeight = 42 * sourceScale;
   const upperNeckCenterY = upperLinkY + (235 - 136) * sourceScale;
   const handleInnerRadius = 0.22;
-  const handleGripLength = 0.72;
   const handleLocalAngle = -sourceOpenRelativeAngle;
   const lowerPlatenCenterLocalY = -lowerDiskToPlatenCenter;
   const lowerPlatenBottomLocalY = lowerPlatenCenterLocalY
@@ -6836,33 +6835,45 @@ function twinObliqueRodTogglePressMotion() {
     handleY,
     -Math.sin(handleLocalAngle) * handleOuterRadius,
   );
-  const handLever = makeBeam(handleStart, handleEnd, {
-    color: PALETTE.driver,
-    depth: 0.2,
-    jointRadius: 0.13,
-    thickness: 0.17,
-  });
+  // Brown draws the lever as one round rod that swells from about 12 px
+  // across at the bell to about 19.5 px near its rounded end (raster rows
+  // 127-140 at x = 315, 125-146 at x = 495), so it is one turned piece: a
+  // gentle cone closed by a hemisphere. (Pass 92: it had been a square bar
+  // with a square dark grip whose corners poked out of too-small balls.)
+  const handleDirection = handleEnd.clone().sub(handleStart).normalize();
+  const handleLength = handleStart.distanceTo(handleEnd);
+  const handleRootRadius = 0.086;
+  const handleTipRadius = 0.156;
+  const handleProfile = [
+    new THREE.Vector2(0, 0),
+    new THREE.Vector2(handleRootRadius, 0),
+    ...Array.from({ length: 17 }, (_, index) => {
+      const angle = index / 16 * Math.PI / 2;
+      return new THREE.Vector2(
+        handleTipRadius * Math.cos(angle),
+        handleLength - handleTipRadius + handleTipRadius * Math.sin(angle),
+      );
+    }),
+  ];
+  handleProfile[handleProfile.length - 1].x = 0;
+  const handLever = new THREE.Group();
+  const handLeverMesh = new THREE.Mesh(
+    // Centred on its own origin, so its bounds are symmetric about the mesh.
+    new THREE.LatheGeometry(handleProfile, 40)
+      .translate(0, -handleLength / 2, 0),
+    matte(PALETTE.driver, { metalness: 0.1, roughness: 0.65 }),
+  );
+  handLeverMesh.position.copy(handleStart).add(handleEnd).multiplyScalar(0.5);
+  handLeverMesh.quaternion.setFromUnitVectors(Y_AXIS, handleDirection);
+  // The centre of the rounded end, where the hand works it.
+  const handleEndAnchor = new THREE.Object3D();
+  handleEndAnchor.position.copy(handleEnd);
+  handleEndAnchor.userData.role = 'hand-lever-end-point';
+  handLever.add(handLeverMesh, handleEndAnchor);
+  handLever.userData.endAnchor = handleEndAnchor;
   handLever.userData.role =
     'horizontal-hand-lever-rigid-with-upper-disk';
   upperRotor.add(handLever);
-
-  const handleGripStartRadius = handleOuterRadius - handleGripLength;
-  const handleGrip = makeBeam(
-    new THREE.Vector3(
-      Math.cos(handleLocalAngle) * handleGripStartRadius,
-      handleY,
-      -Math.sin(handleLocalAngle) * handleGripStartRadius,
-    ),
-    handleEnd,
-    {
-      color: PALETTE.ink,
-      depth: 0.25,
-      jointRadius: 0.14,
-      thickness: 0.22,
-    },
-  );
-  handleGrip.userData.role = 'dark-grip-at-end-of-upper-disk-lever';
-  upperRotor.add(handleGrip);
 
   const upperRotationIndex = new THREE.Mesh(
     new THREE.BoxGeometry(0.25, 0.035, 0.12),
@@ -7395,7 +7406,6 @@ function twinObliqueRodTogglePressMotion() {
     frameColumns,
     frameFeet,
     handLever,
-    handleGrip,
     linkRods,
     lowerAssembly,
     lowerDisk,
@@ -7430,10 +7440,11 @@ function twinObliqueRodTogglePressMotion() {
     cyclePeriod,
     frameBackZ,
     frameDepth,
-    handleGripLength,
     handleInnerRadius,
     handleLocalAngle,
     handleOuterRadius,
+    handleRootRadius,
+    handleTipRadius,
     handleY,
     linkHoleRadius,
     linkLength,

@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { plate, poly, circle, polygonClipping } from './finite-plate-geometry.js';
+import { crankArmGeometry, turnedHandleGeometry, HANDLE_FOOT_EMBED } from './turned-handle.js';
 import { helicalThread, threadAngles, chamferedHex } from './mujoco-screw/thread-geometry.js';
 import {
   PALETTE,
@@ -2338,17 +2339,30 @@ function screwThrustLeverClamp() {
   );
   handleHub.position.y = handleLocalY;
   handleHub.userData.role = 'hub-rigid-with-top-of-power-screw';
+  // Pass 92: Brown draws the usual crank. The bar (0.14 deep, y 245-263 on
+  // the plate) is one flat extrusion whose plan is the hull of a circle
+  // buried in the screw hub and a 0.13 circle concentric with the handle
+  // axis, so the bar runs 0.13 past the handle (Brown: 13 px) and the
+  // handle's foot stands wholly on it. The grip is the shared turned handle
+  // with plate 190's proportions (0.017 units per pixel): 0.63 tall above
+  // the bar (37 px), foot 0.085, neck 0.058 at 0.32 of its height, bulb
+  // 0.155 across at 0.72 (19 px wide at y 224).
+  const handleEndRadius = 0.13;
   const handleArm = new THREE.Mesh(
-    new THREE.BoxGeometry(handleRadius + 0.24, 0.14, 0.16),
+    crankArmGeometry({ handleX: handleRadius, handleEndRadius, hubEndRadius: 0.10,
+      bottomY: -0.07, topY: 0.07 }),
     screwMaterial,
   );
-  handleArm.position.set((handleRadius - 0.24) / 2, handleLocalY, 0);
+  handleArm.position.y = handleLocalY;
   handleArm.userData.role = 'one-sided-radial-screw-turning-handle';
+  handleArm.userData.handleEndRadius = handleEndRadius;
   const handleGrip = new THREE.Mesh(
-    new THREE.CapsuleGeometry(0.115, 0.36, 8, 18),
+    turnedHandleGeometry({ height: 0.63 + HANDLE_FOOT_EMBED, side: [
+      [0.085, 0], [0.065, 0.12], [0.058, 0.32], [0.10, 0.52], [0.155, 0.72],
+    ] }),
     darkMaterial,
   );
-  handleGrip.position.set(handleRadius, handleLocalY + 0.29, 0);
+  handleGrip.position.set(handleRadius, handleLocalY + 0.07 - HANDLE_FOOT_EMBED, 0);
   handleGrip.userData.role = 'upright-freehand-grip-at-handle-tip';
   const handleIndex = new THREE.Mesh(
     new THREE.BoxGeometry(0.25, 0.035, 0.185),

@@ -6,7 +6,7 @@ import {
   matte,
 } from './primitives.js';
 
-import {boredJournal, fitPistonGuide} from './piston-guide-parts.js';
+import {fitPistonGuide} from './piston-guide-parts.js';
 
 const GUIDE_RADIUS = .065;
 const FULL_TURN = Math.PI * 2;
@@ -146,7 +146,10 @@ function cyclograph(movement) {
   const includedRuleAngle = 2 * Math.atan(chordHalf / sagitta);
   const leftGuidePin = new THREE.Vector2(-chordHalf, 0);
   const rightGuidePin = new THREE.Vector2(chordHalf, 0);
-  const ruleLengthMin = -0.62;
+  // p92: the rules run on past their crossing as Brown draws them (his tails
+  // are about a quarter of each rule), so the crossing is a whole lozenge in
+  // which the fastening stands centred (was -0.62, which barely crossed).
+  const ruleLengthMin = -1.5;
   const ruleLengthMax = 6.34;
   // Pass 90: Brown's rules are broad flat laths, width about 0.055 of their
   // length (was 0.036).
@@ -468,8 +471,27 @@ function cyclograph(movement) {
     carriage.add(pin);
     return pin;
   });
-  const apexFastener = boredJournal(.12, .068, .36, darkMaterial);
-  apexFastener.position.z = 0.17;
+  // p92: the fastening is a rivet on both rules' centrelines, at the centre
+  // of their crossing lozenge (margin w/2 - r all round in each rule), and
+  // stands 0.02 proud of the outer faces. It used to be a collar round the
+  // pencil in the open angle, with its axis off both rules' edges.
+  const crossingHalfWidth = ruleWidth / 2 + GUIDE_RADIUS;
+  const crossingCentre = new THREE.Vector2(
+    -crossingHalfWidth * (1 + Math.cos(includedRuleAngle))
+      / Math.sin(includedRuleAngle),
+    -crossingHalfWidth,
+  );
+  const apexFastener = cylinderAlongZ(
+    0.075,
+    ruleDepth * 2 + 0.002 + 0.04,
+    darkMaterial,
+    32,
+  );
+  apexFastener.position.set(
+    crossingCentre.x,
+    crossingCentre.y,
+    (ruleDepth + 0.002) / 2,
+  );
   apexFastener.userData.role =
     'fastened-crossing-of-the-two-sloping-rules';
   carriage.add(apexFastener);

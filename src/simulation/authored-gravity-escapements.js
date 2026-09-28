@@ -1141,7 +1141,10 @@ function mudgeGravityEscapement(movement) {
       primitives: [
         plateBand(new THREE.Vector2(0, 0), forkPoint, 0.12),
         plateDisc(new THREE.Vector2(0, 0), 0.12),
-        plateDisc(forkPoint, 0.1),
+        // Pass 92: Brown draws each half-fork ending in a round eye with the
+        // pin P or Q small and concentric inside it; the eye stands a margin
+        // of half the pin's radius round the pin (it was smaller than the pin).
+        plateDisc(forkPoint, forkPinRadius * 1.5),
       ],
       role: `${sideName}-half-fork-to-pin-${side > 0 ? 'P' : 'Q'}`,
       z0: forkBarZ0 - palletPlaneZ,
@@ -1657,6 +1660,7 @@ function singleThreeLeggedGravityEscapement(movement) {
   const unlockAngle = THREE.MathUtils.degToRad(1.8);
   const pendulumRodRadius = 0.070;
   const beatPinRadius = 0.105;
+  const beatPinEyeRadius = 1.5 * beatPinRadius;
   // Brown closes the two legs on a collar clamped to the pendulum rod just
   // above its lower screw; the beat pins bear on the collar's flat flanks.
   const beatCollarHalfWidth = 0.17;
@@ -2397,7 +2401,12 @@ function singleThreeLeggedGravityEscapement(movement) {
         plateBand(new THREE.Vector2(-side * 0.05, 0.02),
           new THREE.Vector2(side * 1.13, 0.02), 0.12),
         plateDisc(new THREE.Vector2(0, 0), 0.16),
-        plateDisc(outerBowPoints.at(-1), 0.15),
+        // Brown's bow ends in a round eye carrying the beat pin: the bow's
+        // own width runs on from its end to an eye concentric with the pin
+        // (1.5 x its radius), as 309's fork eyes.
+        plateDisc(outerBowPoints.at(-1), 0.10),
+        plateBand(outerBowPoints.at(-1), beatPinLocalPoint(side), 0.20),
+        plateDisc(beatPinLocalPoint(side), beatPinEyeRadius),
         plateDisc(lockBackLocal, 0.15),
       ],
       role: `${sideName}-long-inverted-gravity-arm-bow-with-inner-lifting-face-${
@@ -3518,6 +3527,10 @@ function doubleThreeLeggedGravityEscapement(movement) {
     metalness: 0.02,
     roughness: 0.25,
   });
+  const stopFaceMaterial = matte(PALETTE.muted, {
+    metalness: 0.2,
+    roughness: 0.4,
+  });
 
   const plateRegistry = createSweptPlateRegistry(movement.id);
   const fixedFrame = new THREE.Group();
@@ -3815,7 +3828,8 @@ function doubleThreeLeggedGravityEscapement(movement) {
     });
     const stopStem = plateRegistry.add({
       key: `${isRight ? 'right' : 'left'}-stop-${stopLetter}`,
-      material: markerMaterial,
+      // Steel: a white stop face would read as a hole on the cream page.
+      material: stopFaceMaterial,
       owner: group,
       primitives: [
         sectorLocal(lockingLegRadius - 0.12, lockingLegRadius + 0.30,

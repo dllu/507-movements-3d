@@ -588,3 +588,35 @@ test('movement 310 renderer follows the solved wheel, fly, arms, pendulum and li
   disposeModel(model507.root);
   disposeModel(model.root);
 });
+
+test('movement 310 (pass 92): each bow ends in a round eye concentric with its beat pin', () => {
+  const model = createMovementModel(catalog.movements[309]);
+  try {
+    for (const side of ['left', 'right']) {
+      let bow = null, pin = null;
+      model.root.traverse((object) => {
+        const role = object.userData.role ?? '';
+        if (object.isMesh && role.startsWith(`${side}-`) && /long-inverted-gravity-arm-bow/.test(role)) bow = object;
+        if (object.isMesh && role.startsWith(`${side}-`) && role.endsWith('-pendulum-beat-pin')) pin = object;
+      });
+      assert.ok(bow && pin, `${side} bow and beat pin exist`);
+      assert.equal(bow.parent, pin.parent, `${side} pin is carried by the bow's group`);
+      const r = pin.geometry.parameters.radiusTop;
+      const position = bow.geometry.attributes.position;
+      const v = new THREE.Vector3();
+      let nearest = Infinity, onEye = 0;
+      for (let i = 0; i < position.count; i += 1) {
+        v.fromBufferAttribute(position, i).applyMatrix4(bow.matrix);
+        const d = Math.hypot(v.x - pin.position.x, v.y - pin.position.y);
+        nearest = Math.min(nearest, d);
+        if (Math.abs(d - 1.5 * r) < 0.01) onEye += 1;
+      }
+      // No outline edge runs within the pin's margin, and the end is an arc
+      // of 1.5 r about the pin.
+      assert.ok(nearest >= 1.45 * r, `${side} bow outline ${nearest} from the beat-pin axis`);
+      assert.ok(onEye >= 20, `${side} bow end arc about the pin (${onEye} vertices)`);
+    }
+  } finally {
+    disposeModel(model.root);
+  }
+});

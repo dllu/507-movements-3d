@@ -640,3 +640,26 @@ test("movement 309 drops B's bottom edge into Brown's small nib short of the coc
   assert.ok(!solidAt(134, 205), 'no material in the cocking tooth sweep');
   disposeLike(root);
 });
+
+test('movement 309 (pass 92): each half-fork ends in a round eye standing a margin round its pin', () => {
+  const model = createMovementModel(catalog.movements[308]);
+  try {
+    const { blocks } = model.root.userData;
+    for (const pallet of [blocks.leftPallet, blocks.rightPallet]) {
+      const pin = pallet.forkPin, r = pin.geometry.parameters.radiusTop;
+      const position = pallet.forkRod.geometry.attributes.position;
+      const toGroup = pallet.forkRod.matrix.clone();
+      // Every outline vertex of the extrusion lies at least 1.45 r from the
+      // pin's axis: no edge of the fork runs within the pin's margin.
+      const v = new THREE.Vector3();
+      let nearest = Infinity;
+      for (let i = 0; i < position.count; i += 1) {
+        v.fromBufferAttribute(position, i).applyMatrix4(toGroup);
+        nearest = Math.min(nearest, Math.hypot(v.x - pin.position.x, v.y - pin.position.y));
+      }
+      assert.ok(nearest >= 1.45 * r, `${pin.userData.role}: fork edge ${nearest} from the pin axis`);
+    }
+  } finally {
+    model.root.traverse((o) => { o.geometry?.dispose?.(); });
+  }
+});

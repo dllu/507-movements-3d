@@ -4,7 +4,7 @@ import {WaterStream,collectWaterStreams} from './water-stream.js';
 import {makeCellWaterGeometry,updateClippedCell} from './clipped-fluid-cell.js';
 import { curvedFloatChannel, portedFloatHub } from './water-lifting-solids.js';
 import { horizontalTurned } from './horizontal-turbine-solids.js';
-import { ring, capsule, plate } from './finite-plate-geometry.js';
+import { ring, capsule, plate, poly, circle, polygonClipping } from './finite-plate-geometry.js';
 import { makePersianBucketTrip } from './persian-bucket-trip.js';
 import { waterVolume } from './water-volume.js';
 import {
@@ -134,6 +134,7 @@ function persianIrrigationWheel(movement) {
   const floatInnerRadius = 0.30;
   const floatOuterRadius = 2.48;
   const bucketPivotRadius = 2.58;
+  const bucketPinBossRadius = 1.6 * 0.068;
   const floatSweepAngle = THREE.MathUtils.degToRad(82);
   const floatDepth = 0.34;
   const hollowShaftOuterRadius = 0.54;
@@ -408,15 +409,15 @@ function persianIrrigationWheel(movement) {
     arm.add(channelMarker);
     channelMarkers.push(channelMarker);
 
+    // Pass 92: the link runs from the float tip into the rim boss and stops
+    // short of the pin, which the boss carries.
+    const endLinkInner = floatOuterRadius - 0.06;
+    const endLinkOuter = bucketPivotRadius - 0.085;
     const endLink = new THREE.Mesh(
-      new THREE.BoxGeometry(
-        bucketPivotRadius - floatOuterRadius + 0.12,
-        0.10,
-        0.18,
-      ),
+      new THREE.BoxGeometry(endLinkOuter - endLinkInner, 0.10, 0.18),
       darkMaterial,
     );
-    endLink.position.x = (bucketPivotRadius + floatOuterRadius) / 2;
+    endLink.position.x = (endLinkInner + endLinkOuter) / 2;
     endLink.userData.role = `float-tip-bucket-pivot-link-${index + 1}`;
     arm.add(endLink);
 
@@ -469,6 +470,15 @@ function persianIrrigationWheel(movement) {
     suspensionPin.position.set(bucketPivotRadius,0,.30);
     suspensionPin.userData.role = `finite-bucket-suspension-pin-${index + 1}`;
     arm.add(suspensionPin);
+    // Pass 92: Brown draws a small round boss on the rim at each bucket
+    // pivot. It is part of the rim (wheel body), concentric with the pin
+    // (1.6 x its radius), a little deeper than the rim and the float-tip link
+    // so no face is coplanar, and it buries the link's square end.
+    const pivotBoss = cylinderAlongZ(bucketPinBossRadius, 0.20, wheelMaterial, 40);
+    pivotBoss.position.set(bucketPivotRadius * Math.cos(armAngle),
+      bucketPivotRadius * Math.sin(armAngle), 0);
+    pivotBoss.userData.role = `rim-boss-round-bucket-suspension-pin-${index + 1}`;
+    wheel.add(pivotBoss);
     hinge.userData.role = `bucket-bail-hung-on-float-tip-pin-${index + 1}`;
     bucket.add(hinge);
     // Pass 69: a level body inscribed in the tapered bucket and clipped at
@@ -596,13 +606,19 @@ function persianIrrigationWheel(movement) {
   stationaryTripPin.userData.role =
     'stationary-tipping-pin-at-high-station';
   root.add(stationaryTripPin);
-  const tripPinBracket = beamBetween(
-    new THREE.Vector3(3.42, tripPinPosition.y, 1.34),
-    new THREE.Vector3(tripPinPosition.x - 0.04,tripPinPosition.y,1.34),
-    0.12,
-    0.12,
+  // Pass 92: the arm is one flat extrusion ending in a round eye concentric
+  // with the pin (0.6 of the pin's radius of margin round it), so the pin
+  // stands centred in the arm's end instead of on its square edge.
+  const tripPinEyeRadius = trip.pinRadius * 1.6;
+  const tripPinBracket = new THREE.Mesh(
+    plate(polygonClipping.union(
+      poly([[3.42, tripPinPosition.y - 0.06], [tripPinPosition.x, tripPinPosition.y - 0.06],
+        [tripPinPosition.x, tripPinPosition.y + 0.06], [3.42, tripPinPosition.y + 0.06]]),
+      poly(circle([tripPinPosition.x, tripPinPosition.y], tripPinEyeRadius, 96)),
+    ), 1.28, 1.40),
     frameMaterial,
   );
+  tripPinBracket.userData.eyeRadius = tripPinEyeRadius;
   tripPinBracket.userData.role = 'stationary-tipping-pin-arm';
   root.add(tripPinBracket);
   const tripPinPost = new THREE.Mesh(

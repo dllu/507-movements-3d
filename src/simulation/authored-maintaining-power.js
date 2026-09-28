@@ -434,6 +434,8 @@ const RATCHET_ROOT_RATIO = 0.74;
 const CLICK_EYE_RADIUS = 0.1;
 const CLICK_PIN_RADIUS = 0.05;
 const CLICK_ARM_HALF_WIDTH = 0.05;
+const CLICK_BAR_TIP_CLEARANCE = 0.03;
+const CLICK_TOE_DEPTH = 0.09;
 
 function seatClickAndRatchet(root) {
   const b = root.userData.blocks;
@@ -480,64 +482,53 @@ function seatClickAndRatchet(root) {
   // Click toe in the seated valley (wheel-relative coordinates at A = 0).
   const previousTip = outline.at(-1);
   const back = unit(sub(previousTip, root0));
-  const half = Math.acos(dot(face, back)) / 2;
   const bisector = unit(add(face, back));
-  const noseCenter = add(root0, scale(bisector, CLICK_NOSE_RADIUS / Math.sin(half)));
-  // 0.0005 off the tooth face, so the two outlines only touch.
-  const faceEnd = add(add(root0, scale(face, 0.8 * faceLength)), scale([-face[1], face[0]], 0.0005 * Math.sign(dot([-face[1], face[0]], bisector))));
-  const backEnd = add(root0, scale(back, 0.07));
-  const hullOf = (points) => {
-    const sorted = [...points].sort((p, q) => p[0] - q[0] || p[1] - q[1]);
-    const cross = (o, p, q) => (p[0] - o[0]) * (q[1] - o[1]) - (p[1] - o[1]) * (q[0] - o[0]);
-    const chain = (list) => {
-      const out = [];
-      for (const point of list) {
-        while (out.length > 1 && cross(out.at(-2), out.at(-1), point) <= 0) out.pop();
-        out.push(point);
-      }
-      return out.slice(0, -1);
-    };
-    return [...chain(sorted), ...chain([...sorted].reverse())];
-  };
-  // Brown's click: an arm on a circular arc concentric with p (so it rides
-  // clear over the tooth between its eye and its root), ending in a toe
-  // that drops into the root with its working face on the tooth face and
-  // its underside on the back of the tooth behind.
-  const armRadius = Math.hypot(...pivot);
+  // Brown's click is one simple curved bar: a circular-arc centreline from
+  // the pivot eye, bowed just clear over the tip of the tooth behind, runs
+  // on into the seated valley; its end is cut by that valley (the tooth
+  // face and the back of the tooth behind, 0.0005 clear), so the tip
+  // nestles in the root with the valley's own angle.
   const armHalfWidth = CLICK_ARM_HALF_WIDTH;
-  const armStart = Math.atan2(pivot[1], pivot[0]);
-  const armEnd = Math.atan2(tip0[1], tip0[0]);
-  const armSweep = wrap(armEnd - armStart);
-  const armBand = [];
-  for (let i = 0; i <= 48; i += 1) {
-    const a = armStart + armSweep * i / 48;
-    armBand.push([(armRadius + armHalfWidth) * Math.cos(a), (armRadius + armHalfWidth) * Math.sin(a)]);
+  const tipBehind = outline.at(-1);
+  const overTip = add(tipBehind, scale(unit(tipBehind), armHalfWidth + CLICK_BAR_TIP_CLEARANCE));
+  const toePoint = add(root0, scale(bisector, CLICK_TOE_DEPTH));
+  const circumcenter = (a, c, e) => {
+    const d = 2 * (a[0] * (c[1] - e[1]) + c[0] * (e[1] - a[1]) + e[0] * (a[1] - c[1]));
+    const a2 = dot(a, a), c2 = dot(c, c), e2 = dot(e, e);
+    return [(a2 * (c[1] - e[1]) + c2 * (e[1] - a[1]) + e2 * (a[1] - c[1])) / d,
+      (a2 * (e[0] - c[0]) + c2 * (a[0] - e[0]) + e2 * (c[0] - a[0])) / d];
+  };
+  const arcCenter = circumcenter(pivot, overTip, toePoint);
+  const arcRadius = Math.hypot(...sub(pivot, arcCenter));
+  const angleOf = (q) => Math.atan2(q[1] - arcCenter[1], q[0] - arcCenter[0]);
+  const arcStart = angleOf(pivot);
+  const arcSweep = wrap(angleOf(toePoint) - arcStart);
+  // Run on past the toe point far enough to reach the root; the valley
+  // then trims it.
+  const arcEnd = arcSweep + Math.sign(arcSweep) * 0.2 / arcRadius;
+  const barBand = [];
+  const barSegments = 240;
+  for (let i = 0; i <= barSegments; i += 1) {
+    const a = arcStart + arcEnd * i / barSegments;
+    barBand.push(add(arcCenter, scale([Math.cos(a), Math.sin(a)], arcRadius + armHalfWidth)));
   }
-  for (let i = 48; i >= 0; i -= 1) {
-    const a = armStart + armSweep * i / 48;
-    armBand.push([(armRadius - armHalfWidth) * Math.cos(a), (armRadius - armHalfWidth) * Math.sin(a)]);
+  for (let i = barSegments; i >= 0; i -= 1) {
+    const a = arcStart + arcEnd * i / barSegments;
+    barBand.push(add(arcCenter, scale([Math.cos(a), Math.sin(a)], arcRadius - armHalfWidth)));
   }
-  const armEndOuter = [(armRadius + armHalfWidth) * Math.cos(armEnd), (armRadius + armHalfWidth) * Math.sin(armEnd)];
-  const armEndInner = [(armRadius - armHalfWidth) * Math.cos(armEnd), (armRadius - armHalfWidth) * Math.sin(armEnd)];
-  // The toe is a solid wedge: it fills the corner between the arm and the
-  // tooth behind, lying along that tooth's back.
-  const toeHeel = add(add(root0, scale(back, 0.16)), scale(bisector, 0.002));
-  const armJoin = [(armRadius - armHalfWidth) * Math.cos(armEnd - 0.2 * armSweep),
-    (armRadius - armHalfWidth) * Math.sin(armEnd - 0.2 * armSweep)];
-  const finger = hullOf([
-    armEndOuter, armEndInner, armJoin, faceEnd, backEnd, toeHeel,
-    ...circle(noseCenter, CLICK_NOSE_RADIUS, 48),
-  ]);
-  const seatRotation = Math.atan2(arm[1], arm[0]);
+  // The wheel grown by about 0.0005 on every flank (turned both ways and
+  // scaled a hair), so the seated tip touches without shared faces.
+  const grownWheel = [-1, 1].map((sense) => poly(outline.map((q) => scale(turn(q, sense * 0.0009), 1.0007))));
   const worldShape = polygonClipping.difference(
-    polygonClipping.union(poly(finger), poly(armBand), poly(circle(pivot, CLICK_EYE_RADIUS, 64)),
-      poly(circle(armEndOuter.map((v, i) => (v + armEndInner[i]) / 2), armHalfWidth, 32))),
+    polygonClipping.union(poly(barBand), poly(circle(pivot, CLICK_EYE_RADIUS, 64))),
+    ...grownWheel,
     poly(circle(pivot, CLICK_PIN_RADIUS + 0.002, 48)),
-  );
-  const local = worldShape.map((polygon) => polygon.map((ring) => ring.map((q) => turn(sub(q, pivot), -seatRotation))));
+  ).filter((polygon) => polygon[0].some((q) => Math.hypot(...sub(q, pivot)) < CLICK_EYE_RADIUS + 1e-6));
+  const seatRotation = Math.atan2(arm[1], arm[0]);
+  let local = worldShape.map((polygon) => polygon.map((ring) => ring.map((q) => turn(sub(q, pivot), -seatRotation))));
   old.body.geometry.dispose();
   old.body.geometry = plate(local, -0.06, 0.06);
-  old.body.userData.role = 'flat-click-with-valley-toe';
+  old.body.userData.role = 'flat-curved-bar-click-seated-in-root';
   // A short fixed stud through the click's eye only (no long rear pin).
   const clickZ = old.group.position.z;
   old.pin.geometry.dispose();
@@ -600,6 +591,22 @@ function seatClickAndRatchet(root) {
     }
     return seatRotation + liftSign * lift;
   };
+  // The 0.0005 clearance lets the click drop a hair past the nominal seat.
+  // Turn its outline by that amount, so the rest pose is the nominal seat.
+  for (let pass = 0; pass < 3; pass += 1) {
+    const settle = angleAt(0) - seatRotation;
+    if (Math.abs(settle) < 1e-12) break;
+    local = local.map((polygon) => polygon.map((ring) => ring.map((q) => turn(q, settle))));
+    clickRing.splice(0, clickRing.length, ...local[0][0].slice(0, -1));
+    toe.splice(0, toe.length, ...clickRing.filter((q) => Math.hypot(...add(pivot, turn(q, seatRotation))) < radius + 0.05));
+    toeEdges.length = 0;
+    for (let i = 0; i < clickRing.length; i += 1) {
+      const q = clickRing[i], r = clickRing[(i + 1) % clickRing.length];
+      if (toe.includes(q) || toe.includes(r)) toeEdges.push([q, r]);
+    }
+  }
+  old.body.geometry.dispose();
+  old.body.geometry = plate(local, -0.06, 0.06);
   const bakeKey = '320-p';
   // The click's own outline is part of the signature, so a changed click
   // cannot play back a stale path.

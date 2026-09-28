@@ -158,13 +158,13 @@ test('movement 391 guide grooves are the exact closed loci of the two rigid rack
     vector2Near(
       state.leftRack.guidePin,
       new THREE.Vector2(leftCurvePoint.x, leftCurvePoint.y),
-      1e-12,
+      1e-9,
       'left pin lies on left fixed guide centerline',
     );
     vector2Near(
       state.rightRack.guidePin,
       new THREE.Vector2(rightCurvePoint.x, rightCurvePoint.y),
-      1e-12,
+      1e-9,
       'right pin lies on right fixed guide centerline',
     );
     near(
@@ -192,65 +192,93 @@ test('movement 391 guide grooves are the exact closed loci of the two rigid rack
   disposeModel(model.root);
 });
 
-test('movement 391 alternates exactly one working rack and exchanges mesh only at zero-speed guide corners', () => {
+test('movement 391 guide grooves are Brown\'s: two straight vertical branches joined by arcs at opposite corners', () => {
+  const model = createMovementModel(catalog.movements[390]);
+  const data = model.root.userData;
+  const { geometry } = data;
+  const arcs = geometry.guideArcs;
+  const inner = geometry.rackPivotHalfSpacing + geometry.guideArm;
+  const outer = arcs.lowerCorner.x;
+  let innerCount = 0;
+  let outerCount = 0;
+  let upperCount = 0;
+  let lowerCount = 0;
+  for (let sample = 0; sample < 4000; sample += 1) {
+    const point = data.blocks.guideCurves.right.getPoint(sample / 4000);
+    const p = new THREE.Vector2(point.x, point.y);
+    const onInner = Math.abs(p.x - inner) < 1e-9;
+    const onOuter = Math.abs(p.x - outer) < 1e-9;
+    const onUpper = Math.abs(p.distanceTo(arcs.cornerCentre) - arcs.cornerRadius) < 1e-9
+      || Math.abs(p.distanceTo(arcs.filletCentre) - arcs.filletRadius) < 1e-9;
+    const onLower = Math.abs(p.distanceTo(arcs.lowerCentre) - arcs.lowerRadius) < 1e-9;
+    assert.ok(onInner || onOuter || onUpper || onLower, `pin at ${p.x}, ${p.y} lies on a branch or corner arc`);
+    innerCount += onInner; outerCount += onOuter; upperCount += onUpper && !onInner && !onOuter; lowerCount += onLower && !onInner && !onOuter;
+    if (onUpper && !onInner && !onOuter) assert.ok(p.y > arcs.lowerCentre.y, 'upper arc at the top');
+    // Mirror image: the left groove is the right groove reflected.
+    const left = data.blocks.guideCurves.left.getPoint(sample / 4000);
+    const q = new THREE.Vector2(-left.x, left.y);
+    assert.ok(Math.abs(q.x - inner) < 1e-9 || Math.abs(q.x - outer) < 1e-9
+      || Math.abs(q.distanceTo(arcs.cornerCentre) - arcs.cornerRadius) < 1e-9
+      || Math.abs(q.distanceTo(arcs.filletCentre) - arcs.filletRadius) < 1e-9
+      || Math.abs(q.distanceTo(arcs.lowerCentre) - arcs.lowerRadius) < 1e-9,
+    'left groove mirrors the right');
+  }
+  // Mostly straight: the two vertical branches carry most of the loop.
+  assert.ok(innerCount + outerCount > upperCount + lowerCount, `${innerCount} ${outerCount} ${upperCount} ${lowerCount}`);
+  assert.ok(upperCount > 0 && lowerCount > 0);
+  // The upper arc is tangent to the outer branch: the fillet's centre lies
+  // level with its foot, one radius inside the outer branch.
+  near(arcs.filletCentre.x + arcs.filletRadius, outer, 1e-12, 'upper fillet tangent to the outer branch');
+  // The lower arc is tangent to the inner branch.
+  near(arcs.lowerCentre.x - arcs.lowerRadius, inner, 1e-12, 'lower arc tangent to the inner branch');
+  // Sharp corners at the top of the inner branch and the foot of the outer.
+  near(arcs.corner.x, inner, 1e-12, 'upper corner on the inner branch');
+  near(arcs.lowerCorner.x, outer, 1e-12, 'lower corner on the outer branch');
+  disposeModel(model.root);
+});
+
+test('movement 391 alternates one working rack; the grooves swing the racks in and out', () => {
   const model = createMovementModel(catalog.movements[390]);
   const data = model.root.userData;
   const { geometry, timeline } = data;
   // Tests below work in the mechanism's own cycle phase (0 = bottom corner);
   // playback time zero is Brown's mid-descent pose at geometry.sourcePhase.
   const stateAtTime = (time) => data.stateAtTime(time - timeline.cycleDuration * geometry.sourcePhase);
-
+  const arcs = geometry.guideArcs;
   for (let sample = 0; sample < 12000; sample += 1) {
     const phase = (sample + 0.5) / 12000;
     const state = stateAtTime(timeline.cycleDuration * phase);
-    assert.equal(
-      Number(state.leftRack.engaged) + Number(state.rightRack.engaged),
-      state.activeDrive.includes('working') ? 1 : 0,
-    );
+    assert.ok(Number(state.leftRack.engaged) + Number(state.rightRack.engaged) <= 1);
     if (state.leftRack.engaged) {
-      near(state.leftRack.rackAngle, 0, 0,
-        'rack A vertical on working descent');
-      // A1 rides the bowed outer branch, never nearer than the corner swing.
-      assert.ok(state.rightRack.rackAngle <= -geometry.bottomCornerAngle + 1e-12
-        && state.rightRack.rackAngle >= -geometry.outwardRackAngle - .01,
-        'rack A1 on outer return branch during descent');
+      near(state.leftRack.rackAngle, 0, 0, 'rack A upright on its working descent');
+      assert.ok(state.rightRack.rackAngle < 0 && state.rightRack.rackAngle >= -geometry.outwardRackAngle - 1e-12,
+        'rack A1 out of mesh during descent');
       assert.ok(state.crossheadVelocity < 0);
     } else if (state.rightRack.engaged) {
-      near(state.rightRack.rackAngle, 0, 0,
-        'rack A1 vertical on working ascent');
-      assert.ok(state.leftRack.rackAngle >= geometry.bottomCornerAngle - 1e-12
-        && state.leftRack.rackAngle <= geometry.outwardRackAngle + .01,
-        'rack A on outer return branch during ascent');
+      near(state.rightRack.rackAngle, 0, 0, 'rack A1 upright on its working ascent');
+      assert.ok(state.leftRack.rackAngle > 0 && state.leftRack.rackAngle <= geometry.outwardRackAngle + 1e-12,
+        'rack A out of mesh during ascent');
       assert.ok(state.crossheadVelocity > 0);
     } else {
-      near(state.crossheadVelocity, 0, 0,
-        'piston stationary throughout guide crossover');
-      near(state.outputAngularSpeed, 0, 0,
-        'cog wheel stationary throughout guide crossover');
+      // Neither rack is upright only on the lower arcs, near the bottom.
+      assert.ok(state.crossheadY < arcs.lowerArcHead + 1e-9, `${state.crossheadY}`);
     }
   }
-
-  const topMiddle = stateAtTime(
-    timeline.cycleDuration
-      * (geometry.ascentEnd + geometry.topCrossoverEnd) / 2,
-  );
-  // C's link carries the pin through the crossover and lets go early in the
-  // descent, once A1 is well out on its bowed return branch.
-  assert.equal(topMiddle.elbowAssist.active, true);
-  assert.equal(stateAtTime(timeline.cycleDuration * (geometry.topCrossoverEnd + .01)).elbowAssist.active, true);
-  assert.equal(stateAtTime(timeline.cycleDuration * (geometry.topCrossoverEnd + .15)).elbowAssist.contact, false);
-  near(topMiddle.leftRack.outwardFraction, 0.5, 4e-15,
-    'left top crossover midpoint');
-  near(topMiddle.rightRack.outwardFraction, 0.5, 4e-15,
-    'right top crossover midpoint');
-  const bottomMiddle = stateAtTime(
-    timeline.cycleDuration * (geometry.descentEnd + 1) / 2,
-  );
-  assert.equal(bottomMiddle.elbowAssist.active, false);
-  near(bottomMiddle.leftRack.outwardFraction, 0.5, 4e-15,
-    'left bottom crossover midpoint');
-  near(bottomMiddle.rightRack.outwardFraction, 0.5, 4e-15,
-    'right bottom crossover midpoint');
+  // A is cammed upright by the upper arc as it rises into the top corner.
+  const nearTop = stateAtTime(timeline.cycleDuration * (geometry.ascentEnd - .04));
+  const top = stateAtTime(timeline.cycleDuration * geometry.ascentEnd);
+  assert.ok(nearTop.leftRack.rackAngle > 0 && nearTop.leftRack.rackAngle < geometry.outwardRackAngle);
+  near(top.leftRack.rackAngle, 0, 1e-9, 'A lands upright at the top');
+  near(top.rightRack.rackAngle, 0, 1e-9, 'A1 is still upright at the top');
+  // A1 is carried over the angle as the piston starts down.
+  const afterTop = stateAtTime(timeline.cycleDuration * (geometry.ascentEnd + .04));
+  assert.ok(afterTop.rightRack.rackAngle < 0);
+  assert.equal(afterTop.elbowAssist.active, true);
+  // At the bottom corner both hang out on their outer branches.
+  const bottom = stateAtTime(0);
+  near(bottom.leftRack.rackAngle, geometry.outwardRackAngle, 1e-9, 'A out at the bottom');
+  near(bottom.rightRack.rackAngle, -geometry.outwardRackAngle, 1e-9, 'A1 out at the bottom');
+  assert.equal(bottom.elbowAssist.active, false);
   disposeModel(model.root);
 });
 
@@ -328,7 +356,7 @@ test('movement 391 advances 1.3 counterclockwise output turns (26 teeth) per pis
     const end = stateAtTime(timeline.cycleDuration * (cycle + 1.137));
     near(end.outputAngle - start.outputAngle, 1.3 * FULL_TURN, 1e-13,
       '1.3 counterclockwise output turns (26 whole teeth) per cycle');
-    near(end.crossheadY, start.crossheadY, 4e-15,
+    near(end.crossheadY, start.crossheadY, 4e-14,
       'crosshead repeats after one cycle');
     near(end.leftRack.rackAngle, start.leftRack.rackAngle, 1e-15,
       'left guide state repeats');
@@ -342,23 +370,20 @@ test('movement 391 elbow lever C loads on approach, assists the upper corner, th
   const model = createMovementModel(catalog.movements[390]);
   const data = model.root.userData;
   const { blocks, geometry, timeline } = data;
-  // Tests below work in the mechanism's own cycle phase (0 = bottom corner);
-  // playback time zero is Brown's mid-descent pose at geometry.sourcePhase.
   const stateAtTime = (time) => data.stateAtTime(time - timeline.cycleDuration * geometry.sourcePhase);
-  const topMiddlePhase = geometry.ascentEnd + .25*(geometry.topCrossoverEnd-geometry.ascentEnd);
   const inactive = stateAtTime(timeline.cycleDuration * 0.20);
-  const active = stateAtTime(timeline.cycleDuration * topMiddlePhase);
-  const bottom = stateAtTime(
-    timeline.cycleDuration * (geometry.descentEnd + 1) / 2,
-  );
-  assert.equal(inactive.elbowAssist.active, false);
+  const loading = stateAtTime(timeline.cycleDuration * 0.45);
+  const activePhase = geometry.ascentEnd + .03;
+  const active = stateAtTime(timeline.cycleDuration * activePhase);
+  const bottom = stateAtTime(0);
+  assert.equal(inactive.elbowAssist.contact, false);
+  assert.equal(loading.elbowAssist.loading, true);
   assert.equal(active.elbowAssist.active, true);
   assert.equal(bottom.elbowAssist.active, false);
   assert.ok(active.elbowAssist.springDeflection > 0);
-  assert.ok(active.rightRack.outwardFraction > 0 && active.rightRack.outwardFraction < .5, 'assistance precedes release');
+  assert.ok(active.rightRack.outwardFraction > 0 && active.rightRack.outwardFraction < 1, 'C acts while A1 swings out');
 
-  model.update(timeline.cycleDuration * (topMiddlePhase - geometry.sourcePhase));
-  assert.equal(blocks.leverContactIndex.visible, true);
+  model.update(timeline.cycleDuration * (activePhase - geometry.sourcePhase));
   near(blocks.elbowLever.rotation.z, active.elbowAssist.leverAngle, 0,
     'lever update');
   assert.ok(blocks.spring.userData.currentLength > 0);

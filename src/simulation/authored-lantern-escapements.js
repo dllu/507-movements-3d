@@ -1055,8 +1055,9 @@ function lanternWheelEscapement(movement) {
   root.userData.lanternWorkingParts.pairs = workingPairs.filter(
     ([a, b]) => a.parent && b.parent && body(a) !== body(b),
   );
-  // The pin ends read as separate circles on the plate's plain disc.
-  const pinMaterial = matte(PALETTE.white, { metalness: 0.22, roughness: 0.45 });
+  // The pin ends read as separate circles on the plate's plain disc: steel
+  // pins, since white ones would read as holes on the cream page.
+  const pinMaterial = matte(PALETTE.muted, { metalness: 0.22, roughness: 0.45 });
   pinMaterial.fog = false;
   for (const trundle of blocks.trundles) trundle.material = pinMaterial;
   // Neither the index marks nor a contact marker appear on the plate.

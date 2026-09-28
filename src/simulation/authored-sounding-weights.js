@@ -916,7 +916,8 @@ function seabedTriggeredSoundingWeight(movement) {
     metalness: 0.18,
     roughness: 0.5,
   });
-  const probeMaterial = matte(PALETTE.white, { roughness: 0.46 });
+  // Steel probe: a white probe would read as a gap on the cream page.
+  const probeMaterial = matte(PALETTE.muted, { metalness: 0.2, roughness: 0.46 });
   const weightMaterial = matte(PALETTE.driven, {
     metalness: 0.16,
     roughness: 0.57,

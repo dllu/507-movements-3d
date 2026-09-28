@@ -630,7 +630,8 @@ function atmosphericChainBeamPumpingEngine(movement) {
     metalness: 0.09,
     roughness: 0.59,
   });
-  const whiteMaterial = matte(PALETTE.white, { roughness: 0.47 });
+  // Ink stay-end pins: white ones would read as holes on the cream page.
+  const stayPinMaterial = matte(PALETTE.ink, { metalness: 0.22, roughness: 0.47 });
   const stayMaterial = matte(PALETTE.frame, { metalness: 0.2, roughness: 0.55 });
 
   const fixedBox = (min, max, z0, z1, material, role) => {
@@ -864,7 +865,7 @@ function atmosphericChainBeamPumpingEngine(movement) {
     [new THREE.Vector2(-9.74, -1.15), 0.08, 0.78],
     [new THREE.Vector2(5.7, -0.45), 0.08, 0.66],
   ].map(([point, z0, z1]) => {
-    const pin = cylinderAlongZ(0.13 * sourceScale, z1 - z0, whiteMaterial, 18);
+    const pin = cylinderAlongZ(0.13 * sourceScale, z1 - z0, stayPinMaterial, 18);
     pin.position.set(point.x * sourceScale, point.y * sourceScale, (z0 + z1) / 2);
     pin.userData.role = 'stay-end-pin';
     beam.add(pin);

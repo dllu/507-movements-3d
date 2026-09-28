@@ -448,11 +448,13 @@ function groovedDiskFollower(movement) {
   lever.add(leverBody);
   const bodyYAtPin = localLeverGrip.y * followerArmLength
     / localLeverGrip.x;
-  const followerBracket = makeBeam(
-    new THREE.Vector3(followerArmLength, bodyYAtPin, 0),
-    new THREE.Vector3(followerArmLength, 0, 0),
-    { color: PALETTE.driven, depth: 0.24, thickness: 0.13 },
-  );
+  // Pass 92: one flat bracket whose end is a round eye concentric with the
+  // follower pin (r .13 round the .075 pin), not a square end at its axis.
+  const followerBracket = new THREE.Mesh(plate(polygonClipping.union(
+    poly([[followerArmLength - 0.065, Math.min(0, bodyYAtPin)], [followerArmLength + 0.065, Math.min(0, bodyYAtPin)],
+      [followerArmLength + 0.065, Math.max(0, bodyYAtPin)], [followerArmLength - 0.065, Math.max(0, bodyYAtPin)]]),
+    poly(circle([followerArmLength, 0], 0.13, 48)),
+  ), -0.12, 0.12), drivenMaterial);
   followerBracket.userData.role = 'rigid-offset-pin-bracket-on-lever';
   lever.add(followerBracket);
   const followerPin = cylinderAlongZ(followerPinRadius, 0.78,

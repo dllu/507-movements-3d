@@ -5,36 +5,32 @@
   ],
   "poses": 65,
   "sources": {
-    "factory": "2e50f54383bfea149948634775c200df74d6a73771bb8ce1cf58ea87d0659338",
-    "parts": "af043a4197d95a2651e811a612bb5d1e7b927a7590e755843b481ff6bc2c93cc",
-    "motion": "a1fc3bbf3d947dfeddc1b6a50e24b62fe3d8be376d8896e3550ac79e36618a37"
+    "factory": "98df2d1f88ac620e79df4d0566ae6a52dece9f384d703052798e58ca7dc38ac2",
+    "parts": "7e3e155f35ccdc87e474f38ed4035e28845f536a22086ec97bd9a0470cbdc0c4",
+    "motion": "a69ad463037e1f4f090fdaf0aefd635b679be88f9ede1cea774405ab729d88aa"
   },
   "results": {
     "183": {
-      "meshes": 35,
-      "worstPenetration": 0.0005486135450288128,
+      "meshes": 16,
+      "worstPenetration": 0.0001801919014908106,
       "pairs": {
-        "upper-handle-stud/lower-handle-lip": {
-          "depth": 0.0005486135450288128,
-          "time": 14.34375
-        },
-        "upper-handle-catchBoss/lower-handle-stud": {
-          "depth": 0.0000871410690235589,
-          "time": 8.71875
+        "upper-handle-wing/lower-handle-quadrant": {
+          "depth": 0.0001801919014908106,
+          "time": 13.21875
         }
       }
     },
     "184": {
-      "meshes": 36,
-      "worstPenetration": 0.0005486135450288128,
+      "meshes": 16,
+      "worstPenetration": 0.0001801919014908106,
       "pairs": {
-        "upper-handle-stud/lower-handle-lip": {
-          "depth": 0.0005486135450288128,
-          "time": 14.34375
+        "fixed-sectioned-upper-handle-shaft/lower-handle-lever": {
+          "depth": 8.344650331837448e-9,
+          "time": 12.9375
         },
-        "upper-handle-catchBoss/lower-handle-stud": {
-          "depth": 0.0000871410690235589,
-          "time": 8.71875
+        "upper-handle-wing/lower-handle-quadrant": {
+          "depth": 0.0001801919014908106,
+          "time": 13.21875
         }
       }
     }

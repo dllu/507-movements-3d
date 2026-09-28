@@ -663,10 +663,28 @@ function CartwrightParallelMotion(movement) {
   crosshead.userData.role =
     'rigid-horizontal-crosshead-joining-both-rods-to-piston-rod-B';
   crosshead.userData.rotationDegreesOfFreedom = 0;
-  const crossheadBar = new THREE.Mesh(
-    new THREE.BoxGeometry(crossheadSpan, 0.50 * sourceScale, 0.18),
-    drivenMaterial,
-  );
+  // Pass 92: Brown rounds each end of the crosshead concentric with its
+  // rod-joint pin. One flat extrusion: the 0.50-unit bar plus a round end
+  // (radius 0.54 units, the rods' eye radius) about each pin axis, so each
+  // pin stands with a margin all round instead of on the bar's square end.
+  const crossheadEndRadius = 0.54 * sourceScale;
+  const crossheadHalfHeight = 0.25 * sourceScale;
+  const crossheadHalf = crossheadSpan / 2;
+  const crossheadShape = new THREE.Shape();
+  {
+    const beta = Math.asin(crossheadHalfHeight / crossheadEndRadius);
+    const neckX = crossheadHalf - crossheadEndRadius * Math.cos(beta);
+    crossheadShape.moveTo(-neckX, -crossheadHalfHeight);
+    crossheadShape.lineTo(neckX, -crossheadHalfHeight);
+    crossheadShape.absarc(crossheadHalf, 0, crossheadEndRadius, Math.PI + beta, 3 * Math.PI - beta, false);
+    crossheadShape.lineTo(-neckX, crossheadHalfHeight);
+    crossheadShape.absarc(-crossheadHalf, 0, crossheadEndRadius, beta, 2 * Math.PI - beta, false);
+  }
+  const crossheadGeometry = new THREE.ExtrudeGeometry(crossheadShape, {
+    depth: 0.18, bevelEnabled: false, curveSegments: 48,
+  });
+  crossheadGeometry.translate(0, 0, -0.09);
+  const crossheadBar = new THREE.Mesh(crossheadGeometry, drivenMaterial);
   crossheadBar.position.z = crossheadPlaneZ;
   crossheadBar.userData.role = 'horizontal-crosshead-rigid-span';
   const crossheadPins = [-1, 1].map((side) => {

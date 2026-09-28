@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { smoothShadeExtrusion } from './smooth-extrusion.js';
 import { makeBoredScissorLink } from './bored-scissor-link.js';
 import { groundBlock } from './ground-block.js';
 import { plate, poly, circle, polygonClipping as clip } from './finite-plate-geometry.js';
@@ -39,6 +40,26 @@ function cylinderAlongZ(radius, length, material, segments = 28) {
   return cylinder;
 }
 
+// Plates and bosses of finely sampled curves shade smoothly (flat faces and
+// sharp corners stay creased); see smooth-extrusion.js.
+function smoothed(source) {
+  const geometry = smoothShadeExtrusion(source);
+  source.dispose();
+  return geometry;
+}
+function smoothPlate(polygons, low, high) {
+  return smoothed(plate(polygons, low, high));
+}
+
+// Sample a circular arc from angle a0 to a1 (radians) at half-degree steps.
+function arcSamples(center, radius, a0, a1) {
+  const count = Math.max(8, Math.ceil(Math.abs(a1 - a0) / (Math.PI / 360)));
+  return Array.from({ length: count + 1 }, (_, i) => {
+    const angle = a0 + (a1 - a0) * i / count;
+    return [center[0] + radius * Math.cos(angle), center[1] + radius * Math.sin(angle)];
+  });
+}
+
 function annularShape(innerRadius, outerRadius) {
   const shape = new THREE.Shape();
   shape.absarc(0, 0, outerRadius, 0, Math.PI * 2, false);
@@ -49,13 +70,13 @@ function annularShape(innerRadius, outerRadius) {
   return shape;
 }
 
-function centeredExtrusion(shape, depth, bevel = 0.008) {
+function centeredExtrusion(shape, depth, bevel = 0.008, curveSegments = 64) {
   const geometry = new THREE.ExtrudeGeometry(shape, {
     bevelEnabled: true,
     bevelSegments: 1,
     bevelSize: bevel,
     bevelThickness: bevel,
-    curveSegments: 64,
+    curveSegments,
     depth,
   });
   geometry.translate(0, 0, -depth / 2);
@@ -2569,7 +2590,56 @@ function curvedSlottedArmVariableVibration() {
     [6.30, 9.12], [6.20, 9.56], [6.00, 9.96], [5.72, 10.28], [5.40, 10.52],
     [5.02, 10.71], [4.63, 10.81], [4.18, 10.88], [3.73, 10.88], [3.27, 10.86],
   ];
-  const plateOutline = sourcePlateOutline.map(([x, y]) => (
+  // The traced ink above is only the reference: the plate is built from the
+  // ideal construction it follows (source units). The curved limb's outer
+  // edge is concentric with the slot and tangent to the straight top run; the
+  // top run is a constant-width band on the slot's straight run with a
+  // semicircular end; the lobe is a circle concentric with the pivot; a
+  // concave fillet joins limb and lobe, and the bay is one concave arc tangent
+  // to both the lobe and the top run's lower edge. Each fits the ink within
+  // about 2 px; every arc is sampled at half-degree steps.
+  const idealArm = (() => {
+    const c = [sourceSlotCenter.x, sourceSlotCenter.y];
+    const bandCenterY = geometryAtInputAngle(0).followerPoint.y / sourceScale;
+    const bandHalfWidth = 2.0;
+    const endCenterX = 4.34;
+    const top = bandCenterY + bandHalfWidth;
+    const bottom = bandCenterY - bandHalfWidth;
+    const limbRadius = top - c[1];
+    const lobeRadius = 4.0;
+    const bayX = 1.42;
+    const bayRadius = (bayX ** 2 + bottom ** 2 - lobeRadius ** 2) / (2 * bottom + 2 * lobeRadius);
+    const bay = [bayX, bottom - bayRadius];
+    const filletRadius = 1.5;
+    const r1 = lobeRadius + filletRadius;
+    const r2 = limbRadius + filletRadius;
+    const d = Math.hypot(...c);
+    const along = (r1 ** 2 - r2 ** 2 + d ** 2) / (2 * d);
+    const across = Math.sqrt(r1 ** 2 - along ** 2);
+    const u = [c[0] / d, c[1] / d];
+    // Of the two tangent circles, the fillet is the one at the lower left.
+    const fillet = [-1, 1].map((sign) => [along * u[0] - sign * across * u[1], along * u[1] + sign * across * u[0]])
+      .reduce((best, p) => (p[0] + p[1] < best[0] + best[1] ? p : best));
+    const angle = (p, q = [0, 0]) => Math.atan2(p[1] - q[1], p[0] - q[0]);
+    const wrap = (a) => THREE.MathUtils.euclideanModulo(a, fullTurn);
+    const filletStart = angle(c, fillet);
+    let filletEnd = angle([0, 0], fillet);
+    while (filletEnd > filletStart) filletEnd -= fullTurn;
+    const points = [
+      ...arcSamples([endCenterX, bandCenterY], bandHalfWidth, -Math.PI / 2, Math.PI / 2),
+      ...arcSamples(c, limbRadius, Math.PI / 2, wrap(angle(fillet, c))),
+      ...arcSamples(fillet, filletRadius, filletStart, filletEnd),
+      ...arcSamples([0, 0], lobeRadius, wrap(angle(fillet)), angle(bay) + fullTurn),
+      ...arcSamples(bay, bayRadius, wrap(angle([0, 0], bay)), Math.PI / 2),
+    ];
+    const unique = points.filter((p, i) => {
+      const q = points[(i + points.length - 1) % points.length];
+      return Math.hypot(p[0] - q[0], p[1] - q[1]) > 1e-6;
+    });
+    return { points: unique, construction: { bandCenterY, bandHalfWidth, endCenterX, limbRadius,
+      lobeRadius, bay, bayRadius, fillet, filletRadius } };
+  })();
+  const plateOutline = idealArm.points.map(([x, y]) => (
     [x * sourceScale, y * sourceScale]
   ));
   // Ideal circular working walls replace hand-rounded source offsets. A small
@@ -2626,11 +2696,11 @@ function curvedSlottedArmVariableVibration() {
       [topSlotEndX, topSlotY + slotHalfWidth],
       [topSlotStartX, topSlotY + slotHalfWidth],
     ]),
-    poly(circle([topSlotEndX, topSlotY], slotHalfWidth, 64)),
-    poly(circle([0, 0], sourceScale, 96)),
+    poly(circle([topSlotEndX, topSlotY], slotHalfWidth, 256)),
+    poly(circle([0, 0], sourceScale, 256)),
   );
   const curvedPlate = new THREE.Mesh(
-    plate(curvedPlatePolygons, -plateDepth / 2, plateDepth / 2),
+    smoothPlate(curvedPlatePolygons, -plateDepth / 2, plateDepth / 2),
     driverMaterial,
   );
   curvedPlate.userData.actualThroughSlot = true;
@@ -2644,11 +2714,12 @@ function curvedSlottedArmVariableVibration() {
   inputArm.userData.role = 'regularly-vibrating-curved-slotted-input-arm';
 
   const inputBoss = new THREE.Mesh(
-    centeredExtrusion(
+    smoothed(centeredExtrusion(
       annularShape(sourceScale, 1.8 * sourceScale),
       0.12,
       0.008,
-    ),
+      192,
+    )),
     driverMaterial,
   );
   inputBoss.position.z = plateDepth / 2 + 0.055;
@@ -2724,52 +2795,45 @@ function curvedSlottedArmVariableVibration() {
   outputArm.position.set(outputPivot.x, outputPivot.y, 0);
   outputArm.userData.fixedPivot = true;
   outputArm.userData.role = 'single-straight-variable-vibration-output-arm';
-  const sourceArmOutline = [
-    new THREE.Vector2(-1.8, 1.55),
-    new THREE.Vector2(-sourceOutputArmLength, 1.05),
-    new THREE.Vector2(-sourceOutputArmLength, -1.05),
-    new THREE.Vector2(-1.8, -1.55),
-  ].map((point) => point.multiplyScalar(sourceScale));
+  // One flat plate of uniform thickness, as Brown draws it: the round eye
+  // concentric with the fixed pivot, and a tapered strap whose edges are the
+  // common tangents of a 1.62-unit circle at the pivot (inside the eye) and
+  // the 1.05-unit eye concentric with the follower pin (Brown's dashed end).
+  const pivotEyeRadius = 2.2;
+  const pinEyeRadius = 1.05;
+  const strapRootRadius = 1.62;
+  const strapOutline = (() => {
+    const l = sourceOutputArmLength;
+    const tangent = Math.acos((strapRootRadius - pinEyeRadius) / l);
+    return [
+      ...arcSamples([0, 0], strapRootRadius, -tangent, tangent),
+      ...arcSamples([-l, 0], pinEyeRadius, tangent, fullTurn - tangent),
+    ].map(([x, y]) => [x * sourceScale, y * sourceScale]);
+  })();
   // The plate dashes the arm's end: it passes behind the hooked arm.
   const outputArmPlaneZ = -0.39;
   const outputArmDepth = 0.2;
   const outputArmBody = new THREE.Mesh(
-    plate(clip.difference(poly(sourceArmOutline.map(point => point.toArray())),
-      poly(circle([-outputArmLength, 0], followerPinRadius + 0.005, 64))),
-    -outputArmDepth / 2, outputArmDepth / 2),
+    smoothPlate(clip.difference(
+      clip.union(poly(strapOutline), poly(circle([0, 0], pivotEyeRadius * sourceScale, 512))),
+      // A close running fit (0.003) on the 1.3-unit output shaft.
+      poly(circle([0, 0], 1.3 * sourceScale - 0.007, 256)),
+      poly(circle([-outputArmLength, 0], followerPinRadius + 0.005, 256)),
+    ), -outputArmDepth / 2, outputArmDepth / 2),
     drivenMaterial,
   );
   outputArmBody.position.z = outputArmPlaneZ;
   outputArmBody.userData.rigidLength = outputArmLength;
-  outputArmBody.userData.role = 'tapered-body-of-straight-output-arm';
-  const outputPivotBoss = new THREE.Mesh(
-    centeredExtrusion(
-      annularShape(1.3 * sourceScale, 2.2 * sourceScale),
-      outputArmDepth + 0.08,
-      0.009,
-    ),
-    drivenMaterial,
-  );
-  outputPivotBoss.position.z = outputArmPlaneZ;
-  outputPivotBoss.userData.role = 'boss-around-fixed-output-arm-pivot';
-  const followerBoss = new THREE.Mesh(
-    centeredExtrusion(
-      annularShape(followerPinRadius + 0.005, 1.05 * sourceScale),
-      outputArmDepth + 0.08,
-      0,
-    ),
-    drivenMaterial,
-  );
-  followerBoss.position.set(-outputArmLength, 0, outputArmPlaneZ);
-  followerBoss.userData.role = 'boss-around-single-slot-follower-pin';
+  outputArmBody.userData.role = 'one-piece-flat-straight-output-arm-with-both-eyes';
   const followerPin = new THREE.Mesh(
     new THREE.CylinderGeometry(
       followerPinRadius,
       followerPinRadius,
       0.94,
-      32,
+      96,
     ),
-    indexMaterial,
+    // Steel, not white: a white pin would read as a hole on the cream page.
+    matte(PALETTE.muted, { metalness: 0.2, roughness: 0.5 }),
   );
   followerPin.rotation.x = Math.PI / 2;
   followerPin.position.set(-outputArmLength, 0, -0.23);
@@ -2796,8 +2860,6 @@ function curvedSlottedArmVariableVibration() {
     'white-index-showing-variable-output-arm-angle';
   outputArm.add(
     outputArmBody,
-    outputPivotBoss,
-    followerBoss,
     followerPin,
     followerPinRim,
     outputRotationIndex,
@@ -2823,6 +2885,14 @@ function curvedSlottedArmVariableVibration() {
   outputShaft.userData.fixedCenter = true;
   outputShaft.userData.keyedToOutputArm = true;
   outputShaft.userData.role = 'fixed-center-shaft-keyed-to-straight-output-arm';
+
+  // makeShaft's 22-sided round shows its polygon at these large radii.
+  for (const shaft of [inputShaft, outputShaft]) {
+    const mesh = shaft.userData.rotor.children[0];
+    const { radiusTop, height } = mesh.geometry.parameters;
+    mesh.geometry.dispose();
+    mesh.geometry = new THREE.CylinderGeometry(radiusTop, radiusTop, height, 96);
+  }
 
   const rearZ = -0.66;
   const baseY = -2.26;
@@ -2938,7 +3008,6 @@ function curvedSlottedArmVariableVibration() {
     bearingRings,
     cameraEnvelope,
     curvedPlate,
-    followerBoss,
     followerPin,
     followerPinRim,
     inputArm,
@@ -2950,7 +3019,6 @@ function curvedSlottedArmVariableVibration() {
     outputArm,
     outputArmBody,
     outputBridge,
-    outputPivotBoss,
     outputPost,
     outputRotationIndex,
     outputShaft,

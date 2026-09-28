@@ -27,9 +27,9 @@ export function makeAlternatingPegPawlDrive(){
  for(let i=0;i<24;i++){
   const center=motion.pinAt(i,0);pinCenters.push(center);
   attach('wheelPin'+i,pegGeometry,'wheel',PALETTE.muted,[...center,0]);
-  // Brown draws each peg end-on as a small open circle. A pale cap on the
-  // muted peg reads through shading alone; no inked outline rim is drawn.
-  attach('wheelPinCap'+i,capGeometry,'wheel',PALETTE.white,[...center,0]);
+  // Brown draws each peg end-on as a small open circle. The cap is the
+  // peg's own steel: a white end would read as a hole on the cream page.
+  attach('wheelPinCap'+i,capGeometry,'wheel',PALETTE.muted,[...center,0]);
  }
  attach('wheelAxle',disk(.137,-.32,.10),'fixed',PALETTE.muted);
  attach('wheelAxleCap',disk(.15,.10,.12),'fixed',PALETTE.muted);

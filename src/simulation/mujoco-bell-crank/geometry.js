@@ -60,7 +60,8 @@ export function makeBellCrankGeometry({amplitude=.5,cordSegments=64,outputSegmen
   grips[name]={pin,direction,angle:blocks[family].rotation.z,bore,halfWidth,offset:gripOffset,length:gripLength,clearance:gripClearance};
  }
  const cordLengths={};
- for(const[name,points,color]of [['input',inputPath.points,PALETTE.driver],['output',outputPoints,PALETTE.driven]]){
+ // Pass 92: both cords are hemp rope brown (they were coloured by role).
+ for(const[name,points,color]of [['input',inputPath.points,PALETTE.rope],['output',outputPoints,PALETTE.rope]]){
   cordLengths[name]=points.slice(1).map((p,i)=>Math.hypot(...p.map((v,k)=>v-points[i][k])));
   add(name+'Cord',bellCrankCordGeometry(points,cordRadius),'cord',color);
  }

@@ -75,7 +75,7 @@ test('movement 350 is the corrected two-slot traverse mechanism', () => {
   assert.match(mechanism, /stationary-upper-pin-O/);
   assert.match(mechanism, /lower-pin-D-in-horizontal-guide/);
   assert.match(mechanism, /output-joint-C-on-horizontal-guided-bar/);
-  assert.match(mechanism, /source-corrected-clearance-riser/);
+  assert.match(mechanism, /carried-by-centred-standard-boss/);
   assert.equal(degreesOfFreedom.mechanism, 1);
   assert.match(degreesOfFreedom.input, /lower pin D/);
   assert.match(degreesOfFreedom.output, /guides a,a/);
@@ -102,8 +102,11 @@ test('movement 350 is the corrected two-slot traverse mechanism', () => {
   assert.equal(blocks.outputGuideAssemblies.length, 2);
   assert.equal(blocks.inputGuideDashes.length, 23);
   assert.equal(blocks.railIndexes.length, 4);
-  assert.ok(blocks.outputRiser.position.x > 0,
-    'the official corrected riser is offset from the fixed pin line');
+  assert.equal(blocks.outputRiser, undefined, 'no off-centre riser');
+  assert.equal(blocks.jointToRiser, undefined, 'no angled neck');
+  assert.equal(blocks.outputJointBoss.position.x, 0,
+    'pin C is carried on the standard centreline');
+  assert.equal(blocks.outputJointBoss.position.y, 0);
 
   assert.equal(contacts.fixedPinOInUpperLeverSlot.fixedMember,
     blocks.fixedFrame);
@@ -123,9 +126,9 @@ test('movement 350 is the corrected two-slot traverse mechanism', () => {
   assert.equal(contacts.outputBarInGuidesAA.fixedMembers.length, 2);
   assert.equal(contacts.outputBarInGuidesAA.movingMember,
     blocks.outputBar);
-  assert.equal(sourceAnimation.officialWebsiteCorrection.applied, true);
+  assert.equal(sourceAnimation.officialWebsiteCorrection.applied, false);
   assert.match(sourceAnimation.officialWebsiteCorrection.note,
-    /reroutes the riser/);
+    /centred on the broad standard/);
 
   const roles = [];
   model.root.traverse((object) => roles.push(object.userData.role ?? ''));

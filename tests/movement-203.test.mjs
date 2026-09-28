@@ -109,8 +109,6 @@ test('movement 203 is one curved circular-slot input arm driving one straight ou
   assert.equal(blocks.slotInnerEdge.parent, blocks.inputArm);
   assert.equal(blocks.slotOuterEdge.parent, blocks.inputArm);
   assert.equal(blocks.outputArmBody.parent, blocks.outputArm);
-  assert.equal(blocks.outputPivotBoss.parent, blocks.outputArm);
-  assert.equal(blocks.followerBoss.parent, blocks.outputArm);
   assert.equal(blocks.followerPin.parent, blocks.outputArm);
   assert.equal(blocks.followerPinRim.parent, blocks.outputArm);
   assert.equal(blocks.curvedPlate.userData.actualThroughSlot, true);
@@ -722,5 +720,32 @@ test('movement 203 runtime transforms keep the pin in the moving slot as the que
   assert.equal(model205.root.userData.fidelity, 'authored');
   disposeModel(model205.root);
   disposeModel(model204.root);
+  disposeModel(model.root);
+});
+
+test('movement 203 arms are single smooth flat plates built from ideal arcs', () => {
+  const model = createMovementModel(catalog.movements[202]);
+  const { blocks, geometry } = model.root.userData;
+  const outline = geometry.plateOutline;
+  assert.ok(outline.length > 1000, `finely sampled outline ${outline.length}`);
+  // Tangent-continuous: every vertex turns the outline by at most ~1 degree.
+  for (let i = 0; i < outline.length; i += 1) {
+    const [a, b, c] = [0, 1, 2].map(k => outline[(i + k) % outline.length]);
+    const turn = Math.atan2(b[1] - a[1], b[0] - a[0]) - Math.atan2(c[1] - b[1], c[0] - b[0]);
+    assert.ok(Math.abs(Math.atan2(Math.sin(turn), Math.cos(turn))) < 0.02, `outline kink at ${i}`);
+  }
+  for (const mesh of [blocks.curvedPlate, blocks.outputArmBody]) {
+    const g = mesh.geometry;
+    assert.equal(g.userData.plate.polygons.length, 1, `${mesh.userData.role} is one piece`);
+    assert.ok(g.index, 'welded, smooth-shaded walls');
+    const n = g.attributes.normal;
+    let smoothWall = 0;
+    for (let i = 0; i < n.count; i += 1) if (Math.abs(n.getZ(i)) < 1e-6 && Math.abs(n.getX(i)) > 0.2 && Math.abs(n.getY(i)) > 0.2) smoothWall += 1;
+    assert.ok(smoothWall > 100, 'curved walls carry per-vertex normals');
+  }
+  // No separate stepped bosses on the straight arm.
+  const outputMeshes = blocks.outputArm.children.filter(o => o.isMesh && o.visible);
+  assert.deepEqual(outputMeshes.map(o => o.userData.role).sort(),
+    ['one-piece-flat-straight-output-arm-with-both-eyes', 'single-pin-sliding-in-curved-arm-slot'].sort());
   disposeModel(model.root);
 });

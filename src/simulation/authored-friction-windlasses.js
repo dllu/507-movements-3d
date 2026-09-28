@@ -1,5 +1,7 @@
 import { correctFriction280, finishFrictionFamily } from './friction-family-working-parts.js';
 import * as THREE from 'three';
+import { crankArmOutline } from './turned-handle.js';
+import { plate, poly, circle, polygonClipping as clip } from './finite-plate-geometry.js';
 import {
   PALETTE,
   makeBeam,
@@ -619,11 +621,20 @@ function frictionWindlass(movement) {
   leverBoss.userData.role = 'bored-boss-of-long-hand-lever-on-fulcrum';
   handLever.add(leverBoss);
   const fromBoss = (end) => end.clone().setLength(bossOuterRadius - 0.04);
-  const inputCrankArm = makeBeam(
-    fromBoss(new THREE.Vector3(inputCrankLength, 0, 0)),
-    new THREE.Vector3(inputCrankLength, 0, 0),
-    { color: PALETTE.driver, depth: 0.22, thickness: 0.25 },
+  // Brown's short arm is a narrow link ending in a round eye about the
+  // coupler pin: one flat plate, the hull of an end arc concentric with the
+  // pin and a small root arc buried in the boss, bored clear of the fulcrum.
+  const inputCrankEyeRadius = 0.23;
+  const inputCrankOutline = crankArmOutline({
+    handleX: inputCrankLength - 0.2,
+    handleEndRadius: inputCrankEyeRadius,
+    hubEndRadius: 0.15,
+  }).map(([x, y]) => [x + 0.2, y]);
+  const inputCrankArm = new THREE.Mesh(
+    plate(clip.difference(poly(inputCrankOutline), poly(circle([0, 0], 0.23, 96))), -0.11, 0.11),
+    driverMaterial,
   );
+  inputCrankArm.userData.eyeRadius = inputCrankEyeRadius;
   inputCrankArm.userData.role = 'short-arm-rigid-with-long-hand-lever';
   handLever.add(inputCrankArm);
   const upperHandleSegment = makeBeam(

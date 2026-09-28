@@ -20,7 +20,7 @@ export function makeSlottedElbow(){
  add('diskHub',ring(.164,.25,0,.12,128),'input',PALETTE.ink);
  place('crankPin',disk(pinRadius,0,.66,128),'input',g.pin,PALETTE.brass);
  place('crankRetainer',ring(pinRadius,pinRadius+.045,.524,.59,128),'input',g.pin,PALETTE.ink);
- place('crankFace',disk(pinRadius*.72,.66,.68,128),'input',g.pin,PALETTE.white);
+ place('crankFace',disk(pinRadius*.72,.66,.68,128),'input',g.pin,PALETTE.brass);
  const outputLocal=[g.outputLength*Math.cos(g.includedAngle),g.outputLength*Math.sin(g.includedAngle)];
  const outline=clip.union(capsule([0,0],[g.farCapDistance,0],source.armHalfWidth*source.scale,96),capsule([0,0],outputLocal,.22,64),poly(circle([0,0],.56,128)),poly(circle(outputLocal,.42,128)));
  const leverShape=clip.difference(outline,capsule([g.nearCapDistance,0],[g.farCapDistance,0],halfWidth,96),poly(circle([0,0],.304,128)));

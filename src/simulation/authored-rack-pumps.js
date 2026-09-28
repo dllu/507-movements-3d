@@ -10,6 +10,8 @@ import {
 import { rackPinionGeometry, rackToothGeometry, RACK_PRESSURE_ANGLE } from './rack-pinion-parts.js';
 import { boredCylinderGeometry, boredJournal, fitPistonGuide } from './piston-guide-parts.js';
 import { circle, poly, plate, polygonClipping as clip } from './finite-plate-geometry.js';
+import { standardTurnedHandleGeometry, HANDLE_FOOT_EMBED } from './turned-handle.js';
+import { smoothShadeExtrusion } from './smooth-extrusion.js';
 
 const FULL_TURN = Math.PI * 2;
 const HALF_TURN = Math.PI;
@@ -435,8 +437,22 @@ function handRockedPinionAndPumpRacks(movement) {
   handleBoss.position.set(handleBossPoint.x, handleBossPoint.y, 0.33);
   handleBoss.userData.role = 'handle-boss-on-pinion-face';
   pinionRotor.add(handleBoss);
-  const handleGrip = cylinderAlongZ(0.145, 0.54, darkMaterial, 32);
-  handleGrip.position.set(sourceHandleGrip.x, sourceHandleGrip.y, 0.51);
+  // Pass 92: Brown's curved handle ends in a round knob, seen end-on. The bar
+  // ends in a round eye concentric with the knob (radius 0.14, a 1.5x margin
+  // round the knob's 0.091 foot), and the knob is the shared turned handle
+  // standing forward from the eye's front face, instead of a plain cylinder
+  // standing on the tube's end.
+  const handleEyeDepth = 0.25;
+  const handleEye = cylinderAlongZ(0.14, handleEyeDepth, driverMaterial, 40);
+  handleEye.position.set(sourceHandleGrip.x, sourceHandleGrip.y, handleZ);
+  handleEye.userData.role = 'manual-handle-round-end-eye';
+  pinionRotor.add(handleEye);
+  const handleGrip = new THREE.Mesh(
+    standardTurnedHandleGeometry({ height: 0.4, bulbRadius: 0.16 }).rotateX(Math.PI / 2),
+    darkMaterial,
+  );
+  handleGrip.position.set(sourceHandleGrip.x, sourceHandleGrip.y,
+    handleZ + handleEyeDepth / 2 - HANDLE_FOOT_EMBED);
   handleGrip.userData.role = 'manual-handle-grip';
   pinionRotor.add(handleGrip);
   const handleGripCap = cylinderAlongZ(0.09, 0.055, whiteMaterial, 30);
@@ -462,10 +478,22 @@ function handRockedPinionAndPumpRacks(movement) {
     const bodyCenterX = rackX - innerDirection * (
       pinionToothHeight / 2 + .006 + rackBodyWidth / 2
     );
+    // Pass 92: Brown draws each rack bar with a round top. The bar is one flat
+    // extrusion whose upper end is a semicircle of the bar's half-width, so no
+    // box corner stands outside a separate cap.
+    const halfWidth = rackBodyWidth / 2;
     const body = new THREE.Mesh(
-      new THREE.BoxGeometry(rackBodyWidth, rackLength, rackDepth),
+      smoothShadeExtrusion(plate(poly([
+        [-halfWidth, -rackLength / 2],
+        [halfWidth, -rackLength / 2],
+        ...Array.from({ length: 49 }, (_, i) => [
+          halfWidth * Math.cos(Math.PI * i / 48),
+          rackLength / 2 + halfWidth * Math.sin(Math.PI * i / 48),
+        ]),
+      ]), -rackDepth / 2, rackDepth / 2)),
       drivenMaterial,
     );
+    body.userData.roundTop = { center: [0, rackLength / 2], radius: halfWidth };
     body.position.set(bodyCenterX, 0, 0.23);
     body.userData.role = side < 0
       ? 'left-rack-bar'
@@ -489,16 +517,6 @@ function handRockedPinionAndPumpRacks(movement) {
       teeth.push(tooth);
       rack.add(tooth);
     }
-    const upperCap = new THREE.Mesh(
-      new THREE.SphereGeometry(0.16, 24, 14),
-      drivenMaterial,
-    );
-    upperCap.scale.set(0.65, 1, 1);
-    upperCap.position.set(bodyCenterX, rackLength / 2, 0.23);
-    upperCap.userData.role = side < 0
-      ? 'left-rack-rounded-upper-end'
-      : 'right-rack-rounded-upper-end';
-    rack.add(upperCap);
     const pistonRodTop = -rackLength / 2;
     const pistonRodLength = pistonRodTop - pistonLocalY;
     const pistonRod = new THREE.Mesh(
@@ -542,7 +560,6 @@ function handRockedPinionAndPumpRacks(movement) {
       pistonRod,
       rack,
       teeth,
-      upperCap,
     };
   };
 
@@ -619,6 +636,7 @@ function handRockedPinionAndPumpRacks(movement) {
     baseSlab,
     contactMarkers,
     handle,
+    handleEye,
     handleGrip,
     handleGripCap,
     leftPiston: leftRackAssembly.piston,

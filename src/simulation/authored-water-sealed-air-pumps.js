@@ -372,7 +372,10 @@ function waterSealedBellPump(movement) {
     roughness: 0.20,
   });
   exhaustGasMaterial.depthWrite = false;
-  const ropeMaterial = matte(PALETTE.accent, {
+  const valveMaterial = matte(PALETTE.accent, {
+    roughness: 0.66,
+  });
+  const ropeMaterial = matte(PALETTE.rope, {
     roughness: 0.66,
   });
 
@@ -501,7 +504,7 @@ function waterSealedBellPump(movement) {
   root.add(lowerInletValveSeat);
   const lowerInletValveDisk = addRole(new THREE.Mesh(
     new THREE.CylinderGeometry(0.13, 0.13, 0.045, 28),
-    ropeMaterial,
+    valveMaterial,
   ), 'lower-upward-opening-check-valve-disk');
   root.add(lowerInletValveDisk);
 
@@ -575,7 +578,7 @@ function waterSealedBellPump(movement) {
   movingBell.add(upperOutletValveSeat);
   const upperOutletValveDisk = addRole(new THREE.Mesh(
     new THREE.CylinderGeometry(0.12, 0.12, 0.042, 28),
-    ropeMaterial,
+    valveMaterial,
   ), 'upper-upward-opening-check-valve-disk');
   movingBell.add(upperOutletValveDisk);
 

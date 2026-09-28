@@ -92,6 +92,8 @@ export function correctReactionFerry(root){
  const anchorEye=b.anchor.children[1];replace(anchorEye,hollowPipeBall(.135,.105,.098,64));anchorEye.position.set(0,0,0);anchorEye.rotation.set(0,0,0);
  replace(b.bowRing,hollowPipeBall(.135,.105,.080,64));b.bowRing.position.set(0,0,0);b.bowRing.rotation.set(0,0,0);
  b.ropeStartMarker.userData.role='anchor-rope-swivel-ball';b.ropeEndMarker.userData.role='bow-rope-swivel-ball';
+ // Ink swivel balls: white ones would read as holes against the page.
+ {const ink=new T.MeshStandardMaterial({color:0x252a2d,metalness:.22,roughness:.5});b.ropeStartMarker.material=ink;b.ropeEndMarker.material=ink;}
  // The line ends seated in a blind bore to each swivel ball's centre instead
  // of running through the solid ball (a 0.098 overlap before).
  {

@@ -168,20 +168,16 @@ export default {
     note: 'Brown draws the disk, the slotted crank and the rod broken off to the left; the reconstructed tool slide and its guide rails past the plate are not shown (p60 support policy).',
   },
   181: {
-    remove: ['engine-frame-beyond-plate', '(?:upper|lower|catch)Weight-cast-back-weight(?:#\\d+)?'],
-    note: 'Brown draws the two back-weighted handles on their hatched shafts, the catch and the piston rod; the reconstructed engine frame, stays and rod guides are not shown (p60 support policy), so the shafts end as plain stubs and the whole piston rod runs straight past the plate. The cast weights on the three back-weight rods are not drawn, so the rods run straight past the plate and end cleanly; the weights remain as loads in the baked MuJoCo solve.',
+    note: 'Brown draws the two back-weighted handles on their hatched shafts, the catch and the piston rod; no frame, stays or rod guides are drawn or built, so the shafts end flush with their bosses and the whole piston rod runs straight past the plate. The catch is one plate in front; each handle\'s catching face is the end of its own casting in the catch\'s plane, and the working arms lie behind the catch (the upper one dashed on the plate), shown through the see-through catch. No weights are drawn: the three back-weight rods run straight past the plate and end cleanly; the weights remain as loads in the baked MuJoCo solve.',
   },
   182: {
-    remove: ['engine-frame-beyond-plate', '(?:upper|lower|catch)Weight-cast-back-weight(?:#\\d+)?'],
-    note: 'Brown draws the two back-weighted handles on their hatched shafts, the catch and the piston rod; the reconstructed engine frame, stays and rod guides are not shown (p60 support policy), so the shafts end as plain stubs and the whole piston rod runs straight past the plate. The cast weights on the three back-weight rods are not drawn, so the rods run straight past the plate and end cleanly; the weights remain as loads in the baked MuJoCo solve.',
+    note: 'Brown draws the two back-weighted handles on their hatched shafts, the catch and the piston rod; no frame, stays or rod guides are drawn or built, so the shafts end flush with their bosses and the whole piston rod runs straight past the plate. The catch is one plate in front; each handle\'s catching face is the end of its own casting in the catch\'s plane, and the working arms lie behind the catch, shown through the see-through catch. No weights are drawn: the three back-weight rods run straight past the plate and end cleanly; the weights remain as loads in the baked MuJoCo solve.',
   },
   183: {
-    remove: ['fixed-back-bar-carrying-handle-shafts-rod-guide-and-cylinder'],
-    note: 'Brown draws the handles on their hatched shafts, the quadrant catch, the piston rod and the back-weight rods; the reconstructed back bar, rod guide, cylinder and foot are not shown (p60 support policy). No weights are drawn: the back-weight rods run straight out of the view and end below it in every pose.',
+    note: 'Brown draws the handles on their hatched shafts, the two quadrants, the piston rod with its hatched tappet and the back-weight rods; no frame, guide or cylinder is built. Each part lies in the plane his hidden lines give it: the upper C-arm behind the lower quadrant, the upper weight arm and its rod behind the wing, the lower weight arm behind the piston rod; the quadrants in front are see-through. No weights are drawn: the back-weight rods run straight out of the view and end below it in every pose.',
   },
   184: {
-    remove: ['fixed-back-bar-carrying-handle-shafts-rod-guide-and-cylinder'],
-    note: 'Brown draws the handles on their hatched shafts, the quadrant catch, the piston rod and the back-weight rods; the reconstructed back bar, rod guide, cylinder and foot are not shown (p60 support policy). No weights are drawn: the back-weight rods run straight out of the view and end below it in every pose.',
+    note: 'Plate 184 is plate 183 drawn upside down; the model is the 183 gear reflected top to bottom. Its back-weight arms hang from Brown\'s mid-height pins behind the piston rod and the wing; no frame, guide or cylinder is built, and the rods run straight out of the view.',
   },
   186: {
     remove: ['fixed-column-beam-and-hanger', 'fixed-column-foot', 'fixed-eccentric-shaft-bearing', 'fixed-rockshaft-bearing'],

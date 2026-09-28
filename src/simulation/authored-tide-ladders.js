@@ -456,6 +456,12 @@ function selfAdjustingWharfLadder(movement) {
     metalness: 0,
     roughness: 0.44,
   });
+  // Brass ball finials on the posts: white ones would read as holes on the
+  // cream page.
+  const finialMaterial = matte(PALETTE.brass, {
+    metalness: 0.18,
+    roughness: 0.48,
+  });
 
   // Brown's wharf posts are stout (about 0.35 square at this scale) with
   // ball finials; the floating posts are lighter.
@@ -473,7 +479,7 @@ function selfAdjustingWharfLadder(movement) {
     postDepthZ: wharfPostWidth,
     postWidthX: wharfPostWidth,
     railPlaneZ: railHalfWidth + wharfPostOffset,
-    whiteMaterial,
+    whiteMaterial: finialMaterial,
   });
   root.add(wharf);
 
@@ -488,7 +494,7 @@ function selfAdjustingWharfLadder(movement) {
     postWidthX: wharfPostWidth,
     railHalfWidth,
     role: 'fixed-wharf-end-frame',
-    whiteMaterial,
+    whiteMaterial: finialMaterial,
   });
   fixedEndFrame.position.copy(dockLower);
   // The fixed posts stand on the wharf deck.
@@ -513,7 +519,7 @@ function selfAdjustingWharfLadder(movement) {
     postWidthX: 0.24,
     railHalfWidth,
     role: 'floating-vertical-end-frame',
-    whiteMaterial,
+    whiteMaterial: finialMaterial,
   });
   const floatAssembly = makeFloatAssembly({
     endFrame: floatingEndFrame,

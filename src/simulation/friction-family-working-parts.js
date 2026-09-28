@@ -55,7 +55,8 @@ export function correctFriction280(model){
  for(const o of b.jawSides){o.visible=false;}
  for(const flange of b.jawFlanges){jaw.add(flange);flange.position.set(0,0,0);replace(flange,plate(sector(Ri-.14,Ri,-.18,.18,96),flange===b.jawFlanges[0]?-.46:.10,flange===b.jawFlanges[0]?-.10:.46));}
  b.jawCheeks=[];
- const cheek=clip.difference(poly([[Ri-.14,-.29],[P+.23,-.29],[P+.23,.29],[Ri-.14,.29]]),poly(circle([P,0],.174,96)));
+ // Each cheek ends in a round end concentric with the jaw pivot (r .29, its half-height), not a square end at the pivot heads' rim.
+ const cheek=clip.difference(clip.union(poly([[Ri-.14,-.29],[P,-.29],[P,.29],[Ri-.14,.29]]),poly(circle([P,0],.29,96))),poly(circle([P,0],.174,96)));
  for(const side of[-1,1]){const m=mesh(jaw,plate(cheek,side<0?-.54:.40,side<0?-.40:.54),b.jawPivotBridge.material,'bored-cheek-of-travelling-cast-jaw');b.jawCheeks.push(m);}
  jaw.add(b.jawPivotBridge);b.jawPivotBridge.position.set(P,0,-.34);replace(b.jawPivotBridge,bore(.24,.174,.42));
  const frontJournal=mesh(jaw,bore(.24,.174,.42),b.jawPivotBridge.material,'front-travelling-jaw-journal');frontJournal.rotation.x=Math.PI/2;frontJournal.position.set(P,0,.34);b.frontJawJournal=frontJournal;

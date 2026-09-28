@@ -462,7 +462,7 @@ function selfRockingCradle(movement) {
     metalness: 0.22,
     roughness: 0.46,
   });
-  const bandMaterial = matte(0x477b5c, {
+  const bandMaterial = matte(PALETTE.rope, {
     metalness: 0.08,
     roughness: 0.63,
   });

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { toCreasedNormals } from 'three/addons/utils/BufferGeometryUtils.js';
 import {correctClampParts} from './clamp-working-parts.js';
 import {circle, plate, poly, polygonClipping} from './finite-plate-geometry.js';
 import {
@@ -1074,9 +1075,78 @@ function separateSleeveStackFaces(root) {
   root.userData.sleeveStackBoreSteps = { body: 0, neck: 0.003, keeper: 0.006, flange: 0.006, thrustRings: 0.003, neckOuterInset: 0.003 };
 }
 
+// Brown's head is one turned piece: a thin plate, a round-edged band and a
+// thin plate forming the collar, then a flared neck, a pointed lip and a
+// dome (plate raster 263 axis, 0.018 per px). It replaces the stacked
+// flange, keeper and conical cap, between which the dark spring clamps
+// showed. The spindle ends in a blind bore; the leaf ends and their clamps
+// are buried in the collar, as Brown draws the springs entering it.
+function turnedUpperHead(root) {
+  const b = root.userData.blocks;
+  const g = root.userData.geometry;
+  const bottom = 2.72;
+  const bore = 0.136;
+  const boreTop = 3.40;
+  const band = (y0, y1, r, rounding, steps = 10) => {
+    const points = [];
+    for (let i = 0; i <= steps; i += 1) {
+      const a = -Math.PI / 2 + Math.PI * i / steps;
+      const y = (y0 + y1) / 2 + ((y1 - y0) / 2) * Math.sin(a);
+      points.push([r - rounding + rounding * Math.cos(a), y]);
+    }
+    return points;
+  };
+  const collarTop = bottom + 0.49;
+  const neckTop = collarTop + 0.234;
+  const lipTop = neckTop + 0.135;
+  const profile = [
+    [0, boreTop], [bore, boreTop], [bore, bottom],
+    // Lower thin plate, the round-edged band and the upper thin plate.
+    [0.78, bottom], [0.78, bottom + 0.11],
+    ...band(bottom + 0.11, bottom + 0.38, 0.90, 0.135),
+    [0.765, bottom + 0.38], [0.765, collarTop], [0.25, collarTop],
+    // Flared neck (a concave circular arc), pointed lip and dome.
+    ...Array.from({ length: 9 }, (_, i) => {
+      const t = (i + 1) / 9;
+      return [0.25 + 0.12 * t * t, collarTop + 0.234 * t];
+    }),
+    [0.48, neckTop + 0.06], [0.40, lipTop], [0.26, lipTop],
+    ...Array.from({ length: 12 }, (_, i) => {
+      const a = Math.PI / 2 * (i + 1) / 12;
+      return [0.26 * Math.cos(a), lipTop + 0.225 * Math.sin(a)];
+    }),
+  ];
+  const lathe = new THREE.LatheGeometry(profile.map(([r, y]) => new THREE.Vector2(r, y)), 96);
+  const head = toCreasedNormals(lathe, Math.PI / 5);
+  lathe.dispose();
+  b.upperFlange.geometry.dispose();
+  b.upperFlange.geometry = head;
+  b.upperFlange.position.set(0, 0, 0);
+  b.upperFlange.userData.role = 'turned-upper-spring-collar-and-finial';
+  for (const part of [...b.upperFlange.parent.children]) if (part !== b.upperFlange) part.removeFromParent();
+  // The spindle ends inside the blind bore.
+  const spindleTop = boreTop - 0.02;
+  b.spindle.geometry.dispose();
+  b.spindle.geometry = new THREE.CylinderGeometry(0.13, 0.13, spindleTop - g.spindleBottomY, 38);
+  b.spindle.position.y = (spindleTop + g.spindleBottomY) / 2;
+  g.spindleTopY = spindleTop;
+  // Leaf-end clamps lie wholly inside the collar and the sleeve flange.
+  for (const clamp of b.upperAnchorClamps) {
+    clamp.geometry.dispose();
+    clamp.geometry = new THREE.BoxGeometry(0.2, 0.12, 0.3);
+    clamp.position.y = bottom + 0.11;
+  }
+  for (const clamp of b.lowerAnchorClamps) {
+    clamp.geometry.dispose();
+    clamp.geometry = new THREE.BoxGeometry(0.2, 0.2, 0.3);
+  }
+  g.upperHead = { bottom, collarTop, top: lipTop + 0.225, boreTop };
+}
+
 export function createAuthoredPickeringGovernorMovement(movement) {
   if (movement.id !== 287) return null;
   const model = pickeringThreeSpringGovernor(movement);
+  turnedUpperHead(model.root);
   correctClampParts(model, 287);
   separateSleeveStackFaces(model.root);
   // Brown draws a flat front elevation across the two spring planes.

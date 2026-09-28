@@ -3,6 +3,7 @@ import { boredLatheGeometry } from './bored-lathe-geometry.js';
 import { boredPlanarLinkGeometry } from './bored-planar-link.js';
 import { ratchet, makeFollower } from './maintaining-clock-parts.js';
 import { plate, poly, circle, polygonClipping as clip } from './finite-plate-geometry.js';
+import { crankArmOutline, turnedHandleGeometry, HANDLE_FOOT_EMBED } from './turned-handle.js';
 const TAU=2*Math.PI;
 const tube=(r,h,bore)=>boredLatheGeometry([{radial:r,axial:-h/2},{radial:r,axial:h/2}],bore,64);
 const rectangle=(w,h,cx=0,cy=0)=>poly([[cx-w/2,cy-h/2],[cx+w/2,cy-h/2],[cx+w/2,cy+h/2],[cx-w/2,cy+h/2]]);
@@ -25,9 +26,17 @@ export function correctMirrorPolisher(root){
   const shaft=new THREE.Mesh(new THREE.CylinderGeometry(.12,.12,.90,40),b.crankPinBoss.material);shaft.rotation.x=Math.PI/2;shaft.position.z=.67;shaft.userData.role='actual-crankshaft-through-fixed-bearing';b.inputRotor.add(shaft);b.crankShaft=shaft;
   const arm=b.inputRotor.children.find(o=>o.userData.role==='crank-arm-to-long-bar-upper-eye');
   replace(arm,boredPlanarLinkGeometry({length:g.crankRadius,width:.13,eyeRadius:.18,boreRadius:.122,depth:.14}));arm.position.set(0,0,.28);
-  replace(b.handleArm,new THREE.BoxGeometry(g.handleRadius,.13,.14));b.handleArm.position.z=1.07;
+  // Pass 92: Brown draws the handle crank as a tapered arm with a round boss
+  // on the shaft and a round eye round the handle, which he shows end-on.
+  // The arm is one extrusion whose ends are arcs concentric with the shaft
+  // and the handle; the handle is the shared turned handle, its foot sunk in
+  // the arm's front face with a margin all round.
+  replace(b.handleArm,plate(poly(crankArmOutline({handleX:-g.handleRadius,handleEndRadius:.12,hubEndRadius:.19})),-.07,.07));b.handleArm.position.set(0,0,1.07);
   replace(b.crankPinBoss,new THREE.CylinderGeometry(.12,.12,.35,32));b.crankPinBoss.position.z=.175;
-  replace(b.handle,new THREE.CylinderGeometry(.095,.095,.40,28));b.handle.position.z=1.34;b.handleKnob.position.z=1.58;
+  replace(b.handle,turnedHandleGeometry({height:.44+HANDLE_FOOT_EMBED,side:[[.065,0],[.048,.15],[.045,.4],[.068,.6],[.08,.78]]}));
+  b.handle.rotation.set(Math.PI/2,0,0);b.handle.position.set(-g.handleRadius,0,1.14-HANDLE_FOOT_EMBED);
+  // The turned handle's bulb replaces the separate ball knob.
+  b.handleKnob.visible=false;
   const eccentricShape=clip.difference(poly(circle([0,0],.34,96)),poly(circle([-g.eccentricity,0],.122,64)));
   replace(b.eccentricDisk,plate(eccentricShape,-.06,.06).rotateX(-Math.PI/2));b.eccentricDisk.position.z=g.eccentricPlaneZ;
   // Behind the bar (face 0.02-0.18) and the lower rail (-0.21 to -0.01),

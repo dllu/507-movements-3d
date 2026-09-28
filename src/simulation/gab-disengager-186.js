@@ -56,8 +56,12 @@ const Z_WALL = -0.8; // plain frame plane behind every moving part
 const HOLD_LIFT = 42 * S; // rod bottom clears the 38 px pin by 4 px
 const STRAP_WIDTH = 14 * S; // Brown's broad double-line strap
 
-// Notch a at the foot of the drop (plate pixels).
-const NOTCH = {flatY: 313.5, flatX0: 457, rampX: 470.5, ceilX: 476.5, ceilY: 309.5, lipX: 485.5, lipY: 318};
+// Notch a, cut into the drop's lower outer corner (plate pixels): the flat
+// the tongue bears on runs to the notch's wall (rampX..ceilX), the notch's
+// roof (ceilY) runs out to lipX, where the drop's outer edge curves in to it
+// as Brown draws the concavity at a. The tongue's end springs up into it.
+const NOTCH = {flatY: 313.5, flatX0: 445, rampX: 474.5, ceilX: 477, ceilY: 309.5, lipX: 483, lipY: 309.5};
+const TONGUE_END_X = 484; // the tongue's end, under the notch (Brown's barb at a)
 const TIP_SEAT_PX = 3.9;
 const BAR_PX = 200; // flexing length of the diagonal bar below its riveted pad (Pass 90: bar re-traced)
 const ROOT_BEND = 0.2; // share of it that carries the main bend, just below the pad
@@ -213,6 +217,22 @@ export function springHandleGabDisengager() {
   // ---------- cam lever (local origin at pin c) ----------
   const lever = new THREE.Group();
   lever.name = 'cam-lever';
+  // Concave circular arc (sagitta 2.5 px, hollowed toward the web) from the
+  // outer edge at (495, 292) in to the notch roof's end (lipX, ceilY).
+  const notchArc = (() => {
+    const A = [495, 292], B = [NOTCH.lipX, NOTCH.lipY], sag = 2.5;
+    const half = Math.hypot(B[0] - A[0], B[1] - A[1]) / 2;
+    const r = (half * half + sag * sag) / (2 * sag);
+    const m = [(A[0] + B[0]) / 2, (A[1] + B[1]) / 2], u = [(B[0] - A[0]) / (2 * half), (B[1] - A[1]) / (2 * half)];
+    const inward = [-u[1], u[0]]; // toward the web (left and up in the raster)
+    const c = [m[0] - inward[0] * (r - sag), m[1] - inward[1] * (r - sag)];
+    const a0 = Math.atan2(A[1] - c[1], A[0] - c[0]), a1 = Math.atan2(B[1] - c[1], B[0] - c[0]);
+    const n = 12;
+    return Array.from({length: n}, (_, k) => {
+      const a = a0 + (a1 - a0) * (k + 1) / n;
+      return [c[0] + r * Math.cos(a), c[1] + r * Math.sin(a)];
+    });
+  })();
   const leftNub = [[459, 221], [465, 196], [477, 198], [472, 223]];
   const rightNub = [[493, 201], [506, 208], [501, 235], [489, 231]];
   const leverOutline = polygonClipping.union(
@@ -225,10 +245,13 @@ export function springHandleGabDisengager() {
     // Curved arm to the forked head.
     smoothPx([[346, 234], [362, 241], [380, 250], [410, 254], [440, 248], [460, 236], [470, 224], [475, 208], [480, 200],
       [486, 204], [484, 212], [476, 226], [464, 240], [450, 254], [430, 264], [400, 269], [370, 270], [344, 266]], C),
-    // Fork head and the drop ending in notch a.
-    polyPx([[470, 222], [478, 198], [493, 200], [490, 225], [490, 240], [491, 265], [491, 290], [494, 306], [497, NOTCH.lipY],
-      [NOTCH.lipX, NOTCH.lipY], [NOTCH.lipX, NOTCH.ceilY], [NOTCH.ceilX, NOTCH.ceilY], [NOTCH.rampX, NOTCH.flatY],
-      [NOTCH.flatX0, NOTCH.flatY], [459, 308], [466, 301], [474, 292], [477, 278], [477, 255], [475, 235]], C),
+    // Fork head and the drop: one broad web (Brown's thin inner edge on the
+    // left, his heavy outer edge on the right) with notch a cut into its
+    // lower outer corner. The outer edge curves in to the notch's roof along
+    // a circular arc, as Brown draws the concavity at a.
+    polyPx([[470, 222], [478, 198], [493, 200], [490, 225], [490, 240], [491.5, 262], [493.5, 280], [495, 292],
+      ...notchArc, [NOTCH.ceilX, NOTCH.ceilY], [NOTCH.rampX, NOTCH.flatY],
+      [NOTCH.flatX0, NOTCH.flatY], [452, 312.2], [460, 308], [467, 301.5], [473, 292], [476.5, 278], [477, 255], [475, 235]], C),
   );
   const nubShape = polygonClipping.union(polyPx(leftNub, C), polyPx(rightNub, C));
   const leverBody = plateMesh(polygonClipping.difference(leverOutline, nubShape, poly(circle([0, 0], PIN_C_R + BORE_GAP, 48))),
@@ -246,7 +269,7 @@ export function springHandleGabDisengager() {
   // there) to bear on the drop's flat face under notch a.
   const restPx = [J, [385, 277], [405, 296], [425, 322], [440, 355], [455, 400], [466, 440], [472, 462],
     [470, 478], [461, 488], [449, 489], [438, 482], [430, 468], [416.8, 433], [403.4, 397.5], [392, 367],
-    [391, 352], [397, 340], [408, 330], [422, 324], [436, tipY + 0.8], [450, tipY], [462, tipY], [476, tipY]];
+    [391, 352], [397, 340], [408, 330], [422, 324], [436, tipY + 0.8], [450, tipY], [464, tipY], [TONGUE_END_X, tipY]];
   const STRAP_POINTS = 121;
   const restCurve = new THREE.CatmullRomCurve3(restPx.map((p) => new THREE.Vector3(...P(...p), 0)), false, 'centripetal');
   const restPoints = restCurve.getSpacedPoints(STRAP_POINTS - 1).map((p) => [p.x, p.y]);

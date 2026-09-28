@@ -7,13 +7,15 @@ import {
 // Brown 188 ("Modifications of 186"): the eccentric rod carries, on one
 // pivot, a single rigid loop handle whose right-hand arm reaches behind the
 // rod's crown (Brown's dashed legs) and rests its round toe on the valve pin
-// seated in the rod's open-bottom gab. The loop's descending limb ends at
-// step a, where it stands on the head of a leaf spring rising from a clip
-// block screwed to the rod. Lifting the loop turns the handle clockwise, the
-// toe presses the pin out of the gab (the rod rises off it) and the leaf,
-// whose head stays seated under the limb at a, flexes up with it and props
-// the handle in the lifted position; pressing the leaf back lowers the rod
-// onto the pin again. All working contacts are touching with a small gap.
+// seated in the rod's open-bottom gab. The loop's descending limb runs on
+// below step a as one solid piece: Brown draws no line across the band at a,
+// so notch a is cut into the limb's inner edge, which widens below it and
+// joins the diagonal. Behind the diagonal (out of the plate's view) the head
+// carries the end of a leaf spring rising from a clip block screwed to the
+// rod. Lifting the loop turns the handle clockwise, the toe presses the pin
+// out of the gab (the rod rises off it) and the leaf flexes up with the head
+// and props the handle in the lifted position; pressing the leaf back lowers
+// the rod onto the pin again. The toe/pin contact is touching with a small gap.
 //
 // Brown draws only the pin. It is carried on a valve arm hanging up from a
 // rockshaft below the view (so it swings on a slight arc), and the rod runs on
@@ -38,7 +40,7 @@ const ECC_THROW = STROKE;
 // Rod z layers: front plate [-.12,.12]; handle behind it; leaf further back.
 const Z = {
   rod: [-0.12, 0.12], rail: [-0.62, -0.12], handle: [-0.40, -0.16],
-  leaf: [-0.60, -0.44], lug: [-0.62, -0.40 - GAP], clip: [-0.64, -0.42],
+  leaf: [-0.60, -0.44], tab: [-0.605, -0.39], clip: [-0.64, -0.42],
 };
 
 const pivotRaster = [287, 288];
@@ -80,20 +82,21 @@ const maximumAngle = (() => {
   return hi;
 })();
 
-// Leaf spring: fixed clip exit X (tangent +x) to the head end E carried by
-// the handle (Hermite fit to the plate centreline within 1 px).
+// Leaf spring: fixed clip exit X (tangent +x) to its end E, carried by the
+// handle's head behind the diagonal (on the diagonal's centreline), leaning
+// right as Brown's band does where it passes behind the diagonal.
 const clipExit = R([140, 297 - 4.5 - GAP / PX]);
-const leafHeadRaster = [223, 178];
+const leafHeadRaster = [216, 231];
 const leafHeadRest = R(leafHeadRaster);
-const leafEndAngle = THREE.MathUtils.degToRad(8); // leans left on the plate
-const leafStartSpeed = 70 * PX;
-const leafEndSpeed = 290 * PX;
+const leafEndAngle = THREE.MathUtils.degToRad(-45); // leans right on the plate
+const leafStartSpeed = 130 * PX;
+const leafEndSpeed = 100 * PX;
+const TAB_RADIUS = 10 * PX; // the head's hidden tab behind the diagonal, round the leaf's end
 const leafSamples = 110;
 const leafTailSamples = 8;
 // Half widths (inner = toward the loop, outer = away) by distance from head, px.
 const leafProfile = [
-  [0, 20, 14], [3.2, 20, 14], [5.5, 15, 14], [24, 11, 11], [42, 9.5, 9.5],
-  [70, 8.5, 8.5], [100, 6.5, 6.5], [130, 5.5, 5.5], [150, 4.5, 4.5], [1e9, 4.5, 4.5],
+  [0, 7.5, 7.5], [25, 7, 7], [60, 6, 6], [95, 4.5, 4.5], [1e9, 4.5, 4.5],
 ];
 
 function handleTransform(theta) {
@@ -249,7 +252,9 @@ export function loopHandlePinCamGabDisengager() {
   const root = new THREE.Group();
   const rodMaterial = matte(PALETTE.driver, {metalness: 0.13, roughness: 0.58});
   const handleMaterial = matte(PALETTE.brass, {metalness: 0.24, roughness: 0.47});
-  const leafMaterial = matte(PALETTE.driven, {metalness: 0.2, roughness: 0.5, side: THREE.DoubleSide});
+  // The leaf is the same brass as the handle: Brown draws limb, head and leaf
+  // as one continuous band from the loop down to the clip.
+  const leafMaterial = matte(PALETTE.brass, {metalness: 0.24, roughness: 0.47, side: THREE.DoubleSide});
   const pinMaterial = matte(PALETTE.accent, {metalness: 0.19, roughness: 0.51});
   const darkMaterial = matte(PALETTE.ink, {metalness: 0.28, roughness: 0.44});
   const clipMaterial = matte(PALETTE.frame, {metalness: 0.14, roughness: 0.68});
@@ -287,7 +292,7 @@ export function loopHandlePinCamGabDisengager() {
   const clipScrew = extrude(poly(ring([[112, 276], [137, 276], [137, 280 - GAP / PX], [112, 280 - GAP / PX]])),
     [-0.58, -0.46], darkMaterial, 'clip-screw-head');
   const leaf = new THREE.Mesh(makeLeafGeometry(leafTailSamples + leafSamples + 1), leafMaterial);
-  leaf.userData.role = 'leaf-spring-rising-to-step-a';
+  leaf.userData.role = 'leaf-spring-set-in-handle-head';
   leaf.frustumCulled = false;
 
   // Loop handle, one rigid bent bar: hub on the pivot, diagonal, loop, and
@@ -309,17 +314,6 @@ export function loopHandlePinCamGabDisengager() {
     right.push([p.x + barHalf * t.y, p.y - barHalf * t.x]);
   }
   const bar = poly([...left, ...right.reverse()]);
-  // Tip face: perpendicular to the leaf's end direction, GAP above the head.
-  const headLocal = H(leafHeadRaster);
-  const up = new THREE.Vector2(-Math.sin(leafEndAngle), Math.cos(leafEndAngle));
-  const across = new THREE.Vector2(up.y, -up.x);
-  const faceBox = (below, above) => {
-    const c = headLocal.clone().addScaledVector(up, GAP);
-    return poly([[-8, below], [20, below], [20, above], [-8, above]].map(([a, b]) => {
-      const q = c.clone().addScaledVector(across, a * PX).addScaledVector(up, b * PX);
-      return [q.x, q.y];
-    }));
-  };
   const hub = [];
   for (let i = 0; i < 96; i++) {
     const a = i * Math.PI * 2 / 96, p = H([292 + 38 * Math.cos(a), 289 + 17 * Math.sin(a)]);
@@ -335,16 +329,25 @@ export function loopHandlePinCamGabDisengager() {
   const legDir = toeCenter.clone().sub(legTop).normalize(), legN = new THREE.Vector2(-legDir.y, legDir.x);
   const leg = poly([legTop.clone().addScaledVector(legN, toeRadius), toeCenter.clone().addScaledVector(legN, toeRadius),
     toeCenter.clone().addScaledVector(legN, -toeRadius), legTop.clone().addScaledVector(legN, -toeRadius)].map((p) => p.toArray()));
+  // The limb's head below step a (Brown's band): notch a's ledge runs in from
+  // the inner edge at y 177.5, the head widens below it and closes on the
+  // diagonal's centreline, so limb, notch and diagonal are one extrusion.
+  const head = poly([
+    [204, 177.5], [222, 177.5], [222, 170], [238, 170], [237.6, 185], [236, 200], [233.5, 215], [231, 229], [231, 246],
+    [215, 230], [214.5, 220], [214.5, 208], [213.5, 199], [211, 191], [207.5, 184],
+  ].map((p) => H(p).toArray()));
   const handleShape = polygonClipping.difference(
-    polygonClipping.union(bar, poly(hub), arch, leg, poly(circle(toeCenter.toArray(), toeRadius, 96))),
-    faceBox(-30, 0), poly(circle([0, 0], pivotBoreRadius, 64)),
+    polygonClipping.union(bar, head, poly(hub), arch, leg, poly(circle(toeCenter.toArray(), toeRadius, 96))),
+    poly(circle([0, 0], pivotBoreRadius, 64)),
   );
   const handleBody = extrude(handleShape, Z.handle, handleMaterial,
-    'loop-handle-hub-diagonal-loop-limb-and-pin-toe-arm');
-  // Lug behind the limb's end, reaching back to the leaf's plane.
-  const lug = extrude(polygonClipping.intersection(bar, faceBox(0, 12)), Z.lug, handleMaterial,
-    'handle-limb-end-lug-standing-on-leaf-at-a');
-  handle.add(handleBody, lug);
+    'loop-handle-hub-diagonal-loop-limb-notched-head-and-pin-toe-arm');
+  // Behind the diagonal (hidden in the plate's view) the head is carried
+  // back as a round tab to the leaf's plane, where the leaf's end is set in it.
+  const leafEndLocal = H(leafHeadRaster);
+  const tab = extrude(polygonClipping.intersection(handleShape, poly(circle(leafEndLocal.toArray(), TAB_RADIUS, 64))),
+    Z.tab, handleMaterial, 'loop-handle-head-tab-carrying-leaf-end-behind-diagonal');
+  handle.add(handleBody, tab);
 
   const valvePin = cylinderAlongZ(pinRadius, 0.64, pinMaterial, 48);
   valvePin.position.z = -0.14;
@@ -414,13 +417,13 @@ export function loopHandlePinCamGabDisengager() {
   });
   root.add(valveArm, eccentric.sheave, frame);
 
-  const blocks = {rodFront, rodRail, pivotPin, clipTop, clipFront, clipBack, clipScrew, leaf, handleBody, lug, valvePin,
+  const blocks = {rodFront, rodRail, pivotPin, clipTop, clipFront, clipBack, clipScrew, leaf, handleBody, tab, valvePin,
     valveArm, valveArmPlate, rockshaft, eccentricStrap: eccentric.strap, eccentricSheave: eccentric.sheave, frame,
     // Aliases for the pre-rewrite shared joint test (pin versus plates).
     valvePinBoss: handleBody, valveCarrierWeb: rodFront};
   Object.assign(root.userData, {
     fidelity: 'authored',
-    mechanism: 'rod-pivoted-loop-handle-toe-presses-valve-pin-out-of-gab-leaf-spring-head-props-limb-at-step-a',
+    mechanism: 'rod-pivoted-loop-handle-toe-presses-valve-pin-out-of-gab-notched-limb-head-carried-by-leaf-spring',
     archetype: 'loop-handle-direct-pin-conjugate-cam-leaf-spring-notch-gab-release',
     hideGround: true,
     blocks,
@@ -441,7 +444,7 @@ export function loopHandlePinCamGabDisengager() {
     sourcePointFromRaster: (p) => R(p),
     cameraFitBounds: bounds,
     cameraDistanceScale: 1.0,
-    reconstructionNote: 'One rigid loop handle pivoted on the rod; its toe behind the crown presses the valve pin out of the gab. A clip-guided leaf spring stands under the limb end at a and props the lifted handle. Brown draws no frame: the pin rides on a valve arm from a rockshaft below the view, and the rod runs on to its eccentric; both shafts turn in bearings on plain floor columns off the view.',
+    reconstructionNote: 'One rigid loop handle pivoted on the rod; its toe behind the crown presses the valve pin out of the gab. The limb runs on below notch a as one solid head joining the diagonal (Brown draws no line across the band at a); behind the diagonal a tab on the head carries the end of a clip-guided leaf spring, which props the lifted handle. Brown draws no frame: the pin rides on a valve arm from a rockshaft below the view, and the rod runs on to its eccentric; both shafts turn in bearings on plain floor columns off the view.',
   });
 
   update(0);

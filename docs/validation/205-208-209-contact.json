@@ -8,15 +8,15 @@
         "threeRatioPinWheelAndSlidingSlottedPinion",
         "rollingContactEllipsesWithToothedContinuation"
       ],
-      "sha256": "ddfff91964a45dc75227e816cc52df04bddc97f3da9eba17c1cfa293985dd69c"
+      "sha256": "10d9bdbc3b5243b6efb12dde706f16983be40bebfb6f2b717f42b6b235b2ce4c"
     },
     {
       "file": "src/simulation/variable-drive-205-209-parts.js",
-      "sha256": "c93bc003a1219edf4109d9ba6c1edb1561cdec0a05b34635f09ebbd39bcb9503"
+      "sha256": "a185c1ba5509ca991f2339e4f0363455df69015fd364737d1a915c6210085723"
     },
     {
       "file": "src/simulation/generated-variable-drive-205-209.js",
-      "sha256": "23f04642430940cdb39e95469fc0d33d827a3834edf3ad62bc78b1b843f98176"
+      "sha256": "55db166b77b6c98e814067315c89181bab67d7b306493d7a57c31aa4cc9b1ffd"
     },
     {
       "file": "src/simulation/generated-pin-slot-208.js",
@@ -28,11 +28,11 @@
     },
     {
       "file": "src/simulation/primitives.js",
-      "sha256": "c09dbdfc48b4680ae1194d6b1471ff33d437bc8e8a28f6b290044eba746c9367"
+      "sha256": "e28fda6a3c9e228a8af6601dbe7728e8fd7812ff947073ee5562a3fe0478bb93"
     },
     {
       "file": "scripts/export-205-209-contact.mjs",
-      "sha256": "cd7c2f15b2734c1f368c6990eeed2a2664b7fc7707a1c33b382a9daa8575083a"
+      "sha256": "187cb896d8b06bc6a3c1b790263aeb83d5f157657515242e140995f1c1ec152c"
     },
     {
       "file": "scripts/review-205-209-contact.py",
@@ -53,14 +53,14 @@
       "poses": 513,
       "overlap": 0,
       "penetratingPairPoses": 0,
-      "maximumClosestGap": 0.0010884270267802352
+      "maximumClosestGap": 0.0010994777648017408
     },
     {
       "id": 209,
       "poses": 513,
       "overlap": 0,
       "penetratingPairPoses": 0,
-      "maximumClosestGap": 0.0007165254104267071
+      "maximumClosestGap": 0.0007909115843359558
     }
   ],
   "pinSlots": {

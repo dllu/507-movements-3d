@@ -782,30 +782,126 @@ function redirectedChineseWindlass(movement) {
   const movingAxle = makeShaft({
     axis: pulleyAxis,
     color: PALETTE.ink,
-    length: 0.58,
+    // Just proud of the stirrup's two eyes.
+    length: 0.38,
     radius: 0.052,
   });
   movingAxle.userData.role = 'moving-load-sheave-axle';
-  const hanger = new THREE.Mesh(
-    new THREE.BoxGeometry(0.12, 0.58, 0.16),
-    drivenMaterial,
+  // Brown hangs the load from an ordinary hook under the moving sheave. The
+  // ironwork lies in the sheave's own frame (x along the rope plane, z along
+  // the axle): a round-bar stirrup rides the axle ends by two closed eyes and
+  // passes under the rim; the hook's closed eye links round the stirrup's
+  // bottom bar; one smooth round shank curves into the bowl, whose tip ends in
+  // a hemispherical cap; the load's cast bail hangs in the bowl bottom.
+  const ironMaterial = drivenMaterial;
+  const hangerFrame = new THREE.Group();
+  hangerFrame.quaternion.setFromRotationMatrix(new THREE.Matrix4()
+    .makeBasis(planeHorizontal, Y_AXIS, pulleyAxis));
+  hangerFrame.userData.role = 'moving-sheave-hook-ironwork-in-rope-plane';
+  const stirrupRadius = 0.03;
+  const stirrupEyeRadius = 0.088;
+  const stirrupEyeTube = 0.034;
+  // The working sheave (made by correctCordTraverseParts) is 0.16 wide.
+  const stirrupHalfSpan = 0.14;
+  const stirrupBottomY = -0.24;
+  const stirrupCorner = 0.06;
+  const v3 = (x, y, z) => new THREE.Vector3(x, y, z);
+  const stirrupPath = new THREE.CurvePath();
+  const stirrupLegTop = -stirrupEyeRadius;
+  stirrupPath.add(new THREE.LineCurve3(v3(0, stirrupLegTop, stirrupHalfSpan),
+    v3(0, stirrupBottomY + stirrupCorner, stirrupHalfSpan)));
+  stirrupPath.add(new THREE.QuadraticBezierCurve3(
+    v3(0, stirrupBottomY + stirrupCorner, stirrupHalfSpan),
+    v3(0, stirrupBottomY, stirrupHalfSpan),
+    v3(0, stirrupBottomY, stirrupHalfSpan - stirrupCorner)));
+  stirrupPath.add(new THREE.LineCurve3(
+    v3(0, stirrupBottomY, stirrupHalfSpan - stirrupCorner),
+    v3(0, stirrupBottomY, -stirrupHalfSpan + stirrupCorner)));
+  stirrupPath.add(new THREE.QuadraticBezierCurve3(
+    v3(0, stirrupBottomY, -stirrupHalfSpan + stirrupCorner),
+    v3(0, stirrupBottomY, -stirrupHalfSpan),
+    v3(0, stirrupBottomY + stirrupCorner, -stirrupHalfSpan)));
+  stirrupPath.add(new THREE.LineCurve3(
+    v3(0, stirrupBottomY + stirrupCorner, -stirrupHalfSpan),
+    v3(0, stirrupLegTop, -stirrupHalfSpan)));
+  const stirrupGeometry = () =>
+    new THREE.TubeGeometry(stirrupPath, 96, stirrupRadius, 16, false);
+  const hanger = new THREE.Mesh(stirrupGeometry(), ironMaterial);
+  hanger.userData.role = 'round-bar-stirrup-riding-moving-sheave-axle';
+  const stirrupEyes = [-1, 1].map((side) => {
+    const eye = new THREE.Mesh(
+      new THREE.TorusGeometry(stirrupEyeRadius, stirrupEyeTube, 16, 48),
+      ironMaterial,
+    );
+    eye.position.z = side * stirrupHalfSpan;
+    eye.userData.role = `stirrup-${side < 0 ? 'rear' : 'front'}-eye-on-moving-axle`;
+    return eye;
+  });
+  // Hook: closed eye round the stirrup bar, then one smooth round bar.
+  const hookBar = 0.045;
+  const hookEyeRadius = 0.085;
+  const hookEyeTube = 0.034;
+  // The eye's inner crown rests 0.004 above the stirrup bar's top.
+  const hookEyeCentreY = stirrupBottomY + stirrupRadius
+    - (hookEyeRadius - hookEyeTube) + 0.004;
+  const bowlRadius = 0.11;
+  const bowlCentreY = -0.80;
+  const shankTop = v3(0, hookEyeCentreY - hookEyeRadius, 0);
+  const hookPath = new THREE.CurvePath();
+  hookPath.add(new THREE.LineCurve3(shankTop.clone().add(v3(0, 0.02, 0)),
+    v3(0, hookEyeCentreY - hookEyeRadius - 0.08, 0)));
+  hookPath.add(new THREE.CubicBezierCurve3(
+    v3(0, hookEyeCentreY - hookEyeRadius - 0.08, 0),
+    v3(0, bowlCentreY + 0.20, 0),
+    v3(-bowlRadius, bowlCentreY + 0.20, 0),
+    v3(-bowlRadius, bowlCentreY, 0)));
+  const bowlEndAngle = 2 * Math.PI + 0.55;
+  hookPath.add(new CircularArcCurve3(v3(0, bowlCentreY, 0),
+    v3(-bowlRadius, 0, 0), v3(0, 0, 1), bowlEndAngle - Math.PI));
+  const hookShank = new THREE.Mesh(
+    new THREE.TubeGeometry(hookPath, 160, hookBar, 18, false),
+    ironMaterial,
   );
-  hanger.position.y = -0.37;
-  hanger.userData.role = 'hanger-below-moving-rope-bight';
-  const hook = new THREE.Mesh(
-    new THREE.TorusGeometry(0.22, 0.06, 10, 40, Math.PI * 1.55),
-    drivenMaterial,
+  hookShank.userData.role = 'load-hook-shank-and-bowl';
+  const hookEye = new THREE.Mesh(
+    new THREE.TorusGeometry(hookEyeRadius, hookEyeTube, 16, 48),
+    ironMaterial,
   );
-  hook.position.set(0.06, -0.78, 0.02);
-  hook.rotation.z = Math.PI * 0.16;
+  hookEye.position.y = hookEyeCentreY;
+  hookEye.userData.role = 'load-hook-closed-eye-on-stirrup-bar';
+  const hookTip = new THREE.Mesh(
+    new THREE.SphereGeometry(hookBar, 18, 12),
+    ironMaterial,
+  );
+  hookTip.position.set(bowlRadius * Math.cos(bowlEndAngle),
+    bowlCentreY + bowlRadius * Math.sin(bowlEndAngle), 0);
+  hookTip.userData.role = 'load-hook-rounded-tip-cap';
+  const hook = new THREE.Group();
+  hook.add(hookEye, hookShank, hookTip);
   hook.userData.role = 'load-hook-below-moving-pulley-block';
+  // The load's bail lies across the hook plane and rests on the bowl bottom.
+  const bailRadius = 0.08;
+  const bailTube = 0.026;
+  const bailCentreY = bowlCentreY - bowlRadius + hookBar
+    - (bailRadius - bailTube) + 0.003;
+  const bail = new THREE.Mesh(
+    new THREE.TorusGeometry(bailRadius, bailTube, 16, 48),
+    ironMaterial,
+  );
+  bail.rotation.y = Math.PI / 2;
+  bail.position.y = bailCentreY;
+  bail.userData.role = 'load-bail-hanging-in-hook-bowl';
+  const loadHeight = 0.72;
   const load = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.34, 0.43, 0.72, 36),
+    new THREE.CylinderGeometry(0.34, 0.43, loadHeight, 36),
     drivenMaterial,
   );
-  load.position.y = -1.36;
+  // The bail's foot is cast into the load's top, which stays clear of the
+  // hook's bowl.
+  load.position.y = bailCentreY - bailRadius + 0.025 - loadHeight / 2;
   load.userData.role = 'suspended-load-carried-by-moving-bight';
-  movingBlock.add(movingPulley, movingAxle, hanger, hook, load);
+  hangerFrame.add(hanger, ...stirrupEyes, hook, bail, load);
+  movingBlock.add(movingPulley, movingAxle, hangerFrame);
   root.add(movingBlock);
 
   const shaftBearings = [-2.58, 2.58].map((x, index) => {
@@ -826,7 +922,7 @@ function redirectedChineseWindlass(movement) {
   // the material from the curve's anchored start, shows the travel.
   const rope = makeDynamicMovingBelt(sourceRopeGeometry.curve, {
     closed: false,
-    color: PALETTE.driven,
+    color: PALETTE.rope,
     laid: true,
     markerCount: 0,
     radius: ropeRadius,
@@ -1275,7 +1371,13 @@ function redirectedChineseWindlass(movement) {
     crown,
     frame,
     hanger,
+    hangerFrame,
     hook,
+    hookEye,
+    hookShank,
+    hookTip,
+    bail,
+    stirrupEyes,
     inputShaft,
     largeBarrel,
     leftGuide,
@@ -1428,6 +1530,11 @@ function redirectedChineseWindlass(movement) {
 
   update(0);
   correctCordTraverseParts(root,352,update);
+  // The shared correction still resizes the old box hanger; restore the
+  // round-bar stirrup in its own frame.
+  hanger.geometry.dispose();
+  hanger.geometry = stirrupGeometry();
+  hanger.position.set(0, 0, 0);
   markShadows(root);
   return {
     cameraDirection: root.userData.cameraDirection,

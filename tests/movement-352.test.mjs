@@ -91,8 +91,35 @@ test('movement 352 is one redirected single-rope Chinese windlass', () => {
   assert.equal(blocks.movingBlock.parent, model.root);
   assert.equal(blocks.movingPulley.parent, blocks.movingBlock);
   assert.equal(blocks.movingAxle.parent, blocks.movingBlock);
-  assert.equal(blocks.hook.parent, blocks.movingBlock);
-  assert.equal(blocks.load.parent, blocks.movingBlock);
+  assert.equal(blocks.hangerFrame.parent, blocks.movingBlock);
+  assert.equal(blocks.hook.parent, blocks.hangerFrame);
+  assert.equal(blocks.load.parent, blocks.hangerFrame);
+  // One ordinary hook: a closed eye, one smooth round shank and bowl, and a
+  // rounded cap on the tip, linked through the stirrup and the load's bail.
+  assert.deepEqual(blocks.hook.children.map((part) => part.geometry.type),
+    ['TorusGeometry', 'TubeGeometry', 'SphereGeometry']);
+  assert.equal(blocks.hookEye.geometry.parameters.arc, Math.PI * 2);
+  {
+    const path = blocks.hookShank.geometry.parameters.path;
+    const tipEnd = path.getPoint(1);
+    near(tipEnd.distanceTo(blocks.hookTip.position), 0, 1e-9, 'tip cap on the bar end');
+    near(blocks.hookTip.geometry.parameters.radius,
+      blocks.hookShank.geometry.parameters.radius, 1e-12, 'cap matches bar');
+    const shankStart = path.getPoint(0);
+    const eyeBottomY = blocks.hookEye.position.y - blocks.hookEye.geometry.parameters.radius;
+    assert.ok(shankStart.y > eyeBottomY && Math.abs(shankStart.x) < 1e-9,
+      'the shank starts inside the eye');
+    // Stirrup bar passes through the hook eye; the bail passes round the bowl.
+    const stirrupBottom = blocks.hanger.geometry.parameters.path.getPoint(0.5).y;
+    const eye = blocks.hookEye.geometry.parameters;
+    assert.ok(blocks.hookEye.position.y + eye.radius - eye.tube
+      > stirrupBottom + blocks.hanger.geometry.parameters.radius);
+    assert.ok(blocks.hookEye.position.y - eye.radius + eye.tube
+      < stirrupBottom - blocks.hanger.geometry.parameters.radius);
+    for (const stirrupEye of blocks.stirrupEyes) {
+      assert.equal(stirrupEye.geometry.parameters.arc, Math.PI * 2);
+    }
+  }
   assert.equal(blocks.rope.parent, model.root);
   assert.equal(blocks.ropeMesh.parent, blocks.rope);
   assert.equal(blocks.rope.userData.ropeCount, 1);

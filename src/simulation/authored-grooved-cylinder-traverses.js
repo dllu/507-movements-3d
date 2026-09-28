@@ -390,11 +390,27 @@ function rotatingObliqueGrooveTraverse(movement) {
     'radial-bridge-from-upper-shaft-end-to-groove-follower';
   followerBridge.visible = false;
   upperSlide.add(followerBridge);
-  const followerStem = makeBeam(
-    new THREE.Vector3(0, 0.42, contactZ),
-    new THREE.Vector3(0, contactY - upperAxisY, contactZ),
-    { color: PALETTE.accent, depth: 0.105, thickness: 0.105 },
+  // The pin is turned (pass 92): a square bar's corners poked out of the
+  // rounded tip. Its 0.0525 radius stays inside the tip's 0.060 x 0.084
+  // semi-axes, so the tip alone works in the groove.
+  const followerStemTop = 0.42;
+  const followerStemBottom = contactY - upperAxisY;
+  const followerStem = new THREE.Group();
+  const followerStemRod = new THREE.Mesh(
+    new THREE.CylinderGeometry(
+      0.0525,
+      0.0525,
+      followerStemTop - followerStemBottom,
+      32,
+    ),
+    accentMaterial,
   );
+  followerStemRod.position.set(
+    0,
+    (followerStemTop + followerStemBottom) / 2,
+    contactZ,
+  );
+  followerStem.add(followerStemRod);
   followerStem.userData.role =
     'pin-arm-fixed-to-end-of-traversing-upper-shaft';
   upperSlide.add(followerStem);

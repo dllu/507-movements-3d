@@ -13,7 +13,7 @@
     },
     {
       "file": "src/simulation/pinned-elbow.js",
-      "sha256": "b6228569bc9fc9280256ed0a09c7a6e01987170d805fef9d894b19e46d7a9ad5"
+      "sha256": "259014ef2ea9397ab60bcb719104f819f33067fd8211328eb7e98a5fea26d68e"
     },
     {
       "file": "src/simulation/pinned-elbow-motion.js",

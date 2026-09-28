@@ -632,7 +632,8 @@ function atmosphericHammer(movement) {
   movingCylinder.add(cylinderDriveLug);
   const atmosphericPort = addRole(new THREE.Mesh(
     new THREE.CylinderGeometry(0.085, 0.085, 0.24, 22),
-    matte(PALETTE.white, { roughness: 0.42 }),
+    // Ink, so the opening reads dark; white read as a gap in the page.
+    matte(PALETTE.ink, { roughness: 0.42 }),
   ), 'atmospheric-admission-hole-e');
   atmosphericPort.rotation.z = Math.PI / 2;
   atmosphericPort.position.set(-cylinderOuterRadius - 0.10, 0.20, 0.18);

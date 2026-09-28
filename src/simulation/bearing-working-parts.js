@@ -134,7 +134,8 @@ function correctRollerBearing(root) {
   for (const assembly of b.rollerAssemblies) {
     replace(assembly.body, boredCylinderGeometry(g.rollerBodyRadius, .065, g.rollerDepth));
     replace(assembly.hub, boredCylinderGeometry(.105, .065, g.rollerDepth * 1.1));
-    b.cagePins.push(axle(assembly.positionGroup, .060, -.365, .31, assembly.hub.material,
+    // The pin ends 0.003 inside the retaining plate, not flush with its back face.
+    b.cagePins.push(axle(assembly.positionGroup, .060, -.362, .31, assembly.hub.material,
       `retainer-pin-through-roller-${assembly.index + 1}`));
     assembly.faceIndex.position.z = g.rollerDepth / 2 + .02;
   }

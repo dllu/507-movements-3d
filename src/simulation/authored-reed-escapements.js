@@ -207,8 +207,9 @@ function makeBalance({
   void rollerRadius;
   roller.userData.role = 'balance-roller-h';
   balance.add(roller);
+  // Brass impulse pin: a white one would read as a hole on the cream page.
   const rollerPin = cylinderAlongZ(rollerPinRadius, 0.28,
-    whiteMaterial, 24);
+    matte(PALETTE.brass, { metalness: 0.2, roughness: 0.4 }), 24);
   rollerPin.position.set(PIN_ORBIT, 0, -0.31);
   rollerPin.userData.role = 'roller-impulse-pin-i';
   balance.add(rollerPin);

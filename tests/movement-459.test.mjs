@@ -513,3 +513,31 @@ test('movement 459 has finite render bounds and movement 507 remains the next au
   disposeModel(model459.root);
   disposeModel(model507.root);
 });
+
+test('movement 459 pass 92: the tappet pivot stands centred in the round head of the central post', () => {
+  const model = createMovementModel(catalog.movements[458]);
+  let post, pin;
+  model.root.traverse((o) => {
+    if (o.userData.role === 'fixed-central-post-with-round-head-at-tappet-pivot') post = o;
+    if (o.userData.role === 'fixed-tappet-pivot') pin = o;
+  });
+  assert.ok(post && pin);
+  model.root.updateMatrixWorld(true);
+  const r = pin.geometry.parameters.radiusTop;
+  const c = pin.getWorldPosition(new THREE.Vector3());
+  const p = post.geometry.attributes.position;
+  const v = new THREE.Vector3();
+  let head = null, zMax = -Infinity;
+  for (let i = 0; i < p.count; i += 1) {
+    v.fromBufferAttribute(p, i).applyMatrix4(post.matrixWorld);
+    zMax = Math.max(zMax, v.z);
+    if (v.y < c.y - 1e-6) continue;
+    const d = Math.hypot(v.x - c.x, v.y - c.y);
+    if (head === null) head = d;
+    near(d, head, 1e-3, 'post head is one arc concentric with the pivot');
+  }
+  assert.ok(head >= 1.4 * r, `head radius ${head} >= 1.4 r`);
+  const box = new THREE.Box3().setFromObject(pin);
+  assert.ok(box.max.z > zMax + 0.02, 'pin end stands proud of the post head');
+  disposeModel(model.root);
+});

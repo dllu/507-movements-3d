@@ -843,3 +843,40 @@ test('movement 190 occupies a real 3D envelope and remains distinct as the revie
   disposeModel(movement192.root);
   disposeModel(model.root);
 });
+
+test('movement 190 (pass 92): turned handle stands on its axis inside the crank bar\'s round end', () => {
+  const movement = catalog.movements[189];
+  const model = createMovementModel(movement);
+  try {
+    const { handleArm, handleGrip, handleTipAnchor } = model.root.userData.blocks;
+    assert.equal(handleGrip.geometry.type, 'LatheGeometry', 'grip is a turned (lathed) handle');
+    // On its axis: the lathe axis (local +y) runs through the handle tip anchor.
+    near(handleGrip.position.x, handleTipAnchor.position.x, 1e-12, 'grip axis x');
+    near(handleGrip.position.z, handleTipAnchor.position.z, 1e-12, 'grip axis z');
+    // Foot sunk into the bar's top face, and standing upright.
+    handleArm.geometry.computeBoundingBox();
+    const barTop = handleArm.position.y + handleArm.geometry.boundingBox.max.y;
+    assert.ok(handleGrip.position.y < barTop && handleGrip.position.y > barTop - 0.02, 'foot sunk into the bar top');
+    near(handleGrip.rotation.x, 0, 1e-12, 'upright');
+    near(handleGrip.rotation.z, 0, 1e-12, 'upright');
+    // The foot lies inside the bar's end, and the bar's end is a circular
+    // arc concentric with the handle axis with a margin round the foot.
+    const endRadius = handleArm.userData.handleEndRadius;
+    const pos = handleGrip.geometry.attributes.position;
+    let footRadius = 0;
+    for (let i = 0; i < pos.count; i += 1) if (pos.getY(i) < 0.02) footRadius = Math.max(footRadius, Math.hypot(pos.getX(i), pos.getZ(i)));
+    assert.ok(footRadius < 0.8 * endRadius, `foot ${footRadius} leaves a margin inside the end arc ${endRadius}`);
+    const arm = handleArm.geometry.attributes.position;
+    const axisX = handleGrip.position.x;
+    let beyond = 0;
+    for (let i = 0; i < arm.count; i += 1) {
+      const x = arm.getX(i) + handleArm.position.x;
+      if (x <= axisX + 1e-9) continue;
+      beyond += 1;
+      near(Math.hypot(x - axisX, arm.getZ(i) + handleArm.position.z), endRadius, 1e-6, 'bar end on the arc about the handle');
+    }
+    assert.ok(beyond > 10, 'the bar runs past the handle axis');
+  } finally {
+    disposeModel(model.root);
+  }
+});

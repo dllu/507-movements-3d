@@ -489,3 +489,52 @@ test('movement 283 closes after one vibration while movement 339 stays draft', (
   disposeModel(model289.root);
   disposeModel(model.root);
 });
+
+test('movement 283 (pass 92): the knob is the shared turned handle centred in a round bar-end eye', () => {
+  const model = createMovementModel(catalog.movements[282]);
+  try {
+    const { handleEye, handleGrip } = model.root.userData.blocks;
+    assert.equal(handleGrip.geometry.type, 'LatheGeometry', 'turned (lathed) knob');
+    assert.equal(handleEye.parent, handleGrip.parent);
+    near(handleGrip.position.x, handleEye.position.x, 1e-12, 'knob axis x on the eye');
+    near(handleGrip.position.y, handleEye.position.y, 1e-12, 'knob axis y on the eye');
+    const p = handleGrip.geometry.attributes.position;
+    let footRadius = 0;
+    for (let i = 0; i < p.count; i += 1) {
+      if (Math.abs(p.getZ(i)) < 1e-9) footRadius = Math.max(footRadius, Math.hypot(p.getX(i), p.getY(i)));
+    }
+    const eyeRadius = handleEye.geometry.parameters.radiusTop;
+    assert.ok(eyeRadius > 1.4 * footRadius, `eye ${eyeRadius} leaves a margin round the ${footRadius} foot`);
+    const eyeFront = handleEye.position.z + handleEye.geometry.parameters.height / 2;
+    assert.ok(handleGrip.position.z < eyeFront && handleGrip.position.z > eyeFront - 0.02, 'foot sunk into the eye face');
+  } finally {
+    disposeModel(model.root);
+  }
+});
+
+test('movement 283 (pass 92): each rack bar is one extrusion whose top is a semicircle enclosing every corner', () => {
+  const model = createMovementModel(catalog.movements[282]);
+  try {
+    const { leftRackBody, rightRackBody } = model.root.userData.blocks;
+    for (const body of [leftRackBody, rightRackBody]) {
+      assert.notEqual(body.geometry.type, 'BoxGeometry', 'no box bar');
+      const { center: [cx, cy], radius } = body.userData.roundTop;
+      assert.equal(body.parent.children.filter((child) => /rounded-upper-end/.test(child.userData.role ?? '')).length, 0,
+        'no separate end cap');
+      const p = body.geometry.attributes.position;
+      let top = -Infinity;
+      for (let i = 0; i < p.count; i += 1) {
+        const x = p.getX(i), y = p.getY(i);
+        top = Math.max(top, y);
+        if (y > cy + 1e-6) {
+          near(Math.hypot(x - cx, y - cy), radius, 1e-6, 'every vertex above the top centre lies on the end arc');
+        } else {
+          assert.ok(Math.abs(x - cx) <= radius + 1e-6, 'the bar is no wider than the end arc');
+        }
+      }
+      near(top, cy + radius, 1e-6, 'the arc closes the bar');
+    }
+  } finally {
+    disposeModel(model.root);
+  }
+});

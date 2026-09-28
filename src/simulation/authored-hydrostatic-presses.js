@@ -318,6 +318,7 @@ function hydrostaticPress(movement) {
   const ironMaterial = matte(PALETTE.frame, {metalness: 0.18, roughness: 0.64});
   const ironCut = cutFaceMaterial(ironMaterial);
   const darkMaterial = matte(PALETTE.ink, {metalness: 0.25, roughness: 0.48});
+  const cordMaterial = matte(PALETTE.rope, {roughness: 0.78});
   const pumpMaterial = matte(PALETTE.driver, {metalness: 0.13, roughness: 0.55});
   const pumpCut = cutFaceMaterial(pumpMaterial);
   const ramMaterial = matte(PALETTE.driven, {metalness: 0.14, roughness: 0.53});
@@ -491,7 +492,7 @@ function hydrostaticPress(movement) {
   // pin's swing changes the span as little as the ball allows.
   const cordRadius = 0.8 * S, cordZ = 0.068;
   const cordLoopRadius = pinRadius + cordRadius;
-  const cordLoop = addRole(new THREE.Mesh(new THREE.TorusGeometry(cordLoopRadius, cordRadius, 10, 40), darkMaterial), 'cord-loop-on-fulcrum-pin');
+  const cordLoop = addRole(new THREE.Mesh(new THREE.TorusGeometry(cordLoopRadius, cordRadius, 10, 40), cordMaterial), 'cord-loop-on-fulcrum-pin');
   cordLoop.position.z = cordZ;
   root.add(cordLoop);
   const ballRadius = 11.5 * S, ballRestCenter = new THREE.Vector2(X(305), Y(290) + 26 * S + ballRadius);
@@ -512,7 +513,7 @@ function hydrostaticPress(movement) {
   const cordTieOffset = new THREE.Vector2(Math.sin(cordTieAngle), Math.cos(cordTieAngle)).multiplyScalar(ballSectionRadius);
   const cordLength = Math.max(...cordSamples.map((fulcrum) => cordSpan(fulcrum, ballRestCenter.clone().add(cordTieOffset))));
   const cordTube = makeCurveTubeBuffer({segments: 32, sides: 8, radius: cordRadius});
-  const ballCord = addRole(new THREE.Mesh(cordTube.geometry, darkMaterial), 'thin-cord-from-lever-end-pin-to-ball-weight');
+  const ballCord = addRole(new THREE.Mesh(cordTube.geometry, cordMaterial), 'thin-cord-from-lever-end-pin-to-ball-weight');
   root.add(ballCord);
   const cordCurve = new THREE.QuadraticBezierCurve3(new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3());
   const updateCord = (fulcrum, ballLift) => {

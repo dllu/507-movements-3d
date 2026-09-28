@@ -4,19 +4,19 @@
     182
   ],
   "poses": 129,
-  "meshes": 40,
-  "pairs": 662,
-  "queries": 8053390,
+  "meshes": 19,
+  "pairs": 150,
+  "queries": 13063674,
   "intersections": {},
-  "method": "Every cross-family pair in the serialized visible assembly, including new finger supports and axial webs. Bidirectional vertices, edge midpoints and face centers. Both variants share this full cycle. Sampled evidence, not continuous proof.",
+  "method": "Every cross-family pair in the serialized visible assembly (single-plane castings, no finger supports or axial webs). Bidirectional vertices, edge midpoints and face centers. Both variants share this full cycle. Sampled evidence, not continuous proof.",
   "sources": [
     {
       "file": "scripts/review-diagonal-catch-assembly.mjs",
-      "sha256": "8e44942b3d1950341fe81fcfda0158f3bc5df1f835778abd753fb3665617b736"
+      "sha256": "bc6990e0393891254d93968a36d4524c542d684015c1e3a95f3d73f12f5fb30c"
     },
     {
       "file": "src/simulation/baked/assets/181.json.gz",
-      "sha256": "c9bae71d16c27bc6692e029de524f7c879f93236aa0dcd33f340acde680d63b1"
+      "sha256": "9b9f48ce4903ac905def0af5624852b2f9c68d15e9ea09ef862496c95abae86e"
     },
     {
       "file": "src/simulation/baked/diagonal-catch.js",

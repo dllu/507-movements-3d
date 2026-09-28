@@ -72,12 +72,23 @@ test('188 plate landmarks: pin, pivot, loop extents and step a sit where Brown d
     near(rod.min.x, R([-300, 0]).x, 2 * px, 'rod runs on past Brown\'s break');
     near(rod.max.x, R([520, 0]).x, 2 * px, 'rod nose');
     near(rod.min.y, R([0, 335]).y, 1e-6, 'rod lower edge');
-    // Step a: the leaf head ends exactly under the limb at the plate step.
+    // Notch a is cut into the limb itself (pass 92): the handle's single
+    // extrusion carries the ledge at Brown's step, and the leaf ends behind
+    // the diagonal, set in the head's hidden tab.
     const leaf = d.leafPathAtAngle(0);
-    assert.ok(leaf.end.distanceTo(R([223, 178])) < 1e-9);
+    assert.ok(leaf.end.distanceTo(R([216, 231])) < 1e-9);
     const leafBox = new THREE.Box3().setFromObject(b.leaf);
-    near(leafBox.max.y, R([0, 178]).y, 2 * px, 'leaf top at a');
+    assert.ok(leafBox.max.y < R([0, 222]).y, 'leaf stays below the notch, behind the diagonal');
     near(leafBox.min.x, R([106, 0]).x, 8 * px, 'leaf foot under the clip block');
+    const pos = b.handleBody.geometry.attributes.position;
+    const handleInverse = b.handleBody.matrixWorld.clone().invert();
+    const ledge = [R([206, 177.5]), R([218, 177.5])].map((p) => new THREE.Vector3(p.x, p.y, 0).applyMatrix4(handleInverse));
+    let ledgeVertices = 0;
+    for (let i = 0; i < pos.count; i++) {
+      if (Math.abs(pos.getY(i) - ledge[0].y) < 1e-6 && pos.getX(i) > ledge[0].x - 3 * px && pos.getX(i) < ledge[1].x + 3 * px) ledgeVertices++;
+    }
+    assert.ok(ledgeVertices >= 4, 'notch a ledge is an edge of the handle extrusion');
+    assert.equal(d.blocks.lug, undefined, 'no separate lug at a');
   });
 });
 
@@ -116,7 +127,7 @@ test('188 cycle: running with the pin in the gab, stop, lift, held clear, lower,
   });
 });
 
-test('188 contacts: toe touches the pin, gab captures then clears it, leaf head stays under step a', () => {
+test('188 contacts: toe touches the pin, gab captures then clears it, leaf end carried by the head', () => {
   withModel((model) => {
     const d = model.root.userData, b = d.blocks, g = d.geometry;
     for (let i = 0; i <= 160; i++) {
@@ -135,22 +146,22 @@ test('188 contacts: toe touches the pin, gab captures then clears it, leaf head 
       const gabCentre = worldXY(b.rodFront, new THREE.Vector3(0, 0, 0));
       if (s.pinInGab) assert.ok(gabCentre.distanceTo(pin) < 1e-9, `pin seated in gab at ${t}`);
       if (s.stage === 'held-by-leaf-at-a') assert.ok(s.pinTopBelowRodBottom >= 1.4 * g.pixel);
-      // Leaf: constant length, tail hidden under the clip, head glued under the limb end.
+      // Leaf: constant length, tail hidden under the clip, end carried by the head's tab.
       const leaf = d.leafPathAtAngle(s.handleAngle);
       near(leaf.tail + leaf.free, g.leafLength, 1e-12, 'leaf length conserved');
       const tailX = leaf.path[0].x;
       assert.ok(tailX >= d.sourcePointFromRaster([105, 0]).x && tailX <= d.sourcePointFromRaster([140, 0]).x);
-      const head = d.sourcePointFromRaster([223, 178]).sub(d.sourcePointFromRaster(g.pivotRaster))
+      const head = d.sourcePointFromRaster([216, 231]).sub(d.sourcePointFromRaster(g.pivotRaster))
         .rotateAround(new THREE.Vector2(), -s.handleAngle).add(d.sourcePointFromRaster(g.pivotRaster));
-      assert.ok(leaf.end.distanceTo(head) < 1e-12, 'leaf head carried at a');
+      assert.ok(leaf.end.distanceTo(head) < 1e-12, 'leaf end carried by the head');
     }
   });
 });
 
-test('188 pins never enter the rod, handle or lug solids through the cycle', () => {
+test('188 pins never enter the rod, handle or tab solids through the cycle', () => {
   withModel((model) => {
     const d = model.root.userData;
-    const checks = [...d.jointChecks, [d.blocks.lug, d.blocks.valvePin]]
+    const checks = [...d.jointChecks, [d.blocks.tab, d.blocks.valvePin]]
       .map(([plateMesh, pin]) => ({plateMesh, pin, surface: solidSurface(plateMesh.geometry)}));
     for (let frame = 0; frame <= 32; frame++) {
       model.update(16 * frame / 32);
@@ -169,23 +180,24 @@ test('188 pins never enter the rod, handle or lug solids through the cycle', () 
   });
 });
 
-test('188 leaf head never penetrates the limb lug (touching with a small gap)', () => {
+test('188 leaf end is set in the head tab, hidden behind the diagonal', () => {
   withModel((model) => {
-    const d = model.root.userData, lug = d.blocks.lug, leaf = d.blocks.leaf;
-    const surface = solidSurface(lug.geometry), triangles = surfaceTriangles(lug.geometry);
+    const d = model.root.userData, {tab, leaf, handleBody} = d.blocks;
+    const surface = solidSurface(tab.geometry), handleSurface = solidSurface(handleBody.geometry);
     for (let frame = 0; frame <= 24; frame++) {
       model.update(16 * frame / 24);
       model.root.updateMatrixWorld(true);
-      const toLug = lug.matrixWorld.clone().invert().multiply(leaf.matrixWorld);
-      const p = leaf.geometry.attributes.position;
-      for (let i = 0; i < p.count; i++) {
-        const q = new THREE.Vector3().fromBufferAttribute(p, i).applyMatrix4(toLug);
-        assert.equal(surface.inside(q), false, `leaf vertex inside lug at ${frame}`);
-      }
       const end = d.leafPathAtAngle(d.kinematics.handleAngle).end;
-      const q = new THREE.Vector3(end.x, end.y, -0.52).applyMatrix4(toLug);
-      const nearest = Math.min(...triangles.map((tri) => tri.closestPointToPoint(q, new THREE.Vector3()).distanceTo(q)));
-      assert.ok(nearest > 0 && nearest < 0.004, `leaf head visibly meets the limb at ${frame} (${nearest})`);
+      const toTab = tab.matrixWorld.clone().invert().multiply(leaf.matrixWorld);
+      assert.ok(surface.inside(new THREE.Vector3(end.x, end.y, -0.52).applyMatrix4(toTab)), `leaf end in the tab at ${frame}`);
+      // The tab lies wholly behind the handle's front extrusion (hidden from the front).
+      const toHandle = handleBody.matrixWorld.clone().invert().multiply(tab.matrixWorld);
+      const p = tab.geometry.attributes.position;
+      for (let i = 0; i < p.count; i++) {
+        const q = new THREE.Vector3().fromBufferAttribute(p, i).applyMatrix4(toHandle);
+        q.z = -0.28;
+        assert.ok(handleSurface.inside(q) || handleSurface.distance(q) < 1e-6, `tab shows past the handle outline at ${frame}`);
+      }
     }
   });
 });

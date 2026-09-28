@@ -2,7 +2,7 @@
   "sources": [
     {
       "file": "src/simulation/authored-epicyclic-trains.js",
-      "sha256": "8fc68d81d0d6cb3349875bdb77a5d67e294e0993a3a82cf11c903576d0574de5"
+      "sha256": "fa37e70b7a0eabbc46e30e839718d5a267ae05630aa3cbb9070e5b1a9353ca99"
     },
     {
       "file": "src/simulation/epicyclic-503-504-contact.js",
@@ -14,7 +14,7 @@
     },
     {
       "file": "src/simulation/primitives.js",
-      "sha256": "c09dbdfc48b4680ae1194d6b1471ff33d437bc8e8a28f6b290044eba746c9367"
+      "sha256": "e28fda6a3c9e228a8af6601dbe7728e8fd7812ff947073ee5562a3fe0478bb93"
     },
     {
       "file": "src/simulation/bevel-geometry.js",

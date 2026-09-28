@@ -55,7 +55,7 @@ export function makePumpCatchRearDriveGeometry({model=makePumpCatchCoreGeometry(
   loop.add(arc(separation,Math.PI/2,-Math.PI/2));
   loop.add(new THREE.LineCurve3(at(separation,-radius),at(0,-radius)));
   loop.add(arc(0,-Math.PI/2,-3*Math.PI/2));
-  const band=makeLaidRopeMesh(loop,matte(0xb08d57,{roughness:.86,metalness:0}),{radius:ropeRadius,closed:true,tubularSegments:1024});
+  const band=makeLaidRopeMesh(loop,matte(PALETTE.rope,{roughness:.86,metalness:0}),{radius:ropeRadius,closed:true,tubularSegments:1024});
   band.name='inputDriveRope';model.root.add(band);u.parts[band.name]=band;u.families[band.name]='band';
   const coreSetState=model.setState,setState=state=>{
     const result=coreSetState(state);remote.rotation.z=result.camAngle;

@@ -1020,9 +1020,9 @@ function stud292(movement) {
       materials.rocker.add(plateMesh(circlePoints([0, 0], hubR, 64), [circlePoints([0, 0], 9 * s, 32)], layerZ.back[1], layerZ.front[0], materials.oscillator, 'anchor-hub-F'));
       materials.rocker.add(plateMesh(local(frontPallet), [], 0.09, layerZ.front[0], materials.oscillator, 'front-pallet-c'));
       materials.rocker.add(plateMesh(local(backPallet), [], layerZ.back[1], -0.09, materials.oscillator, 'back-pallet-R'));
-      // Steel studs set in the wheel, so they read as Brown's clear
-      // triangles on the rim.
-      const studMaterial = matte(PALETTE.white, { metalness: 0.3, roughness: 0.45 });
+      // Steel studs set in the wheel (Brown's clear triangles on the rim),
+      // steel-coloured: white studs would read as notches on the cream page.
+      const studMaterial = matte(PALETTE.muted, { metalness: 0.3, roughness: 0.45 });
       studAngles.forEach((angle, k) => {
         const z = k % 2 ? [0.08, 0.18] : [-0.18, -0.08];
         materials.wheelRotor.add(plateMesh(studTriangle(angle, k % 2 === 1), [], z[0], z[1], studMaterial, k % 2 ? 'front-stud' : 'back-stud'));

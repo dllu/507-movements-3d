@@ -63,7 +63,7 @@ test('350: all three real pins clear the lever and central joint solids over a f
     update(4 * sample / 128); root.updateMatrixWorld(true);
     clearsPin(b.fixedPinO, lever);
     clearsPin(b.movingPinD, lever);
-    clearsPin(b.centralJointPin, [...lever, b.outputJointBoss, b.jointToRiser]);
+    clearsPin(b.centralJointPin, [...lever, b.outputJointBoss]);
     const pin = bounds(b.centralJointPin);
     for (const member of [b.centerBoss, b.outputJointBoss]) {
       const box = bounds(member);

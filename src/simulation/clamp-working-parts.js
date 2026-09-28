@@ -100,8 +100,13 @@ function correctProny(root) {
     const pinY=eye.position.y+inner-pinRadius,beamBottom=g.leverCenterY-.07;
     const pin=add(root,new THREE.CylinderGeometry(pinRadius,pinRadius,.17,32).rotateX(Math.PI/2),eye.material,'scale-ring-hook-pin');
     pin.position.set(eye.position.x,pinY,eye.position.z+.005);
-    const lug=add(root,new THREE.BoxGeometry(.1,beamBottom-pinY+.01,.05),b.stopPost.children[0].material,'scale-ring-hook-lug-under-beam');
-    lug.position.set(eye.position.x,(beamBottom+pinY)/2,eye.position.z-tube-.035);
+    // p92: one flat plate whose lower end is a semicircle concentric with the
+    // pin (r .05 against the .03 pin), so the pin stands centred in a round
+    // eye instead of on the square end of a box.
+    const lugHalf=.05,lugTop=beamBottom-pinY+.01;
+    const lugOutline=clip.union(poly([[-lugHalf,0],[lugHalf,0],[lugHalf,lugTop],[-lugHalf,lugTop]]),poly(circle([0,0],lugHalf,128)));
+    const lug=add(root,plate(lugOutline,-.025,.025),b.stopPost.children[0].material,'scale-ring-hook-lug-under-beam');
+    lug.position.set(eye.position.x,pinY,eye.position.z-tube-.035);
   }
   // Brown's 244: a hatched wooden block fills the space between the lever D
   // and the top of pulley A (flat top under the lever, straight sides, its

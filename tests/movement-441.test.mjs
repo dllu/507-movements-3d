@@ -428,3 +428,49 @@ test('movement 507 remains the next authored frontier and does not reuse movemen
   disposeModel(model441.root);
   disposeModel(model507.root);
 });
+
+test('movement 441 (pass 92): the tipping pin stands centred in a round eye at the arm end', () => {
+  const model = createMovementModel(catalog.movements[440]);
+  const { blocks } = model.root.userData;
+  const pin = blocks.stationaryTripPin, arm = blocks.tripPinBracket;
+  const r = pin.geometry.parameters.radiusTop;
+  const position = arm.geometry.attributes.position;
+  const v = new THREE.Vector3();
+  let nearest = Infinity;
+  for (let i = 0; i < position.count; i += 1) {
+    v.fromBufferAttribute(position, i).applyMatrix4(arm.matrix);
+    nearest = Math.min(nearest, Math.hypot(v.x - pin.position.x, v.y - pin.position.y));
+  }
+  assert.ok(nearest >= 1.5 * r, `arm outline ${nearest} from the pin axis`);
+  disposeModel(model.root);
+});
+
+test('movement 441 (pass 92): each bucket pin stands centred in a round rim boss', () => {
+  const model = createMovementModel(catalog.movements[440]);
+  model.root.updateMatrixWorld(true);
+  const byRole = new Map();
+  model.root.traverse((object) => { if (object.userData.role) byRole.set(object.userData.role, object); });
+  const rim = byRole.get('light-outer-rim-through-bucket-pivots');
+  for (let index = 1; index <= 6; index += 1) {
+    const pin = byRole.get(`finite-bucket-suspension-pin-${index}`);
+    const boss = byRole.get(`rim-boss-round-bucket-suspension-pin-${index}`);
+    const link = byRole.get(`float-tip-bucket-pivot-link-${index}`);
+    assert.ok(pin && boss && link, `station ${index} parts exist`);
+    assert.equal(boss.parent, rim.parent, 'the boss is part of the rim body');
+    const r = pin.geometry.parameters.radiusTop;
+    const p = pin.getWorldPosition(new THREE.Vector3());
+    const b = boss.getWorldPosition(new THREE.Vector3());
+    assert.ok(Math.hypot(p.x - b.x, p.y - b.y) < 1e-9, `boss ${index} concentric with its pin`);
+    assert.ok(boss.geometry.parameters.radiusTop >= 1.5 * r, `boss ${index} radius`);
+    // The boss stands proud of the rim (0.05) and link (0.09) faces.
+    assert.ok(boss.geometry.parameters.height / 2 > 0.09 + 0.005, `boss ${index} depth`);
+    // The link's square end is buried in the boss and stops short of the pin.
+    const radial = link.localToWorld(new THREE.Vector3(link.geometry.parameters.width / 2, 0, 0)).sub(link.getWorldPosition(new THREE.Vector3()));
+    const endCenter = link.getWorldPosition(new THREE.Vector3()).add(radial);
+    assert.ok(Math.hypot(endCenter.x - p.x, endCenter.y - p.y) > r, `link ${index} stops short of the pin`);
+    const half = link.geometry.parameters.height / 2;
+    assert.ok(Math.hypot(Math.hypot(endCenter.x - p.x, endCenter.y - p.y), half) < boss.geometry.parameters.radiusTop,
+      `link ${index} end corners lie inside the boss`);
+  }
+  disposeModel(model.root);
+});

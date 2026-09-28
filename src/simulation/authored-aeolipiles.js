@@ -169,9 +169,29 @@ function straightenSourceRisers(root) {
   // Flare the finite boiler shell out to Brown's wide lidded rim.
   // The shell's mouth ends flush under the lid (lid underside y 0.34, same
   // radius), so no ledge or overlap shows a shadow seam round the bowl.
-  const outer = [[-1.40, 0.48], [-1.30, 0.95], [-1.02, 1.42], [-0.53, 1.70],
+  // One smooth bowl through these knots: the radius as a C1 cubic Hermite
+  // function of height (finite-difference tangents), finely sampled, not six
+  // straight frustum bands. Height is the parameter, so the mouth ends
+  // exactly at the lid underside with no overshoot.
+  const bowlKnots = [[-1.40, 0.48], [-1.30, 0.95], [-1.02, 1.42], [-0.53, 1.70],
     [0.08, 1.80], [LID_UNDERSIDE_Y, BOILER_RIM_RADIUS]];
-  const inner = outer.map(([y, r]) => [y + 0.06, r - 0.07]);
+  const outer = [];
+  bowlKnots.forEach(([y0, r0], i) => {
+    const next = bowlKnots[i + 1];
+    if (!next) { outer.push([y0, r0]); return; }
+    const slope = (j) => {
+      const a = bowlKnots[Math.max(0, j - 1)], b = bowlKnots[Math.min(bowlKnots.length - 1, j + 1)];
+      return (b[1] - a[1]) / (b[0] - a[0]);
+    };
+    const [y1, r1] = next, h = y1 - y0, m0 = slope(i) * h, m1 = slope(i + 1) * h;
+    for (let k = 0; k < 12; k += 1) {
+      const t = k / 12, t2 = t * t, t3 = t2 * t;
+      outer.push([y0 + h * t, (2 * t3 - 3 * t2 + 1) * r0 + (t3 - 2 * t2 + t) * m0 + (-2 * t3 + 3 * t2) * r1 + (t3 - t2) * m1]);
+    }
+  });
+  // The inner wall sits 0.06 higher and 0.07 in; the lift eases to zero over
+  // the flare above y 0.08 so the inner wall also ends at the mouth.
+  const inner = outer.map(([y, r]) => [y + 0.06 * Math.min(1, Math.max(0, (LID_UNDERSIDE_Y - y) / (LID_UNDERSIDE_Y - 0.08))), r - 0.07]);
   inner[inner.length - 1][0] = LID_UNDERSIDE_Y;
   b.boiler.geometry.dispose();
   b.boiler.geometry = turned(

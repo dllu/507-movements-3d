@@ -4,9 +4,10 @@ import {boredLatheGeometry} from './bored-lathe-geometry.js';
 import generated from './generated-irregular-gear-profiles.js';
 import {boredPlanarLinkGeometry} from './bored-planar-link.js';
 import {supportMaterial} from './back-plate-support.js';
+import {smoothExtrudeGeometry} from './smooth-extrusion.js';
 const replace=(mesh,geometry)=>{mesh.geometry.dispose();mesh.geometry=geometry;};
 const boreHub=(mesh,bore)=>{const p=mesh.geometry.parameters;replace(mesh,boredLatheGeometry([{radial:Math.max(p.radiusTop,bore+.025),axial:-p.height/2},{radial:Math.max(p.radiusBottom,bore+.025),axial:p.height/2}],bore,64));};
-const contourGeometry=(outline,bore,depth)=>{const shape=new THREE.Shape(outline.map(([x,y])=>new THREE.Vector2(x,y))),hole=new THREE.Path();hole.absarc(0,0,bore,0,Math.PI*2,true);shape.holes.push(hole);const geometry=new THREE.ExtrudeGeometry(shape,{depth,bevelEnabled:false,curveSegments:64}).translate(0,0,-depth/2);geometry.userData={outline,boreRadius:bore,toothProfile:'offline-swept-mating-gear-envelope'};return geometry;};
+const contourGeometry=(outline,bore,depth)=>{const shape=new THREE.Shape(outline.map(([x,y])=>new THREE.Vector2(x,y))),hole=new THREE.Path();hole.absarc(0,0,bore,0,Math.PI*2,true);shape.holes.push(hole);const geometry=smoothExtrudeGeometry(shape,depth,{low:-depth/2});geometry.userData={outline,boreRadius:bore,toothProfile:'offline-swept-mating-gear-envelope'};return geometry;};
 // A flat strap bounded by two eye circles concentric with its pins and their
 // outer common tangents, bored at both eyes.
 function taperedStrapGeometry(length,eyeA,eyeB,bore,depth){
@@ -24,21 +25,28 @@ export function irregularCircularProfile(radius,teeth,depth,bore){
 export function correctIrregularGearFamily(root,id,update){
  const b=root.userData.blocks,g=root.userData.geometry;
  if(id===201){
-  const body=b.eccentricGear.userData.rotor.children[0],profile=irregularCircularProfile(g.driverPitchRadius,g.driverTeeth,.34,.098),offset=g.driverEccentricOffset;
-  const outline=profile.userData.outline.map(p=>p.clone().add(offset)),shape=new THREE.Shape(outline),hole=new THREE.Path();hole.absarc(0,0,.098,0,2*Math.PI,true);shape.holes.push(hole);
-  const geometry=new THREE.ExtrudeGeometry(shape,{depth:.34,bevelEnabled:false,curveSegments:64}).translate(0,0,-.17);geometry.userData={...profile.userData,outline,boreCenter:[0,0]};replace(body,geometry);profile.dispose();
-  // The bore is a snug fit (0.003 clear) on the 0.095 input shaft the gear is keyed to.
-  b.eccentricGear.userData.boreRadius=.098;
-  const rotor=b.pinion.userData.rotor;replace(rotor.children[0],irregularCircularProfile(g.pinionPitchRadius,g.pinionTeeth,.34,.084));
-  // The original quarter-pitch convention belonged to trapezoidal teeth.
-  rotor.children[0].geometry.rotateZ(-Math.PI/(2*g.pinionTeeth));
+  // Brown's irregular 18-tooth driver: the teeth the carried 8-tooth
+  // involute pinion generates as it rolls round the traced pitch curve
+  // (scripts/generate-irregular-gear-profiles.py), extruded flat with smooth
+  // walls. The bore is a snug fit (0.003 clear) on the 0.095 input shaft.
+  const drive=root.userData.transmission.irregularDrive,depth=.34,bore=.098;
+  const body=b.eccentricGear.userData.rotor.children[0],outline=generated[201]?.outline??drive.blankOutline(1024).map(p=>[p.x,p.y]);
+  const shape=new THREE.Shape(outline.map(([x,y])=>new THREE.Vector2(x,y))),hole=new THREE.Path();hole.absarc(0,0,bore,0,2*Math.PI,true);shape.holes.push(hole);
+  const geometry=smoothExtrudeGeometry(shape,depth,{low:-depth/2});
+  geometry.userData={...geometry.userData,outline,boreRadius:bore,toothProfile:generated[201]?'offline-rolling-pinion-generated-envelope':'addendum-blank-without-teeth'};
+  replace(body,geometry);b.eccentricGear.userData.boreRadius=bore;
+  const rotor=b.pinion.userData.rotor,pinionShape=new THREE.Shape(drive.pinionOutline),pinionHole=new THREE.Path();pinionHole.absarc(0,0,.084,0,2*Math.PI,true);pinionShape.holes.push(pinionHole);
+  const pinionGeometry=smoothExtrudeGeometry(pinionShape,depth,{low:-depth/2});pinionGeometry.userData={...pinionGeometry.userData,outline:drive.pinionOutline,boreRadius:.084,toothProfile:'involute-8-tooth-generating-pinion'};
+  replace(rotor.children[0],pinionGeometry);
   boreHub(rotor.children[1],.084);rotor.children[2].visible=false;
   replace(b.slotFollower,new THREE.CylinderGeometry(.125,.125,.36,48));
   const rim=b.rod.children.find(o=>o.userData.role==='slot-follower-roller-rim');replace(rim,new THREE.TorusGeometry(.13,.025,10,48));rim.visible=false;rim.userData.retiredInkOutline=true;
-  root.userData.reconstructionNote='An eccentric circular gear reconstructs the unspecified irregular driver. Its carried pinion rotates continuously, rocking the slotted arm and reciprocating rod A. The belt speed is measured relative to that moving arm; dimensions and speeds are inferred.';
+  root.userData.reconstructionNote='Brown\'s irregular gear: its pitch curve is traced from the plate as a smooth closed five-harmonic curve with 18 teeth, and the pinion on the arm rolls round it, rocking the slotted arm and reciprocating rod A while it turns continuously. The driver\'s teeth are generated by that rolling 8-tooth involute pinion, so the pair is conjugate. The belt speed is measured relative to the moving arm; dimensions and speeds are inferred.';
  }else if(id===196){
   replace(b.wheelBody,contourGeometry(generated[196].outline,g.boreRadius,g.wheelDepth));for(const tooth of b.wheelToothMeshes)tooth.visible=false;
-  const pinionBody=b.pinion.userData.rotor.children[0];replace(pinionBody,irregularCircularProfile(g.pinionPitchRadius,g.pinionTeeth,g.wheelDepth,.070));pinionBody.geometry.rotateZ(-Math.PI/(2*g.pinionTeeth));
+  const pinionBody=b.pinion.userData.rotor.children[0];// The pinion's bore is buried inside its bored hub tube (r 0.070-0.095), so
+  // the two parts share no coincident bore wall.
+  replace(pinionBody,irregularCircularProfile(g.pinionPitchRadius,g.pinionTeeth,g.wheelDepth,.090));pinionBody.geometry.rotateZ(-Math.PI/(2*g.pinionTeeth));
   boreHub(b.wheelHub,.075);b.wheelHub.userData.boreRadius=.075;
   const rotor=b.pinion.userData.rotor;boreHub(rotor.children[1],.070);rotor.children[2].visible=false;
   const arm=b.carrierArm,link=new THREE.Mesh(taperedStrapGeometry(g.carrierLength,.25,.15,.076,.15),arm.children[0].material);link.userData.role='flat-tapered-strap-arm-A-to-stand';
@@ -74,7 +82,7 @@ export function correctIrregularGearFamily(root,id,update){
   root.userData.reconstructionNote='The lower scroll turns uniformly and accelerates the upper scroll during each turn. The stepped seam requires disengagement and a sudden speed reset: this prescribed repeat is not a smooth, continuously engaged physical drive.';
  }
  root.userData.hideGround=true;root.userData.minimumDisplayCycleSeconds=id===191?12:10;
- root.userData.irregularGearReview={report:'docs/validation/191-196-201-contact.json',generatedEnvelope:id!==201,loadedDynamics:false};
+ root.userData.irregularGearReview={report:'docs/validation/191-196-201-contact.json',generatedEnvelope:true,loadedDynamics:false};
  for(const object of[b.contactMarker,b.gearContactMarker,b.wheelPitchLine,b.driverPitchLine,b.drivenPitchLine])if(object)object.visible=false;
  root.traverse(o=>{for(const material of(Array.isArray(o.material)?o.material:[o.material]))if(material)material.fog=false;});
  const visible=[];root.traverseVisible(o=>{if(o.isMesh){o.geometry.computeBoundingBox();visible.push(o);}});

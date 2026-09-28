@@ -411,3 +411,29 @@ test('movement 360 is reviewed while movement 507 remains the next authored draf
   assert.equal(movement507.fidelity, 'authored');
   assert.equal(catalog.movements[506].archetype, 'carrier-driven-25000-to-1-slow-bevel-output-compound-planetary');
 });
+
+test('movement 360 (pass 92): the upright has a round top concentric with the beam pivot pin', () => {
+  const model = createMovementModel(catalog.movements[359]);
+  try {
+    model.root.updateMatrixWorld(true);
+    let post = null;
+    model.root.traverse((o) => { if (o.userData.role === 'beam-pivot-upright') post = o; });
+    assert.ok(post?.isMesh, 'upright is one mesh');
+    const pin = model.root.userData.blocks.beamPivotPin;
+    const axis = pin.getWorldPosition(new THREE.Vector3());
+    const pinRadius = pin.geometry.parameters.radiusTop;
+    const p = post.geometry.attributes.position, v = new THREE.Vector3();
+    let top = 0;
+    for (let i = 0; i < p.count; i += 1) {
+      v.fromBufferAttribute(p, i).applyMatrix4(post.matrixWorld);
+      if (v.y > axis.y + 1e-9) top = Math.max(top, Math.hypot(v.x - axis.x, v.y - axis.y));
+    }
+    assert.ok(top > 1.4 * pinRadius && top < 0.16, `round top radius ${top} about the ${pinRadius} pin`);
+    for (let i = 0; i < p.count; i += 1) {
+      v.fromBufferAttribute(p, i).applyMatrix4(post.matrixWorld);
+      if (v.y > axis.y + 1e-9) near(Math.hypot(v.x - axis.x, v.y - axis.y), top, 1e-6, 'top is an arc about the pin');
+    }
+  } finally {
+    disposeModel(model.root);
+  }
+});

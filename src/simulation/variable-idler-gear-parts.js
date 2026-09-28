@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import ellipseProfile from './generated-elliptical-idler-profile.js';
+import {smoothExtrudeGeometry} from './smooth-extrusion.js';
 import {bandInvoluteGear,involute} from './band-epicyclic-geometry.js';
 import {boredLatheGeometry} from './bored-lathe-geometry.js';
 import {boredPlanarLinkGeometry} from './bored-planar-link.js';
@@ -13,7 +14,7 @@ export function correctVariableIdler(root,id,update){
  const b=root.userData.blocks,g=root.userData.geometry;
  if(id===221){
   circular(b.outputGear,g.outputPitchRadius,g.outputTeeth,g.circularGearDepth,.107);circular(b.compoundOuterGear,g.compoundOuterPitchRadius,g.compoundOuterTeeth,g.circularGearDepth,.107);circular(b.compoundPinion,g.compoundPinionPitchRadius,g.compoundPinionTeeth,g.driverGearDepth,.107);
-  if(ellipseProfile){const shape=new THREE.Shape(ellipseProfile.map(p=>new THREE.Vector2(...p))),hole=new THREE.Path();hole.absarc(0,0,g.boreRadius,0,2*Math.PI,false);shape.holes.push(hole);replace(b.driverBody,new THREE.ExtrudeGeometry(shape,{depth:g.driverGearDepth,bevelEnabled:false,curveSegments:64}).translate(0,0,-g.driverGearDepth/2));for(const tooth of b.driverTeeth)tooth.visible=false;}
+  if(ellipseProfile){const shape=new THREE.Shape(ellipseProfile.map(p=>new THREE.Vector2(...p))),hole=new THREE.Path();hole.absarc(0,0,g.boreRadius,0,2*Math.PI,false);shape.holes.push(hole);replace(b.driverBody,smoothExtrudeGeometry(shape,g.driverGearDepth,{low:-g.driverGearDepth/2}));for(const tooth of b.driverTeeth)tooth.visible=false;}
   replace(b.driverHub,bored(.107,.22,1.08));b.driverHub.position.z=-.13;
   for(const mesh of[b.guideFloor,b.guideInnerIsland,b.guideOuterRail])flatten(mesh,mesh===b.guideFloor?g.guideFloorDepth:g.guideRailDepth);
   replace(b.guideRoller,bored(.107,.142,.12));b.guideRoller.position.z=-.49;g.guideRollerRadius=.142;

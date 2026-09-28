@@ -847,3 +847,81 @@ test('185 (pass 90): one solid wall block, flat eared straps turning with their 
   }
   disposeModel(model.root);
 });
+
+test('185 (pass 92): the reversing handle carries a round boss centred on its fulcrum axis', () => {
+  const model = createMovementModel(catalog.movements[184]);
+  const meshes = model.root.getObjectsByProperty('isMesh', true);
+  const boss = meshes.find((o) => o.userData.role === 'reversing-handle-fulcrum-boss');
+  const axis = meshes.find((o) => o.userData.role === 'fixed-reversing-handle-axis');
+  assert.ok(boss && axis);
+  assert.equal(boss.parent, axis.parent, 'boss turns with the handle, about the axis');
+  assert.ok(Math.hypot(boss.position.x - axis.position.x, boss.position.y - axis.position.y) < 1e-12);
+  const r = boss.geometry.parameters.radiusTop, pin = axis.geometry.parameters.radiusTop;
+  assert.ok(r >= 1.5 * pin, `boss ${r} leaves a margin round the ${pin} axis`);
+  disposeModel(model.root);
+});
+
+test('185 (pass 92): no white parts and no index marks are built (Brown draws none)', () => {
+  const model = createMovementModel(catalog.movements[184]);
+  model.root.traverse((object) => {
+    assert.ok(!/index|white/i.test(object.userData.role ?? ''), `no index mark: ${object.userData.role}`);
+    if (!object.isMesh) return;
+    for (const material of [].concat(object.material)) {
+      const c = material.color;
+      assert.ok(!c || (c.r + c.g + c.b) / 3 < 0.85, `no white material on ${object.userData.role}`);
+    }
+  });
+  disposeModel(model.root);
+});
+
+test('185 (pass 92): every bar that ends in a link ball has its end corners inside the ball', () => {
+  const model = createMovementModel(catalog.movements[184]);
+  const boxes = [];
+  const balls = [];
+  const pins = [];
+  let checked = 0;
+  for (const time of [0, 2.3, 5.9]) {
+    model.update(time, 0.016);
+    model.root.updateMatrixWorld(true);
+    boxes.length = 0;
+    balls.length = 0;
+    pins.length = 0;
+    model.root.traverse((o) => {
+      if (!o.isMesh || !o.visible) return;
+      if (o.geometry.type === 'BoxGeometry') boxes.push(o);
+      if (o.geometry.type === 'SphereGeometry' && o.geometry.parameters.radius > 0.01) balls.push(o);
+      if (o.geometry.type === 'CylinderGeometry' && /pin/.test(o.userData.role ?? '')) {
+        const axis = new THREE.Vector3(0, 1, 0).transformDirection(o.matrixWorld);
+        if (Math.abs(Math.abs(axis.z) - 1) > 1e-6) return;
+        const c = o.getWorldPosition(new THREE.Vector3());
+        const h = o.geometry.parameters.height / 2;
+        pins.push({ axis: c.clone().setZ(0), z0: c.z - h, z1: c.z + h, r: o.geometry.parameters.radiusTop });
+      }
+    });
+    for (const ball of balls) {
+      const centre = ball.getWorldPosition(new THREE.Vector3());
+      const r = ball.geometry.parameters.radius * ball.getWorldScale(new THREE.Vector3()).x;
+      for (const box of boxes) {
+        const p = box.geometry.parameters;
+        const s = box.getWorldScale(new THREE.Vector3());
+        const dims = [p.width * s.x, p.height * s.y, p.depth * s.z];
+        const long = dims.indexOf(Math.max(...dims));
+        const local = box.worldToLocal(centre.clone());
+        const l = [local.x * s.x, local.y * s.y, local.z * s.z];
+        const others = [0, 1, 2].filter((i) => i !== long);
+        if (others.some((i) => Math.abs(l[i]) > 1e-3)) continue;
+        const endOffset = dims[long] / 2 - Math.abs(l[long]);
+        if (Math.abs(endOffset) > r || endOffset < -1e-6) continue;
+        const corner = Math.hypot(dims[others[0]] / 2, dims[others[1]] / 2, endOffset);
+        // A coaxial pin through the joint that covers the bar's depth also hides its corners.
+        const pinR = pins.filter((pin) => pin.axis.distanceTo(centre.clone().setZ(0)) < 1e-3
+          && pin.z0 <= centre.z - dims[2] / 2 + 1e-6 && pin.z1 >= centre.z + dims[2] / 2 - 1e-6)
+          .reduce((m, pin) => Math.max(m, pin.r), 0);
+        assert.ok(corner <= Math.max(r, pinR), `${box.parent?.userData.role} corner ${corner} outside ${ball.parent?.userData.role} ball ${r}`);
+        checked += 1;
+      }
+    }
+  }
+  assert.ok(checked >= 9, `bar ends checked: ${checked}`);
+  disposeModel(model.root);
+});

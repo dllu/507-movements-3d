@@ -374,3 +374,34 @@ test('movement 244 closes after one drum turn and leaves movement 507 authored',
 function measurementFor(model) {
   return model.root.userData.measurement;
 }
+
+test('p92: the scale-ring hook pin stands centred in a round lug end, not on a square box end', () => {
+  const model = createMovementModel(catalog.movements[243]);
+  const byRole = (role) => {
+    let found = null;
+    model.root.traverse((object) => { if (object.userData.role === role) found = object; });
+    assert.ok(found, role);
+    return found;
+  };
+  const pin = byRole('scale-ring-hook-pin');
+  const lug = byRole('scale-ring-hook-lug-under-beam');
+  assert.equal(lug.geometry.type, 'ExtrudeGeometry', 'lug is one flat extrusion');
+  const pinRadius = pin.geometry.parameters.radiusTop;
+  const lugCentre = lug.position.clone();
+  near(lugCentre.x, pin.position.x, 1e-9, 'lug end centred on the pin in x');
+  near(lugCentre.y, pin.position.y, 1e-9, 'lug end centred on the pin in y');
+  const position = lug.geometry.attributes.position;
+  let below = 0;
+  for (let i = 0; i < position.count; i += 1) {
+    const x = position.getX(i);
+    const y = position.getY(i);
+    if (y < -1e-6) {
+      below += 1;
+      near(Math.hypot(x, y), 0.05, 1e-3, 'lug outline below the pin lies on its end arc');
+    }
+    assert.ok(Math.hypot(x, y) >= 0.05 - 1e-3 || y > 0, 'no outline point closer than the arc');
+  }
+  assert.ok(below > 20, 'lug has a round end below the pin');
+  assert.ok(0.05 >= 1.6 * pinRadius, 'end arc radius at least 1.6 pin radii');
+  disposeModel(model.root);
+});

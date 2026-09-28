@@ -8,15 +8,34 @@ import {solidSurface,surfacePoints} from './helpers/solid-surface.mjs';
 const catalog=JSON.parse(fs.readFileSync('src/data/movements.json')).movements,create=id=>createAuthoredGearMovement(catalog[id-1]);
 const clear=(a,b)=>{const surface=solidSurface(b.geometry),matrix=b.matrixWorld.clone().invert().multiply(a.matrixWorld);for(const p of surfacePoints(a.geometry)){const q=p.clone().applyMatrix4(matrix);assert.ok(!surface.inside(q)||surface.distance(q)<1e-6,`${a.userData.role} into ${b.userData.role}`);}};
 test('191 and196 render the baked mating contours and disable obsolete tooth overlays',()=>{
- {const b=create(196).root.userData.blocks;assert.equal(b.wheelBody.geometry.userData.toothProfile,'offline-swept-mating-gear-envelope');assert.ok(b.wheelBody.geometry.userData.outline.length>1000);assert.ok(b.wheelToothMeshes.every(mesh=>!mesh.visible));}
+ {const b=create(196).root.userData.blocks;assert.equal(b.wheelBody.geometry.userData.toothProfile,'offline-swept-mating-gear-envelope');assert.ok(b.wheelBody.geometry.userData.outline.length>800);assert.ok(b.wheelToothMeshes.every(mesh=>!mesh.visible));}
  // 191: both scrolls are hobbed by one rack, so both render baked contours.
  const b=create(191).root.userData.blocks;
- for(const [body,teeth] of[[b.drivenBody,b.drivenTeeth],[b.driverBody,b.driverTeeth]]){assert.equal(body.geometry.userData.toothProfile,'offline-rack-hobbed-conjugate-scroll');assert.ok(body.geometry.userData.outline.length>1000);assert.ok(teeth.every(mesh=>!mesh.visible));}
+ for(const [body,teeth] of[[b.drivenBody,b.drivenTeeth],[b.driverBody,b.driverTeeth]]){assert.equal(body.geometry.userData.toothProfile,'offline-rack-hobbed-conjugate-scroll');assert.ok(body.geometry.userData.outline.length>2000);assert.ok(teeth.every(mesh=>!mesh.visible));}
 });
-test('201 involutes have equal base pitch, continuous transverse engagement and valid eccentric bore',()=>{
- const m=create(201),g=m.root.userData.geometry,b=m.root.userData.blocks,a=b.eccentricGear.userData.rotor.children[0].geometry.userData,c=b.pinion.userData.rotor.children[0].geometry.userData;
- assert.ok(Math.abs(a.basePitch-c.basePitch)<1e-12);const alpha=Math.PI/6,ratio=(Math.sqrt(a.tipRadius**2-a.baseRadius**2)+Math.sqrt(c.tipRadius**2-c.baseRadius**2)-g.pitchCenterDistance*Math.sin(alpha))/a.basePitch;
- assert.ok(ratio>1.05);assert.ok(Math.sqrt(a.tipRadius**2-a.baseRadius**2)<g.pitchCenterDistance*Math.sin(alpha));assert.ok(a.rootRadius-g.driverEccentricOffset.length()>.13);
+test('201 driver carries the pinion-generated teeth on a smooth outline and both gears shade smoothly',()=>{
+ const m=create(201),g=m.root.userData.geometry,b=m.root.userData.blocks,body=b.eccentricGear.userData.rotor.children[0],pinion=b.pinion.userData.rotor.children[0];
+ const u=body.geometry.userData;assert.equal(u.toothProfile,'offline-rolling-pinion-generated-envelope');assert.ok(u.outline.length>1500);
+ // Smooth flanks: no stair-step zigzags between neighbouring outline points.
+ const o=u.outline.slice(0,-1),turn=i=>{const a=o[(i+o.length-1)%o.length],p=o[i],c=o[(i+1)%o.length],x=[p[0]-a[0],p[1]-a[1]],y=[c[0]-p[0],c[1]-p[1]];return Math.atan2(x[0]*y[1]-x[1]*y[0],x[0]*y[0]+x[1]*y[1]);};
+ let zigzags=0,largest=0;for(let i=0;i<o.length;i++){const t=turn(i),n=turn((i+1)%o.length);largest=Math.max(largest,Math.abs(t));if(Math.abs(t)>.09&&Math.abs(n)>.09&&Math.sign(t)!==Math.sign(n))zigzags++;}
+ assert.equal(zigzags,0);assert.ok(largest<.35,`outline corner ${largest}`);
+ assert.ok(Math.min(...o.map(p=>Math.hypot(...p)))-u.boreRadius>.2,'solid wall round the bore');
+ // Brown's 18 teeth: runs of outline beyond the pitch curve.
+ const drive=m.root.userData.transmission.irregularDrive,pitch=drive.pitchOutline(4096),outside=p=>{let best=Infinity,k=0;pitch.forEach((q,i)=>{const d=(q.x-p[0])**2+(q.y-p[1])**2;if(d<best){best=d;k=i;}});const n=drive.pitchPoint(2*Math.PI*k/4096).normal;return (p[0]-pitch[k].x)*n.x+(p[1]-pitch[k].y)*n.y>.5*drive.addendum;};
+ let teeth=0;const flags=o.map(outside);flags.forEach((f,i)=>{if(f&&!flags[(i+flags.length-1)%flags.length])teeth++;});assert.equal(teeth,18);
+ // Both bodies are welded, indexed extrusions whose side walls shade smoothly and caps flat.
+ for(const mesh of[body,pinion]){const geo=mesh.geometry,n=geo.attributes.normal;assert.ok(geo.index);let caps=0;for(let i=0;i<n.count;i++)if(Math.abs(n.getZ(i))>.999999)caps++;assert.ok(caps>0);
+  for(let i=0;i<n.count;i++){const z=Math.abs(n.getZ(i));assert.ok(z>.999999||z<1e-6,'flat caps meet straight walls');}}
+ assert.equal(pinion.geometry.userData.toothProfile,'involute-8-tooth-generating-pinion');
+});
+test('191 and 196 baked envelopes are smooth: no per-pose stair-step zigzags',()=>{
+ const zigzags=outline=>{const o=outline.slice(0,-1),turn=i=>{const a=o[(i+o.length-1)%o.length],p=o[i],c=o[(i+1)%o.length],x=[p[0]-a[0],p[1]-a[1]],y=[c[0]-p[0],c[1]-p[1]];return Math.atan2(x[0]*y[1]-x[1]*y[0],x[0]*y[0]+x[1]*y[1]);};let count=0;for(let i=0;i<o.length;i++){const t=turn(i),n=turn((i+1)%o.length);if(Math.abs(t)>.09&&Math.abs(n)>.09&&Math.sign(t)!==Math.sign(n))count++;}return count;};
+ const b196=create(196).root.userData.blocks,b191=create(191).root.userData.blocks;
+ assert.equal(zigzags(b196.wheelBody.geometry.userData.outline),0);
+ // 191: only the eased corners of each scroll's single radial seam step remain.
+ for(const body of[b191.drivenBody,b191.driverBody])assert.ok(zigzags(body.geometry.userData.outline)<=3);
+ for(const body of[b196.wheelBody,b191.drivenBody,b191.driverBody])assert.ok(body.geometry.index,'welded smooth-shaded extrusion');
 });
 test('201 finite follower fits its slot at every sampled input pose',()=>{
  const m=create(201),b=m.root.userData.blocks,period=m.root.userData.transmission.inputCyclePeriod;

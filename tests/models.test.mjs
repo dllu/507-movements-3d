@@ -281,7 +281,11 @@ test('movement 4 is a tangent-continuous crossed drive between intersecting perp
     belt.userData.curve.curves[6],
   );
   assert.ok(crossing, 'the two long belt leaves cross between the driver and side guides');
-  assert.ok(Math.abs(crossing.z - crossing.otherPoint.z) > 0.2,
+  // Pass 92: the leaves are straight (taut) and part by a rope diameter plus
+  // clearance where they cross, instead of bowing apart.
+  assert.equal(belt.userData.curve.curves[0].isLineCurve3, true);
+  assert.equal(belt.userData.curve.curves[6].isLineCurve3, true);
+  assert.ok(Math.abs(crossing.z - crossing.otherPoint.z) > 2 * 0.05 + 0.03,
     'the crossed leaves occupy opposite axial offsets instead of self-intersecting');
   assert.ok(Math.abs(driver.arc.sweep) > Math.PI, 'crossed layout produces a major wrap on the driver');
   assert.ok(model.root.userData.drivenWrapTurns > 2,
@@ -665,14 +669,27 @@ test('movement 11 uses a tangent-continuous twisted belt without guide pulleys',
   assert.equal(belts.length, 1);
   const curve = belts[0].userData.curve;
   assert.equal(curve.curves.length, 4, 'two contact arcs alternate with two taut free spans');
-  // Taut belt: both free spans are straight lines, each lying in the
-  // mid-plane of the pulley it runs onto (the quarter-turn rule).
+  // Pass 92: the drum is centred in the pulley's plane, and both free spans
+  // are straight common tangents of the two rims that meet each face at its
+  // centre (a symmetric fleet angle rather than the textbook quarter-turn).
   assert.equal(curve.curves[0].isLineCurve3, true);
   assert.equal(curve.curves[2].isLineCurve3, true);
-  assert.ok(Math.abs(curve.curves[0].v1.z - contacts[1].object.position.z) < 1e-12
-    && Math.abs(curve.curves[0].v2.z - contacts[1].object.position.z) < 1e-12, 'right run lies in the pulley plane');
-  assert.ok(Math.abs(curve.curves[2].v1.x - curve.curves[2].v2.x) < 1e-12, 'left run lies in the drum belt plane');
-  assert.ok(Math.abs(curve.curves[2].v2.x - curve.curves[3].center.x) < 1e-12, 'left run meets the drum in its belt plane');
+  const [drum, pulley] = [contacts[0], contacts[1]];
+  assert.ok(Math.abs(drum.object.position.z - pulley.object.position.z) < 1e-12, 'drum centred in the pulley plane');
+  assert.ok(Math.abs(curve.curves[0].v2.z - pulley.object.position.z) < 1e-12
+    && Math.abs(curve.curves[2].v1.z - pulley.object.position.z) < 1e-12, 'both runs meet the pulley at its face centre');
+  assert.ok(Math.abs(curve.curves[0].v1.x - drum.object.position.x) < 1e-12
+    && Math.abs(curve.curves[2].v2.x - drum.object.position.x) < 1e-12, 'both runs meet the drum at its face centre');
+  assert.ok(Math.abs(curve.curves[2].v1.x - curve.curves[2].v2.x) < 1e-9, 'left run is vertical in the elevation, as Brown draws it');
+  for (const run of [curve.curves[0], curve.curves[2]]) {
+    const direction = run.v2.clone().sub(run.v1);
+    for (const contact of [drum, pulley]) {
+      const end = [run.v1, run.v2].find((point) => Math.abs(point.clone().sub(contact.object.position).projectOnPlane(contact.axis).length() - contact.radius) < 1e-9);
+      assert.ok(end, 'each run ends on each rim');
+      const radial = end.clone().sub(contact.object.position).projectOnPlane(contact.axis);
+      assert.ok(Math.abs(radial.dot(direction)) < 1e-9 * direction.length(), 'each run is tangent to the rims it joins');
+    }
+  }
   assertTangentContinuous(curve, 'movement 11 twisted belt');
   const samples = curve.getSpacedPoints(100);
   const xRange = Math.max(...samples.map(({ x }) => x)) - Math.min(...samples.map(({ x }) => x));
@@ -30108,7 +30125,7 @@ test('movement 132 straightens two equal oblique rods to drive one guided platen
       assert.ok(Math.abs(rod.userData.lengthError) < 5e-16);
       assert.ok(Math.abs(rod.userData.lengthRateError) < 1.1e-16);
     });
-    assert.ok(worldPosition(handLever.children[2]).distanceTo(
+    assert.ok(worldPosition(handLever.userData.endAnchor).distanceTo(
       state.handleEndPoint
     ) < 1.5e-15);
     assert.equal(
@@ -30135,7 +30152,7 @@ test('movement 132 straightens two equal oblique rods to drive one guided platen
       model.root.userData.contacts.platenWorkpiece.inContact,
       state.platenInContact,
     );
-    const handlePosition = worldPosition(handLever.children[2]);
+    const handlePosition = worldPosition(handLever.userData.endAnchor);
     const platenIndexPosition = worldPosition(platenMotionIndex);
     const upperIndexPosition = worldPosition(upperRotationIndex);
     if (previousHandlePosition) {

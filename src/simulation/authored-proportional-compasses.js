@@ -441,10 +441,11 @@ function proportionalCompasses(movement) {
   pivotAxle.position.z = 0.14;
   pivotAxle.userData.role =
     'common-pivot-axis-allowing-relative-leg-rotation';
+  // Steel screw head: a white head would read as a hole on the cream page.
   const setScrewHead = cylinderAlongZ(
     0.29,
     0.12,
-    whiteMaterial,
+    matte(PALETTE.muted, { metalness: 0.24, roughness: 0.42 }),
     38,
   );
   setScrewHead.position.z = 0.35;

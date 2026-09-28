@@ -32,7 +32,8 @@ test('403 finite guide pins touch offset rule faces and clear the raised brace t
  const p=new THREE.Vector3();let minimumZ=Infinity;
  for(let i=0;i<vertices.count;i++)minimumZ=Math.min(minimumZ,b.pencilTip.localToWorld(p.fromBufferAttribute(vertices,i)).z);
  near(minimumZ,-.075);
- assert.ok(b.apexFastener.geometry.userData.boreRadius>g.guideRadius);
+ // Pass 92: the fastening is a solid rivet centred in the rules' crossing (no collar or bore round the pencil).
+ assert.equal(b.apexFastener.userData.role,'fastened-crossing-of-the-two-sloping-rules');
  assert.equal(b.board.parent,null);assert.equal(root.userData.hideGround,true);
 });
 

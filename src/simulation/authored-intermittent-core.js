@@ -19690,36 +19690,42 @@ function coaxialArmCrownRatchet(movement) {
   const armBossLocalZ = armBossHeight - armPivotHeight;
   const armRiseAt = (radius) => armBossLocalZ
     * (1 - radius / armPawlPivotRadius);
-  // Through the pawl eye the bar runs level, so the inclined arm stays
-  // inside the eye's bore; the kink (under 0.03) is hidden in the eye.
-  const armEyeHalfSpan = 0.17;
-  const armSegment = (startRadius, startZ, endRadius, endZ) => makeBeam(
-    new THREE.Vector3(startRadius, 0, startZ),
-    new THREE.Vector3(endRadius, 0, endZ),
-    { color: PALETTE.driver, depth: 0.15, thickness: 0.12 },
-  );
-  const armBody = armSegment(
-    0.2,
-    armRiseAt(0.2),
-    armPawlPivotRadius - armEyeHalfSpan + 0.02,
-    armRiseAt(armPawlPivotRadius - armEyeHalfSpan + 0.02),
-  );
+  // Brown's arm is a plain round rod through the pawl's eye. It is two
+  // straight round rods: each runs from its end to the pawl hinge axis at the
+  // barrel's face (so it enters the barrel centred) and a little on into it,
+  // where a level core rod on the hinge axis joins them out of sight. The barrel is a boss on the rod's
+  // centreline, not on the edge of a square bar.
+  const armRodRadius = 0.065;
+  const armRodEntry = 0.1; // along the hinge axis from the pivot, inside the 0.13 barrel face
+  const armRodOverlap = 0.03; // run on into the barrel past the entry point
+  const armRod = (outerRadius, entryRadius) => {
+    const outer = new THREE.Vector3(outerRadius, 0, armRiseAt(outerRadius));
+    const entry = new THREE.Vector3(entryRadius, 0, 0);
+    const direction = entry.clone().sub(outer).normalize();
+    const inner = entry.clone().addScaledVector(direction, armRodOverlap);
+    const length = outer.distanceTo(inner);
+    const rod = new THREE.Mesh(
+      new THREE.CylinderGeometry(armRodRadius, armRodRadius, length, 32),
+      matte(PALETTE.driver, { metalness: 0.12, roughness: 0.58 }),
+    );
+    rod.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction);
+    rod.position.copy(outer).add(inner).multiplyScalar(0.5);
+    rod.userData.rodRadius = armRodRadius;
+    rod.userData.hingeEntry = entry;
+    return rod;
+  };
+  const armBody = armRod(0.2, armPawlPivotRadius - armRodEntry);
   armBody.userData.role = 'source-radial-top-arm-and-handle';
-  const armEyeBar = armSegment(
-    armPawlPivotRadius - armEyeHalfSpan,
-    0,
-    armPawlPivotRadius + armEyeHalfSpan,
-    0,
-  );
-  armEyeBar.userData.role = 'source-radial-top-arm-and-handle';
-  const armHandle = armSegment(
-    armPawlPivotRadius + armEyeHalfSpan - 0.02,
-    armRiseAt(armPawlPivotRadius + armEyeHalfSpan - 0.02),
-    armHandleRadius,
-    armRiseAt(armHandleRadius),
-  );
+  const armHandle = armRod(armHandleRadius, armPawlPivotRadius + armRodEntry);
   armHandle.userData.role = 'source-radial-top-arm-and-handle';
-  armRotor.add(armBody, armEyeBar, armHandle);
+  const armCore = new THREE.Mesh(
+    new THREE.CylinderGeometry(armRodRadius, armRodRadius, 2 * armRodEntry, 32),
+    armBody.material,
+  );
+  armCore.rotation.z = Math.PI / 2;
+  armCore.position.x = armPawlPivotRadius;
+  armCore.userData.role = 'source-radial-top-arm-and-handle';
+  armRotor.add(armBody, armCore, armHandle);
   const armHub = new THREE.Mesh(
     makeAnnulusGeometry(0.105, 0.31, 0.2),
     matte(PALETTE.driver, { metalness: 0.13, roughness: 0.59 }),
@@ -20074,6 +20080,7 @@ function coaxialArmCrownRatchet(movement) {
   root.userData.blocks = {
     arm,
     armBody,
+    armHandle,
     armFulcrumShaft,
     armHub,
     armHubRing,

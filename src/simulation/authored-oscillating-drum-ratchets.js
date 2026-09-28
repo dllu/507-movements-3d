@@ -453,10 +453,18 @@ function oscillatingDrumRatchet(movement) {
   base.position.set(-0.56, -1.40, -0.30);
   base.userData.role = 'source-visible-frame-base';
   frame.add(base);
-  const post = makeBeam(
-    new THREE.Vector3(beamPivot.x, -1.31, -0.34),
-    new THREE.Vector3(beamPivot.x, beamPivot.y, -0.34),
-    { color: PALETTE.frame, depth: 0.34, thickness: 0.23 },
+  // Pass 92: Brown's upright has a round top concentric with the beam's pivot
+  // pin. One flat extrusion (same plane and depth as before), 0.30 wide, its
+  // top a semicircle about the pin, so the pin stands with a 1.6x margin
+  // instead of on the square end of a box.
+  const postHalfWidth = 0.15;
+  const post = new THREE.Mesh(
+    plate(clip.union(
+      poly([[beamPivot.x - postHalfWidth, -1.31], [beamPivot.x + postHalfWidth, -1.31],
+        [beamPivot.x + postHalfWidth, beamPivot.y], [beamPivot.x - postHalfWidth, beamPivot.y]]),
+      poly(circle([beamPivot.x, beamPivot.y], postHalfWidth, 64)),
+    ), -0.51, -0.17),
+    frameMaterial,
   );
   post.userData.role = 'beam-pivot-upright';
   frame.add(post);

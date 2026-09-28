@@ -435,7 +435,7 @@ function directActionEngineParallelMotion(movement) {
     metalness: 0.10,
     roughness: 0.59,
   });
-  const whiteMaterial = matte(PALETTE.white, { roughness: 0.47 });
+  // Working pins are ink (white pins would read as holes on the cream page).
 
   // Brown's frame is one bell-shaped casting with an upper oval window and a
   // lower arched window; F is carried on the web between them, behind the
@@ -709,7 +709,7 @@ function directActionEngineParallelMotion(movement) {
 
   // Each pin is rigid with one member and turns in true bores of the others.
   const pinBetween = (radius, low, high) => {
-    const pin = cylinderAlongZ(radius, high - low, whiteMaterial, 30);
+    const pin = cylinderAlongZ(radius, high - low, darkMaterial, 30);
     pin.position.z = (low + high) / 2;
     return pin;
   };
@@ -1489,7 +1489,7 @@ function jogglingPillarParallelMotion(movement) {
     metalness: 0.10,
     roughness: 0.59,
   });
-  const whiteMaterial = matte(PALETTE.white, { roughness: 0.47 });
+  // Working pins are ink (white pins would read as holes on the cream page).
 
   // Brown shows only the hatched shaft in the pillar's large eye at F and a
   // bracket from the hatched wall at E; the bed, standard and rod guides are
@@ -1688,7 +1688,7 @@ function jogglingPillarParallelMotion(movement) {
   root.add(inputRodParts.group, pistonParts.group);
 
   const pinBetween = (radius, low, high, x) => {
-    const pin = cylinderAlongZ(radius, high - low, whiteMaterial, 30);
+    const pin = cylinderAlongZ(radius, high - low, darkMaterial, 30);
     pin.position.set(x, 0, (low + high) / 2);
     beam.add(pin);
     return pin;

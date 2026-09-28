@@ -323,6 +323,9 @@ export const CUTAWAY_SPECS = {
       'stationary-central-pipe-a-through-journal-turned-above-water'],
     water: ['stationary-water-volume-above-drum-centerline'],
     solid: ['transparent-rear-head-of-case-A'],
+    // Case back muted and drum back stone (PALETTE): paper-coloured backs
+    // read as holes against the page.
+    colors: {'transparent-rear-head-of-case-A': 0x7e8584, 'finite-ported-drum-head': 0xbfb6a0},
     hide: [/^gas-displacing-water-in-compartment-/, 'stationary-level-water-surface-line'],
   },
   482: {

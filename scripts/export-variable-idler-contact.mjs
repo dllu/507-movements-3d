@@ -11,7 +11,7 @@ for(const id of[221,222,223]){const model=(id===223?sectors:idler)(c[id-1]),u=mo
  const row={id,period,parts,pairs:pairs.map(pair=>pair.map(o=>objects.indexOf(o))),poses};
  if(id===221){row.blank=Array.from({length:1024},(_,i)=>{const p=u.profileAtParameter(i*2*Math.PI/1024);return p.point.clone().addScaledVector(p.outwardNormal,.9*u.geometry.module).toArray();});row.generationPoses=Array.from({length:4097},(_,i)=>{model.update(period*i/4096);model.root.updateMatrixWorld(true);return transform(b.driverAssembly,b.compoundPinion);});}
  if(id===223)row.generationParts=objects.map(gear=>{const web=gear.children[0].clone();web.geometry=gear.userData.generationWebGeometry??web.geometry;return{triangles:project([web,gear.children[1],...gear.userData.toothMeshes],true)};});
- if(id===223)row.generationPoses=Array.from({length:4097},(_,i)=>{model.update(period*i/4096);model.root.updateMatrixWorld(true);return pairs.map(([a,b])=>transform(a,b));});
+ if(id===223)row.generationPoses=Array.from({length:32769},(_,i)=>{model.update(period*i/32768);model.root.updateMatrixWorld(true);return pairs.map(([a,b])=>transform(a,b));});
  rows.push(row);
 }
 const files=['src/simulation/authored-elliptical-idler-gears.js','src/simulation/authored-stepped-sector-gears.js','src/simulation/variable-idler-gear-parts.js','src/simulation/generated-elliptical-idler-profile.js','src/simulation/band-epicyclic-geometry.js','src/simulation/primitives.js','src/simulation/variable-sector-parts.js','src/simulation/generated-stepped-sector-relief.js','src/simulation/bored-lathe-geometry.js','src/simulation/bored-planar-link.js','scripts/review-variable-idler-contact.py','scripts/export-variable-idler-contact.mjs'];

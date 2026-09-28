@@ -112,7 +112,7 @@
     },
     {
       "file": "src/simulation/primitives.js",
-      "sha256": "c09dbdfc48b4680ae1194d6b1471ff33d437bc8e8a28f6b290044eba746c9367"
+      "sha256": "e28fda6a3c9e228a8af6601dbe7728e8fd7812ff947073ee5562a3fe0478bb93"
     },
     {
       "file": "src/simulation/mujoco-ball-governor/equilibrium.js",
@@ -197,5 +197,5 @@
   "nativeSamples": 83553,
   "samples": 1490,
   "bytes": 482597,
-  "sha256": "0a174b3fbc29836f7909734f3d743a85202818e776773f0bb342f743e0b85173"
+  "sha256": "a2dafa5b13686ff4943841c6115b3d8ffc19131c64b811017fb7dacf7c0c8958"
 }

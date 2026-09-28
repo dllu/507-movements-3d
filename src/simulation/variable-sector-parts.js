@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import contours from './generated-stepped-sector-relief.js';
+import {smoothExtrudeGeometry} from './smooth-extrusion.js';
 import {boredLatheGeometry} from './bored-lathe-geometry.js';
 const replace=(mesh,geometry)=>{mesh.geometry.dispose();mesh.geometry=geometry;};
 export function correctVariableSectors(root){
@@ -8,7 +9,7 @@ export function correctVariableSectors(root){
  if(contours)for(const[index,sector]of b.outputSectors.entries()){
   sector.userData.generationWebGeometry=sector.children[0].geometry;
   const shape=new THREE.Shape(contours[index].map(p=>new THREE.Vector2(...p))),hole=new THREE.Path();hole.absarc(0,0,.107,0,Math.PI*2,false);shape.holes.push(hole);
-  replace(sector.children[0],new THREE.ExtrudeGeometry(shape,{depth:.22,bevelEnabled:false,curveSegments:64}).translate(0,0,-.11));sector.children[1].visible=false;for(const tooth of sector.userData.toothMeshes)tooth.visible=false;sector.userData.finiteProfile='offline-swept-transition-relief';
+  replace(sector.children[0],smoothExtrudeGeometry(shape,.22,{low:-.11}));sector.children[1].visible=false;for(const tooth of sector.userData.toothMeshes)tooth.visible=false;sector.userData.finiteProfile='offline-swept-transition-relief';
  }
  for(const index of[b.driverFaceIndex,b.outputFaceIndex]){replace(index.children[0],new THREE.BoxGeometry(.54,.07,.028));index.children[0].position.x=.50;}
  root.userData.hideGround=true;root.userData.minimumDisplayCycleSeconds=12;

@@ -1,5 +1,6 @@
 import {correctScriberDynamometer} from './scriber-dynamometer-gears.js';
 import * as THREE from 'three';
+import { crankArmOutline, turnedHandleGeometry, HANDLE_FOOT_EMBED } from './turned-handle.js';
 import { makeSeeThrough } from './see-through-part.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { circle, plate, poly, polygonClipping } from './finite-plate-geometry.js';
@@ -718,24 +719,40 @@ function spiralCylinderScriber(movement) {
   crankRotor.position.set(2.05, apex.y, apex.z);
   crankRotor.userData.axis = X_AXIS.clone();
   crankRotor.userData.role = 'hand-crank-keyed-to-input-shaft';
+  // Pass 92: Brown's crank arm tapers from the shaft to a narrow end that
+  // carries a short turned knob (a slim neck and a round bulb). The arm is
+  // one extrusion in the crank's plane (thickness 0.11 along the shaft) whose
+  // ends are arcs concentric with the shaft and the knob, so the knob's foot
+  // stands inside the arm's end with a margin all round; the knob is the
+  // shared turned handle, lathed about the shaft's direction.
+  const crankHandleRadius = 0.74;
+  const crankArmHalfThickness = 0.055;
   const crankArm = new THREE.Mesh(
-    new THREE.BoxGeometry(0.11, 0.74, 0.105),
+    plate(poly(crankArmOutline({ handleX: crankHandleRadius, handleEndRadius: 0.075,
+      hubEndRadius: 0.11 })), -crankArmHalfThickness, crankArmHalfThickness)
+      .rotateZ(Math.PI / 2).rotateY(Math.PI / 2),
     driverMaterial,
   );
-  crankArm.position.y = 0.37;
   crankArm.userData.role = 'input-crank-arm';
-  crankRotor.add(crankArm);
-  const crankHandle = cylinderAlongX(0.075, 0.43, darkMaterial, 28);
-  crankHandle.position.set(0.19, 0.74, 0);
-  crankHandle.userData.role = 'free-turning-hand-crank-handle';
-  crankRotor.add(crankHandle);
-  const crankKnob = new THREE.Mesh(
-    new THREE.SphereGeometry(0.095, 20, 14),
-    driverMaterial,
+  // Pass 92 (p92-e): Brown draws the crank hanging below the shaft with its
+  // knob at the bottom. The throw is keyed half a turn round the shaft, so at
+  // the default pose (input angle 18 degrees) it hangs down as drawn; the
+  // shaft and gear angles are unchanged.
+  const crankThrow = new THREE.Group();
+  crankThrow.rotation.x = Math.PI;
+  crankThrow.userData.role = 'hand-crank-throw-keyed-below-shaft';
+  crankRotor.add(crankThrow);
+  crankThrow.add(crankArm);
+  const crankHandle = new THREE.Mesh(
+    turnedHandleGeometry({ height: 0.32 + HANDLE_FOOT_EMBED, side: [
+      [0.055, 0], [0.045, 0.12], [0.045, 0.3], [0.09, 0.5], [0.12, 0.7],
+    ] }),
+    darkMaterial,
   );
-  crankKnob.position.set(0.41, 0.74, 0);
-  crankKnob.userData.role = 'crank-handle-end-knob';
-  crankRotor.add(crankKnob);
+  crankHandle.rotation.z = -Math.PI / 2;
+  crankHandle.position.set(crankArmHalfThickness - HANDLE_FOOT_EMBED, crankHandleRadius, 0);
+  crankHandle.userData.role = 'free-turning-hand-crank-turned-knob';
+  crankThrow.add(crankHandle);
   root.add(crankRotor);
 
   const rackAssembly = new THREE.Group();

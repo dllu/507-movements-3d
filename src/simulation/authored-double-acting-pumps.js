@@ -172,7 +172,9 @@ function doubleActingPump(movement) {
     metalness: 0.18,
     roughness: 0.52,
   });
-  const interiorMaterial = matte(PALETTE.white, { roughness: 0.82 });
+  // The casing's rear half behind the section plane: plain muted, since
+  // white would read as holes on the cream page.
+  const interiorMaterial = matte(PALETTE.muted, { roughness: 0.82 });
 
   // Planar section pieces: polygons in plate pixels, extruded through the
   // casing depth with the cut face towards the viewer.

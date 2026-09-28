@@ -146,6 +146,9 @@ function parabolaDrawingInstrument(movement) {
     roughness: 0.49,
   });
   const whiteMaterial = matte(PALETTE.white, { roughness: 0.42 });
+  // The thread's end and bight take the thread's ink: white ones would read
+  // as holes on the cream page and the pale board.
+  const threadMaterial = darkMaterial;
   const boardMaterial = matte(0xdadad4, {
     metalness: 0.02,
     roughness: 0.92,
@@ -321,7 +324,7 @@ function parabolaDrawingInstrument(movement) {
   square.add(bladeEnd);
   const threadAnchor = new THREE.Mesh(
     new THREE.SphereGeometry(0.075, 18, 12),
-    whiteMaterial,
+    threadMaterial,
   );
   threadAnchor.position.set(0, directrixY - bladeLength, 0.220);
   threadAnchor.userData.role =
@@ -359,7 +362,7 @@ function parabolaDrawingInstrument(movement) {
   pencilPoint.userData.role = 'pencil-point-on-parabola';
   const bightCollar = new THREE.Mesh(
     new THREE.TorusGeometry(0.12, 0.026, 10, 36),
-    whiteMaterial,
+    threadMaterial,
   );
   bightCollar.position.z = 0.255;
   bightCollar.userData.role = 'white-thread-bight-around-pencil';

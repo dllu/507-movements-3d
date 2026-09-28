@@ -576,3 +576,29 @@ test('movement 328 p89: each wheel-C web is bored clear inside its hub', () => {
   });
   assert.equal(checked, 2);
 });
+
+test('movement 328 p92: the crosshead ends are round about their rod-joint pins', () => {
+  const model = createMovementModel(catalog.movements[327]);
+  const { crossheadBar, crossheadPins } = model.root.userData.blocks;
+  const p = crossheadBar.geometry.attributes.position;
+  const pinRadius = crossheadPins[0].geometry.parameters.radiusTop;
+  let endRadius = 0;
+  for (const pin of crossheadPins) {
+    const cx = pin.position.x, side = Math.sign(cx);
+    let outer = 0, farthest = -Infinity;
+    for (let i = 0; i < p.count; i += 1) {
+      const x = p.getX(i), y = p.getY(i);
+      if (side * (x - cx) > 1e-9) outer = Math.max(outer, Math.hypot(x - cx, y));
+      farthest = Math.max(farthest, side * x);
+    }
+    // Every outline vertex beyond the pin axis lies on one circle about it.
+    for (let i = 0; i < p.count; i += 1) {
+      const x = p.getX(i), y = p.getY(i);
+      if (side * (x - cx) > 1e-9) near(Math.hypot(x - cx, y), outer, 1e-6, 'crosshead end arc about the pin');
+    }
+    near(farthest, side * cx + outer, 1e-6, 'bar runs past the pin by its end radius');
+    endRadius = outer;
+  }
+  assert.ok(endRadius > 1.3 * pinRadius, `pin margin ${endRadius / pinRadius}`);
+  disposeModel(model.root);
+});

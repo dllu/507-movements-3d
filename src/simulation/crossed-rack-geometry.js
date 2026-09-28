@@ -86,9 +86,10 @@ export function makeCrossedRackGeometry({hookRelief={left:704,right:524}}={}){
    hook=clip.intersection(hook,poly(region.map(local)));
   }
   attach(key+'HookWeb',plate(hook,-.025,low),key,PALETTE.brass);profiles[key]=hook;
-  attach(key+'PawlPin',disk(pinRadius,-.235,high+.005,128),'lever',PALETTE.muted,[...P,0]);
+  // The pin stops just inside the eye's bore: nothing stands in front of
+  // the flat pawl plate.
+  attach(key+'PawlPin',disk(pinRadius,-.235,high-.004,128),'lever',PALETTE.muted,[...P,0]);
   attach(key+'PinRearCap',disk(boreRadius+.010,-.247,-.235,128),'lever',PALETTE.muted,[...P,0]);
-  attach(key+'PinFrontCap',disk(boreRadius+.010,high+.005,high+.016,128),'lever',PALETTE.muted,[...P,0]);
  }
  const anchorAt=(key,q)=>rotate(p.anchors[key],q),
   setState=({q=0,rackY=0,leftAngle=0,rightAngle=0}={})=>{
@@ -101,6 +102,6 @@ export function makeCrossedRackGeometry({hookRelief={left:704,right:524}}={}){
  root.userData={parts,families,blocks,geometry:p,profiles,source,anchorAt,setState,masses,
   hideGround:true,cameraFov:8,shadowCameraHalfExtent:5.5,shadowBias:-.00003,shadowNormalBias:.004,
   mechanism:'crossed-hook-slotted-rack-drive',fidelity:'authored',
-  qualification:'Source-measured finite 16-tooth rack, tapered lever and crossed hooked pawls. Axial layers, bearing details and concealed relief behind the visible hook toes are reconstruction assumptions. Source pose is prescribed for geometry review; contact, free motion and finite travel are unverified.'};
+  qualification:'Source-measured finite 16-tooth rack, tapered lever and crossed hooked pawls. Axial layers, flush pivot pins without front caps and concealed relief behind the visible hook toes are reconstruction assumptions. Source pose is prescribed for geometry review; contact, free motion and finite travel are unverified.'};
  setState();markShadows(root);return{root,setState,update:()=>{},cameraDirection:new THREE.Vector3(0,0,10)};
 }

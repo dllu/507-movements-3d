@@ -20,7 +20,7 @@
     },
     {
       "file": "src/simulation/authored-drawing-instruments.js",
-      "sha256": "c08b876ddcd84bb84e49801da807cd3490d4964f1db235bb79746b1b16964450"
+      "sha256": "b521450d1b6d42f7d45de152ac137c179298f875fa2f76e1881dcaaabda8176b"
     },
     {
       "file": "src/simulation/finite-plate-geometry.js",

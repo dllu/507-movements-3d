@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { PALETTE } from './primitives.js';
+import { applyShadowPolicy } from './shadow-policy.js';
 import { loadMovementModel } from './model-loader.js';
 import { disposeMovementModel, disposeObject3D } from './dispose-model.js';
 import {
@@ -215,7 +216,7 @@ export class MovementEngine {
     this.renderer.localClippingEnabled = Boolean(this.model.root.userData.localClippingEnabled);
     this.playbackTimeScale = this.model.root.userData.animationTiming
       ?.playbackTimeScale ?? 1;
-    this.scene.add(this.model.root);
+    this.scene.add(applyShadowPolicy(this.model.root));
     this.model.update?.(0, 0);
     this.fitCamera(this.model.cameraDirection);
     this.addGround();

@@ -448,6 +448,12 @@ test('movement 320 click is seated in a root against a tooth face whenever it ho
   // One flat plate: the old pin-and-cone click is gone.
   assert.equal(click.group.children.filter((o) => o.isMesh && o.visible).length, 1);
   assert.equal(click.body.geometry.userData.plate.polygons.length, 1);
+  // Pass 91: one simple curved bar from the eye to the root, with no hooked
+  // arm or wedge: nothing reaches past the tip or far outside the eye-tip chord.
+  assert.equal(click.body.userData.role, 'flat-curved-bar-click-seated-in-root');
+  const ring = click.body.geometry.userData.plate.polygons[0][0];
+  assert.ok(ring.every((q) => Math.hypot(...q) <= geometry.clickLength + 0.03), 'nothing beyond the tip');
+  assert.ok(Math.max(...ring.map(([, y]) => Math.abs(y))) < 0.25, 'a shallow bow');
   const noseWorld = () => {
     model.root.updateMatrixWorld(true);
     return new THREE.Vector3(geometry.clickLength, 0, 0).applyMatrix4(click.group.matrixWorld);

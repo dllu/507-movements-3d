@@ -1692,7 +1692,7 @@ function stationaryBeamEngineParallelMotion(movement) {
     metalness: 0.09,
     roughness: 0.61,
   });
-  const whiteMaterial = matte(PALETTE.white, { roughness: 0.47 });
+  // Working pins are ink (white pins would read as holes on the cream page).
 
   // Brown shows only the tapered beam with its large fulcrum boss and
   // sectioned shaft O, the pins, the drop links, the lower bars and a plain
@@ -1864,7 +1864,7 @@ function stationaryBeamEngineParallelMotion(movement) {
     glandRadius: 0.12, boreRadius: 0.32, outerRadius: 0.45, role: 'piston-cylinder-below-plate-crop' }));
 
   const pinOn = (parent, name, x, low, high) => {
-    const pin = cylinderAlongZ(pinRadius[name], high - low, whiteMaterial, 30);
+    const pin = cylinderAlongZ(pinRadius[name], high - low, darkMaterial, 30);
     pin.position.set(x, 0, (low + high) / 2);
     pin.userData.role = `common-working-pin-${name}`;
     parent.add(pin);

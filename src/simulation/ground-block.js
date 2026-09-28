@@ -6,8 +6,10 @@ import * as THREE from 'three';
 // ground colour so the edges read under any light. No hatch strokes or
 // hatch textures are drawn on any face.
 
-const GROUND_COLOR = 0xe2ddd1;
-const SIDE_COLOR = 0xcfc9bb;
+// A warm stone, darker than the cream page (#f3f0e9) so the ground reads as a
+// solid rather than as blank paper or a hole.
+const GROUND_COLOR = 0xbfb6a0;
+const SIDE_COLOR = 0xa99f88;
 
 export function groundBlockMaterials() {
   const side = new THREE.MeshStandardMaterial({color: SIDE_COLOR, roughness: 0.92, metalness: 0.02});

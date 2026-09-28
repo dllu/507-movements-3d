@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
 import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
-import { creaseIndexedNormals, creaseLatheNormals, creaseNormalsIn } from '../src/simulation/crease-normals.js';
+import { creaseIndexedNormals, creaseLatheNormals, creaseNormalsIn, smoothFacetNormals } from '../src/simulation/crease-normals.js';
+import { analyseGeometry } from '../scripts/screen-faceting.mjs';
 import { makePulley } from '../src/simulation/primitives.js';
 import { bevelBodyGeometry, bevelToothGeometry } from '../src/simulation/bevel-geometry.js';
 import { LaidRopeGeometry } from '../src/simulation/laid-rope.js';
@@ -142,4 +143,34 @@ test('open laid-rope strand ends are flat caps', () => {
   assert.equal(caps, 3 * 2 * rope._laid.around);
   rope.setTravel(0.3);
   assert.ok(rope.attributes.position.array.every(Number.isFinite));
+});
+
+test('flat-shaded extrusions of sampled curves get smooth walls, flat caps and sharp corners', () => {
+  const arc = (count) => new THREE.Shape(Array.from({ length: count }, (_, i) => new THREE.Vector2(Math.cos(2 * Math.PI * i / count), Math.sin(2 * Math.PI * i / count))));
+  const disc = new THREE.ExtrudeGeometry(arc(96), { depth: 0.3, bevelEnabled: false });
+  const positions = disc.attributes.position.array.slice();
+  const before = analyseGeometry(disc, { pxPerUnit: 700 / 2 });
+  assert.ok(before.faceted.edges > 90, 'three shades each side triangle flat');
+  const root = new THREE.Group(); root.add(new THREE.Mesh(disc));
+  creaseNormalsIn(root);
+  const after = analyseGeometry(disc, { pxPerUnit: 700 / 2 });
+  assert.equal(after.faceted.edges, 0);
+  assert.equal(after.smoothed.edges, 0, 'the caps stay creased from the wall');
+  assert.deepEqual(disc.attributes.position.array, positions, 'positions untouched');
+  assert.equal(disc.groups.length, 2);
+  // Caps stay exactly flat.
+  const n = disc.attributes.normal;
+  for (let i = 0; i < n.count; i += 1) if (Math.abs(n.getZ(i)) > 0.5) assert.ok(Math.abs(Math.abs(n.getZ(i)) - 1) < 1e-6);
+  // A hexagonal prism and a lever of two long walls kinked 12 degrees keep
+  // every face flat.
+  const hex = smoothFacetNormals(new THREE.ExtrudeGeometry(arc(6), { depth: 0.3, bevelEnabled: false }));
+  assert.ok(worstFaceDeviation(hex) < 1e-3);
+  const k = Math.tan(THREE.MathUtils.degToRad(12));
+  const lever = smoothFacetNormals(new THREE.ExtrudeGeometry(new THREE.Shape([[0, 0], [2, 0], [4, 2 * k], [4, 2 * k + 0.3], [2, 0.3], [0, 0.3]]
+    .map((p) => new THREE.Vector2(...p))), { depth: 0.1, bevelEnabled: false }));
+  assert.ok(worstFaceDeviation(lever) < 1e-3);
+  // Authored shared-vertex normals are left alone.
+  const sphere = new THREE.SphereGeometry(1, 16, 8); const normals = sphere.attributes.normal.array.slice();
+  smoothFacetNormals(sphere);
+  assert.deepEqual(sphere.attributes.normal.array, normals);
 });

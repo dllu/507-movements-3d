@@ -17,7 +17,7 @@ export function makePinnedElbow(){
  add('diskHub',ring(.164,.238,0,.12,128),'input',PALETTE.ink);
  place('crankPin',disk(pinRadius,0,.88,128),'input',g.pin,PALETTE.brass);
  place('crankRetainer',ring(pinRadius,pinRadius+.045,.824,.88,128),'input',g.pin,PALETTE.ink);
- place('crankFace',disk(pinRadius*.72,.88,.90,128),'input',g.pin,PALETTE.white);
+ place('crankFace',disk(pinRadius*.72,.88,.90,128),'input',g.pin,PALETTE.brass);
  const outputLocal=[g.outputLength*Math.cos(g.includedAngle),g.outputLength*Math.sin(g.includedAngle)];
  const inputLocal=[g.inputLength,0];
  const taper=(a,b,ra,rb)=>{const dx=b[0]-a[0],dy=b[1]-a[1],length=Math.hypot(dx,dy),nx=-dy/length,ny=dx/length;return poly([[a[0]+nx*ra,a[1]+ny*ra],[b[0]+nx*rb,b[1]+ny*rb],[b[0]-nx*rb,b[1]-ny*rb],[a[0]-nx*ra,a[1]-ny*ra]]);};

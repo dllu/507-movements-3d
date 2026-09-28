@@ -16,12 +16,12 @@ export function addBellCrankRopeEnds(visual){
  const group=new THREE.Group();group.name='ropeEndsBeyondCrop';visual.root.add(group);
  // Input: a rigid lead below the moving end.
  const inputLead=Math.max(.8,(inputEnd0.y-(bounds.min.y-1.35))/Math.max(.3,-inputDir.y));
- const inputRope=new THREE.Mesh(new LaidRopeGeometry(new THREE.LineCurve3(inputDir.clone().multiplyScalar(inputLead),new THREE.Vector3()),32,r,8,false,{travel:inputLead}),ropeMaterial(PALETTE.driver));
+ const inputRope=new THREE.Mesh(new LaidRopeGeometry(new THREE.LineCurve3(inputDir.clone().multiplyScalar(inputLead),new THREE.Vector3()),32,r,8,false,{travel:inputLead}),ropeMaterial(PALETTE.rope));
  inputRope.name='inputLead';
  // Output: a rigid lead running on along the cord's line past the right crop.
  // The output cord's lay is measured from its bell-crank end.
  const outputLead=Math.max(.7,bounds.max.x+1.25-outputEnd0.x)+1.1,outputCordLength=f.cordLengths.output.reduce((s,v)=>s+v,0);
- const outputRope=new THREE.Mesh(new LaidRopeGeometry(new THREE.LineCurve3(new THREE.Vector3(),outputDir.clone().multiplyScalar(outputLead)),96,r,8,false,{travel:-outputCordLength}),ropeMaterial(PALETTE.driven));
+ const outputRope=new THREE.Mesh(new LaidRopeGeometry(new THREE.LineCurve3(new THREE.Vector3(),outputDir.clone().multiplyScalar(outputLead)),96,r,8,false,{travel:-outputCordLength}),ropeMaterial(PALETTE.rope));
  outputRope.name='outputLead';
  group.add(inputRope,outputRope);
  markShadows(group);

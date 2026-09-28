@@ -75,8 +75,10 @@ test('movement 274 is one parabolic-guide flyball governor, not a Watt linkage',
   assert.equal(blocks.sideAssemblies.length, 2);
   assert.equal(blocks.shoulderCurves.length, 2);
   assert.equal(blocks.sleeveAssembly.parent, blocks.governorRotor);
-  for (const shoulder of blocks.shoulderCurves) {
-    assert.equal(shoulder.parent, blocks.governorRotor);
+  for (const [index, shoulder] of blocks.shoulderCurves.entries()) {
+    // p92: each shoulder is rigid with its guide side (eye, band and pin).
+    assert.equal(shoulder.parent, blocks.sideAssemblies[index].side);
+    assert.equal(shoulder.parent.parent, blocks.governorRotor);
   }
   blocks.sideAssemblies.forEach((assembly, sideIndex) => {
     assert.equal(assembly.side.parent, blocks.governorRotor);
@@ -596,5 +598,26 @@ test('movement 274 closes after two spindle turns and leaves movement 507 author
   assert.equal(catalog.movements[506].archetype, 'carrier-driven-25000-to-1-slow-bevel-output-compound-planetary');
   assert.equal(model289.root.userData.fidelity, 'authored');
   disposeModel(model289.root);
+  disposeModel(model.root);
+});
+
+// p92: Brown's round eye at the top of each guide arm B is concentric with the
+// top fastening pin, deep enough to take the shoulder's round end, and rigid
+// with the shoulder, band and pin in the guide side's frame.
+test('movement 274 top fastening pins stand centred in round eyes on the guide arms', () => {
+  const model = createMovementModel(catalog.movements[273]);
+  const { blocks, geometry } = model.root.userData;
+  for (const [index, assembly] of blocks.sideAssemblies.entries()) {
+    const eye = assembly.topEye;
+    assert.ok(eye, 'eye exists');
+    assert.equal(eye.parent, assembly.side);
+    assert.equal(blocks.shoulderCurves[index].parent, assembly.side);
+    vectorNear(eye.position, assembly.guidePin.position, 1e-9, 'eye on the pin axis');
+    const pinRadius = assembly.guidePin.children[0].geometry.parameters.radiusTop;
+    const { radiusTop, height } = eye.geometry.parameters;
+    assert.ok(radiusTop >= 1.5 * pinRadius, `eye radius ${radiusTop} vs pin ${pinRadius}`);
+    assert.ok(height / 2 > 0.095 + 0.01, 'eye encloses the shoulder tube end');
+    assert.equal(radiusTop, geometry.topEyeRadius);
+  }
   disposeModel(model.root);
 });

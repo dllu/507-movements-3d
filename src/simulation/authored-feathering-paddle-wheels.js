@@ -236,6 +236,7 @@ function featheringPaddleWheel(movement) {
     transparent: true,
   });
   markerMaterial.depthWrite = false;
+  const controlPinMaterial = matte(PALETTE.muted, { metalness: 0.2, roughness: 0.42 });
 
   const fixedEccentric = addRole(new THREE.Mesh(
     plate(clip.difference(poly(circle([0, 0], stationaryEccentricRadiusSceneUnit, 128)),
@@ -323,7 +324,8 @@ function featheringPaddleWheel(movement) {
     radialArm.position.x = controlRingRadiusSceneUnit + radialLength / 2;
     const controlPin = addRole(new THREE.Mesh(
       new THREE.CylinderGeometry(0.105, 0.105, .28, 24),
-      markerMaterial,
+      // An opaque steel pin: the white marker finish read as a hole.
+      controlPinMaterial,
     ), `control-pin-at-end-of-ring-arm-${index + 1}`);
     controlPin.rotation.x = Math.PI / 2;
     controlPin.position.set(armRadiusSceneUnit, 0, -.055);

@@ -79,7 +79,14 @@ function castCasing(root,b,p){
  shaftBearing.rotation.z=Math.PI/2;shaftBearing.position.set(1.15,-2.39,0);shaftBearing.userData.role='fixed-foot-bearing-of-shaft-M';root.add(shaftBearing);
  // Lugs join the lever pivot and the spring anchor to the casing.
  const lug=(x,y0,y1,z0,z1,role)=>{const o=new THREE.Mesh(new THREE.BoxGeometry(.16,y1-y0,z1-z0),material);o.position.set(x,(y0+y1)/2,(z0+z1)/2);o.userData.role=role;root.add(o);return o;};
- lug(b.leverPivotBearing.position.x,3.40,b.leverPivotBearing.position.y,-.2,.2,'casing-lug-carrying-lever-N-pivot');
+ // Pass 92: the pivot lug is one extrusion whose top is a round eye
+ // concentric with lever N's pin (r .13 round the .07 pin), not a square
+ // end cut at the pin's axis.
+ {const px=b.leverPivotBearing.position.x,py=b.leverPivotBearing.position.y,shape=new THREE.Shape();
+  shape.moveTo(px-.08,3.40);shape.lineTo(px+.08,3.40);shape.lineTo(px+.08,py-Math.sqrt(.13*.13-.08*.08));
+  shape.absarc(px,py,.13,-Math.acos(.08/.13),Math.PI+Math.acos(.08/.13),false);shape.lineTo(px-.08,3.40);
+  const geometry=new THREE.ExtrudeGeometry(shape,{depth:.4,bevelEnabled:false,curveSegments:48});geometry.translate(0,0,-.2);
+  const o=new THREE.Mesh(geometry,material);o.userData.role='casing-lug-carrying-lever-N-pivot';root.add(o);}
  const eye=b.springLowerEye.position;const spur=new THREE.Mesh(new THREE.BoxGeometry(.3,.12,.5),material);spur.position.set(eye.x+.12,eye.y-.18,.08);spur.userData.role='casing-lug-anchoring-spring-L';root.add(spur);
  // No white indices or index teeth are drawn.
  for(const o of[b.inputShaftIndex,...b.rotorFaceIndexes,b.rotorIndexBead,b.engineInputIndex,b.valveRodIndex])o.removeFromParent();

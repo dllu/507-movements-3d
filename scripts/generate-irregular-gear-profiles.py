@@ -5,6 +5,20 @@ from shapely.affinity import affine_transform
 import math
 from shapely.geometry import Polygon as _P
 rows=json.load(open('/dev/shm/irregular-profile-input.json'))
+EASE=.002
+# The opening leaves residual micro-scallops of about 1e-5 in concave roots
+# (the cutter's own corner arcs). A 1e-4 Douglas-Peucker pass keeps outline
+# vertices only where the true curve bends; it moves the outline at most
+# 1e-4, well inside the 0.0008 cutter clearance.
+SMOOTH_TOLERANCE=.0001
+def ease(shape):
+ # Each cutter pose leaves a tiny cusp between neighbouring cuts, which
+ # renders as a jagged, stair-stepped flank. A morphological opening by a
+ # small disc removes only those cusps (it can only remove material), leaving
+ # smooth flanks and roots and slightly eased corners.
+ opened=shape.buffer(-EASE,resolution=32).buffer(EASE,resolution=32)
+ pieces=list(opened.geoms) if opened.geom_type=='MultiPolygon' else [opened]
+ return max(pieces,key=lambda p:p.area)
 output={}
 
 def hob_scroll(rack,name,cutter_offset,backlash):
@@ -77,6 +91,8 @@ for row in rows:
   sweep=unary_union([affine_transform(driven,invert(q)) for q in near]).buffer(clearance,resolution=4)
   driver=driver.difference(sweep.intersection(seam_shelf('driver',1.6)))
   driver=max(getattr(driver,'geoms',[driver]),key=lambda g:g.area)
+  driven=ease(driven).simplify(SMOOTH_TOLERANCE,preserve_topology=True)
+  driver=ease(driver).simplify(SMOOTH_TOLERANCE,preserve_topology=True)
   areas=[];gaps=[]
   for pose in row['auditPoses']:
    other=affine_transform(driver,pose);areas.append(driven.intersection(other).area);gaps.append(driven.distance(other))
@@ -90,13 +106,20 @@ for row in rows:
  if row['id']==191:
   actual=next(r for r in json.load(open('/dev/shm/irregular-contact-input.json'))['results'] if r['id']==191)
   cutter=unary_union([Polygon(triangle) for triangle in actual['trianglesB']])
- if row['id']!=201:
-  cutter=cutter.buffer(.0012 if row['id']==191 else .0008,resolution=2)
-  # Periodic cutter envelope; heavy geometry stays offline.
+ cutter=cutter.buffer(.0012 if row['id']==191 else .0008,resolution=2)
+ # Periodic cutter envelope; heavy geometry stays offline. 201's 8193
+ # rolling-pinion poses are unioned in batches before cutting.
+ if row['id']==201:
+  poses=row['poses']
+  for i in range(0,len(poses),64):
+   blank=blank.difference(unary_union([affine_transform(cutter,pose) for pose in poses[i:i+64]]))
+ else:
   for pose in row['poses']:
    blank=blank.difference(affine_transform(cutter,pose))
-  pieces=list(blank.geoms) if blank.geom_type=='MultiPolygon' else [blank]
-  blank=max(pieces,key=lambda p:p.area).simplify(.00015 if row['id']==191 else .00004,preserve_topology=True)
+ pieces=list(blank.geoms) if blank.geom_type=='MultiPolygon' else [blank]
+ blank=max(pieces,key=lambda p:p.area)
+ if row['id']!=191:blank=ease(blank)
+ blank=blank.simplify(.00002 if row['id']==201 else SMOOTH_TOLERANCE,preserve_topology=True)
  if row['id']==191:blank=blank.buffer(-.0002,join_style=2).simplify(.00001,preserve_topology=True)
  areas=[];gaps=[]
  for pose in row['auditPoses']:
@@ -110,5 +133,13 @@ json.dump(output,open('/dev/shm/irregular-profile-output.json','w'))
 for value in output.values():
  value['outline']=[[round(x,7),round(y,7)] for x,y in value['outline']]
  value['holes']=[[[round(x,7),round(y,7)] for x,y in hole] for hole in value['holes']]
-with open(os.environ.get('BAKED_OUTPUT','src/simulation/generated-irregular-gear-profiles.js'),'w') as f:
- f.write('// Generated offline by scripts/generate-irregular-gear-profiles.py.\nexport default '+json.dumps({k:v for k,v in output.items() if k!='201'},separators=(',',':'))+';\n')
+# A subset run (IRREGULAR_IDS) keeps the other ids' baked profiles.
+target=os.environ.get('BAKED_OUTPUT','src/simulation/generated-irregular-gear-profiles.js')
+prefix='// Generated offline by scripts/generate-irregular-gear-profiles.py.\nexport default '
+merged={}
+if os.path.exists(target):
+ text=open(target).read()
+ if text.startswith(prefix):merged=json.loads(text[len(prefix):].rstrip().rstrip(';'))
+merged.update(output)
+with open(target,'w') as f:
+ f.write(prefix+json.dumps(merged,separators=(',',':'))+';\n')

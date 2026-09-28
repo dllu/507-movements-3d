@@ -26,7 +26,7 @@ try{
  const sources=['scripts/review-diagonal-catch-assembly.mjs',asset,'src/simulation/baked/diagonal-catch.js',
   'src/simulation/baked/playback.js','src/simulation/mujoco-diagonal-catch/update-solids.js','tests/helpers/solid-surface.mjs'];
  const report={movements:[181,182],poses:129,meshes:parts.length,pairs:pairs.length,queries,intersections,
-  method:'Every cross-family pair in the serialized visible assembly, including new finger supports and axial webs. Bidirectional vertices, edge midpoints and face centers. Both variants share this full cycle. Sampled evidence, not continuous proof.',
+  method:'Every cross-family pair in the serialized visible assembly (single-plane castings, no finger supports or axial webs). Bidirectional vertices, edge midpoints and face centers. Both variants share this full cycle. Sampled evidence, not continuous proof.',
   sources:sources.map(file=>({file,sha256:createHash('sha256').update(fs.readFileSync(file)).digest('hex')}))};
  fs.writeFileSync('docs/validation/181-baked-assembly-clearance.json',JSON.stringify(report,null,2)+'\n');console.log(report);
  assert.ok(queries>0);assert.equal(Object.keys(intersections).length,0);

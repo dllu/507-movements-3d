@@ -11,7 +11,8 @@ for(const id of [192,193]) {
   const segment=g.pitchSegments[0];
   const cutterStart=segment.startAngle+(segment.sweep<0?Math.PI:0)+Math.PI;
   const phase=first.pinionAngle-first.wheelAngle-cutterStart;
-  const outline=gear.geometry.parameters.shapes.getPoints();
+  // The finished pinion's exact involute outline (reversing-mangle-guides.js), closed.
+  const outline=gear.geometry.userData.pinionOutline.map(([x,y])=>new THREE.Vector2(x,y));outline.push(outline[0].clone());
   // The existing cutter indexes its polar outline uniformly. Resample the
   // visible involute, retaining the factory's actual relative pinion phase.
   const pinionOutline=Array.from({length:2048},(_,i)=>{

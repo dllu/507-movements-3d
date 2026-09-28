@@ -155,7 +155,7 @@ function makeArcRail({
   );
 }
 
-function makeIndexedEccentricSheave({
+function makeEccentricSheave({
   material,
   radius,
   rimMaterial,
@@ -172,15 +172,8 @@ function makeIndexedEccentricSheave({
   );
   rim.position.z = z + width * 0.52;
   rim.userData.role = 'working-face-beneath-free-eccentric-strap';
-  const index = new THREE.Mesh(
-    new THREE.BoxGeometry(radius * 0.62, 0.075, 0.035),
-    matte(PALETTE.white, { roughness: 0.42 }),
-  );
-  index.position.set(radius * 0.34, 0, z + width * 0.57);
-  index.userData.role = 'white-index-on-eccentric-sheave';
-  group.add(body, rim, index);
+  group.add(body, rim);
   group.userData.body = body;
-  group.userData.index = index;
   group.userData.rim = rim;
   return group;
 }
@@ -773,7 +766,6 @@ function locomotiveStephensonExpansionLinkValveGear() {
     metalness: 0.14,
     roughness: 0.68,
   });
-  const whiteMaterial = matte(PALETTE.white, { roughness: 0.41 });
 
   const forwardLayerZ = 0.24;
   const backwardLayerZ = -0.24;
@@ -788,7 +780,7 @@ function locomotiveStephensonExpansionLinkValveGear() {
     'one-locomotive-shaft-carrying-two-opposed-eccentrics';
   const inputShaft = cylinderAlongZ(0.135, 2.65, darkMaterial, 38);
   inputShaft.userData.role = 'common-shaft-through-both-eccentrics';
-  const forwardSheave = makeIndexedEccentricSheave({
+  const forwardSheave = makeEccentricSheave({
     material: driverMaterial,
     radius: sheaveRadius,
     rimMaterial: darkMaterial,
@@ -797,7 +789,7 @@ function locomotiveStephensonExpansionLinkValveGear() {
   });
   forwardSheave.position.y = eccentricity;
   forwardSheave.userData.role = 'forward-eccentric-sheave';
-  const backwardSheave = makeIndexedEccentricSheave({
+  const backwardSheave = makeEccentricSheave({
     material: driverMaterial,
     radius: sheaveRadius,
     rimMaterial: darkMaterial,
@@ -806,13 +798,7 @@ function locomotiveStephensonExpansionLinkValveGear() {
   });
   backwardSheave.position.y = -eccentricity;
   backwardSheave.userData.role = 'backward-eccentric-sheave';
-  const shaftIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(0.10, 0.54, 0.045),
-    whiteMaterial,
-  );
-  shaftIndex.position.set(0.20, 0, 1.25);
-  shaftIndex.userData.role = 'white-index-on-common-input-shaft';
-  inputRotor.add(inputShaft, forwardSheave, backwardSheave, shaftIndex);
+  inputRotor.add(inputShaft, forwardSheave, backwardSheave);
   root.add(inputRotor);
 
   const forwardStrap = makeEccentricStrap({
@@ -985,6 +971,14 @@ function locomotiveStephensonExpansionLinkValveGear() {
   const reversingPivotShaft = cylinderAlongZ(0.14, 0.88, darkMaterial, 30);
   reversingPivotShaft.position.z = -0.22;
   reversingPivotShaft.userData.role = 'fixed-reversing-handle-axis';
+  // Pass 92: Brown draws the handle swelling into a round boss at its
+  // fulcrum; the 0.14 axis stood wider than the 0.105 bar, on its edges. The
+  // boss (0.23, 0.09 of margin round the axis) stands 0.02 proud of each
+  // face of the bar so no face is coplanar with the bar's.
+  let reversingHandleMaterial = null;
+  reversingHandleBeam.traverse((object) => { if (object.isMesh && !reversingHandleMaterial) reversingHandleMaterial = object.material; });
+  const reversingHandleBoss = cylinderAlongZ(0.23, 0.19, reversingHandleMaterial, 48);
+  reversingHandleBoss.userData.role = 'reversing-handle-fulcrum-boss';
   const reversingAnchorPin = cylinderAlongZ(0.095, 0.46, darkMaterial, 26);
   reversingAnchorPin.position.x = reversingShortArmLength;
   reversingAnchorPin.userData.role = 'moving-upper-suspension-rod-pin';
@@ -994,18 +988,12 @@ function locomotiveStephensonExpansionLinkValveGear() {
   );
   handleKnob.position.x = -reversingLongArmLength;
   handleKnob.userData.role = 'operator-reversing-handle-knob';
-  const handleIndex = new THREE.Mesh(
-    new THREE.SphereGeometry(0.075, 20, 14),
-    whiteMaterial,
-  );
-  handleIndex.position.set(reversingShortArmLength, 0, 0.25);
-  handleIndex.userData.role = 'white-index-on-reversing-arm';
   reversingHandle.add(
     reversingHandleBeam,
+    reversingHandleBoss,
     reversingPivotShaft,
     reversingAnchorPin,
     handleKnob,
-    handleIndex,
   );
   root.add(reversingHandle);
 
@@ -1132,10 +1120,13 @@ function locomotiveStephensonExpansionLinkValveGear() {
   }
   root.add(sectionedWall);
 
+  // Pass 92 (p92-e): the link's ball ends enclose the corners of its own
+  // 0.105 x 0.12 section (0.080). At the top the ball stays inside the 0.095
+  // anchor pin, which also encloses the reversing handle's bar corners (0.092).
   const suspensionRod = makeDynamicLink({
     color: PALETTE.driver,
     depth: 0.12,
-    jointRadius: 0.085,
+    jointRadius: 0.09,
     thickness: 0.105,
   });
   suspensionRod.userData.kinematicConstraint =
@@ -1159,20 +1150,22 @@ function locomotiveStephensonExpansionLinkValveGear() {
   const outputRockerShaft = cylinderAlongZ(0.13, 0.58, darkMaterial, 30);
   outputRockerShaft.position.z = -0.05;
   outputRockerShaft.userData.role = 'fixed-output-rockshaft';
-  const lowerRockerArm = makeBeam(
-    new THREE.Vector3(0, 0, 0),
-    new THREE.Vector3(
-      outputRockerLowerArmAtSource.x,
-      outputRockerLowerArmAtSource.y,
-      0,
-    ),
-    {
-      color: PALETTE.accent,
-      depth: 0.16,
-      jointRadius: 0.001,
-      thickness: 0.12,
-    },
-  );
+  // Pass 92: the lower arm is one flat extrusion ending in a round eye
+  // concentric with the die pin (r .14 round the .085 pin), as Brown draws
+  // the rocker's end; its root is buried in the rockshaft.
+  const lowerArmEnd = [outputRockerLowerArmAtSource.x, outputRockerLowerArmAtSource.y];
+  const lowerArmNormal = (() => {
+    const l = Math.hypot(...lowerArmEnd);
+    return [-lowerArmEnd[1] / l * 0.06, lowerArmEnd[0] / l * 0.06];
+  })();
+  const lowerRockerArm = new THREE.Mesh(plate(clip.difference(clip.union(
+    poly([[lowerArmNormal[0], lowerArmNormal[1]], [-lowerArmNormal[0], -lowerArmNormal[1]],
+      [lowerArmEnd[0] - lowerArmNormal[0], lowerArmEnd[1] - lowerArmNormal[1]],
+      [lowerArmEnd[0] + lowerArmNormal[0], lowerArmEnd[1] + lowerArmNormal[1]]]),
+    poly(circle(lowerArmEnd, 0.14, 64)),
+  ), poly(circle(lowerArmEnd, 0.089, 64))), -0.08, 0.08), matte(PALETTE.accent, { metalness: 0.1, roughness: 0.65 }));
+  lowerRockerArm.castShadow = true;
+  lowerRockerArm.receiveShadow = true;
   lowerRockerArm.userData.role = 'rocker-lower-arm-to-link-die';
   const upperRockerArm = makeBeam(
     new THREE.Vector3(0, 0, 0),
@@ -1189,21 +1182,10 @@ function locomotiveStephensonExpansionLinkValveGear() {
     },
   );
   upperRockerArm.userData.role = 'rocker-upper-arm-to-valve-link';
-  const rockerIndex = new THREE.Mesh(
-    new THREE.SphereGeometry(0.085, 20, 14),
-    whiteMaterial,
-  );
-  rockerIndex.position.set(
-    outputRockerLowerArmAtSource.x,
-    outputRockerLowerArmAtSource.y,
-    0.18,
-  );
-  rockerIndex.userData.role = 'white-index-on-die-rocker-pin';
   outputRocker.add(
     outputRockerShaft,
     lowerRockerArm,
     upperRockerArm,
-    rockerIndex,
   );
   root.add(outputRocker);
 
@@ -1219,19 +1201,16 @@ function locomotiveStephensonExpansionLinkValveGear() {
   dieBody.userData.role = 'working-link-die-body';
   const diePin = cylinderAlongZ(0.085, 1.50, brassMaterial, 28);
   diePin.userData.role = 'die-pin-through-link-and-output-rocker';
-  const dieIndex = new THREE.Mesh(
-    new THREE.SphereGeometry(0.075, 20, 14),
-    whiteMaterial,
-  );
-  dieIndex.position.z = 0.78;
-  dieIndex.userData.role = 'white-index-on-captured-die';
-  dieBlock.add(dieBody, diePin, dieIndex);
+  dieBlock.add(dieBody, diePin);
   root.add(dieBlock);
 
+  // Pass 92 (p92-e): ball ends enclose the corners of the link's own
+  // 0.10 x 0.12 section (0.078) and of the rocker's 0.12 x 0.16 upper arm,
+  // which ends in the rocker-side ball (0.100).
   const valveLink = makeDynamicLink({
     color: PALETTE.driven,
     depth: 0.12,
-    jointRadius: 0.075,
+    jointRadius: 0.106,
     thickness: 0.10,
   });
   valveLink.userData.role =
@@ -1249,13 +1228,7 @@ function locomotiveStephensonExpansionLinkValveGear() {
   );
   valveHead.position.x = -1.16;
   valveHead.userData.role = 'moving-slide-valve-head';
-  const valveIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(0.16, 0.075, 0.04),
-    whiteMaterial,
-  );
-  valveIndex.position.set(-1.16, 0, 0.20);
-  valveIndex.userData.role = 'white-index-on-moving-valve';
-  valveSlider.add(valveStem, valveHead, valveIndex);
+  valveSlider.add(valveStem, valveHead);
   root.add(valveSlider);
 
   const valveGuide = new THREE.Group();
@@ -1342,7 +1315,6 @@ function locomotiveStephensonExpansionLinkValveGear() {
     chestOpening,
     dieBlock,
     dieBody,
-    dieIndex,
     diePin,
     expansionLink,
     fixedFrame,
@@ -1351,7 +1323,6 @@ function locomotiveStephensonExpansionLinkValveGear() {
     forwardStrap,
     frameBeams,
     guideBarrel,
-    handleIndex,
     handleKnob,
     innerLinkRail,
     inputRotor,
@@ -1368,9 +1339,7 @@ function locomotiveStephensonExpansionLinkValveGear() {
     reversingHandle,
     reversingPivotShaft,
     reversingQuadrant,
-    rockerIndex,
     sectionedWall,
-    shaftIndex,
     steamChest,
     suspensionLug,
     suspensionLugEye,
@@ -1379,7 +1348,6 @@ function locomotiveStephensonExpansionLinkValveGear() {
     upperRockerArm,
     valveGuide,
     valveHead,
-    valveIndex,
     valveLink,
     valveSlider,
     valveStem,
@@ -1584,18 +1552,11 @@ function locomotiveStephensonExpansionLinkValveGear() {
   supportBox('slide-valve-bed-on-wall', [-2.25, 1.405, -0.55], [-1.13, 1.505, 1.14]);
   supportBox('reversing-axis-lug-on-wall', [-2.08, 1.61, -0.55], [-1.64, 2.44, 0.02]);
   root.add(wallSupports);
-  // Brown draws no index marks, and each eccentric shows one strap outline
-  // over its sheave, not a second painted rim.
+  // Each eccentric shows one strap outline over its sheave, not a second
+  // painted rim. Brown draws no index marks, so none are built (p92-e).
   for (const mark of [
-    forwardSheave.userData.index,
-    backwardSheave.userData.index,
     forwardSheave.userData.rim,
     backwardSheave.userData.rim,
-    shaftIndex,
-    handleIndex,
-    rockerIndex,
-    dieIndex,
-    valveIndex,
   ]) mark.removeFromParent();
   root.userData.hideGround = true;
   root.userData.reconstruction = {
@@ -1617,11 +1578,6 @@ function locomotiveStephensonExpansionLinkValveGear() {
   markShadows(root);
   for (const object of [
     cameraEnvelope,
-    dieIndex,
-    handleIndex,
-    rockerIndex,
-    shaftIndex,
-    valveIndex,
   ]) {
     object.castShadow = false;
     object.receiveShadow = false;
