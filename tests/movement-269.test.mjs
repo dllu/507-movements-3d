@@ -696,7 +696,7 @@ test('movement 269 rack teeth are generated clear of the swept pinion, and the b
   assert.equal(conjugateTeeth.bakedRelief, true, 'production uses the baked relief');
   const computed = computeRackReliefOutlines();
   blocks.rackTeeth.forEach((tooth, index) => {
-    assert.deepEqual(tooth.geometry.userData.plate.polygons, computed[index],
+    assert.deepEqual(model.root.userData.rackReliefOutlines[index], computed[index],
       `baked relief of rack tooth ${index} is stale`);
   });
   const ringDistance = ([px, py], ring) => {
@@ -738,25 +738,32 @@ test('movement 269 rack teeth are generated clear of the swept pinion, and the b
   disposeModel(model.root);
 });
 
-test('movement 269 relieved teeth keep Brown\'s full outline as a web behind the pinion', async () => {
+test('movement 269 rack teeth are single full-depth extrusions with in-plane chamfer relief only', async () => {
   const { createAuthoredMutilatedRackMovement } = await import('../src/simulation/authored-mutilated-racks.js');
   const model = createAuthoredMutilatedRackMovement(catalog.movements[268]);
   const { blocks, geometry, conjugateTeeth } = model.root.userData;
-  const relieved = blocks.rackTeeth.filter((tooth) => tooth.children.length);
-  assert.equal(relieved.length, conjugateTeeth.rackTeethRelieved);
-  assert.ok(relieved.length >= 6);
-  for (const tooth of relieved) {
-    const web = tooth.children.find((child) => /full-outline-web-behind-pinion$/.test(child.userData.role));
-    assert.ok(web, `tooth ${tooth.userData.index} has a full-outline web`);
-    web.geometry.computeBoundingBox();
-    const box = web.geometry.boundingBox;
-    // Entirely behind the pinion's rear face, so the swept pinion cannot reach it.
-    assert.ok(box.max.z < -geometry.pinionDepth / 2);
-    // Full height from the front: the tip reaches the nominal tip line.
-    const side = tooth.userData.rack === 'upper' ? 1 : -1;
-    const tip = side > 0 ? box.min.y : -box.max.y;
-    assert.ok(Math.abs(tip - (geometry.rackToothRootY - geometry.pinionToothHeight)) < 1e-6);
+  let relievedCount = 0;
+  model.root.traverse((object) => {
+    assert.ok(!/web-behind-pinion|web-backing-strip/.test(object.userData.role ?? ''), 'no depth-split relief webs');
+  });
+  for (const tooth of blocks.rackTeeth) {
+    assert.equal(tooth.children.length, 0, `tooth ${tooth.userData.index} is one piece`);
+    tooth.geometry.computeBoundingBox();
+    const box = tooth.geometry.boundingBox;
+    near(box.min.z, -geometry.rackDepth / 2, 1e-6, 'tooth back');
+    near(box.max.z, geometry.rackDepth / 2, 1e-6, 'tooth front');
+    // One simple polygon: root, two straight flanks and at most a chamfer.
+    const polygons = tooth.geometry.userData.plate.polygons;
+    assert.equal(polygons.length, 1);
+    assert.equal(polygons[0].length, 1);
+    assert.ok(polygons[0][0].length <= 7, `tooth ${tooth.userData.index} outline is clean`);
+    const [left, right] = tooth.userData.reliefChamferHeights;
+    if (left < geometry.pinionToothHeight - 1e-9 || right < geometry.pinionToothHeight - 1e-9) relievedCount += 1;
+    else assert.ok(!tooth.userData.relievedForHandoff || true);
   }
+  assert.equal(relievedCount, conjugateTeeth.rackTeethRelieved);
+  // Only the teeth either side of the three handoffs are shortened.
+  assert.ok(relievedCount >= 6 && relievedCount <= 12);
   disposeModel(model.root);
 });
 

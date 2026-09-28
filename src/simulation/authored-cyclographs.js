@@ -148,7 +148,9 @@ function cyclograph(movement) {
   const rightGuidePin = new THREE.Vector2(chordHalf, 0);
   const ruleLengthMin = -0.62;
   const ruleLengthMax = 6.34;
-  const ruleWidth = 0.25;
+  // Pass 90: Brown's rules are broad flat laths, width about 0.055 of their
+  // length (was 0.036).
+  const ruleWidth = 0.40;
   const ruleDepth = 0.14;
   const braceDistance = 3.05;
   const braceOverhang = 0.29;
@@ -423,7 +425,9 @@ function cyclograph(movement) {
     width: ruleWidth,
   });
   rightRule.rule.rotation.z = includedRuleAngle;
-  rightRule.rule.position.z = 0.055;
+  // The right rule lies on the left one where they cross (Brown draws it
+  // over the left rule), rather than cutting into it.
+  rightRule.rule.position.z = ruleDepth + 0.002;
   carriage.add(rightRule.rule);
 
   const leftBracePoint = new THREE.Vector2(
@@ -447,7 +451,7 @@ function cyclograph(movement) {
   const brace = beamBetween(
     new THREE.Vector3(braceStart.x, braceStart.y, .42),
     new THREE.Vector3(braceEnd.x, braceEnd.y, .42),
-    0.22,
+    0.36,
     0.12,
     rulerMaterial,
   );

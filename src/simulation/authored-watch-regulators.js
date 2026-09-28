@@ -457,10 +457,11 @@ function watchRegulator(movement) {
         balanceHubRadius * Math.sin(angle),
         0,
       ),
+      // Runs 0.1 into the flat rim.
       new THREE.Vector3(
-        (balanceOuterRadius - balanceRimTubeRadius)
+        (balanceOuterRadius - balanceRimTubeRadius + 0.1)
           * Math.cos(angle),
-        (balanceOuterRadius - balanceRimTubeRadius)
+        (balanceOuterRadius - balanceRimTubeRadius + 0.1)
           * Math.sin(angle),
         0,
       ),

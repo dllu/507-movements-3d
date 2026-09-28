@@ -28,7 +28,7 @@ test('076 locates C, the hinged end B, the holding pawl and D on a complete coax
   for(let i=1;i<4;i++){const other=u.parts[`driverStud${i}`].position,angle=Math.atan2(stud.y,stud.x)+i*Math.PI/2;
     near(other.x,p.studOrbit*Math.cos(angle),1e-12);near(other.y,p.studOrbit*Math.sin(angle),1e-12);}
   assert.deepEqual(u.blocks.driver.position.toArray(),[0,0,0]);assert.deepEqual(u.blocks.wheel.position.toArray(),[0,0,0]);
-  assert.equal(p.teeth,20);assert.equal(Object.keys(u.parts).length,24);assert.equal(u.fidelity,'authored');assert.equal(u.hideGround,true);
+  assert.equal(p.teeth,20);assert.equal(Object.keys(u.parts).length,23);assert.equal(u.fidelity,'authored');assert.equal(u.hideGround,true);
   assert.match(u.idealConstraints,/reconstruction assumptions/);near(u.profile.physics.load,3);assert.deepEqual(u.profile.physics.damping,[3,.008,100,.003]);
   for(const family of ['driver','wheel','tappet','dog','holding']){
     near(u.masses[family].volume*u.profile.physics.density,u.profile.physics.mass[family].mass,1e-10);
@@ -63,7 +63,7 @@ test('076 every physical mesh is closed, connected, outward and nondegenerate',(
 
 test('076 all four bearings have real bores with supporting material around them',()=>{
   const model=makeJointedTappetCounter(),u=model.root.userData,p=u.geometry;
-  for(const [name,center,z,r] of [['driverBody',[0,0],-.25,.106],['wheelBody',[0,0],0,.106],['tappetBody',[0,0],.06,.056],['tappetBody',p.B,.06,.032],['tappetRearCheek',[0,0],-.06,.056],['tappetRearCheek',p.B,-.06,.032],['tappetWeb',[0,0],0,.056],['dogBody',[0,0],0,.032],['holdingBody',[0,0],0,.039]]){
+  for(const [name,center,z,r] of [['driverBody',[0,0],-.25,.106],['wheelBody',[0,0],0,.106],['tappetBody',[0,0],.06,.056],['tappetBody',p.B,.06,.032],['tappetRearCheek',[0,0],-.06,.056],['tappetRearCheek',p.B,-.06,.032],['dogBody',[0,0],0,.032],['holdingBody',[0,0],0,.039]]){
     const solid=solidSurface(u.parts[name].geometry);
     for(let i=0;i<8;i++){
       const angle=2*Math.PI*(i+.37)/8;
@@ -116,7 +116,7 @@ test('076 the pawls\' own tips and B\'s heel resist motion into their contacting
     {time:.8,a:'dogBody',b:'wheelBody',block:'wheel',delta:-1e-4},
     {time:2.5,a:'holdingBody',b:'wheelBody',block:'wheel',delta:-1e-4},
     {time:.8,a:'dogBody',b:'tappetWeb',block:'dog',delta:1e-3},
-    {time:2.5,a:'tappetRestPin',b:'tappetBody',block:'tappet',delta:1e-3},
+    {time:2.5,a:'tappetRestKey',b:'tappetWeb',block:'tappet',delta:1e-3},
     {time:.7,a:'driverStud',b:'tappetBody',block:'driver',delta:-1e-4},
   ];
   for(const c of cases){
@@ -124,9 +124,8 @@ test('076 the pawls\' own tips and B\'s heel resist motion into their contacting
       points:surfacePoints(u.parts[a].geometry),solid:solidSurface(u.parts[b].geometry)}));
     // The long stud spans past both faces of the thin bar. Probe its actual
     // straight side generators inside the bar's axial interval as well.
-    // The rest pin likewise spans the whole bar; probe its side at mid-cheek.
-    if(c.a==='driverStud'||c.a==='tappetRestPin'){
-      const position=u.parts[c.a].geometry.attributes.position,radius=c.a==='driverStud'?.06:.02;
+    if(c.a==='driverStud'){
+      const position=u.parts[c.a].geometry.attributes.position,radius=.06;
       for(let i=0;i<position.count;i++){
         const point=new THREE.Vector3().fromBufferAttribute(position,i);
         if(Math.hypot(point.x,point.y)>radius){point.z=.06;pairs[0].points.push(point);}
@@ -238,5 +237,19 @@ test('076 B and the click outlines stay clear of the ratchet outline throughout 
     assert.ok(area(clip.intersection(dog,wheel))<1e-7,`B overlaps A at ${t}`);
     assert.ok(area(clip.intersection(click,wheel))<1e-7,`click overlaps A at ${t}`);
   }
+  dispose(model);
+});
+
+test('076 B\'s heel and the rest key stay hidden inside the tappet outline; no frame is modelled',async()=>{
+  const {polygonClipping:clip,rotate,add}=await import('../src/simulation/finite-plate-geometry.js');
+  const model=makeJointedTappetCounter(),u=model.root.userData,p=u.geometry;
+  const area=mp=>mp.reduce((s,poly)=>s+poly.reduce((t,ring,k)=>{let a=0;for(let i=0;i<ring.length-1;i++)a+=ring[i][0]*ring[i+1][1]-ring[i+1][0]*ring[i][1];return t+(k?-1:1)*Math.abs(a/2);},0),0);
+  const outline=[[u.outlines.bar[0][0]]],heel=[[0,0],...Array.from({length:33},(_,i)=>rotate([p.heelRadius,0],p.heelAngle+p.heelStart+p.heelSpread*i/32)),[0,0]];
+  for(let i=0;i<=600;i++){const s=sampleJointedTappetMotion(3*i/600);
+    assert.ok(area(clip.difference([[heel.map(q=>add(p.B,rotate(q,s.alpha)))]],outline))<1e-12,'heel shows outside the bar at '+3*i/600);
+    const key=u.parts.tappetRestKey.geometry.parameters.shapes[0].getPoints().map(v=>rotate([v.x,v.y],-s.q));key.push(key[0]);
+    assert.ok(area(clip.difference([[key]],outline))<1e-12,'rest key shows outside the bar');
+  }
+  assert.equal(u.parts.fixedPivotBracket,undefined);assert.equal(u.parts.tappetRestPin,undefined);
   dispose(model);
 });

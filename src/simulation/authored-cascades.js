@@ -15,7 +15,11 @@ function loadWithEyes(anchorXs) {
   const eyes = anchorXs.map((x) => {
     const eye = new THREE.Mesh(new THREE.TorusGeometry(0.075, 0.022, 12, 40), matte(PALETTE.ink));
     eye.position.set(x, 0.08, 0);
-    load.add(eye);
+    // A short cast boss on the weight's top seats the eye's foot.
+    const boss = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.055, 0.05, 28), matte(PALETTE.ink));
+    boss.position.set(x, 0.015, 0);
+    boss.userData.role = 'weight-eye-boss';
+    load.add(eye, boss);
     return eye;
   });
   load.userData.body = body;
@@ -293,7 +297,7 @@ export function ceilingAnchoredEightToOneCascade() {
     root.add(eye);
     return eye;
   });
-  const weight = makeHoistLoad({ radius: 0.56, height: 0.5 });
+  const weight = makeHoistLoad({ radius: 0.56, height: 0.5, eyeBoss: true });
   root.add(guide, support, stem, weight);
   const pathsAt = (travel) => movingPulleys.map((pulley, index) => {
     const center = new THREE.Vector3(xs[index], baseYs[index] + factors[index] * travel, 0);

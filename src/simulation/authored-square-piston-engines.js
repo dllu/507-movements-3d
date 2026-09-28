@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { PALETTE, markShadows, matte } from './primitives.js';
 import { latheSectionGeometry } from './cutaway-section.js';
+import { makeSeeThrough } from './see-through-part.js';
 import {
   circlePolygon,
   filletPath,
@@ -33,7 +34,7 @@ const rect = (x0, y0, x1, y1) => ringPolygon([[x0, y0], [x1, y0], [x1, y1], [x0,
 // (undrawn) valve. Each of the four working spaces takes live steam while it
 // grows and exhausts while it shrinks, which turns the crank anticlockwise.
 //
-// Brown dots crank b behind C. The crank arm works in a round pocket in the
+// Brown dots crank b behind C, so C is see-through. The crank arm works in a round pocket in the
 // back of C, closed by the back cover, and shaft b runs out through a bearing
 // in the back cover, so no support is needed in front.
 function squarePistonEngine(movement) {
@@ -184,6 +185,11 @@ function squarePistonEngine(movement) {
   const cBack = partPlate(polygonClipping.difference(cSolid, circlePolygon([0, 0], pocketRadius, 128)),
     zBack + 0.01, zBack + 0.01 + pocketDepth, cMaterial, 'back-of-piston-C-round-crank-pocket');
   pistonC.add(cFront, cBack);
+  // Brown dots crank a-b behind C: C gets the standard see-through style so
+  // the crank arm and shaft b working in its pocket show (the crank circle
+  // always lies inside C's outline, so B never covers it).
+  makeSeeThrough(cFront);
+  makeSeeThrough(cBack);
   const wristA = new THREE.Mesh(latheSectionGeometry(
     [[0, zBack + 0.1], [wristRadius - 0.004, zBack + 0.1], [wristRadius - 0.004, -0.02], [0, -0.02]],
     { segments: 40, phiStart: 0, phiLength: FULL_TURN }), darkMaterial);

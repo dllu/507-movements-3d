@@ -16,9 +16,11 @@ test('390 flat bands fit inside the actual concave loose-pulley grooves',()=>{
   for(const carrier of[models[0].root.userData.blocks.openCarrier,models[0].root.userData.blocks.crossedCarrier]){
     const field=solidSurface(carrier.userData.pulley.geometry);let minimum=Infinity;
     // Sample the band's rectangular section perimeter all round the wrap.
-    for(let i=0;i<48;i++)for(let j=0;j<=16;j++)for(const [dr,dz] of [[-thickness/2,width*(j/16-.5)],[thickness*(j/16-.5),-width/2],[thickness*(j/16-.5),width/2]]){
+    // Across the crossed band's whole shift from one span plane to the other.
+    const shift=models[0].root.userData.geometry.crossShift;
+    for(const offset of[-shift,0,shift])for(let i=0;i<48;i++)for(let j=0;j<=16;j++)for(const [dr,dz] of [[-thickness/2,width*(j/16-.5)],[thickness*(j/16-.5),-width/2],[thickness*(j/16-.5),width/2]]){
       const a=i*Math.PI/24,r=.5+dr;
-      minimum=Math.min(minimum,field.signedDistance(new THREE.Vector3(r*Math.cos(a),dz,r*Math.sin(a))));
+      minimum=Math.min(minimum,field.signedDistance(new THREE.Vector3(r*Math.cos(a),dz+offset,r*Math.sin(a))));
     }
     assert.ok(minimum>.004,`finite band/pulley clearance ${minimum}`);
   }

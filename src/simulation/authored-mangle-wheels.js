@@ -1,5 +1,5 @@
 import {finishMangle371} from './reversing-transmission-working-parts.js';
-import {circle,plate,poly,polygonClipping} from './finite-plate-geometry.js';
+import {circle,plate,poly,polygonClipping,sector} from './finite-plate-geometry.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -814,6 +814,73 @@ function dualFaceGapTransferMangleWheel(movement) {
   // Brown draws no white phase marks; they stay allocated for the checks.
   outputIndex.visible = false;
   shaftIndex.visible = false;
+  // Brown's band is two solid rims joined by the radial teeth. The pinion's
+  // face never reaches radii below 1.495 or above 1.97 (or, at 1.97, within
+  // 0.18 of the median plane), so both rims are made as deep as the tooth
+  // stock (0.136 each side): the teeth's uncut stock ends, which read as
+  // necks where the cut working length met thin rails, now lie inside the
+  // rims, and each tooth shows only its smooth working length between them.
+  {
+    const g = root.userData.geometry;
+    wheelBody.geometry.dispose();
+    wheelBody.geometry = plate(polygonClipping.union(
+      sector(1.29, 1.495, g.firstTerminalAngle, g.secondTerminalAngle, 288),
+      sector(1.97, 2.11, g.firstTerminalAngle, g.secondTerminalAngle, 288),
+      // Past each terminal tooth only where the crossing pinion never comes
+      // (r < 1.45 and r > 2.0, checked over the whole rollover), so the
+      // terminal teeth's outer halves are carried by the rims too.
+      sector(1.29, 1.45, g.firstTerminalAngle - 0.07, g.firstTerminalAngle, 16),
+      sector(1.29, 1.45, g.secondTerminalAngle, g.secondTerminalAngle + 0.07, 16),
+      sector(2.0, 2.11, g.firstTerminalAngle - 0.07, g.firstTerminalAngle, 16),
+      sector(2.0, 2.11, g.secondTerminalAngle, g.secondTerminalAngle + 0.07, 16)), -0.136, 0.136);
+    root.userData.geometry.rimRadii = {inner: [1.29, 1.495], outer: [1.97, 2.11], halfDepth: 0.136};
+  }
+  // Each tooth bar is one part serving both faces: one colour, so no seam
+  // shows along its median plane.
+  for (const tooth of rearFaceTeeth) tooth.material = frontToothMaterial;
+  // One small fixed slotted guide replaces the undrawn rectangular yoke, rails,
+  // shoes, bridge and collar: the input shaft passes through a slot that
+  // lets it move from face to face (z) and float along its own axis (x)
+  // through the rollovers. Brown shows only a small block on the shaft.
+  {
+    const g = root.userData.geometry;
+    let reach = 0;
+    for (let i = 0; i <= 720; i += 1) reach = Math.max(reach, Math.abs(root.userData.stateAtInputTravel(i * g.mechanismCycleInputAngle / 720).pinionCenter.z));
+    const slotHalf = inputShaft.geometry.parameters.radiusTop + 0.006;
+    const guideX = -2.46, halfY = 0.26, halfZ = reach + 0.22;
+    const slot = [];
+    for (const [cz, a0] of [[reach, 0], [-reach, Math.PI]]) {
+      for (let i = 0; i <= 24; i += 1) {
+        const a = a0 + Math.PI * i / 24;
+        slot.push([slotHalf * Math.cos(a), cz + slotHalf * Math.sin(a)]);
+      }
+    }
+    // Plate in the y-z plane: shape (u, v) = (y, z), extruded along x.
+    const outline = [];
+    const corner = 0.08;
+    for (const [cy, cz, a0] of [[halfY - corner, halfZ - corner, 0], [-halfY + corner, halfZ - corner, Math.PI / 2],
+      [-halfY + corner, -halfZ + corner, Math.PI], [halfY - corner, -halfZ + corner, 3 * Math.PI / 2]]) {
+      for (let i = 0; i <= 8; i += 1) {
+        const a = a0 + Math.PI / 2 * i / 8;
+        outline.push([cy + corner * Math.cos(a), cz + corner * Math.sin(a)]);
+      }
+    }
+    const guidePlateGeometry = plate(polygonClipping.difference([[outline]], [[slot]]), -0.06, 0.06)
+      .rotateY(Math.PI / 2).rotateX(Math.PI / 2);
+    const guidePlate = new THREE.Mesh(guidePlateGeometry, frameMaterial);
+    guidePlate.position.set(guideX, 0, 0);
+    guidePlate.userData.fixed = true;
+    guidePlate.userData.role = 'fixed-slotted-guide-carrying-input-shaft-from-face-to-face';
+    // Like the wheel's own bearing, the fixed guide is shown without the
+    // undrawn frame that would carry it.
+    root.add(guidePlate);
+    markShadows(guidePlate);
+    for (const part of [...guideRails, ...guideCrossbars, ...(root.userData.blocks.guideShoes ?? []), carrierBridge, carrierCollar]) {
+      part.visible = false;
+      part.userData.retiredUndrawnGuide = true;
+    }
+    Object.assign(root.userData.blocks, {guidePlate});
+  }
   return model;
 }
 

@@ -2,11 +2,11 @@
   "sources": [
     {
       "file": "src/simulation/authored-cylinder-spiral-scribers.js",
-      "sha256": "01c3bfc0d0a0ef7fbf884d58c99c8edf4c7d0b24a3266ec512b52b561087a4f6"
+      "sha256": "f597bd646ce19ee284f425e6a23f37d139a78e2fba53545933cab181a01abceb"
     },
     {
       "file": "src/simulation/authored-dynamometers.js",
-      "sha256": "52364a2f1d9d7c1324f04c6ba41dafa58e7f43c1761df12f48470e303c9ccb7e"
+      "sha256": "e26fa0cd90fa352d5ea1e33ac8b7f7f32abfee3ffb4d390eb6fb7920d59329da"
     },
     {
       "file": "src/simulation/scriber-dynamometer-gears.js",
@@ -66,30 +66,30 @@
     {
       "id": 372,
       "poses": 33,
-      "queries": 1093410,
+      "queries": 751402,
       "penetrations": 0,
       "maxDepth": 0,
       "worst": null,
       "pairs": [
         {
           "pair": "right-loose-input-miter-gear-free-on-horizontal-shaft-upper-balanced-intermediate-miter-gear-carried-by-hoop",
-          "maximumSampledGap": 0.0017858355807837019,
-          "minimumSampledGap": 0.0017757112620395206
+          "maximumSampledGap": 0.004100801742162213,
+          "minimumSampledGap": 0.004077585452066174
         },
         {
           "pair": "left-miter-gear-fast-keyed-to-horizontal-output-shaft-upper-balanced-intermediate-miter-gear-carried-by-hoop",
-          "maximumSampledGap": 0.0017858355807837427,
-          "minimumSampledGap": 0.0017757112620395109
+          "maximumSampledGap": 0.004100801742162296,
+          "minimumSampledGap": 0.004077585452066174
         },
         {
           "pair": "right-loose-input-miter-gear-free-on-horizontal-shaft-lower-balanced-intermediate-miter-gear-carried-by-hoop",
-          "maximumSampledGap": 0.0017858355807837427,
-          "minimumSampledGap": 0.0017757112620395109
+          "maximumSampledGap": 0.004100801742162296,
+          "minimumSampledGap": 0.004077585452066174
         },
         {
           "pair": "left-miter-gear-fast-keyed-to-horizontal-output-shaft-lower-balanced-intermediate-miter-gear-carried-by-hoop",
-          "maximumSampledGap": 0.0017858355807837019,
-          "minimumSampledGap": 0.0017757112620395206
+          "maximumSampledGap": 0.004100801742162213,
+          "minimumSampledGap": 0.004077585452066174
         }
       ]
     }

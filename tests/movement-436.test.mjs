@@ -438,3 +438,50 @@ test('movement 507 remains the next authored frontier and does not reuse movemen
   disposeModel(model436.root);
   disposeModel(model507.root);
 });
+
+// Pass 90: the supply pipe is closed and sealed into trunk b.
+import { inletPipeGeometry, trunkWithInletGeometry } from '../src/simulation/jonval-inlet-geometry.js';
+
+function openEdges(geometry) {
+  const p = geometry.attributes.position, key = (i) => [p.getX(i), p.getY(i), p.getZ(i)].map((v) => Math.round(v * 1e5)).join(',');
+  const edges = new Map();
+  for (let t = 0; t < p.count; t += 3) for (let k = 0; k < 3; k += 1) {
+    const a = key(t + k), b = key(t + (k + 1) % 3), e = a < b ? `${a}|${b}` : `${b}|${a}`;
+    edges.set(e, (edges.get(e) ?? 0) + 1);
+  }
+  return [...edges.values()].filter((count) => count !== 2).length;
+}
+
+test('movement 436 supply pipe is a closed pipe sealed into trunk b, and its water falls onto the trunk water', () => {
+  const model = createMovementModel(catalog.movements[435]);
+  const { geometry: g, blocks } = model.root.userData;
+  const pipe = g.inletPipe, bottom = -2.15, top = 3.45;
+  const pipeGeometry = inletPipeGeometry(pipe, g.trunkOuter);
+  const trunkGeometry = trunkWithInletGeometry(pipe, { inner: g.trunkInner, outer: g.trunkOuter, bottom, top });
+  assert.equal(openEdges(pipeGeometry), 0, 'pipe is watertight');
+  assert.equal(openEdges(trunkGeometry), 0, 'trunk is watertight');
+  // The pipe's walls end exactly on the trunk's outer surface.
+  const p = pipeGeometry.attributes.position;
+  let innermost = Infinity;
+  for (let i = 0; i < p.count; i += 1) innermost = Math.min(innermost, Math.hypot(p.getX(i), p.getZ(i)));
+  near(innermost, g.trunkOuter, 1e-5, 'pipe meets the trunk');
+  // The trunk wall is open across the whole bore and closed round it.
+  const inWall = (x, y, z) => {
+    const r = Math.hypot(x, z);
+    return r > g.trunkInner && r < g.trunkOuter;
+  };
+  const boreY = (x, Y) => Y + pipe.slope * (x - pipe.x0);
+  const trunkPoints = trunkGeometry.attributes.position;
+  let wallVerticesInBore = 0;
+  for (let i = 0; i < trunkPoints.count; i += 1) {
+    const x = trunkPoints.getX(i), y = trunkPoints.getY(i), z = trunkPoints.getZ(i);
+    if (Math.abs(z) < pipe.boreHalf - 1e-6 && y > boreY(x, pipe.boreLow) + 1e-6 && y < boreY(x, pipe.boreHigh) - 1e-6 && x > 0) wallVerticesInBore += 1;
+  }
+  assert.equal(wallVerticesInBore, 0, 'no trunk wall across the bore');
+  assert.ok(inWall(g.trunkInner + 0.03, 0, 0));
+  // The chute water runs down the pipe floor and ends on the trunk water.
+  const points = blocks.chuteStream.path.points;
+  near(points.at(-1).y, g.trunkWaterLevel + 0.02, 1e-6, 'stream ends at the trunk water surface');
+  assert.ok(points[0].x < pipe.xEnd && points[0].x > pipe.x0, 'stream starts inside the pipe');
+  assert.ok(g.trunkWaterLevel < boreY(g.trunkInner, pipe.boreLow), 'trunk water stands below the lip');
+});

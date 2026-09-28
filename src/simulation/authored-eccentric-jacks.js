@@ -185,6 +185,7 @@ function makeJackFrame({
       depth: standDepth,
     });
     geometry.translate(0, 0, standBackZ);
+    geometry.userData.outline = shape.getPoints(24).map((point) => point.toArray());
     return geometry;
   };
 
@@ -497,28 +498,32 @@ function eccentricPawlJack(movement) {
   holdingPawl.add(holdingPivotPin);
   root.add(holdingPawl);
 
-  // Minimal undrawn supports behind the stand: bored bosses for the two
-  // fixed pins, carried by bridges from a spine behind the rack.
+  // The cast stand is one hollow column: Brown's two sectioned walls are
+  // joined behind the rack by the column's back wall, which rises past the
+  // right wall's top as one bracket, bored for the eccentric shaft and the
+  // stop pin. It lies behind the rack and pawls; the walls stand in front of
+  // it, overlapping it so no faces coincide.
   const fixedSupports = [];
-  for (const [pivot, radius] of [[eccentricShaft, shaftRadius], [holdingPivot, stopPinRadius]]) {
-    const journal = new THREE.Mesh(boredCylinderGeometry(radius + 0.08, radius + 0.004, 0.24), frameMaterial);
-    journal.rotation.x = Math.PI / 2;
-    journal.position.set(pivot.x, pivot.y, -0.43);
-    journal.userData.role = 'fixed-bored-jack-pawl-support';
-    root.add(journal);
-    fixedSupports.push(journal);
-    const bridge = new THREE.Mesh(new THREE.BoxGeometry(pivot.x - radius - 0.07, 0.16, 0.24), frameMaterial);
-    bridge.position.set((pivot.x - radius - 0.07) / 2, pivot.y, -0.51);
-    bridge.userData.role = 'fixed-rear-pawl-support-bridge';
-    root.add(bridge);
-    fixedSupports.push(bridge);
-  }
-  const spineTop = holdingPivot.y + 0.08;
-  const supportSpine = new THREE.Mesh(new THREE.BoxGeometry(0.25, spineTop - GROUND_Y, 0.24), frameMaterial);
-  supportSpine.position.set(-0.12, (spineTop + GROUND_Y) / 2, -0.51);
-  supportSpine.userData.role = 'fixed-rear-pawl-support-spine';
-  root.add(supportSpine);
-  fixedSupports.push(supportSpine);
+  const rightWall = frame.userData.feet[1].geometry.userData.outline;
+  const rightTop = rightWall.reduce((best, point) => point[1] > best[1] || (point[1] === best[1] && point[0] > best[0]) ? point : best, [-Infinity, -Infinity]);
+  const hull = (points) => {
+    const sorted = [...points].sort((p, q) => p[0] - q[0] || p[1] - q[1]);
+    const cross = (o, a, c) => (a[0] - o[0]) * (c[1] - o[1]) - (a[1] - o[1]) * (c[0] - o[0]);
+    const half = (list) => { const out = []; for (const point of list) { while (out.length >= 2 && cross(out.at(-2), out.at(-1), point) <= 0) out.pop(); out.push(point); } return out.slice(0, -1); };
+    return [...half(sorted), ...half([...sorted].reverse())];
+  };
+  const shaftBoss = circle([eccentricShaft.x, eccentricShaft.y], shaftRadius + 0.11, 96);
+  const stopBoss = circle([holdingPivot.x, holdingPivot.y], stopPinRadius + 0.10, 64);
+  const backOutline = clip.difference(clip.union(
+    poly([[-rackBodyWidth / 2 - 0.12, GROUND_Y + 0.002], [rightInnerX + 0.12, GROUND_Y + 0.002], [rightInnerX + 0.12, rightTop[1] - 0.02], [-rackBodyWidth / 2 - 0.12, rightTop[1] - 0.02]]),
+    poly(hull([[rightInnerX, rightTop[1] - 0.3], [rightTop[0], rightTop[1] - 0.3], ...shaftBoss])),
+    poly(hull([...shaftBoss.filter((_, i) => i % 4 === 0), ...stopBoss])),
+  ), poly(circle([eccentricShaft.x, eccentricShaft.y], shaftRadius + 0.004, 64)),
+  poly(circle([holdingPivot.x, holdingPivot.y], stopPinRadius + 0.004, 48)));
+  const columnBack = new THREE.Mesh(plate(backOutline, -0.54, -0.29), frameMaterial);
+  columnBack.userData.role = 'cast-jack-column-back-wall-and-pin-bracket';
+  root.add(columnBack);
+  fixedSupports.push(columnBack);
   for (const y of [0.35, 1.15]) {
     const cheek = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.18, 0.12), frameMaterial);
     cheek.position.set(-0.04, y, 0.35);

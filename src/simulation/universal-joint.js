@@ -9,7 +9,7 @@ const X = new THREE.Vector3(1, 0, 0), Z = new THREE.Vector3(0, 0, 1);
 const dimensions = { forkInnerRadius: 0.66, forkOuterRadius: 0.84, forkWidth: 0.30,
   trunnionRadius: 0.75, eyeRadius: 0.15, eyeDepth: 0.18, boreRadius: 0.046,
   pinRadius: 0.045, pinStart: 0.56, pinEnd: 0.855, pinCapRadius: 0.052,
-  pinCapStart: 0.844, pinCapEnd: 0.867, armEnd: 0.075, shaftRadius: 0.10, neckRadius: 0.15, neckLength: 0.42,
+  pinCapStart: 0.844, pinCapEnd: 0.867, armEnd: 0.075, shaftRadius: 0.13, neckRadius: 0.15, neckLength: 0.30,
   shaftInnerDistance: 1.20, forkAxialScale: 1.6, middleAxialScale: 1.12,
   crossEnd: 0.648, crossHalfWidth: 0.063, crossDepth: 0.10 };
 
@@ -131,7 +131,7 @@ function jointState(inputAxis, outputAxis, inputReference, outputReference, inpu
 
 export function makeUniversalJoint(id = 50) {
   if (![50, 51].includes(id)) throw new RangeError('Universal-joint reconstruction is for 050 or 051.');
-  const p = { ...dimensions, id, shaftEnd: id === 50 ? 2.10 : 2.65, jointSpacing: id === 50 ? 1.70 : 0,
+  const p = { ...dimensions, id, shaftEnd: id === 50 ? 2.75 : 3.70, jointSpacing: id === 50 ? 1.70 : 0,
     forkAxialScale: id === 50 ? 1.6 : 1.85, shaftInnerDistance: id === 50 ? 1.20 : 1.40,
     bendAngle: THREE.MathUtils.degToRad(id === 50 ? 52 : 27), inputAngularSpeed: 1.05,
     sourcePhase: id === 50 ? Math.PI / 2 : 0, cyclePeriod: 2 * Math.PI / 1.05 };

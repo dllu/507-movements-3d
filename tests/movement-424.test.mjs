@@ -94,3 +94,14 @@ test('424: crank b works behind C, with no undrawn support in front', () => {
     assert.equal(u.hideGround, true);
   } finally { disposeObject3D(model.root); }
 });
+
+test('movement 424 piston C is see-through so crank a-b (dotted by Brown) shows behind it (pass 90)', () => {
+  const model = createMovementModel(catalog.movements[423]);
+  const { cFront, cBack, crankArm } = model.root.userData.blocks;
+  for (const mesh of [cFront, cBack]) {
+    assert.equal(mesh.userData.seeThrough, true);
+    assert.equal([mesh.material].flat()[0].transparent, true);
+  }
+  assert.notEqual(crankArm.userData.seeThrough, true);
+  disposeObject3D(model.root);
+});

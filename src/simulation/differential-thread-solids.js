@@ -33,7 +33,10 @@ export function correctDifferentialThreads(root,id){
    replace(bridge,new THREE.ExtrudeGeometry(shape,{depth:p.width,bevelEnabled:false,curveSegments:64}).translate(0,0,-p.width/2).rotateY(Math.PI/2));bridge.userData.boreRadius=radius;
   }
   for(const bar of b.rightStandardBars){replace(bar,new THREE.BoxGeometry(.25,2,.3));bar.position.y=-2.27;}
-  const sleeveExtension=new THREE.Mesh(annulus(.369,.51,.58).rotateZ(Math.PI/2),b.internalThread.material);sleeveExtension.position.x=2.24;sleeveExtension.userData.role='nut-journal-extension-through-fixed-bearing';b.nutAssembly.add(sleeveExtension);b.nutJournal=sleeveExtension;
+  // The journal is 0.005 inside the nut's outer wall and bored 0.011 over
+  // the nut and 0.009 over wheel E, so where they overlap no surfaces
+  // coincide (they flickered).
+  const sleeveExtension=new THREE.Mesh(annulus(.380,.505,.58).rotateZ(Math.PI/2),b.internalThread.material);sleeveExtension.position.x=2.24;sleeveExtension.userData.role='nut-journal-extension-through-fixed-bearing';b.nutAssembly.add(sleeveExtension);b.nutJournal=sleeveExtension;
   // A stationary bored collar locates the nut extension; its supports tie
   // it to both upright bars without crossing the screw passage.
   replace(b.fixedNutBearing,annulus(.512,.72,.23).rotateX(Math.PI/2));b.fixedNutBearing.position.x=2.3;

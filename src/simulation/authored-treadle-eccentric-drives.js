@@ -1,3 +1,4 @@
+import { boredLatheGeometry } from './bored-lathe-geometry.js';
 import {correctReciprocatingCordParts} from './reciprocating-cord-working-parts.js';
 import * as THREE from 'three';
 import { LaidRopeGeometry } from './laid-rope.js';
@@ -785,6 +786,30 @@ function treadleEccentricBandDrive(movement) {
   root.userData.groundFloorY = -2.73;
   markShadows(root);
   correctReciprocatingCordParts(root,374,update);
+  // The solid eccentric disk is keyed on the shaft, which passes through it,
+  // so the undrawn rear drive arm goes. Brown draws the shaft large, about a
+  // quarter of the disk's radius; its bearing and standard follow it.
+  {
+    const b = root.userData.blocks;
+    const g = root.userData.geometry;
+    root.traverse((o) => {
+      if (o.userData.role === 'eccentric-shaft-to-sheave-drive-arm') o.removeFromParent();
+    });
+    const shaftRadius = 0.26;
+    const bearingRadius = shaftRadius + 0.13;
+    b.shaftPin.geometry.dispose();
+    b.shaftPin.geometry = new THREE.CylinderGeometry(shaftRadius, shaftRadius, 0.90, 64);
+    b.shaftBearing.geometry.dispose();
+    b.shaftBearing.geometry = boredLatheGeometry([
+      { axial: -0.15, radial: bearingRadius },
+      { axial: 0.15, radial: bearingRadius },
+    ], shaftRadius + 0.004, 96);
+    const top = g.shaftCenter.y - bearingRadius + 0.025;
+    const bottom = b.shaftPost.position.y - b.shaftPost.geometry.parameters.height / 2;
+    b.shaftPost.geometry.dispose();
+    b.shaftPost.geometry = new THREE.BoxGeometry(0.24, top - bottom, 0.38);
+    b.shaftPost.position.y = (top + bottom) / 2;
+  }
   return {
     cameraDirection: root.userData.cameraDirection,
     root,

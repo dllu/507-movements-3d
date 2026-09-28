@@ -28,3 +28,13 @@ test('172 renders the solved tracer, repeats and restarts without fog or ground'
  m.reset();assert.deepEqual(m.root.userData.kinematics,a);assert.equal(m.root.userData.hideGround,true);
  }finally{disposeObject3D(m.root);}
 });
+test('172 (pass 90): the wrist is Brown\'s large eye on a crosshead bar sliding along the guide line; no undrawn frame is built',()=>{
+ const m=createAuthoredCurveGeneratorMovement({id:172});
+ try {const {parts}=m.root.userData;
+  assert.ok(parts.crossheadEye);for(const n of ['guideFrame','backBar','shaftBearingFlange','guideFrameFlange','slider'])assert.equal(parts[n],undefined,n);
+  const box=new THREE.Box3().setFromBufferAttribute(parts.crossheadEye.geometry.attributes.position);
+  assert.ok(Math.abs(box.min.x+.30)<1e-3&&Math.abs(box.max.y-.30)<1e-3,'eye radius matches the crank bosses');
+  for(const t of [0,1,2,3]){m.update(t);m.root.updateMatrixWorld(true);const p=parts.crossheadEye.getWorldPosition(new THREE.Vector3());
+   assert.ok(Math.abs(p.y-g.guideY)<1e-12);assert.ok(Math.abs(p.x-eggAtTime(t).wrist[0])<1e-12);}
+ }finally{disposeObject3D(m.root);}
+});

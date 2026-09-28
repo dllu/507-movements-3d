@@ -80,7 +80,6 @@ test('movement 366 contains the full hand-crank, unequal bevel pair, keyed slidi
     blocks.lowerLeverRotor,
     blocks.upperLeverRotor,
     blocks.verticalConnector,
-    blocks.upperThrustLink,
     blocks.frame,
   ]) assert.equal(component.parent, model.root);
   assert.equal(blocks.frame.userData.fixed, true);
@@ -94,7 +93,7 @@ test('movement 366 contains the full hand-crank, unequal bevel pair, keyed slidi
     ...blocks.bitFlutes,
   ]) assert.equal(component.parent, blocks.shaftSpinRotor);
   assert.equal(blocks.thrustCollar.parent, blocks.drillSlide);
-  assert.equal(blocks.collarYoke.parent, blocks.drillSlide);
+  assert.equal(blocks.collarPin.parent, blocks.drillSlide);
   assert.equal(blocks.pinionKeyway.parent,
     blocks.pinionGear.userData.rotor);
   assert.equal(blocks.inputShaft.parent, blocks.inputRotor);
@@ -120,7 +119,7 @@ test('movement 366 contains the full hand-crank, unequal bevel pair, keyed slidi
     'nonrotating-thrust-collar-translating-with-drillshaft',
     'long-two-sided-foot-treadle-lever',
     'rigid-vertical-link-joining-left-ends-of-treadle-and-upper-lever',
-    'finite-link-from-upper-lever-to-nonrotating-thrust-collar',
+    'thrust-collar-pin-riding-in-upper-lever-slot',
     'rotating-pointed-drill-bit',
   ]) assert.ok(roles.includes(role), role);
   assert.equal(belts.length, 0);
@@ -318,7 +317,8 @@ test('movement 366 treadle and upper lever preserve the vertical connector and f
       `depression at ${phase}`);
     assert.equal(state.stage, expectedStage);
     assert.ok(Math.abs(state.verticalConnectorLengthError) < 5e-16);
-    assert.ok(Math.abs(state.thrustLinkLengthError) < 3e-16);
+    assert.ok(state.slotLineError < 1e-15);
+    assert.equal(state.slotTravelExcess, 0);
     near(
       state.upperLeftPoint.x - state.lowerLeftPoint.x,
       geometry.upperLeverPivot.x - geometry.lowerLeverPivot.x,
@@ -407,7 +407,7 @@ test('movement 366 renderer follows both independent inputs with exact contacts 
     maximumVerticalLinkError = Math.max(maximumVerticalLinkError,
       Math.abs(data.contacts.feedLinkage.verticalConnectorLengthError));
     maximumThrustLinkError = Math.max(maximumThrustLinkError,
-      Math.abs(data.contacts.feedLinkage.thrustLinkLengthError));
+      data.contacts.feedLinkage.slotLineError + data.contacts.feedLinkage.slotTravelExcess);
     if (previousFeed !== null) {
       largestFeedStep = Math.max(
         largestFeedStep,

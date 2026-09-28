@@ -13,9 +13,12 @@ export function correctChainPump(root){
  for(const wheel of[b.topWheel,b.bottomWheel]){
   replace(wheel.hub,tube(.17,.76,.107));replace(wheel.axle,new THREE.CylinderGeometry(.105,.105,1.08,32));
   wheel.rim.visible=false;wheel.spokes.forEach(o=>o.visible=false);wheel.workingParts=[];
-  for(const z of[-.275,.275]){
-   const rim=new THREE.Mesh(plate(pinProfiles.shape,-.003,.003),wheel.rim.material);rim.userData.role="swept-cross-shaft-pocket-rim";rim.position.z=z;wheel.rotor.add(rim);wheel.workingParts.push(rim);
-   for(let i=0;i<8;i++){const a=i*Math.PI/4,spoke=new THREE.Mesh(new THREE.BoxGeometry(.28,.045,.006),wheel.spokes[i].material);spoke.position.set(.29*Math.cos(a),.29*Math.sin(a),z);spoke.rotation.z=a;wheel.rotor.add(spoke);wheel.workingParts.push(spoke);}
+  // Each cheek is one plate: Brown's eight-armed star (hub, eight long arms
+  // between the chain seats) joined by his thin rim, with the carrier-shaft
+  // pockets swept out of the rim.
+  const cheek=plate(pinProfiles.shape,-.025,.025);// inner face 0.2725: the shafts (half-length 0.28, capped by the riser bore) bear on it
+  for(const z of[-.2975,.2975]){
+   const rim=new THREE.Mesh(cheek,wheel.rim.material);rim.userData.role="swept-cross-shaft-pocket-rim";rim.position.z=z;wheel.rotor.add(rim);wheel.workingParts.push(rim);
   }
   const bracket=new THREE.Mesh(tube(.20,.18,.107),b.topWheel.hub.material);bracket.rotation.x=Math.PI/2;bracket.position.copy(wheel.axle.position);bracket.position.z=-.52;root.add(bracket);wheel.bearing=bracket;
  }

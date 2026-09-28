@@ -122,12 +122,12 @@ test('movement 234 preserves the source layout and exact verge design equation',
     'thirteen-tooth pitch');
   near(
     geometry.palletIncludedAngle,
-    THREE.MathUtils.degToRad(100),
+    THREE.MathUtils.degToRad(70),
     0,
-    'historical pallet included angle',
+    'pallet included angle for Brown\'s steeply hanging flags',
   );
-  // A 13-degree half swing gives Brown's longer flags (0.76 long, S 0.34
-  // above the tips).
+  // A 13-degree half swing on a 70-degree verge hangs Brown's flags steeply
+  // (0.88 long, S 0.59 above the tips).
   near(geometry.vergeAmplitude, THREE.MathUtils.degToRad(13), 0,
     'verge half swing');
   near(geometry.dropFractionOfPitch, 0.1, 0,
@@ -314,7 +314,7 @@ test('movement 234 keeps each active tooth exactly on its pallet face', () => {
     );
     near(contact.point.z, geometry.toothTipZ, 0,
       'contact ridge stays at tooth-tip height');
-    near(contact.palletPlaneSeparation, 0, 2.5e-15,
+    near(contact.palletPlaneSeparation, 0, 5e-15,
       'tooth ridge lies on the pallet plane');
     near(contact.toothPhaseError, 0, 1.3e-15,
       'the published tooth is the geometrically active tooth');
@@ -349,7 +349,7 @@ test('movement 234 keeps each active tooth exactly on its pallet face', () => {
       Math.abs(contact.slidingVelocity),
     );
   }
-  assert.ok(maximumSeparation < 2.5e-15);
+  assert.ok(maximumSeparation < 5e-15);
   assert.ok(maximumPhaseError < 1.3e-15);
   assert.ok(maximumNormalVelocityError < 2.6e-15);
   assert.ok(maximumSlidingSpeed > 0.18);
@@ -389,17 +389,17 @@ test('movement 234 free drops clear the releasing tip before the opposite root',
   assert.equal(firstRelease.freeDropState.escaping.side, 'right');
   assert.equal(firstRelease.freeDropState.approaching.side, 'left');
   assert.ok(firstRelease.freeDropState.approachingPlaneClearance > 0.08);
-  assert.ok(firstRelease.freeDropState.approachingLongitudinalShortfall > 0.04);
+  assert.ok(firstRelease.freeDropState.approachingLongitudinalShortfall > 0.035);
   near(firstRelease.freeDropState.escapingLongitudinalOverrun, 0, 6e-17,
     'release tooth begins at the pallet tip');
   assert.ok(firstMiddle.freeDropState.approachingPlaneClearance > 0.04);
-  assert.ok(firstMiddle.freeDropState.approachingLongitudinalShortfall > 0.02);
-  assert.ok(firstMiddle.freeDropState.escapingLongitudinalOverrun > 0.04);
+  assert.ok(firstMiddle.freeDropState.approachingLongitudinalShortfall > 0.018);
+  assert.ok(firstMiddle.freeDropState.escapingLongitudinalOverrun > 0.035);
   assert.ok(firstArrival.freeDropState.approachingPlaneClearance < 2e-14);
   assert.ok(
     firstArrival.freeDropState.approachingLongitudinalShortfall < 1e-14,
   );
-  assert.ok(firstArrival.freeDropState.escapingLongitudinalOverrun > 0.085);
+  assert.ok(firstArrival.freeDropState.escapingLongitudinalOverrun > 0.07);
 
   const secondMiddle = stateAtCycleCoordinate(
     (geometry.phases.secondDrop.start + geometry.phases.secondDrop.end) / 2,

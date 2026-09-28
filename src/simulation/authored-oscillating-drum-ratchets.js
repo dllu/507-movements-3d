@@ -1,6 +1,8 @@
 import {correctOscillatingDrum,finishOneWayFamily} from './one-way-clutch-working-parts.js';
 import * as THREE from 'three';
 import {circle,plate,poly,polygonClipping as clip,rotate as rotateXY,sector} from './finite-plate-geometry.js';
+import {drumContact} from './oscillating-drum-contact.js';
+import {makeSpokedWheel} from './spoked-wheel.js';
 import {
   PALETTE,
   makeBeam,
@@ -294,7 +296,7 @@ function oscillatingDrumRatchet(movement) {
   const sectorBaseWrap = 0.50;
   const drumBaseWrap = 1.35;
   const flywheelRadius = 1.34;
-  const ratchetToothCount = 16;
+  const ratchetToothCount = drumContact.toothCount;
   const ratchetToothPitch = FULL_TURN / ratchetToothCount;
   const counterweightNominalFreeLength = 1.55;
   const cordZ = 0.67;
@@ -907,9 +909,55 @@ function oscillatingDrumRatchet(movement) {
   };
 }
 
+// Brown's twenty-tooth ratchet (the hooked pawl is generated offline), and
+// his flat-rimmed, four-flat-spoked flywheel (the shared spoked-wheel
+// extrusion) in place of the torus rim and rod spokes.
+function fitBrownRatchetAndFlywheel(model) {
+  const b = model.root.userData.blocks, p = drumContact;
+  let profile = poly(circle([0, 0], p.rootRadius, 160));
+  for (let i = 0; i < p.toothCount; i += 1) {
+    const a = i * p.pitch, c = Math.cos(a), si = Math.sin(a);
+    profile = clip.union(profile, poly(p.profile.map(([x, y]) => [c * x - si * y, si * x + c * y])));
+  }
+  profile = clip.difference(profile, poly(circle([0, 0], .104, 96)));
+  b.ratchetWheel.geometry.dispose();
+  b.ratchetWheel.geometry = plate(profile, -.07, .07);
+  b.ratchetWheel.userData.toothCount = p.toothCount;
+  b.ratchetWheel.userData.toothPitch = p.pitch;
+  const rim = b.flywheelRim, R = model.root.userData.geometry.flywheelRadius;
+  const wheel = makeSpokedWheel({
+    spokes: 4, outerRadius: R + .105, rimInnerRadius: R - .105,
+    spokeWidth: .13, hubRadius: .26, boreRadius: .102, thickness: .16,
+    rimFillet: .03, hubFillet: .08, role: 'flat-four-spoked-flywheel',
+  }, rim.material);
+  // Brown draws the frame upright and brace in front of the flywheel. The
+  // old rim plane (z -0.27) ran through them, so the wheel now turns behind
+  // the rear shaft-bearing post (z -0.73..-0.51) at z -0.86, keyed straight
+  // on the shaft, which is lengthened to end just behind it.
+  wheel.position.z = -0.86;
+  {
+    const front = 0.76, back = -0.95;
+    let frontShaft = null;
+    model.root.traverse((o) => { if (o.userData.role === 'shaft-rigid-with-ratchet-and-flywheel') frontShaft = o; });
+    frontShaft.geometry.dispose();
+    frontShaft.geometry = new THREE.CylinderGeometry(.10, .10, front - back, 28);
+    frontShaft.rotation.set(Math.PI / 2, 0, 0);
+    frontShaft.position.z = (front + back) / 2;
+  }
+  rim.parent.add(wheel);
+  rim.visible = false;
+  for (const spoke of b.flywheelSpokes) spoke.visible = false;
+  b.flywheelWheel = wheel;
+  // The least-clearance table drops the pawl from each crest in one frame.
+  // That snap is physical here: during overrun a tooth passes in about 0.3 s,
+  // and a pawl held up for even 0.01 s would have its hooked nose struck by
+  // the next crest, so it must be down within a frame.
+  return model;
+}
+
 export function createAuthoredOscillatingDrumRatchetMovement(movement) {
   if (movement.id !== 360) return null;
-  const model = finishOneWayFamily(correctOscillatingDrum(oscillatingDrumRatchet(movement)), 360);
+  const model = finishOneWayFamily(fitBrownRatchetAndFlywheel(correctOscillatingDrum(oscillatingDrumRatchet(movement))), 360);
   // Display time 0 is Brown's pose: the beam level at mid-swing, a quarter
   // of a beam oscillation into the physical cycle (stateAtTime keeps the
   // physical timeline; the loop stays whole because the shift is constant).
@@ -920,6 +968,7 @@ export function createAuthoredOscillatingDrumRatchetMovement(movement) {
   // shift, so they stand upright and level at time 0 as Brown draws them.
   const spokeTurn = data.stateAtTime(0).flywheelAngle - data.stateAtTime(sourcePoseTime).flywheelAngle;
   for (const spoke of data.blocks.flywheelSpokes) spoke.rotation.z += spokeTurn;
+  data.blocks.flywheelWheel.rotation.z += spokeTurn;
   model.update = (time) => physicalUpdate(time + sourcePoseTime);
   data.timeline.displayTimeOffset = sourcePoseTime;
   model.update(0);

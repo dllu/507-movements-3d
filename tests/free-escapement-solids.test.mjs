@@ -10,7 +10,7 @@ test('313 finite impulse and locking faces retain full-cycle clearance and activ
   const m=models[0],d=m.root.userData,b=d.blocks,g=d.geometry;
   for(const[name,target]of[['impulse',b.impulsePalletBody],['lock',b.lockingStoneT]]){
     const field=solidSurface(target.geometry),sources=b.escapeTeeth.map(a=>({a,points:surfacePoints(a.geometry)}));let min=Infinity,minActive=Infinity,maxActive=0;
-    for(const phase of phases(g)){m.update(phase*g.balancePeriod);m.root.updateMatrixWorld(true);const s=d.stateAtTime(phase*g.balancePeriod),gap=Math.min(...sources.map(p=>gapAt(p.a,target,p.points,field)));min=Math.min(min,gap);if(name==='impulse'?s.impulseContactActive:(s.wheelLocked&&s.detentLift===0)){minActive=Math.min(minActive,gap);maxActive=Math.max(maxActive,gap);}}
+    for(const phase of phases(g)){m.update(phase*g.balancePeriod-(d.displayTimeOffset??0));m.root.updateMatrixWorld(true);const s=d.stateAtTime(phase*g.balancePeriod),gap=Math.min(...sources.map(p=>gapAt(p.a,target,p.points,field)));min=Math.min(min,gap);if(name==='impulse'?s.impulseContactActive:(s.wheelLocked&&s.detentLift===0)){minActive=Math.min(minActive,gap);maxActive=Math.max(maxActive,gap);}}
     assert.ok(min>.00018,`${name} full-cycle gap ${min}`);assert.ok(minActive>.00018,`${name} active gap ${minActive}`);assert.ok(maxActive<.00022,`${name} working gap ${maxActive}`);
   }
   for(const phase of[g.impulseStartPhase,g.impulseEndPhase]){const s=d.contactGeometryAtPhase(phase),r=s.point.clone().sub(g.balanceCenter),n={x:-s.direction.y,y:s.direction.x};assert.ok(r.x*n.y-r.y*n.x>1.4,'one-sided face has the correct positive impulse moment');}

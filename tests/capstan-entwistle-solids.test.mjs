@@ -60,5 +60,8 @@ for(const id of[412,495])test(`${id} disables ground and actual material fog`,()
 test('finite working surfaces stay close and clear with current source hashes',()=>{
  const report=JSON.parse(fs.readFileSync('docs/validation/412-495-gear-solids.json'));
  for(const source of report.sources)assert.equal(createHash('sha256').update(fs.readFileSync(source.file)).digest('hex'),source.sha256,source.file);
- for(const row of report.results){assert.ok(row.poses>=33);assert.equal(row.penetrations,0);assert.ok(row.queries>100000);for(const pair of row.pairs)assert.ok(pair.maximumSampledGap<.004);}
+ // Pass 90: 495's bevels are short-faced (teeth on the outer third only), so
+ // the closest approach is the flank backlash (tooth thickness factor 0.96),
+ // no longer the tiny teeth near the apex.
+ for(const row of report.results){assert.ok(row.poses>=33);assert.equal(row.penetrations,0);assert.ok(row.queries>100000);for(const pair of row.pairs)assert.ok(pair.maximumSampledGap<(row.id===495?.006:.004));}
 });

@@ -23,6 +23,19 @@ export function correctGyroscopeParts(root,id) {
   };
   if(id===355){
     ring(b.ringBody,'support355');
+    // Disk C is Brown's flywheel: a heavy rim, a thinner web and a bell hub
+    // flaring from the spindle towards the pillar side (lathe axis +y is the
+    // mesh's -x after its quarter turn). One lathed solid, bored round the
+    // brass hub with 0.002 clearance.
+    {
+      const R=g.diskRadius,rimIn=R*.8,web=.06,half=g.diskThickness/2,bell=[];
+      for(let i=0;i<=16;i++){const t=i/16;bell.push({radial:.30+(.64-.30)*(1-t)**2.2,axial:web+(.46-web)*t});}
+      replace(b.diskBody,boredLatheGeometry([
+        {radial:.36,axial:-.12},{radial:rimIn-.05,axial:-web},{radial:rimIn,axial:-half},
+        {radial:R,axial:-half},{radial:R,axial:half},{radial:rimIn,axial:half},
+        {radial:rimIn-.05,axial:web},...bell,
+      ],.272,160));
+    }
     b.leftSpindleCap.visible=false; // The short left end terminates inside its journal.
     for(const o of[b.pillarIndex,b.ringIndex,...b.spinIndexes])o.visible=false; // Brown draws no white indices.
     b.bearingHousings.forEach(h=>bearing(h,b.spindle,g.bearingOuterRadius,g.bearingLength,.096));
@@ -30,7 +43,7 @@ export function correctGyroscopeParts(root,id) {
     for(const moving of[b.diskBody,b.spindle,b.hub,...b.spinIndexes,b.rightSpindleKnob,b.knobBulb]){
       for(const fixed of[b.ringBody,...b.bearingHousings,b.pillar,b.supportCup,b.pintle,b.curvedNeck])pair(moving,fixed);
     }
-    d.cameraDirection=new THREE.Vector3(7,3.8,12);
+    d.cameraDirection=new THREE.Vector3(1,3.4,12);
     // The full precession sweep, so disk C and ring A stay in view as they
     // turn round the pillar.
     d.sweptBounds=new THREE.Box3(new THREE.Vector3(-4.75,-2.48,-4.75),new THREE.Vector3(4.75,3.55,4.75));
@@ -47,7 +60,8 @@ export function correctGyroscopeParts(root,id) {
     b.middlePivotBearings.forEach((h,i)=>bearing(h,b.middlePivotPins[i],g.bearingRadius,.055,.081));
     b.innerPivotBearings.forEach((h,i)=>bearing(h,b.innerPivotPins[i],g.bearingRadius*.91,.20,.074));
     b.rotorBearingHousings.forEach(h=>bearing(h,b.rotorShaft,g.bearingRadius*.82,.17,.070));
-    journal(b.lowerYawTrunnion,.12,.36,.081);
+    // Bore 0.0835, not 0.081: the 0.081 bore wall coincided with ring A and the A–A1 bearing (p90 flicker screen).
+    journal(b.lowerYawTrunnion,.12,.36,.0835);
     journal(b.supportColumn,.23,b.supportColumn.geometry.parameters.height,.126);
     pair(b.lowerYawTrunnion,b.supportColumn);
     b.middlePivotPins.forEach(pin=>{pair(pin,b.outerRing);pair(pin,b.lowerYawTrunnion);});

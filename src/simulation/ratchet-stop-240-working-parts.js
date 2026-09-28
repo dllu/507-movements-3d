@@ -27,7 +27,7 @@ export function stateStops240(s,stops,outline,pitch){
 // finite toe (not the tooth root the source-shaped bodies reach): Brown's
 // curved hook bows outward over the teeth, the straight stop is a plain
 // tapering bar. Each ends in its own rounded toe of the finite nose radius.
-export const BAND240={hook:{bow:[[.24,.24],[.52,.34],[.78,.26]],width:[.18,.17,.15],radial:0},straight:{bow:[[.48,.06],[.8,.07]],width:[.16,.13],radial:1},spring:{radial:1},clearance:.05,neck:.09};
+export const BAND240={hook:{bow:[[.24,.30],[.52,.42],[.78,.29]],width:[.24,.21,.15],radial:0},straight:{bow:[[.48,0],[.8,0]],width:[.24,.19],radial:0},spring:{radial:1},clearance:.05,neck:.09,eye:.25};
 // Where a stop's working toe leaves its tooth space: the toe runs out along
 // the bisector of the space's opening (between the two neighbouring tips), or
 // radially, to a neck just clear of the tip circle, so the band behind it
@@ -113,7 +113,7 @@ export function finishStops240(root,stops){
   // Each stop is one flat plate in the wheel's plane whose own rounded toe
   // (the finite nose radius) bears on the retaining face: no cross-pin.
   let joined;
-  if(i<2)joined=clip.union(stopBand240(stop,g.localProfilePoints,g.wheelOuterRadius),poly(circle([0,0],.19,64)));
+  if(i<2)joined=clip.union(stopBand240(stop,g.localProfilePoints,g.wheelOuterRadius),poly(circle([0,0],BAND240.eye,96)));
   else{
    // C turns on a fixed pin through its own hole. The S-spring is a separate
    // flat band from its anchored leaf eye to C's lower right; it bends to
@@ -127,7 +127,7 @@ export function finishStops240(root,stops){
   const bore=i===2?.05:.089;
   replace(body,plate(clip.difference(joined,poly(circle([0,0],bore,128))),-.09,.09));
   const nose=new THREE.Object3D();nose.position.set(stop.arm.x,stop.arm.y,body.position.z);nose.userData.role=`${stop.key}-finite-working-toe`;group.add(nose);noses.push(nose);
-  const collar=group.children.find(o=>o.userData.role===`${stop.key}-pivot-ring`);replace(collar,i===2?ring(.05,.1,-.02,.035,96):ring(.089,.205,-.02,.035,128));/* seated just clear of the plate's face */collars.push(collar);
+  const collar=group.children.find(o=>o.userData.role===`${stop.key}-pivot-ring`);replace(collar,i===2?ring(.05,.1,-.02,.035,96):ring(.089,.13,-.02,.035,128));/* seated just clear of the plate's face */collars.push(collar);
  });
  root.traverse(o=>{if(o.userData.role==='stop-C-fixed-pivot-pin'){const m=o.isMesh?o:o.userData.rotor?.children.find(c=>c.isMesh)??o.children.find(c=>c.isMesh);if(m){m.geometry.dispose();m.geometry=new THREE.CylinderGeometry(.047,.047,.34,48);}}});
  replace(b.wheel.userData.hub,ring(.124,.39,-.2272,.2272,128));

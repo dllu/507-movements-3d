@@ -54,6 +54,19 @@ export function holdingClickOutline(g){
   const ringPoints=[...upper,...nose,...lower.reverse()];
   return clip.union(poly(ringPoints),poly(circle([0,0],CLICK_EYE_RADIUS,64)));
 }
+export const TAPPET_BLADE_235={back:[[.02,-.19],[1.3,-.12],[1.42,-.04]],notch:[1.76,.19],beakBack:[1.99,.08],front:[[2.0,.25],[1.55,.45],[.52,.3]],eye:.15};
+export function tappetBladeOutline(g){
+  const L=g.tappetLength,rn=g.tappetNoseRadius-.0005,B=TAPPET_BLADE_235;
+  // Along the arm's edge, then the notch's two straight sides: the star's
+  // point sits in the notch while the nose drives its face.
+  const points=[...B.back,B.notch,B.beakBack];
+  for(let i=0;i<=24;i++){const a=TAPPET_NOSE_START+(TAPPET_NOSE_END-TAPPET_NOSE_START)*i/24;points.push([L+rn*Math.cos(a),rn*Math.sin(a)]);}
+  // One cubic from the nose's end round the front to the arm's edge.
+  const p0=points.at(-1),[c1,c2,p3]=B.front;
+  for(let i=1;i<=32;i++){const t=i/32,u=1-t;points.push([0,1].map(k=>u**3*p0[k]+3*u*u*t*c1[k]+3*u*t*t*c2[k]+t**3*p3[k]));}
+  points.push([.08,.2],[-.06,.16]);
+  return clip.union(poly(points),poly(circle([0,0],B.eye,96)));
+}
 export function finishStarTappet(root){
   const d=root.userData,b=d.blocks,g=d.geometry;
   const replace=(mesh,geometry,reset=false)=>{mesh.geometry.dispose();mesh.geometry=geometry;if(reset)mesh.rotation.set(0,0,0);};
@@ -66,16 +79,13 @@ export function finishStarTappet(root){
   // with a rounded end round its pivot, carrying the tappet near its left end.
   const carrierOutline=capsule([-.12,0],[g.carrierLength+.8,0],.22,48);
   replace(b.carrierBody,plate(clip.difference(carrierOutline,poly(circle([0,0],.089,128)),poly(circle([g.carrierLength,0],.074,128))),-.085,.085));
-  // Brown's tappet is a beak: its upper edge sweeps down and back from the
-  // rounded nose, so the driven point's tip passes clear of it while the nose
-  // (its arc covering every drive contact direction) bears on the face.
-  const L=g.tappetLength,rn=g.tappetNoseRadius-.0005,hook=new THREE.Shape();hook.moveTo(-.1,-.11);
-  const noseStart=[L+rn*Math.cos(TAPPET_NOSE_START),rn*Math.sin(TAPPET_NOSE_START)],noseTangent=[-Math.sin(TAPPET_NOSE_START),Math.cos(TAPPET_NOSE_START)];
-  hook.quadraticCurveTo(noseStart[0]-TAPPET_EDGE_REACH*noseTangent[0],noseStart[1]-TAPPET_EDGE_REACH*noseTangent[1],...noseStart);
-  hook.absarc(L,0,rn,TAPPET_NOSE_START,TAPPET_NOSE_END,false);
-  hook.quadraticCurveTo(L*.83,.52,L*.43,.4);
-  hook.quadraticCurveTo(.08,.26,-.1,.1);hook.closePath();
-  replace(b.tappetBody,plate(clip.difference(poly(hook.extractPoints(24).shape.map(p=>p.toArray())),poly(circle([0,0],.074,128))),-.09,.09));
+  // Brown's tappet is one flat blade with a pointed beak: from the beak its
+  // back (the star side) runs straight down to a notch and steps up onto the
+  // arm's edge; its front sweeps round from the beak in one convex curve to
+  // the arm's other edge; and it closes round the hinge in a plain eye. Set
+  // out from the plate in the tappet's frame (hinge at the origin, the nose
+  // centre on +x). The working nose arc covers every drive contact direction.
+  replace(b.tappetBody,plate(clip.difference(tappetBladeOutline(g),poly(circle([0,0],.074,128))),-.09,.09));
   // Brown's tappet continues past its hinge into a tail lobe that he dashes
   // behind the arm; only its lower edge shows below the arm. The tail is a
   // second plate behind the arm (world z 0.01..0.19; arm 0.215..0.385), keyed

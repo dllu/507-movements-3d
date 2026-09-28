@@ -61,7 +61,7 @@ test('379 and 380 actual drill points face down and preserve clearance to the wo
 test('366 finite keyed pinion and shaft guides clear the sliding feather across every feed position',()=>{
  const {root,update}=createMovementModel(catalog[365]),b=root.userData.blocks;
  const meshes=[];
- for(const object of[b.pinionGear.userData.body,b.pinionHub,...b.pinionBearingCollars,b.lowerShaftGuide,b.upperShaftGuide,b.thrustCollar,b.collarYoke,b.inputShaft])object.traverse(o=>{if(o.geometry)meshes.push(o);});
+ for(const object of[b.pinionGear.userData.body,b.pinionHub,...b.pinionBearingCollars,b.lowerShaftGuide,b.upperShaftGuide,b.thrustCollar,b.inputShaft])object.traverse(o=>{if(o.geometry)meshes.push(o);});
  const targets=meshes.map(o=>[o,solidSurface(o.geometry)]);
  for(let i=0;i<=64;i++){
   update(i*8/64);root.updateMatrixWorld(true);
@@ -79,7 +79,7 @@ test('366 finite keyed pinion and shaft guides clear the sliding feather across 
 
 test('366 feed rods have finite bores and distinct joint layers',()=>{
  const {root,update}=createMovementModel(catalog[365]),b=root.userData.blocks;
- const rods=[[b.verticalConnector,[b.feedPins[0],b.feedPins[1]]],[b.upperThrustLink,[b.feedPins[2],b.collarPin]]];
+ const rods=[[b.verticalConnector,[b.feedPins[0],b.feedPins[1]]]];
  const ray=new THREE.Raycaster();
  for(let i=0;i<=64;i++){
   update(i*8/64);root.updateMatrixWorld(true);
@@ -92,7 +92,9 @@ test('366 feed rods have finite bores and distinct joint layers',()=>{
    assert.ok(bounds(pin).min.z<bounds(rod).min.z&&bounds(pin).max.z>bounds(rod).max.z);
   }
   assert.ok(bounds(b.verticalConnector).min.z>bounds(b.treadleBeam).max.z);
-  assert.ok(bounds(b.upperThrustLink).min.z>bounds(b.upperLeverBeam).max.z);
+  // The collar pin passes through the upper lever's slotted eye, in the shaft plane behind the shaft.
+  assert.ok(bounds(b.collarPin).min.z<bounds(b.upperLeverBeam).min.z&&bounds(b.collarPin).max.z>bounds(b.upperLeverBeam).max.z);
+  assert.ok(bounds(b.upperLeverBeam).max.z<-.2&&bounds(b.treadleBeam).max.z<-.2,'levers lie just behind the drill shaft');
  }
 });
 
@@ -163,5 +165,29 @@ test('379 and 380 C-frames are one extrusion of one section thickness, arm ends 
     assert.ok(center.x-x>bore+.005,`${id} ${name}: arm end clears the bore`);
    }
   }
+ }
+});
+
+// Pass 90: 379 and 380 share one crank treatment. The bar is one flat
+// extrusion whose far end is a circular arc concentric with the turned
+// handle; the handle's foot is sunk into the bar's top and lies wholly inside
+// that end, so no bar edge overhangs the handle (the p87 lip).
+test('379 and 380 cranks carry one turned handle whose foot stands wholly on the bar end',()=>{
+ for(const [id,expected] of [[379,{handleX:-1.60,end:.15,height:.47}],[380,{handleX:-1.45,end:.20,height:.442}]]){
+  const model=createMovementModel(catalog[id-1]),b=model.root.userData.blocks;
+  const arm=b.drillCrankArm,knob=b.drillCrankKnob;
+  assert.equal(knob.geometry.type,'LatheGeometry',`${id} handle is turned`);
+  assert.ok(Math.abs(knob.position.x-expected.handleX)<1e-6,`${id} handle axis`);
+  arm.geometry.computeBoundingBox();const box=arm.geometry.boundingBox;
+  assert.ok(Math.abs(box.max.y-box.min.y-.11)<1e-6,`${id} bar is 0.11 thick`);
+  assert.ok(Math.abs(box.min.x-(expected.handleX-expected.end))<1e-3,`${id} bar end is an arc about the handle axis`);
+  const p=knob.geometry.attributes.position,foot={r:0,top:0};
+  for(let i=0;i<p.count;i++){const y=p.getY(i),r=Math.hypot(p.getX(i),p.getZ(i));foot.top=Math.max(foot.top,y);if(y<=.013)foot.r=Math.max(foot.r,r);}
+  assert.ok(Math.abs(foot.top-expected.height)<1e-6,`${id} handle height`);
+  assert.ok(foot.r<expected.end-.02,`${id} foot ${foot.r} lies inside the bar end`);
+  assert.ok(Math.abs(knob.position.y-(box.max.y-.012))<1e-6,`${id} foot is sunk 0.012 into the bar`);
+  // Every bar vertex beyond the handle axis lies on the end arc.
+  const q=arm.geometry.attributes.position;
+  for(let i=0;i<q.count;i++){const x=q.getX(i),z=q.getZ(i);if(x<expected.handleX-1e-6)assert.ok(Math.abs(Math.hypot(x-expected.handleX,z)-expected.end)<1e-6,`${id} end arc`);}
  }
 });

@@ -4,6 +4,7 @@ import { dualInputDifferentialMotion } from './dual-input-differential-motion.js
 import { turnedClutchGeometry } from './clutch-section-geometry.js';
 import { bevelToothGeometry } from './bevel-geometry.js';
 import { flatBeltGeometry } from './belt-geometry.js';
+import { makeSeeThrough } from './see-through-part.js';
 import { PALETTE, matte, markShadows, beltCurveOpen, beltCurveCrossed } from './primitives.js';
 
 export function makeDualInputDifferential() {
@@ -133,8 +134,10 @@ export function makeDualInputDifferential() {
     fullCameraDirection: new THREE.Vector3(-8, 3, 6), shadowCameraHalfExtent: 5, shadowBias: -0.00003,
     fidelity: 'authored', mechanism: 'enclosed-dual-input-bevel-differential', reconstructionStatus: 'contact-verified-reconstruction', animationTiming: { authoredCyclePeriod: p.cycleDuration },
     idealConstraints: 'Shaft bearings and axial retention are ideal constraints. The carrier runs on the auxiliary-input sleeve. The input is stopped in neutral and during selector shifts. Open and crossed bands are separate installed configurations; manual re-reeving is not animated. Free differential dynamics, transient friction, belt elasticity and inertia are not solved. The two-sided crossed flat band has prescribed smooth axial bows between exact cylindrical wraps.' };
-  // Brown draws the pulleys as a closed drum (bevels only dotted inside);
-  // the cutaway is offered through the section-view control.
+  // Brown draws the bevels dotted inside the closed drum of the fast and
+  // carrier pulleys. Those two pulleys take the shared see-through style so
+  // the differential shows; the cutaway stays on the section-view control.
+  for (const mesh of sectioned) makeSeeThrough(mesh);
   update(0); markShadows(root); setSectionView(false);
   sectionCaps.traverse(mesh => { mesh.castShadow = false; });
   return { root, update, cameraDirection: new THREE.Vector3(-10, 0, 0) };

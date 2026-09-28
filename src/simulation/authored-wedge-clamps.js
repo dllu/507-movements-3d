@@ -63,10 +63,11 @@ function boweryJoinersClamp(movement) {
 
   const stateAtTime = (time) => {
     const insertionPhase = insertionAngularFrequency * time;
-    const insertionFraction = 0.5 * (1 - Math.cos(insertionPhase));
-    const insertionRate = 0.5 * insertionAngularFrequency
+    // Brown draws the wedges driven home, so the cycle starts clamped.
+    const insertionFraction = 0.5 * (1 + Math.cos(insertionPhase));
+    const insertionRate = -0.5 * insertionAngularFrequency
       * Math.sin(insertionPhase);
-    const insertionAcceleration = 0.5 * insertionAngularFrequency ** 2
+    const insertionAcceleration = -0.5 * insertionAngularFrequency ** 2
       * Math.cos(insertionPhase);
     const axialDisplacement = -wedgeTravel * insertionFraction;
     const axialVelocity = -wedgeTravel * insertionRate;

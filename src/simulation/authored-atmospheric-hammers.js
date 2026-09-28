@@ -1,6 +1,7 @@
 import {correctHammerWorkingParts} from './hammer-working-parts.js';
 import * as THREE from 'three';
 import {applyCutawayFor} from './cutaway-presentations.js';
+import {makeSeeThrough} from './see-through-part.js';
 import {
   plate,
   poly,
@@ -958,5 +959,13 @@ function atmosphericHammer(movement) {
 
 export function createAuthoredAtmosphericHammerMovement(movement) {
   if (movement.id !== 471) return null;
-  return applyCutawayFor(atmosphericHammer(movement), movement.id);
+  const model = applyCutawayFor(atmosphericHammer(movement), movement.id);
+  // Brown draws crank A and rod D dotted, behind cylinder B, and B's piston
+  // dotted inside it: B's shell and heads are see-through (the shared style)
+  // so the crank, rod and piston show from the front at every phase.
+  const seeThrough = new Set(['front-cutaway-moving-cylinder-shell-B', 'bored-lower-cylinder-head', 'closed-upper-cylinder-head']);
+  model.root.traverse((object) => {
+    if (object.isMesh && seeThrough.has(object.userData.role)) makeSeeThrough(object);
+  });
+  return model;
 }

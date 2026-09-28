@@ -18,6 +18,8 @@ test('115 has seven closed solids and equal shifted involute pinions',()=>{
    const a=inspectWeightedClutchSolid(mesh.geometry);assert(a.volume>0,name);assert.equal(a.components,1,name);assert.equal(a.unmatchedEdges+a.degenerate+a.nonfinite+a.wrongNormals,0,name);
   }
   for(const n of ['upper','lower']){const f=u.parts[n].geometry.userData;assert.equal(f.teeth,12);assert(f.profileShift>.8&&f.profileShift<.9);}
+  // Stub teeth: flat pinion tips over 0.2 pitch and rack tips over 0.24 pitch (Brown draws square teeth).
+  {const g=u.profile,pitch=g.pitch;assert.equal(g.addendum,.6);assert.equal(g.dedendum,1.1);assert((pitch/2-2*g.dedendum*g.module*Math.tan(g.pressureAngle))/pitch>.24);}
   assert.deepEqual(u.profile.counts,{upper:10,lower:9});assert.equal(u.hideGround,true);
  }finally{disposeObject3D(v.root);}
 });
@@ -46,7 +48,9 @@ test('115 both rack faces engage through two native cycles without prescribed fr
    assert(Math.abs(d.qfrc_actuator[0]+d.qfrc_actuator[1])<1e-10);assert.equal(d.qfrc_actuator[2],0);
    const cs=d.contact;try{for(let j=0;j<cs.size();j++){const c=cs.get(j);try{const key=Array.from(c.geom,id=>p.model.geom_bodyid[id]).sort().join('/');pairs[key]=(pairs[key]??0)+1;penetration=Math.max(penetration,-c.dist);}finally{c.delete();}}}finally{cs.delete();}
   }
-  assert(lo<-.749&&lo>-.754&&hi>.749&&hi<.754);assert(error<.002);assert(penetration<.001);assert(maxStep<.0012);assert(pairs['1/3']>1000&&pairs['2/3']>1000);assert(pairs['1/2']>0);
+  assert(lo<-.749&&lo>-.754&&hi>.749&&hi<.754);assert(error<.002);assert(penetration<.001);assert(maxStep<.0012);assert(pairs['1/3']>1000&&pairs['2/3']>1000);
+  // The pinions interleave at the centre (tips overlap by 0.9 module); both are driven, so they need not touch.
+  assert(2*(f.cutterPitchRadius+f.addendum*f.module)-2*f.workingRadius>.85*f.module);
   t.diagnostic(JSON.stringify({range:[lo,hi],meshErrorPixels:100*error,penetrationPixels:100*penetration,maxStepPixels:100*maxStep,pairs}));
   v.reset();p.model.geom_contype.fill(0);p.model.geom_conaffinity.fill(0);v.update(1.5);assert(Math.abs(p.data.qpos[2])<1e-10);assert(p.data.qpos[0]<-1&&p.data.qpos[1]>1);
  }finally{v.dispose();v.dispose();}assert(p.model.isDeleted()&&p.data.isDeleted());

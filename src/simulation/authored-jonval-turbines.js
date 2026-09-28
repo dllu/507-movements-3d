@@ -3,9 +3,10 @@ import {applyCutawayFor} from './cutaway-presentations.js';
 import {horizontalRing,horizontalPlate,horizontalVane,horizontalTurned} from './horizontal-turbine-solids.js';
 import {poly,circle,polygonClipping,rotate,plate} from './finite-plate-geometry.js';
 import {mergePassageParts,curvedPipeWall} from './finite-fluid-passages.js';
+import {inletPipeGeometry,trunkWithInletGeometry} from './jonval-inlet-geometry.js';
 import {latheSectionGeometry} from './cutaway-section.js';
 import {waterVolumeMaterial} from './water-volume.js';
-import {WaterStream,collectWaterStreams,guidedPath} from './water-stream.js';
+import {WaterStream,ballisticPath,collectWaterStreams,guidedPath,joinPaths} from './water-stream.js';
 import {
   PALETTE,
   markShadows,
@@ -456,25 +457,17 @@ function jonvalTurbine(movement) {
   );
   // Brown's trunk b rises well above the wheel to the top cover and runs down
   // past the runner to the bridge carrying step c.
-  // Brown's chute opens into the trunk: the wall is cut away across the
-  // chute mouth (floor to roof, full chute width) so the water can enter.
-  {
-    const inner = annulusOuterRadius + .24, outer = annulusOuterRadius + .30;
-    const mouthLow = 1.02 - 0.65, mouthHigh = 3.30 - 0.65;
-    const half = Math.asin(1.0 / inner);
-    const arc = (radius, from, to, n = 96) => Array.from({length: n + 1}, (_, i) => {
-      const a = from + (to - from) * i / n;
-      return [radius * Math.cos(a), radius * Math.sin(a)];
-    });
-    const wall = poly([...arc(outer, half, FULL_TURN - half), ...arc(inner, FULL_TURN - half, half)]);
-    casing.geometry.dispose();
-    casing.geometry = mergePassageParts([
-      horizontalRing(inner, outer, -2.80, mouthLow),
-      horizontalPlate(wall, mouthLow, mouthHigh),
-      horizontalRing(inner, outer, mouthHigh, 2.80),
-    ]);
-  }
-  casing.position.y = 0.65;
+  // Pass 90: Brown's closed supply pipe is sealed into trunk b. The wall is
+  // pierced by exactly the pipe's bore, and the pipe's walls end on the
+  // trunk's outer surface, so its floor, roof and sides run on through the
+  // wall (jonval-inlet-geometry.js): no gap, lip or leak at the joint.
+  const inletPipe = {
+    x0: annulusOuterRadius + 0.35, slope: Math.tan(0.45), boreLow: 1.16, boreHigh: 3.16,
+    boreHalf: 1.0, wall: 0.14, side: 0.10, xEnd: annulusOuterRadius + 0.35 + 3.5,
+  };
+  const trunkInner = annulusOuterRadius + .24, trunkOuter = annulusOuterRadius + .30;
+  casing.geometry.dispose();
+  casing.geometry = trunkWithInletGeometry(inletPipe, {inner: trunkInner, outer: trunkOuter, bottom: -2.80 + 0.65, top: 2.80 + 0.65});
   casing.userData.role = 'fixed-trunk-or-casing-b-around-both-vane-rows';
   root.add(casing);
   const casingRings = [];
@@ -537,23 +530,16 @@ function jonvalTurbine(movement) {
     new THREE.BoxGeometry(3.40, 0.26, 1.28),
     frameMaterial,
   );
-  // Brown's broad rectangular chute enters the side of trunk b under the top
-  // cover, rising away to the upper right; drawn in section as a hatched
-  // floor and roof over the back wall.
+  // Brown's broad rectangular pipe enters the side of trunk b under the top
+  // cover, rising away to the upper right; closed on all four sides and
+  // sealed into the trunk (see above). The mesh keeps its local x up the
+  // pipe (position at the floor's foot, turned to the slope).
   {
-    const x0 = annulusOuterRadius + 0.35, run = 3.5, rise = Math.tan(0.45) * run;
-    const floorY = 1.16, roofY = 3.16, wall = 0.14, halfWidth = 1.0;
-    const band = (y0, y1) => poly([[x0, y0], [x0 + run, y0 + rise], [x0 + run, y1 + rise], [x0, y1]]);
-    inletFlume.geometry.dispose();
-    inletFlume.geometry = mergePassageParts([
-      plate(band(floorY - wall, floorY), -halfWidth, halfWidth),
-      plate(band(roofY, roofY + wall), -halfWidth, halfWidth),
-      plate(band(floorY - wall, roofY + wall), -halfWidth - 0.10, -halfWidth),
-    ]);
-    // Carry the slope on the mesh itself: its local x runs up the chute.
-    inletFlume.geometry.translate(-x0, -floorY, 0).rotateZ(-0.45);
-    inletFlume.position.set(x0, floorY, 0);
+    inletFlume.position.set(inletPipe.x0, inletPipe.boreLow, 0);
     inletFlume.rotation.z = 0.45;
+    inletFlume.updateMatrix();
+    inletFlume.geometry.dispose();
+    inletFlume.geometry = inletPipeGeometry(inletPipe, trunkOuter).applyMatrix4(inletFlume.matrix.clone().invert());
   }
   inletFlume.userData.role = 'fixed-sloping-inlet-flume-to-casing-b';
   root.add(inletFlume);
@@ -581,15 +567,21 @@ function jonvalTurbine(movement) {
   // back half and the trunk water is its back half with a flat cut face.
   const chuteRise = Math.tan(0.45);
   const chuteX0 = annulusOuterRadius + 0.35;
-  const chuteSurface = (x) => new THREE.Vector3(x, 1.16 + (x - chuteX0) * chuteRise + 0.155, -0.45);
-  const trunkWaterLevel = 1.46;
-  const chuteStream = new WaterStream(guidedPath([
-    chuteSurface(chuteX0 + 3.45),
-    chuteSurface(chuteX0),
-    new THREE.Vector3(chuteX0 - 0.7, 1.30, -0.45),
-  ], {speed: 2.6, samples: 30}), {
+  const chuteZ = -0.45, chuteLift = 0.155, chuteSpeed = 2.6;
+  const chuteSurface = (x) => new THREE.Vector3(x, 1.16 + (x - chuteX0) * chuteRise + chuteLift, chuteZ);
+  // Pass 90: the trunk stands full to just under the pipe's floor at the
+  // wall; the sheet runs down the floor, over the bore's lip on the trunk's
+  // inner face and falls onto that water (ending at its surface, so the two
+  // bodies neither overlap nor part).
+  const trunkWaterLevel = 0.98;
+  const lipX = Math.sqrt(trunkInner ** 2 - chuteZ ** 2);
+  const downPipe = new THREE.Vector3(-1, -chuteRise, 0).normalize();
+  const chuteStream = new WaterStream(joinPaths(
+    guidedPath([chuteSurface(chuteX0 + 3.45), chuteSurface(lipX)], {speed: chuteSpeed, samples: 24}),
+    ballisticPath({origin: chuteSurface(lipX), velocity: downPipe.multiplyScalar(chuteSpeed), endY: trunkWaterLevel + 0.02, samples: 12}),
+  ), {
     width: 0.45, thickness: 0.15, widthAxis: new THREE.Vector3(0, 0, 1), widthExponent: 0,
-    fadeOut: 0.12, cyclePeriod: cycleDuration, streakRate: 1.1, opacity: 0.5,
+    cyclePeriod: cycleDuration, streakRate: 1.1, opacity: 0.5,
   });
   chuteStream.userData.role = 'water-running-down-chute-into-trunk-b';
   root.add(chuteStream);
@@ -602,6 +594,7 @@ function jonvalTurbine(movement) {
   trunkWater.renderOrder = 1;
   trunkWater.userData.role = 'water-standing-in-trunk-b-over-shute-row-a';
   root.add(trunkWater);
+  Object.assign(geometry, {inletPipe, trunkInner, trunkOuter, trunkWaterLevel});
   const updateWater = collectWaterStreams(root);
   const lowerBasin = new THREE.Mesh(
     new THREE.CylinderGeometry(3.02, 3.02, 0.24, 80),

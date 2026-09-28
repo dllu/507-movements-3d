@@ -358,3 +358,38 @@ test('movement 507 remains the next authored frontier', () => {
   assert.equal(movement507.fidelity, 'authored');
   assert.equal(catalog.movements[506].archetype, 'carrier-driven-25000-to-1-slow-bevel-output-compound-planetary');
 });
+
+test('movement 404 thumbscrew head is Brown’s flat wing: neck up, two round lobes down, notch between', async () => {
+  const { THUMBSCREW_HEAD, thumbscrewHeadOutline } = await import('../src/simulation/authored-flexible-cyclographs.js');
+  const movement = catalog.movements[403];
+  const model = createMovementModel(movement);
+  const { handwheel } = model.root.userData.blocks;
+  const { outline, lobe, corner } = thumbscrewHeadOutline();
+  // Mirror-symmetric about the screw axis, closed, with the neck at the top.
+  const top = Math.max(...outline.map((p) => p.y));
+  near(top, THUMBSCREW_HEAD.top, 1e-9, 'head top');
+  const neck = outline.filter((p) => Math.abs(p.y - top) < 1e-9);
+  near(Math.max(...neck.map((p) => Math.abs(p.x))), THUMBSCREW_HEAD.neckHalfWidth, 1e-9, 'neck half width');
+  for (const p of outline) {
+    assert.ok(outline.some((q) => Math.abs(q.x + p.x) < 1e-9 && Math.abs(q.y - p.y) < 1e-9), 'mirror point');
+  }
+  // Two grip lobes below and wider than the neck: three lobes, not three-fold.
+  assert.ok(lobe.x > THUMBSCREW_HEAD.neckHalfWidth);
+  near(Math.max(...outline.map((p) => p.x)), lobe.x + THUMBSCREW_HEAD.lobeRadius, 2e-3, 'lobe reach');
+  near(Math.min(...outline.map((p) => p.y)), lobe.y - THUMBSCREW_HEAD.lobeRadius, 2e-3, 'lobe bottom');
+  // The notch opens downward between the lobes and stops above their centres.
+  const notchApex = outline.find((p) => p.x === 0 && p.y < top);
+  assert.ok(notchApex.y > lobe.y && notchApex.y < top - 0.5 * THUMBSCREW_HEAD.lobeDrop);
+  assert.ok(corner.x > 0 && corner.x < lobe.x - THUMBSCREW_HEAD.lobeRadius);
+  // No white angular index: the wing itself shows the turn.
+  const roles = [];
+  handwheel.handwheel.traverse((object) => roles.push(object.userData.role));
+  assert.ok(!roles.some((role) => /angular-index/.test(role ?? '')));
+  // At the source pose the wing faces the viewer, as drawn.
+  model.update(0, 0);
+  model.root.updateMatrixWorld(true);
+  const e = handwheel.lobes.matrixWorld.elements;
+  near(Math.abs(e[0]), 1, 1e-3, 'wing plane faces the viewer');
+  near(e[1], 0, 1e-6, 'wing axis horizontal');
+  disposeModel(model.root);
+});

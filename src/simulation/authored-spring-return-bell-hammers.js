@@ -176,7 +176,9 @@ function springReturnBellHammer(movement) {
   // Rope: tied to the tail end, held by the ringer's hand on a fixed line
   // just left of the tail. Taut (straight, full length) only while the hand
   // pulls; otherwise it hangs as a slack catenary.
-  const pullCordLength = 3.35;
+  // Pass 90: Brown's cord hangs only a short way below the tail, so the
+  // ringer's hand is in view just below the plank's end (was 3.35 long).
+  const pullCordLength = 1.25;
   const tailDirection = Math.PI - restAngle;
   const tailTipAt = (angle) => new THREE.Vector3(
     pivot.x + Math.cos(angle + tailDirection) * hammerTailLength,
@@ -535,14 +537,18 @@ function springReturnBellHammer(movement) {
   bellPivot.userData.role = 'small-post-impact-bell-vibration-pivot';
   // Brown's shouldered bell: domed crown, near-straight waist, flared sound
   // bow and lip, with two raised bands at the shoulder and one above the lip.
+  // Pass 90: measured on Brown's plate (radius over lip radius, depth over
+  // height): a domed crown, a narrow shoulder with two raised bands, then
+  // straight, steadily flaring sides to a band above the lip.
+  const R = bellLipRadius, H = bellHeight;
   const bellProfile = [
-    [0.20, 0], [0.36, 0.03], [0.47, 0.09], [0.54, 0.18], [0.57, 0.28],
-    [0.575, 0.33], [0.60, 0.335], [0.60, 0.365], [0.578, 0.37],
-    [0.58, 0.41], [0.605, 0.415], [0.605, 0.445], [0.582, 0.45],
-    [0.60, 0.80], [0.64, 1.00], [0.72, 1.18], [0.80, 1.31],
-    [0.84, 1.36], [0.87, 1.365], [0.885, 1.40], [0.86, 1.405],
-    [0.89, 1.50], [bellLipRadius, bellHeight],
-  ].map(([r, depth]) => new THREE.Vector2(r, bellHeight - depth));
+    [0.28, 0], [0.40, 0.03], [0.47, 0.065], [0.505, 0.10],
+    [0.535, 0.105], [0.535, 0.125], [0.512, 0.13],
+    [0.525, 0.20], [0.552, 0.205], [0.552, 0.225], [0.53, 0.23],
+    [0.555, 0.35], [0.62, 0.50], [0.71, 0.65], [0.80, 0.77], [0.86, 0.84],
+    [0.89, 0.845], [0.89, 0.865], [0.87, 0.87],
+    [0.935, 0.93], [1, 1],
+  ].map(([r, depth]) => new THREE.Vector2(r * R, H - depth * H));
   const bellBody = new THREE.Mesh(
     new THREE.LatheGeometry([...bellProfile,
       ...bellProfile.slice().reverse().map(p => new THREE.Vector2(p.x - 0.055, p.y)), bellProfile[0]].reverse(), 96),
@@ -567,11 +573,28 @@ function springReturnBellHammer(movement) {
   bellCrown.position.set(0, -0.15, 0);
   bellCrown.userData.role = 'bell-crown-below-hanger';
   // The cast canon loop Brown draws on the crown; the hanger pin runs through it.
+  // Brown's canon is a flat, round-cornered trapezoidal loop, wider at the top.
+  const canonShape = (bottom, top, bottomHalf, topHalf, corner) => {
+    const shape = new THREE.Path();
+    const pts = [[-bottomHalf, bottom], [bottomHalf, bottom], [topHalf, top], [-topHalf, top]];
+    for (let k = 0; k < 4; k += 1) {
+      const a = pts[k], b = pts[(k + 1) % 4], c = pts[(k + 2) % 4];
+      const toward = (p, q, d) => { const l = Math.hypot(q[0] - p[0], q[1] - p[1]); return [p[0] + (q[0] - p[0]) * d / l, p[1] + (q[1] - p[1]) * d / l]; };
+      const start = toward(b, a, corner), end = toward(b, c, corner);
+      if (k === 0) shape.moveTo(...toward(a, b, corner));
+      shape.lineTo(...start);
+      shape.quadraticCurveTo(b[0], b[1], ...end);
+    }
+    return shape;
+  };
+  const canonOuter = new THREE.Shape(canonShape(-0.14, 0.36, 0.19, 0.27, 0.07).getPoints(8));
+  canonOuter.holes.push(new THREE.Path(canonShape(0.03, 0.27, 0.10, 0.175, 0.04).getPoints(8).reverse()));
   const bellCanon = new THREE.Mesh(
-    new THREE.TorusGeometry(0.26, 0.055, 14, 48),
+    new THREE.ExtrudeGeometry(canonOuter, { depth: 0.11, bevelEnabled: true, bevelSize: 0.012,
+      bevelThickness: 0.012, bevelSegments: 2, curveSegments: 8 }).translate(0, 0, -0.055),
     bellMaterial,
   );
-  bellCanon.position.y = 0.08;
+  bellCanon.position.y = 0;
   bellCanon.userData.role = 'bell-canon-loop-on-hanger';
   bellPivot.add(bellCanon);
   bellPivot.add(bellCrown);
@@ -725,7 +748,7 @@ function springReturnBellHammer(movement) {
     update,
   };
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-3.22, -1.94, -1.08),
+    new THREE.Vector3(-3.45, -2.55, -1.08),
     new THREE.Vector3(3.35, 2.55, 1.12),
   );
   root.userData.cameraDistanceScale = 1.02;

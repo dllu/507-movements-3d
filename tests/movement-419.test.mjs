@@ -399,3 +399,23 @@ test('movement 507 remains the next authored frontier and does not reuse movemen
   disposeModel(model419.root);
   disposeModel(model507.root);
 });
+
+test('movement 419 wheel A is half of B and clears rocker E through the whole rock (pass 90)', () => {
+  const model = createMovementModel(catalog.movements[418]);
+  const { blocks } = model.root.userData;
+  const wheelA = blocks.inputWheelA;
+  let radius = 0;
+  wheelA.traverse((object) => { if (object.geometry?.parameters?.radiusTop) radius = Math.max(radius, object.geometry.parameters.radiusTop); });
+  near(radius, 0.59, 1e-9, 'A radius, half of B as Brown draws');
+  let clearance = Infinity;
+  for (let index = 0; index <= 400; index += 1) {
+    model.update(4 * index / 400);
+    blocks.cradleE.updateMatrixWorld(true);
+    for (let x = -3; x <= 3; x += 0.02) {
+      const point = new THREE.Vector3(x, -2.66, 0).applyMatrix4(blocks.cradleE.matrixWorld);
+      if (Math.abs(point.x) < 0.59) clearance = Math.min(clearance, -1.02 - Math.sqrt(0.59 ** 2 - point.x ** 2) - point.y);
+    }
+  }
+  assert.ok(clearance > 0.05, `A clears E's bed by ${clearance}`);
+  disposeModel(model.root);
+});

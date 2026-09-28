@@ -774,7 +774,7 @@ function slottedTraverse(movement) {
   fixedPinO.position.copy(fixedPinWorld).setZ(0.09);
   fixedPinO.userData.role = 'stationary-white-pin-in-upper-lever-slot-O';
   const fixedPinCap = cylinderAlongZ(0.065, 0.035, inkMaterial, 28);
-  fixedPinCap.position.copy(fixedPinWorld).setZ(0.505);
+  fixedPinCap.position.copy(fixedPinWorld).setZ(0.4825); // seated 0.005 into the pin end face (was 0.0175 proud of it)
   fixedPinCap.userData.role = 'fixed-pin-O-front-index';
   root.add(fixedPinO, fixedPinCap);
 

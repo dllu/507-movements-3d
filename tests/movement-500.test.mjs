@@ -239,34 +239,19 @@ test('movement 500 renderer follows the diaphragm, exact rod, sector, pinion, an
   disposeModel(model.root);
 });
 
-test('movement 500 section figure carries the motion from disk A to its pointer', () => {
+test('movement 500 is one gauge: no separate section copy, the case drum see-through', () => {
   const { model } = movementModel();
-  const { blocks, geometry, stateAtTime, transmission } = model.root.userData;
-  const section = blocks.sectionView;
-  const sweep = geometry.maximumSectorAngle * transmission.gearRatio;
-  const pointerDirection = () => new THREE.Vector3(0, 1, 0)
-    .applyQuaternion(section.spindleGroup.getWorldQuaternion(new THREE.Quaternion()));
-  let rodLength = null;
-  let previous = null;
-  const zeroDirection = (model.update(0), model.root.updateMatrixWorld(true), pointerDirection());
-  for (let sample = 0; sample <= 64; sample += 1) {
-    const time = geometry.cycleDuration * 0.5 * sample / 64;
-    model.update(time);
-    model.root.updateMatrixWorld(true);
-    const state = section.spindleGroup.parent.userData.sectionState;
-    rodLength ??= state.rodLength;
-    near(state.rodLength, rodLength, 1e-9, `section rod keeps its length ${sample}`);
-    if (previous !== null) assert.ok(state.sectorAngle >= previous - 1e-12, `sector e follows pressure ${sample}`);
-    previous = state.sectorAngle;
-    // The pointer turns on the spindle with the crown-driven pinion.
-    assert.equal(section.pinion.parent, section.spindleGroup, 'pinion on the pointer spindle');
-    assert.equal(section.needle.parent, section.spindleGroup, 'pointer on the pointer spindle');
+  const { blocks } = model.root.userData;
+  assert.equal(blocks.sectionView, undefined);
+  const roles = [];
+  model.root.traverse((object) => roles.push(object.userData.role ?? ''));
+  assert.ok(!roles.some((role) => /-in-section$|^brown-section-view/.test(role)), 'no section copy');
+  let drum = null;
+  model.root.traverse((object) => { if (object.userData.role === 'whole-round-gauge-case-drum') drum = object; });
+  assert.ok(drum && drum.userData.seeThrough, 'case drum is see-through');
+  for (const part of [blocks.diaphragm, blocks.sector, blocks.pinion, blocks.pointer, blocks.connectingRod]) {
+    assert.equal(part.visible, true);
   }
-  model.update(geometry.cycleDuration / 2);
-  model.root.updateMatrixWorld(true);
-  const turned = Math.acos(THREE.MathUtils.clamp(zeroDirection.dot(pointerDirection()), -1, 1));
-  // A 211-degree sweep reads as 149 degrees between the end directions.
-  near(turned, Math.PI * 2 - sweep, 1e-6, 'section pointer sweeps the face pointer angle');
   disposeModel(model.root);
 });
 

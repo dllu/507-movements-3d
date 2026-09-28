@@ -40,7 +40,7 @@ export function twoFixedOneMovable() {
   support.position.set(upperX, 2.79, 0);
   const mountingStem = makeBeam(upperFixed.position.clone().add(upperFixed.userData.upperAttachment),
     new THREE.Vector3(upperX, 2.75, 0), { thickness: 0.055, depth: 0.055, color: PALETTE.ink });
-  const weight = makeHoistLoad({ radius: 0.31, height: 0.48 });
+  const weight = makeHoistLoad({ radius: 0.31, height: 0.48, eyeBoss: true });
   root.add(upperFixed, lowerFixed, movable, support, mountingStem, weight);
   const effortDirection = new THREE.Vector3(-Math.sin(0.32), -Math.cos(0.32), 0);
   const upperExit = upperFixed.position.clone().add(new THREE.Vector3(

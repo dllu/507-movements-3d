@@ -2,6 +2,8 @@ import * as THREE from 'three';
 import { fitPistonGuide } from './piston-guide-parts.js';
 import { boredLatheGeometry } from './bored-lathe-geometry.js';
 import { circle, plate, poly, polygonClipping as clip } from './finite-plate-geometry.js';
+import { makeSeeThrough } from './see-through-part.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import {
   PALETTE,
   markShadows,
@@ -218,7 +220,9 @@ function uniformVelocityEndlessGrooveCrosshead(movement) {
   const inputRevolutionsPerMinute = sourceCoordinateCyclesPerMinute / 2;
   const inputAngularSpeed = fullTurn * inputRevolutionsPerMinute / 60;
   const inputCyclePeriod = fullTurn / inputAngularSpeed;
-  const sourcePoseAngle = -0.274;
+  // Viewed from Brown's side (behind the model's +z), so the wrist sits
+  // right of the shaft as on the plate.
+  const sourcePoseAngle = 0.274;
   const sourcePosePhase = positiveModulo(sourcePoseAngle / fullTurn, 1);
   const shaftCenter = new THREE.Vector3(0, -0.1, 0);
 
@@ -227,10 +231,15 @@ function uniformVelocityEndlessGrooveCrosshead(movement) {
   const diskFrontZ = diskCenterZ + diskDepth / 2;
   const shaftRadius = hubRadius * 0.67;
   // The shaft ends inside the disk: Brown draws no shaft end or bearing.
-  const shaftLength = 0.47;
-  const shaftCenterZ = -0.155;
-  const wristLength = 0.95;
-  const wristCenterZ = 0.17;
+  const shaftLength = 0.465;
+  const shaftCenterZ = -0.1525; // back end 0.005 inside the hub's back face (no shared cap)
+  // The groove is blind: cut from the disk side of the crosshead into a
+  // solid back plate, so the wrist ends 0.013 short of the groove floor.
+  const grooveFloorZ = 0.298;
+  const wristBackZ = -0.305;
+  const wristTipZ = grooveFloorZ - 0.013;
+  const wristLength = wristTipZ - wristBackZ;
+  const wristCenterZ = (wristTipZ + wristBackZ) / 2;
   const wristFrontZ = wristCenterZ + wristLength / 2;
   const wristCapDepth = 0.08;
   const yokeDepth = 0.3;
@@ -238,8 +247,11 @@ function uniformVelocityEndlessGrooveCrosshead(movement) {
   const yokeFrontZ = yokePlaneZ + yokeDepth / 2;
   const grooveFaceZ = yokeFrontZ + 0.018;
   const grooveCornerRadius = grooveHalfWidth;
-  const stemDepth = 0.24;
-  const stemPlaneZ = yokePlaneZ;
+  // One straight stem runs the full length on the crosshead's back face,
+  // where Brown dashes it behind the figure; it is embedded 0.005 in the
+  // back plate so the two share no face.
+  const stemDepth = 0.245;
+  const stemPlaneZ = yokeFrontZ - 0.005 + stemDepth / 2;
   const guideRunningClearance = 0.018;
   const guideInnerHalfWidth = stemHalfWidth + guideRunningClearance;
   const frameZ = -0.78;
@@ -278,10 +290,9 @@ function uniformVelocityEndlessGrooveCrosshead(movement) {
   input.add(inputRotor);
 
   // Brown draws the disk as a broad ring (outer edge and raised rim) in
-  // front, with the groove and stem dashed behind it.  The view is taken
-  // from the crosshead side instead, so the groove the figure explains
-  // stays visible: the disk is opaque behind the crosshead and its raised
-  // rim faces the viewer, reading as Brown's ring.
+  // front, with the groove and stem dashed behind it. The view is his: the
+  // disk faces the viewer and is see-through (the standard style for parts
+  // that cover dotted working details), so the groove and wrist show.
   const diskMaterial = matte(PALETTE.driver, {
     metalness: 0.16,
     roughness: 0.59,
@@ -317,7 +328,8 @@ function uniformVelocityEndlessGrooveCrosshead(movement) {
     diskMaterial,
   );
   diskFaceRim.rotation.x = Math.PI / 2;
-  diskFaceRim.position.z = diskFrontZ + rimDepth / 2;
+  // The raised rim is on the viewer's face, as Brown's ring.
+  diskFaceRim.position.z = diskCenterZ - diskDepth / 2 - rimDepth / 2;
   diskFaceRim.userData.role = 'raised-rim-on-crosshead-face-of-input-disk';
   inputRotor.add(diskFaceRim);
   const diskFaceRimEdge = new THREE.Mesh(
@@ -407,6 +419,8 @@ function uniformVelocityEndlessGrooveCrosshead(movement) {
   );
   wristCap.userData.role = 'visible-cap-showing-the-crank-wrist-path';
   inputRotor.add(wristCap);
+  // The wrist ends inside the blind groove; no cap is drawn.
+  wristCap.visible = false;
 
   const yoke = new THREE.Group();
   yoke.userData.role =
@@ -422,10 +436,19 @@ function uniformVelocityEndlessGrooveCrosshead(movement) {
   }));
   const yokeSection = poly(horizontalCapsuleShape(yokeOuterHalfHeight, yokeEndCenter)
     .getPoints(128).map(p => [p.x, p.y]));
-  const yokeBody = new THREE.Mesh(
-    plate(clip.difference(yokeSection, grooveSection), -yokeDepth / 2, yokeDepth / 2),
-    drivenMaterial,
-  );
+  // Grooved layer (disk side) and back plate as one closed solid: the
+  // grooved layer runs 0.002 into the back plate, so no faces coincide.
+  const yokeBackZ = yokeFrontZ;
+  const yokeDiskZ = yokePlaneZ - yokeDepth / 2;
+  const floorLocal = grooveFloorZ - yokePlaneZ;
+  const groovedLayer = plate(clip.difference(yokeSection, grooveSection), yokeDiskZ - yokePlaneZ, floorLocal + 0.002);
+  const yokeGeometry = mergeGeometries([
+    groovedLayer,
+    plate(yokeSection, floorLocal, yokeBackZ - yokePlaneZ),
+  ]);
+  // Keep the milled layer's outline for the finite groove audits.
+  yokeGeometry.userData.plate = groovedLayer.userData.plate;
+  const yokeBody = new THREE.Mesh(yokeGeometry, drivenMaterial);
   yokeBody.position.z = yokePlaneZ;
   yokeBody.userData.role = 'source-proportioned-capsule-crosshead-plate';
   yoke.add(yokeBody);
@@ -450,6 +473,9 @@ function uniformVelocityEndlessGrooveCrosshead(movement) {
   strap.position.set(0, 0, retainerZ);
   islandRetainer.add(strap);
   yoke.add(islandRetainer);
+  // The blind groove's back plate holds the islands: no retainer needed.
+  islandRetainer.visible = false;
+  islandRetainer.traverse((part) => { part.visible = false; });
 
 
   const yokeOutlineThickness = 0.055;
@@ -511,15 +537,12 @@ function uniformVelocityEndlessGrooveCrosshead(movement) {
   const stemWidth = stemHalfWidth * 2;
   const stemStart = yokeOuterHalfHeight - 0.035;
   const stemLength = stemEnd - stemStart;
+  // upperStem is the one full-length stem; lowerStem stays hidden.
   const upperStem = new THREE.Mesh(
-    new THREE.BoxGeometry(stemWidth, stemLength, stemDepth),
+    new THREE.BoxGeometry(stemWidth, 2 * stemEnd, stemDepth),
     drivenMaterial,
   );
-  upperStem.position.set(
-    0,
-    (stemStart + stemEnd) / 2,
-    stemPlaneZ,
-  );
+  upperStem.position.set(0, 0, stemPlaneZ);
   upperStem.userData.role = 'upper-rectangular-output-stem-rigid-with-crosshead';
   const lowerStem = new THREE.Mesh(
     new THREE.BoxGeometry(stemWidth, stemLength, stemDepth),
@@ -531,6 +554,7 @@ function uniformVelocityEndlessGrooveCrosshead(movement) {
     stemPlaneZ,
   );
   lowerStem.userData.role = 'lower-rectangular-output-stem-rigid-with-crosshead';
+  lowerStem.visible = false;
   yoke.add(upperStem, lowerStem);
 
   const stemIndexes = [-1, 1].map((side) => {
@@ -581,7 +605,7 @@ function uniformVelocityEndlessGrooveCrosshead(movement) {
       frameMaterial,
     );
     bridge.position.set(0, shaftCenter.y + sideY * guideCenter,
-      stemPlaneZ + 0.21 - 0.035);
+      stemPlaneZ - 0.21 + 0.035);
     bridge.userData.role = 'fixed-guide-bridge-across-output-stem';
     guideBridges.push(bridge);
   }
@@ -957,6 +981,13 @@ function uniformVelocityEndlessGrooveCrosshead(movement) {
     outputLaw:
       'the crosshead displacement is linear in crank phase on each half-turn, so equal crank-angle increments produce equal rectilinear increments',
   };
+  // Brown dashes the groove, wrist and stem behind the disk: the disk,
+  // its rim and hub take the standard see-through style.
+  makeSeeThrough(diskBody);
+  makeSeeThrough(diskFaceRim);
+  makeSeeThrough(shaftHub);
+  makeSeeThrough(hubFace);
+  makeSeeThrough(inputShaft);
   root.userData.grooveCenterAtPhase = (phase) => grooveCenterAtPhase(
     phase,
     crankRadius,
@@ -992,6 +1023,8 @@ function uniformVelocityEndlessGrooveCrosshead(movement) {
     line.receiveShadow = false;
   }
   return {
+    // source-presentation turns the model half a turn about y, so this
+    // camera looks at the disk side, as Brown does.
     cameraDirection: new THREE.Vector3(1.2, 0.6, 14),
     root,
     update,

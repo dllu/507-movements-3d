@@ -516,12 +516,14 @@ test('movement 415 update binds D, A, B, C, E, cords, input rod, and slider to o
     near(blocks.inputRod.position.y, state.inputPin.y, 0, 'bar D eye on lever pin y');
     near(blocks.inputRod.rotation.z, Math.atan2(state.inputSlider.y - state.inputPin.y,
       state.inputSlider.x - state.inputPin.x), 0, 'bar D points at its guided point');
+    // Pass 90: each cord is drawn straight and taut from E's pin to the
+    // pawl eye; its slack is taken up at E's pin rather than drawn as a sag.
     near(blocks.bCord.userData.renderedLength,
-      geometry.bCordMaterialLength, 4e-16,
-      'B cord rendered length');
+      state.bCord.chordLength, 4e-16,
+      'B cord rendered straight');
     near(blocks.cCord.userData.renderedLength,
-      geometry.cCordMaterialLength, 4e-16,
-      'C cord rendered length');
+      state.cCord.chordLength, 4e-16,
+      'C cord rendered straight');
   }
   assert.equal(model.root.userData.animationTiming.authoredCyclePeriod,
     geometry.cycleDuration);
@@ -557,5 +559,26 @@ test('movement 415 draws flat bar D running past the crop with no undrawn guide'
   model.root.updateMatrixWorld(true);
   const worldBox = new THREE.Box3().setFromObject(bar);
   assert.ok(worldBox.max.x > model.root.userData.cameraFitBounds.max.x + 1, 'bar runs past the crop');
+  disposeModel(model.root);
+});
+
+test('movement 415 lever A is Brown’s horned T and the pawls are straight constant-width blades', () => {
+  const model = createMovementModel(catalog.movements[414]);
+  const { blocks, geometry } = model.root.userData;
+  let lever;
+  model.root.traverse((object) => { if (object.userData.role === 'T-shaped-rigid-body-of-lever-A') lever = object; });
+  lever.geometry.computeBoundingBox();
+  const box = lever.geometry.boundingBox;
+  near(box.max.x, 1.11, 0.01, 'crossbar right horn');
+  near(box.min.x, -1.11, 0.01, 'crossbar left horn');
+  near(box.min.y, -1.70, 0.01, 'stem end concentric with the input pin');
+  for (const pawl of [blocks.bPawl, blocks.cPawl]) {
+    const body = pawl.children[0];
+    body.geometry.computeBoundingBox();
+    const b = body.geometry.boundingBox;
+    near(b.max.y - b.min.y, 0.19, 0.002, 'constant blade width');
+    // The blade ends on D's inner circle: its far end reaches the seated contact.
+    near(b.max.x, geometry.pawlLength, 0.01, 'blade end on the rim');
+  }
   disposeModel(model.root);
 });

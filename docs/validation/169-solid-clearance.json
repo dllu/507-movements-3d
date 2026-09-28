@@ -7,10 +7,10 @@
     "radius": 0.5731177889404585,
     "rightSpan": 2.376969499173265,
     "leftSpan": 2.2351268420382766,
-    "rockerLength": 7.776,
+    "rockerLength": 2.5,
     "rockerPivot": [
-      -4.185302820325981,
-      -7.7477485949321325
+      -3.016029877790586,
+      -2.60294764777639
     ],
     "mainPivot": [
       1.9080000000000001,
@@ -34,15 +34,15 @@
     },
     {
       "file": "src/simulation/linked-variable-crank.js",
-      "sha256": "71e1b19c1581dd4b6d232acd02ab248910c9bc20d175a5027889096707a7b6be"
+      "sha256": "a99095b2559caffc85f9e85bf38f92c4e0d187ec2144464bd92bb3db9794af6b"
     },
     {
       "file": "src/simulation/variable-radius-crank-motion.js",
-      "sha256": "50a759f29481f201a478f41f2ce3156fe8f09071d2682a821123689d80d4b460"
+      "sha256": "67588a13b8a40b9b61f52de03f990156ab48f77def2242b603571a84eb0ff583"
     },
     {
       "file": "src/simulation/linked-variable-crank-motion.js",
-      "sha256": "0347cdbe2af34819b76ce5268f05cb0c784f2ca2d9bd16b50f3ba91727c29357"
+      "sha256": "a2c92a4578d982d05796edad692128206dd56e90fdb2cc13fcbc661b6c74d780"
     },
     {
       "file": "src/simulation/finite-plate-geometry.js",

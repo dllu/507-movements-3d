@@ -815,10 +815,12 @@ function groovedCamWoolComberRollerMotion(movementId) {
   rockerBody.userData.role = 'curved-rocker-link-A-to-G';
   rocker.add(rockerBody);
 
+  // The stud is part of the rocker: it takes the rocker's colour, not the
+  // white reserved for markers.
   const followerRoller = cylinderAlongZ(
     followerRollerRadius,
     0.39,
-    whiteMaterial,
+    driverMaterial,
     36,
   );
   followerRoller.position.set(followerLocal.x, followerLocal.y, 0.31);

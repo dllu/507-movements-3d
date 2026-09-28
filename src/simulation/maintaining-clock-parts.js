@@ -90,7 +90,8 @@ export function correctEndlessMaintainingChain(root){
     const shape=clip.difference(clip.union(capsule([0,0],[0,-length],.065,16),poly(circle([0,0],.14,48))),poly(circle([0,0],.082,48)));
     const eye=new THREE.Mesh(plate(shape,-.075,.075),hanger.children[0].material);eye.userData.role='bored-moving-weight-hanger';hanger.add(eye);
     const pin=new THREE.Mesh(new THREE.CylinderGeometry(.08,.08,.80,32),eye.material);pin.rotation.x=Math.PI/2;pin.position.z=.12;carrier.add(pin);
-    b[`${size}Weight`].position.z=.20;b[`${size}Hanger`]=eye;b[`${size}Axle`]=pin;
+    // The hanger enters the middle of the weight's top face, not its front.
+    b[`${size}Weight`].position.z=hanger.position.z;b[`${size}Hanger`]=eye;b[`${size}Axle`]=pin;
   }
   // The laid rope keeps its buffers (constant length) and closes its lay seam itself.
   const mesh=b.ratchetPulley.userData.rotor.children.find(o=>o.userData.role==='ratchet-wheel-riding-on-arbor-p');
@@ -117,7 +118,8 @@ export function correctGoingBarrel(root){
   const b=root.userData.blocks,g=root.userData.geometry;
   const bearing=b.fixedFrame.children.find(o=>o.userData.role==='fixed-coaxial-going-barrel-bearing');
   replace(bearing,tube(.34,.35,.142));b.rearBearing=bearing;
-  replace(b.barrelHub,new THREE.CylinderGeometry(.14,.14,2.55,40));b.barrelHub.position.z=.10;
+  // The arbor runs back through the rope drum behind the wheels.
+  replace(b.barrelHub,new THREE.CylinderGeometry(.14,.14,2.85,40));b.barrelHub.position.z=-.05;
   const wheelBody=b.greatWheel.userData.rotor.children[0],wheelHub=b.greatWheel.userData.rotor.children[1];
   const sourceShape=wheelBody.geometry.parameters.shapes.clone();
   const hole=new THREE.Path();hole.absarc(0,0,.142,0,TAU,false);sourceShape.holes.push(hole);
@@ -126,7 +128,7 @@ export function correctGoingBarrel(root){
   const ratchetHub=new THREE.Mesh(tube(.28,.10,.142).rotateX(Math.PI/2),b.largeRatchetMesh.material);ratchetHub.position.z=-.02;b.largeRatchet.userData.rotor.add(ratchetHub);b.largeRatchetHub=ratchetHub;
   for(let i=0;i<3;i++){const a=i*TAU/3,spoke=new THREE.Mesh(new THREE.BoxGeometry(1.30,.14,.10),b.largeRatchetMesh.material);spoke.position.set(.9*Math.cos(a),.9*Math.sin(a),-.02);spoke.rotation.z=a;b.largeRatchet.userData.rotor.add(spoke);}
   replace(b.barrelBody,tube(g.barrelFaceRadius,.43,.142));
-  replace(b.ropeDrum,tube(g.ropeDrumPitchRadius-.035,.24,.142));b.ropeDrum.position.z=1.19;
+  replace(b.ropeDrum,tube(g.ropeDrumPitchRadius-.035,.24,.142));b.ropeDrum.position.z=g.ropePlaneZ-b.barrel.position.z;
   // Bring each click into its own ratchet layer; their pivots retain the source planar positions.
   b.clickR.position.z=b.barrel.position.z+b.barrelRatchet.position.z;
   b.clickT.position.z=b.largeRatchetMesh.position.z;
@@ -139,9 +141,12 @@ export function correctGoingBarrel(root){
     replace(follower.pin,new THREE.CylinderGeometry(.08,.08,name==='R'?.99:.80,32));
     follower.pin.position.z=name==='R'?.395:-.25;
   }
-  // An exposed front groove explains the rope's otherwise hidden barrel contact.
-  const wrap=new THREE.CatmullRomCurve3(Array.from({length:65},(_,i)=>{const a=Math.PI-1.7*Math.PI*i/64;return new THREE.Vector3(g.ropeDrumPitchRadius*Math.cos(a),g.ropeDrumPitchRadius*Math.sin(a),1.48);}));
+  // The rope's turns on the drum behind the wheels.
+  const wrap=new THREE.CatmullRomCurve3(Array.from({length:65},(_,i)=>{const a=Math.PI-1.7*Math.PI*i/64;return new THREE.Vector3(g.ropeDrumPitchRadius*Math.cos(a),g.ropeDrumPitchRadius*Math.sin(a),g.ropePlaneZ);}));
   b.ropeWrap=new THREE.Mesh(new THREE.TubeGeometry(wrap,128,.035,10,false),b.rope.material);b.ropeWrap.userData.role='exposed-weight-rope-barrel-wrap';root.add(b.ropeWrap);
+  // The laid rope already carries these turns on the same arc: a second tube
+  // there would only coincide with it.
+  b.ropeWrap.visible=false;
   root.userData.updateClockInterfaces=state=>{
     b.finiteClicks[0].update(state.barrelAngle-state.largeRatchetAngle);
     b.finiteClicks[1].update(state.largeRatchetAngle);
@@ -149,5 +154,5 @@ export function correctGoingBarrel(root){
   };
   root.userData.hideGround=true;root.userData.minimumDisplayCycleSeconds=20;
   root.userData.cameraFitBounds.min.y=-5.15;root.userData.cameraFitBounds.max.z=1.90;
-  root.userData.reconstructionNote='The weight, spring and winding sequence are prescribed. The two clicks follow finite opposite-handed ratchets geometrically; their impact, spring bias and passive handoff are not force-validated. The maintaining spring uses an ideal torque law and a constant-length illustrative curve. The front rope groove exposes the inferred winding drum.';
+  root.userData.reconstructionNote='The weight, spring and winding sequence are prescribed. The two clicks follow finite opposite-handed ratchets geometrically; their impact, spring bias and passive handoff are not force-validated. The maintaining spring uses an ideal torque law and a constant-length illustrative curve. The inferred rope drum is on B\'s arbor behind the wheels.';
 }

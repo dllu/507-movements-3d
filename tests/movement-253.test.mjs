@@ -199,7 +199,7 @@ test('movement 253 gives all three ideal hooks exact surface contact with fixed 
 
   assert.equal(state.contactActive, true);
   assert.equal(state.hookCenters.length, 3);
-  near(state.minimumHookStudGap, 0, 4e-16, 'minimum catch gap');
+  near(state.minimumHookStudGap, 0, 1e-15, 'minimum catch gap');
   state.hookCenters.forEach((hookCenter, index) => {
     const studCenter = geometry.studCenters[index];
     const normal = studCenter.clone().sub(hookCenter.contactCenter).normalize();

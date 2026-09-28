@@ -13,13 +13,13 @@
     "src/simulation/mujoco/simulation.js": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
   },
   "visualSourcesAtBake": {
-    "src/simulation/mujoco-stroke-doubler/geometry.js": "43c3e63ce2a1c93263bd4c6bed4e56d8163da67a1edfaa9d17a7f64d79d92585"
+    "src/simulation/mujoco-stroke-doubler/geometry.js": "a65b23c3d63438b58d43b01c028725f140e9f322ceba5acb517816b0ee8a352c"
   },
   "physicsXmlSha256": {
-    "default": "21c1a267766d8c198b372902bbce9d0867709660351663f30f68828de929e604"
+    "default": "4f45d3c650e1ae6c963895f8674ebe0c6a6b9c92d8e3c0194a5a35dfb371836e"
   },
   "fullXmlSha256": {
-    "default": "1859678b4487a679faba4bd0e424d13d6406e93b8992b859046156acd99ffd53"
+    "default": "2a7c1882c84a0e7c42b805326533ee9398cbe6a39b05903b8d82414b0f13563a"
   },
   "config": {
     "sampleRate": 60,
@@ -61,5 +61,5 @@
   },
   "extras": [],
   "removed": [],
-  "bakeSeconds": 29.000176896095276
+  "bakeSeconds": 30.49626580619812
 }

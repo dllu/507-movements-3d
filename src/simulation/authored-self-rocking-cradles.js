@@ -23,17 +23,6 @@ function cylinderAlongZ(radius, length, material, segments = 32) {
   return cylinder;
 }
 
-function beamBetween(start, end, width, depth, material) {
-  const delta = end.clone().sub(start);
-  const beam = new THREE.Mesh(
-    new THREE.BoxGeometry(delta.length(), width, depth),
-    material,
-  );
-  beam.position.copy(start).add(end).multiplyScalar(0.5);
-  beam.rotation.z = Math.atan2(delta.y, delta.x);
-  return beam;
-}
-
 function makeTubeThrough(points, radius, material, role) {
   const curve = new THREE.CatmullRomCurve3(
     points,
@@ -208,11 +197,14 @@ function selfRockingCradle(movement) {
   const cradleBandEffectiveRadius = bandPitchRadius
     / cradlePerOutputRatio;
   const rockerRollRadius = 3.68;
-  const groundY = -2.60;
+  // Brown's rocker top lies at A's lowest point (A radius 0.59, half of B),
+  // so the cradle sits 0.12 lower than the p62 build and the standards are
+  // 0.12 taller to keep the band attachments C and D where Brown draws them.
+  const groundY = -2.72;
   const cradleCenterY = groundY + rockerRollRadius;
   const bandZ = .42;
-  const leftPostLocal = new THREE.Vector2(-2.02, 1.05);
-  const rightPostLocal = new THREE.Vector2(2.02, 1.05);
+  const leftPostLocal = new THREE.Vector2(-2.02, 1.17);
+  const rightPostLocal = new THREE.Vector2(2.02, 1.17);
 
   const stateAtInputAngle = (
     inputAngle,
@@ -530,7 +522,7 @@ function selfRockingCradle(movement) {
     wheel.userData.rotor.add(pin);
     return pin;
   };
-  const inputWheelA = plainWheel(PALETTE.driver, 0.66, 0.34,
+  const inputWheelA = plainWheel(PALETTE.driver, 0.59, 0.34,
     'continuously-rotating-crank-wheel-A');
   inputWheelA.position.copy(inputCenter);
   const inputPinMarker = crankPin(inputWheelA, inputCrankRadius, 0.34,
@@ -577,11 +569,22 @@ function selfRockingCradle(movement) {
   // The segment's flat top is the cradle's bed.
   const cradleBed = rockerShoe;
   for (const side of [-1, 1]) {
-    const standard = beamBetween(
-      new THREE.Vector3(side * 2.02, -2.68, -.25),
-      new THREE.Vector3(side * 2.02, 1.05, -.25),
-      0.15,
-      0.26,
+    // Each standard is one flat extrusion: a straight post whose inner
+    // edge sweeps into E's bed on a fillet, as Brown's U-shaped standards do.
+    const postHalf = 0.1, filletRadius = 0.42, postTop = 1.17, bedY = rockerTopY;
+    const inner = side * (2.02 - postHalf), outer = side * (2.02 + postHalf);
+    const postShape = new THREE.Shape();
+    postShape.moveTo(outer, bedY - 0.04);
+    postShape.lineTo(inner - side * filletRadius, bedY - 0.04);
+    postShape.lineTo(inner - side * filletRadius, bedY);
+    postShape.absarc(inner - side * filletRadius, bedY + filletRadius, filletRadius,
+      -Math.PI / 2, side < 0 ? Math.PI : 0, side < 0);
+    postShape.lineTo(inner, postTop);
+    postShape.lineTo(outer, postTop);
+    postShape.closePath();
+    const standard = new THREE.Mesh(
+      new THREE.ExtrudeGeometry(postShape, { depth: 0.26, bevelEnabled: false, curveSegments: 24 })
+        .translate(0, 0, -.25 - 0.13),
       cradleMaterial,
     );
     standard.userData.role = side < 0
@@ -589,7 +592,7 @@ function selfRockingCradle(movement) {
       : 'right-band-standard-attached-to-rocker-E';
     cradleE.add(standard);
     const anchor = cylinderAlongZ(.115, .88, cradleMaterial, 24);
-    anchor.position.set(side * 2.02, 1.05, .05);
+    anchor.position.set(side * 2.02, 1.17, .05);
     anchor.userData.role = side < 0
       ? 'attachment-of-flexible-band-C-to-E'
       : 'attachment-of-flexible-band-D-to-E';

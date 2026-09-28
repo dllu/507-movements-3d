@@ -32,10 +32,12 @@ are 2.376969 toward the power wrist and 2.235127 toward the added link.
 The drawing's three pitman joints are slightly noncollinear. A single rigid
 pitman follows the direction between its engraved endpoints, retaining the
 small residual above. These measurements qualify initial planar joint
-positions, not complete contour registration. The visible power rocker is
-1.36 world units long. Its hidden full length is inferred as 7.776, and its
-initial direction puts the remote pivot near (-4.185303,-7.747749), relative
-to the auxiliary shaft. Neither hidden pivot nor axial depths are specified
+positions, not complete contour registration. Brown breaks the power rocker off about 1.36 world units from its wrist.
+Since pass 90 (docs/p90-fg-review.md) the whole rocker is modelled, 2.5 long
+(about one pitman length; formerly 7.776, the source animation's ratio). It
+runs along the drawn continuation to an inferred fulcrum near (-3.016030,-2.602948),
+relative to the auxiliary shaft, on a plain round bearing boss. The pin orbit
+changes by about 1%. Neither hidden pivot nor axial depths are specified
 by the engraving.
 
 The auxiliary crank is prescribed at uniform speed. Two circle-intersection

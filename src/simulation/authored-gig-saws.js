@@ -1,6 +1,7 @@
 import {correctReciprocatingCordParts} from './reciprocating-cord-working-parts.js';
 import * as THREE from 'three';
 import { boredLatheGeometry } from './bored-lathe-geometry.js';
+import {plate, capsule, circle, poly, polygonClipping as clip} from './finite-plate-geometry.js';
 import {
   PALETTE,
   makeDynamicLink,
@@ -43,9 +44,12 @@ function makeCrankFlywheel({
   rim.userData.role = 'four-unit-source-radius-flywheel-rim';
   rotor.add(rim);
   const spokes = [];
-  for (let index = 0; index < 4; index += 1) {
+  // Two full-diameter bars make Brown's four spokes (four bars would lie
+  // on top of one another).
+  for (let index = 0; index < 2; index += 1) {
     const spoke = new THREE.Mesh(
-      new THREE.BoxGeometry(wheelRadius * 1.74, 0.11, depth * 0.62),
+      // No deeper than the rim, so the spokes stand no lips on its faces.
+      new THREE.BoxGeometry(wheelRadius * 1.74, 0.11, depth * 0.46),
       material,
     );
     spoke.rotation.z = index * Math.PI / 2;
@@ -742,6 +746,36 @@ function gigSawWithTensionSpring(movement) {
   root.userData.groundFloorY = -3.59;
   update(0);
   correctReciprocatingCordParts(root,392,update);
+  {
+    const b = root.userData.blocks, rotor = b.crankRotor, g = root.userData.geometry;
+    // Brown's crank is a distinct lever on the flywheel's front face: a boss
+    // on the shaft, a boss round the crank pin, straight tapering flanks.
+    const r = g.crankRadius ?? crankRadius;
+    const crankShape = clip.difference(clip.union(
+      poly(circle([0, 0], 0.27, 96)), poly(circle([-r, 0], 0.22, 96)),
+      poly([[0, 0.20], [-r, 0.15], [-r, -0.15], [0, -0.20]]),
+    ), poly(circle([-r, 0], 0.139, 64)));
+    const crank = new THREE.Mesh(plate(crankShape, 0.245, 0.40), rotor.children.find(o => o.userData.role === 'four-unit-source-radius-flywheel-rim').material);
+    crank.userData.role = 'crank-lever-on-flywheel-front-face';
+    rotor.add(crank); markShadows(crank);
+    for (const child of rotor.userData.throwArm.children) child.visible = false;
+    // The crank pin stands from the crank into the rod's eye and ends at its
+    // front face.
+    const pin = rotor.userData.crankPin;
+    pin.geometry.dispose(); pin.geometry = new THREE.CylinderGeometry(0.135, 0.135, 0.44, 40);
+    pin.position.z = 0.50;
+    // The lower cheeks rise to the table's underside, as Brown draws them.
+    root.updateMatrixWorld(true);
+    const tableBottom = Math.min(...b.tableParts.map(t => new THREE.Box3().setFromObject(t).min.y));
+    for (const rail of b.guideRails) {
+      if (rail.userData.region !== 'lower') continue;
+      const box = new THREE.Box3().setFromObject(rail), bottom = box.min.y, top = tableBottom + 0.012;
+      const size = new THREE.Vector3(); box.getSize(size);
+      rail.geometry.dispose(); rail.geometry = new THREE.BoxGeometry(size.x, top - bottom, size.z);
+      rail.position.y = (top + bottom) / 2;
+    }
+    update(0);
+  }
   return { cameraDirection: root.userData.cameraDirection, root, update };
 }
 

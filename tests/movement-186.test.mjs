@@ -249,3 +249,22 @@ test('186 solids: pins run in real bores, claw and spring end touch without over
     assert.ok(tipTouch < 0.003);
   } finally { disposeObject3D(model.root); }
 });
+
+test('186 (pass 90): the loop hangs on the inner side of the bar and its tongue passes behind the bar', () => {
+  const model = build();
+  try {
+    const d = model.root.userData, g = d.geometry;
+    const rest = d.strapPointsWorld(d.stateAtTime(0)).map((p) => [...d.sourceRasterFromPoint(p.x, p.y).toArray(), p.z]);
+    // Return leg (left of the bar) and the round bottom, as Brown draws them.
+    const bottom = rest.reduce((a, b) => (b[1] > a[1] ? b : a));
+    near(bottom[1], 489, 3, 'loop bottom');
+    const legAt = (y) => rest.filter((p) => Math.abs(p[1] - y) < 3).map((p) => p[0]);
+    const xs = legAt(400);
+    assert.ok(Math.min(...xs) < 405 && Math.max(...xs) > 450, `bar and return leg at y=400: ${xs}`);
+    // The bar sits in the rod's plane, the tongue in the lever's plane behind it.
+    near(rest[5][2], g.layers.strapFront, 1e-9, 'bar plane');
+    near(rest.at(-1)[2], g.layers.strapBack, 1e-9, 'tongue plane');
+    assert.ok(g.layers.strapBack > g.layers.lever[0] && g.layers.strapBack < g.layers.lever[1]);
+    assert.ok(g.layers.strapFront - g.layers.strapBack < 0.3, 'shallow step between the two planes');
+  } finally { disposeObject3D(model.root); }
+});

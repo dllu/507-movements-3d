@@ -24,7 +24,9 @@ test('082 MuJoCo drives only the treadle and preserves the working tooth and paw
  const v=makeMujocoTreadle(mujoco);try {
   const {model,description,joints}=v.physics;
   assert.equal(model.nu,1);assert.equal(model.actuator_trnid[0],mujoco.mj_name2id(model,mujoco.mjtObj.mjOBJ_JOINT.value,'lowerTreadle'));
-  assert.ok(description.options.lowerSpring>0);assert.ok(v.root.getObjectByName('passive-lower-pawl-torsion-spring').visible);
+  assert.ok(description.options.lowerSpring>0);
+  // The inferred torsion springs act in physics only; Brown draws none, so none is rendered.
+  let springMeshes=0;v.root.traverse(o=>{if(/spring/i.test(o.name))springMeshes++;});assert.equal(springMeshes,0);
   for(const [name,shape]of Object.entries(description.collision)){
    assert.ok(shape.maximumBoundaryError*v.root.userData.geometry.source.scale<.15,name+' collision silhouette is too coarse');
    for(const cell of shape.cells)for(let i=0;i<cell.length;i++){
@@ -101,7 +103,6 @@ test('082 pawls are one identical plate on equal pivot radii, seated in a root a
   // Every vertex of the turned upper outline lies on the lower outline.
   for(const q of turned)assert.ok(Math.min(...lower[0][0].map(p=>Math.hypot(p[0]-q[0],p[1]-q[1])))<1e-9);
   assert.ok(Math.hypot(...rot(g.pawlNoses.upper,turn).map((x,i)=>x-g.pawlNoses.lower[i]))<1e-12);
-  for(const name of ['lower','upper'])assert.ok(v.root.getObjectByName(`passive-${name}-pawl-torsion-spring`).visible);
   const {lowerSpring,upperSpring,load}=v.physics.description.options;assert.equal(lowerSpring,upperSpring);assert.ok(load>0);
   // The nose is the drawn root radius and the end face runs up the steep face.
   for(const [i,name] of ['lower','upper'].entries()){

@@ -45,16 +45,17 @@ export function makeLinkedVariableCrank() {
   add('pitmanEndPin', disk(.10, 0, .50, 96), 'pitman', PALETTE.ink, [-L, 0, 0]);
   add('auxiliaryPin', disk(.10, .215, .52, 96), 'pitman', PALETTE.ink);
   add('wristPin', disk(.11, 0, .50, 96), 'pitman', PALETTE.ink, [R, 0, 0]);
-  // Brown crops the power rocker 1.36 from its wrist. It is whole: it runs
-  // on to its fixed fulcrum pin, carried by a bearing block, beyond the
-  // plate's view.
+  // Brown breaks the power rocker (the reciprocating moving power) off 1.36
+  // from its wrist. It is whole here, running on to an inferred fulcrum 2.5
+  // from the wrist (about one pitman length), inside the default view.
   const Lr = g.rockerLength;
   const rockerOutline = clip.union(hole([0, 0], .20), hole([Lr, 0], .26),
     poly([[0, -.14], [1.36, -.18], [Lr, -.2], [Lr, .2], [1.36, .18], [0, .14]]));
   add('powerRocker', plate(clip.difference(rockerOutline, hole([0, 0], .114), hole([Lr, 0], .124)), .02, .20), 'rocker', PALETTE.driven);
   add('rockerFulcrumPin', disk(.12, -.22, .26, 96), 'fixed', PALETTE.ink, [...g.rockerPivot, 0]);
-  add('rockerFulcrumBearing', plate(clip.difference(clip.union(hole([0, 0], .34), poly([[-.34, 0], [.34, 0], [.42, -.62], [-.42, -.62]])),
-    hole([0, 0], .124)), -.20, 0), 'fixed', PALETTE.muted, [...g.rockerPivot, 0]);
+  // Brown draws no fulcrum; a plain round bearing boss, stayed back to the
+  // framing wall like the shaft bearings, is the minimal fixed pivot.
+  add('rockerFulcrumBearing', plate(clip.difference(hole([0, 0], .32), hole([0, 0], .124)), -.20, 0), 'fixed', PALETTE.muted, [...g.rockerPivot, 0]);
   // Brown draws no frame. Each shaft bearing's flange and the rocker's
   // fulcrum block are carried by a stay running straight back to a round
   // flange on the framing wall behind the mechanism; stay and flange lie
@@ -77,8 +78,6 @@ export function makeLinkedVariableCrank() {
     blocks.fixed.add(support);
   }
 
-  // The default view frames Brown's drawn length of the rocker only.
-  const drawnRocker = new THREE.Mesh(plate(poly([[0, -.2], [1.36, -.2], [1.36, .2], [0, .2]]), .02, .20));
   const update = time => {
     const angle = g.phase + 2 * Math.PI * time / g.period, s = linkedVariableCrankAtAngle(angle, g);
     blocks.link.position.set(...s.slotPin, 0); blocks.link.rotation.z = Math.atan2(s.mainPin[1] - s.slotPin[1], s.mainPin[0] - s.slotPin[0]);
@@ -93,17 +92,21 @@ export function makeLinkedVariableCrank() {
   for (let i = 0; i <= 128; i++) {
     update(g.period * i / 128);
     for (const name of ['main', 'auxiliary', 'pitman', 'link']) bounds.union(new THREE.Box3().setFromObject(blocks[name], true));
-    for (const name of ['mainShaft', 'auxiliaryShaft']) bounds.union(new THREE.Box3().setFromObject(parts[name], true));
-    drawnRocker.position.copy(blocks.rocker.position); drawnRocker.rotation.copy(blocks.rocker.rotation); drawnRocker.updateMatrixWorld(true);
-    bounds.union(new THREE.Box3().setFromObject(drawnRocker, true));
+    for (const name of ['mainShaft', 'auxiliaryShaft', 'rockerFulcrumBearing']) bounds.union(new THREE.Box3().setFromObject(parts[name], true));
+    bounds.union(new THREE.Box3().setFromObject(blocks.rocker, true));
   }
-  drawnRocker.geometry.dispose();
   bounds.expandByScalar(.04); update(0); markShadows(root);
+  // The initial fit measures posed vertices only; an unrendered envelope of
+  // the whole swing keeps the rocker inside the frame later in the cycle.
+  const envelope = new THREE.Mesh(new THREE.BoxGeometry(...bounds.getSize(new THREE.Vector3()).multiplyScalar(.999).toArray()),
+    new THREE.MeshBasicMaterial({colorWrite: false, depthWrite: false, transparent: true, opacity: 0, fog: false}));
+  envelope.position.copy(bounds.getCenter(new THREE.Vector3())); envelope.name = 'invisible-swept-camera-envelope';
+  envelope.userData.cameraFitGuide = true; envelope.castShadow = envelope.receiveShadow = false; root.add(envelope);
   Object.assign(root.userData, {parts, families, blocks, geometry: g, mechanism: 'source-linked-variable-crank',
     simulationBackend: 'analytic', fidelity: 'authored', reconstructionStatus: 'reconstructed', supportsRestart: true,
     hideGround: true, cameraFitBounds: bounds, cameraFov: 8,
     animationTiming: {authoredCyclePeriod: g.period, displayCycleDuration: g.period, playbackTimeScale: 1},
-    reconstructionNote: 'The added link replaces the slotted crank of movement 168. Rigid closure uses measured shaft spacing and pitman spans. The power rocker runs whole to an inferred fulcrum pin and bearing block below the drawing; both crank shafts turn in inferred rear bearings; depths, clearances and the four-second cycle are inferred.'});
+    reconstructionNote: 'The added link replaces the slotted crank of movement 168. Rigid closure uses measured shaft spacing and pitman spans. The power rocker runs whole to an inferred fulcrum pin and round bearing boss 2.5 from its wrist, just beyond where Brown breaks it off; both crank shafts turn in inferred rear bearings; depths, clearances and the four-second cycle are inferred.'});
   return {root, update, reset: () => update(0), focus: bounds.getCenter(new THREE.Vector3()),
     cameraDirection: new THREE.Vector3(.01, .01, 15), dispose: () => disposeObject3D(root)};
 }

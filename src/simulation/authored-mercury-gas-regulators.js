@@ -2,7 +2,7 @@ import {correctGasMeterParts} from './gas-meter-working-parts.js';
 import {capsule, circle, plate, poly, polygonClipping} from './finite-plate-geometry.js';
 import {curvedPipeWall, mergePassageParts} from './finite-fluid-passages.js';
 import {latheSectionGeometry} from './cutaway-section.js';
-import {horizontalPlate} from './horizontal-turbine-solids.js';
+import {horizontalPlate, horizontalRing} from './horizontal-turbine-solids.js';
 import * as THREE from 'three';
 import {applyCutawayFor} from './cutaway-presentations.js';
 import {
@@ -1187,7 +1187,10 @@ function powersMercuryRegulator(movement) {
     const corner = at(ROUND.caseOuter);
     const turned = corner.clone().add(new THREE.Vector3(-0.30, 0, 0));
     const path = new THREE.CurvePath();
-    path.add(new THREE.LineCurve3(new THREE.Vector3(-3.22, ROUND.outletY, corner.z), turned));
+    // Pass 90: the pipe starts 0.01 inside the flange's outer face and the
+    // flange is bored 0.003 over the pipe (their bores had lain on each
+    // other and flickered).
+    path.add(new THREE.LineCurve3(new THREE.Vector3(-3.29, ROUND.outletY, corner.z), turned));
     path.add(new THREE.QuadraticBezierCurve3(turned, corner, at(2.20)));
     // The pipe's end sits 0.02 into the wall's outer face, round the port.
     path.add(new THREE.LineCurve3(at(2.20), at(ROUND.wellOuter - 0.02)));
@@ -1197,6 +1200,19 @@ function powersMercuryRegulator(movement) {
     outletPipeF.quaternion.identity();
     outletPipeF.scale.set(1, 1, 1);
     outletFlangeF.position.set(-3.19, ROUND.outletY, corner.z);
+    outletFlangeF.geometry.dispose();
+    outletFlangeF.geometry = horizontalRing(ROUND.outletWall + 0.003, 0.40, -0.11, 0.11, 64);
+    // Inlet E likewise: the flange is bored over the pipe, which runs down
+    // through it to 0.01 short of its lower face.
+    {
+      const flangeBottom = inletFlange.position.y - 0.12, top = inletPipeE.position.y + 1.14;
+      const bottom = flangeBottom + 0.01;
+      inletFlange.geometry.dispose();
+      inletFlange.geometry = horizontalRing(0.243, 0.47, -0.12, 0.12, 64);
+      inletPipeE.geometry.dispose();
+      inletPipeE.geometry = horizontalRing(0.18, 0.24, -(top - bottom) / 2, (top - bottom) / 2, 64);
+      inletPipeE.position.y = (top + bottom) / 2;
+    }
     blocks.outletChamber = { wall: wellWall, port: wellPanel, pipe: outletPipeF, portCentre: at(ROUND.wellInner) };
     // The gas path from E through a notch b, over the well under H, down to
     // the port F and out along the delivery pipe.

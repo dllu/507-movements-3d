@@ -66,3 +66,31 @@ test('423: valve a feeds each piston through its working stroke, both where the 
     for (const banned of [/indicator/, /marker/, /pedestal/]) assert.ok(!roles.some((x) => banned.test(x)), String(banned));
   } finally { disposeObject3D(model.root); }
 });
+
+test('423: the top steam passage is one smooth, constant-width channel sealed in a constant wall to valve a (pass 90)', () => {
+  const model = createAuthoredDoubleQuadrantEngineMovement(movement);
+  try {
+    const g = model.root.userData.geometry, line = g.topChannelLine;
+    // Tangent-continuous: no kink along the centre line.
+    for (let i = 1; i + 1 < line.length; i += 1) {
+      const a = Math.atan2(line[i][1] - line[i - 1][1], line[i][0] - line[i - 1][0]);
+      const b = Math.atan2(line[i + 1][1] - line[i][1], line[i + 1][0] - line[i][0]);
+      const turn = Math.abs(Math.atan2(Math.sin(b - a), Math.cos(b - a)));
+      assert.ok(turn < 8 * DEG, `centre line turns ${(turn / DEG).toFixed(2)} deg at ${i}`);
+    }
+    // It ends on valve a's top port, heading into the bore along its radius.
+    const end = line.at(-1), port = [g.valveCenter[0] + 0.86 * Math.cos(g.portAngles.top), g.valveCenter[1] + 0.86 * Math.sin(g.portAngles.top)];
+    assert.ok(Math.hypot(end[0] - port[0], end[1] - port[1]) < 1e-9);
+    // The whole channel is open, and it is walled all along: points a wall
+    // thickness less a margin to either side are casting, never outside.
+    for (let i = 0; i + 1 < line.length; i += 1) {
+      const p = line[i], q = line[i + 1], len = Math.hypot(q[0] - p[0], q[1] - p[1]), n = [-(q[1] - p[1]) / len, (q[0] - p[0]) / len];
+      assert.ok(pointInMulti(p, g.workingCavity), `channel open at ${i}`);
+      for (const side of [-1, 1]) {
+        const w = [p[0] + side * n[0] * (g.passageHalfWidth + g.wallThickness * 0.8), p[1] + side * n[1] * (g.passageHalfWidth + g.wallThickness * 0.8)];
+        if (Math.hypot(w[0] - g.valveCenter[0], w[1] - g.valveCenter[1]) < 0.97) continue; // inside valve a's bore
+        assert.ok(pointInMulti(w, g.casingOutline), `channel walled at ${i} side ${side}`);
+      }
+    }
+  } finally { disposeObject3D(model.root); }
+});

@@ -64,9 +64,12 @@ test('movement 233 is one lantern wheel with alternative roller and latch stops'
   assert.equal(sourceAnimation.available, false);
   assert.equal(sourceAnimation.independentlyReconstructed, true);
   assert.match(sourceAnimation.reason, /unavailable/);
-  assert.equal(transmission.alternativesSimultaneouslyLoaded, false);
+  // Both stops stay on the wheel; nothing lifts either except a trundle.
+  assert.equal(transmission.alternativesSimultaneouslyLoaded, true);
+  assert.equal(transmission.stopsLiftedOnlyByTrundleContact, true);
   assert.equal(transmission.trundlesPerDemonstrationStroke, 1);
-  assert.equal(transmission.wheelReturnsToSourceAngleEachCycle, true);
+  assert.equal(transmission.strokesPerCycle, 2);
+  assert.equal(transmission.wheelReturnsToSourceAngleEachCycle, false);
   assert.equal(blocks.wheel.parent, model.root);
   assert.equal(blocks.rollerStop.parent, model.root);
   assert.equal(blocks.latchStop.parent, model.root);
@@ -163,149 +166,81 @@ test('movement 233 preserves the measured shared-wheel source layout', () => {
   disposeModel(model.root);
 });
 
-test('movement 233 loads only one alternative through 65,537 cycle states', () => {
+test('movement 233 turns the wheel counterclockwise past both engaged stops', () => {
   const model = createMovementModel(catalog.movements[232]);
-  const {
-    geometry,
-    stateAtCycleCoordinate,
-  } = model.root.userData;
-  let minimumWheelAngle = Infinity;
-  let maximumWheelAngle = -Infinity;
-  let rollerStates = 0;
-  let latchStates = 0;
-  let sourceStates = 0;
-  for (let index = 0; index <= 65536; index += 1) {
+  const { geometry, stateAtCycleCoordinate } = model.root.userData;
+  let previous = stateAtCycleCoordinate(0);
+  let active = 0;
+  for (let index = 1; index <= 65536; index += 1) {
     const state = stateAtCycleCoordinate(index / 65536);
-    for (const value of [
-      state.wheelAngle,
-      state.wheelAngularSpeed,
-      state.wheelAngularAcceleration,
-      state.rollerLeverDelta,
-      state.rollerLeverAngularSpeed,
-      state.rollerSpinAngle,
-      state.rollerSpinAngularSpeed,
-      state.latchAngle,
-      state.latchAngularSpeed,
+    for (const value of [state.wheelAngle, state.wheelAngularSpeed,
+      state.rollerLeverDelta, state.rollerLeverAngularSpeed,
+      state.rollerSpinAngle, state.latchAngle, state.latchAngularSpeed,
     ]) assert.ok(Number.isFinite(value));
-    assert.equal(state.rollerActive && state.latchActive, false);
-    assert.equal(state.rollerContact !== null, state.rollerActive);
-    assert.equal(state.latchContact !== null, state.latchActive);
-    assert.ok(state.wheelAngle <= 2e-15);
-    assert.ok(state.wheelAngle >= -geometry.trundlePitch - 2e-15);
-    if (state.rollerActive) {
-      rollerStates += 1;
-      assert.equal(state.activeAlternative, 'roller-stop');
-      assert.equal(state.latchParked, true);
-      assert.ok(state.wheelAngularSpeed <= 1e-13);
-      assert.ok(state.rollerLeverDelta >= -2e-14);
-    }
-    if (state.latchActive) {
-      latchStates += 1;
-      assert.equal(state.activeAlternative, 'latch-stop');
-      assert.equal(state.rollerParked, true);
-      assert.ok(state.wheelAngularSpeed >= -1e-13);
-      assert.ok(state.latchAngle <= 2e-14);
-    }
-    if (state.sourcePose) {
-      sourceStates += 1;
-      near(state.wheelAngle, 0, 2e-14, 'source-pose wheel closure');
-      near(state.rollerLeverDelta, 0, 2e-14, 'source-pose roller closure');
-      near(state.latchAngle, 0, 2e-14, 'source-pose latch closure');
-    }
-    minimumWheelAngle = Math.min(minimumWheelAngle, state.wheelAngle);
-    maximumWheelAngle = Math.max(maximumWheelAngle, state.wheelAngle);
+    // The roller only rises (never below its seat) and the latch only
+    // lifts; both are bounded by their contact solutions.
+    assert.ok(state.rollerLeverDelta >= 0);
+    assert.ok(state.rollerLeverDelta < THREE.MathUtils.degToRad(4.9));
+    assert.ok(state.latchAngle <= 1e-12);
+    assert.ok(state.wheelAngle >= previous.wheelAngle - geometry.trundlePitch
+      * geometry.latchOvershoot);
+    assert.ok(Math.abs(state.rollerLeverDelta - previous.rollerLeverDelta)
+      < THREE.MathUtils.degToRad(0.05), 'roller lift is continuous');
+    if (state.rollerActive) active += 1;
+    assert.equal(state.rollerActive, state.latchActive);
+    previous = state;
   }
-  assert.ok(rollerStates > 15000);
-  assert.ok(latchStates > 15000);
-  assert.ok(sourceStates > 5000);
-  near(minimumWheelAngle, -geometry.trundlePitch, 2e-15,
-    'roller demonstration advances clockwise one pitch');
-  near(maximumWheelAngle, 0, 2e-15,
-    'latch demonstration returns counterclockwise one pitch');
-  near(stateAtCycleCoordinate(0.16).wheelAngle, 0, 0,
-    'roller drive begins at source angle');
-  near(stateAtCycleCoordinate(0.4).wheelAngle, -geometry.trundlePitch, 1e-15,
-    'roller drive ends one pitch clockwise');
-  near(stateAtCycleCoordinate(0.58).wheelAngle, -geometry.trundlePitch, 1e-15,
-    'latch drive begins at indexed angle');
-  near(stateAtCycleCoordinate(0.82).wheelAngle, 0, 1e-15,
-    'latch drive returns one pitch counterclockwise');
-  const closure = stateAtCycleCoordinate(1);
-  near(closure.wheelAngle, 0, 0, 'cycle wheel closure');
-  near(closure.rollerLeverDelta, 0, 0, 'cycle roller closure');
-  near(closure.latchAngle, 0, 0, 'cycle latch closure');
+  assert.ok(active > 30000);
+  near(stateAtCycleCoordinate(0.4).wheelAngle, geometry.trundlePitch, 1e-12,
+    'first stroke turns one pitch counterclockwise');
+  near(stateAtCycleCoordinate(0.82).wheelAngle, 2 * geometry.trundlePitch,
+    1e-12, 'second stroke turns another pitch');
+  for (const phase of [0, 0.1, 0.45, 0.55, 0.9]) {
+    const seated = stateAtCycleCoordinate(phase);
+    near(seated.rollerLeverDelta, 0, 1e-12, `roller seated at ${phase}`);
+    near(seated.latchAngle, 0, 1e-12, `latch seated at ${phase}`);
+  }
   disposeModel(model.root);
 });
 
-test('movement 233 roller has exact two-circle contact and true rolling rate', () => {
+test('movement 233 roller rides over the trundles as a least-lift contact follower', () => {
   const model = createMovementModel(catalog.movements[232]);
+  const { geometry, lanternStop233Kinematics: kinematics } = model.root.userData;
   const {
-    geometry,
-    rollerContactAtProgress,
-    rollerSpinAtProgress,
-  } = model.root.userData;
+    rollerArmLength, rollerContactDistance, rollerPivot, rollerRestArmAngle,
+    trundleCount, trundleOrbitRadius, trundlePitch,
+  } = geometry;
   let maximumLift = 0;
-  let maximumRollingError = 0;
-  for (let index = 0; index <= 32768; index += 1) {
-    const progress = index / 32768;
-    const contact = rollerContactAtProgress(progress);
-    near(
-      contact.rollerCenter.distanceTo(contact.pinCenter),
-      geometry.rollerContactDistance,
-      5e-15,
-      'roller-to-trundle center distance',
+  for (let index = 0; index <= 8192; index += 1) {
+    const theta = trundlePitch * index / 8192;
+    const { delta, binding } = kinematics.rollerLift(theta);
+    const angle = rollerRestArmAngle + delta;
+    const center = new THREE.Vector2(
+      rollerPivot.x + rollerArmLength * Math.cos(angle),
+      rollerPivot.y + rollerArmLength * Math.sin(angle),
     );
-    vectorNear(
-      contact.pinContactPoint,
-      contact.rollerContactPoint,
-      5e-15,
-      'roller and trundle share one contact point',
-    );
-    near(
-      contact.rollingVelocityError.dot(contact.contactNormal),
-      0,
-      1.2e-15,
-      'roller contact has no normal slip',
-    );
-    near(
-      contact.rollingVelocityError.dot(contact.contactTangent),
-      0,
-      1.2e-15,
-      'roller contact has no tangential slip',
-    );
-    maximumLift = Math.max(maximumLift, contact.armDelta);
-    maximumRollingError = Math.max(
-      maximumRollingError,
-      contact.rollingVelocityError.length(),
-    );
+    let closest = Infinity;
+    for (let pin = 0; pin < trundleCount; pin += 1) {
+      const pinAngle = geometry.rollerGapAngle + trundlePitch / 2
+        + pin * trundlePitch + theta;
+      const gap = center.distanceTo(new THREE.Vector2(
+        Math.cos(pinAngle) * trundleOrbitRadius,
+        Math.sin(pinAngle) * trundleOrbitRadius,
+      )) - rollerContactDistance;
+      assert.ok(gap > -1e-9, `roller clears trundle ${pin} at ${theta}`);
+      closest = Math.min(closest, gap);
+    }
+    // It always touches a trundle: lifted by one, or seated between two.
+    assert.ok(closest < 1e-9, `roller rests on a trundle at ${theta}`);
+    if (delta > 1e-9) assert.ok(binding >= 0);
+    maximumLift = Math.max(maximumLift, delta);
   }
   assert.ok(maximumLift > THREE.MathUtils.degToRad(4.7));
   assert.ok(maximumLift < THREE.MathUtils.degToRad(4.9));
-  assert.ok(maximumRollingError < 1.2e-15);
-  near(rollerContactAtProgress(0).armDelta, 0, 5e-16,
-    'roller begins seated');
-  near(rollerContactAtProgress(1).armDelta, 0, 5e-16,
+  near(kinematics.rollerLift(0).delta, 0, 0, 'roller begins seated');
+  near(kinematics.rollerLift(trundlePitch).delta, 0, 1e-9,
     'roller reseats one pitch later');
-  near(rollerSpinAtProgress(0), 0, 0, 'roller witness starts at zero');
-  near(
-    rollerSpinAtProgress(1),
-    geometry.rollerSpinPerPitch,
-    0,
-    'roller witness integrates one complete contact stroke',
-  );
-  for (const progress of [0.08, 0.21, 0.37, 0.5, 0.64, 0.82, 0.94]) {
-    const h = 1e-5;
-    const finiteDerivative = (
-      rollerSpinAtProgress(progress + h)
-      - rollerSpinAtProgress(progress - h)
-    ) / (2 * h);
-    near(
-      finiteDerivative,
-      rollerContactAtProgress(progress).rollerSpinDerivative,
-      2e-4,
-      'integrated roller witness derivative',
-    );
-  }
+  assert.ok(Math.abs(kinematics.spinPerPitch) > 1, 'the free roller rolls');
   disposeModel(model.root);
 });
 
@@ -352,7 +287,7 @@ test('movement 233 latch is a flat bar with a slanted end that rides the lower t
   disposeModel(model.root);
 });
 
-test('movement 233 analytic velocities and accelerations match finite differences', () => {
+test('movement 233 published speeds match finite differences', () => {
   const model = createMovementModel(catalog.movements[232]);
   const { geometry, stateAtTime } = model.root.userData;
   const h = 2e-5;
@@ -361,42 +296,13 @@ test('movement 233 analytic velocities and accelerations match finite difference
     const before = stateAtTime(time - h);
     const state = stateAtTime(time);
     const after = stateAtTime(time + h);
-    const wheelSpeed = (after.wheelAngle - before.wheelAngle) / (2 * h);
-    const wheelAcceleration = (
-      after.wheelAngle - 2 * state.wheelAngle + before.wheelAngle
-    ) / h ** 2;
-    near(wheelSpeed, state.wheelAngularSpeed, 2e-9,
-      'wheel angular speed finite difference');
-    near(wheelAcceleration, state.wheelAngularAcceleration, 2e-5,
-      'wheel angular acceleration finite difference');
-    if (state.rollerActive) {
-      const leverSpeed = (
-        after.rollerLeverDelta - before.rollerLeverDelta
-      ) / (2 * h);
-      const spinSpeed = (
-        after.rollerSpinAngle - before.rollerSpinAngle
-      ) / (2 * h);
-      near(leverSpeed, state.rollerLeverAngularSpeed, 3e-8,
-        'roller arm angular speed finite difference');
-      near(spinSpeed, state.rollerSpinAngularSpeed, 6e-5,
-        'roller spin finite difference');
-    }
-    if (state.latchActive) {
-      const latchSpeed = (
-        after.latchAngle - before.latchAngle
-      ) / (2 * h);
-      const latchAcceleration = (
-        after.latchAngle - 2 * state.latchAngle + before.latchAngle
-      ) / h ** 2;
-      // The latch's lift is a C1 monotone spline through its solved table,
-      // so its acceleration steps at the table knots.
-      near(latchSpeed, state.latchAngularSpeed,
-        1e-4 * (1 + Math.abs(state.latchAngularSpeed)),
-        'latch angular speed finite difference');
-      near(latchAcceleration, state.latchAngularAcceleration,
-        0.3 * (1 + Math.abs(state.latchAngularAcceleration)),
-        'latch angular acceleration finite difference');
-    }
+    near((after.wheelAngle - before.wheelAngle) / (2 * h),
+      state.wheelAngularSpeed, 2e-8, 'wheel angular speed');
+    near((after.rollerLeverDelta - before.rollerLeverDelta) / (2 * h),
+      state.rollerLeverAngularSpeed, 2e-3, 'roller arm angular speed');
+    near((after.latchAngle - before.latchAngle) / (2 * h),
+      state.latchAngularSpeed, 1e-3 * (1 + Math.abs(state.latchAngularSpeed)),
+      'latch angular speed');
   }
   disposeModel(model.root);
 });
@@ -429,87 +335,32 @@ test('movement 233 renderer binds wheel, stops, witnesses, and contacts for 4,09
     );
     near(blocks.latchStop.rotation.z, state.latchAngle, 2e-15,
       'rendered latch angle');
-    assert.equal(blocks.rollerContactMarker.visible, state.rollerActive);
-    assert.equal(blocks.latchContactMarker.visible, state.latchActive);
-    if (state.rollerContact) {
-      vectorNear(
-        new THREE.Vector2(
-          blocks.rollerContactMarker.position.x,
-          blocks.rollerContactMarker.position.y,
-        ),
-        state.rollerContact.point,
-        1e-15,
-        'rendered roller contact marker',
-      );
-    }
-    if (state.latchContact) {
-      vectorNear(
-        new THREE.Vector2(
-          blocks.latchContactMarker.position.x,
-          blocks.latchContactMarker.position.y,
-        ),
-        state.latchContact.point,
-        1e-15,
-        'rendered latch contact marker',
-      );
-    }
-    const renderedRollerContact = model.root.userData.contacts
-      .rollerStopToTrundle;
-    const renderedLatchContact = model.root.userData.contacts
-      .latchStopToTrundle;
-    assert.equal(renderedRollerContact !== null, state.rollerContact !== null);
-    assert.equal(renderedLatchContact !== null, state.latchContact !== null);
-    if (state.rollerContact) {
-      vectorNear(renderedRollerContact.point, state.rollerContact.point, 0,
-        'renderer publishes the roller contact point');
-      near(
-        renderedRollerContact.tangentialVelocityError,
-        state.rollerContact.tangentialVelocityError,
-        0,
-        'renderer publishes roller rolling contact',
-      );
-    }
-    if (state.latchContact) {
-      vectorNear(renderedLatchContact.point, state.latchContact.point, 0,
-        'renderer publishes the latch contact point');
-      near(
-        renderedLatchContact.normalVelocityError,
-        state.latchContact.normalVelocityError,
-        0,
-        'renderer publishes latch normal contact',
-      );
-    }
+    const published = model.root.userData.contacts;
+    assert.equal(published.rollerStopToTrundle !== null, state.rollerContact !== null);
+    assert.equal(published.latchStopToTrundle !== null, state.latchContact !== null);
   }
   assert.equal(blocks.rollerWitness.userData.rollerRotationWitness, true);
   assert.equal(blocks.wheelIndicator.userData.rotationWitness, true);
   disposeModel(model.root);
 });
 
-test('movement 233 closes every demonstration cycle and leaves 269 authored', () => {
+test('movement 233 closes every cycle two trundles on and leaves 269 authored', () => {
   const model = createMovementModel(catalog.movements[232]);
-  const {
-    geometry,
-    stateAtCycleCoordinate,
-  } = model.root.userData;
-  const source = stateAtCycleCoordinate(0);
+  const { geometry, stateAtCycleCoordinate } = model.root.userData;
   for (let cycle = 1; cycle <= 14; cycle += 1) {
     const closure = stateAtCycleCoordinate(cycle);
-    near(closure.wheelAngle, source.wheelAngle, 0,
-      `wheel closure after demonstration cycle ${cycle}`);
-    near(closure.rollerLeverDelta, source.rollerLeverDelta, 0,
-      `roller arm closure after demonstration cycle ${cycle}`);
-    near(closure.latchAngle, source.latchAngle, 0,
-      `latch closure after demonstration cycle ${cycle}`);
-    near(
-      closure.rollerSpinAngle,
-      cycle * geometry.rollerSpinPerPitch,
-      2e-15,
-      `free roller accumulates physical spin in cycle ${cycle}`,
-    );
+    near(closure.wheelAngle, 2 * cycle * geometry.trundlePitch, 1e-12,
+      `wheel advances two trundles in cycle ${cycle}`);
+    near(closure.rollerLeverDelta, 0, 1e-12, `roller reseated after ${cycle}`);
+    near(closure.latchAngle, 0, 1e-12, `latch reseated after ${cycle}`);
+    near(closure.rollerSpinAngle, 2 * cycle * model.root.userData.lanternStop233Kinematics.spinPerPitch,
+    1e-9, `free roller accumulates spin in cycle ${cycle}`);
+    const before = stateAtCycleCoordinate(cycle - 1e-9);
+    near(before.rollerSpinAngle, closure.rollerSpinAngle, 1e-6,
+      `roller spin is continuous across cycle ${cycle}`);
   }
   const movement507 = createMovementModel(catalog.movements[506]);
   assert.equal(catalog.movements[506].id, 507);
-  assert.equal(catalog.movements[506].fidelity, 'authored');
   assert.equal(movement507.root.userData.fidelity, 'authored');
   disposeModel(model.root);
   disposeModel(movement507.root);

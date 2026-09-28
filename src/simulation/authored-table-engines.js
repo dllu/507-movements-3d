@@ -633,8 +633,9 @@ function tableEngine(movement) {
     sideRodPlaneZ * 2 + 0.72, frameEdgeMaterial, 36);
   crossheadPin.userData.role = 'common-crosshead-pin-C-for-two-side-rods';
   const crossheadPinCaps = [-1, 1].map((side, index) => {
+    // Pin heads in the pin's own colour (the white caps read as undrawn marks).
     const cap = cylinderAlongZ(0.36 * sourceScale, 0.09,
-      whiteMaterial, 34);
+      frameEdgeMaterial, 34);
     cap.position.z = side * (sideRodPlaneZ + 0.39);
     cap.userData.role = `crosshead-pin-visible-cap-${index + 1}`;
     pistonAssembly.add(cap);

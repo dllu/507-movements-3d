@@ -51,43 +51,102 @@ function beamBetween(start, end, width, depth, material) {
   return beam;
 }
 
-function makeHandwheel(material, indexMaterial) {
+// Brown's thumbscrew head (plate 404): a washer collar under the screw, then
+// one flat wing plate in the screw's plane. Three lobes, not three-fold
+// symmetric: the narrow neck lobe up into the collar, and two round grip lobes
+// down-left and down-right, split by a flat-topped notch that widens toward
+// its mouth. Every edge is a circular arc or a straight line: concave neck
+// fillets tangent to the neck line and to the lobe circles, the lobe circles,
+// straight notch sides tangent to the lobes, and small concave notch corners.
+// Proportions are read from the plate relative to the screw diameter.
+export const THUMBSCREW_HEAD = Object.freeze({
+  top: 0.15, // head top, inside the collar and against the screw end (local y; screw axis is +y)
+  neckHalfWidth: 0.16,
+  lobeRadius: 0.165,
+  lobeCenterX: 0.29,
+  lobeDrop: 0.495, // lobe centres below the head top
+  notchDepth: 0.37, // flat notch top below the head top
+  notchHalfWidth: 0.075,
+  notchCornerRadius: 0.06,
+  depth: 0.13,
+  collarRadius: 0.25,
+  collarBottom: 0.10,
+  collarTop: 0.18,
+});
+
+export const THUMBSCREW_FACE_OFFSET = 0.7494;
+
+export function thumbscrewHeadOutline(head = THUMBSCREW_HEAD) {
+  const { top, neckHalfWidth: a, lobeRadius: R, lobeCenterX: c, lobeDrop: h } = head;
+  const V = (x, y) => new THREE.Vector2(x, y);
+  // Neck fillet: centre (a + rf, top), tangent to x = a at the head top and
+  // externally tangent to the lobe circle.
+  const rf = ((c - a) ** 2 + h ** 2 - R ** 2) / (2 * (c - a) + 2 * R);
+  const fillet = V(a + rf, top);
+  const lobe = V(c, top - h);
+  // Notch corner circle (inside the notch) and the internal tangent line
+  // from it to the lobe circle: the straight notch side.
+  const rc = head.notchCornerRadius;
+  const corner = V(head.notchHalfWidth - rc, top - head.notchDepth - rc);
+  const D = lobe.clone().sub(corner);
+  const alpha = Math.acos((rc + R) / D.length());
+  const nAngle = Math.atan2(D.y, D.x) + alpha;
+  const n = V(Math.cos(nAngle), Math.sin(nAngle));
+  const half = [];
+  const arc = (centre, radius, from, to, steps) => {
+    for (let i = 0; i <= steps; i += 1) {
+      const t = from + (to - from) * i / steps;
+      half.push(V(centre.x + radius * Math.cos(t), centre.y + radius * Math.sin(t)));
+    }
+  };
+  const angle = (v) => Math.atan2(v.y, v.x);
+  // Fillet arc from the neck top (angle pi) down to the lobe tangent.
+  let fEnd = angle(lobe.clone().sub(fillet)); while (fEnd < Math.PI) fEnd += 2 * Math.PI;
+  arc(fillet, rf, Math.PI, fEnd, 16);
+  // Lobe, clockwise round the outside and underneath to the notch side.
+  const lStart = angle(fillet.clone().sub(lobe));
+  let lEnd = nAngle + Math.PI; while (lEnd > lStart) lEnd -= 2 * Math.PI;
+  arc(lobe, R, lStart, lEnd, 48);
+  // Straight notch side, then the concave corner up onto the flat top.
+  let cEnd = Math.PI / 2; while (cEnd < nAngle) cEnd += 2 * Math.PI;
+  arc(corner, rc, nAngle, cEnd, 8);
+  half.push(V(0, top - head.notchDepth));
+  const points = [...half];
+  for (let i = half.length - 2; i >= 0; i -= 1) points.push(V(-half[i].x, half[i].y));
+  const outline = points.filter((p, i) => i === 0 || p.distanceTo(points[i - 1]) > 1e-6);
+  return { outline, filletRadius: rf, lobe, corner, notchNormal: n };
+}
+
+function makeHandwheel(material) {
   const handwheel = new THREE.Group();
   handwheel.userData.role = 'three-lobed-handwheel-rigid-on-adjusting-screw';
-  const hub = cylinderAlongZ(0.22, 0.22, material, 34);
-  hub.userData.role = 'adjusting-screw-handwheel-hub';
-  handwheel.add(hub);
-  const lobeShape = new THREE.Shape();
-  const points = 72;
-  for (let index = 0; index <= points; index += 1) {
-    const angle = FULL_TURN * index / points;
-    const radius = 0.34 + 0.10 * Math.cos(3 * angle);
-    const x = radius * Math.cos(angle);
-    const y = radius * Math.sin(angle);
-    if (index === 0) lobeShape.moveTo(x, y);
-    else lobeShape.lineTo(x, y);
-  }
-  lobeShape.closePath();
-  const lobeGeometry = new THREE.ExtrudeGeometry(lobeShape, {
+  const head = THUMBSCREW_HEAD;
+  // Handwheel local +y is the screw axis (up toward the bar).
+  const collar = new THREE.Mesh(
+    new THREE.CylinderGeometry(head.collarRadius, head.collarRadius,
+      head.collarTop - head.collarBottom, 48),
+    material,
+  );
+  collar.position.y = (head.collarTop + head.collarBottom) / 2;
+  collar.userData.role = 'adjusting-screw-thumbscrew-collar';
+  handwheel.add(collar);
+  const { outline } = thumbscrewHeadOutline(head);
+  const lobeGeometry = new THREE.ExtrudeGeometry(new THREE.Shape(outline), {
     bevelEnabled: true,
     bevelSegments: 2,
-    bevelSize: 0.018,
-    bevelThickness: 0.018,
+    bevelSize: 0.016,
+    bevelThickness: 0.016,
     curveSegments: 16,
-    depth: 0.12,
+    depth: head.depth - 0.032,
   });
-  lobeGeometry.translate(0, 0, -0.06);
+  lobeGeometry.translate(0, 0, -(head.depth - 0.032) / 2);
   const lobes = new THREE.Mesh(lobeGeometry, material);
   lobes.userData.role = 'three-lobed-adjusting-grip';
+  // Turn the wing about the screw axis so that it faces the viewer, as Brown
+  // draws it, at the source pose (phase 0).
+  lobes.rotation.y = THUMBSCREW_FACE_OFFSET;
   handwheel.add(lobes);
-  const angularIndex = new THREE.Mesh(
-    new THREE.SphereGeometry(0.045, 14, 10),
-    indexMaterial,
-  );
-  angularIndex.position.set(0.30, 0, 0.085);
-  angularIndex.userData.role = 'white-screw-handwheel-angular-index';
-  handwheel.add(angularIndex);
-  return { angularIndex, handwheel, hub, lobes };
+  return { collar, handwheel, hub: collar, lobes };
 }
 
 function flexibleBarCyclograph(movement) {
@@ -605,7 +664,7 @@ function flexibleBarCyclograph(movement) {
   nutThread.rotation.x = -Math.PI / 2; fixedNut.add(nutThread);
 
   root.add(screw);
-  const handwheel = makeHandwheel(driverMaterial, whiteMaterial);
+  const handwheel = makeHandwheel(driverMaterial);
   handwheel.handwheel.rotation.x = Math.PI / 2;
   handwheel.handwheel.position.z = 0.30;
   screw.userData.rotor.add(handwheel.handwheel);

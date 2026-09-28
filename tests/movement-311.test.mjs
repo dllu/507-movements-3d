@@ -93,16 +93,23 @@ test('movement 311 is two offset three-legged wheels, one lifting-pin set, and t
   assert.deepEqual(blocks.rearWheelabc.legs.map(({ userData }) =>
     userData.label), ['a', 'b', 'c']);
   assert.equal(blocks.liftingPinMeshes.length, 3);
-  assert.equal(blocks.flyVanes.length, 2);
+  // Brown's FLY: one long plain blade, no vanes, along his line at t = 0.
+  assert.equal(blocks.flyVanes.length, 0);
   {
-    // The fly crossarm ends on each vane's inner edge (it used to run on to
-    // the vane centre with coplanar faces).
-    let crossarm = null;
-    model.root.traverse((o) => { if (o.userData.role === 'long-fan-fly-crossarm') crossarm = o; });
-    for (const vane of blocks.flyVanes) {
-      const inner = Math.abs(vane.position.x) - vane.geometry.parameters.width / 2;
-      assert.ok(Math.abs(crossarm.geometry.parameters.width / 2 - inner) < 1e-9);
-    }
+    let blade = null;
+    model.root.traverse((o) => { if (o.userData.role === 'long-plain-fly-blade-edge-on') blade = o; });
+    assert.ok(blade);
+    blade.geometry.computeBoundingBox();
+    const box = blade.geometry.boundingBox;
+    const g = model.root.userData.geometry;
+    const upper = Math.hypot(g.mappedFlyUpperEnd.x - g.wheelCenter.x, g.mappedFlyUpperEnd.y - g.wheelCenter.y);
+    const lower = Math.hypot(g.mappedFlyLowerEnd.x - g.wheelCenter.x, g.mappedFlyLowerEnd.y - g.wheelCenter.y);
+    assert.ok(Math.abs(box.max.x - (upper + lower) / 2) < 1e-6);
+    // Thin in the plane (edge-on), deep along the arbor.
+    assert.ok(box.max.y < 0.14 && box.max.z > 0.15);
+    const state = model.root.userData.stateAtTime(0);
+    const plateAngle = Math.atan2(g.mappedFlyUpperEnd.y - g.mappedFlyLowerEnd.y, g.mappedFlyUpperEnd.x - g.mappedFlyLowerEnd.x);
+    assert.ok(Math.abs(Math.sin(state.flyAngle - plateAngle)) < 1e-9);
   }
 
   const roles = [];
@@ -603,8 +610,12 @@ test('movement 311 supplies equal isolated gravity impulses and a correctly coup
   assert.match(transmission.flyCoupling, /same angular rate/);
   for (const phase of [0, 0.2, 0.38, 0.48, 0.7, 0.88, 0.98, 1]) {
     const state = stateAtCyclePhase(phase);
+    // The blade lies along Brown's FLY line when the wheel is at pi/2.
+    const g311 = model.root.userData.geometry;
+    const plateFlyAngle = Math.atan2(g311.mappedFlyUpperEnd.y - g311.mappedFlyLowerEnd.y,
+      g311.mappedFlyUpperEnd.x - g311.mappedFlyLowerEnd.x);
     near(state.flyAngle - state.wheelAngle,
-      Math.PI / 5, 1e-14, `normal no-slip fly phase at ${phase}`);
+      plateFlyAngle - Math.PI / 2, 1e-14, `normal no-slip fly phase at ${phase}`);
     near(state.flyAngularSpeed, state.wheelAngularSpeed,
       0, `friction fly follows the escape arbor at ${phase}`);
   }

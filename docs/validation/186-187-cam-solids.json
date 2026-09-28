@@ -13,19 +13,19 @@
     },
     {
       "file": "src/simulation/gab-disengager-186.js",
-      "sha256": "2c008ed0414a67e68caf0c4be2c3e752867a2493ef3ca60447fabfb25c1e6f37"
+      "sha256": "8b97173a60b32f68b4ae951086e2c751115a18b5fa7a2f8e099f7eef1bc59a70"
     },
     {
       "file": "src/simulation/gab-disengager-187.js",
-      "sha256": "861ada17ceb839162bafc8e621ddae3f52cfa2fdeed0b9d6cd310086ed431c5a"
+      "sha256": "e11e8696f770e7649d436829abe4bcce1f179839bfc51b5c237af33c36e6263e"
     },
     {
       "file": "src/simulation/gab-disengager-188.js",
-      "sha256": "022aeb0725dbf7ae6132318b0c5535fee5e925fe0d3c8535e375f200fb6829fc"
+      "sha256": "8df04fc72c0fb96aa11b23a8944d01ec828904e8175f74aab149f5b4f3f6a9d4"
     },
     {
       "file": "src/simulation/gab-disengager-189.js",
-      "sha256": "23c59bc54b39e4808d299069bbf6642a1f1dd2812e58af54410655140750ff47"
+      "sha256": "0d5a6fcaa0590a56d38be2e5c47498f4b8af617cc2043683f94203baaa787335"
     },
     {
       "file": "tests/helpers/solid-surface.mjs",
@@ -37,36 +37,36 @@
       "id": 186,
       "poses": 129,
       "bodies": 4,
-      "meshes": 13,
-      "pairs": 55,
-      "queries": 4139616,
+      "meshes": 26,
+      "pairs": 221,
+      "queries": 5330394,
       "intersections": {}
     },
     {
       "id": 187,
       "poses": 129,
       "bodies": 3,
-      "meshes": 8,
-      "pairs": 19,
-      "queries": 1528788,
+      "meshes": 22,
+      "pairs": 131,
+      "queries": 3284340,
       "intersections": {}
     },
     {
       "id": 188,
       "poses": 129,
       "bodies": 4,
-      "meshes": 11,
-      "pairs": 33,
-      "queries": 5680514,
+      "meshes": 28,
+      "pairs": 229,
+      "queries": 7523374,
       "intersections": {}
     },
     {
       "id": 189,
       "poses": 129,
       "bodies": 4,
-      "meshes": 16,
-      "pairs": 73,
-      "queries": 1668744,
+      "meshes": 29,
+      "pairs": 225,
+      "queries": 3277140,
       "intersections": {}
     }
   ]

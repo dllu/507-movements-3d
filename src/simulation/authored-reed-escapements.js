@@ -180,7 +180,7 @@ function makeBalance({
     { axial: 0.08, radial: rimOuterRadius },
   ], rimOuterRadius - 0.22, 160), material);
   rim.rotation.x = Math.PI / 2;
-  rim.position.z = -0.28;
+  rim.position.z = -0.54;
   rim.userData.role = 'balance-wheel-B-rim';
   balance.add(rim);
   // The rim is carried on its staff by one plain diametral arm lying in the
@@ -190,7 +190,7 @@ function makeBalance({
     new THREE.BoxGeometry(2 * (rimOuterRadius - 0.11), 0.14, 0.10),
     material,
   );
-  rimArm.position.z = -0.28;
+  rimArm.position.z = -0.54;
   rimArm.userData.role = 'balance-wheel-B-arm-to-staff';
   balance.add(rimArm);
   const hub = cylinderAlongZ(0.18, 0.72, darkMaterial, 32);
@@ -203,13 +203,13 @@ function makeBalance({
     [[circlePoints(0.30, 64)]],
     [[[[0, -0.09], [PIN_ORBIT, -0.09], ...circlePoints(0.09, 24, PIN_ORBIT, -Math.PI / 2, Math.PI / 2), [PIN_ORBIT, 0.09], [0, 0.09], [0, -0.09]]]],
   ), [[circlePoints(0.183, 64)]]);
-  const roller = new THREE.Mesh(extrudePlate(rollerShape, 0.40, 0.56), darkMaterial);
+  const roller = new THREE.Mesh(extrudePlate(rollerShape, -0.28, -0.18), darkMaterial);
   void rollerRadius;
   roller.userData.role = 'balance-roller-h';
   balance.add(roller);
-  const rollerPin = cylinderAlongZ(rollerPinRadius, 0.24,
+  const rollerPin = cylinderAlongZ(rollerPinRadius, 0.28,
     whiteMaterial, 24);
-  rollerPin.position.set(PIN_ORBIT, 0, 0.58);
+  rollerPin.position.set(PIN_ORBIT, 0, -0.31);
   rollerPin.userData.role = 'roller-impulse-pin-i';
   balance.add(rollerPin);
   const directPallet = new THREE.Mesh(
@@ -265,28 +265,6 @@ function makeLever({
     new THREE.Vector2(PIN_ORBIT, 0),
   );
   const forkCenterLocal = forkCenterWorld.clone().sub(leverPivot);
-  // Brown draws lever C straight along the line of centres, bowing in one
-  // small half-round crook d beneath escape-wheel staff a.
-  const crookRadius = 0.44;
-  const crookPath = new THREE.CurvePath();
-  const local = (x, y) => new THREE.Vector3(x - leverPivot.x, y - leverPivot.y, 0.53);
-  crookPath.add(new THREE.LineCurve3(local(leverPivot.x, leverPivot.y),
-    local(crookRadius, 0)));
-  const crookArc = new THREE.EllipseCurve(0, 0, crookRadius, crookRadius,
-    0, -Math.PI, true);
-  const arcPoints = crookArc.getPoints(40).map((point) => local(point.x, point.y));
-  crookPath.add(new THREE.CatmullRomCurve3(arcPoints));
-  const forkEnd = forkCenterWorld.clone().add(new THREE.Vector2(0.24, 0));
-  crookPath.add(new THREE.LineCurve3(local(-crookRadius, 0),
-    local(forkEnd.x, forkEnd.y)));
-  const crookCurve = crookPath;
-  const crook = new THREE.Mesh(
-    new THREE.TubeGeometry(crookCurve, 88, 0.085, 10, false),
-    material,
-  );
-  crook.userData.role = 'lever-C-principal-arm-with-crook-d-around-wheel-staff';
-  lever.add(crook);
-
   const crosspiece = beamBetween(
     new THREE.Vector3(fLocal.x, fLocal.y, 0.35),
     new THREE.Vector3(gLocal.x, gLocal.y, 0.35),
@@ -325,35 +303,60 @@ function makeLever({
     'chronometer-detent-only-pallet-f',
   );
 
-  // Fork e is one plate working on the part of pin i standing proud of
-  // roller h. Its slot runs along the lever through staff c and is the pin's
-  // width plus a running clearance, from just past the pin's deepest reach
-  // (on the line of centres) to a mouth beyond its exit, so the pin drives
-  // the lever bank to bank without ever cutting a prong.
+  // Lever C is one flat plate in one plane, as Brown draws it: fork e, a
+  // straight arm along the line of centres bowed in the half-round crook d
+  // round escape-wheel staff a, the boss on staff c, and the tail with its
+  // hand-shaped end between banking pins l.
+  // Fork e works on the part of pin i standing proud of roller h. Its slot
+  // runs along the lever through staff c and is the pin's width plus a
+  // running clearance, from just past the pin's deepest reach (on the line
+  // of centres) to a mouth beyond its exit, so the pin drives the lever bank
+  // to bank without ever cutting a prong.
   const slotHalf = 0.072 + 0.008;
-  const prong = 0.07;
+  const prong = 0.08;
   const deepest = forkCenterLocal.x + 0.072 + 0.012;
   const mouth = forkCenterLocal.x - 0.18;
   const chamfer = 0.06;
-  const back = deepest + 0.09;
-  const forkShape = clip.difference(
+  const back = deepest + 0.12;
+  const armHalf = 0.085;
+  const crookRadius = 0.55;
+  const staffA = -leverPivot.x;
+  const lathe = (cx, radius, from, to, count) => Array.from({length: count + 1},
+    (_, i) => [cx + radius * Math.cos(from + (to - from) * i / count), radius * Math.sin(from + (to - from) * i / count)]);
+  // Hand-shaped tail end: the tail widens along two smooth flanks to a
+  // concave end, symmetric about the lever's centre line.
+  const hand = [];
+  for (let i = 0; i <= 24; i += 1) {
+    const t = i / 24;
+    hand.push([0.60 + 0.36 * t, 0.07 + 0.13 * t * t]);
+  }
+  const handEnd = lathe(1.18, 0.30, Math.PI - Math.asin(0.2 / 0.30), Math.PI + Math.asin(0.2 / 0.30), 24).reverse();
+  const tailOutline = [[0.05, -0.07], [0.60, -0.07], ...hand.map(([x, y]) => [x, -y]).slice(1),
+    ...handEnd.filter(([x, y]) => y < 0.2 && y > -0.2), ...[...hand].reverse().slice(0, -1), [0.60, 0.07], [0.05, 0.07]];
+  const leverShape = clip.difference(clip.union(
     [[[[mouth, -slotHalf - prong], [back, -slotHalf - prong], [back, slotHalf + prong], [mouth, slotHalf + prong], [mouth, -slotHalf - prong]]]],
-    [[[[mouth - 0.1, -slotHalf], [deepest, -slotHalf], [deepest, slotHalf], [mouth - 0.1, slotHalf], [mouth - 0.1, -slotHalf]]]],
-    // Chamfered horns let the pin swing in and out of the mouth.
-    ...[-1, 1].map((side) => [[[[mouth - 0.01, side * (slotHalf - 0.01)], [mouth + chamfer, side * (slotHalf - 0.01)], [mouth - 0.01, side * (slotHalf + chamfer)], [mouth - 0.01, side * (slotHalf - 0.01)]]]]),
-  );
-  const fork = new THREE.Mesh(extrudePlate(forkShape, 0.59, 0.69), material);
-  fork.userData.role = 'lever-fork-e-slot-around-roller-pin-i';
+    [[[[back - 0.02, -armHalf], [staffA - crookRadius, -armHalf], [staffA - crookRadius, armHalf], [back - 0.02, armHalf], [back - 0.02, -armHalf]]]],
+    [[[...lathe(staffA, crookRadius + armHalf, Math.PI, 2 * Math.PI, 64), ...lathe(staffA, crookRadius - armHalf, 2 * Math.PI, Math.PI, 64)]]],
+    [[[[staffA + crookRadius, -armHalf], [-0.1, -armHalf], [-0.1, armHalf], [staffA + crookRadius, armHalf], [staffA + crookRadius, -armHalf]]]],
+    [[circlePoints(0.27, 96)]],
+    [[tailOutline]],
+  ),
+  [[[[mouth - 0.1, -slotHalf], [deepest, -slotHalf], [deepest, slotHalf], [mouth - 0.1, slotHalf], [mouth - 0.1, -slotHalf]]]],
+  // Chamfered horns let the pin swing in and out of the mouth.
+  ...[-1, 1].map((side) => [[[[mouth - 0.01, side * (slotHalf - 0.01)], [mouth + chamfer, side * (slotHalf - 0.01)], [mouth - 0.01, side * (slotHalf + chamfer)], [mouth - 0.01, side * (slotHalf - 0.01)]]]]),
+  [[circlePoints(0.173, 96)]]);
+  const fork = new THREE.Mesh(extrudePlate(leverShape, -0.42, -0.30), material);
+  fork.userData.role = 'lever-C-one-plate-with-fork-e-crook-d-and-tail';
   lever.add(fork);
   const forkProngs = [fork];
   const forkBridge = fork;
-  // The guard pin stands on the lever's centre line just clear of the
-  // roller's edge, level with the roller and below the proud part of pin i.
+  // The guard pin stands on the lever's front face on its centre line just
+  // clear of the roller's edge, level with the roller.
   const guardPin = cylinderAlongZ(0.052, 0.12, darkMaterial, 20);
   guardPin.position.set(
     forkCenterLocal.x - PIN_ORBIT + rollerRadius + 0.072,
     forkCenterLocal.y,
-    0.46,
+    -0.24,
   );
   guardPin.userData.role = 'lever-guard-pin-k-against-balance-roller-h';
   lever.add(guardPin);
@@ -362,21 +365,7 @@ function makeLever({
   pivotHub.position.z = 0.18;
   pivotHub.userData.role = 'lever-staff-c';
   lever.add(pivotHub);
-  const tail = new THREE.Mesh(
-    new THREE.BoxGeometry(0.72, 0.14, 0.18),
-    material,
-  );
-  tail.position.set(0.35, 0, 0.48);
-  tail.userData.role = 'lever-tail-between-banking-pins-l';
-  lever.add(tail);
-  const tailKnob = new THREE.Mesh(
-    new THREE.SphereGeometry(0.18, 24, 16),
-    material,
-  );
-  tailKnob.scale.set(1.5, 0.62, 0.62);
-  tailKnob.position.set(0.72, 0, 0.48);
-  tailKnob.userData.role = 'lever-tail-hand-shaped-end';
-  lever.add(tailKnob);
+  const tail = fork;
 
   lever.userData.crosspiece = crosspiece;
   lever.userData.forkBridge = forkBridge;
@@ -404,8 +393,8 @@ function reedHybridEscapement(movement) {
   const wheelAdvancePerBalanceCycle = toothPitch;
   const lockContactAngle = THREE.MathUtils.degToRad(22.5);
   const wheelToothTipRadius = 1.72;
-  const wheelRootRadius = 1.43;
-  const wheelInnerRadius = 1.09;
+  const wheelRootRadius = 1.52;
+  const wheelInnerRadius = 1.22;
   const wheelDepth = 0.28;
   const wheelReferenceAngle = lockContactAngle;
   const leverPivot = new THREE.Vector2(2.18, 0);
@@ -522,9 +511,9 @@ function reedHybridEscapement(movement) {
     return boss;
   });
   const bankingPins = [-1, 1].map((side) => {
-    const pin = cylinderAlongZ(0.085, 0.62, darkMaterial, 24);
+    const pin = cylinderAlongZ(0.085, 0.44, darkMaterial, 24);
     pin.position.set(leverPivot.x + 0.47,
-      side * 0.20, 0.28);
+      side * 0.20, -0.50);
     pin.userData.side = side;
     pin.userData.role = 'fixed-banking-pin-l';
     fixedFrame.add(pin);

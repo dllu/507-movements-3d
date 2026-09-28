@@ -1,4 +1,5 @@
 import * as T from 'three';
+import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {boredLatheGeometry} from './bored-lathe-geometry.js';
 import {boredPlanarLinkGeometry} from './bored-planar-link.js';
 import {plate,poly,circle,polygonClipping as clip} from './finite-plate-geometry.js';
@@ -7,6 +8,21 @@ const find=(r,name)=>{let result;r.traverse(o=>{if(o.userData.role===name)result
 const ring=(outer,inner,length)=>boredLatheGeometry([{axial:-length/2,radial:outer},{axial:length/2,radial:outer}],inner,96);
 const add=(parent,g,material,role)=>{const o=new T.Mesh(g,material);o.userData.role=role;parent.add(o);return o;};
 const axle=(parent,material,role,length=.31)=>{const o=add(parent,new T.CylinderGeometry(.080,.080,length,64).rotateX(Math.PI/2),material,role);return o;};
+
+// S-hook in the weight's frame: the upper hook wraps the apex pin (radius
+// 0.08) and opens to the lower right; the lower hook, opening to the upper
+// left, threads the weight's eye, whose inner top rests on it.
+function sHookGeometry(eyeY,drop){
+ const wire=.02,r1=.11,r2=.07,c1=eyeY+drop,c2=eyeY+.06+r2,path=new T.CurvePath();
+ const arc=(cy,r,a0,a1)=>new T.EllipseCurve(0,cy,r,r,a0,a1,a1<a0,0);
+ const lift=c=>{const curve=new T.Curve();curve.getPoint=(t,target=new T.Vector3())=>{const p=c.getPoint(t);return target.set(p.x,p.y,0);};return curve;};
+ path.add(lift(arc(c1,r1,-Math.PI/9,3*Math.PI/2)));
+ path.add(new T.LineCurve3(new T.Vector3(0,c1-r1,0),new T.Vector3(0,c2+r2,0)));
+ path.add(lift(arc(c2,r2,Math.PI/2,-Math.PI*1.2)));
+ const tube=new T.TubeGeometry(path,160,wire,12,false),ends=[path.getPoint(0),path.getPoint(1)].map(p=>new T.SphereGeometry(wire,12,8).translate(p.x,p.y,p.z));
+ const merged=mergeGeometries([tube,...ends].map(g=>{const n=g.toNonIndexed();n.deleteAttribute('uv');return n;}));
+ return merged;
+}
 
 export function correctDoorCloserParts(model){
  const{root}=model,d=root.userData,b=d.blocks,g=d.geometry,oldUpdate=model.update;
@@ -20,13 +36,14 @@ export function correctDoorCloserParts(model){
   const oldEye=find(root,`${prefix}-link-end-eye`),oldTab=find(root,`${prefix}-pin-orientation-yoke`),index=find(root,`${prefix}-white-pin-turn-index`);
   oldEye.visible=false;oldTab.visible=false;
   index.position.set(.10,g.endpointY-.161,.065);index.scale.set(.60,1,1);
-  const fork=new T.Group();fork.userData.role=`${prefix}-transverse-toggle-clevis`;fork.position.y=g.endpointY;rotor.add(fork);
-  const shape=clip.difference(clip.union(poly([[-.15,-.24],[.15,-.24],[.15,0],[-.15,0]]),poly(circle([0,0],.15,64))),poly(circle([0,0],.083,96)));
-  const ears=[];for(const z of[-.04,.17]){const ear=add(fork,plate(shape,-.02,.02),pin.material,`${prefix}-bored-clevis-ear`);ear.position.z=z;ears.push(ear);}
-  const bridge=add(fork,new T.BoxGeometry(.30,.07,.25),pin.material,`${prefix}-clevis-bridge`);bridge.position.set(0,-.205,.065);
-  const jointPin=axle(fork,pin.material,`${prefix}-transverse-toggle-pin`);jointPin.position.z=.065;
-  const cap=add(fork,ring(.115,.077,.025).rotateX(Math.PI/2),pin.material,`${prefix}-transverse-pin-retainer`);cap.position.z=.2325;
-  forks.push({fork,ears,bridge,jointPin,cap,verticalPin:pin,socket});
+  // Pass 90: Brown's pin ends in a plain eye beside the link's eye, joined by
+  // one short cross pin (no clevis, bridge or retainer). The eye is a flat
+  // tongue of the pin, within its round section, widening to the eye.
+  const fork=new T.Group();fork.userData.role=`${prefix}-plain-pin-eye-joint`;fork.position.y=g.endpointY;rotor.add(fork);
+  const shape=clip.difference(clip.union(poly([[-.05,-.24],[.05,-.24],[.05,0],[-.05,0]]),poly(circle([0,0],.15,64))),poly(circle([0,0],.083,96)));
+  const ear=add(fork,plate(shape,-.068,.02),pin.material,`${prefix}-plain-eye-on-pin-top`);const ears=[ear];
+  const jointPin=axle(fork,pin.material,`${prefix}-transverse-toggle-pin`,.20);jointPin.position.z=.025;
+  forks.push({fork,ears,jointPin,verticalPin:pin,socket});
  }
  // The pins stand in bored socket blocks fixed on the top edge of the door
  // and on the wall beside the opening; the door hangs on three knuckles with
@@ -48,24 +65,28 @@ export function correctDoorCloserParts(model){
  }
  // Both rigid links retain their analytic endpoints but occupy separate axial
  // layers on a common transverse axis; only rigid transforms change at runtime.
- const links=[];for(const[parent,layer]of[[b.frameToggleLink,.065],[b.doorToggleLink,-.065],[b.suspension,0]]){
+ const links=[];for(const[parent,layer]of[[b.frameToggleLink,.065],[b.doorToggleLink,-.065]]){
   for(const child of parent.children)child.visible=false;
   const length=parent===b.suspension?g.weightSuspensionLength:g.linkLength;
   const mesh=add(parent,boredPlanarLinkGeometry({length,width:parent===b.suspension?.055:.13,eyeRadius:parent===b.suspension?.12:.15,boreRadius:.083,depth:parent===b.suspension?.035:.08}),parent.children[0].material,`${parent.userData.role}-finite-bored-link`);
   links.push({mesh,layer});
  }
  b.toggleEye.visible=false;b.toggleIndex.position.set(0,.12,.24);
- const centerPin=axle(b.toggleJoint,b.toggleEye.material,'central-toggle-transverse-axle',.43);
- const centerCaps=[];for(const z of[-.2275,.2275]){const cap=add(b.toggleJoint,ring(.12,.077,.025).rotateX(Math.PI/2),b.toggleEye.material,'central-toggle-axle-retainer');cap.position.z=z;centerCaps.push(cap);}
- // Separate the weight eye and suspension plate on the same finite lower pin.
- b.weightEye.position.z=.15;find(root,'weight-neck').position.z=.13;
- const weightPin=axle(b.weight,b.toggleEye.material,'weight-eye-transverse-suspension-pin',.29);weightPin.position.set(0,g.weightEyeOffsetY,.045);
- const weightCap=add(b.weight,ring(.115,.077,.025).rotateX(Math.PI/2),b.toggleEye.material,'weight-suspension-pin-retainer');weightCap.position.set(0,g.weightEyeOffsetY,.2025);
+ // The apex pin spans the two link eyes only (no retainers).
+ const centerPin=axle(b.toggleJoint,b.toggleEye.material,'central-toggle-transverse-axle',.25);
+ const centerCaps=[];
+ // Pass 90: Brown hangs the weight from the apex pin on an S-hook in the
+ // links' mid-plane, not from a suspension plate on a second pin. The
+ // weight's eye stands across the hook's plane so the lower hook threads it.
+ b.suspension.visible=false;
+ b.weightEye.position.z=0;b.weightEye.rotation.set(0,Math.PI/2,0);find(root,'weight-neck').position.z=0;
+ const hook=add(b.weight,sHookGeometry(g.weightEyeOffsetY,g.weightSuspensionLength),b.toggleEye.material,'s-hook-from-apex-pin-to-weight-eye');
+ const weightPin=null,weightCap=null;
  function place(mesh,start,end,normal,offset){const x=end.clone().sub(start).normalize(),y=new T.Vector3().crossVectors(normal,x);mesh.quaternion.setFromRotationMatrix(new T.Matrix4().makeBasis(x,y,normal));mesh.position.copy(start).addScaledVector(normal,offset);}
- model.update=time=>{oldUpdate(time);const s=d.kinematics,chord=s.doorAnchor.clone().sub(s.frameAnchor).setY(0).normalize(),normal=new T.Vector3(-chord.z,0,chord.x);place(links[0].mesh,s.frameAnchor,s.apex,normal,links[0].layer);place(links[1].mesh,s.doorAnchor,s.apex,normal,links[1].layer);place(links[2].mesh,s.apex,s.weightEye,normal,0);b.toggleJoint.rotation.y=s.framePinYaw;b.weight.rotation.y=s.framePinYaw;};
- d.workingJoints={forks,links:links.map(o=>o.mesh),centerPin,centerCaps,weightPin,weightCap};
- d.reconstructionNote='The hanging weight closes an exact equal-link toggle. Door motion is prescribed; gravity torque is calculated quasistatically. Joint friction, impact, weight swing and load-dependent closing speed are not simulated. Forks and axially separated eyes are inferred construction details.';
+ model.update=time=>{oldUpdate(time);const s=d.kinematics,chord=s.doorAnchor.clone().sub(s.frameAnchor).setY(0).normalize(),normal=new T.Vector3(-chord.z,0,chord.x);place(links[0].mesh,s.frameAnchor,s.apex,normal,links[0].layer);place(links[1].mesh,s.doorAnchor,s.apex,normal,links[1].layer);b.toggleJoint.rotation.y=s.framePinYaw;b.weight.rotation.y=s.framePinYaw;};
+ d.workingJoints={forks,links:links.map(o=>o.mesh),centerPin,centerCaps,hook};
+ d.reconstructionNote='The hanging weight closes an exact equal-link toggle. Door motion is prescribed; gravity torque is calculated quasistatically. Joint friction, impact, weight swing and load-dependent closing speed are not simulated. The pins end in plain eyes beside the link eyes; the weight hangs on an S-hook from the apex pin. The door and wall only carry the two pins and are framed below the default view.';
  d.hideGround=true;d.minimumDisplayCycleSeconds=10;
  root.traverse(o=>{for(const m of(Array.isArray(o.material)?o.material:[o.material]))if(m)m.fog=false;});
- const bounds=new T.Box3();for(let i=0;i<=32;i++){model.update(10*i/32);root.updateMatrixWorld(true);root.traverseVisible(o=>{if(o.geometry){o.geometry.computeBoundingBox();bounds.union(o.geometry.boundingBox.clone().applyMatrix4(o.matrixWorld));}});}model.update(0);d.cameraFitBounds=bounds;d.cameraDistanceScale=1.03;model.cameraDirection=new T.Vector3(1.8,1.2,12);return model;
+ const bounds=new T.Box3();for(let i=0;i<=32;i++){model.update(10*i/32);root.updateMatrixWorld(true);root.traverseVisible(o=>{if(o.geometry){o.geometry.computeBoundingBox();bounds.union(o.geometry.boundingBox.clone().applyMatrix4(o.matrixWorld));}});}model.update(0);bounds.min.y=Math.max(bounds.min.y,g.endpointY-1.35);d.cameraFitBounds=bounds;d.cameraDistanceScale=1.03;model.cameraDirection=new T.Vector3(1.8,1.2,12);return model;
 }

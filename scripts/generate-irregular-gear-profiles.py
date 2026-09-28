@@ -8,7 +8,8 @@ rows=json.load(open('/dev/shm/irregular-profile-input.json'))
 output={}
 
 def hob_scroll(rack,name,cutter_offset,backlash):
- # Roll a straight-sided 20-degree rack along one sampled pitch spiral.
+ # Roll a straight-sided 14.5-degree rack along one sampled pitch spiral
+ # (the low angle keeps the teeth near Brown's square form).
  # Arc 0 is the low side of the seam and arc P the high side; rack teeth
  # sit at cutter_offset+k*pitch, and each pose is clipped to a wedge that
  # never crosses the seam ray, so the reset step stays a plain radial wall.
@@ -22,7 +23,7 @@ def hob_scroll(rack,name,cutter_offset,backlash):
  blankPts=[tuple(p+add*n) for p,n in zip(pts[on],norm[on])]
  blank=_P(blankPts).buffer(0)
  # Gear tooth thickness pitch/2-backlash, so each rack tooth is pitch/2+backlash.
- w0=(pitch/2+backlash)/2;tn=math.tan(math.radians(20));top=add+.25
+ w0=(pitch/2+backlash)/2;tn=math.tan(math.radians(14.5));top=add+.25
  def angle_of(p):return math.atan2(p[1],p[0])
  def wedge(lo,hi):
   lo=max(0,lo);hi=min(2*math.pi,hi);ps=np.linspace(lo,hi,160)

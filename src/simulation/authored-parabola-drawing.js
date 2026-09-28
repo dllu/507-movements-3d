@@ -92,8 +92,13 @@ function parabolaDrawingInstrument(movement) {
   const vertex = new THREE.Vector2(0, 0);
   const bladeLength = 3.55;
   const threadLength = bladeLength;
-  const maximumSquareOffset = 2.05;
-  const targetHalfWidth = 2.05;
+  // Pass 90: the square slides until the pencil comes down to the blade
+  // end, where it meets the thread's anchor block (block top 0.09 above
+  // the foot, pencil barrel radius 0.085, 0.02 clearance), so Brown's curve
+  // runs down nearly to the blade foot on both sides.
+  const lowestPencilY = directrixY - bladeLength + 0.09 + 0.085 + 0.02;
+  const maximumSquareOffset = Math.sqrt(-4 * focalLength * lowestPencilY);
+  const targetHalfWidth = maximumSquareOffset;
   const targetBaseY = -(targetHalfWidth ** 2) / (4 * focalLength);
   const stockWidth = 0.96;
   const stockHeight = 0.20;
@@ -229,7 +234,7 @@ function parabolaDrawingInstrument(movement) {
 
   const straightedgeHeight = 0.34;
   const straightedge = new THREE.Mesh(
-    new THREE.BoxGeometry(5.33, straightedgeHeight, 0.30),
+    new THREE.BoxGeometry(5.9, straightedgeHeight, 0.30),
     frameMaterial,
   );
   straightedge.position.set(
@@ -663,7 +668,7 @@ function parabolaDrawingInstrument(movement) {
     targetParabola.scale.z = 0.3;
     targetParabola.position.z = boardTop + 0.0075 + 0.145 * 0.3;
     straightedge.geometry.dispose();
-    straightedge.geometry = new THREE.BoxGeometry(5.33, straightedgeHeight, 0.15 - boardTop);
+    straightedge.geometry = new THREE.BoxGeometry(5.9, straightedgeHeight, 0.15 - boardTop);
     straightedge.position.z = (0.15 + boardTop) / 2;
     directrixHighlight.visible = false;
     const stockTop = square.position.z + stock.position.z + stock.geometry.parameters.depth / 2;
@@ -672,8 +677,10 @@ function parabolaDrawingInstrument(movement) {
     stock.geometry = new THREE.BoxGeometry(stockGeometry.width, stockGeometry.height, stockTop - boardTop - 0.001);
     stock.position.z = (stockTop + boardTop + 0.001) / 2 - square.position.z;
     focusAxle.geometry.dispose();
-    focusAxle.geometry = new THREE.CylinderGeometry(0.070, 0.070, 0.33 + 0.37, 28);
-    focusAxle.position.z = (0.33 - 0.37) / 2 - focusPin.position.z;
+    // The pin stops just above its thread loop (top 0.255), below the
+    // blade-side thread run (z 0.27 and up) that passes over it at the vertex.
+    focusAxle.geometry = new THREE.CylinderGeometry(0.070, 0.070, 0.255 + 0.37, 28);
+    focusAxle.position.z = (0.255 - 0.37) / 2 - focusPin.position.z;
     focusCollar.position.z = boardTop + 0.085 - focusPin.position.z;
   }
   return { root, update, cameraDirection: root.userData.cameraDirection };

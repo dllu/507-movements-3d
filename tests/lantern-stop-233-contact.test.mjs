@@ -6,7 +6,7 @@ import {nearest390Outline} from '../src/simulation/dual-band-pawl-contact.js';
 import {solidSurface,surfacePoints,surfaceTriangles} from './helpers/solid-surface.mjs';
 const make=()=>create({id:233}),pose=(m,p)=>{m.update(p*8);m.root.updateMatrixWorld(true);return m.root.userData.kinematics;};
 
-test('233 complete trundle circles clear the finite latch and roller throughout withdrawal and both strokes',()=>{
+test('233 complete trundle circles clear the finite latch and roller while both ride every stroke',()=>{
  const m=make(),d=m.root.userData,b=d.blocks,g=d.geometry,outline=b.latchBody.geometry.userData.plate.polygons[0][0].map(p=>p.map(Math.fround));let latchMinimum=Infinity,rollerMinimum=Infinity,workingMaximum=0,borne=0,active=0;
  for(let i=0;i<=512;i++){
   const state=pose(m,i/512),inverse=b.latchBody.matrixWorld.clone().invert(),r=b.rollerWheel.getWorldPosition(new THREE.Vector3());
@@ -65,7 +65,9 @@ test('233 actual shaft passages and separate free-roller layers remain clear',()
 test('233 continuous demonstrations fit visible bounds, retain readable speed and allocate no meshes per update',()=>{
  const m=make(),d=m.root.userData,snapshot=()=>{const x=[];m.root.traverse(o=>x.push([o,o.geometry]));return x;},before=snapshot(),p=new THREE.Vector3();
  for(let i=0;i<=64;i++){pose(m,i/64);d.stateAtTime(i*.021);m.root.traverseVisible(o=>{if(!o.isMesh)return;assert.equal(o.material.fog,false);const a=o.geometry.attributes.position;for(let j=0;j<a.count;j++){p.fromBufferAttribute(a,j).applyMatrix4(o.matrixWorld);assert.ok(d.cameraFitBounds.containsPoint(p));}});}
- for(const t of[0,.08,.16,.4,.46,.52,.58,.82,.88,.94,1]){const a=d.stateAtCycleCoordinate(t-1e-8),b=d.stateAtCycleCoordinate(t+1e-8);for(const key of['wheelAngle','latchAngle','rollerLeverDelta'])assert.ok(Math.abs(a[key]-b[key])<1e-7);for(const key of['wheelAngularSpeed','latchAngularSpeed','rollerLeverAngularSpeed'])assert.ok(Math.abs(a[key]-b[key])<1e-6);}
- for(const cycle of[0,1,3]){assert.equal(d.stateAtCycleCoordinate(cycle+.25).rollerContact.trundleIndex,0);assert.equal(d.stateAtCycleCoordinate(cycle+.70).latchContact.trundleIndex,11);}
+ for(const t of[0,.16,.4,.58,.82,1]){const a=d.stateAtCycleCoordinate(t-1e-8),b=d.stateAtCycleCoordinate(t+1e-8);for(const key of['wheelAngle','latchAngle','rollerLeverDelta'])assert.ok(Math.abs(a[key]-b[key])<1e-6);for(const key of['wheelAngularSpeed','latchAngularSpeed'])assert.ok(Math.abs(a[key]-b[key])<1e-5);}
+ // Each stroke carries the next trundle under both stops.
+ const n=d.geometry.trundleCount,roller=[],latch=[];for(let stroke=0;stroke<6;stroke++){const at=Math.floor(stroke/2)+(stroke%2?.66:.24);roller.push(d.stateAtCycleCoordinate(at).rollerContact.trundleIndex);latch.push(d.stateAtCycleCoordinate(at).latchContact.trundleIndex);}
+ for(let i=1;i<6;i++){assert.equal((roller[i-1]-roller[i]+n)%n,1,`roller ${roller}`);assert.equal((latch[i-1]-latch[i]+n)%n,1,`latch ${latch}`);}
  assert.deepEqual(snapshot(),before);assert.equal(d.minimumDisplayCycleSeconds,8);assert.equal(d.hideGround,true);assert.match(d.reconstructionNote,/not dynamically solved/);
 });

@@ -19,38 +19,86 @@ const FULL_TURN = Math.PI * 2;
 // centre x_w and the roller a fixed distance e left of the rod pin, the
 // roller's distance from the cam centre x_c for crank angle phi is
 //
-//   d(phi) = x_w - x_c - e + r cos(phi) - sqrt(L^2 - r^2 sin^2(phi)).
+//   d(phi) = x_w - x_c - e + r cos(phi) - sqrt(L^2 - r^2 sin^2(phi)),
 //
+// decreasing from d(0) (crank away from the cam) to d(pi) (crank toward it).
 // A crank driven through a rod can only go right round if the roller covers
-// the full stroke 2r: d runs from d(pi) (crank toward the cam) to d(0). We
-// prescribe the wheel angle as a function of cam angle psi, three turns of
-// the wheel per cam turn (one per side of Brown's three-sided groove):
+// the full stroke 2r. The groove centreline is prescribed directly as a
+// smooth three-lobed polar curve (Brown's three-sided groove), with the
+// lobes at the stroke's outer end and the flanks at its inner end:
 //
-//   u = 3 psi / 2 pi,  phi(psi) = pi + 2 pi [ floor(u) + g(u - floor(u)) ],
-//   g(f) = f - (a / 2 pi) sin(2 pi f),  0 < a < 1,
+//   rho(psi) = d(pi) + 2r [1 - (a s + (1 - a) s^2)],  s = (1 - cos 3 psi) / 2,
 //
-// so phi is monotone (phi' = 3 (1 - a cos 2 pi f) > 0: the wheel never stops
-// or reverses), C1 across the sides, slowest (1 - a) with the crank toward
-// the cam and fastest (1 + a) with it away. The groove centreline is then the
-// roller centre carried round by the cam: in cam coordinates, polar radius
-// d(phi(psi)) at polar angle psi (the cam turns clockwise under the fixed
-// roller line). Its walls are that curve offset by the roller radius. The
-// roller always has the stroke 2r to cover, which is what lets the wheel turn
-// fully round instead of rocking.
-export function cam398Law({crankRadius, rodLength, wheelX, camX, pivotOffset, unevenness}) {
-  const g = (f) => f - unevenness / FULL_TURN * Math.sin(FULL_TURN * f);
-  const wheelAngle = (camTurn) => {
-    const u = 3 * camTurn / FULL_TURN;
-    const n = Math.floor(u);
-    return Math.PI + FULL_TURN * (n + g(u - n));
-  };
+// which is monotone between each lobe and flank for 0 < a <= 2 and has no
+// wobble or inflection bumps. The wheel angle follows exactly by inverting
+// d: phi = d^-1(rho) on the lobe-to-flank half and 2 pi - d^-1(rho) on the
+// flank-to-lobe half, plus one full turn per side, so phi is monotone and the
+// wheel makes three full turns per cam turn. a = 1.75 matches Brown's trefoil
+// (rounded lobes, gently concave flanks) and is the largest value whose
+// centreline keeps exactly one concave run per flank; above about 1.78 the
+// flank bottoms flatten into a wobble. The wheel then runs about 3:1 in
+// speed, slowest with the crank toward the cam. The walls are
+// exact +/- roller-radius offsets of the centreline.
+export function cam398Law({crankRadius, rodLength, wheelX, camX, pivotOffset, flankFlatness}) {
   const rollerDistance = (phi) => wheelX - camX - pivotOffset + crankRadius * Math.cos(phi)
     - Math.sqrt(rodLength ** 2 - (crankRadius * Math.sin(phi)) ** 2);
+  const dOuter = rollerDistance(0), dInner = rollerDistance(Math.PI);
+  const radiusAt = (psi) => {
+    const s = (1 - Math.cos(3 * psi)) / 2;
+    return dInner + (dOuter - dInner) * (1 - (flankFlatness * s + (1 - flankFlatness) * s * s));
+  };
+  // d is strictly decreasing on [0, pi]; invert it by bisection to machine precision.
+  const inverseDistance = (rho) => {
+    let lo = 0, hi = Math.PI;
+    for (let i = 0; i < 64; i += 1) {
+      const mid = (lo + hi) / 2;
+      if (rollerDistance(mid) > rho) lo = mid; else hi = mid;
+    }
+    return (lo + hi) / 2;
+  };
+  const wheelAngle = (camTurn) => {
+    const u = 3 * camTurn;
+    const n = Math.floor(u / FULL_TURN);
+    const f = u - FULL_TURN * n;
+    const half = inverseDistance(radiusAt(f / 3));
+    return FULL_TURN * n + (f <= Math.PI ? half : FULL_TURN - half);
+  };
   const centerline = (psi) => {
-    const d = rollerDistance(wheelAngle(psi));
+    const d = radiusAt(psi);
     return [d * Math.cos(psi), d * Math.sin(psi)];
   };
-  return {wheelAngle, rollerDistance, centerline, g};
+  return {wheelAngle, rollerDistance, centerline, radiusAt};
+}
+
+// Split an extruded plate's cap group into back (0) and front (1) faces, with
+// the sides as group 2, so the front cap can take its own material.
+function floorFaceGroups(geometry, frontZ) {
+  const position = geometry.attributes.position;
+  const [caps, sides] = geometry.groups;
+  const back = [], front = [];
+  const index = geometry.index;
+  const vertexAt = (i) => (index ? index.getX(i) : i);
+  for (let i = caps.start; i < caps.start + caps.count; i += 3) {
+    (Math.abs(position.getZ(vertexAt(i)) - frontZ) < 1e-6 ? front : back).push(i);
+  }
+  // Non-indexed ExtrudeGeometry: reorder the cap triangles back-then-front.
+  const attributes = Object.values(geometry.attributes);
+  const copies = attributes.map((a) => a.array.slice());
+  const order = [...back, ...front];
+  order.forEach((start, k) => {
+    for (let v = 0; v < 3; v += 1) {
+      attributes.forEach((a, j) => {
+        for (let c = 0; c < a.itemSize; c += 1) {
+          a.array[(caps.start + 3 * k + v) * a.itemSize + c] = copies[j][(start + v) * a.itemSize + c];
+        }
+      });
+    }
+  });
+  geometry.clearGroups();
+  geometry.addGroup(caps.start, back.length * 3, 0);
+  geometry.addGroup(caps.start + back.length * 3, front.length * 3, 1);
+  geometry.addGroup(sides.start, sides.count, 2);
+  return geometry;
 }
 
 function cylinderAlongZ(radius, length, material, segments = 36) {
@@ -84,8 +132,8 @@ function makeFollower({
   follower.userData.role =
     'one-piece-horizontal-roller-crosshead-and-rod-pivot-carriage';
 
-  const roller = cylinderAlongZ(rollerRadius, 0.62, followerMaterial, 32);
-  roller.position.z = 0.37;
+  const roller = cylinderAlongZ(rollerRadius, 0.48, followerMaterial, 32);
+  roller.position.z = 0.40;
   roller.userData.role = 'cam-contact-roller-constrained-to-horizontal-line';
   follower.add(roller);
 
@@ -224,11 +272,11 @@ function camFullTurnDrive(movement) {
   // The crank throw is half the roller's stroke; Brown's groove runs its
   // roller between about 0.39 and 0.77 of the cam radius, so r = 0.4.
   const crankRadius = 0.40;
-  const unevenness = 0.8;
-  const law = cam398Law({crankRadius, rodLength, wheelX, camX, pivotOffset, unevenness});
-  // Time zero: the roller near the lobe at three o'clock and the crank
-  // raised, as Brown draws it; the cam lobes then lie as on the plate.
-  const sourceCamTurn = FULL_TURN / 3 * 0.55;
+  const flankFlatness = 1.75;
+  const law = cam398Law({crankRadius, rodLength, wheelX, camX, pivotOffset, flankFlatness});
+  // Time zero: the roller just past the lobe at three o'clock (lobes 6 degrees
+  // on from Brown's) with the crank raised about 25 degrees.
+  const sourceCamTurn = 6 * Math.PI / 180;
 
   const driverMaterial = matte(PALETTE.driver, {metalness: 0.16, roughness: 0.54});
   const followerMaterial = matte(PALETTE.driven, {metalness: 0.14, roughness: 0.58});
@@ -236,11 +284,12 @@ function camFullTurnDrive(movement) {
   const frameMaterial = matte(PALETTE.frame, {metalness: 0.12, roughness: 0.67});
   const rodMaterial = matte(0x3f8057, {metalness: 0.10, roughness: 0.58});
   const whiteMaterial = matte(PALETTE.white, {roughness: 0.48});
+  const grooveFloorMaterial = matte(new THREE.Color(PALETTE.driver).multiplyScalar(0.72), {metalness: 0.16, roughness: 0.6});
 
   // Cam C: a disc with the derived groove sunk in its face.
   const samples = 1440;
   const centre = [], inner = [], outer = [];
-  let minimumConvexRadius = Infinity;
+  let minimumConvexRadius = Infinity, minimumConcaveRadius = Infinity;
   for (let i = 0; i < samples; i += 1) {
     const psi = FULL_TURN * i / samples, h = 1e-5;
     const [x, y] = law.centerline(psi);
@@ -254,22 +303,31 @@ function camFullTurnDrive(movement) {
     const ax = (x1 - 2 * x + x0) / h ** 2, ay = (y1 - 2 * y + y0) / h ** 2;
     const curvature = (tx * ay - ty * ax) / tl ** 3;
     if (curvature > 0) minimumConvexRadius = Math.min(minimumConvexRadius, 1 / curvature);
+    else minimumConcaveRadius = Math.min(minimumConcaveRadius, -1 / curvature);
   }
   const cam = new THREE.Group();
   cam.userData.role = 'constant-speed-clockwise-disc-cam-with-derived-three-sided-groove';
   const bore = poly(circle([0, 0], 0.323, 96)), disk = poly(circle([0, 0], camRadius, 256));
-  const camDisk = new THREE.Mesh(plate(clip.difference(disk, bore), -0.21, 0.03), driverMaterial);
-  camDisk.userData.role = 'single-solid-input-cam-disc';
-  const innerLand = new THREE.Mesh(plate(clip.difference(poly(inner), bore), 0.03, 0.30), driverMaterial);
+  // The disc runs the full depth outside the groove and inside it (the lands),
+  // and only the groove band stops at the floor, so the floor is one flat face
+  // that can take a slightly darker shade (Brown inks the channel) without
+  // tinting the cam's rim or back.
+  const floorZ = 0.13;
+  const outerPolygon = poly(outer), innerPolygon = poly(inner);
+  const grooveBand = new THREE.Mesh(
+    floorFaceGroups(plate(clip.difference(outerPolygon, innerPolygon), -0.21, floorZ), floorZ),
+    [driverMaterial, grooveFloorMaterial, driverMaterial]);
+  grooveBand.userData.role = 'derived-groove-floor-band';
+  const innerLand = new THREE.Mesh(plate(clip.difference(innerPolygon, bore), -0.21, 0.30), driverMaterial);
   innerLand.userData.role = 'derived-groove-inner-cam-land';
-  const outerLand = new THREE.Mesh(plate(clip.difference(disk, poly(outer)), 0.03, 0.30), driverMaterial);
+  const outerLand = new THREE.Mesh(plate(clip.difference(disk, outerPolygon), -0.21, 0.30), driverMaterial);
   outerLand.userData.role = 'derived-groove-outer-wall';
   const camShaft = cylinderAlongZ(0.32, 0.84, darkMaterial, 32);
   camShaft.position.z = -0.05;
   camShaft.userData.role = 'fixed-axis-input-camshaft';
-  cam.add(camDisk, innerLand, outerLand, camShaft);
-  cam.userData = {...cam.userData, disk: camDisk, innerLand, outerLand, shaft: camShaft,
-    recess: {floorZ: 0.03, frontZ: 0.30, innerClearance: clearance, outerClearance: clearance}};
+  cam.add(grooveBand, innerLand, outerLand, camShaft);
+  cam.userData = {...cam.userData, disk: grooveBand, innerLand, outerLand, shaft: camShaft,
+    recess: {floorZ, frontZ: 0.30, innerClearance: clearance, outerClearance: clearance}};
   cam.position.set(camX, 0, 0);
   root.add(markShadows(cam));
 
@@ -341,8 +399,8 @@ function camFullTurnDrive(movement) {
     archetype: movement.archetype,
     fidelity: 'authored',
     blocks: {cam, connectingRod, follower, guides, outputWheel},
-    geometry: {camRadius, camX, crankRadius, cycleDuration, mechanismCyclePeriod: cycleDuration, minimumConvexRadius,
-      pivotOffset, rodLength, rollerRadius, sourceCamTurn, unevenness, wheelX,
+    geometry: {camRadius, camX, crankRadius, cycleDuration, mechanismCyclePeriod: cycleDuration, minimumConvexRadius, minimumConcaveRadius,
+      pivotOffset, rodLength, rollerRadius, sourceCamTurn, flankFlatness, wheelX,
       strokeRange: [law.rollerDistance(Math.PI), law.rollerDistance(0)]},
     law,
     mechanism: 'one-constant-speed-clockwise-disc-cam-whose-derived-three-sided-groove-drives-one-horizontal-roller-crosshead-and-single-finite-rod-to-turn-one-fixed-axis-output-wheel-fully-round-three-times-per-cam-turn-at-varying-speed',
@@ -351,7 +409,7 @@ function camFullTurnDrive(movement) {
       outputCharacter: 'full counterclockwise turns at varying speed, slowest with the crank toward the cam', outputIsContinuousUnidirectionalRotation: true},
     sourceAnimation: {available: true, officialPage: movement.sourceUrl,
       discrepancy: 'The official 2D animation rocks the wheel back and forth; following the user\'s reading of "intermittent circular", the groove is re-derived so the wheel turns fully round.'},
-    reconstructionNote: 'Groove derived from the in-line slider-crank so the roller covers exactly the crank stroke; the wheel angle law phi(psi) is prescribed (smooth, monotone, three turns per cam turn). Passing the crank dead centres relies on the groove (it positions the roller both ways) and the wheel\'s momentum is not needed kinematically, but at the dead centres the rod alone cannot choose the direction: the prescribed law does. Pressure angles on the steep flanks reach about 60 degrees; loads and friction are not modelled.',
+    reconstructionNote: 'Groove centreline is an analytic three-lobed polar curve spanning exactly the in-line slider-crank stroke, with walls at exact roller-radius offsets and one flat floor; the wheel angle is obtained by inverting the slider-crank (smooth, monotone, three turns per cam turn, about 3:1 speed variation). Passing the crank dead centres relies on the groove (it positions the roller both ways) and the wheel\'s momentum is not needed kinematically, but at the dead centres the rod alone cannot choose the direction: the prescribed law does. Pressure angles on the steep flanks reach about 60 degrees; loads and friction are not modelled.',
     stateAtTime,
     update,
   };

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {correctClampParts} from './clamp-working-parts.js';
+import {circle, plate, poly, polygonClipping} from './finite-plate-geometry.js';
 import {
   PALETTE,
   markShadows,
@@ -1052,10 +1053,32 @@ function pickeringThreeSpringGovernor(movement) {
   };
 }
 
+// The keyed sleeve stack (flange, keeper, neck, body, thrust rings) shared
+// one bore and the neck and body one outer radius, so overlapping surfaces
+// z-fought. Each part's bore steps 0.003 further out than the part it
+// overlaps (so it lies inside that part's material), and the neck is 0.003
+// inside the body's outer wall.
+function steppedKeyedBore(radius, length, step) {
+  const hole = polygonClipping.union(poly(circle([0, 0], 0.136 + step, 128)),
+    poly([[0.10, -0.055 - step], [0.19 + step, -0.055 - step], [0.19 + step, 0.055 + step], [0.10, 0.055 + step]]));
+  return plate(polygonClipping.difference(poly(circle([0, 0], radius, 128)), hole), -length / 2, length / 2)
+    .rotateX(Math.PI / 2);
+}
+function separateSleeveStackFaces(root) {
+  const b = root.userData.blocks;
+  const set = (mesh, geometry) => { mesh.geometry.dispose(); mesh.geometry = geometry; };
+  set(b.lowerSleeveNeck, steppedKeyedBore(0.337, 0.28, 0.003));
+  set(b.lowerKeeper, steppedKeyedBore(0.66, 0.17, 0.006));
+  set(b.lowerFlange, steppedKeyedBore(0.81, 0.23, 0.006));
+  for (const ring of [b.thrustRingUpper, b.thrustRingLower]) set(ring, steppedKeyedBore(0.49, 0.12, 0.003));
+  root.userData.sleeveStackBoreSteps = { body: 0, neck: 0.003, keeper: 0.006, flange: 0.006, thrustRings: 0.003, neckOuterInset: 0.003 };
+}
+
 export function createAuthoredPickeringGovernorMovement(movement) {
   if (movement.id !== 287) return null;
   const model = pickeringThreeSpringGovernor(movement);
   correctClampParts(model, 287);
+  separateSleeveStackFaces(model.root);
   // Brown draws a flat front elevation across the two spring planes.
   model.cameraDirection = new THREE.Vector3(0, 0.3, 14);
   return model;

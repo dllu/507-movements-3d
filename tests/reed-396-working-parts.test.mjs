@@ -47,6 +47,6 @@ test('396 one-tooth indexing, finite contact metadata and retained buffers survi
  const m=make({id:396}),d=m.root.userData,objects=[];m.root.traverse(o=>{if(o.isMesh)objects.push([o,o.geometry.attributes.position.array])});
  for(let i=0;i<129;i++){const t=8*i/128+.017,s=d.stateAtTime(t),next=d.stateAtTime(t+4);assert.ok(Math.abs(next.wheelAngle-s.wheelAngle+Math.PI/6)<1e-12);m.update(t);assert.equal(d.blocks.escapeWheel.rotation.z,s.wheelAngle);assert.equal(d.contacts.wheelLock.active,s.stableLock);assert.equal(d.contacts.leverImpulseG.active,s.leverImpulseActive);assert.equal(d.contacts.directChronometerImpulseJ.active,s.directImpulseActive);}
  for(const [o,array]of objects){assert.equal(o.geometry.attributes.position.array,array);assert.equal(o.castShadow,true);for(const mat of [].concat(o.material))assert.equal(mat.fog,false);}
- assert.equal(d.hideGround,true);assert.equal(d.minimumDisplayCycleSeconds,6);assert.ok(m.cameraDirection.z>15);assert.equal(d.workingParts396.webs.length,3);
+ assert.equal(d.hideGround,true);assert.equal(d.minimumDisplayCycleSeconds,6);assert.ok(m.cameraDirection.z>15);assert.equal(d.workingParts396.webs.length,0);
  for(const t of [0,4,8]){const l=d.stateAtTime(t-1e-9),r=d.stateAtTime(t+1e-9);assert.ok(Math.abs(l.wheelAngle-r.wheelAngle)<1e-10);}
 });

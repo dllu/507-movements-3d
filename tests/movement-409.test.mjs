@@ -395,3 +395,20 @@ test('movement 507 remains the next authored frontier', () => {
   assert.equal(movement507.fidelity, 'authored');
   assert.equal(catalog.movements[506].archetype, 'carrier-driven-25000-to-1-slow-bevel-output-compound-planetary');
 });
+
+test('movement 409 legs are round-ended bars with straight tapers, no bulb bosses (pass 90)', () => {
+  const model = createMovementModel(catalog.movements[408]);
+  const { blocks, geometry } = model.root.userData;
+  for (const leg of [blocks.legA, blocks.legB]) {
+    const body = leg.spine;
+    body.geometry.computeBoundingBox();
+    const box = body.geometry.boundingBox;
+    // The serrated grip is Brown's widest part; the round ends are no wider than the bar.
+    assert.ok(box.max.x <= 0.26 && box.min.x >= -0.26, `leg width ${box.min.x}..${box.max.x}`);
+    const p = body.geometry.attributes.position;
+    let endWidth = 0;
+    for (let i = 0; i < p.count; i += 1) if (p.getY(i) > 1.47) endWidth = Math.max(endWidth, Math.abs(p.getX(i)));
+    assert.ok(endWidth <= geometry.legWidth / 2 + 1e-6, `upper end radius ${endWidth}`);
+  }
+  disposeModel(model.root);
+});

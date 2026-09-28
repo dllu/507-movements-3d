@@ -373,16 +373,28 @@ function doubleEllipticalRotaryEngine(movement) {
   leftRotor.position.copy(leftCenter);
   leftRotor.userData.role =
     'left-Holly-conjugate-toothed-elliptical-piston';
+  // Pass 90: both rotors are the generated rounded conjugates (Brown's
+  // U-rooted sinuous teeth and packing-stripped pistons); the official Canvas
+  // outlines, whose teeth are narrow spikes, stay recorded in sourceProfiles.
   const leftPiston = new THREE.Mesh(
-    makeProfileGeometry(leftProfile, sourceScale, 1.2),
+    makeProfileGeometry({points:hollyMate.left.map(p=>new THREE.Vector2(...p))}, 1, 1.2),
     leftMaterial,
   );
   leftPiston.position.z = 0.09;
   leftPiston.userData.role =
-    'left-exact-official-profile-elliptical-piston';
+    'left-rounded-conjugate-elliptical-piston';
   leftRotor.add(leftPiston);
-  // Brown's packing strips are painted marks; none are built.
-  const leftPackingStrips = [];
+  // Brown's packing strips, one inset flush in each piston tip.
+  const packingMaterial = matte(PALETTE.ink, { metalness: 0.2, roughness: 0.5 });
+  const makeStrips = (outlines, prefix) => outlines.map((outline, index) => {
+    const shape = new THREE.Shape(outline.map((p) => new THREE.Vector2(...p)));
+    const strip = new THREE.Mesh(new THREE.ExtrudeGeometry(shape, { bevelEnabled: false, curveSegments: 1, depth: 1.2 }).translate(0, 0, -0.6), packingMaterial);
+    strip.position.z = 0.09;
+    strip.userData.role = `${prefix}-piston-tip-packing-strip-${index + 1}`;
+    return strip;
+  });
+  const leftPackingStrips = makeStrips(hollyMate.strips.left, 'left');
+  leftRotor.add(...leftPackingStrips);
   root.add(leftRotor);
 
   const rightRotor = new THREE.Group();
@@ -395,10 +407,10 @@ function doubleEllipticalRotaryEngine(movement) {
   );
   rightPiston.position.z = 0.09;
   rightPiston.userData.role =
-    'right-swept-conjugate-profile-elliptical-piston';
+    'right-rounded-conjugate-elliptical-piston';
   rightRotor.add(rightPiston);
-  // Brown's packing strips are painted marks; none are built.
-  const rightPackingStrips = [];
+  const rightPackingStrips = makeStrips(hollyMate.strips.right, 'right');
+  rightRotor.add(...rightPackingStrips);
   root.add(rightRotor);
 
   const leftShaft = cylinderAlongZ(shaftRadius, 1.30, darkMaterial, 36);
@@ -447,7 +459,7 @@ function doubleEllipticalRotaryEngine(movement) {
       return [point[0] + sign * distance * ty / length, point[1] - sign * distance * tx / length];
     });
   };
-  const leftOutline = grow(leftProfile.points.map((p) => [p.x * sourceScale, p.y * sourceScale]), 0.012);
+  const leftOutline = grow(hollyMate.left.filter((_, i) => i % 3 === 0), 0.012);
   const rightOutline = grow(hollyMate.outline.filter((_, i) => i % 3 === 0), 0.012);
   const workingSpace = polygonClipping.union(poly(circle([-halfCenterDistance,0],innerHousingRadius-0.012,512)),
     poly(circle([halfCenterDistance,0],innerHousingRadius-0.012,512)));
@@ -599,7 +611,7 @@ function doubleEllipticalRotaryEngine(movement) {
       rightMajorAxisAngle: sourceState.rightMajorAxisAngle,
       rightReferencePoint: sourceState.rightReferencePoint.clone(),
     },
-    matingCorrection: {...hollyMate, outline: undefined},
+    matingCorrection: {...hollyMate, outline: undefined, left: undefined, strips: undefined},
     sourceProfiles: {
       leftConnectionGaps: [...leftProfile.connectionGaps],
       leftMaximumConnectionGap: leftProfile.maximumConnectionGap,
@@ -659,7 +671,7 @@ function doubleEllipticalRotaryEngine(movement) {
   root.userData.groundFloorY = -3.06;
   root.userData.hideGround=true;
   root.userData.solidReview={housingRadialClearance:0.00006,
-    qualification:'Unexpanded official mating profiles, bored shafts, closed double-circle working casing and open central port throats. The right profile receives offline swept relief from the unchanged left rotor, retaining over 99.7 percent of source area with less than 0.0145 boundary displacement. Sampled actual-profile overlap and clearance are qualified separately in the saved contact report. Exact pressure, sealing, packing compression and load response are not modeled.'};
+    qualification:'Generated rounded conjugate rotors (pass 90: round tip lobes on the pitch circle, roots carved by the mate\'s lobes, pistons with inset packing strips, recesses swept by the mate\'s pistons; the official Canvas outlines are recorded, not rendered), bored shafts, closed double-circle working casing and open central port throats. Sampled actual-profile overlap and clearance are qualified separately in the saved contact report. Exact pressure, sealing, packing compression and load response are not modeled.'};
   root.traverse(object=>{for(const material of object.material?[].concat(object.material):[])material.fog=false;});
   markShadows(root);
   for (const mesh of Object.values(steam)) { mesh.castShadow = false; mesh.receiveShadow = false; }

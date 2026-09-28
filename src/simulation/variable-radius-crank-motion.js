@@ -25,7 +25,12 @@ export function variableRadiusCrankAtAngle(angle, {
 export function sourceVariableCrankGeometry() {
   const scale = .012, phase = Math.atan2(47, 24), radius = Math.hypot(24, 47) * scale;
   const leftSpan = Math.hypot(187, 56) * scale, rightSpan = Math.hypot(163, 46) * scale;
-  const pitmanAngle = Math.atan2(-102, 350), rockerLength = 648 * scale;
+  // Brown breaks the power rocker off 1.36 above its wrist; its fulcrum is
+  // not drawn. It is placed 2.5 along the drawn continuation (about one
+  // pitman length) so the whole lever sits in the default view. The pin
+  // orbit barely changes: over a revolution the slot radius spans
+  // 0.361-1.476 (0.375-1.448 with the animation-ratio 7.776 rocker).
+  const pitmanAngle = Math.atan2(-102, 350), rockerLength = 2.5;
   const wrist = [24 * scale + rightSpan * Math.cos(pitmanAngle), 47 * scale + rightSpan * Math.sin(pitmanAngle)];
   const rockerDirection = [19 / Math.hypot(19, 112), 112 / Math.hypot(19, 112)];
   return {scale, phase, radius, leftSpan, rightSpan, rockerLength,

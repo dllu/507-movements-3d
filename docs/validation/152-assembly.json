@@ -3,24 +3,24 @@
   "method": "All visible mesh pairs belonging to different rigid bodies, bidirectional vertices/edge midpoints/face centers, 65 poses spanning a full bar revolution. Pencil trace is an annotation and excluded. Same-body mating interfaces excluded. No continuous collision proof.",
   "summary": {
     "parts": 34,
-    "pairs": 317,
+    "pairs": 296,
     "poses": 65,
-    "checks": 206180,
+    "checks": 805672,
     "failingPairs": 0
   },
   "failures": {},
   "sources": [
     {
       "file": "scripts/review-trammel-assembly.mjs",
-      "sha256": "de9c2cfe41ea8a3e014aa8e0cf2381a970758a515206bb164ae25214006f6fbf"
+      "sha256": "2b4f15d8a35d23741d45908f385beb359df1954daae8278ea10345b3d052cf5f"
     },
     {
       "file": "src/simulation/trammel-ellipsograph.js",
-      "sha256": "4d26673377153acf838021dc9f99a530b903785589358cb0b1352275dfe18b0d"
+      "sha256": "b2d42b1cb7fe0f03c13dea40607c45ae48c495adebf06000065ca765cf73bb56"
     },
     {
       "file": "src/simulation/authored-drawing-instruments.js",
-      "sha256": "803d089a8fe691bdafe7dc363ca328594f893a008114b8e9407a90f390c4752f"
+      "sha256": "c08b876ddcd84bb84e49801da807cd3490d4964f1db235bb79746b1b16964450"
     },
     {
       "file": "src/simulation/finite-plate-geometry.js",
@@ -28,7 +28,7 @@
     },
     {
       "file": "tests/helpers/solid-surface.mjs",
-      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+      "sha256": "8f39335894306bfe77f2d3562e6c2e7ac867dead2e078f2d1da4da7151998b99"
     }
   ]
 }

@@ -238,6 +238,39 @@ test('movement 499 renderer follows the solved tube, links, sector, pinion, and 
   disposeModel(model.root);
 });
 
+test('movement 499 scale is an arched band carried by the case, in front of tube B', () => {
+  const { model } = movementModel();
+  const { blocks, geometry } = model.root.userData;
+  const band = blocks.scaleArc;
+  const spec = band.userData.scaleBand;
+  band.geometry.computeBoundingBox();
+  const box = band.geometry.boundingBox;
+  // The ends run past the bezel into the case rim, and are seated back into it.
+  let reach = 0;
+  const p = band.geometry.attributes.position;
+  for (let i = 0; i < p.count; i += 1) reach = Math.max(reach, Math.hypot(p.getX(i), p.getY(i)));
+  assert.ok(reach > spec.bezelRadius + 0.2, `band reaches the rim: ${reach}`);
+  assert.ok(box.min.z <= spec.seat + 1e-6 && spec.seat < -0.02, 'band ends seated in the rim');
+  // Concentric with the pointer spindle; the pointer reaches its lower edge.
+  assert.ok(Math.abs(geometry.pinionCenter.x) < 1e-12);
+  const tip = new THREE.Box3().setFromObject(blocks.pointerTip);
+  model.root.updateMatrixWorld(true);
+  for (const tick of blocks.scaleTicks) {
+    assert.ok(tick.position.z > spec.front, 'graduations printed on the band face');
+  }
+  // Tube B stays behind the band over the whole cycle.
+  for (let i = 0; i <= 32; i += 1) {
+    model.update(geometry.cycleDuration * i / 32);
+    model.root.updateMatrixWorld(true);
+    for (const branch of blocks.tubeBranches) {
+      const b = new THREE.Box3().setFromObject(branch);
+      assert.ok(b.max.z < spec.back, `tube behind band ${i}: ${b.max.z}`);
+    }
+  }
+  assert.ok(Number.isFinite(tip.max.x));
+  disposeModel(model.root);
+});
+
 test('movement 499 closes smoothly, fits all poses, and leaves movement 507 next', () => {
   const { model } = movementModel();
   const { geometry, stateAtTime } = model.root.userData;

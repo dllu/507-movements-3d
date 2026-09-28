@@ -26,3 +26,17 @@ test('saved bevel contact audit matches production and keeps all six meshes clos
  const r=JSON.parse(fs.readFileSync('docs/validation/200-226-bevel-solids.json'));for(const s of r.sources)assert.equal(createHash('sha256').update(fs.readFileSync(s.file)).digest('hex'),s.sha256,s.file);
  assert.equal(r.results.length,2);for(const row of r.results){assert.equal(row.poses,33);assert.equal(row.penetrations,0);assert.ok(row.queries>500000);for(const p of row.pairs)assert.ok(p.maximumSampledGap<.002);}
 });
+
+test('226 frame A and its carrier arm are one broad flat bar width', () => {
+  const b = createAuthoredGearMovement({id: 226}).root.userData.blocks;
+  b.flatFrameA.geometry.computeBoundingBox();
+  const frame = b.flatFrameA.geometry.boundingBox;
+  assert.ok(frame.max.z - frame.min.z > 0.13, 'frame is a bar, not a film');
+  const inner = b.flatFrameA.geometry.parameters.shapes.holes[0].getPoints();
+  const innerHalfHeight = Math.max(...inner.map((p) => p.y));
+  assert.ok(frame.max.y - innerHalfHeight > 0.25, 'broad band');
+  for (const part of b.carrierShaftConnection.slice(1)) {
+    const box = new THREE.Box3().setFromObject(part);
+    assert.ok(box.max.y - box.min.y > 0.25, 'arm matches the band');
+  }
+});

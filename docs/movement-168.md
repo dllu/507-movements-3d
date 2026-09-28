@@ -31,11 +31,12 @@ These are planar joint-position checks, not whole-contour or screenshot
 registration claims. The previous animation-proportioned model missed the
 slot pin and wrist by approximately 41 and 38 pixels after shaft alignment.
 
-The power rocker is shown only for the approximately 1.36-world-unit length
-visible in the engraving. Its inferred full length is 7.776, retaining the
-source animation's ratio to shaft spacing. The initial direction follows the
-engraved upper continuation, placing its hidden pivot at approximately
-(3.539788,7.661824), relative to the auxiliary shaft. Depths, pin clearances,
+Brown breaks the power rocker off about 1.36 world units from its wrist.
+Since pass 90 (docs/p90-fg-review.md) the whole rocker is modelled, 2.5 long
+(about one pitman length; formerly 7.776, the source animation's ratio). It
+runs along the drawn continuation to an inferred fulcrum near (2.657360,2.460142),
+relative to the auxiliary shaft, on a plain round bearing boss. The pin orbit
+changes by about 1%. Depths, pin clearances,
 shaft support outside the picture and absolute timing are inferred.
 
 The auxiliary crank is prescribed at uniform speed. Circle intersection closes

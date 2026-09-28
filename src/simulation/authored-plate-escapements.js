@@ -660,10 +660,14 @@ function lever296(movement) {
       { center: B, radius: 5 * s, z0: -0.3, z1: 0.2, role: 'lever-arbor-B' },
     ],
     extras: (root, materials) => {
-      const diskMaterial = matte(PALETTE.driven, { metalness: 0.2, roughness: 0.55 });
+      // The balance's roller has its own colour so it does not blend into
+      // the lever where they overlap.
+      const diskMaterial = matte(PALETTE.accent, { metalness: 0.2, roughness: 0.55 });
       const disk = plateMesh(circlePoints([0, 0], 46 * s, 96), [circlePoints([0, 0], 5 * s, 32)], -0.34, -0.14, diskMaterial, 'balance-roller-disk-D');
       const pin = arborMesh([pinRadius * Math.cos(beta0), pinRadius * Math.sin(beta0)], pinSize, -0.14, 0.08, materials.arbor, 'roller-pin');
-      const arbor = arborMesh([0, 0], 5 * s, -0.5, 0.2, materials.arbor, 'balance-arbor-D');
+      // The fixed staff through D's centre (it was placed at the wheel's
+      // centre, coincident with the escape-wheel arbor, leaving D empty).
+      const arbor = arborMesh(O, 5 * s, -0.4, 0.0, materials.arbor, 'balance-arbor-D');
       balance.add(disk, pin);
       root.add(balance);
       return [arbor];

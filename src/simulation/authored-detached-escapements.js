@@ -522,6 +522,10 @@ function brownDetachedEscapement(movement) {
         fromRaster([228, 214]), fromRaster([cockLeft, cockNeck]),
       ]),
       poly(circle([0, 0], hubRadius, 48)),
+      // A minimal lug in the cock's own plane carries Q's pivot stud (Brown
+      // draws the stud just right of the cock, with no other support).
+      capsule(fromRaster([cockRight - 6, raster.qPivot[1]]), qPivot, px(11), 32),
+      poly(circle(qPivot, px(15), 48)),
     ),
     poly(circle([0, 0], arborRadius + px(0.3), 32)),
   );
@@ -542,7 +546,8 @@ function brownDetachedEscapement(movement) {
   );
   cockScrew.userData.role = 'cock-fixing-screw';
   root.add(cockScrew);
-  const leverStud = new THREE.Mesh(solidRod(pivotStud, Z.cockLow, Z.leverHigh + 0.03), darkMaterial);
+  // The stud's foot is buried in the lug (no end face on the cock's back).
+  const leverStud = new THREE.Mesh(solidRod(pivotStud, Z.cockLow + 0.03, Z.leverHigh + 0.03), darkMaterial);
   leverStud.position.set(qPivot[0], qPivot[1], 0);
   leverStud.userData.role = 'Q-pivot-stud';
   root.add(leverStud);

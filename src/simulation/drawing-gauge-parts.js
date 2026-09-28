@@ -33,7 +33,7 @@ export function correctCentrolinead(root){
   leg.body.position.z=layer;leg.backEdge.position.z=.095+layer;
   const length=g.visibleLegLength;
   const outline=clip.union(rect(-length/2,-.12,length/2,.12),poly(circle([-length/2,-.195],.20,64)));
-  const holes=clip.union(poly(circle([-length/2,-.195],.145,64)),poly(circle([.43-length/2,0],.028,48)));
+  const holes=clip.union(poly(circle([-length/2,-.195],.062,64)),poly(circle([.43-length/2,0],.028,48)));
   replace(leg.body,plate(clip.difference(outline,holes),-.08,.08));
   leg.clamp.position.z=.445;
   const stem=new THREE.Mesh(new THREE.CylinderGeometry(.026,.026,.62,32),b.centralJoint.material);
@@ -54,9 +54,10 @@ export function correctCentrolinead(root){
  b.headSlotSpans=slotSpans;
  // The left opening and two real adjustment slots follow the engraved head.
  const headOutline=clip.difference(poly(circle([0,0],.58,96)),
-  poly([[-.7,-.31],[-.20,0],[-.7,.31]]),poly(circle([0,0],.145,64)),...slots);
+  poly([[-.7,-.31],[-.20,0],[-.7,.31]]),poly(circle([0,0],.062,64)),...slots);
  replace(b.head,plate(headOutline,-.10,.10));b.head.rotation.set(0,0,0);b.head.position.z=.25;
- replace(b.centralJoint,new THREE.CylinderGeometry(.14,.14,.80,48));b.jointIndex.position.z=.53;
+ // Brown's joint is a small pin (his small centre hole), not a boss.
+ replace(b.centralJoint,new THREE.CylinderGeometry(.06,.06,.80,48));b.jointIndex.position.z=.53;
  for(const arc of b.adjustmentArcs)b.instrument.remove(arc);
  replace(b.drawingEdge,new THREE.BoxGeometry(g.bladeLength,.025,.022));
  b.drawingEdge.position.set(g.bladeLength/2,-.013,.12);b.drawingEdge.rotation.z=0;
@@ -68,10 +69,15 @@ export function correctProportionalCompasses(root){
  root.remove(b.board,b.boardBorder);
  const holes=clip.union(rect(-g.slotWidth/2,g.slotMinimumCoordinate,g.slotWidth/2,g.slotMaximumCoordinate),
   poly(circle([0,g.slotMinimumCoordinate],.18,64)),poly(circle([0,g.slotMaximumCoordinate],.18,64)));
- const outline=clip.union(rect(-g.legWidth/2,-.88,g.legWidth/2,1.47),
-  poly(circle([0,1.47],g.bossRadius,64)),poly(circle([0,-.88],g.bossRadius*1.03,64)),
-  poly([[-.19,1.5],[0,g.shortArmLength],[.19,1.5]]),
-  poly(compassGripProfile.points),poly([[-.09,-1.40],[0,-g.longArmLength],[.09,-1.40]]));
+ // Brown's legs are broad round-ended bars (end radius = half the bar
+ // width, a thin rim round each slot-end hole); each short point tapers
+ // straight from tangents to the round end, and each long point tapers
+ // straight from below the serrated grip.
+ const w=g.legWidth/2,tangentPoint=(center,tip,side)=>{const d=Math.abs(tip-center),a=Math.acos(w/d);return [side*w*Math.sin(a),center+Math.sign(tip-center)*w*Math.cos(a)];};
+ const outline=clip.union(rect(-w,-.88,w,1.47),
+  poly(circle([0,1.47],w,64)),poly(circle([0,-.88],w,64)),
+  poly([tangentPoint(1.47,g.shortArmLength,-1),[0,g.shortArmLength],tangentPoint(1.47,g.shortArmLength,1),[0,1.47]]),
+  poly(compassGripProfile.points),poly([[-.15,-1.33],[0,-g.longArmLength],[.15,-1.33]]));
  const legProfile=clip.difference(outline,holes);
  for(const leg of [b.legA,b.legB]){
   replace(leg.spine,plate(legProfile,-g.legDepth/2,g.legDepth/2));leg.spine.position.set(0,0,0);

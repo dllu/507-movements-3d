@@ -4,17 +4,17 @@
   "format": "mujoco-loop",
   "version": 1,
   "asset": "src/simulation/baked/assets/mujoco-098.json.gz",
-  "bytes": 4247,
-  "assetSha256": "4075d05a2361ce6f64743d73c5b4aaf33c583662fc3303aa62a624da12b330e2",
+  "bytes": 2971,
+  "assetSha256": "2427f3c08869b39326747934b5241a099002964394db1885710c6cbd016e98ca",
   "motionSources": {
     "src/simulation/mujoco-endless-groove/physics.js": "3af0a77909daea762aca34d484d1fc5a9702ca96b60088cfed1074e77e07efb5",
     "src/simulation/mujoco-endless-groove/profile.js": "29d58f96f7bf154ad1dd729cfa3841f3900bb93e49d02ea6ea9b577daab16912",
     "src/simulation/mujoco-endless-groove/source.js": "7681b22f4b1a464c07f2b3bcee794bece6c0ab694027c48e7ffb4c1d74418fc1",
-    "src/simulation/mujoco-endless-groove/visual.js": "b1e0a8fa51ff1d2bb4ac6b897c5daa34c4754b45b8228f3b869398e5ee9fa63a",
+    "src/simulation/mujoco-endless-groove/visual.js": "3640ad320656487abf72878b366a645d5369eb88418642f407ea83a4bc6f04a8",
     "src/simulation/mujoco/simulation.js": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
   },
   "visualSourcesAtBake": {
-    "src/simulation/mujoco-endless-groove/geometry.js": "5651867c8890de2ef28f1884156be38883f8733ead746372d87f53a915574a4d"
+    "src/simulation/mujoco-endless-groove/geometry.js": "7b73088f5f3eb6c6b8fde1664ae87b21563e749874cbe4b23678d6b0ac26768c"
   },
   "physicsXmlSha256": {
     "default": "81b9140e2bbcab142e384245b708cdd001a1656cc7fe7db6a56bf44b8af05fb0"
@@ -57,16 +57,16 @@
           }
         ]
       },
-      "roundTripPixels": 0.002313140659346391,
+      "roundTripPixels": 0.005164612555668063,
       "seam": {
-        "seamStepPixels": 8.237832959856195,
-        "interiorStepPixels": 8.76497767909982,
-        "seamSecondPixels": 0.41564418991121754,
-        "interiorSecondPixels": 3.2848885493824738
+        "seamStepPixels": 8.236616260766887,
+        "interiorStepPixels": 8.765565426398489,
+        "seamSecondPixels": 0.4155571332453642,
+        "interiorSecondPixels": 3.297711579450553
       }
     }
   },
   "extras": [],
   "removed": [],
-  "bakeSeconds": 7.734037049770356
+  "bakeSeconds": 7.983337092876434
 }

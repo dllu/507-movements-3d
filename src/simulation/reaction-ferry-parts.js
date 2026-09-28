@@ -102,11 +102,11 @@ export function correctReactionFerry(root){
   const geometry=new T.LatheGeometry(points,48);
   b.ropeStartMarker.geometry.dispose();b.ropeStartMarker.geometry=geometry;b.ropeEndMarker.geometry=geometry;
  }
- // Brown draws the line slack: a laid rope with two gentle plan-view waves.
- // Its chord stays the tether length, and both ends run straight into the
- // swivel bores; tension and sag are not modelled.
+ // Brown's wavy line is his way of drawing a rope; the stream's drag on the
+ // boat keeps the anchor rope taut (pass 90), so it runs straight from swivel
+ // to swivel as a laid rope of the tether length.
  {
-  const L=g.tetherLength,n=161,amplitude=.075,points=[];
+  const L=g.tetherLength,n=161,amplitude=0,points=[];
   for(let i=0;i<n;i++){const s=i/(n-1),w=Math.sin(Math.PI*s)**2;points.push([amplitude*Math.sin(4*Math.PI*s)*w,(s-.5)*L,0]);}
   const geometry=new LaidRopeGeometry(points.map(p=>new T.Vector3(...p)),160,.04,8);geometry.scale(1,1/L,1);
   b.rope.geometry.dispose();b.rope.geometry=geometry;

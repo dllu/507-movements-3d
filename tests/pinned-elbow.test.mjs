@@ -11,6 +11,13 @@ test('157 records its source correction and rejects impossible raw engraving pos
  const g=pinnedElbowParameters(source),s=pinnedElbowState(0,g),pixel=p=>[source.diskCenter[0]+p[0]/source.scale,source.diskCenter[1]-p[1]/source.scale];
  for(const [actual,expected]of [[s.pin,source.crankPin],[g.pivot,source.pivot],[s.input,source.input],[s.output,source.output]])assert.ok(Math.hypot(...pixel(actual).map((x,i)=>x-expected[i]))<1e-10);
 });
+test('157 bell crank swings near-symmetrically about the drawn pose and the output rod stays near its guide line',()=>{
+ const g=pinnedElbowParameters(source);let low=Infinity,high=-Infinity,tilt=0;
+ for(let i=0;i<=1440;i++){const s=pinnedElbowState(g.period*i/1440,g),b=(s.bellAngle-g.restAngle)*180/Math.PI;low=Math.min(low,b);high=Math.max(high,b);
+  tilt=Math.max(tilt,Math.abs(Math.atan2(s.slider[0]-s.output[0],s.output[1]-s.slider[1]))*180/Math.PI);}
+ // Was +21/-75 degrees with an 18 degree rod lean before the p90 refit.
+ assert.ok(high-low<80,`swing ${high-low}`);assert.ok(Math.abs(high+low)<30.5,`asymmetry ${high+low}`);assert.ok(tilt<8,`rod tilt ${tilt}`);
+});
 test('157 closes every rigid link through a full turn on one continuous branch',()=>{
  const g=pinnedElbowParameters(source);let previous,low=Infinity,high=-Infinity;
  for(let i=0;i<=4096;i++){

@@ -1,7 +1,6 @@
 import { correctMirrorPolisher } from './polishing-joint-parts.js';
 import { plate, poly, circle, polygonClipping } from './finite-plate-geometry.js';
 import {
-  followerTable,
   makeSeatedFollower,
   sawRatchetOutline,
   seatedClickOutline,
@@ -31,10 +30,11 @@ function cylinderAlongZ(radius, length, material, segments = 28) {
   return cylinder;
 }
 
-// Brown's click is a hook: from its eye on the carrier it comes round the
-// bar's edge and down the ratchet's left side, its nose turned back into a
-// tooth root so the carrier draws the tooth up. One planar plate with a
-// bored boss; the nose lies along the flank and is cut along the tooth face.
+// Brown's click comes down from its eye on the carrier, beside the bar, and
+// its nose sits in a root on the ratchet's left side, so the carrier's
+// downward swing pushes the tooth down and turns the wheel anticlockwise.
+// One planar plate with a bored boss: the blade is one circular arc from the
+// boss to the flank, and the nose is cut along the tooth face.
 function seatMirrorClick(root) {
   const b = root.userData.blocks;
   const g = root.userData.geometry;
@@ -46,7 +46,7 @@ function seatMirrorClick(root) {
   // Engaged, the wheel stands this far round from the carrier (mod pitch).
   const seatWheelAngle = -g.carrierBaseAngle - hand * g.clickBacklash;
   // Brown's nose engages the ratchet's left side, below the carrier eye.
-  const noseAngle = THREE.MathUtils.degToRad(34);
+  const noseAngle = THREE.MathUtils.degToRad(35);
   const wheel = sawRatchetOutline({
     radius,
     rootRadius: radius * 0.8,
@@ -85,7 +85,7 @@ function seatMirrorClick(root) {
     bossRadius: 0.13,
     boreRadius: 0.082,
     shank: 0.10,
-    fillet: 0.10,
+    fillet: 0,
     trimRadius: 0.16,
   });
   const local = outline.polygons.map((polygon) => polygon.map((ring) => ring.map((p) => [p[0] - pivot[0], p[1] - pivot[1]])));
@@ -98,8 +98,60 @@ function seatMirrorClick(root) {
   pawl.rotation.z = 0;
   // A hair of running clearance keeps the dark hook visibly off the brass.
   const core = makeSeatedFollower({ outline, wheel, pivot, seatWheelAngle, runningClearance: 0.0015 });
-  const angleAt = (relativeWheelAngle) => core.angleAt(hand * (relativeWheelAngle - seatWheelAngle));
-  const playbackAngleAt = followerTable(angleAt, pitch);
+  // Brown's click pushes: on the return it climbs the long flank and, past
+  // the tip, falls into the next root. Its nose's lift arc swings forward, so
+  // it rests on the passed tip corner until the carrier has drawn it clear
+  // (about 0.07 pitch), then falls at a finite rate (0.03 pitch of return),
+  // inside the 0.2 pitch of overtravel, and is on the flank again before the
+  // drive stroke draws it back into the root.
+  // Resting lift: the lowest clear lift on the flank. (Because of that
+  // forward swing, clearance is not monotonic in lift and the shared
+  // bisection would overshoot.)
+  const restingLift = (x) => {
+    if (!core.overlaps(x, 0)) return 0;
+    const step = 0.01;
+    let high = step;
+    while (core.overlaps(x, high)) {
+      high += step;
+      if (high > 0.9) throw new RangeError('click cannot clear the ratchet');
+    }
+    let low = high - step;
+    for (let i = 0; i < 30; i += 1) {
+      const mid = (low + high) / 2;
+      if (core.overlaps(x, mid)) low = mid; else high = mid;
+    }
+    return high + 2e-6;
+  };
+  const samples = 384;
+  const contact = Array.from({ length: samples + 1 }, (_, i) => restingLift(pitch * i / samples));
+  contact[samples] = contact[0];
+  const lerp = (table, u) => {
+    const i = Math.min(table.length - 2, Math.floor(u)), t = u - i;
+    return table[i] + (table[i + 1] - table[i]) * t;
+  };
+  // Contact lift at any relative wheel angle (the drive stroke).
+  const angleAt = (relativeWheelAngle) => core.liftSign * lerp(contact,
+    positiveModulo(hand * (relativeWheelAngle - seatWheelAngle), pitch) / pitch * samples);
+  // The return stroke, indexed by carrier travel back from the seat.
+  const returnTravel = pitch + g.clickBacklash;
+  const returnSamples = Math.ceil(samples * returnTravel / pitch);
+  const dropPerSample = Math.max(...contact) / (0.03 * samples);
+  const returnLift = [];
+  for (let i = 0; i <= returnSamples; i += 1) {
+    const x = returnTravel * i / returnSamples;
+    const onFlank = lerp(contact, positiveModulo(x, pitch) / pitch * samples);
+    if (i === 0) { returnLift.push(onFlank); continue; }
+    // Fall at the finite rate, but never into the undercut tip that the
+    // nose's arc passes under: hold just above it until the carrier's return
+    // has drawn the nose clear.
+    let lift = Math.max(onFlank, returnLift[i - 1] - dropPerSample * samples / returnSamples * returnTravel / pitch);
+    const xm = positiveModulo(x, pitch);
+    while (lift > onFlank && core.overlaps(xm, lift)) lift += 0.002;
+    returnLift.push(lift);
+  }
+  const returnAngleAt = (travelBack) => core.liftSign * lerp(returnLift,
+    Math.min(Math.max(travelBack / returnTravel, 0), 1) * returnSamples);
+  const playbackAngleAt = angleAt;
   b.finiteClick = {
     group: pawl,
     body: old.body,
@@ -112,9 +164,17 @@ function seatMirrorClick(root) {
     liftSign: core.liftSign,
     angleAt,
     playbackAngleAt,
-    update(angle) { pawl.rotation.z = playbackAngleAt(angle); },
+    returnAngleAt,
+    returnTravel,
+    core,
+    update(angle, state) {
+      pawl.rotation.z = state && !state.stage.startsWith('eccentric-driven')
+        ? returnAngleAt(returnTravel * (1 - state.carrierFraction))
+        : angleAt(angle);
+    },
   };
-  root.userData.updatePolishingInterfaces = (state) => b.finiteClick.update(state.ratchetAngle - state.carrierAngle);
+  root.userData.updatePolishingInterfaces = (state) => b.finiteClick.update(state.ratchetAngle - state.carrierAngle, state);
+  root.userData.reconstructionNote = 'The guided bar follows the crank exactly. Mirror indexing and the eccentric-driven carrier stroke are prescribed, with a geometric overrunning click on the ratchet\'s left side pushing it anticlockwise as Brown draws. The mirror and ratchet stand behind the bar and the lower rail, as Brown draws them behind the bar; the click\'s stem comes forward beside the bar\'s edge to the eccentric rod. The telescoping follower is an illustrative transmission, not a closed rigid linkage or a validated passive ratchet under polishing load.';
 }
 
 function makeRatchetWheel({
@@ -245,18 +305,22 @@ function mirrorPolishingCompoundMotion(movement) {
   // Brown's ratchet spans about 0.83 of the mirror's side.
   const ratchetOuterRadius = 0.52;
   const ratchetRootRadius = 0.44;
-  // Brown's click hooks the ratchet's upper-left teeth and draws them
-  // upward: the wheel turns clockwise in the plate (clickHand -1, angles
-  // counterclockwise positive), its tooth tips pointing counterclockwise.
-  const clickHand = -1;
-  // The carrier swings 160 -> 130 degrees, so its pivot (where the eccentric
-  // rod's click stem passes the bar's plane) always stays beside the bar.
-  const carrierBaseAngle = THREE.MathUtils.degToRad(160);
-  const carrierPivotRadius = 0.68;
+  // Brown's click comes down the ratchet's left side from above and pushes
+  // its teeth downward: the wheel turns anticlockwise in the plate
+  // (clickHand +1, angles anticlockwise positive). His teeth rake that way:
+  // on the right side each tip has its long flank above and its short
+  // radial face below.
+  const clickHand = 1;
+  // The carrier swings 130 -> 160 degrees (Brown's click pivot stands at
+  // about 125 degrees, 1.7 ratchet radii out, its nose at about 165), so its
+  // pivot, where the eccentric rod's click stem passes the bar's plane,
+  // always stays beside the bar.
+  const carrierBaseAngle = THREE.MathUtils.degToRad(130);
+  const carrierPivotRadius = 0.8;
   const pawlContactRadius = ratchetOuterRadius;
   const pawlMaximumLift = 0.105;
   // Carrier travel taken up before the click's nose meets the tooth face.
-  const clickBacklash = 0.12 * ratchetToothPitch;
+  const clickBacklash = 0.2 * ratchetToothPitch;
   const eccentricity = 0.18;
   const mirrorRotorZ = -0.60;
   // World depths: the ratchet/click plane behind the lower rail (rail back

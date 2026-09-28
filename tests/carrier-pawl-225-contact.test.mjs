@@ -121,10 +121,17 @@ test('225 deterministic curved plate has one continuous finite body and a retain
   assert.equal(polygons.length, 1);
   assert.equal(polygons[0].length, 2);
   const field = solidSurface(geometry), length = d.geometry.pawlLength;
-  // Brown's plain curved bar: a shallow arch from the hinge whose end turns
-  // down into the tooth space; the body is solid all along its centre line.
+  // Brown's plain curved bar: one circular arc from the hinge, with no hook
+  // turned into the tooth space; the body is solid all along its centre line.
   const sagitta = d.geometry.pawlBarSagitta;
   assert.ok(sagitta > 0 && sagitta < 0.2 * length, 'a shallow arch');
+  const arcRadius = (length ** 2 / 4 + sagitta ** 2) / (2 * sagitta), arcCentre = [length / 2, arcRadius - sagitta];
+  for (const [x, y] of d.geometry.pawlCenterLine) assert.ok(Math.abs(Math.hypot(x - arcCentre[0], y - arcCentre[1]) - arcRadius) < 0.002, 'centre line is one circular arc');
+  // The end is a straight cut lying within the relief of the driven face.
+  const { start, hit, direction, relief } = d.geometry.pawlEndCut, mid = d.stateAtCycleCoordinate(0.25);
+  const n = mid.contactNormal, a = -mid.pawlAngle, face = [Math.cos(a) * -n.y - Math.sin(a) * n.x, Math.sin(a) * -n.y + Math.cos(a) * n.x];
+  assert.ok(Math.hypot(hit[0] - start[0], hit[1] - start[1]) > 0.06, 'a real straight end face');
+  assert.ok(Math.abs(Math.abs(face[0] * direction[0] + face[1] * direction[1]) - Math.cos(relief)) < 1e-9, 'end face within its relief of the tooth face');
   const line = d.geometry.pawlCenterLine;
   for (let i = 4; i < line.length - 2; i++) {
     assert.ok(field.signedDistance(new THREE.Vector3(line[i][0], line[i][1], 0)) < -0.025, `finite curved body at ${i / (line.length - 1)}`);

@@ -150,10 +150,10 @@ function otisSafetyStop(movement) {
   const sourceRopeEyeY = sourcePointToModel(sourceRasterRopeEye).y;
   // Brown's leaf spring c hangs from the underside of B's head: its two
   // upturned tips meet the head, and its middle, crossing pin b about 0.5
-  // above the eye, bears on a small seat collar on the pin (inferred). The leaf is modelled as a round wire of radius 0.045
-  // parted around pin b (the leaf's slot) so the pin does not pass through it.
+  // above the eye, bears on a small seat collar on the pin (inferred). The
+  // leaf is one flat band 0.09 thick with a slotted flat middle on pin b.
   const springWireRadius = 0.045;
-  const springLayerZ = 0.50;
+  const springLayerZ = 0.44; // the pin's own plane, so the leaf's slot centres on it
   const springTipY = sourcePointToModel({ x: 264, y: 197 }).y
     - springWireRadius;
   const springLeftAnchor = new THREE.Vector3(
@@ -737,33 +737,102 @@ function otisSafetyStop(movement) {
     springSeat);
   carriage.add(pinAssembly);
 
+  // Spring c is one continuous flat leaf: two bands swept along its bow and
+  // a flat slotted middle through which pin b passes, resting on the seat
+  // collar. The bands run into the middle plate, so the leaf reads as one
+  // piece bearing on the pin.
+  const leafWidth = 0.24;
+  const leafThickness = 2 * springWireRadius;
+  const leafMiddleHalfLength = 0.18;
+  const leafSlot = { x: 0.075, z: 0.1 };
+  const springMaterial = matte(PALETTE.brass, { metalness: 0.2, roughness: 0.5 });
   const spring = new THREE.Group();
-  const springHalves = ['left', 'right'].map((side) => {
-    const half = makeDynamicCable({
-      color: PALETTE.brass,
-      maxSegments: 12,
-      radius: springWireRadius,
+  const makeBand = (role) => {
+    const samples = 32;
+    const geometry = new THREE.BufferGeometry();
+    // Four long sides with their own vertices (crisp edges) plus two caps.
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array((samples * 8 + 8) * 3), 3));
+    const indices = [];
+    for (let side = 0; side < 4; side += 1) {
+      const base = side * samples * 2;
+      for (let i = 0; i < samples - 1; i += 1) {
+        const a0 = base + 2 * i;
+        indices.push(a0, a0 + 2, a0 + 1, a0 + 1, a0 + 2, a0 + 3);
+      }
+    }
+    const cap = samples * 8;
+    indices.push(cap, cap + 2, cap + 1, cap, cap + 3, cap + 2, cap + 4, cap + 5, cap + 6, cap + 4, cap + 6, cap + 7);
+    geometry.setIndex(indices);
+    const mesh = new THREE.Mesh(geometry, springMaterial);
+    mesh.userData.role = role;
+    mesh.userData.samples = samples;
+    mesh.frustumCulled = false;
+    return mesh;
+  };
+  const setBand = (mesh, curvePoints) => {
+    const samples = mesh.userData.samples;
+    const curve = new THREE.CatmullRomCurve3(curvePoints, false, 'centripetal');
+    const points = curve.getSpacedPoints(samples - 1);
+    const position = mesh.geometry.attributes.position;
+    const corners = points.map((point, index) => {
+      const tangent = curve.getTangentAt(index / (samples - 1));
+      const normal = new THREE.Vector3(-tangent.y, tangent.x, 0).normalize()
+        .multiplyScalar(leafThickness / 2);
+      const across = new THREE.Vector3(0, 0, leafWidth / 2);
+      return [
+        point.clone().add(normal).add(across), point.clone().add(normal).sub(across),
+        point.clone().sub(normal).sub(across), point.clone().sub(normal).add(across),
+      ];
     });
-    half.userData.role = `${side}-half-of-leaf-spring-c`;
+    for (let side = 0; side < 4; side += 1) {
+      for (let i = 0; i < samples; i += 1) {
+        const index = side * samples * 2 + 2 * i;
+        position.setXYZ(index, ...corners[i][side].toArray());
+        position.setXYZ(index + 1, ...corners[i][(side + 1) % 4].toArray());
+      }
+    }
+    const cap = samples * 8;
+    for (let k = 0; k < 4; k += 1) {
+      position.setXYZ(cap + k, ...corners[0][k].toArray());
+      position.setXYZ(cap + 4 + k, ...corners[samples - 1][k].toArray());
+    }
+    position.needsUpdate = true;
+    mesh.geometry.computeVertexNormals();
+    mesh.geometry.computeBoundingSphere();
+  };
+  const springHalves = ['left', 'right'].map((side) => {
+    const half = makeBand(`${side}-band-of-continuous-leaf-spring-c`);
     spring.add(half);
     return half;
   });
+  const leafMiddle = new THREE.Mesh(
+    plate(polygonClipping.difference(
+      poly([[-leafMiddleHalfLength, -leafWidth / 2], [leafMiddleHalfLength, -leafWidth / 2],
+        [leafMiddleHalfLength, leafWidth / 2], [-leafMiddleHalfLength, leafWidth / 2]]),
+      poly([[-leafSlot.x, -leafSlot.z], [leafSlot.x, -leafSlot.z], [leafSlot.x, leafSlot.z], [-leafSlot.x, leafSlot.z]])),
+    -leafThickness / 2, leafThickness / 2).rotateX(Math.PI / 2),
+    springMaterial,
+  );
+  leafMiddle.userData.role = 'slotted-middle-of-leaf-spring-c-on-pin-b';
+  spring.add(leafMiddle);
   spring.userData.role = 'transverse-leaf-spring-c-pressing-pin-down';
   spring.userData.setPoints = (points) => {
-    // Part the wire where it crosses the pin's slot in the leaf; the
-    // points run monotonically from the left tip to the right tip.
-    const w = springPinSlotHalfWidth;
+    // The bands run from the tips into the flat slotted middle; the points
+    // run monotonically from the left tip to the right tip.
+    const w = leafMiddleHalfLength - 0.01;
     const crossing = (a, b, x) => a.clone().lerp(b, (x - a.x) / (b.x - a.x));
     const lastLeft = points.findLastIndex((point) => point.x <= -w);
     const firstRight = points.findIndex((point) => point.x >= w);
-    springHalves[0].userData.setPoints([
+    const center = points[lastLeft].clone().lerp(points[firstRight], 0.5);
+    setBand(springHalves[0], [
       ...points.slice(0, lastLeft + 1),
-      crossing(points[lastLeft], points[lastLeft + 1], -w),
+      crossing(points[lastLeft], points[lastLeft + 1], -w).setY(center.y),
     ]);
-    springHalves[1].userData.setPoints([
-      crossing(points[firstRight - 1], points[firstRight], w),
+    setBand(springHalves[1], [
+      crossing(points[firstRight - 1], points[firstRight], w).setY(center.y),
       ...points.slice(firstRight),
     ]);
+    leafMiddle.position.set(0, center.y, center.z);
   };
   carriage.add(spring);
   // The leaf's tips seat under B's head; B's head is carried forward over
@@ -1118,32 +1187,23 @@ function otisSafetyStop(movement) {
 
   const updateSpring = (state) => {
     const center = state.springContact;
-    const leftControlA = springLeftAnchor.clone().lerp(center, 0.46)
+    // Each bow ends level at the edge of the leaf's flat slotted middle.
+    const leftEnd = center.clone().add(new THREE.Vector3(-leafMiddleHalfLength, 0, 0));
+    const rightEnd = center.clone().add(new THREE.Vector3(leafMiddleHalfLength, 0, 0));
+    const leftControlA = springLeftAnchor.clone().lerp(leftEnd, 0.46)
       .add(new THREE.Vector3(0, 0.08 * state.springRelease, 0));
-    const leftControlB = springLeftAnchor.clone().lerp(center, 0.78)
-      .add(new THREE.Vector3(0, 0.04 * state.springRelease, 0));
-    const rightControlA = center.clone().lerp(springRightAnchor, 0.22)
-      .add(new THREE.Vector3(0, 0.04 * state.springRelease, 0));
-    const rightControlB = center.clone().lerp(springRightAnchor, 0.54)
+    const leftControlB = springLeftAnchor.clone().lerp(leftEnd, 0.78)
+      .setY(center.y);
+    const rightControlA = rightEnd.clone().lerp(springRightAnchor, 0.22)
+      .setY(center.y);
+    const rightControlB = rightEnd.clone().lerp(springRightAnchor, 0.54)
       .add(new THREE.Vector3(0, 0.08 * state.springRelease, 0));
     const points = [];
     for (let index = 0; index <= 12; index += 1) {
-      points.push(cubicBezierPoint(
-        springLeftAnchor,
-        leftControlA,
-        leftControlB,
-        center,
-        index / 12,
-      ));
+      points.push(cubicBezierPoint(springLeftAnchor, leftControlA, leftControlB, leftEnd, index / 12));
     }
-    for (let index = 1; index <= 12; index += 1) {
-      points.push(cubicBezierPoint(
-        center,
-        rightControlA,
-        rightControlB,
-        springRightAnchor,
-        index / 12,
-      ));
+    for (let index = 0; index <= 12; index += 1) {
+      points.push(cubicBezierPoint(rightEnd, rightControlA, rightControlB, springRightAnchor, index / 12));
     }
     spring.userData.setPoints(points);
     spring.userData.center = center.clone();

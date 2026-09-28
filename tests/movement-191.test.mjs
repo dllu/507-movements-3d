@@ -299,15 +299,15 @@ test('movement 191 preserves conjugate contact and progressively increases outpu
   const afterReset = stateAtTime(transmission.cyclePeriod);
   near(
     transmission.minimumOutputSpeedRatio,
-    0.38 / 0.62,
+    0.436 / 0.564,
     2e-14,
     'minimum ratio follows Brown-proportioned starting radii',
   );
-  assert.ok(transmission.maximumOutputSpeedRatio > 1.52);
-  assert.ok(transmission.maximumOutputSpeedRatio < 1.522);
+  assert.ok(transmission.maximumOutputSpeedRatio > 1.267);
+  assert.ok(transmission.maximumOutputSpeedRatio < 1.268);
   assert.ok(
     transmission.maximumOutputSpeedRatio
-      / transmission.minimumOutputSpeedRatio > 2.48,
+      / transmission.minimumOutputSpeedRatio > 1.63,
   );
   near(
     transmission.outputRevolutionsPerInputRevolution,
@@ -334,7 +334,7 @@ test('movement 191 preserves conjugate contact and progressively increases outpu
   );
   assert.ok(
     Math.abs(beforeReset.outputAngularSpeed)
-      > Math.abs(afterReset.outputAngularSpeed) * 2.48,
+      > Math.abs(afterReset.outputAngularSpeed) * 1.63,
   );
   assert.equal(afterReset.seamReset, true);
   assert.ok(start.contactPoint.y > beforeReset.contactPoint.y);
@@ -707,5 +707,15 @@ test('movement 191 remains distinct as the sequential review queue advances thro
   disposeModel(movement198.root);
   disposeModel(movement199.root);
   disposeModel(movement200.root);
+  disposeModel(model.root);
+});
+
+test('movement 191 seam step is Brown\'s shallow shoulder, about 0.13 of the centre distance', () => {
+  const model = createMovementModel(catalog.movements[190]);
+  const g = model.root.userData.geometry;
+  const step = (g.maximumDriverRadius - g.minimumDriverRadius) / g.centerDistance;
+  assert.ok(step > 0.12 && step < 0.14, `step ${step}`);
+  // Roughly two tooth depths, not a long spike.
+  assert.ok(g.maximumDriverRadius - g.minimumDriverRadius < 2.5 * (g.addendum + g.dedendum));
   disposeModel(model.root);
 });

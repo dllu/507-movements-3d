@@ -652,6 +652,16 @@ function pivotedSailWindmill(movement) {
   root.userData.cameraDirection = new THREE.Vector3(7.4, 9.2, 10.8);
   root.userData.groundFloorY = -0.64;
   correctWindRotorWorkingParts(root, 486);
+  // Pass 90: each hinge pin's head stops 0.005 below its sleeve's top (it
+  // stood 0.08 proud and read as an off-centre crescent from above), and its
+  // foot runs on below the arm so the arm enters the pin's side rather than
+  // the pin sitting on the thinner arm with a lip all round.
+  for (const { hingePin } of root.userData.blocks.armAssemblies) {
+    const top = 0.405, bottom = -0.60;
+    hingePin.geometry.dispose();
+    hingePin.geometry = new THREE.CylinderGeometry(0.10, 0.10, top - bottom, 32);
+    hingePin.position.y = (top + bottom) / 2;
+  }
   markShadows(root);
   for (const arrow of windArrows) {
     arrow.traverse((object) => {

@@ -191,7 +191,9 @@ function hoopReactionDynamometer(movement) {
   const gearTeeth = 18;
   const pitchConeAngle = Math.PI / 4;
   const outerConeDistance = 0.94;
-  const innerConeDistance = 0.27;
+  // Brown draws each miter as an outer toothed band (about a third of the
+  // cone distance) round a central window in which the hoop shows.
+  const innerConeDistance = 0.62;
   const outerPitchRadius = outerConeDistance
     * Math.tan(pitchConeAngle);
   const module = 2 * outerPitchRadius / gearTeeth;

@@ -77,3 +77,17 @@ for(const id of [192,193,194]) {
    assert.equal(d.hideGround,true);model.root.traverse(o=>{for(const material of [].concat(o.material??[]))assert.equal(material.fog,false);if(o.isMesh)assert.equal(o.castShadow,true);});
  });
 }
+
+test('192-194 pinions are flat unbeveled involute extrusions and the wheel bore fits its shaft', () => {
+  for (const id of [192, 193, 194]) {
+    const model = createAuthoredGearMovement({id}), b = model.root.userData.blocks;
+    const gear = b.pinion.userData.rotor.children[0];
+    assert.equal(gear.geometry.parameters.options.bevelEnabled, false, `${id} pinion has no faceting chamfer`);
+    gear.geometry.computeBoundingBox();
+    assert.ok(Math.abs(gear.geometry.boundingBox.max.z - gear.geometry.boundingBox.min.z - 0.37) < 1e-6);
+    const shaft = b.wheelShaft.userData.rotor?.children.find((o) => o.isMesh) ?? b.wheelShaft;
+    const bore = b.wheelBody.geometry.userData.plate.polygons[0][1];
+    const boreRadius = Math.max(...bore.map(([x, y]) => Math.hypot(x, y)));
+    assert.ok(boreRadius - shaft.geometry.parameters.radiusTop < 0.005, `${id} bore ${boreRadius}`);
+  }
+});

@@ -43,7 +43,9 @@ function faceHeight(point, geometry) {
   return Infinity;
 }
 
-test('026 generated crown and actual involute pinion clear and remain engaged over a tooth cycle', () => {
+// p90: the square-toothed spur generates steeper crown flanks, so the
+// conservative neighbour relief leaves up to 0.004 of working gap.
+test('026 generated crown and actual square-tooth pinion clear and remain engaged over a tooth cycle', () => {
   const model = createMovementModel(catalog.movements[25]);
   const { crown, spur } = model.root.userData.blocks;
   const toothGeometry = crown.userData.faceTeeth[0].geometry;
@@ -75,7 +77,7 @@ test('026 generated crown and actual involute pinion clear and remain engaged ov
       assert.ok(gap > -2e-6, `pose ${sample}: pinion enters the rendered crown by ${-gap}`);
       minimumGap = Math.min(minimumGap, gap);
     }
-    assert.ok(minimumGap < 0.003, `pose ${sample}: the tooth flanks remain engaged, gap ${minimumGap}`);
+    assert.ok(minimumGap < 0.0045, `pose ${sample}: the tooth flanks remain engaged, gap ${minimumGap}`);
     const inversePinion = pinion.matrixWorld.clone().invert();
     for (const tooth of crown.userData.faceTeeth) {
       const transform = inversePinion.clone().multiply(tooth.matrixWorld);
@@ -86,4 +88,21 @@ test('026 generated crown and actual involute pinion clear and remain engaged ov
       }
     }
   }
+});
+
+test('026 crown teeth are flat-topped square teeth on a deep rim, and the spur boss runs through both faces', () => {
+  const model = createMovementModel(catalog.movements[25]);
+  const { crown, spur } = model.root.userData.blocks;
+  const face = crown.userData.faceTeeth[0].geometry.userData;
+  const tipFace = Math.min(...face.heights);
+  for (let radial = 0; radial <= face.radialSteps; radial += 1) {
+    const row = face.heights.slice(radial * (face.angularSteps + 1), (radial + 1) * (face.angularSteps + 1));
+    const flat = row.filter((height) => height <= tipFace + 1e-9).length / face.angularSteps;
+    assert.ok(flat > 0.15, `row ${radial}: the tooth keeps a flat tip (${flat} of a pitch)`);
+  }
+  const diameter = 2 * crown.userData.outerFaceRadius;
+  assert.ok(crown.userData.bodyThickness > 0.08 * diameter, 'the crown rim is deep, as drawn');
+  assert.equal(spur.userData.toothProfile, 'source-square-straight-flank');
+  assert.ok(spur.userData.hubLength > spur.userData.toothHeight + 0.42 * 0.82, 'the boss stands proud of both spur faces');
+  assert.ok(spur.userData.hubRadius >= 2.5 * 0.075);
 });

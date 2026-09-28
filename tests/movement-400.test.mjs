@@ -73,10 +73,13 @@ test('movement 400 is one compound cam, forked carrier A, pivoted feed bar B, fe
     'spur-or-feeder-carried-at-end-of-bar-B',
     'preloaded-carrier-return-spring-pushing-bar-A-rearward',
     'carrier-A-left-cross-leg-bearing-return-spring',
-    'fixed-return-spring-stop-inside-fork-A',
+    'fixed-cup-socket-holding-return-spring',
   ]) assert.ok(roles.includes(role), role);
-  assert.equal(roles.filter((role) => role === 'upward-feed-dog-tooth').length,
-    6);
+  // Pass 90: one raked feeder plate with an upturned toe carries five teeth.
+  assert.equal(roles.filter((role) => role === 'feeder-tooth-tip').length,
+    5);
+  assert.ok(roles.includes('raked-toothed-feeder-plate-with-upturned-toe'));
+  assert.ok(!roles.includes('underside-pad-stem-set-into-bar-B'), 'no stem-and-ball pad');
   disposeModel(model.root);
 });
 

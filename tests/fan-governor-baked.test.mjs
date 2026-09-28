@@ -29,8 +29,13 @@ test('147 baked bodies stay framed, ignore fog, and reset deterministically',()=
  const model=makeFanGovernorModel(bundle);
  try{
   const bounds=model.root.userData.cameraFitBounds.clone().expandByScalar(1e-6);let count=0;
-  model.root.traverse(o=>{if(o.isMesh){count++;assert.equal(o.material.fog,false);}});assert.equal(count,11);
-  for(let i=0;i<=64;i++){model.update(bundle.period*i/64);assert.ok(bounds.containsBox(new Box3().setFromObject(model.root,true)));}
+  model.root.traverse(o=>{if(o.isMesh){count++;assert.equal(o.material.fog,false);}});assert.equal(count,12);
+  // Brown's stepped finial caps the bulb neck (one body with the carrier);
+  // the spindle ends inside the carrier's bore at every lift.
+  const finial=model.root.userData.blocks.crosshead.getObjectByName('bulb-neck-finial');assert.ok(finial);
+  const spindle=model.root.userData.blocks.shaft.children.find(o=>o.isMesh&&!o.name);spindle.geometry.computeBoundingBox();
+  for(let i=0;i<=64;i++){model.update(bundle.period*i/64);assert.ok(bounds.containsBox(new Box3().setFromObject(model.root,true)));
+   assert.ok(spindle.geometry.boundingBox.max.y<3.1+model.root.userData.state.lift-.02,'spindle stands above the neck');}
   model.reset();const initial=structuredClone(model.root.userData.state);
   model.update(123);model.reset();assert.deepEqual(model.root.userData.state,initial);
  }finally{model.dispose();model.dispose();}

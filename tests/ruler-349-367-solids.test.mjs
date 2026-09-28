@@ -106,7 +106,7 @@ test('367: pinned flat arms clear blades, calibrated scale and fixed indicator',
     const local = b.brassArc.worldToLocal(reading);
     assert.ok(arc.distance(local) < .0001, 'calibrated reading lies on actual outer strip edge');
     assert.ok(box(b.brassArc).min.y > box(b.ivoryScale).max.y);
-    for (const tick of b.scaleTicks) assert.ok(box(b.brassArc).min.y > box(tick).max.y);
+    for (const tick of b.scaleTicks.filter((t) => t.visible)) assert.ok(box(b.brassArc).min.y > box(tick).max.y);
   }
   disposeObject3D(m.root);
 });

@@ -237,17 +237,18 @@ test('movement 360 reverses the loose drum twice per beam cycle while its flywhe
     assert.ok(state.flywheelAngularSpeed > 0);
     assert.equal(state.flywheelDirection, 'positive continuous rotation');
   });
-  near(states[4].flywheelAngle - states[0].flywheelAngle, Math.PI * .75, 2e-12,
-    'six teeth after one beam cycle');
-  near(states[8].flywheelAngle - states[0].flywheelAngle, Math.PI * 1.5, 2e-12,
-    'continuous twelve-tooth output over the demonstration');
+  // Brown's twenty-tooth ratchet advances seven teeth per beam cycle.
+  near(states[4].flywheelAngle - states[0].flywheelAngle, Math.PI * .7, 2e-12,
+    'seven teeth after one beam cycle');
+  near(states[8].flywheelAngle - states[0].flywheelAngle, Math.PI * 1.4, 2e-12,
+    'continuous fourteen-tooth output over the demonstration');
   near(
     dynamics.flywheelAdvancePerBeamCycle,
-    Math.PI * .75,
+    Math.PI * .7,
     2e-12,
     'flywheel advance per beam cycle',
   );
-  near(dynamics.flywheelAdvancePerCycle, FULL_TURN * .75, 2e-12,
+  near(dynamics.flywheelAdvancePerCycle, FULL_TURN * .7, 2e-12,
     'flywheel advance per demonstration');
   assert.equal(states[1].carrierCatching, true);
   assert.match(states[1].pawlMode, /driving locked/);

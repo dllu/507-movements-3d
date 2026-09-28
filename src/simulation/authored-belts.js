@@ -2,6 +2,7 @@ import { correctCraneBrakeJoints, correctSpatialPulley, finishBandDrive } from '
 import {correctChainDrive} from './chain-drive-working-parts.js';
 import { ropeDrumSpokeShape } from './rope-drum-spoke.js';
 import { filletPulleySpokes } from './spoked-wheel.js';
+import { creaseLatheNormals } from './crease-normals.js';
 import { HelicalDrumWrap } from './helical-drum-wrap.js';
 import { ceilingAnchoredEightToOneCascade, sixPulleyCascade, loadAnchoredSevenToOneCascade, loadAnchoredThreeToOneCascade } from './authored-cascades.js';
 import * as THREE from 'three';
@@ -105,6 +106,24 @@ function addKeyedShaft(pulley, length = 1.5, radius = 0.075) {
   shaft.userData.role = 'keyed-shaft';
   pulley.userData.rotor.add(shaft);
   return shaft;
+}
+
+// Brown draws these cast spoked pulleys with a plain ring hub in the wheel's
+// own metal and no protruding shaft. Cast the pulley's turned hub in the
+// tread's material, standing only slightly proud of the web; callers cut the
+// keyed shaft to a short stub (spokedStubLength) just proud of that boss.
+const spokedStubLength = (pulley) => pulley.userData.width + 0.10;
+function castSpokedHub(pulley) {
+  const data = pulley.userData;
+  if (data.tread?.userData.role !== 'one-piece-filleted-spoked-pulley') return pulley;
+  const hub = data.hub;
+  const hubLength = hub.geometry.parameters?.height
+    ?? new THREE.Box3().setFromBufferAttribute(hub.geometry.attributes.position).getSize(new THREE.Vector3()).y;
+  const bossLength = data.width + 0.06;
+  hub.scale.y = bossLength / hubLength;
+  hub.material = data.tread.material;
+  hub.userData.role = 'cast-ring-hub';
+  return pulley;
 }
 
 function setBeltActive(belt, active) {
@@ -281,8 +300,10 @@ function simpleBeltTransmission(crossed = false) {
     { radius: ropeRadius, laid: true, markerCount: 0 },
   );
   root.add(driver, driven, belt);
-  addKeyedShaft(driver);
-  addKeyedShaft(driven);
+  castSpokedHub(driver);
+  castSpokedHub(driven);
+  addKeyedShaft(driver, spokedStubLength(driver));
+  addKeyedShaft(driven, spokedStubLength(driven));
   const angularSpeed = 1.55;
   const beltSpeed = angularSpeed * radius;
   root.userData.mechanism = crossed
@@ -621,7 +642,8 @@ function rightAngleCrossed() {
   // Brown hatches the band as a laid rope lying on each tread.
   const belt = makeMovingBelt(beltCurve, { radius: 0.05, laid: true, markerCount: 0 });
   root.add(driver, driven, guideLeft, guideRight, belt);
-  addKeyedShaft(driver, 1.5);
+  castSpokedHub(driver);
+  addKeyedShaft(driver, spokedStubLength(driver));
   addKeyedShaft(driven, 1.15);
   addKeyedShaft(guideLeft, 0.74);
   addKeyedShaft(guideRight, 0.74);
@@ -762,8 +784,10 @@ function tighteningPulley() {
   belt.userData.mechanismBelt = true;
   const arm = makeDynamicLink({ thickness: 0.085, depth: 0.12, color: PALETTE.frame, jointRadius: 0.085 });
   root.add(driver, driven, idler, belt, arm);
-  addKeyedShaft(driver, 0.85);
-  addKeyedShaft(driven, 0.75);
+  castSpokedHub(driver);
+  castSpokedHub(driven);
+  addKeyedShaft(driver, spokedStubLength(driver));
+  addKeyedShaft(driven, spokedStubLength(driven));
   // Both pins belong to the rigid lever: the idler turns on its pin, and the
   // lever turns with its pivot journal in the unshown bracket.
   const idlerPin = addAxle(root, sourceIdler.clone().setZ(-0.08), 0.62);
@@ -870,11 +894,15 @@ function oscillatingSector() {
     matte(PALETTE.ink),
   );
   hub.rotation.x = Math.PI / 2;
+  // The web (spokes and arms) is cast with the sector rim, so it shares the
+  // rim's metal rather than the lever's black.
+  const webMaterial = sectorPlate.material;
   for (const angle of [-Math.PI * 0.70, -Math.PI * 0.30]) {
     const spoke = new THREE.Mesh(
       new THREE.BoxGeometry(sectorRimRadius * 0.72, 0.08, 0.20),
-      matte(PALETTE.ink),
+      webMaterial,
     );
+    spoke.userData.role = 'sector-web-spoke';
     spoke.position.set(Math.cos(angle) * sectorRimRadius * 0.51, Math.sin(angle) * sectorRimRadius * 0.51, 0);
     spoke.rotation.z = angle;
     sector.add(spoke);
@@ -883,7 +911,7 @@ function oscillatingSector() {
   // out along the underside of the lever bar to the rim's ends.
   for (const side of [-1, 1]) {
     const length = innerRadius - 0.18;
-    const arm = new THREE.Mesh(new THREE.BoxGeometry(length + 0.02, 0.08, 0.20), matte(PALETTE.ink));
+    const arm = new THREE.Mesh(new THREE.BoxGeometry(length + 0.02, 0.08, 0.20), webMaterial);
     arm.position.set(side * (0.18 + length / 2), -0.115, 0);
     arm.userData.role = 'sector-arm-under-lever';
     sector.add(arm);
@@ -895,7 +923,9 @@ function oscillatingSector() {
     -sectorRadius * Math.cos(attachmentDrop), -sectorRadius * Math.sin(attachmentDrop), beltZ);
   const rightAttachmentLocal = new THREE.Vector3(
     sectorRadius * Math.cos(attachmentDrop), -sectorRadius * Math.sin(attachmentDrop), beltZ);
-  const sectorShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.075, 1.4, 22),
+  // Brown draws only the ring boss at the pivot: the shaft stands just proud
+  // of the hub.
+  const sectorShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.075, 0.44, 22),
     matte(PALETTE.ink, { metalness: 0.28, roughness: 0.44 }));
   sectorShaft.rotation.x = Math.PI / 2;
   sector.add(sectorPlate, lever, hub, sectorShaft);
@@ -1004,8 +1034,10 @@ function oscillatingSector() {
   });
   belt.userData.mechanismBelt = true;
   root.add(sector, leftPulley, rightPulley, belt);
-  addKeyedShaft(leftPulley, 1.2);
-  addKeyedShaft(rightPulley, 1.2);
+  castSpokedHub(leftPulley);
+  castSpokedHub(rightPulley);
+  addKeyedShaft(leftPulley, spokedStubLength(leftPulley));
+  addKeyedShaft(rightPulley, spokedStubLength(rightPulley));
   root.userData.mechanism = 'vibrating-sector-belt-drive';
   root.userData.nominalBeltLength = initialPath.curve.getLength();
   root.userData.blocks = { sector, sectorPlate, leftPulley, rightPulley, belt };
@@ -1466,6 +1498,26 @@ function coneSpeedDrive(nonlinear = false) {
   const driven = makeConePulley({ length, radiusStart: 0.42, radiusEnd: 1.05, color: PALETTE.driven, profile: nonlinear ? 'convex' : 'linear', reverse: true });
   driver.position.set(left.x, left.y, 0);
   driven.position.set(right.x, right.y, 0);
+  // Brown's straight cones of 9 end in a short cylindrical land at the same
+  // axial end: the large end of one cone and the small end of the other. The
+  // land is turned in one piece with the cone, beyond the belt's travel.
+  const landWidth = 0.26;
+  if (!nonlinear) {
+    for (const cone of [driver, driven]) {
+      const endRadius = cone.userData.radiusAt(1);
+      const points = [new THREE.Vector2(0, -length / 2)];
+      for (let index = 0; index <= 96; index += 1) {
+        const normalized = index / 96;
+        points.push(new THREE.Vector2(cone.userData.radiusAt(normalized), -length / 2 + normalized * length));
+      }
+      points.push(new THREE.Vector2(endRadius, length / 2 + landWidth), new THREE.Vector2(0, length / 2 + landWidth));
+      const body = cone.userData.body;
+      body.geometry.dispose();
+      body.geometry = creaseLatheNormals(new THREE.LatheGeometry(points, 64));
+      body.userData.role = 'cone-with-end-land';
+      cone.userData.landWidth = landWidth;
+    }
+  }
   const makeBeltCurve = (level) => {
     const driverPitchRadius = driver.userData.radiusAt(level) + beltOffset;
     const drivenPitchRadius = driven.userData.radiusAt(level) + beltOffset;
@@ -1519,7 +1571,11 @@ function coneSpeedDrive(nonlinear = false) {
 
   const update = (time, delta) => {
     const stepDelta = Number.isFinite(delta) ? delta : 0;
-    const level = 0.5 + 0.46 * Math.sin(time * 0.5);
+    // On 9's straight cones the shift stops with half a belt width of plain
+    // cone left beyond the belt's outer edge at either extreme; 10's curved
+    // cones keep their wider source ratio range.
+    const shiftAmplitude = nonlinear ? 0.46 : 0.5 - beltWidth / length;
+    const level = 0.5 + shiftAmplitude * Math.sin(time * 0.5);
     const path = makeBeltCurve(level);
     currentPath = path;
     const driverAngularSpeed = -1.2;
@@ -1716,7 +1772,8 @@ function rightAngleWithoutGuides() {
   belt.userData.mechanismBelt = true;
   root.add(driver, driven, belt);
   addKeyedShaft(driver, 2.15);
-  addKeyedShaft(driven, 1.5);
+  castSpokedHub(driven);
+  addKeyedShaft(driven, spokedStubLength(driven));
   root.userData.mechanism = 'twisted-right-angle-belt-drive';
   root.userData.cameraFov = 18;
   root.userData.blocks = { driver, driven, belt };
@@ -2057,7 +2114,7 @@ function singleMovableHoist() {
   rope.userData.mechanismRope = true;
   // Only the fall's stretch beyond the plate's crop runs out of frame.
   rope.userData.beyondPlateCropBelowY = freeContact.y - cropEffortLength * effortDirection.y;
-  const weight = makeHoistLoad({ radius: 0.46, height: 0.62 });
+  const weight = makeHoistLoad({ radius: 0.46, height: 0.62, eyeBoss: true });
   const fixedHanger = makeSheaveHanger({ radius: fixedPitchRadius, width: 0.3, openHook: true });
   fixedHanger.position.copy(fixedCenter);
   const { ceiling: support } = addHookStaple(fixedHanger, fixedShoulder,
@@ -2763,8 +2820,23 @@ function compensatedMovableDrive() {
     laid: true,
   });
   suspension.userData.mechanismRope = true;
-  const weight = makeHoistLoad({ radius: 0.27, height: 0.5 });
+  const weight = makeHoistLoad({ radius: 0.27, height: 0.5, eyeBoss: true });
   weight.userData.body.material.color.set(PALETTE.brass);
+  // Brown draws weight C as a square block, a little wider than it is tall,
+  // hung from the same eye; its edges are slightly rounded.
+  weight.userData.body.geometry.dispose();
+  const blockShape = new THREE.Shape();
+  const bevel = 0.03;
+  blockShape.moveTo(-0.28 + bevel, -0.23 + bevel);
+  blockShape.lineTo(0.28 - bevel, -0.23 + bevel);
+  blockShape.lineTo(0.28 - bevel, 0.23 - bevel);
+  blockShape.lineTo(-0.28 + bevel, 0.23 - bevel);
+  blockShape.closePath();
+  weight.userData.body.geometry = new THREE.ExtrudeGeometry(blockShape, {
+    depth: 0.46 - 2 * bevel, bevelEnabled: true, bevelThickness: bevel, bevelSize: bevel, bevelSegments: 2,
+  }).translate(0, 0, -0.23 + bevel);
+  weight.userData.body.position.y = -0.23;
+  weight.userData.body.userData.role = 'square-weight-block';
   weight.position.set(guideCenters[1].x + guideRadius, weightBaseY, ropePlane);
 
   root.add(
@@ -5668,8 +5740,9 @@ function chineseDifferentialWindlass() {
     shape.moveTo(-.15, baseY);shape.lineTo(.15, baseY);
     shape.lineTo(.15, postTop);shape.lineTo(-.15, postTop);shape.closePath();
     const bore = new THREE.Path();bore.absarc(0, shaftY, bearingInnerRadius, 0, fullTurn, true);shape.holes.push(bore);
-    const postGeometry = new THREE.ExtrudeGeometry(shape, {depth:.27, bevelEnabled:false, curveSegments:32});
-    postGeometry.translate(0,0,-.135);postGeometry.rotateY(Math.PI/2);
+    // Brown's uprights are broad planks, about 0.4 across the face.
+    const postGeometry = new THREE.ExtrudeGeometry(shape, {depth:.40, bevelEnabled:false, curveSegments:32});
+    postGeometry.translate(0,0,-.20);postGeometry.rotateY(Math.PI/2);
     const post = new THREE.Mesh(postGeometry, frameMaterial);
     post.position.x = x;
     post.userData.role = `${side}-windlass-bearing-support-post`;

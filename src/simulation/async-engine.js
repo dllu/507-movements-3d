@@ -433,7 +433,8 @@ export class MovementEngine {
 
   applyPixelRatio(width = this.container?.clientWidth || 1, height = this.container?.clientHeight || 1) {
     const ratio = renderPixelRatio(globalThis.devicePixelRatio || 1, width, height, this.resolutionScale);
-    if (this.renderer.getPixelRatio() !== ratio) this.renderer.setPixelRatio(ratio);
+    if (typeof this.renderer.setPixelRatio !== 'function') return;
+    if (this.renderer.getPixelRatio?.() !== ratio) this.renderer.setPixelRatio(ratio);
   }
 
   // Step the resolution down while frames stay slow (weak GPUs at 3x).

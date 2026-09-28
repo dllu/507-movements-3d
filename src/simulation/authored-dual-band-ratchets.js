@@ -5,8 +5,6 @@ import { boredLatheGeometry } from './bored-lathe-geometry.js';
 import { plate, poly, circle, polygonClipping as clip } from './finite-plate-geometry.js';
 import {
   PALETTE,
-  beltCurveCrossed,
-  beltCurveOpen,
   makeDynamicLink,
   makeDynamicMovingBelt,
   markShadows,
@@ -28,14 +26,37 @@ function cylinderAlongZ(radius, length, material, segments = 36) {
   return cylinder;
 }
 
-class PlanarArcCurve3 extends THREE.Curve {
-  constructor(center, radius, startAngle, sweep, z) {
+// A wrap on a groove whose axial position eases from z0 to z1 (zero axial
+// slope at both ends), used where the crossed band shifts across its pulley so
+// that its two straight spans pass each other at D in parallel planes.
+class GrooveWrapCurve3 extends THREE.Curve {
+  constructor(center, radius, startAngle, sweep, z0, z1 = z0) {
     super();
     this.center = center.clone();
     this.radius = radius;
     this.startAngle = startAngle;
     this.sweep = sweep;
-    this.z = z;
+    this.z0 = z0;
+    this.z1 = z1;
+    const arc = Math.abs(sweep) * radius;
+    // Exact for a planar wrap; for the eased shift, a fine fixed quadrature
+    // (the lower wrap never changes shape, so its length is one constant).
+    if (z0 === z1) this.length = arc;
+    else {
+      let length = 0;
+      const n = 4096;
+      for (let i = 0; i < n; i += 1) {
+        const t = (i + 0.5) / n;
+        const dz = (z1 - z0) * 6 * t * (1 - t);
+        length += Math.hypot(arc, dz) / n;
+      }
+      this.length = length;
+    }
+  }
+
+  zAt(parameter) {
+    const t = parameter;
+    return this.z0 + (this.z1 - this.z0) * t * t * (3 - 2 * t);
   }
 
   getPoint(parameter, target = new THREE.Vector3()) {
@@ -43,7 +64,7 @@ class PlanarArcCurve3 extends THREE.Curve {
     return target.set(
       this.center.x + this.radius * Math.cos(angle),
       this.center.y + this.radius * Math.sin(angle),
-      this.z,
+      this.zAt(parameter),
     );
   }
 
@@ -53,12 +74,12 @@ class PlanarArcCurve3 extends THREE.Curve {
 
   getTangent(parameter, target = new THREE.Vector3()) {
     const angle = this.startAngle + this.sweep * parameter;
-    const direction = Math.sign(this.sweep) || 1;
+    const t = parameter;
     return target.set(
-      -Math.sin(angle) * direction,
-      Math.cos(angle) * direction,
-      0,
-    );
+      -Math.sin(angle) * this.sweep * this.radius,
+      Math.cos(angle) * this.sweep * this.radius,
+      (this.z1 - this.z0) * 6 * t * (1 - t),
+    ).normalize();
   }
 
   getTangentAt(parameter, target = new THREE.Vector3()) {
@@ -66,14 +87,13 @@ class PlanarArcCurve3 extends THREE.Curve {
   }
 
   getLength() {
-    return Math.abs(this.sweep) * this.radius;
+    return this.length;
   }
 
   getLengths(divisions = 200) {
-    const length = this.getLength();
     return Array.from(
       { length: divisions + 1 },
-      (_, index) => length * index / divisions,
+      (_, index) => this.length * index / divisions,
     );
   }
 
@@ -82,69 +102,103 @@ class PlanarArcCurve3 extends THREE.Curve {
   }
 }
 
-function angleFrom(center, point) {
-  return Math.atan2(point.y - center.y, point.x - center.x);
-}
-
 function tangentJoinDot(first, firstParameter, second, secondParameter) {
   return first.getTangent(firstParameter).dot(
     second.getTangent(secondParameter),
   );
 }
 
+// Tangent points of the open (external) or crossed (internal) common tangents
+// between piece A's band circle and a loose pulley's band circle. "Right" is
+// the span leaving A's right-hand side.
+function bandTangents({ crossed, lowerCenter, lowerRadius, sectorCenter, sectorRadius }) {
+  const direction = new THREE.Vector2().subVectors(lowerCenter, sectorCenter);
+  const distance = direction.length();
+  const along = direction.clone().divideScalar(distance);
+  const across = new THREE.Vector2(-along.y, along.x);
+  const projection = (crossed ? sectorRadius + lowerRadius
+    : sectorRadius - lowerRadius) / distance;
+  const perpendicular = Math.sqrt(1 - projection ** 2);
+  const rightNormal = along.clone().multiplyScalar(projection)
+    .addScaledVector(across, perpendicular);
+  const leftNormal = along.clone().multiplyScalar(projection)
+    .addScaledVector(across, -perpendicular);
+  const sign = crossed ? -1 : 1;
+  const upperAngle = (normal) => Math.atan2(normal.y, normal.x);
+  const rightUpperAngle = upperAngle(rightNormal);
+  let leftUpperAngle = upperAngle(leftNormal);
+  if (leftUpperAngle < 0) leftUpperAngle += FULL_TURN;
+  return {
+    leftLower: lowerCenter.clone().addScaledVector(leftNormal, sign * lowerRadius),
+    leftUpperAngle,
+    rightLower: lowerCenter.clone().addScaledVector(rightNormal, sign * lowerRadius),
+    rightUpperAngle,
+  };
+}
+
+// One band, both ends fastened to piece A where its rim meets the lever bar
+// (anchorLift below the horn), wrapped in A's groove down to the tangent
+// point, a straight taut span, a wrap round the loose pulley's groove, a
+// straight taut span and the wrap back up A's other side. The ends turn with
+// A; the two upper wraps change by +alpha and -alpha, so the length is fixed.
 function anchoredBandCurve({
+  anchorLift,
   crossed,
+  crossShift = 0,
   lowerCenter,
   lowerRadius,
   rockerAngle,
   sectorCenter,
   sectorRadius,
-  upperBaseWrap,
   z,
 }) {
-  const base = crossed
-    ? beltCurveCrossed(
-      sectorCenter,
-      lowerCenter,
-      sectorRadius,
-      lowerRadius,
-      z,
-    )
-    : beltCurveOpen(
-      sectorCenter,
-      lowerCenter,
-      sectorRadius,
-      lowerRadius,
-      z,
-    );
-  const firstSpan = base.curves[0];
-  const lowerArc = base.curves[1];
-  const secondSpan = base.curves[2];
-  const firstDeparture = firstSpan.getPoint(0);
-  const secondDeparture = secondSpan.getPoint(1);
-  const firstDepartureAngle = angleFrom(sectorCenter, firstDeparture);
-  const secondDepartureAngle = angleFrom(sectorCenter, secondDeparture);
-  const firstWrapAngle = upperBaseWrap + rockerAngle;
-  const secondWrapAngle = upperBaseWrap - rockerAngle;
+  const tangents = bandTangents({
+    crossed, lowerCenter, lowerRadius, sectorCenter, sectorRadius,
+  });
+  // The right-hand end runs in the plane z - shift, the left-hand end in
+  // z + shift; the pulley wrap eases between them.
+  const rightZ = z - crossShift;
+  const leftZ = z + crossShift;
+  const rightAnchorAngle = -anchorLift + rockerAngle;
+  const leftAnchorAngle = Math.PI + anchorLift + rockerAngle;
+  const firstWrapAngle = rightAnchorAngle - tangents.rightUpperAngle;
+  const secondWrapAngle = tangents.leftUpperAngle - leftAnchorAngle;
   if (firstWrapAngle <= 0 || secondWrapAngle <= 0) {
     throw new RangeError('Rocking sector exhausted an anchored band wrap.');
   }
-  const firstAnchorAngle = firstDepartureAngle + firstWrapAngle;
-  const secondAnchorAngle = secondDepartureAngle - secondWrapAngle;
-  const firstUpperWrap = new PlanarArcCurve3(
-    sectorCenter,
-    sectorRadius,
-    firstAnchorAngle,
-    -firstWrapAngle,
-    z,
+  const firstUpperWrap = new GrooveWrapCurve3(
+    sectorCenter, sectorRadius, rightAnchorAngle, -firstWrapAngle, rightZ,
   );
-  const secondUpperWrap = new PlanarArcCurve3(
-    sectorCenter,
-    sectorRadius,
-    secondDepartureAngle,
-    -secondWrapAngle,
-    z,
+  const rightUpper = firstUpperWrap.getPoint(1);
+  const rightLower = new THREE.Vector3(tangents.rightLower.x, tangents.rightLower.y, rightZ);
+  const firstSpan = new THREE.LineCurve3(rightUpper, rightLower);
+  const startAngle = Math.atan2(
+    tangents.rightLower.y - lowerCenter.y,
+    tangents.rightLower.x - lowerCenter.x,
   );
+  const endAngle = Math.atan2(
+    tangents.leftLower.y - lowerCenter.y,
+    tangents.leftLower.x - lowerCenter.x,
+  );
+  // Continue round the pulley in the direction the span arrives.
+  const arrival = new THREE.Vector2(rightLower.x - rightUpper.x, rightLower.y - rightUpper.y);
+  const radial = new THREE.Vector2(
+    tangents.rightLower.x - lowerCenter.x,
+    tangents.rightLower.y - lowerCenter.y,
+  );
+  const counterClockwise = radial.x * arrival.y - radial.y * arrival.x > 0;
+  let sweep = endAngle - startAngle;
+  if (counterClockwise) sweep = positiveModulo(sweep, FULL_TURN);
+  else sweep = -positiveModulo(-sweep, FULL_TURN);
+  const lowerArc = new GrooveWrapCurve3(
+    lowerCenter, lowerRadius, startAngle, sweep, rightZ, leftZ,
+  );
+  const leftLower = new THREE.Vector3(tangents.leftLower.x, tangents.leftLower.y, leftZ);
+  const secondUpperWrap = new GrooveWrapCurve3(
+    sectorCenter, sectorRadius, tangents.leftUpperAngle, -secondWrapAngle, leftZ,
+  );
+  const leftUpper = secondUpperWrap.getPoint(0);
+  const secondSpan = new THREE.LineCurve3(leftLower, leftUpper);
   const curve = new THREE.CurvePath();
   curve.add(firstUpperWrap);
   curve.add(firstSpan);
@@ -155,11 +209,11 @@ function anchoredBandCurve({
   const secondAnchor = secondUpperWrap.getPoint(1);
   curve.userData = {
     crossed,
-    crossoverLift: base.userData.crossoverLift,
+    crossShift,
     firstAnchor,
-    firstAnchorAngle,
-    firstDeparture,
-    firstDepartureAngle,
+    firstAnchorAngle: rightAnchorAngle,
+    firstDeparture: rightUpper,
+    firstDepartureAngle: tangents.rightUpperAngle,
     firstWrapAngle,
     fixedLowerAndSpanLength: firstSpan.getLength()
       + lowerArc.getLength() + secondSpan.getLength(),
@@ -169,15 +223,68 @@ function anchoredBandCurve({
       tangentJoinDot(lowerArc, 1, secondSpan, 0),
       tangentJoinDot(secondSpan, 1, secondUpperWrap, 0),
     ],
+    lowerWrapAngle: Math.abs(sweep),
     secondAnchor,
-    secondAnchorAngle,
-    secondDeparture,
-    secondDepartureAngle,
+    secondAnchorAngle: leftAnchorAngle,
+    secondDeparture: leftUpper,
+    secondDepartureAngle: tangents.leftUpperAngle,
     secondWrapAngle,
     upperWrapLength: sectorRadius
       * (firstWrapAngle + secondWrapAngle),
   };
   return curve;
+}
+
+// Piece A's rim: a closed (r, z) section, with its band grooves, revolved
+// through the lower half-turn and capped flat at both horns.
+function grooveRimGeometry(profile, startAngle, sweep, segments = 160) {
+  const positions = [];
+  const normals = [];
+  const push = (p, n) => { positions.push(...p); normals.push(...n); };
+  const at = ([r, z], angle) => [r * Math.cos(angle), r * Math.sin(angle), z];
+  const triangle = (a, b, c, normal) => {
+    const ab = new THREE.Vector3(b[0] - a[0], b[1] - a[1], b[2] - a[2]);
+    const ac = new THREE.Vector3(c[0] - a[0], c[1] - a[1], c[2] - a[2]);
+    const n = new THREE.Vector3(...normal);
+    if (ab.cross(ac).dot(n) < 0) [b, c] = [c, b];
+    push(a, normal); push(b, normal); push(c, normal);
+  };
+  for (let e = 0; e < profile.length; e += 1) {
+    const p0 = profile[e], p1 = profile[(e + 1) % profile.length];
+    const dr = p1[0] - p0[0], dz = p1[1] - p0[1], len = Math.hypot(dr, dz);
+    const nr = dz / len, nz = -dr / len; // outward for a CCW (r, z) section
+    for (let i = 0; i < segments; i += 1) {
+      const a0 = startAngle + sweep * i / segments;
+      const a1 = startAngle + sweep * (i + 1) / segments;
+      const n0 = [nr * Math.cos(a0), nr * Math.sin(a0), nz];
+      const n1 = [nr * Math.cos(a1), nr * Math.sin(a1), nz];
+      const quad = [[at(p0, a0), n0], [at(p1, a0), n0], [at(p1, a1), n1], [at(p0, a1), n1]];
+      for (const [i0, i1, i2] of [[0, 1, 2], [0, 2, 3]]) {
+        const [a, na] = quad[i0], [b, nb] = quad[i1], [c, nc] = quad[i2];
+        const ab = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
+        const ac = [c[0] - a[0], c[1] - a[1], c[2] - a[2]];
+        const cross = [ab[1] * ac[2] - ab[2] * ac[1], ab[2] * ac[0] - ab[0] * ac[2], ab[0] * ac[1] - ab[1] * ac[0]];
+        const mean = [na[0] + nb[0] + nc[0], na[1] + nb[1] + nc[1], na[2] + nb[2] + nc[2]];
+        if (cross[0] * mean[0] + cross[1] * mean[1] + cross[2] * mean[2] < 0) {
+          push(a, na); push(c, nc); push(b, nb);
+        } else { push(a, na); push(b, nb); push(c, nc); }
+      }
+    }
+  }
+  const faces = THREE.ShapeUtils.triangulateShape(
+    profile.map(([r, z]) => new THREE.Vector2(r, z)), [],
+  );
+  for (const [angle, outward] of [[startAngle, -1], [startAngle + sweep, 1]]) {
+    const direction = Math.sign(sweep) * outward;
+    const normal = [-Math.sin(angle) * direction, Math.cos(angle) * direction, 0];
+    for (const [i, j, k] of faces) {
+      triangle(at(profile[i], angle), at(profile[j], angle), at(profile[k], angle), normal);
+    }
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
+  return geometry;
 }
 
 function makeRatchetWheel({
@@ -326,9 +433,19 @@ function dualBandOscillationRectifier(movement) {
   const loosePulleyRadius = 0.50;
   const pulleyRatio = sectorRadius / loosePulleyRadius;
   const carrierOvertravel = dualBandPawlDimensions.overtravel;
-  const carrierAmplitude = (Math.PI + carrierOvertravel) / 2;
+  // Each stroke advances the flywheel a quarter turn (three ratchet teeth), so
+  // A swings +/-14 degrees and both band ends stay wrapped on A's rim.
+  const strokeAdvance = Math.PI / 2;
+  const carrierAmplitude = (strokeAdvance + carrierOvertravel) / 2;
   const rockerAmplitude = carrierAmplitude / pulleyRatio;
-  const upperBaseWrap = 0.57;
+  // Band ends are fastened where A's rim meets the lever bar: this far below
+  // the horn, the band end stands 0.007 up inside the bar's underside.
+  const anchorLift = 0.044;
+  // The crossed band's two spans run 0.035 either side of its mean plane, so
+  // they pass each other at D with 0.02 clearance.
+  const crossShift = 0.035;
+  const bandWidth = 0.05;
+  const bandThickness = 0.04;
   const cycleDuration = 8;
   const inputAngularFrequency = FULL_TURN / cycleDuration;
   const flywheelRadius = 1.42;
@@ -339,32 +456,37 @@ function dualBandOscillationRectifier(movement) {
   const pawlMaximumLift = 0.29;
   const openPlaneZ = 0.29;
   const crossedPlaneZ = 0.73;
-  const outputAdvancePerCycle = FULL_TURN;
+  const outputAdvancePerCycle = 2 * strokeAdvance;
 
   const openCurveAtAngle = (rockerAngle) => anchoredBandCurve({
+    anchorLift,
     crossed: false,
     lowerCenter,
     lowerRadius: loosePulleyRadius,
     rockerAngle,
     sectorCenter,
     sectorRadius,
-    upperBaseWrap,
     z: openPlaneZ,
   });
   const crossedCurveAtAngle = (rockerAngle) => anchoredBandCurve({
+    anchorLift,
     crossed: true,
+    crossShift,
     lowerCenter,
     lowerRadius: loosePulleyRadius,
     rockerAngle,
     sectorCenter,
     sectorRadius,
-    upperBaseWrap,
     z: crossedPlaneZ,
   });
   const initialOpenCurve = openCurveAtAngle(0);
   const initialCrossedCurve = crossedCurveAtAngle(0);
   const openBandLength = initialOpenCurve.getLength();
   const crossedBandLength = initialCrossedCurve.getLength();
+  const openUpperBaseWrap = (initialOpenCurve.userData.firstWrapAngle
+    + initialOpenCurve.userData.secondWrapAngle) / 2;
+  const crossedUpperBaseWrap = (initialCrossedCurve.userData.firstWrapAngle
+    + initialCrossedCurve.userData.secondWrapAngle) / 2;
 
   const frameMaterial = matte(PALETTE.frame, {
     metalness: 0.12,
@@ -427,44 +549,34 @@ function dualBandOscillationRectifier(movement) {
   rockingSector.position.set(sectorCenter.x, sectorCenter.y, 0);
   rockingSector.userData.role = 'fulcrumed-semicircular-piece-A-and-lever';
   root.add(rockingSector);
+  // Piece A: one flat-sided semicircular rim (Brown's ring, 0.30 wide) with
+  // two band grooves turned in its edge: a narrow one for open band C and a
+  // wide one in which the crossed band D's two ends lie side by side.
+  const rimInner = 1.40;
+  const rimOuter = sectorRadius + 0.045;
+  const grooveFloor = sectorRadius - bandThickness / 2 - 0.005;
+  const rimBack = 0.20;
+  const rimFront = 0.85;
+  const openGroove = [openPlaneZ - bandWidth / 2 - 0.01, openPlaneZ + bandWidth / 2 + 0.01];
+  const crossedGroove = [
+    crossedPlaneZ - crossShift - bandWidth / 2 - 0.01,
+    crossedPlaneZ + crossShift + bandWidth / 2 + 0.01,
+  ];
+  const rimSection = [
+    [rimInner, rimBack], [rimOuter, rimBack],
+    [rimOuter, openGroove[0]], [grooveFloor, openGroove[0]],
+    [grooveFloor, openGroove[1]], [rimOuter, openGroove[1]],
+    [rimOuter, crossedGroove[0]], [grooveFloor, crossedGroove[0]],
+    [grooveFloor, crossedGroove[1]], [rimOuter, crossedGroove[1]],
+    [rimOuter, rimFront], [rimInner, rimFront],
+  ];
   const sectorArc = new THREE.Mesh(
-    new THREE.TubeGeometry(
-      new PlanarArcCurve3(
-        new THREE.Vector2(0, 0),
-        sectorRadius,
-        Math.PI,
-        Math.PI,
-        0.49,
-      ),
-      96,
-      0.13,
-      12,
-      false,
-    ),
+    grooveRimGeometry(rimSection, Math.PI, Math.PI),
     driverMaterial,
   );
   sectorArc.userData.role = 'rigid-lower-semicircular-rim-A';
+  sectorArc.userData.section = rimSection;
   rockingSector.add(sectorArc);
-  for (const z of [openPlaneZ, crossedPlaneZ]) {
-    const groove = new THREE.Mesh(
-      new THREE.TubeGeometry(
-        new PlanarArcCurve3(
-          new THREE.Vector2(0, 0),
-          sectorRadius,
-          Math.PI,
-          Math.PI,
-          z,
-        ),
-        96,
-        0.035,
-        8,
-        false,
-      ),
-      driverMaterial,
-    );
-    groove.userData.role = 'semicircular-piece-band-groove';
-    rockingSector.add(groove);
-  }
   // Bar with Brown's round boss at fulcrum a, bored for the fixed pin.
   const topLever = new THREE.Mesh(
     plate(clip.difference(
@@ -473,10 +585,11 @@ function dualBandOscillationRectifier(movement) {
         poly(circle([0, 0], 0.25, 96)),
       ),
       poly(circle([0, 0], 0.137, 96)),
-    ), -0.19, 0.19),
+    ), rimBack + 0.005, rimFront - 0.005),
     driverMaterial,
   );
-  topLever.position.z = 0.49;
+  // The bar spans the rim's depth (0.005 inside its faces), so the rim's horns
+  // and both bands' fastened ends meet its underside.
   topLever.userData.role = 'operating-lever-rigid-with-piece-A';
   rockingSector.add(topLever);
   for (const phase of [Math.PI, Math.PI * 1.5, FULL_TURN]) {
@@ -505,38 +618,26 @@ function dualBandOscillationRectifier(movement) {
   rockerIndex.userData.role = 'white-rocking-piece-angle-index';
   rockingSector.add(rockerIndex);
 
-  // Fulcrum a is a short pin through the lever boss (z 0.30 to 0.68) that
-  // stands only 0.06 proud of each face; Brown draws no frame behind it.
-  const pivotPin = cylinderAlongZ(0.13, 0.50, darkMaterial, 32);
-  pivotPin.position.set(sectorCenter.x, sectorCenter.y, 0.49);
+  // Fulcrum a is a short pin through the lever boss that stands 0.05 proud
+  // of each face; Brown draws no frame behind it.
+  const pivotPin = cylinderAlongZ(0.13, rimFront - rimBack + 0.10, darkMaterial, 32);
+  pivotPin.position.set(sectorCenter.x, sectorCenter.y, (rimFront + rimBack) / 2);
   pivotPin.userData.role = 'fixed-fulcrum-a';
   root.add(pivotPin);
 
-  const anchorKnots = [];
-  for (const [curve, plane, bandName] of [
-    [initialOpenCurve, openPlaneZ, 'open-band-C'],
-    [initialCrossedCurve, crossedPlaneZ, 'crossed-band-D'],
-  ]) {
-    for (const [anchorNumber, angle] of [
-      [0, curve.userData.firstAnchorAngle],
-      [1, curve.userData.secondAnchorAngle],
-    ]) {
-      const knot = new THREE.Mesh(
-        new THREE.SphereGeometry(0.070, 16, 10),
-        brassMaterial,
-      );
-      knot.position.set(
-        sectorRadius * Math.cos(angle),
-        sectorRadius * Math.sin(angle),
-        plane,
-      );
-      knot.userData.anchorNumber = anchorNumber;
-      knot.userData.bandName = bandName;
-      knot.userData.role = `${bandName}-end-fixed-to-piece-A`;
-      rockingSector.add(knot);
-      anchorKnots.push(knot);
-    }
-  }
+  // Each band end is fastened in its groove just under the bar, turning with
+  // A (local frame of piece A, rocker angle zero).
+  const bandAnchorsLocal = [
+    ['open-band-C', initialOpenCurve],
+    ['crossed-band-D', initialCrossedCurve],
+  ].flatMap(([bandName, curve]) => [
+    [0, curve.userData.firstAnchor],
+    [1, curve.userData.secondAnchor],
+  ].map(([anchorNumber, point]) => ({
+    anchorNumber,
+    bandName,
+    local: new THREE.Vector3(point.x - sectorCenter.x, point.y - sectorCenter.y, point.z),
+  })));
 
   const flywheelRotor = new THREE.Group();
   flywheelRotor.position.set(lowerCenter.x, lowerCenter.y, 0);
@@ -608,8 +709,10 @@ function dualBandOscillationRectifier(movement) {
   });
   openCarrier.position.set(lowerCenter.x, lowerCenter.y, 0);
   root.add(openCarrier);
+  // Both loose pulleys are identical, in one colour, so the fast brass ratchet
+  // and its dark pawls read against the front one's face.
   const crossedCarrier = makeLoosePulleyCarrier({
-    beltMaterial: brassMaterial,
+    beltMaterial: drivenMaterial,
     darkMaterial,
     pawlMaterial: brassMaterial,
     planeZ: crossedPlaneZ,
@@ -629,8 +732,8 @@ function dualBandOscillationRectifier(movement) {
     radius: 0.034,
     tubularSegments: 220,
     // Brown draws flat leather bands, not round cord.
-    thickness: 0.04,
-    width: 0.05,
+    thickness: bandThickness,
+    width: bandWidth,
     widthDirection: new THREE.Vector3(0, 0, 1),
   });
   openBand.userData.isBelt = true;
@@ -648,8 +751,8 @@ function dualBandOscillationRectifier(movement) {
     radius: 0.034,
     tubularSegments: 220,
     // Brown draws flat leather bands, not round cord.
-    thickness: 0.04,
-    width: 0.05,
+    thickness: bandThickness,
+    width: bandWidth,
     widthDirection: new THREE.Vector3(0, 0, 1),
   });
   crossedBand.userData.isBelt = true;
@@ -694,8 +797,8 @@ function dualBandOscillationRectifier(movement) {
     const rocker = rockerAmplitude * Math.sin(FULL_TURN * phase);
     const open = pulleyRatio * rocker, crossed = -pulleyRatio * rocker;
     const flywheel = phase < .25 ? open
-      : phase < .75 ? Math.max(carrierAmplitude, crossed + Math.PI)
-        : Math.max(carrierAmplitude + Math.PI, open + FULL_TURN);
+      : phase < .75 ? Math.max(carrierAmplitude, crossed + strokeAdvance)
+        : Math.max(carrierAmplitude + strokeAdvance, open + 2 * strokeAdvance);
     return { open: flywheel - open, crossed: flywheel - crossed };
   };
   // A pawl cannot fall into the root in zero time. Its lift over one cycle is
@@ -742,12 +845,12 @@ function dualBandOscillationRectifier(movement) {
     // The extra carrier travel lets an overrunning toe finish its finite drop.
     // On reversal the new carrier takes up that clearance before driving.
     const flywheelAngle = phase < .25 ? openPulleyAngle
-      : phase < .75 ? Math.max(carrierAmplitude, crossedPulleyAngle + Math.PI)
-        : Math.max(carrierAmplitude + Math.PI, openPulleyAngle + FULL_TURN);
+      : phase < .75 ? Math.max(carrierAmplitude, crossedPulleyAngle + strokeAdvance)
+        : Math.max(carrierAmplitude + strokeAdvance, openPulleyAngle + 2 * strokeAdvance);
     const openDriving = phase < .25 || (phase >= .75
-      && openPulleyAngle + FULL_TURN >= carrierAmplitude + Math.PI - 1e-13);
+      && openPulleyAngle + 2 * strokeAdvance >= carrierAmplitude + strokeAdvance - 1e-13);
     const crossedDriving = phase >= .25 && phase < .75
-      && crossedPulleyAngle + Math.PI >= carrierAmplitude - 1e-13;
+      && crossedPulleyAngle + strokeAdvance >= carrierAmplitude - 1e-13;
     const flywheelAngularSpeed = openDriving ? Math.max(0, openPulleyAngularSpeed)
       : crossedDriving ? Math.max(0, crossedPulleyAngularSpeed) : 0;
     const atHandoff = !openDriving && !crossedDriving;
@@ -763,7 +866,7 @@ function dualBandOscillationRectifier(movement) {
       crossedPulleyAngle,
       crossedDriving,
       phase < .25 || phase >= .75,
-      flywheelAngle - crossedPulleyAngle + (phase < .25 ? Math.PI : -Math.PI),
+      flywheelAngle - crossedPulleyAngle + (phase < .25 ? strokeAdvance : -strokeAdvance),
     );
     openPawl.liftAngle = droppedLift(time, 'open');
     crossedPawl.liftAngle = droppedLift(time, 'crossed');
@@ -801,14 +904,18 @@ function dualBandOscillationRectifier(movement) {
     openCarrier.rotation.z = state.openPulleyAngle;
     crossedCarrier.rotation.z = state.crossedPulleyAngle;
     flywheelRotor.rotation.z = state.flywheelAngle;
-    openCarrier.userData.pawl.rotation.z =
-      openCarrier.userData.pawl.userData.baseAngle
-      + state.openPawl.liftAngle;
-    crossedCarrier.userData.pawl.rotation.z =
-      crossedCarrier.userData.pawl.userData.baseAngle
-      + state.crossedPawl.liftAngle;
-    openCarrier.userData.contactIndex.visible = state.openPawl.active;
-    crossedCarrier.userData.contactIndex.visible = state.crossedPawl.active;
+    // Both pawls of a pulley are six teeth apart, so they share one lift.
+    for (const [carrier, pawlState] of [
+      [openCarrier, state.openPawl],
+      [crossedCarrier, state.crossedPawl],
+    ]) {
+      for (const pawl of carrier.userData.pawls ?? [carrier.userData.pawl]) {
+        pawl.rotation.z = pawl.userData.baseAngle + pawlState.liftAngle;
+      }
+      for (const index of carrier.userData.contactIndices ?? [carrier.userData.contactIndex]) {
+        index.visible = pawlState.active;
+      }
+    }
     openBand.userData.setCurve(state.openCurve);
     openBand.userData.updateDistance(state.openBandMaterialTravel);
     crossedBand.userData.setCurve(state.crossedCurve);
@@ -834,7 +941,7 @@ function dualBandOscillationRectifier(movement) {
     archetype:
       'rocking-semicircular-sector-open-and-crossed-anchored-bands-dual-loose-pulley-ratchet-flywheel-rectifier',
     blocks: {
-      anchorKnots,
+      bandAnchorsLocal,
       crossedBand,
       crossedBandMarkers: crossedBand.userData.markers,
       crossedCarrier,
@@ -866,12 +973,13 @@ function dualBandOscillationRectifier(movement) {
         initialCrossedCurve.getLength() - crossedBandLength,
       openBandInitialLength:
         initialOpenCurve.getLength() - openBandLength,
-      outputCycleClosure: outputAdvancePerCycle - FULL_TURN,
+      // The flywheel's four spokes and twelve teeth repeat every quarter turn.
+      outputCycleClosure: positiveModulo(outputAdvancePerCycle, Math.PI / 2),
       pulleyRatioClosure:
         loosePulleyRadius * pulleyRatio - sectorRadius,
       upperWrapSum:
         initialOpenCurve.userData.upperWrapLength
-          - 2 * sectorRadius * upperBaseWrap,
+          - 2 * sectorRadius * openUpperBaseWrap,
     },
     degreesOfFreedom: {
       independentPrescribedInputs: 1,
@@ -913,7 +1021,13 @@ function dualBandOscillationRectifier(movement) {
       rockerAmplitude,
       sectorCenter: sectorCenter.clone(),
       sectorRadius,
-      upperBaseWrap,
+      anchorLift,
+      bandThickness,
+      bandWidth,
+      crossShift,
+      crossedUpperBaseWrap,
+      openUpperBaseWrap,
+      strokeAdvance,
     },
     mechanism:
       'one-fulcrumed-semicircular-piece-A-two-simultaneous-fixed-end-bands-C-open-and-D-crossed-two-coaxial-loose-pulley-pawl-carriers-two-ratchets-fast-on-one-continuously-positive-flywheel-B-shaft',
@@ -1007,6 +1121,34 @@ function dualBandOscillationRectifier(movement) {
     hub.geometry.dispose();
     hub.geometry = boredAxialCylinder(0.13, 0.108, 0.21);
   }
+  // Identical loose pulleys: a flat-bottomed groove wide enough for the
+  // crossed band's shift across it (and the open band centred in it), between
+  // two flanges. The old flange ring shared the rim's outer surface.
+  for (const carrier of [openCarrier, crossedCarrier]) {
+    const { pulley, groove } = carrier.userData;
+    const halfGroove = crossShift + bandWidth / 2 + 0.01;
+    const floor = loosePulleyRadius - bandThickness / 2 - 0.005;
+    pulley.geometry.dispose();
+    pulley.geometry = boredLatheGeometry([
+      { axial: -0.11, radial: 0.545 },
+      { axial: -halfGroove, radial: 0.545 },
+      { axial: -halfGroove, radial: floor },
+      { axial: halfGroove, radial: floor },
+      { axial: halfGroove, radial: 0.545 },
+      { axial: 0.11, radial: 0.545 },
+    ], 0.108, 128);
+    pulley.userData.grooveFloorRadius = floor;
+    pulley.userData.grooveHalfWidth = halfGroove;
+    groove.removeFromParent();
+    groove.geometry.dispose();
+  }
+  // The fulcrum pin spans the deeper bar (correctDualBandInterfaces cut it
+  // for the old thin lever).
+  pivotPin.geometry.dispose();
+  pivotPin.geometry = new THREE.CylinderGeometry(0.13, 0.13, rimFront - rimBack + 0.10, 32)
+    .rotateX(Math.PI / 2);
+  pivotPin.rotation.set(0, 0, 0);
+  pivotPin.position.z = (rimFront + rimBack) / 2;
   install390Pawls(root);
   finishAlternatingDrive(root, update, cycleDuration);
   markShadows(root);

@@ -527,3 +527,22 @@ test('movement 365 is the reviewed frontier and movement 507 remains authored', 
   disposeModel(model365.root);
   disposeModel(model507.root);
 });
+
+test('movement 365 shows the rod feed: checkered cue bands travel with the stock and repeat exactly each roller turn', () => {
+  const model = createMovementModel(catalog.movements[364]);
+  const { blocks, geometry } = model.root.userData;
+  const period = geometry.inputCyclePeriod;
+  // One roller turn gives exactly half a rod turn and three band pairs.
+  near(geometry.rodRotationPerRollerTurn, -Math.PI, 1e-12, 'half rod turn');
+  near(geometry.axialAdvancePerRollerTurn / geometry.rodFeedBandPitch, 6, 1e-12, 'six bands per turn');
+  assert.equal(blocks.rodBody.visible, true);
+  assert.equal(blocks.rodBody.userData.rotationIndicator, true);
+  model.update(0);
+  const start = blocks.rodFeedOffset.value;
+  model.update(period * 0.1);
+  near(blocks.rodFeedOffset.value - start, geometry.axialAdvancePerRollerTurn * 0.1, 1e-12, 'bands travel with the rod');
+  model.update(period);
+  near(blocks.rodFeedOffset.value, start, 1e-9, 'feed cue repeats at the seam');
+  near(Math.cos(2 * blocks.rodSpinRotor.rotation.y), 1, 1e-12, 'half-turn: quadrant cue repeats');
+  disposeModel(model.root);
+});

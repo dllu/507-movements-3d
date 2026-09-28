@@ -68,11 +68,21 @@ export function correctWaterLiftParts(root,id) {
     replace(b.scoopConnectionPin,new THREE.CylinderGeometry(.06,.06,1.28,48));
     const upper=b.beam.children.find(o=>o.userData.role==='pitman-pin-seated-in-selected-beam-notch');
     replace(upper,new THREE.CylinderGeometry(.06,.06,1.28,48));
-    // Pass 69: the tail past the pivot is short, so it clears the bank top
-    // through the full-drain stroke.
-    const beamOutline=poly([[-.27,-.125],[2.345,-.125],[2.345,.125],[-.27,.125]]);
-    const notches=g.notchRadii.map(r=>clip.union(poly(circle([r,0],.065,64)),poly([[r-.065,-.2],[r+.065,-.2],[r+.065,0],[r-.065,0]])));
-    const beamBored=clip.difference(clip.union(beamOutline,poly(circle([0,0],.25,64))),poly(circle([0,0],.174,64)),...notches);
+    // Pass 90: Brown's lever is a deep tapered beam, one plate: a round end
+    // concentric with the pivot (r 0.32, clear of the bank top), straight
+    // edges tapering to a round free end, two slanted lightening slots, and
+    // near the lower edge a slot whose floor is a row of six teeth with the
+    // five U-notches between them; the pitman pin sits in a notch root on
+    // the lower rail. Local +y points down in the world, so the outline is
+    // drawn with v = -y (world up) and flipped.
+    const up=pts=>poly(pts.map(([x,v])=>[x,-v]));
+    const L=2.35,vBot=x=>-.32+.21*x/L,vTop=x=>.32-.01*x/L;
+    const body=clip.union(up([[0,vBot(0)],[2.2,vBot(2.2)],[2.2,vTop(2.2)],[0,vTop(0)]]),poly(circle([0,0],.32,96)),up(circle([2.2,.10],.21,64)));
+    const r0=g.notchRadii[0],r1=g.notchRadii.at(-1),slotFloor=.035,slotTop=.175;
+    const slot=up([[r0-.13,slotFloor],[r1+.13,slotFloor],[r1+.13,slotTop],[r0-.13,slotTop]]);
+    const notches=g.notchRadii.map(r=>clip.union(poly(circle([r,0],.065,64)),up([[r-.065,0],[r+.065,0],[r+.065,slotFloor+.01],[r-.065,slotFloor+.01]])));
+    const lightening=[up([[.46,.08],[1.02,.10],[.98,.215],[.52,.225]]),up([[.52,-.075],[1.02,-.06],[.98,-.17],[.56,-.20]])];
+    const beamBored=clip.difference(body,poly(circle([0,0],.174,64)),slot,...notches,...lightening);
     replace(b.beamBody,plate(beamBored,-.275,.275));b.beamBody.position.x=0;
     b.beam.children[1].visible=false;b.notches.forEach(o=>o.visible=false);
     for(let i=0;i<b.pitmanBars.length;i++) {

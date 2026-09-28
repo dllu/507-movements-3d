@@ -16,9 +16,7 @@ for(const id of [464,465])test(`${id} finite working interfaces clear through a 
  for(let i=0;i<=32;i++){
   model.update(d.geometry.cycleDuration*(i+.137)/33);model.root.updateMatrixWorld(true);
   if(id===464){
-   for(const wall of[b.bowl,...b.intermediateVessel.children.filter(o=>o.userData.role==='closed-bowl-end-wall')])clear(b.intermediateWater,wall,`464 water/bowl ${i}`);
-   for(const [water,pipe]of[[b.rightDrainWater,b.rightDrainOuter],[b.centralRiserWater,b.centralRiser],[b.centralRiserWater,b.nozzle],[b.airCore,b.leftAirPipe]])clear(water,pipe,`464 pipe core ${i}`);
-   for(const pipe of[b.rightDrainOuter,b.centralRiser])clear(pipe,b.basinFloor,`464 basin bore ${i}`);
+   for(const water of[b.rightWater,b.bowlWater])for(const fixed of[b.casting,b.slab,b.jetPipe])clear(water,fixed,`464 ${water.userData.role}/${fixed.userData.role} ${i}`);
   }else{
    clear(b.beamBar,b.platform,`465 beam/deck ${i}`);clear(b.beamAxle,b.beamBar,`465 fulcrum ${i}`);
    for(const a of b.pumpAssemblies){

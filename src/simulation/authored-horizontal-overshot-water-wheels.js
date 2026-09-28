@@ -464,36 +464,78 @@ function horizontalOvershotWaterWheel(movement) {
     foam: {start: 0.9, amount: 0.55}, cyclePeriod: cycleDuration, streakRate: 1.2, opacity: 0.55,
   });
   jet.userData.role = 'falling-tangential-jet-striking-horizontal-scoop-wheel';
-  // The broken jet leaves the struck floats as spray: the water runs out
-  // along the float as the runner carries it on, so it is thrown off the
-  // floats' outer ends downstream of the strike with their rim speed and
-  // falls, spreading and thinning, below the runner.
+  // Pass 90: the broken jet leaves the struck floats live. Water struck onto
+  // a board runs out along it and leaves its outer lower corner while the
+  // board sweeps on through the wet sector past the strike, so each board
+  // trails its own falling sheet: the streakline of drops thrown from its
+  // corner over the last moments (each drop keeps the corner's velocity at
+  // release plus its run-off along the board, then falls freely). Every
+  // sheet starts on its board's corner and moves with the runner; it fades
+  // in as the board meets the jet and thins away as the board carries the
+  // last of its water out of the sector.
   const rimSpeed = inputAngularSpeed * bladeOuterRadius;
-  // Most of the water leaves soon after the strike; what the floats carry on
-  // round is shed further downstream in thinner sheets (Brown's spray under
-  // the near blades), so there are three spills of falling flow.
-  const spills = [[0.3, 1.0], [0.75, 0.6], [1.2, 0.45]].map(([turn, flow], index) => {
-    const angle = impactAngle + spin * turn;
-    const radial = horizontalRadial(angle);
-    const tangent = horizontalTangent(angle).multiplyScalar(spin);
-    const start = radial.clone().multiplyScalar(bladeOuterRadius + 0.06).setY(-0.02);
-    const velocity = tangent.clone().multiplyScalar(rimSpeed * 0.3)
-      .addScaledVector(radial, 0.35).add(new THREE.Vector3(0, -0.3, 0));
-    const stream = new WaterStream(ballisticPath({origin: start, velocity, endY: -1.55, samples: 24}), {
-      width: 0.2, thickness: 0.025, widthAxis: tangent, widthExponent: 0.3, flow,
-      spread: {start: 0.15, width: 1.8, thickness: 1.3}, fadeIn: 0.1, fadeOut: 0.7,
-      cyclePeriod: cycleDuration, streakRate: 1.5, streakAcross: 5, opacity: 0.32,
+  // The board's outer end in its own frame (the pitched board below: radial
+  // run to bladeOuterRadius, centre line at y 0.16, face pitched 0.62 rad);
+  // the water leaves across the whole end edge, so the sheet's width lies
+  // along that edge.
+  const cornerLocal = new THREE.Vector3(bladeOuterRadius, 0.16, 0);
+  const edgeLocal = new THREE.Vector3(0, Math.cos(0.62), -Math.sin(0.62));
+  const runOff = 0.45, spillDrop = 0.25, spillAge = 0.62, spillSamples = 22;
+  // Wet sector, measured from the strike in the direction of rotation.
+  const wetStart = 0.08, wetPeak = 0.35, wetEnd = 1.45;
+  const wetness = (bladeWorldAngle) => {
+    const past = THREE.MathUtils.euclideanModulo(spin * (bladeWorldAngle - impactAngle), FULL_TURN);
+    if (past <= wetStart || past >= wetEnd) return 0;
+    return past < wetPeak ? smoothStep5((past - wetStart) / (wetPeak - wetStart))
+      : 1 - smoothStep5((past - wetPeak) / (wetEnd - wetPeak));
+  };
+  const spillPath = (bladeIndex, time) => {
+    const points = [], speeds = [], times = [], flows = [], axes = [];
+    for (let i = 0; i <= spillSamples; i += 1) {
+      const age = spillAge * i / spillSamples;
+      const angle = sourcePoseBladeOffset + bladeIndex * bladePitch + spin * inputAngularSpeed * (time - age);
+      const radial = horizontalRadial(angle), tangent = horizontalTangent(angle).multiplyScalar(spin);
+      const corner = cornerLocal.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), angle);
+      const velocity = tangent.clone().multiplyScalar(rimSpeed).addScaledVector(radial, runOff).setY(-spillDrop);
+      points.push(corner.addScaledVector(velocity, age).add(new THREE.Vector3(0, -0.5 * STREAM_GRAVITY * age * age, 0)));
+      speeds.push(Math.hypot(velocity.x, velocity.y - STREAM_GRAVITY * age, velocity.z));
+      times.push(age);
+      flows.push(wetness(angle));
+      axes.push(edgeLocal.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), angle));
+    }
+    // Dry stretches carry no water: fold them onto the nearest wet sample so
+    // the sheet's extent is only its water.
+    const wet = flows.map((flow) => flow > 0.02), first = wet.indexOf(true), last = wet.lastIndexOf(true);
+    if (first >= 0) for (let i = 0; i < points.length; i += 1) {
+      if (i < first) points[i] = points[first].clone();
+      else if (i > last) points[i] = points[last].clone();
+    }
+    return {points, speeds, times, flows, axes};
+  };
+  const spills = Array.from({length: bladeCount}, (_, bladeIndex) => {
+    const initial = spillPath(bladeIndex, 0);
+    let flows = initial.flows, axes = initial.axes;
+    const stream = new WaterStream(initial, {
+      width: 0.24, thickness: 0.03, widthAxis: (i) => axes[i], widthExponent: 0.3,
+      spread: {start: 0.25, width: 1.8, thickness: 1.3}, fadeOut: 0.5,
+      cyclePeriod: cycleDuration, streakRate: 1.5, streakAcross: 5, opacity: 0.42,
+      // Each sample carries the water its board held when it was released.
+      // (A dry sample collapses to a point; a wet one keeps some thickness
+      // so the sheet never flattens into two coincident faces.)
+      section: (i, u, [a, b]) => {
+        const wet = Math.max(0, flows[i] - 0.02) / 0.98;
+        return wet <= 0 ? [0, 0] : [a * wet, Math.max(0.01 * Math.min(1, wet / 0.1), b * wet)];
+      },
     });
-    stream.userData.role = index === 0 ? 'spray-falling-from-struck-blades'
-      : `spray-shed-downstream-from-carried-blades-${index}`;
+    stream.userData.role = `sheet-spilling-from-board-${bladeIndex + 1}-corner`;
+    stream.userData.setTime = (time) => {
+      const path = spillPath(bladeIndex, time);
+      flows = path.flows;axes = path.axes;
+      stream.visible = flows.some((flow) => flow > 0.02);
+      if (stream.visible) stream.setPath(path);
+    };
+    stream.userData.setTime(0);
     root.add(stream);
-    // Brown's broken drops falling beside the sheet.
-    const drops = new WaterSpray({
-      origin: start.clone().setY(-0.08), velocity, spread: 0.35, count: 20, lifetime: 0.55,
-      radius: 0.028, cyclePeriod: cycleDuration, seed: 4330 + index, originSpread: tangent.clone().multiplyScalar(0.35),
-    });
-    drops.userData.role = `drops-falling-from-blade-tips-${index + 1}`;
-    root.add(drops);
     return stream;
   });
   const spill = spills[0];
@@ -560,6 +602,7 @@ function horizontalOvershotWaterWheel(movement) {
     const state = stateAtTime(time);
     rotor.rotation.y = state.wheelAngle;
     updateWater(time);
+    for (const sheet of spills) sheet.userData.setTime(time);
     const jetPhase = THREE.MathUtils.euclideanModulo(time / 0.82, 1);
     for (let markerIndex = 0; markerIndex < jetMarkers.length;
       markerIndex += 1) {

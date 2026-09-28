@@ -1221,8 +1221,13 @@ function graduatedArcParallelRuler(movement) {
   const upperPivotLocalXs = lowerPivotXs.map(
     (position) => position - upperPivotLocalOffsetX,
   );
-  const arcPivot = new THREE.Vector3(0.62, 0.205, lowerBladeCenterZ);
-  const arcHeight = 0.205;
+  // Brown's links and arc lie flat on the blades. The ivory scale is inlaid
+  // flush in the upper blade's face (top 0.105), so the brass arc rests
+  // directly on the lower blade and slides over the ivory; the links lie on
+  // the arc's plane just above it, since closing the ruler carries the right
+  // link across the arc.
+  const arcHeight = 0.107 + 0.0175;
+  const arcPivot = new THREE.Vector3(0.62, arcHeight, lowerBladeCenterZ);
   const scaleEdgeInset = 0.018;
   // Ideal circle fitted to the visible arc contour (367 contour 21), rounded
   // slightly to keep one unambiguous scale crossing throughout the travel.
@@ -1417,12 +1422,12 @@ function graduatedArcParallelRuler(movement) {
     roughness: 0.56,
   });
 
-  const makeBlade = (role, pivotXs) => {
+  const makeBlade = (role, pivotXs, extraHoles = []) => {
     const group = new THREE.Group();
     group.userData.role = role;
     const body = new THREE.Mesh(
       plate(polygonClipping.difference(poly([[-bladeLength/2, -bladeWidth/2], [bladeLength/2, -bladeWidth/2], [bladeLength/2, bladeWidth/2], [-bladeLength/2, bladeWidth/2]]),
-        ...pivotXs.map(x => poly(circle([x, 0], .089, 64)))), -bladeThickness/2, bladeThickness/2).rotateX(Math.PI / 2),
+        ...pivotXs.map(x => poly(circle([x, 0], .089, 64))), ...extraHoles), -bladeThickness/2, bladeThickness/2).rotateX(Math.PI / 2),
       bladeMaterial,
     );
     body.userData.role = `${role}-straight-rigid-body`;
@@ -1449,7 +1454,9 @@ function graduatedArcParallelRuler(movement) {
     return group;
   };
 
-  const lowerBlade = makeBlade('fixed-lower-ruler-blade', lowerPivotXs);
+  // The arc's fastening pin passes through a bore in the lower blade.
+  const lowerBlade = makeBlade('fixed-lower-ruler-blade', lowerPivotXs,
+    [poly(circle([arcPivot.x - .03, 0], .044, 48))]);
   lowerBlade.position.set(0, 0.035, lowerBladeCenterZ);
   lowerBlade.userData.fixed = true;
   root.add(lowerBlade);
@@ -1525,7 +1532,8 @@ function graduatedArcParallelRuler(movement) {
   // so no division is drawn. The tick bars stay as hidden calibration
   // references for the arc's incidence reading.
   {
-    const bottom = bladeThickness / 2, base = bottom + 0.018, top = bottom + 0.032;
+    // Inlaid: the strip fills a 0.032-deep pocket, its face flush with the blade.
+    const top = bladeThickness / 2, bottom = top - 0.032, base = bottom + 0.018;
     const zCenter = -bladeWidth / 2 + 0.078, halfWidth = 0.0675;
     const x0 = scaleLeftX;
     const x1 = scaleRightX;
@@ -1547,6 +1555,14 @@ function graduatedArcParallelRuler(movement) {
     ivoryScale.material = ivoryMaterial.clone();
     ivoryScale.material.color.set(0xe3d6b4);
     ivoryScale.position.set(0, 0, 0);
+    const body = upperBlade.userData.body;
+    const outline = polygonClipping.difference(poly([[-bladeLength/2, -bladeWidth/2], [bladeLength/2, -bladeWidth/2], [bladeLength/2, bladeWidth/2], [-bladeLength/2, bladeWidth/2]]),
+      ...upperPivotLocalXs.map(x => poly(circle([x, 0], .089, 64))));
+    body.geometry.dispose();
+    body.geometry = mergeGeometries([
+      plate(polygonClipping.difference(outline, strip), -top, top).rotateX(Math.PI / 2),
+      plate(polygonClipping.intersection(outline, strip), -bottom, top).rotateX(Math.PI / 2),
+    ]);
   }
 
   const makeDecorativeLink = (index) => {
@@ -1564,12 +1580,14 @@ function graduatedArcParallelRuler(movement) {
       ornamentalRulerArmGeometry(367, linkLength, .10, .089).rotateX(Math.PI / 2),
       linkMaterial,
     );
-    arm.position.y = .13;
+    // Link underside 0.148: just clear of the arc's top face (0.142).
+    arm.position.y = .028;
     arm.userData.role = 'bored-extracted-outline-of-parallel-link';
     group.add(arm);
     const pivotBosses = [0, linkLength].map((x, end) => {
-      const pin = new THREE.Mesh(new THREE.CylinderGeometry(.085, .085, .44, 48), darkMaterial);
-      pin.position.x = x;
+      // From just under the blade to just proud of the link eye.
+      const pin = new THREE.Mesh(new THREE.CylinderGeometry(.085, .085, .318, 48), darkMaterial);
+      pin.position.set(x, -.061, 0);
       pin.userData.end = end === 0 ? 'lower-blade' : 'upper-blade';
       pin.userData.role = 'through-pin-of-parallel-link';
       group.add(pin);
@@ -1599,10 +1617,11 @@ function graduatedArcParallelRuler(movement) {
   brassArc.position.y = arcHeight;
   brassArc.userData.role = 'fixed-to-lower-blade-brass-arc-crossing-graduated-scale';
   root.add(brassArc);
-  const brassArcPivot = new THREE.Mesh(new THREE.CylinderGeometry(.04, .04, .25, 32), darkMaterial);
+  const brassArcPivot = new THREE.Mesh(new THREE.CylinderGeometry(.04, .04, .19, 32), darkMaterial);
   // The pin is centred in the arc's rounded lower end (the band's centre
   // line, 0.03 inside the calibrated outer edge), where its bore is.
-  brassArcPivot.position.set(arcPivot.x - .03, .12, arcPivot.z);
+  // Through the lower blade's bore to just proud of the arc.
+  brassArcPivot.position.set(arcPivot.x - .03, .059, arcPivot.z);
   brassArcPivot.userData.role = 'fastening-pivot-of-brass-indicating-arc-on-lower-blade';
   root.add(brassArcPivot);
   const tip = arcCurve.getPoint(1);

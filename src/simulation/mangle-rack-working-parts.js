@@ -130,6 +130,10 @@ function addFrameAndShaftSupports(root) {
   for (const o of [channel, post, standard]) o.traverse((m) => { if (m.isMesh) { m.userData.fixed = true; m.userData.runsPastCrop = true; } });
   root.add(channel, post, carriage, standard);
   Object.assign(b, { frameBackRail: rail, frameChannel: channel, shaftRail: post, shaftCarriage: carriage, supportStandard: standard });
+  // Brown draws a plain plate: the undrawn back rail and its channel read as
+  // a bar and block across the plate's back in rotated views. They are kept
+  // as reconstruction data (the frame's straight slide) but not rendered.
+  for (const o of [rail, channel]) o.traverse((m) => { if (m.isMesh) { m.visible = false; m.userData.hiddenReason = 'undrawn support behind the plate'; } });
   g.supportFloorY = floorY;
 }
 

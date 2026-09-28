@@ -185,10 +185,12 @@ function makeEccentricStrap({ radius, sheaveRadius, length, material, z }) {
   shank.closePath();
   const outline = clip.union(poly(circle([0, 0], outerRadius, 192)),
     poly(shank.getPoints(64).map(point => point.toArray())),
-    ...[-1, 1].map(sign => poly([[-.07, sign * (outerRadius - .08)],
-      [.07, sign * (outerRadius - .08)], [.07, sign * (outerRadius + .23)],
-      [-.07, sign * (outerRadius + .23)]])),
-    poly(circle([length, 0], .13, 96)));
+    // Bolt-lug ears: flat, round-ended tabs in the strap plane (Pass 90).
+    ...[-1, 1].map(sign => poly([[-.10, sign * (outerRadius - .08)],
+      [.10, sign * (outerRadius - .08)], [.10, sign * (outerRadius + .12)],
+      [-.10, sign * (outerRadius + .12)]])),
+    ...[-1, 1].map(sign => poly(circle([0, sign * (outerRadius + .12)], .10, 64))),
+    poly(circle([length, 0], .19, 96)));
   const shape = clip.difference(outline,
     poly(circle([0, 0], sheaveRadius + .006, 192)),
     poly(circle([length, 0], .074, 96)));
@@ -755,10 +757,17 @@ function oscillatingMarineEngineStephensonValveGear() {
       -Math.PI / 2 - halfAngle, -Math.PI / 2 + rightAngle, 192), 0, linkSlotRadius);
   const reachLugLocal = sourcePointFromRaster(new THREE.Vector2(60, 298)).sub(linkCenterAtSource);
   const upperPinPoints = [aheadLinkPinLocal, asternLinkPinLocal, reachLugLocal];
+  // Pass 90: the link's ends are round, and each rod pin sits in a round
+  // lug concentric with it (as large as the rod eye it carries).
+  const arcPoint = (angle, radius = linkSlotRadius) => [radius * Math.cos(-Math.PI / 2 + angle),
+    radius * Math.sin(-Math.PI / 2 + angle) + linkSlotRadius];
   const upperOutline = clip.union(upperArc(.17, visibleLinkHalfAngle, visibleLinkRightAngle),
-    ...upperPinPoints.map(point => poly(circle(point.toArray(), .13, 96))));
+    poly(circle(arcPoint(-visibleLinkHalfAngle), .17, 96)), poly(circle(arcPoint(visibleLinkRightAngle), .17, 96)),
+    ...upperPinPoints.map((point, index) => poly(circle(point.toArray(), index < 2 ? .19 : .13, 96))));
+  const slotEnds = [-(visibleLinkHalfAngle - .035), visibleLinkRightAngle - .035]
+    .map(angle => poly(circle(arcPoint(angle), .06, 64)));
   const upperLinkPlate = new THREE.Mesh(plate(clip.difference(upperOutline,
-    upperArc(.06, visibleLinkHalfAngle - .035, visibleLinkRightAngle - .035),
+    upperArc(.06, visibleLinkHalfAngle - .035, visibleLinkRightAngle - .035), ...slotEnds,
     ...upperPinPoints.map(point => poly(circle(point.toArray(), .074, 96)))), -.10, .10), accentMaterial);
   upperLinkPlate.userData.role = 'finite-stephenson-link-with-through-slot-and-pin-bores';
   linkGroup.add(upperLinkPlate);
@@ -778,12 +787,13 @@ function oscillatingMarineEngineStephensonValveGear() {
     const group = new THREE.Group();
     group.position.set(localPoint.x, localPoint.y, 0);
     group.userData.role = role;
-    const eye = makeEye(0.13, 0.055, drivenMaterial, z + Math.sign(z) * .14);
     // Pass 71: the pin spans the link plate and the rod eye only; it used
     // to run on into the output rod's layer and clip it in full gear.
-    const pin = cylinderAlongZ(0.07, 0.58, darkMaterial, 24);
-    pin.position.z = Math.sign(z) * 0.18;
-    group.add(eye, pin);
+    // Pass 90: the loose torus washers are gone; the pin runs from the link's
+    // far face through the rod's integral eye and stands just proud of it.
+    const pin = cylinderAlongZ(0.07, 0.47, darkMaterial, 24);
+    pin.position.z = Math.sign(z) * 0.135;
+    group.add(pin);
     linkGroup.add(group);
     return group;
   });

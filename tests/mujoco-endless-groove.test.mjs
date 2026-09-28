@@ -44,8 +44,12 @@ test('098 compiled contacts preserve the complete rear groove and finite crank p
     assert.ok(Math.abs(d+f.crankRadius-f.maximumRadius)<1e-12,'crank cannot reach the far end');
     assert.ok(Math.abs(f.distance(f.local([u.source.axis[0]+100*f.initialPin[0],u.source.axis[1]-100*f.initialPin[1]]))-f.radius)<1e-12);
     t.diagnostic(JSON.stringify({crankRadiusPixels:f.crankRadius*100,inputAxisShiftPixels:Math.hypot(...f.inputCenter)*100}));
-    const state=[...p.data.qpos,...p.data.qvel];u.setSectionView(false);assert.ok(u.parts.cover.visible);u.setSectionView(true);
-    assert.ok(!u.parts.cover.visible);assert.deepEqual([...p.data.qpos,...p.data.qvel],state);
+    const state=[...p.data.qpos,...p.data.qvel];
+    // The section view keeps the cover (it joins the groove island to the
+    // arm) and renders it in the shared see-through style.
+    assert.ok(u.parts.cover.visible&&u.parts.cover.userData.seeThrough&&u.parts.cover.material.userData.seeThrough);
+    u.setSectionView(false);assert.ok(u.parts.cover.visible&&!u.parts.cover.material.transparent&&!u.parts.cover.userData.seeThrough);u.setSectionView(true);
+    assert.ok(u.parts.cover.visible&&u.parts.cover.material.userData.seeThrough);assert.deepEqual([...p.data.qpos,...p.data.qvel],state);
   }finally{v.dispose();}
 });
 

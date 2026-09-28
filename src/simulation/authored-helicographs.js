@@ -6,6 +6,7 @@ import {
 } from './primitives.js';
 
 import { boredLatheGeometry } from './bored-lathe-geometry.js';
+import { plate, poly, circle, polygonClipping } from './finite-plate-geometry.js';
 import { helicographThreadGeometry, helicographPivotBridge, helicographTraceGeometry } from './helicograph-working-parts.js';
 
 const FULL_TURN = Math.PI * 2;
@@ -116,34 +117,38 @@ function makeThreadedRollingWheel({
   rotor.userData.role = 'rolling-and-thread-advancing-wheel-rotor';
   assembly.add(rotor);
 
-  const rimTube = 0.075;
-  const rim = new THREE.Mesh(
-    new THREE.TorusGeometry(radius - rimTube, rimTube, 16, 192),
-    rimMaterial,
-  );
-  rim.rotation.y = Math.PI / 2;
+  // Pass 90: Brown's milled wheel is one solid disc: a knurled rim (fine V
+  // ridges whose tips lie on the rolling radius), a thinner web with radial
+  // face ribs, and a long cylindrical nut on the side away from the point.
+  const rimWidth = 0.22, rimInner = radius * 0.80, knurls = 240, knurlDepth = 0.022;
+  const alongX = geometry => geometry.rotateY(Math.PI / 2);
+  const knurled = [];
+  for (let i = 0; i < 2 * knurls; i += 1) {
+    const angle = Math.PI * i / knurls, r = i % 2 ? radius - knurlDepth : radius;
+    knurled.push([r * Math.cos(angle), r * Math.sin(angle)]);
+  }
+  const rim = new THREE.Mesh(alongX(plate(polygonClipping.difference(poly(knurled),
+    poly(circle([0, 0], rimInner, 240))), -rimWidth / 2, rimWidth / 2)), material);
   rim.userData.role = 'paper-contacting-milled-wheel-rim';
   rotor.add(rim);
 
-  const faceRadius = radius - rimTube * 1.35;
-  const face = annulusAlongX({
-    innerRadius: radius * 0.70,
-    material,
-    outerRadius: faceRadius,
-    width: 0.09,
-  });
-  face.userData.role = 'thin-wheel-face-retaining-ring';
+  const nutRadius = radius * 0.36;
+  const face = new THREE.Mesh(alongX(plate(polygonClipping.difference(poly(circle([0, 0], rimInner + 0.02, 240)),
+    poly(circle([0, 0], nutRadius - 0.02, 120))), -0.035, 0.035)), material);
+  face.userData.role = 'milled-wheel-web';
   rotor.add(face);
 
-  const spokeCount = 8;
-  const spokeLength = radius * 0.68;
-  const spokeCenter = radius * 0.54;
+  // Sixteen radial ribs standing proud of both web faces, rim to nut.
+  const spokeCount = 16;
+  const spokeInner = nutRadius - 0.01, spokeOuter = rimInner + 0.01;
+  const spokeLength = spokeOuter - spokeInner;
+  const spokeCenter = (spokeOuter + spokeInner) / 2;
   const spokes = [];
   for (let index = 0; index < spokeCount; index += 1) {
     const angle = index / spokeCount * FULL_TURN;
     const spoke = new THREE.Mesh(
-      new THREE.BoxGeometry(0.11, spokeLength, 0.055),
-      rimMaterial,
+      new THREE.BoxGeometry(0.13, spokeLength, 0.035),
+      material,
     );
     spoke.position.set(
       0,
@@ -151,17 +156,21 @@ function makeThreadedRollingWheel({
       spokeCenter * Math.sin(angle),
     );
     spoke.rotation.x = angle;
-    spoke.userData.role = 'one-of-eight-wheel-spokes';
+    spoke.userData.role = 'one-of-sixteen-wheel-face-ribs';
     rotor.add(spoke);
     spokes.push(spoke);
   }
 
-  const hub = annulusAlongX({
-    innerRadius: axleRadius + 0.004,
-    material: rimMaterial,
-    outerRadius: radius * 0.27,
-    width: hubWidth,
-  });
+  // Long nut: from just behind the web out along the screw (away from the
+  // point), 0.36 of the wheel radius round and 0.55 of it long.
+  const nutLength = radius * 0.55;
+  const hub = new THREE.Mesh(
+    boredLatheGeometry([
+      { axial: -nutLength, radial: nutRadius },
+      { axial: 0.07, radial: nutRadius },
+    ], axleRadius + 0.004, 96).rotateZ(Math.PI / 2),
+    material,
+  );
   hub.userData.role = 'female-threaded-wheel-hub';
   rotor.add(hub);
 
@@ -191,7 +200,7 @@ function makeThreadedRollingWheel({
     whiteMaterial,
   );
   faceIndex.position.set(
-    0.0676,
+    0.08,
     radius * 0.53,
     0,
   );
@@ -201,12 +210,12 @@ function makeThreadedRollingWheel({
   const treadIndex = new THREE.Mesh(
     new THREE.BoxGeometry(
       hubWidth * 0.48,
-      rimTube * 1.35,
-      rimTube * 1.9,
+      0.1,
+      0.14,
     ),
     whiteMaterial,
   );
-  treadIndex.position.y = radius - rimTube * 0.45;
+  treadIndex.position.y = radius - 0.034;
   treadIndex.userData.role = 'white-wheel-spin-index-on-tread';
   rotor.add(treadIndex);
 
@@ -239,12 +248,13 @@ function screwHelicograph(movement) {
   const wheelRadius = 1.00;
   const wheelAxisY = drawingPlaneY + wheelRadius;
   const wheelWidth = 0.25;
-  const screwCoreRadius = 0.085;
+  // A solid threaded rod: the core is 0.8 of the thread's major diameter.
+  const screwCoreRadius = 0.128;
   const screwThreadRadius = 0.135;
   const threadTubeRadius = 0.024;
   const threadLead = 0.36;
   const screwMinimumX = 0.42;
-  const screwMaximumX = 4.78;
+  const screwMaximumX = 5.20;
   const screwLength = screwMaximumX - screwMinimumX;
   const outerRadius = 4.20;
   const orbitTurns = 1.5;
@@ -259,7 +269,7 @@ function screwHelicograph(movement) {
   const pivotNeedleRadius = 0.075;
   const pivotSleeveRadius = 0.20;
   const armWidth = 0.50;
-  const armThickness = 0.17;
+  const armThickness = 0.28; // pass 90: thicker than the 0.8-core screw it carries
 
   const paperMaterial = matte(PALETTE.paper, {
     metalness: 0,
@@ -377,7 +387,8 @@ function screwHelicograph(movement) {
   const screwThread = new THREE.Mesh(
     helicographThreadGeometry({ minimum: screwMinimumX, maximum: screwMaximumX,
       lead: threadLead, core: screwCoreRadius, crest: screwThreadRadius + threadTubeRadius }),
-    darkMaterial,
+    // Thread and core are one rod: the same steel.
+    frameMaterial,
   );
   screwThread.position.y = wheelAxisY;
   screwThread.userData.role = 'single-start-right-hand-external-thread';
@@ -739,8 +750,8 @@ function screwHelicograph(movement) {
   // The whole revolution, so the screw and wheel stay in view as the arm
   // turns round the point (Brown draws one pose: point left, screw right).
   root.userData.sweptBounds = new THREE.Box3(
-    new THREE.Vector3(-5.35, -0.12, -5.35),
-    new THREE.Vector3(5.35, 2.18, 5.35),
+    new THREE.Vector3(-5.6, -0.12, -5.6),
+    new THREE.Vector3(5.6, 2.18, 5.6),
   );
   // The view frames Brown's pose (point left, screw and wheel right) whole,
   // plus 2.8 of the sweep to the point's left, so the wheel leaves the frame
@@ -749,7 +760,7 @@ function screwHelicograph(movement) {
   // corners from inflating the fit.
   root.userData.cameraFitBounds = new THREE.Box3(
     new THREE.Vector3(-2.8, -0.12, -1.05),
-    new THREE.Vector3(5.35, 2.18, 1.05),
+    new THREE.Vector3(5.6, 2.18, 1.05),
   );
   root.userData.groundFloorY = -0.10;
   markShadows(root);

@@ -15,22 +15,32 @@ export function finishReed396Parts(model) {
   b.lever.userData.palletFIndex.visible = false;
   b.lever.userData.palletGIndex.visible = false;
 
-  // Three curved webs join the existing complete toothed rim to the spindle.
+  // Brown's crossing is one broad three-armed plate: each arm is a band
+  // along a circular arc from the hub to the rim, widening outward, and the
+  // whole crossing is one extrusion with the toothed rim.
   const webs = [];
   for (const spoke of b.escapeWheel.userData.spokes) { spoke.visible = false; }
+  const crossingArms = [poly(circle([0, 0], .36, 96))];
   for (let i = 0; i < 3; i++) {
-    const a = i * Math.PI * 2 / 3;
-    const at = (r, da) => new THREE.Vector2(r * Math.cos(a + da), r * Math.sin(a + da));
-    const points = new THREE.QuadraticBezierCurve(at(.17, 0), at(.68, .38), at(1.12, .18)).getPoints(16);
-    const profile = clip.union(...points.slice(1).map((p, j) => capsule(points[j].toArray(), p.toArray(), .06, 8)));
-    const web = new THREE.Mesh(plate(profile, -.10, .10), b.escapeWheel.userData.toothedRim.material);
-    web.userData.role = 'escape-wheel-A-curved-web';
-    b.escapeWheel.add(web); webs.push(web);
+    const phi = Math.PI / 2 + i * Math.PI * 2 / 3, P = [1.30 * Math.cos(phi), 1.30 * Math.sin(phi)], rho = 1.25;
+    const L = 1.30, h = Math.sqrt(rho * rho - L * L / 4), n = [Math.sin(phi), -Math.cos(phi)];
+    const C = [P[0] / 2 + n[0] * h, P[1] / 2 + n[1] * h];
+    const a0 = Math.atan2(-C[1], -C[0]);
+    let a1 = Math.atan2(P[1] - C[1], P[0] - C[0]);
+    while (a1 - a0 > Math.PI) a1 -= 2 * Math.PI; while (a1 - a0 < -Math.PI) a1 += 2 * Math.PI;
+    const count = 48, outer = [], inner = [];
+    for (let k = 0; k <= count; k++) {
+      const t = k / count, ang = a0 + (a1 - a0) * t, half = .16 + .12 * t;
+      outer.push([C[0] + (rho + half) * Math.cos(ang), C[1] + (rho + half) * Math.sin(ang)]);
+      inner.push([C[0] + (rho - half) * Math.cos(ang), C[1] + (rho - half) * Math.sin(ang)]);
+    }
+    crossingArms.push(poly([...outer, ...inner.reverse()]));
   }
+  const crossing = clip.union(...crossingArms);
   const bearingParts = [];
   const shafts = [b.escapeWheel.userData.hub, staff, b.lever.userData.pivotHub];
   for (let i = 0; i < 3; i++) {
-    const boss = b.bearingBosses[i], shaft = shafts[i], radius = [.20, .18, .17][i], front = [.217, .39, .64][i];
+    const boss = b.bearingBosses[i], shaft = shafts[i], radius = [.20, .18, .17][i], front = [.217, .10, .12][i];
     replace(shaft, new THREE.CylinderGeometry(radius, radius, front + .72, 64));
     shaft.position.z = (front - .72) / 2;
     replace(boss, ring(radius + .003, .26, -.08, .08, 128));
@@ -49,7 +59,8 @@ export function finishReed396Parts(model) {
 
   for(const spoke of b.balance.children.filter(o=>o.userData.role==='balance-wheel-B-spoke'))replace(spoke,new THREE.BoxGeometry(g.balanceRadius*1.94,.10,.12));
   const profiles = reed396Profiles();
-  replace(b.escapeWheel.userData.toothedRim, plate(clip.difference(poly(profiles.wheel), poly(circle([0, 0], g.wheelInnerRadius, 128))), -.14, .14));
+  replace(b.escapeWheel.userData.toothedRim, plate(clip.union(clip.difference(poly(profiles.wheel), poly(circle([0, 0], g.wheelInnerRadius, 256))), crossing), -.14, .14));
+  b.escapeWheel.userData.toothedRim.userData.role = 'twelve-tooth-escape-wheel-rim-and-three-armed-crossing';
   // Pallets g and f and the anchor-like cross-piece h are one plate in the
   // escape wheel's plane, as Brown draws it: a bracket round staff c whose
   // two arms end in the pallets. The lever arm, fork and tail sit above it

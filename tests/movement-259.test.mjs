@@ -63,7 +63,7 @@ test('movement 259 is one physically notched V-groove rigid on its shaft', () =>
   assert.equal(blocks.pulleyBody.parent, blocks.pulleyRotor);
   assert.equal(blocks.hub.parent, blocks.pulleyRotor);
   assert.equal(blocks.shaft.parent, blocks.pulleyRotor);
-  assert.equal(geometry.notchCount, 48);
+  assert.equal(geometry.notchCount, 88);
   assert.equal(
     transmission.potentialNoSlipLandLaw,
     'v=omega-times-(groove-root-radius+band-radius/sin(groove-half-angle))',
@@ -86,7 +86,7 @@ test('movement 259 preserves the measured unavailable edge elevation', () => {
   assert.equal(plate.measurementUncertaintyPixels, 5);
   assert.equal(plate.officialAnimationAvailable, false);
   assert.equal(plate.notchCountSpecifiedBySource, false);
-  assert.equal(plate.modeledNotchCount, 48);
+  assert.equal(plate.modeledNotchCount, 88);
   assert.deepEqual(plate.rasterPulleyBounds, {
     bottom: 474,
     left: 222,
@@ -193,18 +193,18 @@ test('movement 259 has equal-pitch real indentations across both V flanks', () =
   near(geometry.notchPitchAtOuterRadius,
     geometry.outerRadius * geometry.notchAngularPitch, 0,
     'outer-radius notch pitch');
-  near(notchDepthAtAngle(0), geometry.notchDepth, 0,
+  near(notchDepthAtAngle(0), geometry.notchDepth, 1e-12,
     'notch-center depth');
   near(notchDepthAtAngle(geometry.notchAngularPitch / 2), 0, 0,
     'between-notch depth');
-  near(notchDepthAtAngle(Math.PI * 2), geometry.notchDepth, 0,
+  near(notchDepthAtAngle(Math.PI * 2), geometry.notchDepth, 1e-12,
     'periodic notch depth');
   near(nearestNotchAngularOffset(3 * geometry.notchAngularPitch), 0,
     2e-16, 'third notch center offset');
   near(baseVRadiusAtAxial(0), geometry.grooveRootRadius, 0,
     'unnotched V root');
   near(surfaceRadiusAt(0, 0),
-    geometry.grooveRootRadius - geometry.notchDepth, 0,
+    geometry.grooveRootRadius - geometry.notchDepth, 1e-12,
     'physically indented V root');
   near(surfaceRadiusAt(0, geometry.notchAngularPitch / 2),
     geometry.grooveRootRadius, 0,
@@ -299,7 +299,7 @@ test('movement 259 fabricates neither a round-band route nor a mate pulley', () 
   );
   assert.equal(
     roles.filter((role) => role === 'notch-bottom-contrast-line').length,
-    48,
+    88,
   );
   disposeModel(model.root);
 });

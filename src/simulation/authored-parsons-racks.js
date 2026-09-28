@@ -247,7 +247,8 @@ function parsonsEndlessRackDrive(movement) {
   const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.27, 0.27, rodLength, 48).rotateZ(Math.PI / 2), rackMaterial);
   rod.position.set(rodStart + rodLength / 2, 0, -0.12);
   rod.userData.role = 'input-rod-from-oscillating-cylinder';
-  const collar = new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.62, 0.30, 64).rotateZ(Math.PI / 2), rackMaterial);
+  // Brown ends the rod in a flat rectangular crosshead block.
+  const collar = new THREE.Mesh(new THREE.BoxGeometry(0.30, 1.30, 0.72), rackMaterial);
   collar.position.set(rodStart + rodLength + 0.15, 0, -0.12);
   collar.userData.role = 'input-rod-end-collar';
   rack.add(band, largeRebate, smallRebate, rod, collar);

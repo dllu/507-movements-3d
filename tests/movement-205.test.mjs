@@ -859,3 +859,38 @@ test('movement 205 seats every tooth into the wheel rim on a root key the cams n
   assert.ok(closest > key.outer + 0.05, `cam reaches radius ${closest} over the key`);
   disposeModel(model.root);
 });
+
+test('movement 205 front teeth are single plain bars running in across the face, clear of the front cam', () => {
+  const model = createMovementModel(catalog.movements[204]);
+  const { blocks, geometry } = model.root.userData;
+  const shank = geometry.frontSeriesShank;
+  const front = blocks.wheelRows.find((row) => row.position.z > 0);
+  for (const tooth of front.userData.teeth) {
+    // One extrusion: no raised face bars stepped onto the tooth.
+    assert.equal(tooth.children.filter((child) => /face-bar/.test(child.userData.role ?? '')).length, 0);
+    tooth.geometry.computeBoundingBox();
+    near(tooth.geometry.boundingBox.min.x, shank.inner, 1e-6, 'shank inner radius');
+    assert.ok(tooth.geometry.boundingBox.max.x > geometry.wheelOuterRadius - 1e-3);
+  }
+  assert.ok(shank.high - shank.low > 0.25);
+  // The front cam never enters the shank band over a whole wheel turn.
+  const cam = blocks.camMeshes.find((mesh) => {
+    const box = new THREE.Box3().setFromObject(mesh); return box.max.z > 0;
+  });
+  const period = model.root.userData.transmission.inputCyclePeriod, tooth = front.userData.teeth[0];
+  const position = cam.geometry.attributes.position, point = new THREE.Vector3();
+  let closest = Infinity;
+  for (let i = 0; i < 11 * 72; i += 1) {
+    model.update(11 * period * i / (11 * 72));
+    model.root.updateMatrixWorld(true);
+    const matrix = tooth.matrixWorld.clone().invert().multiply(cam.matrixWorld);
+    for (let j = 0; j < position.count; j += 1) {
+      point.fromBufferAttribute(position, j).applyMatrix4(matrix);
+      if (point.x > shank.outer) continue;
+      const dx = Math.max(shank.inner - point.x, 0), dy = Math.max(shank.low - point.y, 0, point.y - shank.high);
+      closest = Math.min(closest, Math.hypot(dx, dy));
+    }
+  }
+  assert.ok(closest > 0.02, `cam comes within ${closest} of a front shank`);
+  disposeModel(model.root);
+});

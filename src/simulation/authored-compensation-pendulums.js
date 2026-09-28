@@ -486,21 +486,27 @@ function mercurialCompensationPendulum(movement) {
   rodIndex.position.set(0.10, -1.02, 0);
   rodIndex.userData.role = 'white-pendulum-swing-index';
 
-  const threadPoints = Array.from({ length: 181 }, (_, index) => {
-    const progress = index / 180;
-    const angle = progress * FULL_TURN * 14;
+  // A clean helical ridge on the rod: 14 turns, finely sampled, its round
+  // section sunk 0.008 into the rod so it sits on it (it floated 0.013 off
+  // and 48 segments for 14 turns made lumpy blobs).
+  const threadTurns = 14;
+  const threadRidgeRadius = 0.024;
+  const threadHelixRadius = 0.095 + threadRidgeRadius - 0.008;
+  const threadPoints = Array.from({ length: threadTurns * 32 + 1 }, (_, index) => {
+    const progress = index / (threadTurns * 32);
+    const angle = progress * FULL_TURN * threadTurns;
     return new THREE.Vector3(
-      0.132 * Math.cos(angle),
+      threadHelixRadius * Math.cos(angle),
       -(1.18 + progress * 2.05),
-      0.132 * Math.sin(angle),
+      threadHelixRadius * Math.sin(angle),
     );
   });
-  const threadHelix = tubeThrough(
-    threadPoints,
-    0.024,
+  const threadHelix = new THREE.Mesh(
+    new THREE.TubeGeometry(new THREE.CatmullRomCurve3(threadPoints, false, 'centripetal'),
+      threadTurns * 40, threadRidgeRadius, 10, false),
     brassMaterial,
-    'visible-thread-on-pendulum-adjustment-rod',
   );
+  threadHelix.userData.role = 'visible-thread-on-pendulum-adjustment-rod';
 
   const jarAssembly = new THREE.Group();
   jarAssembly.userData.role = 'thermally-translated-mercury-jar-assembly';
@@ -1799,10 +1805,9 @@ function compoundBarCompensationPendulum(movement) {
 
 export function createAuthoredCompensationPendulumMovement(movement) {
   if (movement.id === 316) {
-    // Brown sections the jar: the mercury is cut on the plane facing the
-    // camera (plain cut face) so the rod's lower end shows standing in it,
-    // as he draws it; the glass stays clear and whole.
-    return applyCutawayFor(mercurialCompensationPendulum(movement), 316, { cutMercury: true });
+    // The mercury is a full column inside the clear glass (it was a
+    // half-cylinder section, so the jar looked half empty when turned).
+    return applyCutawayFor(mercurialCompensationPendulum(movement), 316);
   }
   if (movement.id === 317) {
     return compoundBarCompensationPendulum(movement);

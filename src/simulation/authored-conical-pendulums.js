@@ -280,8 +280,9 @@ function conicalPendulum(movement) {
   spindle.userData.role = 'vertical-rotating-driving-spindle';
   const crankHub = cylinderAlongY(0.40, 0.42, darkMaterial, 40);
   crankHub.userData.role = 'rotating-crank-hub';
+  // The arm ends inside the hub's wall; no stub runs out past the hub.
   const crankArm = makeBeam(
-    new THREE.Vector3(-0.62, 0, 0),
+    new THREE.Vector3(0.2, 0, 0),
     new THREE.Vector3(crankRadius, 0, 0),
     {
       color: PALETTE.driver,

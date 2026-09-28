@@ -257,12 +257,16 @@ function pumpDrill(movement) {
 
   const cyclePeriod = 8;
   const cycleRate = FULL_TURN / cyclePeriod;
-  const maximumWindingAngle = 4 * Math.PI;
-  const spindleRadius = 0.105;
+  // With Brown's thicker spindle each turn takes up more cord, so the cord
+  // winds about 1.1 turns each way and the crossbar travels a little lower.
+  const maximumWindingAngle = 7.0;
+  // Cord centreline radius. The visible spindle (0.037 less) is 0.157, about
+  // 0.087 of the fly's diameter as Brown draws it.
+  const spindleRadius = 0.194;
   const handleHalfSpan = 1.62;
   const anchorY = 2.45;
-  const connectorDrop = 0.09;
-  const crossbarLowY = -0.28;
+  const connectorDrop = 0.16; // gentler eye-to-helix bend for the thicker spindle
+  const crossbarLowY = -0.40;
   const tangentTransitionAngle = 0.42;
   // Brown draws the fly as a heavy disk wider than the crossbar
   // (427 px against the crossbar's 383 px) with a thick rounded edge.
@@ -358,12 +362,16 @@ function pumpDrill(movement) {
   topCap.position.y = 2.59;
   topCap.userData.role = 'cord-midpoint-anchorage-collar';
   spindleRotor.add(topCap);
+  // Brown's spindle runs plain out of the plate: no top nut, and the cord's
+  // anchorage pin stays inside the spindle.
+  topCap.visible = false;
 
   const eyePin = cylinderAlongY(0.045, 0.33, brassMaterial, 20);
   eyePin.rotation.z = Math.PI / 2;
   eyePin.position.y = anchorY;
   eyePin.userData.role = 'transverse-cord-anchoring-eye';
   spindleRotor.add(eyePin);
+  eyePin.visible = false;
 
   // A disk with a fully rounded (semicircular) rim, as the plate shades it.
   const flywheelProfile = [new THREE.Vector2(0, -flywheelThickness / 2)];
@@ -385,12 +393,12 @@ function pumpDrill(movement) {
   flywheel.userData.role = 'heavy-momentum-flywheel-fixed-to-spindle';
   spindleRotor.add(flywheel);
 
-  const flywheelHub = cylinderAlongY(0.19, 0.34, darkMaterial, 32);
+  const flywheelHub = cylinderAlongY(0.25, 0.34, darkMaterial, 32);
   flywheelHub.position.y = flywheelY;
   flywheelHub.userData.role = 'flywheel-hub';
   spindleRotor.add(flywheelHub);
 
-  const drillSocket = cylinderAlongY(0.19, 0.31, brassMaterial, 28);
+  const drillSocket = cylinderAlongY(0.25, 0.31, brassMaterial, 28);
   drillSocket.position.y = -1.54;
   drillSocket.userData.role = 'source-labeled-drill-socket-E';
   spindleRotor.add(drillSocket);
@@ -413,7 +421,7 @@ function pumpDrill(movement) {
 
   const crossbar = new THREE.Group();
   crossbar.userData.role = 'hand-pumped-transverse-sliding-crossbar';
-  const sleeveOuterRadius = 0.22;
+  const sleeveOuterRadius = 0.30;
   const beamLength = handleHalfSpan - sleeveOuterRadius;
   for (const side of [-1, 1]) {
     const beam = new THREE.Mesh(

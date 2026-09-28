@@ -356,3 +356,35 @@ test('movement 507 remains the next authored frontier and does not reuse movemen
   disposeModel(model433.root);
   disposeModel(model507.root);
 });
+
+test('movement 433 spill sheets leave the boards live, move with the runner and loop', () => {
+  const model = createMovementModel(catalog.movements[432]);
+  const { blocks, geometry, stateAtTime } = model.root.userData;
+  const { spills } = blocks;
+  assert.equal(spills.length, geometry.bladeCount);
+  for (const time of [0, 0.37, 1.9, 3.3]) {
+    model.update(time);
+    const state = stateAtTime(time);
+    const live = spills.filter((sheet) => sheet.visible);
+    assert.ok(live.length >= 2, `sheets falling at ${time}`);
+    assert.ok(live.some((sheet) => sheet.path.points[0].y - sheet.path.points.at(-1).y > 1), `water falls well below the runner at ${time}`);
+    const attached = live.filter((sheet) => sheet.path.flows[0] > 0.02);
+    assert.ok(attached.length >= 1, `a board is shedding at ${time}`);
+    for (const sheet of attached) {
+      const index = spills.indexOf(sheet), start = sheet.path.points[0];
+      const angle = state.blades[index].worldAngle;
+      near(start.distanceTo(new THREE.Vector3(Math.cos(angle), 0, -Math.sin(angle)).multiplyScalar(geometry.bladeOuterRadius).setY(0.16)), 0, 1e-9,
+        `sheet ${index} starts on its board's outer end`);
+      const pts = sheet.path.points;
+      for (let k = 1; k < pts.length; k += 1) assert.ok(pts[k].y <= pts[k - 1].y + 1e-12, 'the sheet only falls');
+    }
+  }
+  model.update(0.5);
+  const first = spills.map((sheet) => sheet.visible && sheet.path.points.map((p) => p.clone()));
+  model.update(0.5 + geometry.cycleDuration);
+  spills.forEach((sheet, index) => {
+    assert.equal(Boolean(first[index]), sheet.visible);
+    if (sheet.visible) sheet.path.points.forEach((p, k) => near(p.distanceTo(first[index][k]), 0, 1e-9, 'loops'));
+  });
+  disposeModel(model.root);
+});

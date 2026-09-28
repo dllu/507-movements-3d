@@ -21,6 +21,66 @@ function cFrameMesh(outline, depth, material) {
 
 const FULL_TURN = Math.PI * 2;
 
+// Brown draws the same crank on 379 and 380: a flat bar whose far end
+// carries an upright turned handle. The bar is one flat extrusion whose plan
+// is the hull of two circles, one concentric with the handle's axis and one
+// buried in the spindle hub, so the handle's foot stands wholly on the bar
+// and no bar edge overhangs it.
+function convexHull2(points) {
+  const sorted = [...points].sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  const cross = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+  const lower = [];
+  for (const point of sorted) {
+    while (lower.length >= 2 && cross(lower.at(-2), lower.at(-1), point) <= 0) lower.pop();
+    lower.push(point);
+  }
+  const upper = [];
+  for (const point of sorted.reverse()) {
+    while (upper.length >= 2 && cross(upper.at(-2), upper.at(-1), point) <= 0) upper.pop();
+    upper.push(point);
+  }
+  return [...lower.slice(0, -1), ...upper.slice(0, -1)];
+}
+
+function crankArmGeometry({ handleX, handleEndRadius, hubEndRadius, bottomY, topY }) {
+  const circlePoints = (cx, radius) => Array.from({ length: 96 }, (_, index) => {
+    const angle = index * FULL_TURN / 96;
+    return [cx + radius * Math.cos(angle), radius * Math.sin(angle)];
+  });
+  const outline = convexHull2([
+    ...circlePoints(handleX, handleEndRadius),
+    ...circlePoints(0, hubEndRadius),
+  ]);
+  // plate() extrudes along z; turning it about x stands the plan in the
+  // horizontal plane with its thickness along y.
+  return plate(poly(outline), bottomY, topY).rotateX(-Math.PI / 2);
+}
+
+// A turned handle: a flared foot, a slim neck and a bulb closed by an
+// elliptical dome. `side` lists [radius, height fraction] stations from the
+// foot to the bulb's widest point; the profile is one smooth spline.
+function turnedHandleGeometry({ height, side }) {
+  const [bulbRadius, bulbAt] = side.at(-1);
+  const dome = [20, 40, 60, 78, 90].map((degrees) => {
+    const angle = THREE.MathUtils.degToRad(degrees);
+    return [bulbRadius * Math.cos(angle), bulbAt + (1 - bulbAt) * Math.sin(angle)];
+  });
+  const curve = new THREE.CatmullRomCurve3(
+    [...side, ...dome].map(([radius, fraction]) => new THREE.Vector3(radius, fraction * height, 0)),
+    false,
+    'centripetal',
+  );
+  const profile = [
+    new THREE.Vector2(0, 0),
+    ...curve.getSpacedPoints(64).map((point) => new THREE.Vector2(Math.max(0, point.x), point.y)),
+  ];
+  profile[profile.length - 1].x = 0;
+  return new THREE.LatheGeometry(profile, 40);
+}
+
+// The handle's foot is sunk this far into the bar's top face.
+const HANDLE_FOOT_EMBED = 0.012;
+
 class VerticalHelixCurve extends THREE.Curve {
   constructor({ maximumY, minimumY, phase = 0, radius, turns }) {
     super();
@@ -237,11 +297,13 @@ function opposingFeedScrewCrampDrill(movement) {
   drillBit.rotation.y = Math.PI / 5;
   drillBit.userData.role = 'downward-pointing-drill-bit';
   drillRotor.add(drillBit);
+  // Crank bar 0.11 thick (y 0.505-0.615), handle axis 1.60 from the spindle.
+  const drillCrankHandleX = -1.60;
   const drillCrankArm = new THREE.Mesh(
-    new THREE.BoxGeometry(1.76, 0.11, 0.14),
+    crankArmGeometry({ handleX: drillCrankHandleX, handleEndRadius: 0.15,
+      hubEndRadius: 0.12, bottomY: 0.505, topY: 0.615 }),
     drillMaterial,
   );
-  drillCrankArm.position.set(-0.78, 0.56, 0);
   drillCrankArm.userData.role =
     'radial-upper-hand-crank-rigid-with-drill-spindle';
   drillRotor.add(drillCrankArm);
@@ -256,13 +318,12 @@ function opposingFeedScrewCrampDrill(movement) {
   drillRotor.add(drillCrankHub);
   // Brown draws a turned handle: a slim neck swelling to a rounded bulb.
   const drillCrankKnob = new THREE.Mesh(
-    new THREE.LatheGeometry([
-      [0, -0.27], [0.10, -0.27], [0.075, -0.17], [0.085, -0.07],
-      [0.15, 0.04], [0.175, 0.13], [0.16, 0.21], [0.11, 0.26], [0, 0.27],
-    ].map(([radius, y]) => new THREE.Vector2(radius, y)), 32),
+    turnedHandleGeometry({ height: 0.47, side: [
+      [0.10, 0], [0.075, 0.185], [0.085, 0.37], [0.15, 0.574], [0.175, 0.74],
+    ] }),
     drillMaterial,
   );
-  drillCrankKnob.position.set(-1.60, 0.79, 0);
+  drillCrankKnob.position.set(drillCrankHandleX, 0.615 - HANDLE_FOOT_EMBED, 0);
   drillCrankKnob.userData.role = 'free-turning-upper-crank-hand-knob';
   drillRotor.add(drillCrankKnob);
   const drillIndex = new THREE.Mesh(
@@ -703,7 +764,9 @@ function throughFeedScrewCrampDrill(movement) {
       ),
       feedMaterial,
     );
-    ring.position.y = y;
+    // Set 0.004 inside the sleeve end, within the neck, so the ring never
+    // lies in the thread's flat end face (pass 90 coincident-face screen).
+    ring.position.y = y - Math.sign(y) * 0.004;
     ring.rotation.x = -Math.PI / 2;
     ring.userData.role = 'annular-end-face-showing-feed-screw-bore';
     sleeveEndRings.push(ring);
@@ -819,21 +882,28 @@ function throughFeedScrewCrampDrill(movement) {
   drillCrankHub.position.y = 1.43;
   drillCrankHub.userData.role = 'upper-through-spindle-crank-hub';
   drillRotor.add(drillCrankHub);
+  // Pass 90: 380's crank takes 379's turned handle, with the proportions of
+  // Brown's plate 380 (0.0077 units per pixel): the handle stands 0.43 above
+  // the bar, its foot flares to 0.116, its neck narrows to 0.058 at 0.43 of
+  // its height and its bulb swells to 0.108 at 0.76 (neck and bulb are made
+  // 0.004 fuller, as Brown's outline strokes eat into them); its axis is 1.45
+  // from the spindle and the bar runs 0.20 beyond it.
+  const drillCrankHandleX = -1.45;
   const drillCrankArm = new THREE.Mesh(
-    new THREE.BoxGeometry(1.84, 0.11, 0.14),
+    crankArmGeometry({ handleX: drillCrankHandleX, handleEndRadius: 0.20,
+      hubEndRadius: 0.12, bottomY: 1.445, topY: 1.555 }),
     drillMaterial,
   );
-  drillCrankArm.position.set(-0.82, 1.50, 0);
   drillCrankArm.userData.role =
     'upper-hand-crank-rigid-with-inner-drill-spindle';
   drillRotor.add(drillCrankArm);
-  const drillCrankKnob = cylinderAlongY(
-    0.17,
-    0.55,
+  const drillCrankKnob = new THREE.Mesh(
+    turnedHandleGeometry({ height: 0.43 + HANDLE_FOOT_EMBED, side: [
+      [0.116, 0], [0.088, 0.12], [0.062, 0.43], [0.085, 0.6], [0.112, 0.76],
+    ] }),
     drillMaterial,
-    24,
   );
-  drillCrankKnob.position.set(-1.68, 1.73, 0);
+  drillCrankKnob.position.set(drillCrankHandleX, 1.555 - HANDLE_FOOT_EMBED, 0);
   drillCrankKnob.userData.role = 'upper-drill-crank-hand-knob';
   drillRotor.add(drillCrankKnob);
   const drillIndex = new THREE.Mesh(

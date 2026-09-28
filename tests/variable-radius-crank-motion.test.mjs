@@ -25,8 +25,12 @@ test('engraving dimensions close throughout the cycle and fit the three initial 
   for (let i = 0; i <= 1440; i++) {
     const s = variableRadiusCrankAtAngle(2 * Math.PI * i / 1440, g);
     assert.ok(Math.abs(Math.hypot(s.wrist[0] - g.rockerPivot[0], s.wrist[1] - g.rockerPivot[1]) - g.rockerLength) < 1e-12);
-    assert.ok(s.slotRadius > .35 && s.slotRadius < 1.46);
+    // The slot (capsule .34-1.50 in the crank) must contain the pin centre.
+    assert.ok(s.slotRadius > .35 && s.slotRadius < 1.49);
   }
+  // The inferred fulcrum sits about one pitman length from the wrist, along
+  // Brown's broken-off continuation, so the whole rocker is in view.
+  assert.equal(g.rockerLength, 2.5);
   const s = variableRadiusCrankAtAngle(g.phase, g);
   for (const [name, pixel] of [['auxiliaryPin', [310, 217]], ['slotPin', [123, 161]], ['wrist', [473, 263]]]) {
     const projected = [286 + s[name][0] / g.scale, 264 - s[name][1] / g.scale];

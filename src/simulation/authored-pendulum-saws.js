@@ -36,6 +36,17 @@ function tubeBetween(start, end, radius, material) {
   );
 }
 
+// A capped round bar whose lower end is cut level (flat on its pad).
+function closedBarBetween(start, end, radius, material) {
+  const axis = end.clone().sub(start);
+  const length = axis.length();
+  const geometry = new THREE.CylinderGeometry(radius, radius, length, 24);
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.position.copy(start).add(end).multiplyScalar(0.5);
+  mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), axis.normalize());
+  return mesh;
+}
+
 const ROPE_RADIUS = 0.025;
 
 // One continuous laid rope per side: up from the carriage tie, half round
@@ -253,10 +264,12 @@ function pendulumTreeSaw(movement) {
   const framePosts = [];
   for (const x of [-0.95, 3.65]) {
     const post = new THREE.Mesh(
-      new THREE.BoxGeometry(0.16, 3.26, 0.22),
+      // Down to the feet on the common ground line (y -2.0) that also
+      // carries the log's plank and the pendulum's A-frame.
+      new THREE.BoxGeometry(0.16, 3.855, 0.22),
       frameMaterial,
     );
-    post.position.set(x, 0.31, 0);
+    post.position.set(x, 0.0125, 0);
     post.userData.role = 'fixed-overhead-frame-post';
     framePosts.push(post);
     fixedFrame.add(post);
@@ -274,7 +287,7 @@ function pendulumTreeSaw(movement) {
       new THREE.BoxGeometry(1.08, 0.17, 0.72),
       frameMaterial,
     );
-    foot.position.set(x, -1.38, 0);
+    foot.position.set(x, -1.915, 0);
     foot.userData.role = 'fixed-overhead-frame-foot';
     frameFeet.push(foot);
     fixedFrame.add(foot);
@@ -284,20 +297,21 @@ function pendulumTreeSaw(movement) {
   pendulumFrame.userData.fixed = true;
   pendulumFrame.userData.role = 'fixed-triangular-pendulum-standard';
   root.add(pendulumFrame);
-  const pendulumSupports = [
-    tubeBetween(
-      new THREE.Vector3(-4.32, -1.74, 0.16),
-      pendulumPivot.clone().setZ(0.16),
-      0.075,
-      frameMaterial,
-    ),
-    tubeBetween(
-      new THREE.Vector3(-2.18, -1.74, 0.16),
-      pendulumPivot.clone().setZ(0.16),
-      0.075,
-      frameMaterial,
-    ),
-  ];
+  // The A-frame's two legs are closed round bars from the pivot down to the
+  // common ground line, each ending on a small pad.
+  const legGroundY = -2.0;
+  const pendulumFeet = [];
+  const pendulumSupports = [-4.32, -2.18].map((footX) => {
+    const top = pendulumPivot.clone().setZ(0.16);
+    const foot = new THREE.Vector3(footX, legGroundY + 0.06, 0.16);
+    const leg = closedBarBetween(top, foot, 0.075, frameMaterial);
+    const pad = new THREE.Mesh(new THREE.BoxGeometry(0.30, 0.06, 0.26), frameMaterial);
+    pad.position.set(footX, legGroundY + 0.03, 0.16);
+    pad.userData.role = 'pendulum-a-frame-leg-foot';
+    pendulumFeet.push(pad);
+    pendulumFrame.add(pad);
+    return leg;
+  });
   for (const support of pendulumSupports) {
     support.userData.role = 'pendulum-a-frame-leg';
     pendulumFrame.add(support);
@@ -337,14 +351,34 @@ function pendulumTreeSaw(movement) {
   pendulumShaft.position.copy(pendulumPivot).setZ(.16);root.add(pendulumShaft);
   pendulumRod.userData.role = 'rigid-pendulum-rod';
   pendulum.add(pendulumRod);
+  // Brown's bob is a spade: a straight-sided blade whose lower end closes in
+  // two circular arcs to a blunt point, one flat extrusion on the rod's end.
+  const spadeHalfWidth = 0.27;
+  const spadeTop = 0.24;
+  const spadeShoulder = -0.12;
+  const spadeTip = -0.46;
+  const spadeOutline = [[-spadeHalfWidth, spadeTop], [spadeHalfWidth, spadeTop]];
+  {
+    // Arc through the shoulder corner and the tip, tangent to the side there.
+    const drop = spadeShoulder - spadeTip;
+    const radius = (spadeHalfWidth ** 2 + drop ** 2) / (2 * spadeHalfWidth);
+    const centerX = spadeHalfWidth - radius;
+    const end = Math.asin(drop / radius);
+    for (let i = 0; i <= 32; i += 1) {
+      const a = -end * i / 32;
+      spadeOutline.push([centerX + radius * Math.cos(a), spadeShoulder + radius * Math.sin(a)]);
+    }
+    for (let i = 32; i >= 0; i -= 1) {
+      const a = -end * i / 32;
+      spadeOutline.push([-(centerX + radius * Math.cos(a)), spadeShoulder + radius * Math.sin(a)]);
+    }
+  }
   const pendulumBob = new THREE.Mesh(
-    // Brown's bob is narrow (about 0.3 of the A-frame spread); 0.64 wide
-    // it swings clear of both legs.
-    new THREE.BoxGeometry(0.64, 0.46, 0.34),
+    plate(poly(spadeOutline), -0.12, 0.12),
     pendulumMaterial,
   );
   pendulumBob.position.y = -pendulumLength;
-  pendulumBob.userData.role = 'rectangular-source-style-pendulum-bob';
+  pendulumBob.userData.role = 'spade-shaped-source-style-pendulum-bob';
   pendulum.add(pendulumBob);
   const rodJointPin = cylinderAlongZ(0.11, 0.64, darkMaterial, 24);
   rodJointPin.position.y = -rodAttachmentRadius;
@@ -412,45 +446,91 @@ function pendulumTreeSaw(movement) {
   saw.userData.role =
     'bow-saw-translating-horizontally-with-fed-guide';
   root.add(saw);
-  const sawBlade = new THREE.Mesh(
-    new THREE.BoxGeometry(2.72, 0.095, 0.095),
-    sawMaterial,
+  // Brown's bow saw is one symmetric frame: two waisted end standards whose
+  // tops scroll outward, a stretcher across the middle (on the slider pin's
+  // line) and the toothed blade strained across the bottom. The frame is one
+  // extrusion; the blade and its 27 crosscut teeth are another.
+  // Narrow enough that the outward scrolls clear the counterweights.
+  const sawSpan = 2.58;
+  const sawMid = sawSpan / 2;
+  const standardBottomY = -0.60;
+  // Low enough that the scrolls pass under the carriage's rope anchors.
+  const standardTopY = 0.36;
+  const standardWaist = 0.12;
+  const standardHalfWidth = 0.065;
+  const standardRing = (side) => {
+    // Circular-arc centreline bowing inward, offset each side by the half width.
+    const chord = standardTopY - standardBottomY;
+    const radius = (chord * chord / 4 + standardWaist * standardWaist) / (2 * standardWaist);
+    const midY = (standardTopY + standardBottomY) / 2;
+    const baseX = side < 0 ? 0 : sawSpan;
+    const inward = side < 0 ? 1 : -1;
+    const centerX = baseX + inward * (standardWaist - radius);
+    const half = Math.asin(chord / 2 / radius);
+    const outer = [];
+    const inner = [];
+    for (let i = 0; i <= 48; i += 1) {
+      const a = -half + 2 * half * i / 48;
+      const y = midY + radius * Math.sin(a);
+      const dx = inward * radius * Math.cos(a);
+      outer.push([centerX + dx * (radius - standardHalfWidth) / radius, y]);
+      inner.push([centerX + dx * (radius + standardHalfWidth) / radius, y]);
+    }
+    return poly([...outer, ...inner.reverse()]);
+  };
+  // Each standard's top curls outward and over: an arc of constant width
+  // tangent to the standard's end, finished with a round end.
+  const scroll = (side) => {
+    const radius = 0.08;
+    const baseX = side < 0 ? 0 : sawSpan;
+    const cx = baseX + side * radius;
+    const sweep = THREE.MathUtils.degToRad(200);
+    const start = side < 0 ? 0 : Math.PI;
+    const dir = side < 0 ? 1 : -1;
+    const outer = [];
+    const inner = [];
+    for (let i = 0; i <= 64; i += 1) {
+      const a = start + dir * sweep * i / 64;
+      outer.push([cx + (radius + standardHalfWidth) * Math.cos(a), standardTopY + (radius + standardHalfWidth) * Math.sin(a)]);
+      inner.push([cx + (radius - standardHalfWidth) * Math.cos(a), standardTopY + (radius - standardHalfWidth) * Math.sin(a)]);
+    }
+    const endAngle = start + dir * sweep;
+    return polygonClipping.union(
+      poly([...outer, ...inner.reverse()]),
+      poly(circle([cx + radius * Math.cos(endAngle), standardTopY + radius * Math.sin(endAngle)], standardHalfWidth, 48)),
+    );
+  };
+  const sawPinBore = 0.123;
+  const frameRegion = polygonClipping.difference(
+    polygonClipping.union(
+      standardRing(-1),
+      standardRing(1),
+      poly([[0.05, -0.045], [sawSpan - 0.05, -0.045], [sawSpan - 0.05, 0.045], [0.05, 0.045]]),
+      scroll(-1),
+      scroll(1),
+      poly(circle([0, 0], 0.18, 96)),
+    ),
+    poly(circle([0, 0], sawPinBore, 96)),
   );
-  sawBlade.position.set(1.35, -0.54, 0);
+  const sawFrame = new THREE.Mesh(plate(frameRegion, -0.05, 0.05), sawMaterial);
+  sawFrame.userData.role = 'symmetric-bow-saw-frame-with-scrolled-standards-and-stretcher';
+  saw.add(sawFrame);
+  const sawTeethCount = 27;
+  const toothPitch = 0.0925;
+  const firstToothX = 0.09 - toothPitch / 2;
+  const bladeTop = -0.49;
+  const bladeBottom = -0.59;
+  const toothTip = -0.705;
+  const bladeOutline = [[-0.01, bladeTop], [sawSpan + 0.01, bladeTop], [sawSpan + 0.01, bladeBottom]];
+  for (let index = sawTeethCount - 1; index >= 0; index -= 1) {
+    const x0 = firstToothX + index * toothPitch;
+    bladeOutline.push([x0 + toothPitch, bladeBottom], [x0 + toothPitch / 2, toothTip], [x0, bladeBottom]);
+  }
+  bladeOutline.push([-0.01, bladeBottom]);
+  const sawBlade = new THREE.Mesh(plate(poly(bladeOutline), -0.03, 0.03), darkMaterial);
   sawBlade.userData.role = 'horizontal-crosscut-saw-blade';
+  sawBlade.userData.teeth = sawTeethCount;
   saw.add(sawBlade);
-  const sawTop = new THREE.Mesh(
-    new THREE.BoxGeometry(2.72, 0.09, 0.11),
-    sawMaterial,
-  );
-  sawTop.position.set(1.35, 0.44, 0);
-  sawTop.userData.role = 'bow-saw-upper-stretcher';
-  saw.add(sawTop);
-  const sawHandles = [];
-  for (const x of [0.05, 2.65]) {
-    const handle = tubeBetween(
-      new THREE.Vector3(x - 0.08, -0.54, 0),
-      new THREE.Vector3(x + 0.08, 0.44, 0),
-      0.065,
-      sawMaterial,
-    );
-    handle.userData.role = 'bow-saw-curved-end-standard';
-    sawHandles.push(handle);
-    saw.add(handle);
-  }
-  const sawTeeth = [];
-  for (let index = 0; index < 27; index += 1) {
-    const tooth = new THREE.Mesh(
-      new THREE.ConeGeometry(0.054, 0.13, 3),
-      darkMaterial,
-    );
-    tooth.position.set(0.09 + index * 0.097, -0.64, 0);
-    tooth.rotation.z = Math.PI;
-    tooth.userData.index = index;
-    tooth.userData.role = 'one-of-crosscut-saw-teeth';
-    sawTeeth.push(tooth);
-    saw.add(tooth);
-  }
 
   const pulleyRoots = [];
   const ropes = [];
@@ -665,15 +745,14 @@ function pendulumTreeSaw(movement) {
       pendulumIndex,
       pendulumRod,
       pendulumSupports,
+      pendulumFeet,
       pulleyRoots,
       rodJointPin,
       ropes,
       saw,
       sawBlade,
-      sawHandles,
+      sawFrame,
       sawPinMarker,
-      sawTeeth,
-      sawTop,
       topBeam,
     },
     degreesOfFreedom: {

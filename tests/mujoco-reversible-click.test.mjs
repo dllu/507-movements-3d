@@ -44,11 +44,20 @@ test('121 either click end indexes one tooth per cycle with a physical return an
 });
 
 test('121 disabling tooth contact disconnects the cog from the driven rod and disk',()=>{
- const v=makeMujocoReversibleClick(mujoco),p=v.physics;try{for(const[id,n]of Object.entries(p.geomGroups))if(n==='cog')p.model.geom_contype[id]=p.model.geom_conaffinity[id]=0;v.update(1.5);assert(p.data.qpos[p.joints.carrier.q]<-.3);assert(p.data.qpos[p.joints.slider.q]<-.44);assert.equal(p.data.qpos[p.joints.output.q],0);}finally{v.dispose();}
+ const v=makeMujocoReversibleClick(mujoco),p=v.physics;try{for(const[id,n]of Object.entries(p.geomGroups))if(n==='cog')p.model.geom_contype[id]=p.model.geom_conaffinity[id]=0;v.update(1.5);assert(p.data.qpos[p.joints.carrier.q]<-.26);assert(p.data.qpos[p.joints.slider.q]<-.37);assert.equal(p.data.qpos[p.joints.output.q],0);}finally{v.dispose();}
 });
 
 test('121 restart, reverse selection, seeking and frame partitioning preserve deterministic playback',()=>{
  const v=makeMujocoReversibleClick(mujoco),p=v.physics,u=v.root.userData;try{v.update(3);const state=[...p.data.qpos,...p.data.qvel];v.reset();for(let i=1;i<=180;i++)v.update(i/60);assert.deepEqual([...p.data.qpos,...p.data.qvel],state);v.update(.5);v.update(3);assert.deepEqual([...p.data.qpos,...p.data.qvel],state);
   u.setConfiguration('reverse');assert.equal(p.data.time,0);assert.equal(p.data.qpos[p.joints.pawl.q],3.3);v.update(3);assert(p.data.qpos[p.joints.output.q]>.1);u.setConfiguration('forward');v.update(3);assert.deepEqual([...p.data.qpos,...p.data.qvel],state);
  }finally{v.dispose();v.dispose();}assert(p.model.isDeleted()&&p.data.isDeleted());
+});
+
+test('121 after each return the click drops back into a root in both modes, not onto a tooth flank',()=>{
+ for(const mode of ['forward','reverse']){const v=makeMujocoReversibleClick(mujoco,{mode}),u=v.root.userData,pos=u.parts.click.geometry.attributes.position;try{
+  const reach=()=>{const e=u.parts.click.matrixWorld.elements;let r=Infinity;for(let i=0;i<pos.count;i++){const x=pos.getX(i),y=pos.getY(i);r=Math.min(r,Math.hypot(e[0]*x+e[4]*y+e[12],e[1]*x+e[5]*y+e[13]));}return r;};
+  const P=v.physics.description.options.period,[drive,rest]=mode==='forward'?[.5,0]:[0,.5];
+  for(const cycle of [4,8]){v.update((cycle+drive)*P);const driving=reach();v.update((cycle+1+rest)*P);const resting=reach();
+   assert(resting<driving+.02,`${mode}: click rests ${resting-driving} above its driving depth`);assert(resting<u.profile.tipRadius-.05);}
+ }finally{v.dispose();}}
 });

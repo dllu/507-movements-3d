@@ -4,6 +4,7 @@ import { heldSideDifferentialMotion } from './held-side-differential-motion.js';
 import { turnedClutchGeometry } from './clutch-section-geometry.js';
 import { bevelToothGeometry } from './bevel-geometry.js';
 import { flatBeltGeometry } from './belt-geometry.js';
+import { makeSeeThrough } from './see-through-part.js';
 import { PALETTE, matte, markShadows, beltCurveOpen } from './primitives.js';
 
 export function makeHeldSideDifferential() {
@@ -114,8 +115,10 @@ export function makeHeldSideDifferential() {
     fullCameraDirection: new THREE.Vector3(-8, 3, 6), shadowCameraHalfExtent: 5, shadowBias: -0.00003,
     fidelity: 'authored', mechanism: 'enclosed-held-side-bevel-differential', reconstructionStatus: 'contact-verified-reconstruction', animationTiming: { authoredCyclePeriod: p.cycleDuration },
     idealConstraints: 'Shaft bearings and axial retention are ideal constraints. The carrier runs on the held-side sleeve. The friction curb is held stationary with an ideal anchored tail and weight; transient brake slip, friction, elasticity and inertia are not solved. An operator stops the driver before traversing the band.' };
-  // Brown draws the pulleys as a closed drum (bevels only dotted inside);
-  // the cutaway is offered through the section-view control.
+  // Brown draws the bevels dotted inside the closed drum of the fast and
+  // carrier pulleys. Those two pulleys take the shared see-through style so
+  // the differential shows; the cutaway stays on the section-view control.
+  for (const mesh of sectioned) makeSeeThrough(mesh);
   update(0); markShadows(root); setSectionView(false);
   sectionCaps.traverse(mesh => { mesh.castShadow = false; });
   return { root, update, cameraDirection: new THREE.Vector3(-10, 0, 0) };

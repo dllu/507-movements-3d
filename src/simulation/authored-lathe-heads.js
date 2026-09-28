@@ -333,8 +333,10 @@ function latheTailstockScrewFeed(movement) {
 
   // Two inferred bearing lands overlap the quill throughout its entire travel.
   const quillGuides = [-1.5, 0.65].map(x => {
+    // The land's key notch is 0.003 wider each side than the key guide's
+    // slot, so their side walls do not coincide (they flickered).
     const profile = polygonClipping.difference(rectangle(-0.53, -0.54, 0.53, 0.54),
-      poly(circle([0, 0], 0.335, 128)), rectangle(-0.112, 0, 0.112, 0.435));
+      poly(circle([0, 0], 0.335, 128)), rectangle(-0.115, 0, 0.115, 0.435));
     const guide = new THREE.Mesh(plate(profile, -0.08, 0.08).rotateY(Math.PI / 2), frameMaterial);
     guide.position.x = x; guide.userData.role = 'bored-keyed-quill-bearing-land'; frame.add(guide); return guide;
   });
@@ -553,7 +555,9 @@ function latheTailstockScrewFeed(movement) {
 
   const nut = cylinderAlongX(0.31, 0.42, accentMaterial, 34);
   nut.geometry.dispose();
-  nut.geometry = ring(threadCrestRadius + threadRadialClearance, 0.31, -0.21, 0.21, 128);
+  // The nut's rear face stops 0.015 inside the sleeve's rear end (the two
+  // faces were nearly flush and flickered through the glass).
+  nut.geometry = ring(threadCrestRadius + threadRadialClearance, 0.31, -0.21, 0.198, 128);
   nut.geometry.rotateX(Math.PI / 2); // Existing cylinder mesh turns Y onto X.
   nut.position.x = sourceNutCenterX;
   nut.userData.role = 'nonrotating-nut-fixed-inside-traveling-quill';

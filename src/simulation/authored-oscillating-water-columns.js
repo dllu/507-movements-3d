@@ -363,15 +363,9 @@ function dectolOscillatingColumn(movement) {
     frameMaterial,
   ), 'fixed-lower-box-top-with-round-opening');
   root.add(lowerTop);
-  // Brown's walled neck carries the stream from the upper box's orifice down
-  // into the lower box: a round pipe (in the same half-section as the boxes)
-  // seated under the upper floor and on the lower top round both openings.
-  const neck = addRole(new THREE.Mesh(
-    latheSectionGeometry([[receiverHoleRadius + 0.01, receiverTopY], [receiverHoleRadius + 0.09, receiverTopY],
-      [receiverHoleRadius + 0.09, nozzleBottomY], [receiverHoleRadius + 0.01, nozzleBottomY]], {segments: 64}),
-    frameMaterial,
-  ), 'fixed-walled-neck-from-upper-orifice-to-lower-box');
-  root.add(neck);
+  // Brown draws open air between the upper box's orifice and the lower box's
+  // top opening: the free stream (445) and the checked cone and rising
+  // column (446) show there, so no pipe joins the boxes.
   const lowerBack = backWall([
     [-lowerOuter, groundY],
     [outletRightX, groundY],

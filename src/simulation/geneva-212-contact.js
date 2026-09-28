@@ -63,6 +63,12 @@ export function finishGeneva212Contact(model){
  }
  d.reconstructionNote='The existing finger, mouth and rim now form a contacting index branch, capturing the lock at 54.78° rather than the source animation’s linear 51° schedule. Handoff impacts and input motion are prescribed; reverse playback requires an assisting output bias. Friction, inertia and loaded force balance are not simulated.';
  d.sourceAnimation.runtimeReconstructsFiniteContact=true;
- model.update=time=>{oldUpdate(time);const s=d.stateAtTime(time);for(const part of[b.stopWheel,b.stopWheelShaft]){part.userData.rotor.rotation.z=s.stopWheelAngle;part.userData.angularSpeed=s.stopWheelAngularSpeed;}d.kinematics=s;d.contacts={windingFingerSlot:s.engagement.active?s.engagement:null,lockingPocket:s.lock.active?s.lock:null,convexTerminalStop:s.atTerminalStop?s.limit:null};};
+ // Brown draws B two indexes into its run: the convex stop face a-b stands
+ // beside the top slot and A's finger is at the mouth of the third slot.
+ // Display time starts there; states keep the demonstration clock
+ // (display time t shows demonstration time t + displayTimeOffset).
+ const offset=d.timeline.forwardSegments.find(s=>s.name==='slot-3-index').startTime;d.displayTimeOffset=offset;
+ const inner=time=>{oldUpdate(time);const s=d.stateAtTime(time);for(const part of[b.stopWheel,b.stopWheelShaft]){part.userData.rotor.rotation.z=s.stopWheelAngle;part.userData.angularSpeed=s.stopWheelAngularSpeed;}d.kinematics=s;d.contacts={windingFingerSlot:s.engagement.active?s.engagement:null,lockingPocket:s.lock.active?s.lock:null,convexTerminalStop:s.atTerminalStop?s.limit:null};};
+ model.update=time=>inner(time+offset);
  model.update(0);return model;
 }

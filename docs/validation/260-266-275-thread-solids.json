@@ -14,7 +14,7 @@
     },
     {
       "file": "src/simulation/differential-thread-solids.js",
-      "sha256": "fdd773f1f70fffde1549d97cc82c5c3b3fd338c5c034315168fc9b2301bf5724"
+      "sha256": "bfb9a079b21db1b6f094f375de4265ff3579d30862fb53050d76cabb04176ea0"
     },
     {
       "file": "src/simulation/mujoco-screw/thread-geometry.js",

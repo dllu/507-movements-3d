@@ -6,6 +6,7 @@ import {
 } from './primitives.js';
 import { GRAVITY_ESCAPEMENT_PLATES } from './baked/gravity-escapement-plates.js';
 import { spokedWheelGeometry } from './spoked-wheel.js';
+import { circle, plate, poly, polygonClipping } from './finite-plate-geometry.js';
 
 const FULL_TURN = Math.PI * 2;
 const Z_AXIS = new THREE.Vector3(0, 0, 1);
@@ -2977,6 +2978,11 @@ function doubleThreeLeggedGravityEscapement(movement) {
   const mappedRightBeatPin = sourcePointToModel(sourceRasterRightBeatPin);
   const mappedFlyUpperEnd = sourcePointToModel(sourceRasterFlyUpperEnd);
   const mappedFlyLowerEnd = sourcePointToModel(sourceRasterFlyLowerEnd);
+  // Brown's fly line, upper right to lower left through the arbor.
+  const flyPlateAngle = Math.atan2(
+    mappedFlyUpperEnd.y - mappedFlyLowerEnd.y,
+    mappedFlyUpperEnd.x - mappedFlyLowerEnd.x,
+  );
   const mappedLiftingPins = sourceRasterLiftingPins.map(sourcePointToModel);
   const mappedFrontLegTipsABC = sourceRasterFrontLegTipsABC.map(
     sourcePointToModel,
@@ -3316,7 +3322,8 @@ function doubleThreeLeggedGravityEscapement(movement) {
     }
 
     const wheelAngle = wheelAngleAtCycleStart(cycleIndex) + wheelAdvance;
-    const flyPhaseOffset = Math.PI / 5;
+    // The blade lies along Brown's FLY line at t = 0 (wheel at pi/2).
+    const flyPhaseOffset = flyPlateAngle - wheelAngleAtCycleStart(0);
     const flyAngle = wheelAngle + flyPhaseOffset;
     const leftPalletAngle = -leftMagnitude;
     const rightPalletAngle = rightMagnitude;
@@ -3693,38 +3700,29 @@ function doubleThreeLeggedGravityEscapement(movement) {
   flyRotor.userData.axis = Z_AXIS.clone();
   flyRotor.userData.role = 'large-friction-spring-fly-on-common-arbor';
   escapeWheelAssembly.add(flyRotor);
-  const flyRadius = 3.05;
-  const flyVaneWidth = 0.48;
-  // The crossarm ends on each vane's inner edge. Running on to the vane
-  // centre, its front and back faces lay in the vane's (same 0.075 depth)
-  // and z-fought there.
-  const flyBarReach = flyRadius - flyVaneWidth / 2;
-  const flyBar = beamBetween(
-    new THREE.Vector3(-flyBarReach, 0, 0),
-    new THREE.Vector3(flyBarReach, 0, 0),
-    0.090,
-    0.075,
-    darkMaterial,
+  // Brown draws the FLY as one long plain blade seen edge-on, through the
+  // arbor from upper right to lower left (raster 205,20 to 62,474). It is
+  // one flat blade, its broad faces containing the arbor axis (so it reads
+  // as a line from the front, as he draws it), of his mean half-span.
+  const flyUpperReach = mappedFlyUpperEnd.distanceTo(wheelCenter);
+  const flyLowerReach = mappedFlyLowerEnd.distanceTo(wheelCenter);
+  const flyRadius = (flyUpperReach + flyLowerReach) / 2;
+  const flyBladeThickness = 0.07;
+  const flyBladeDepth = 0.42;
+  const flyBar = new THREE.Mesh(
+    plate(polygonClipping.union(
+      poly([[-flyRadius, -flyBladeThickness / 2], [flyRadius, -flyBladeThickness / 2],
+        [flyRadius, flyBladeThickness / 2], [-flyRadius, flyBladeThickness / 2]]),
+      poly(circle([0, 0], 0.13, 48)),
+    ), -flyBladeDepth / 2, flyBladeDepth / 2),
+    frameMaterial,
   );
-  flyBar.userData.role = 'long-fan-fly-crossarm';
+  flyBar.userData.role = 'long-plain-fly-blade-edge-on';
   flyRotor.add(flyBar);
-  const flyVanes = [-1, 1].map((side) => {
-    const vane = new THREE.Mesh(
-      new THREE.BoxGeometry(flyVaneWidth, 0.34, 0.075),
-      frameMaterial,
-    );
-    vane.position.x = side * flyRadius;
-    vane.userData.side = side;
-    vane.userData.role = `${side < 0 ? 'lower' : 'upper'}-fly-vane`;
-    flyRotor.add(vane);
-    return vane;
-  });
-  const flyPhaseWitness = new THREE.Mesh(
-    new THREE.SphereGeometry(0.064, 14, 10),
-    markerMaterial,
-  );
-  flyPhaseWitness.position.set(flyRadius, 0.20, 0.06);
-  flyPhaseWitness.userData.role = 'white-common-fly-speed-witness';
+  const flyVanes = [];
+  const flyPhaseWitness = new THREE.Object3D();
+  flyPhaseWitness.position.set(flyRadius, 0, 0);
+  flyPhaseWitness.userData.role = 'fly-blade-tip-locus';
   flyRotor.add(flyPhaseWitness);
 
   const makeGravityArm = (side) => {

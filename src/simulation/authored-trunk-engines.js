@@ -8,6 +8,7 @@ import {
 } from './primitives.js';
 
 import { boredCylinderGeometry, fitPistonGuide } from './piston-guide-parts.js';
+import { boredLatheGeometry } from './bored-lathe-geometry.js';
 import { engineRod, annularSector } from './steam-engine-parts.js';
 import { circle, plate, poly, polygonClipping } from './finite-plate-geometry.js';
 import { cutFaceMaterial, latheSectionGeometry } from './cutaway-section.js';
@@ -251,10 +252,20 @@ function trunkEngine(movement) {
   lowerFlange.position.y = cylinderBottomY - 0.2;
   lowerFlange.userData.role = 'lower-cylinder-flange';
   fixedCylinder.add(lowerFlange);
+  // Pass 90: Brown's stuffing box is a raised gland boss round the trunk,
+  // standing on a flange with a round packing groove, lathed as one casting
+  // that sits on the head (its foot 0.005 into the head's top face).
+  const glandProfile = [[0, 1.20], [0.10, 1.20], [0.10, 1.105]];
+  for (let k = 1; k < 12; k += 1) {
+    const a = Math.PI * k / 12;
+    glandProfile.push([0.10 - 0.095 * Math.sin(a), 1.01 + 0.095 * Math.cos(a)]);
+  }
+  glandProfile.push([0.10, 0.915], [0.10, 0.885], [0.20, 0.885], [0.24, 0.84]);
   const stuffingBox = new THREE.Mesh(
-    boredCylinderGeometry(0.86, trunkOuterRadius + 0.008, 0.22), darkMaterial,
+    boredLatheGeometry(glandProfile.map(([axial, radial]) => ({ axial, radial })), trunkOuterRadius + 0.008, 128),
+    frameMaterial,
   );
-  stuffingBox.position.set(0, cylinderHeadY + 0.13, 0);
+  stuffingBox.position.set(0, cylinderHeadY + 0.105, 0);
   stuffingBox.userData.role =
     'fixed-annular-stuffing-box-around-moving-trunk';
   fixedCylinder.add(stuffingBox);

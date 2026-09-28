@@ -48,6 +48,25 @@ test('244 friction liners meet the rotating drum surface, with finite running cl
   }finally{disposeObject3D(model.root);}
 });
 
+test('244 wooden block fills lever to pulley, strap bolts run straight, and no undrawn stop standard shows',()=>{
+  const model=create(244),{blocks:b,geometry:g}=model.root.userData;
+  try {
+    model.root.updateMatrixWorld(true);
+    assert.equal(b.upperShoe.userData.role,'upper-wooden-brake-block-under-lever-D');
+    const block=new THREE.Box3().setFromObject(b.upperShoe);
+    assert.ok(block.max.y>g.leverCenterY,'block reaches up under the lever');
+    assert.ok(block.max.z<g.leverPlaneZ-g.leverDepth/2,'and stays behind it');
+    for(const {bolt,eye} of b.endBolts){
+      assert.equal(bolt.rotation.x,0);assert.equal(bolt.rotation.z,0);
+      assert.ok(Math.abs(bolt.position.x-eye.position.x)<1e-12,'bolt is straight above its eye');
+    }
+    for(const hidden of [b.stopPost,...b.stopBridges,b.leftBandLink,b.rightBandLink,...b.shoeHangers]){
+      let shown=false;hidden.traverse(o=>{if(o.isMesh&&o.visible)shown=true;});assert.equal(shown,false);
+    }
+    assert.ok(b.upperStop.visible&&b.lowerStop.visible,'stop blocks C and C\u2032 remain');
+  }finally{disposeObject3D(model.root);}
+});
+
 test('287 fixed feather remains captured by the sliding keyed sleeve, with visible shoulders attached',()=>{
   const model=create(287),{blocks:b,geometry:g}=model.root.userData;
   try {

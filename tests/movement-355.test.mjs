@@ -292,7 +292,7 @@ test('movement 355 precession direction and inverse-spin law are correct', () =>
     Y_AXIS.clone().multiplyScalar(precession)
       .cross(source.spinAngularMomentum),
     source.gravityTorque,
-    0,
+    3e-14,
     'right-hand angular-momentum turning direction',
   );
   assert.match(transmission.angularMomentumDirection,

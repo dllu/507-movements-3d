@@ -6,7 +6,7 @@
     },
     {
       "file": "src/simulation/authored-gears-core.js",
-      "sha256": "21acc71e9141b73c1b8555a71a2e7b21d08813548d54a11b1846f8dc5e50e07a"
+      "sha256": "35dbc46879f1a0ff0e7d1f27f305535aa880b1365cb83a90fd691b6218534fdd"
     },
     {
       "file": "src/simulation/miter-gear.js",
@@ -14,7 +14,7 @@
     },
     {
       "file": "src/simulation/bevel-200-226-corrections.js",
-      "sha256": "122a1d71c2795af6248515ad4a645c6a7fd7966af9bf8ec4a3a16e34f3aba3d5"
+      "sha256": "d9b314a13d8853cbd37004687263d2f053d10edeb51890a9e55d8cda787cb1fc"
     },
     {
       "file": "src/simulation/primitives.js",

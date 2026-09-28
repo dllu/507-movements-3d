@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {WaterStream,collectWaterStreams,guidedPath,ballisticPath,joinPaths} from './water-stream.js';
-import {poly,circle,plate,turned,polygonClipping} from './finite-plate-geometry.js';
+import {poly,circle,plate,turned,disk,polygonClipping} from './finite-plate-geometry.js';
+import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {makeCellWaterGeometry,updateClippedCell} from './clipped-fluid-cell.js';
 import {waterVolumeMaterial} from './water-volume.js';
 import {
@@ -85,15 +86,21 @@ function tippingWaterMeter(movement) {
   const root = new THREE.Group();
   const cycleDuration = 6;
   const inputAngularSpeed = FULL_TURN / cycleDuration;
-  const pivot = new THREE.Vector3(0, 0.34, 0);
+  // Pass 90: Brown's pin passes through the trough's sides low on their
+  // height, carried on the round tops of two standards outside them; the
+  // trough keeps its place (the pivot rose 0.59 and the trough's local
+  // floor fell by the same).
+  const pivot = new THREE.Vector3(0, 0.93, 0);
   const maximumTiltAngle = THREE.MathUtils.degToRad(14);
   const troughHalfLength = 2.34;
   const troughWidth = 1.46;
-  const floorLocalY = 0.31;
+  const floorLocalY = -0.28;
   const floorThickness = 0.16;
   const floorTopLocalY = floorLocalY + floorThickness / 2;
   const sideWallHeight = 0.72;
   const sideWallThickness = 0.12;
+  const pinRadius = 0.10;
+  const pinBore = 0.104;
   const dividerHeight = 1.15;
   const dividerTopLocalY = floorTopLocalY + dividerHeight;
   const compartmentWaterCenterX = 1.12;
@@ -364,7 +371,8 @@ function tippingWaterMeter(movement) {
         [outer, floorTopLocalY], [inner, floorTopLocalY],
         [inner, floorTopLocalY + dividerHeight], [outer, floorTopLocalY + sideWallHeight],
       ];
-      wall.geometry = plate(poly(sign > 0 ? profile.reverse() : profile), -sideWallThickness / 2, sideWallThickness / 2);
+      // Bored (0.104) round the pin at the pivot, which lies on the inner edge.
+      wall.geometry = plate(polygonClipping.difference(poly(sign > 0 ? profile.reverse() : profile), poly(circle([inner, 0], pinBore, 96))), -sideWallThickness / 2, sideWallThickness / 2);
       wall.position.set(
         0,
         0,
@@ -393,23 +401,6 @@ function tippingWaterMeter(movement) {
     'single-transverse-divider-forming-two-equal-compartments';
   trough.add(centralDivider);
 
-  const underBrace = new THREE.Mesh(
-    new THREE.BoxGeometry(3.22, 0.18, 0.42),
-    darkMaterial,
-  );
-  underBrace.geometry.dispose();underBrace.geometry=plate(polygonClipping.difference(poly([[-1.61,-.09],[1.61,-.09],[1.61,.09],[-1.61,.09]]),poly(circle([0,-(floorLocalY-.17)],.204,128))),-.21,.21);
-  underBrace.material = troughMaterial; // part of the trough, not a black strip
-  underBrace.position.y = floorLocalY - 0.17;
-  underBrace.userData.role = 'rigid-trough-underframe-centered-on-axis';
-  trough.add(underBrace);
-  const angleIndicator = new THREE.Mesh(
-    new THREE.BoxGeometry(0.66, 0.08, 0.11),
-    whiteMaterial,
-  );
-  angleIndicator.position.set(0.73, -0.03, troughWidth / 2 + 0.06);
-  angleIndicator.userData.role = 'visible-trough-angle-index';
-  trough.add(angleIndicator);
-
   // The water standing in each half is the shared translucent water body
   // (clear, glossy, drawn after the trough so its walls show through).
   // Orange (the trough) is complementary to the water's blue: a thin tint
@@ -432,18 +423,23 @@ function tippingWaterMeter(movement) {
     'right-variable-water-load-with-horizontal-free-surface';
   trough.add(rightWater);
 
-  const axle = cylinderAlongZ(0.20, 2.38, darkMaterial, 36);
+  // The fixed pin: a stub through each standard's round top into the bore
+  // in the trough's side wall (stopping short of the compartment inside),
+  // with a head on the standard's outer face.
+  const standardFace = [troughWidth / 2 + 0.02, troughWidth / 2 + 0.17];
+  const pinStub = (sign) => {
+    const inner = troughWidth / 2 - sideWallThickness + 0.065, outer = standardFace[1] + 0.025;
+    return new THREE.CylinderGeometry(pinRadius, pinRadius, outer - inner, 48)
+      .rotateX(Math.PI / 2).translate(0, 0, sign * (inner + outer) / 2).toNonIndexed();
+  };
+  const axle = new THREE.Mesh(mergeGeometries([pinStub(-1), pinStub(1)]), darkMaterial);
   axle.position.copy(pivot);
   axle.userData.role = 'single-fixed-transverse-trough-axis';
   root.add(axle);
   const bearingRings = [-1, 1].map((sign) => {
-    const ring = new THREE.Mesh(
-      new THREE.TorusGeometry(0.29, 0.075, 10, 36),
-      frameMaterial,
-    );
-    ring.geometry.dispose();ring.geometry=turned([[-.09,.204],[-.09,.365],[.09,.365],[.09,.204]]);
-    ring.position.set(pivot.x, pivot.y, sign * 0.92);
-    ring.userData.role = `fixed-${sign < 0 ? 'rear' : 'front'}-axis-bearing`;
+    const ring = new THREE.Mesh(disk(0.17, -0.025, 0.025, 96), frameMaterial);
+    ring.position.set(pivot.x, pivot.y, sign * (standardFace[1] + 0.025));
+    ring.userData.role = `fixed-${sign < 0 ? 'rear' : 'front'}-axis-pin-head`;
     root.add(ring);
     return ring;
   });
@@ -452,39 +448,42 @@ function tippingWaterMeter(movement) {
     new THREE.BoxGeometry(5.70, 0.25, 2.74),
     frameMaterial,
   );
-  // Brown's base is an open plank frame (two sills, end and middle cross
-  // planks under the standards), not a slab.
+  // Brown's base is one solid plank.
   base.geometry.dispose();
-  base.geometry = plate(polygonClipping.difference(
-    poly([[-2.85, -1.10], [2.85, -1.10], [2.85, 1.10], [-2.85, 1.10]]),
-    poly([[-2.49, -0.74], [-0.18, -0.74], [-0.18, 0.74], [-2.49, 0.74]]),
-    // Offset a hair so no hole edge is collinear with the other's (keeps
-    // the triangulated caps watertight).
-    poly([[0.18, -0.745], [2.49, -0.745], [2.49, 0.745], [0.18, 0.745]]),
-  ), -0.125, 0.125).rotateX(-Math.PI / 2);
+  base.geometry = plate(poly([[-2.85, -1.10], [2.85, -1.10], [2.85, 1.10], [-2.85, 1.10]]), -0.125, 0.125).rotateX(-Math.PI / 2);
   base.position.set(0, groundY + 0.125, 0);
   base.userData.role = 'fixed-water-meter-base';
   root.add(base);
+  // Two flat standards outside the trough's faces, each one plate from the
+  // plank to a round top concentric with the pin, braced both ways.
+  const baseTop = groundY + 0.25;
+  const standardHalfWidth = 0.25;
+  const standardShape = polygonClipping.difference(
+    polygonClipping.union(
+      poly([[-standardHalfWidth, baseTop - 0.02], [standardHalfWidth, baseTop - 0.02], [standardHalfWidth, pivot.y], [-standardHalfWidth, pivot.y]]),
+      poly(circle([0, pivot.y], standardHalfWidth, 128)),
+    ),
+    poly(circle([0, pivot.y], pinBore, 96)),
+  );
   const supportPosts = [-1, 1].map((zSign) => {
     const post = new THREE.Mesh(
-      new THREE.BoxGeometry(0.34, 2.22, 0.30),
+      plate(standardShape, zSign > 0 ? standardFace[0] : -standardFace[1], zSign > 0 ? standardFace[1] : -standardFace[0]),
       frameMaterial,
     );
-    post.geometry.dispose();post.geometry=plate(polygonClipping.difference(poly([[-.17,-1.11],[.17,-1.11],[.17,1.11],[-.17,1.11]]),poly(circle([0,pivot.y+.78],.204,128))),-.15,.15);
-    post.position.set(0, -0.78, zSign * 0.92);
     post.userData.role =
       `fixed-${zSign < 0 ? 'rear' : 'front'}-pivot-standard`;
     root.add(post);
     return post;
   });
   const braces = [];
-  for (const z of [-0.92, 0.92]) {
-    for (const x of [-1.92, 1.92]) {
+  const braceZ = (standardFace[0] + standardFace[1]) / 2;
+  for (const z of [-braceZ, braceZ]) {
+    for (const x of [-1.55, 1.55]) {
       const brace = beamBetween(
-        new THREE.Vector3(x, groundY + 0.31, z),
-        new THREE.Vector3(0, pivot.y - 0.20, z),
-        0.18,
-        0.22,
+        new THREE.Vector3(x, baseTop - 0.08, z),
+        new THREE.Vector3(Math.sign(x) * (standardHalfWidth - 0.06), pivot.y - 1.05, z),
+        0.14,
+        0.12,
         frameMaterial,
       );
       brace.userData.role = 'fixed-diagonal-axis-frame-brace';
@@ -714,7 +713,6 @@ function tippingWaterMeter(movement) {
     archetype:
       'tipping-water-meter-with-equally-divided-pivoted-trough-alternately-filling-and-emptying',
     blocks: {
-      angleIndicator,
       axle,
       base,
       bearingRings,
@@ -739,7 +737,6 @@ function tippingWaterMeter(movement) {
       streamMarkers,
       supportPosts,
       trough,
-      underBrace,
     },
     degreesOfFreedom: {
       compartmentFillsIndependent: false,

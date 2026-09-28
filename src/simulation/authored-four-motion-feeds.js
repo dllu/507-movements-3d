@@ -35,6 +35,46 @@ function cylinderAlongAxis(radius, length, axis, material, segments = 36) {
   return cylinder;
 }
 
+// Round-ended follower of one radius: a hemisphere of `radius` centred on
+// the contact centre, continued as a plain cylinder of the same radius for
+// `length` back along `axis` into the part that carries it (no neck).
+function roundEndedFollower(radius, length, axis, material) {
+  const points = [];
+  for (let i = 0; i <= 24; i += 1) {
+    const a = -Math.PI / 2 + (Math.PI / 2) * i / 24;
+    points.push(new THREE.Vector2(radius * Math.cos(a), radius * Math.sin(a)));
+  }
+  points.push(new THREE.Vector2(radius, length), new THREE.Vector2(0, length));
+  const geometry = new THREE.LatheGeometry(points, 48);
+  geometry.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), axis.clone().normalize()));
+  return new THREE.Mesh(geometry, material);
+}
+
+// Brown's feeder at B's end: one plate of raked teeth whose tail curls up
+// in a toe, extruded across the bar.
+function feederPlateGeometry(depth) {
+  const teeth = 5, pitch = 0.13, x0 = -0.41, root = 0.16, tip = 0.285, bottom = -0.06;
+  const points = [[x0, bottom], [x0, root]];
+  for (let i = 0; i < teeth; i += 1) {
+    const a = x0 + 0.05 + i * pitch;
+    // Long back slope rising in the feed direction, steep working face.
+    points.push([a, root], [a + pitch * 0.78, tip], [a + pitch * 0.86, root]);
+  }
+  const heel = x0 + 0.05 + teeth * pitch;
+  points.push([heel, root]);
+  // The toe: the underside sweeps up in a quarter circle to a rounded tip.
+  const toeRadius = 0.26, cx = heel - 0.04, cy = bottom + toeRadius;
+  const shape = new THREE.Shape();
+  shape.moveTo(...points[0]);
+  for (const point of points.slice(1)) shape.lineTo(...point);
+  shape.lineTo(cx + toeRadius * Math.cos(Math.PI / 5), cy + toeRadius * Math.sin(Math.PI / 5));
+  shape.absarc(cx, cy, toeRadius, Math.PI / 5, -Math.PI / 2, true);
+  shape.lineTo(x0, bottom);
+  const geometry = new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: false, curveSegments: 24 });
+  geometry.translate(0, 0, -depth / 2);
+  return geometry;
+}
+
 function beamBetween(start, end, width, depth, material) {
   const direction = end.clone().sub(start);
   const beam = new THREE.Mesh(
@@ -425,12 +465,13 @@ function makeCarrierA({
     carrier.add(rail);
     return rail;
   });
+  // The cheeks run down past B's pivot into A's downward leg.
   const cheeks = [-0.25, 0.25].map((z) => {
     const cheek = new THREE.Mesh(
-      new THREE.BoxGeometry(0.18, 0.62, 0.16),
+      new THREE.BoxGeometry(0.18, pivotY + 0.56 - 0.60, 0.13),
       carrierMaterial,
     );
-    cheek.position.set(pivotX, pivotY + 0.25, z);
+    cheek.position.set(pivotX, (pivotY + 0.56 + 0.60) / 2, z);
     cheek.userData.role = 'carrier-A-fork-cheek-around-B-pivot';
     carrier.add(cheek);
     return cheek;
@@ -456,12 +497,12 @@ function makeCarrierA({
     const leg = new THREE.Mesh(new THREE.BoxGeometry(0.16, legTop - contactY, 0.13), carrierMaterial);
     leg.position.set(rearX, (legTop + contactY) / 2, z);projection.add(leg);
   }
-  const bridge = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.14, 0.63), carrierMaterial);
+  const bridge = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.22, 0.63), carrierMaterial);
   bridge.position.set(rearX, contactY, 0);projection.add(bridge);
-  const neck = cylinderAlongAxis(0.045, rearX - axialBaseFront - 0.08, new THREE.Vector3(1, 0, 0), darkMaterial, 24);
-  neck.position.set((rearX + axialBaseFront + 0.08) / 2, contactY, 0);projection.add(neck);
   carrier.add(projection);
-  const projectionContact = new THREE.Mesh(new THREE.SphereGeometry(0.08, 40, 24), darkMaterial);
+  // The bridge's round-ended nose bears on the cam face directly: one
+  // radius from the contact to the bridge, with no neck.
+  const projectionContact = roundEndedFollower(0.08, rearX - axialBaseFront - 0.08 - 0.07, new THREE.Vector3(1, 0, 0), carrierMaterial);
   projectionContact.position.set(axialBaseFront + 0.08, contactY, 0);
   projectionContact.userData.role = 'axial-cam-face-contact-pad';
   carrier.add(projectionContact);
@@ -486,11 +527,12 @@ function makeFeedBarB({
   bar.userData.role =
     'feed-bar-B-pivoted-in-fork-A-and-carrying-the-toothed-feeder';
 
+  // The bar butts against the feeder plate, which continues it.
   const beam = new THREE.Mesh(
-    new THREE.BoxGeometry(dogX + 0.35 - 0.18, 0.15, 0.22),
+    new THREE.BoxGeometry(dogX - 0.41 - 0.18, 0.15, 0.22),
     feedMaterial,
   );
-  beam.position.set((dogX + 0.35 + 0.18) / 2, 0, 0);
+  beam.position.set((dogX - 0.41 + 0.18) / 2, 0, 0);
   beam.userData.role = 'rigid-feed-bar-B';
   bar.add(beam);
 
@@ -498,41 +540,28 @@ function makeFeedBarB({
   pivotHub.userData.role = 'feed-bar-B-pivot-hub';
   bar.add(pivotHub);
 
-  const followerPad = new THREE.Mesh(
-    new THREE.SphereGeometry(0.08, 40, 24),
-    darkMaterial,
-  );
+  // B's round-ended foot rests on the cam: one radius from the contact up
+  // into the bar (no stem and ball).
+  const followerPad = roundEndedFollower(0.08, -followerOffsetY - 0.02, new THREE.Vector3(0, 1, 0), feedMaterial);
   followerPad.position.set(followerArm, followerOffsetY, 0);
   followerPad.userData.role =
     'underside-pad-resting-by-gravity-on-radial-cam-prominence';
   bar.add(followerPad);
-  // A short stem runs from inside the bar down to the ball's centre, so the
-  // ball is carried on a solid neck rather than touching the bar at a point.
-  const followerPadStem = cylinderAlongAxis(0.055, -followerOffsetY,
-    new THREE.Vector3(0, 1, 0), darkMaterial, 28);
-  followerPadStem.position.set(followerArm, followerOffsetY / 2, 0);
-  followerPadStem.userData.role = 'underside-pad-stem-set-into-bar-B';
-  bar.add(followerPadStem);
 
   const dog = new THREE.Group();
-  dog.position.set(dogX, 0.07, 0);
+  dog.position.set(dogX, -0.015, 0);
   dog.userData.role = 'spur-or-feeder-carried-at-end-of-bar-B';
-  const dogPlate = new THREE.Mesh(
-    new THREE.BoxGeometry(0.82, 0.12, 0.52),
-    feedMaterial,
-  );
-  dogPlate.userData.role = 'feed-dog-base';
+  // One plate: raked teeth on top, the tail curling up in Brown's toe.
+  const dogPlate = new THREE.Mesh(feederPlateGeometry(0.22), feedMaterial);
+  dogPlate.userData.role = 'raked-toothed-feeder-plate-with-upturned-toe';
   dog.add(dogPlate);
-  const teeth = Array.from({ length: 6 }, (_, index) => {
-    const tooth = new THREE.Mesh(
-      new THREE.ConeGeometry(0.075, 0.20, 4),
-      darkMaterial,
-    );
-    tooth.position.set(-0.33 + index * 0.132, 0.15, 0);
-    tooth.rotation.y = Math.PI / 4;
-    tooth.userData.role = 'upward-feed-dog-tooth';
-    dog.add(tooth);
-    return tooth;
+  // Tooth tips (dog-local), for the clearance checks.
+  const teeth = Array.from({ length: 5 }, (_, index) => {
+    const tip = new THREE.Object3D();
+    tip.position.set(-0.41 + 0.05 + index * 0.13 + 0.13 * 0.78, 0.285, 0);
+    tip.userData.role = 'feeder-tooth-tip';
+    dog.add(tip);
+    return tip;
   });
   const dogIndex = new THREE.Mesh(
     new THREE.SphereGeometry(0.075, 18, 12),
@@ -578,13 +607,13 @@ function fourMotionFeed(movement) {
   const followerPadHalfHeight = 0.08;
   const dogX = 5.35;
   const workPlateY = 1.17;
-  // Brown draws the return spring inside A at its left end: it bears
-  // between A's left cross-leg and a fixed stop inside the fork, and is
+  // Brown draws the return spring below A at its left end: it bears
+  // between A's downward leg and a fixed, sectioned cup socket, and is
   // compressed as A feeds forward, so it pushes A back.
-  const springCarrierLocalX = -2.74;
+  const springCarrierLocalX = pivotX + 0.09;
   const springBaseLength = 1.18;
   const springFixedX = springCarrierLocalX + springBaseLength;
-  const springY = 1.37;
+  const springY = 0.46;
 
   const feedLawAtPhase = (phase) => lawWithDwells(phase, {
     endDwellEnd: 1,
@@ -670,21 +699,25 @@ function fourMotionFeed(movement) {
     'preloaded-carrier-return-spring-pushing-bar-A-rearward';
   root.add(markShadows(returnSpring));
 
-  // A's left cross-leg joining the fork rails, on which the spring bears.
+  // A's downward leg: one cross piece joining the two cheeks below B's
+  // pivot, on which the spring bears.
   const springLeg = new THREE.Mesh(
-    new THREE.BoxGeometry(0.08, 0.24, 0.40),
+    new THREE.BoxGeometry(0.18, 0.32, 0.66),
     carrierMaterial,
   );
-  springLeg.position.set(springCarrierLocalX - 0.04, springY, 0);
+  springLeg.position.set(springCarrierLocalX - 0.09, springY, 0);
   springLeg.userData.role = 'carrier-A-left-cross-leg-bearing-return-spring';
   carrierA.add(markShadows(springLeg));
-  // Brown's hatched stop inside the fork (its frame support is undrawn).
-  const rearSpringAnchor = new THREE.Mesh(
-    new THREE.BoxGeometry(0.20, 0.30, 0.30),
-    frameMaterial,
-  );
-  rearSpringAnchor.position.set(springFixedX + 0.10, springY, 0);
-  rearSpringAnchor.userData.role = 'fixed-return-spring-stop-inside-fork-A';
+  // Brown's hatched socket: a fixed cup open toward the leg; the spring's
+  // far end bears on its floor (its frame support is undrawn).
+  const cupDepth = 0.30, cupFloor = 0.06;
+  const rearSpringAnchor = new THREE.Mesh(new THREE.LatheGeometry([
+    new THREE.Vector2(0, cupFloor), new THREE.Vector2(0.23, cupFloor), new THREE.Vector2(0.23, -cupDepth),
+    new THREE.Vector2(0.17, -cupDepth), new THREE.Vector2(0.17, 0), new THREE.Vector2(0, 0),
+  ].reverse(), 64), frameMaterial);
+  rearSpringAnchor.rotation.z = -Math.PI / 2;
+  rearSpringAnchor.position.set(springFixedX, springY, 0);
+  rearSpringAnchor.userData.role = 'fixed-cup-socket-holding-return-spring';
   root.add(markShadows(rearSpringAnchor));
 
   const guideRails = [-0.39, 0.39].map((z) => {

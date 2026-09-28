@@ -64,7 +64,7 @@ test('400: both finite cam contacts remain near tangent and carry the required o
       if (state.carrierVelocity < -1e-6) {
         const workTop = b.workPlateLeft.position.y + .06;
         for (const tooth of f.teeth) {
-          const tip = new THREE.Vector3(0, .1, 0).applyMatrix4(tooth.matrixWorld);
+          const tip = tooth.getWorldPosition(new THREE.Vector3());
           assert.ok(workTop - tip.y > .0299, 'actual teeth return below the finite work surface');
         }
       }

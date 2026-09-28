@@ -85,18 +85,25 @@ test('movement 383 is one S-path textile web between two winding rolls and one i
   for (const marker of blocks.webMarkers) assert.equal(marker.parent, null);
   assert.equal(blocks.dressingIndex.parent, null);
   for (const component of [
-    ...blocks.bearingBars,
     ...blocks.bearingBlocks,
     ...blocks.frameFeet,
     blocks.arch,
+    blocks.archWeb,
+    blocks.nearArch,
+    blocks.nearArchWeb,
   ]) assert.equal(component.parent, blocks.fixedFrame);
+  // Brown's arched end plates carry all three axles; no bar crosses the rolls.
+  assert.deepEqual(blocks.bearingBars, []);
+  assert.equal(blocks.nearArchWeb.userData.seeThrough, true);
   for (const component of [
     ...blocks.brushBars,
+    ...blocks.boards,
     blocks.dressingAxle,
     blocks.dressingCore,
   ]) assert.equal(component.parent, blocks.dressingCylinder);
   assert.equal(blocks.windingRollers.length, 2);
-  assert.equal(blocks.brushBars.length, 12);
+  assert.equal(blocks.brushBars.length, 8);
+  assert.equal(blocks.boards.length, 8);
   assert.equal(blocks.webMarkers.length, 9);
   assert.equal(blocks.fixedFrame.userData.fixed, true);
   assert.equal(blocks.webRibbon.userData.isContinuousOpenTextileWeb, true);

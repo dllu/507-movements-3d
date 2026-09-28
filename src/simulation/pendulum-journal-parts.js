@@ -22,7 +22,9 @@ export function correctConicalJournals(root) {
   replace(b.bearingPlate,drilledBox(3.15,1.72,.30,.162).rotateX(Math.PI/2));
   replace(b.spindle,new THREE.CylinderGeometry(.16,.16,2.22,40));
   b.spindle.position.y=-1.05;
-  replace(b.crankHub,tube(.40,.42,.162));
+  // The hub is fast on the spindle, so it is solid: the open bore let the
+  // arm show through it (speckled where their faces met).
+  replace(b.crankHub,new THREE.CylinderGeometry(.40,.40,.42,48));
   // Brown draws a toothed bevel pinion under the bearing bar (large end up),
   // not a smooth cone: the spindle's drive to the clockwork.
   const pinion=makeBevelGear({teeth:14,radius:.46,depth:.3,color:PALETTE.brass,axis:new THREE.Vector3(0,-1,0)});

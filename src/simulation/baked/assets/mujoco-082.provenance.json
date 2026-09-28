@@ -4,14 +4,14 @@
   "format": "mujoco-loop",
   "version": 1,
   "asset": "src/simulation/baked/assets/mujoco-082.json.gz",
-  "bytes": 256985,
-  "assetSha256": "7133124576c6eda519e3242394289962df88da8e7b0082ed6b6773df6c5cc0b9",
+  "bytes": 42681,
+  "assetSha256": "d9a5cd175bb40a0c1fc8a277c55d943759c9766f7352f369018c5704995777d1",
   "motionSources": {
     "src/simulation/mujoco-treadle/collision.js": "c242f9c33b002058a16bfc5113f8d6aae413efd3731bc09ad365e9513d7ebf00",
     "src/simulation/mujoco-treadle/linkage.js": "ac66eb64508221a8719ca9fca51c2c85224f9e9c62a974de38be5ebb293bdd1f",
     "src/simulation/mujoco-treadle/physics.js": "7c80b64246c9f4b3142013219dfa7c2c291ca0a4ca92068ed2a8fad57d5f6516",
     "src/simulation/mujoco-treadle/source.js": "a4ccbe2793e8b37024141d3cd340a4fd39965cfb8b1729023404e13fc16ebb6d",
-    "src/simulation/mujoco-treadle/visual.js": "b094a29bc34b87ea46575146258870cb787637537f706e62387617f91a8063ad",
+    "src/simulation/mujoco-treadle/visual.js": "927711ee2711b28ed60c42e411ebae4c70f703a48540e67256c363100166cf99",
     "src/simulation/mujoco/simulation.js": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
   },
   "visualSourcesAtBake": {
@@ -72,10 +72,7 @@
       }
     }
   },
-  "extras": [
-    "blocks.lowerArm/passive-lower-pawl-torsion-spring#0",
-    "blocks.upperArm/passive-upper-pawl-torsion-spring#0"
-  ],
+  "extras": [],
   "removed": [],
-  "bakeSeconds": 36.557858527183534
+  "bakeSeconds": 33.06809858083725
 }

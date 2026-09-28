@@ -20,7 +20,7 @@ test('028 turntable facing is the disk colour and carries the standard cue', () 
   const { root } = build(28);
   const meshes = [];
   root.traverse((object) => { if (object.isMesh && object.geometry.type === 'CylinderGeometry' && object.geometry.parameters.radiusTop > 1) meshes.push(object); });
-  assert.ok(meshes.length >= 2);
+  assert.ok(meshes.length >= 1); // p90: the plain board is one disk (the stepped lip is gone)
   for (const mesh of meshes) {
     assert.ok(!isInk(mesh), 'no black facing');
     assert.ok(hasRotationIndicator(mesh));

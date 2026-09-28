@@ -51,11 +51,17 @@ export function makeBandEpicyclic(options = {}) {
   // The carrier runs between the rear sun drum and the gear plane. Keeping
   // its axle forward of the inner band clears that band throughout an orbit.
   add('carrierSleeve', annulus(0.40, 0.325, -0.205, -0.12, PALETTE.frame), blocks.carrier);
+  // One flat link, free on the sun shaft: a hub arc round the sleeve and a
+  // boss arc round the planet axle joined by straight tangents. The boss
+  // stands clear of the sun drum's rim, so from behind the pinion reads as
+  // carried round the common centre by this arm.
+  const hubR = 0.46, bossR = 0.30, d = p.orbitRadius, tangent = Math.acos((hubR - bossR) / d);
   const armShape = new THREE.Shape();
-  armShape.moveTo(0.335, -0.09); armShape.lineTo(p.orbitRadius, -0.18);
-  armShape.absarc(p.orbitRadius, 0, 0.18, -Math.PI / 2, Math.PI / 2, false);
-  armShape.lineTo(0.335, 0.09); armShape.closePath();
-  const armBore = new THREE.Path(); armBore.absarc(p.orbitRadius, 0, 0.13, 0, 2 * Math.PI, true); armShape.holes.push(armBore);
+  armShape.absarc(0, 0, hubR, tangent, 2 * Math.PI - tangent, false);
+  armShape.absarc(d, 0, bossR, -tangent, tangent, false);
+  armShape.closePath();
+  const armBore = new THREE.Path(); armBore.absarc(d, 0, 0.13, 0, 2 * Math.PI, true); armShape.holes.push(armBore);
+  const hubBore = new THREE.Path(); hubBore.absarc(0, 0, 0.36, 0, 2 * Math.PI, true); armShape.holes.push(hubBore);
   add('carrierArm', new THREE.Mesh(bandProfileExtrusion(armShape, -0.195, -0.145), matte(PALETTE.frame)), blocks.carrier);
   const axle = add('planetAxle', cylinder(0.13, -0.205, 0.20, PALETTE.muted), blocks.carrier); axle.position.x = p.orbitRadius;
   const rear = add('planetCollar', annulus(0.22, 0.13, -0.15, -0.12, PALETTE.muted), blocks.carrier); rear.position.x = p.orbitRadius;

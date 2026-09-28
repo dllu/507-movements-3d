@@ -42,22 +42,17 @@ export function correctWatchRegulator(root){
   // A flat ribbon fits between the actual .02-wide curb opening; the previous .09 wire did not.
   for(const segment of b.springSegments)replace(segment,new THREE.BoxGeometry(.014,1,.12));
   root.userData.cameraFitBounds=new THREE.Box3(new THREE.Vector3(-3.95,-5.30,-.85),new THREE.Vector3(3.95,3.70,1.40));
-  // Supports Brown leaves undrawn, kept plain and out of the way. Behind the
-  // balance, one flat back bar carries the staff's lower bearing and runs
-  // down to the scale plate it holds. Brown draws no balance cock and no
-  // stud carrier: the small fixed stud R and the regulator's fixed ring
-  // (hidden under the lever's ring, concentric with the staff) are shown as
-  // drawn, without the bars that would cross the balance spring.
+  // Brown draws no balance cock, stud carrier or back bar. The back bar that
+  // carried the staff bearing to the scale read, through the balance, as a
+  // second fixed lever beside the real one whenever the regulator moved, so
+  // it is gone: the scale and the staff's rear bearing stand as drawn.
+  // The balance rim is Brown's flat ring (a rectangular section), not a
+  // torus; the spokes run 0.1 into it.
   {
-    const frame=b.fixedRing.material;
-    const backLow=-.42,backHigh=-.30;
-    const outline=polygonClipping.difference(
-      polygonClipping.union(capsule([0,.25],[0,-3.7],.15,48),poly(circle([0,0],.4,64))),
-      poly(circle([0,0],.16,48)));
-    const backBar=new THREE.Mesh(plate(outline,backLow,backHigh),frame);
-    backBar.userData.role='plain-back-bar-carrying-staff-bearing-and-scale-plate';
-    b.fixedFrame.add(backBar);
-    Object.assign(b,{backBar});
+    const outer=g.balanceOuterRadius+g.balanceRimTubeRadius,inner=g.balanceOuterRadius-g.balanceRimTubeRadius;
+    const rim=polygonClipping.difference(poly(circle([0,0],outer,192)),poly(circle([0,0],inner,192)));
+    // As deep as the spokes' .28 plus .02, so no spoke face stands proud.
+    replace(b.balanceRim,plate(rim,-.15,.15));
   }
   root.userData.minimumDisplayCycleSeconds=20;
   root.userData.reconstructionNote='The lever prescribes a slow rate adjustment; the balance follows the ideal stiffness/active-length relation. The spring ribbon and curb neutral point are kinematic approximations, not a solved elastic/contact system. The fixed watch bridges outside this source detail are omitted.';

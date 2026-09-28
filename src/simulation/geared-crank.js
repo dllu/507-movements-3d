@@ -4,6 +4,7 @@ import {gearedCrankSource as g,sourcePoint} from './geared-crank-source.js';
 import {makeGear,matte,PALETTE,markShadows} from './primitives.js';
 import {plate,poly,capsule,ring,disk} from './finite-plate-geometry.js';
 import {disposeObject3D} from './dispose-model.js';
+import {spokedWheelGeometry} from './spoked-wheel.js';
 
 export function makeGearedCrank(){
  const v=makeGearedCrankFrame(),{root}=v,{parts,families,blocks}=root.userData;
@@ -16,20 +17,33 @@ export function makeGearedCrank(){
  for(const m of oldMaterials)m.dispose();
  const add=(name,geometry,body,color)=>{const mesh=new THREE.Mesh(geometry,materials[color]);mesh.name=name;body.add(mesh);parts[name]=mesh;families[name]=body.name;return mesh;};
  blocks.pinion=new THREE.Group();blocks.pinion.name='pinion';blocks.pinion.position.x=-5.1;root.add(blocks.pinion);
- const gear=(name,teeth,radius,body,phase,opening)=>{
+ const toothOutline=(teeth,radius)=>{
   const nominal=.085*1.48,template=makeGear({teeth,radius,depth:.24,addendum:nominal*.55,dedendum:nominal*.65});
   const shape=template.userData.rotor.children[0].geometry.parameters.shapes.clone();disposeObject3D(template);
-  const hole=new THREE.Path();hole.absarc(0,0,opening,0,2*Math.PI,true);shape.holes.push(hole);
-  const geometry=new THREE.ExtrudeGeometry(shape,{depth:.24,bevelEnabled:true,bevelSize:.008,bevelOffset:-.008,bevelThickness:.008,bevelSegments:1,curveSegments:64});
-  geometry.translate(0,0,-.32);
-  add(name,geometry,body,body===blocks.pinion?'driver':'driven').rotation.z=phase;
+  const points=[];for(const p of shape.getPoints()){const last=points.at(-1);if(!last||Math.hypot(p.x-last[0],p.y-last[1])>1e-9)points.push([p.x,p.y]);}
+  if(Math.hypot(points[0][0]-points.at(-1)[0],points[0][1]-points.at(-1)[1])<1e-9)points.pop();
+  return {shape,points};
  };
- gear('large-involute-rim',48,4.08,blocks.drive,Math.PI/48,3.64);
- gear('involute-pinion',12,1.02,blocks.pinion,0,.183);
+ {
+  // Pinion: a solid involute plate bored for its hub.
+  const {shape}=toothOutline(12,1.02),hole=new THREE.Path();hole.absarc(0,0,.183,0,2*Math.PI,true);shape.holes.push(hole);
+  const geometry=new THREE.ExtrudeGeometry(shape,{depth:.24,bevelEnabled:true,bevelSize:.008,bevelOffset:-.008,bevelThickness:.008,bevelSegments:1,curveSegments:64});
+  geometry.translate(0,0,-.32);add('involute-pinion',geometry,blocks.pinion,'driver');
+ }
+ {
+  // Large gear: Brown's toothed rim and eight broad spokes are one spoked
+  // plate (the shared spoked-wheel builder), 0.24 deep like the rim; the
+  // spokes are about as wide as he draws them (0.26, was 0.11 bars).
+  const {points}=toothOutline(48,4.08),rotation=Math.PI/48;
+  const outline=points.map(([x,y])=>[x*Math.cos(rotation)-y*Math.sin(rotation),x*Math.sin(rotation)+y*Math.cos(rotation)]);
+  const geometry=spokedWheelGeometry({outline,spokes:8,phase:rotation,rimInnerRadius:3.64,spokeWidth:.30,spokeTipWidth:.24,
+   hubRadius:.62,rimFillet:.12,boreRadius:.34,thickness:.24,arcSegments:384});
+  geometry.translate(0,0,-.20);geometry.userData.toothOutline=outline;
+  add('large-spoked-gear',geometry,blocks.drive,'driven');
+ }
  add('large-bored-hub',ring(.183,.53,-.38,.16,96),blocks.drive,'driven');
  add('gear-shaft-retainer',disk(.42,.17,.185,96),blocks.fixed,'brass');
  add('pinion-bored-hub',ring(.183,.25,-.38,.12,96),blocks.pinion,'driver');
- for(let i=0;i<8;i++)add('gear-spoke-'+i,plate(capsule([.34,0],[3.67,0],.055,24),-.28,-.07).rotateZ(Math.PI/48+i*Math.PI/4),blocks.drive,'driven');
  add('pinion-shaft',disk(.18,-.8,.18,64).translate(-5.1,0,0),blocks.fixed,'ink');
  const panel=points=>poly(points.map(p=>sourcePoint(p).toArray()));
  add('left-frame-panel',plate(panel([[32,215],[85,215],[101,240],[128,255],[139,280],[133,323],[99,340],[85,359],[32,359]]),-.85,-.59),blocks.fixed,'frame');

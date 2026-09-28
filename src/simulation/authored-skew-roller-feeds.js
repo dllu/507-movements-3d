@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {correctRollerParts} from './roller-working-parts.js';
+import {applyRotationIndicator} from './rotation-indicator.js';
 import {
   PALETTE,
   makeBeam,
@@ -61,7 +62,12 @@ function skewRollerHelicalRodFeed(movement) {
   const rollerRadius = 0.47;
   const rollerBodyLength = 2.72;
   const rollerShaftLength = 3.52;
-  const rodRadius = 0.23;
+  // The rod radius is chosen so one roller turn gives exactly half a rod
+  // turn: rodRadius = 2 * rollerRadius * sin(15 deg) = 0.243. The plate's rod
+  // is about 0.58 of the roller radius, so this is also closer to Brown than
+  // the earlier 0.23. With a half turn and a whole number of feed bands per
+  // roller turn, the checkered feed cue repeats exactly at the cycle seam.
+  const rodRadius = 2 * rollerRadius * Math.sin(THREE.MathUtils.degToRad(15));
   const rodAxisX = 0;
   const rodAxisZ = 0;
   const contactY = 1.40;
@@ -104,6 +110,10 @@ function skewRollerHelicalRodFeed(movement) {
     rodRotationPerInputRadian * FULL_TURN;
   const screwLead = FULL_TURN * rodAxialVelocity / rodAngularSpeed;
 
+  // Feed bands: the stock is painted in bands of this pitch, alternate bands
+  // with their quadrant cue turned a quarter turn (a checker), and the bands
+  // travel with the stock. Three band pairs pass per roller turn.
+  const rodFeedBandPitch = axialAdvancePerRollerTurn / 6;
   const rodBodyBottom = -1.03;
   const rodBodyTop = 3.87;
   const rodBodyLength = rodBodyTop - rodBodyBottom;
@@ -366,7 +376,7 @@ function skewRollerHelicalRodFeed(movement) {
     body.userData.name = specification.name;
     spinRotor.add(body);
     const shaft = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.090, 0.090, rollerShaftLength, 28),
+      new THREE.CylinderGeometry(0.16, 0.16, rollerShaftLength, 64),
       darkMaterial,
     );
     shaft.userData.role = 'shaft-fixed-to-oblique-friction-roller';
@@ -440,6 +450,32 @@ function skewRollerHelicalRodFeed(movement) {
   rodBody.userData.role =
     'long-cylindrical-rod-driven-between-two-oblique-rollers';
   rodSpinRotor.add(rodBody);
+  // The stock carries the shared quadrant cue with alternate bands of
+  // rodFeedBandPitch turned a quarter (a checker), and the bands travel
+  // with the rod's axial feed: the band offset is a shader uniform, so the
+  // stock stays one fixed solid in its viewing window.
+  applyRotationIndicator(rodBody, { axis: 'y' });
+  const rodFeedOffset = { value: 0 };
+  {
+    const material = rodBody.material;
+    const installCue = material.onBeforeCompile;
+    material.onBeforeCompile = (shader) => {
+      installCue(shader);
+      shader.uniforms.rodFeedOffset = rodFeedOffset;
+      shader.uniforms.rodFeedPitch = { value: rodFeedBandPitch };
+      shader.fragmentShader = shader.fragmentShader
+        .replace('uniform float rotationIndicatorStrength;',
+          'uniform float rotationIndicatorStrength;\nuniform float rodFeedOffset;\nuniform float rodFeedPitch;')
+        .replace('float rotationQuadrant = rotationXY.x * rotationXY.y;',
+          'float rotationQuadrant = rotationXY.x * rotationXY.y'
+          + ' * (mod(floor((vRotationIndicator.z - rodFeedOffset) / rodFeedPitch), 2.0) < 0.5 ? 1.0 : -1.0);');
+    };
+    const cacheKey = material.customProgramCacheKey;
+    material.customProgramCacheKey = () => `${cacheKey()}-365-rod-feed`;
+  }
+  const updateRodFeedBands = (axialDisplacement) => {
+    rodFeedOffset.value = positiveModulo(axialDisplacement, 2 * rodFeedBandPitch);
+  };
   const rodMarkers = rodMarkerBaseCoordinates.map((baseCoordinate, index) => {
     const marker = new THREE.Mesh(
       new THREE.SphereGeometry(0.042, 18, 12),
@@ -466,6 +502,7 @@ function skewRollerHelicalRodFeed(movement) {
     rollerSpinRotors[0].rotation.y = state.frontRollerAngle;
     rollerSpinRotors[1].rotation.y = state.rearRollerAngle;
     rodSpinRotor.rotation.y = state.rodAngle;
+    updateRodFeedBands(state.rodAxialDisplacement);
     rodMarkers.forEach((marker, index) => {
       marker.position.y = state.markerStates[index].wrappedY;
     });
@@ -490,6 +527,7 @@ function skewRollerHelicalRodFeed(movement) {
       bearingRings,
       frame,
       rodBody,
+      rodFeedOffset,
       rodGuides,
       rodMarkers,
       rodSpinRotor,
@@ -548,6 +586,7 @@ function skewRollerHelicalRodFeed(movement) {
       rodBodyBottom,
       rodBodyLength,
       rodBodyTop,
+      rodFeedBandPitch,
       rodMarkerCount,
       rodMarkerPitch,
       rodRadius,
@@ -622,7 +661,7 @@ function skewRollerHelicalRodFeed(movement) {
     },
     visualizationDisclosure: {
       eulerianRodWindow:
-        'the uniformly cylindrical stock remains in a fixed viewing window while periodic material markers carry the exact unbounded axial displacement and rod angle',
+        'the uniformly cylindrical stock remains in a fixed viewing window; its surface is painted as a checker of quadrant-cue bands that travel with the exact unbounded axial displacement and turn with the rod angle, so both the feed and the spin show',
       markerWrap:
         'surface-painted marker identities fade at the viewing-window edges before wrapping; their unbounded material coordinates remain available in state',
       reason:

@@ -24,17 +24,15 @@ export function makeStrokeDoublerGeometry({samples=96,cutterSteps=2048,amplitude
  const upperTeeth=Array.from({length:19},(_,i)=>poly(tooth.map(([x,y])=>[x+s.origins.upper+i*pitch,y])));
  add('upperRack',plate(clip.union(upperBody,...upperTeeth),-.12,.12),'rack',PALETTE.driven);
  const under=atLine('lowerUnderside'),baseTop=atLine('baseTop'),baseBottom=atLine('baseBottom');
+ // The fixed rack stands on one solid web down to the bed. Brown's three
+ // rounded '( )' forms are oval openings through that web, so the rack and
+ // web are one extrusion with three capsule-shaped holes.
  const lx=local([29,350])[0],rx=local([518,350])[0],shape=new THREE.Shape();
- shape.moveTo(lx,baseTop);shape.lineTo(lx,under-.07);shape.quadraticCurveTo(lx,-rootY,lx+.26,-rootY);shape.lineTo(rx-.28,-rootY);shape.quadraticCurveTo(rx,-rootY,rx,under-.09);shape.lineTo(rx,baseTop);shape.lineTo(rx-.19,baseTop);shape.lineTo(rx-.19,under-.10);shape.quadraticCurveTo(rx-.19,under,rx-.30,under);shape.lineTo(lx+.29,under);shape.quadraticCurveTo(lx+.16,under,lx+.16,under-.09);shape.lineTo(lx+.16,baseTop);shape.closePath();
+ shape.moveTo(lx,baseTop);shape.lineTo(lx,under-.07);shape.quadraticCurveTo(lx,-rootY,lx+.26,-rootY);shape.lineTo(rx-.28,-rootY);shape.quadraticCurveTo(rx,-rootY,rx,under-.09);shape.lineTo(rx,baseTop);shape.closePath();
  const lowerTeeth=Array.from({length:20},(_,i)=>poly(tooth.map(([x,y])=>[x+s.origins.lower+i*pitch,-y])));
- add('lowerRack',plate(clip.union(poly(shape.getPoints(24).map(p=>[p.x,p.y])),...lowerTeeth),-.12,.12),'fixed',PALETTE.frame);
+ const radius=(under-baseTop)/2*.8,cy=(under+baseTop)/2,openings=[[77,167],[196,319],[350,443]].map(([a,b])=>{const x0=local([a,340])[0],x1=local([b,340])[0];return capsule([x0+radius,cy],[x1-radius,cy],radius,48);});
+ add('lowerRack',plate(clip.difference(clip.union(poly(shape.getPoints(24).map(p=>[p.x,p.y])),...lowerTeeth),...openings),-.12,.12),'fixed',PALETTE.frame);
  const bedLeft=local([16,360])[0],bedRight=local([514,360])[0];add('bed',plate(poly([[bedLeft,baseBottom],[bedRight,baseBottom],[bedRight,baseTop],[bedLeft,baseTop]]),-.20,.20),'fixed',PALETTE.frame);
- // The caption assigns no motion to the three rounded forms below the fixed
- // rack. Their reconstruction as static support webs is an explicit inference.
- const radius=(under-baseTop)/2,cy=(under+baseTop)/2;
- for(const [i,[a,b]]of [[77,167],[196,319],[350,443]].entries()){
-  const x0=local([a,340])[0],x1=local([b,340])[0];add('support'+i,plate(capsule([x0+radius,cy],[x1-radius,cy],radius,48),-.10,.10),'fixed',PALETTE.frame);
- }
  const rodTop=x=>s.lines.rodTop.intercept+s.lines.rodTop.slope*x,rodBottom=x=>s.lines.rodBottom.intercept+s.lines.rodBottom.slope*x;
  // Brown breaks the pitman off at the plate edge. Model it whole: the rod
  // ends in a rounded crank-end eye on its pin (the crank lies off the plate).

@@ -121,9 +121,10 @@ const FIGURE = {
   logHalfWidth: 0.12,
   logCenterY: -0.52,
   logCenterZ: 0.76,
-  // Pass 74: the figure only ever flexes one way (0-23 degrees, the
-  // upstream log ends swinging clear), so the log ends need only clear the
-  // other frame's hinge-strap legs (half width 0.075).
+  // The figure flexes from +23 degrees (Brown's bend, the log ends opening
+  // below) to -14 degrees (the lower log corners closing to 0.02 apart);
+  // the log ends also clear the other frame's hinge-strap legs (half width
+  // 0.075).
   logGap: 0.09,
   tieTopY: -0.20,
   pinRadius: 0.055,
@@ -170,7 +171,9 @@ function buildPlateJointFigure(materials, name) {
     { axial: f.upstreamEnd, radial: 0.34 },
     { axial: f.upstreamEnd + 0.20, radial: 0.34 },
     { axial: f.upstreamEnd + 0.20, radial: f.pipeOuter },
-    { axial: -ballEnd + 0.012, radial: f.pipeOuter },
+    // The barrel ends on the ball's flat end face (it ran 0.012 into the
+    // ball's neck, whose bore then z-fought with the barrel's).
+    { axial: -ballEnd, radial: f.pipeOuter },
   ], f.pipeInner, materials.pipe, `plate-${name}-collared-upstream-pipe`));
   upstream.add(addRole(new THREE.Mesh(ballGeometry, materials.ball),
     `plate-${name}-hollow-pipe-ball`));
@@ -1157,11 +1160,10 @@ function flexibleWaterMain(movement) {
     socket.castShadow = false;
   });
   fitPistonGuide(root, update, cycleDuration);
-  // Brown draws one ball-and-socket joint, not the crossing: a sectional
-  // elevation above and a plan below. The analytic crossing (two mains, banks,
-  // winches) stays as the hidden motion source; both figures show its front
-  // 18-inch main's middle joint, whose deflection they reproduce. The figures
-  // start at the installed pose Brown draws (source phase 0.61).
+  // Brown draws one ball-and-socket joint, not the crossing, twice: a
+  // sectional elevation above and a plan below. Both figures are the same
+  // mechanism, so it is ONE animated model (the viewer rotates to the plan).
+  // The analytic crossing (two mains, banks, winches) stays hidden.
   const crossing = [...root.children];
   crossing.forEach((object) => { object.visible = false; });
   const figureMaterials = {
@@ -1173,44 +1175,39 @@ function flexibleWaterMain(movement) {
     wood: woodMaterial,
   };
   const elevation = buildPlateJointFigure(figureMaterials, 'elevation');
-  elevation.position.set(0, 1.0, 0);
-  const plan = buildPlateJointFigure(figureMaterials, 'plan');
-  plan.position.set(0, -0.96, 0);
-  plan.rotation.x = Math.PI / 2;
-  root.add(elevation, plan);
-  const figureJointIndex = 1;
-  const figureSourcePhase = 0.61;
-  const figureDeflectionAtTime = (time) => stateAtPhase(
-    time / cycleDuration + figureSourcePhase,
-  ).chain.jointDeflections[figureJointIndex].angle;
+  root.add(elevation);
+  // The joint flexes both ways about its horizontal trunnions: from Brown's
+  // drawn bend (upstream end raised 23 degrees, the log ends opening below)
+  // through straight to a 14-degree reverse bend, where the lower corners of
+  // the log ends still clear each other by 0.02.
+  const figureBend = {
+    drawn: THREE.MathUtils.degToRad(23),
+    reverse: THREE.MathUtils.degToRad(-14),
+  };
+  const bendMid = (figureBend.drawn + figureBend.reverse) / 2;
+  const bendAmplitude = (figureBend.drawn - figureBend.reverse) / 2;
+  const figureDeflectionAtTime = (time) => bendMid
+    + bendAmplitude * Math.cos(FULL_TURN * time / cycleDuration);
   const updateAll = (time) => {
     update(time);
-    const deflection = figureDeflectionAtTime(time);
-    for (const figure of [elevation, plan]) {
-      figure.userData.upstream.rotation.z = -deflection;
-    }
+    elevation.userData.upstream.rotation.z = -figureDeflectionAtTime(time);
   };
   markShadows(elevation);
-  markShadows(plan);
-  // The elevation sits above the plan on the page; it must not shade it.
-  elevation.traverse((object) => { object.castShadow = false; });
   elevation.traverse((object) => { if (object.material) object.material.fog = false; });
-  plan.traverse((object) => { if (object.material) object.material.fog = false; });
   root.userData.blocks.crossing = crossing;
-  root.userData.blocks.plateFigures = { elevation, plan };
+  root.userData.blocks.plateFigures = { elevation };
   root.userData.plateFigures = {
+    figureBend,
     figureDeflectionAtTime,
-    figureJointIndex,
-    figureSourcePhase,
     geometry: { ...FIGURE },
     presentation:
-      'two figures of one joint as Brown draws it: sectional elevation above, plan below; the crossing is the hidden analytic motion source',
+      'one animated joint for both of Brown\'s figures (elevation and plan); it flexes both ways about its trunnions; the crossing is hidden',
   };
   root.userData.update = updateAll;
   updateAll(0);
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-1.92, -1.98, -1.02),
-    new THREE.Vector3(2.00, 1.98, 1.02),
+    new THREE.Vector3(-1.90, -1.08, -1.00),
+    new THREE.Vector3(2.00, 0.95, 1.00),
   );
   root.userData.cameraDirection = new THREE.Vector3(0.25, 0.2, 16);
   root.userData.cameraFov = 12;

@@ -13,6 +13,16 @@ test('390 uses identical opposed curled chisel pawls seated in the V root, drivi
   assert.ok(Math.abs(b.crossedPawl.userData.mountPhase-b.openPawl.userData.mountPhase-Math.PI)<1e-14);
   assert.equal(b.openCarrier.userData.pawlStop,null,'no extra stop pin');assert.equal(b.crossedCarrier.userData.pawlStop,null);
   const [po,pc]=[b.openCarrier,b.crossedCarrier].map(c=>c.userData.pawlBody.geometry.attributes.position.array);assert.deepEqual(Array.from(po),Array.from(pc),'both pawls identical');
+  // Brown's point-symmetric pair: each pulley carries two identical pawls half a turn apart.
+  for(const c of[b.openCarrier,b.crossedCarrier]){
+    const[main,twin]=c.userData.pawls;assert.equal(c.userData.pawls.length,2);assert.ok(twin.parent===c);
+    assert.ok(Math.abs(twin.userData.mountPhase-main.userData.mountPhase-Math.PI)<1e-14);
+    assert.ok(twin.position.clone().add(main.position).setZ(0).length()<1e-12,'mirrored through the axis');
+    assert.equal(twin.position.z,main.position.z,'both on one face');
+    assert.ok(c.userData.pawlBodies[1].geometry===c.userData.pawlBodies[0].geometry,'identical outline');
+    assert.equal(Math.abs((Math.PI/dualBandToothPitch)%1),0,'half a turn is whole teeth, so both seat together');
+  }
+  for(let i=0;i<16;i++){model.update(i*.5);for(const c of[b.openCarrier,b.crossedCarrier])assert.ok(Math.abs((c.userData.pawls[0].rotation.z-c.userData.pawls[0].userData.baseAngle)-(c.userData.pawls[1].rotation.z-c.userData.pawls[1].userData.baseAngle))<1e-12,'one shared lift');}
   const outline=ratchet390Outline(dualBandSeatPhase),root=outline[1],crest=outline[2];
   const nose=pawlAt(d.seatAngle)[0].reduce((best,q)=>Math.hypot(q[0]-root[0],q[1]-root[1])<Math.hypot(best[0]-root[0],best[1]-root[1])?q:best);
   assert.ok(Math.hypot(nose[0]-root[0],nose[1]-root[1])<.003,'nose sits in the root corner');
@@ -25,10 +35,10 @@ test('390 uses identical opposed curled chisel pawls seated in the V root, drivi
 });
 test('390 finite pawl, journal and stop surfaces remain clear through drive and return',()=>{
   const pairs=[];
-  for(const[c,w]of[[b.openCarrier,b.openRatchet],[b.crossedCarrier,b.crossedRatchet]])for(const[name,a,target,minimum]of[
-    ['pawl/ratchet',c.userData.pawlBody,w,-.00002],
-    ['pin/bored eye',c.userData.pawlPin,c.userData.pawlBody,.0009],
-    ['pawl/carrier face',c.userData.pawlBody,c.userData.pulley,.037],
+  for(const[c,w]of[[b.openCarrier,b.openRatchet],[b.crossedCarrier,b.crossedRatchet]])for(const k of[0,1])for(const[name,a,target,minimum]of[
+    ['pawl/ratchet',c.userData.pawlBodies[k],w,-.00002],
+    ['pin/bored eye',c.userData.pawlPins[k],c.userData.pawlBodies[k],.0009],
+    ['pawl/carrier face',c.userData.pawlBodies[k],c.userData.pulley,.037],
   ])pairs.push({name,a,target,minimum,points:surfacePoints(a.geometry),field:solidSurface(target.geometry),gap:Infinity});
   for(let i=0;i<=512;i++){
     model.update(i/64);model.root.updateMatrixWorld(true);

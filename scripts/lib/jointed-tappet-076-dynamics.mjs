@@ -1,6 +1,7 @@
 // Movement 76's finite-contact dynamics after pass 86: B and the holding
 // click are plain plates in the wheel's plane. B's heel stops on the tappet
-// web (alpha <= 0) and the tappet arm rests on one fixed pin. Adapted from
+// web (alpha <= 0) and the tappet rests on a hidden fixed key on pivot C
+// (q <= restQ). Adapted from
 // jointed-tappet-dynamics-study.mjs, which other studies still fingerprint.
 import{solveContactProjection,advanceJointedTappetStep}from'./jointed-tappet-dynamics-study.mjs';
 export{solveContactProjection,advanceJointedTappetStep};
@@ -12,11 +13,6 @@ function profileFrom(mesh){
   const shape=mesh.geometry.parameters.shapes[0],points=[];
   for(const p of shape.getPoints(1)){const q=[Math.fround(p.x),Math.fround(p.y)];if(!points.length||Math.hypot(...sub(q,points.at(-1)))>1e-12)points.push(q);}
   if(Math.hypot(...sub(points[0],points.at(-1)))<1e-12)points.pop();
-  return points.map((a,i)=>{const b=points[(i+1)%points.length],d=sub(b,a);return{a,b,d,square:dot(d,d),index:i};});
-}
-// The tappet's exact (unrounded) outline, so its rest on the pin is exact.
-function ringEdges(ring){
-  const points=ring.slice(0,-1);
   return points.map((a,i)=>{const b=points[(i+1)%points.length],d=sub(b,a);return{a,b,d,square:dot(d,d),index:i};});
 }
 function circleFeatures(edges,point,radius,padding){
@@ -37,8 +33,7 @@ function circleFeatures(edges,point,radius,padding){
 export function makeJointedTappet076Dynamics(candidate,{period=12,load=3,damping=[.08,.008,1,.003]}={}){
   const u=candidate.root.userData,p=u.geometry,density=1/u.masses.dog.volume,
     mass=Object.fromEntries(Object.entries(u.masses).map(([k,m])=>[k,{mass:density*m.volume,c:m.centroid.slice(0,2),I:density*m.polar}])),
-    wheelEdges=profileFrom(u.parts.wheelBody),restEdges=ringEdges(u.outlines.bar[0][0]),
-    restPin=sub(p.restPin,p.C),heelLever=p.heelRadius,strikeStart=p.strikeArmStart??p.B,barAxis=sub(p.end,strikeStart),barSquare=dot(barAxis,barAxis),omega=2*Math.PI/period;
+    wheelEdges=profileFrom(u.parts.wheelBody),restLever=p.restKeyLever,heelLever=p.heelRadius,strikeStart=p.strikeArmStart??p.B,barAxis=sub(p.end,strikeStart),barSquare=dot(barAxis,barAxis),omega=2*Math.PI/period;
   const matrices=(x,v,dt=0)=>{
     const[q,alpha,theta,beta]=x,b=rotate(mass.dog.c,alpha),coupling=dot(p.B,b),
       Mqq=mass.tappet.I+dot(p.B,p.B)+mass.dog.I+2*coupling,Mqa=mass.dog.I+coupling,Maa=mass.dog.I,
@@ -66,9 +61,10 @@ export function makeJointedTappet076Dynamics(candidate,{period=12,load=3,damping
     // stop at alpha = 0, measured as the heel tip's travel into the web.
     gaps.dogStop=-alpha*heelLever;
     if(gaps.dogStop<padding)rows.push({id:'dogStop',kind:'dogStop',gap:gaps.dogStop,J:[0,-heelLever,0,0]});
-    // The tappet's own arm edge rests on the fixed rest pin.
-    {const result=circleFeatures(restEdges,rotate(restPin,-q),p.restPinRadius,padding);gaps.restStop=result.gap;
-      for(const f of result.rows){const normal=rotate(f.normal,q);rows.push({id:'restStop:'+f.index,kind:'restStop',gap:f.gap,J:[-cross(restPin,normal),0,0,0]});}}
+    // The web's cutout end bears flush on the fixed rest key at q = restQ,
+    // measured as travel at the key's mid radius.
+    gaps.restStop=(p.restQ-q)*restLever;
+    if(gaps.restStop<padding)rows.push({id:'restStop',kind:'restStop',gap:gaps.restStop,J:[-restLever,0,0,0]});
     // One stud D on each of the driver's studCount spokes (evenly spaced).
     gaps.stud=Infinity;
     for(let k=0;k<(p.studCount??1);k++){

@@ -19,39 +19,44 @@ function audit(model,pairs,period,poses=33){
  assert.ok(worst>=-2e-6,`${description}: ${worst}`);
 }
 
-test('395 sectioned passages are open through plug and housing at both indexed positions',()=>{
+test('395 plug passages and body ducts are closed square bores that meet face to face at both indexed positions',()=>{
  const m=cock({id:395}),d=m.root.userData,b=d.blocks,g=d.geometry;
  try{
   const plug=solidSurface(b.plug.geometry),housing=solidSurface(b.housing.geometry);
+  // Pass 90: the passages are closed inside the plug (see-through), not
+  // open channels in its face.
   for(const channel of Object.values(b.channels)){
    const path=channel.userData.curve;
    for(let i=0;i<=64;i++){
-    const p=path.getPoint(i/64);
-    // Pass 55: one clean cutaway on z = 0; each channel is open toward the
-    // cut face and the plug is solid behind it (no tinted fluid cores).
-    for(const z of[-.07,.12])assert.equal(plug.inside(p.clone().setZ(z)),false,'passage open toward the cut face');
-    if(p.length()<g.plugRadius-1e-5)assert.equal(plug.inside(p.clone().setZ(-(g.plugDepth/2+d.plugChannelDepth)/2)),true,'solid plug floor behind the channel');
+    const p=path.getPoint(i/64);if(p.length()>g.plugRadius-.01)continue;
+    assert.equal(plug.inside(p.clone().setZ(0)),false,'passage bored through the plug');
+    for(const z of[-.25,.25])assert.equal(plug.inside(p.clone().setZ(z)),true,'passage covered on both faces');
    }
    assert.equal(channel.userData.flowCore.visible,false,'no tinted fluid core stands in for the passage');
   }
-  for(const a of[0,Math.PI/2,Math.PI,3*Math.PI/2])for(let r=g.bodyInnerRadius+.01;r<g.bodyOuterRadius;r+=.02)assert.equal(housing.inside(new T.Vector3(r*Math.cos(a),r*Math.sin(a),0)),false,'open housing mouth');
-  const pipes=Object.values(b.pipes).map(p=>p.children[0]);
-  audit(m,[[b.plug,b.housing],...pipes.map(p=>[b.plug,p])],d.motion.cycleDuration);
+  assert.equal(b.plug.userData.seeThrough,true,'the plug is see-through so its passages show');
+  for(const a of[0,Math.PI/2,Math.PI,3*Math.PI/2])for(let r=g.bodyInnerRadius+.01;r<g.bodyOuterRadius;r+=.02){
+   const at=z=>new T.Vector3(r*Math.cos(a),r*Math.sin(a),z);
+   assert.equal(housing.inside(at(0)),false,'open port duct');
+   for(const z of[-.25,.25])assert.equal(housing.inside(at(z)),true,'port duct closed on both faces');
+  }
+  // The four pipe ends are the body's only openings.
+  for(const end of d.pipeEnds){
+   assert.equal(housing.inside(end.point.clone().addScaledVector(end.tangent,-.05)),false,'bore reaches the pipe end');
+   assert.equal(housing.inside(end.point.clone().addScaledVector(end.tangent,-.05).setZ(.25)),true,'pipe wall');
+  }
+  audit(m,[[b.plug,b.housing]],d.motion.cycleDuration);
  }finally{disposeObject3D(m.root);}
 });
 
-test('395 moving passage and pipe markers stay inside the actual cutaway bores',()=>{
+test('395 moving passage markers stay inside the closed plug passages',()=>{
  const m=cock({id:395}),d=m.root.userData,b=d.blocks;
  try{
-  const plug=solidSurface(b.plug.geometry),housing=solidSurface(b.housing.geometry);
+  const plug=solidSurface(b.plug.geometry);
   for(const time of[.13,.61,1.37,4.31,5.19,6.43]){
    m.update(time);m.root.updateMatrixWorld(true);
    for(const channel of Object.values(b.channels))for(const marker of channel.userData.markers){
-    assert.equal(marker.visible,true);assert.ok(plug.signedDistance(marker.position,.2)>=.094);
-   }
-   for(const group of b.externalFlow.children)for(const marker of group.userData.markers){
-    assert.equal(housing.inside(marker.position),false);
-    for(const pipe of Object.values(b.pipes))assert.equal(solidSurface(pipe.children[0].geometry).inside(marker.position),false);
+    assert.equal(marker.visible,true);if(marker.position.length()<d.geometry.plugRadius-.1)assert.ok(plug.signedDistance(marker.position,.2)>=.094);
    }
   }
  }finally{disposeObject3D(m.root);}

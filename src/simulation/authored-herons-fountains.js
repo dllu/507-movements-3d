@@ -1,639 +1,202 @@
 import * as THREE from 'three';
-import {correctFountain,fountainBowlLevel} from './fountain-balance-working-parts.js';
+import {PALETTE, markShadows, matte} from './primitives.js';
+import {cutFaceMaterial, latheSectionGeometry} from './cutaway-section.js';
+import {waterVolumeMaterial} from './water-volume.js';
+import {WaterStream, ballisticPath} from './water-stream.js';
 import {
-  PALETTE,
-  markShadows,
-  matte,
-} from './primitives.js';
+  FOUNTAIN,
+  bowlWaterGeometry,
+  bunFootGeometry,
+  fountainCastingGeometry,
+  fountainOutlines,
+  jetPipeProfile,
+  rightWaterGeometry,
+} from './herons-fountain-casting.js';
 
 function addRole(object, role) {
   object.userData.role = role;
   return object;
 }
 
-function positiveModulo(value, modulus) {
-  return ((value % modulus) + modulus) % modulus;
-}
-
-function smootherStep(value) {
-  const x = THREE.MathUtils.clamp(value, 0, 1);
-  return x ** 3 * (10 + x * (-15 + 6 * x));
-}
-
-function smootherStepDerivative(value) {
-  const x = THREE.MathUtils.clamp(value, 0, 1);
-  return 30 * x ** 2 * (1 - x) ** 2;
-}
-
+// Pass 90: Hero's fountain rebuilt as Brown draws it, one hollow cast frame
+// seen in section (a clean cutaway on the plane z = 0, facing the default
+// camera):
+//   - the trough on top is open to the air; poured water and the returning
+//     jet stand in it;
+//   - its floor opens into the right leg, a tube running down into the foot
+//     (the lower vessel) and ending under the foot's water;
+//   - the left leg is hollow and joins the foot's headspace to the chamber
+//     over the bowl (the intermediate vessel); Brown's cavities over the
+//     water are air;
+//   - the bowl hangs from the leg walls under that chamber, and the jet pipe
+//     rises from near its bottom, through the chamber and the trough water, to
+//     the pointed spire;
+//   - water in the right tube presses the foot's air, which by the left leg
+//     presses on the bowl water and drives it up the pipe as the jet.
 function heronsFountain(movement) {
   const root = new THREE.Group();
   const cycleDuration = 12.5;
-  const operationEndPhase = 0.72;
-  const resetStartPhase = 0.80;
-  const atmosphericPressure = 101325;
-  const waterDensity = 1000;
-  const gravitationalAcceleration = 9.81;
-  const initialPressureRatio = 1.22;
-  const intermediateInnerRadius = 0.90;
-  const intermediateBottomY = 2.00;
-  const intermediateInnerHeight = 1.20;
-  const intermediateCapacity = 2.60 * 1.55 * (3.73 - .77);
-  const intermediateInitialWaterVolume = 2.00;
-  const lowerInnerLength = 4.10;
-  const lowerInnerWidth = 1.45;
-  const lowerInnerHeight = 0.62;
-  const lowerArea = lowerInnerLength * lowerInnerWidth;
-  const lowerBottomY = 0.05;
-  const lowerCapacity = lowerArea * lowerInnerHeight;
-  const lowerInitialWaterVolume = 1.40;
-  const topInnerLength = 4.20;
-  const topInnerWidth = 1.35;
-  const topArea = topInnerLength * topInnerWidth;
-  const topBasinBottomY = 3.85;
-  const topWaterVolume = 1.05;
-  const nozzleY = 4.40;
-  // Running, the right drain carries exactly the jet's return (the upper
-  // basin level holds and the shared air volume and pressure stay constant),
-  // so no undrawn extra pour is needed and no water appears from nowhere.
-  const lowerTransfer = 0.24;
-  const intermediateTransfer = 0.24;
-  const externalPourTransfer = lowerTransfer - intermediateTransfer;
-  const initialLowerGasVolume = lowerCapacity - lowerInitialWaterVolume;
-  const initialIntermediateGasVolume = intermediateCapacity
-    - intermediateInitialWaterVolume;
-  const initialSharedGasVolume = initialLowerGasVolume
-    + initialIntermediateGasVolume;
-  const initialSharedGasPressure = atmosphericPressure * initialPressureRatio;
-  const sharedGasPVConstant = initialSharedGasPressure
-    * initialSharedGasVolume;
-  const groundY = -0.18;
+  const gravity = 9.81;
+  const pipe = FOUNTAIN.pipe;
+  // Levels at Brown's pose (plate units above the underside of the foot).
+  const troughLevel = 4.86;
+  const footLevel = 0.50;
+  const bowlLevel = 3.84;
+  const groundY = -FOUNTAIN.foot3d.height;
+  // Hydrostatics. The right tube is full from the trough surface down to the
+  // foot water, so the shared air stands at a gauge head equal to that
+  // column; the same air presses on the bowl water, so the ideal jet head
+  // above the spire tip is that head less the lift from bowl level to tip.
+  const airGaugeHead = troughLevel - footLevel;
+  const idealJetHead = airGaugeHead - (pipe.tip - bowlLevel);
+  // Brown's spray rises about 0.6 above the tip: the pipe and the fine tip
+  // orifice lose the rest of the ideal head (a disclosed loss factor).
+  const visibleJetRise = 0.6;
+  const jetHeadEfficiency = visibleJetRise / idealJetHead;
+  const jetSpeed = Math.sqrt(2 * gravity * visibleJetRise);
 
-  const stateAtTransferProgress = (unclampedProgress) => {
-    const transferProgress = THREE.MathUtils.clamp(unclampedProgress, 0, 1);
-    const drainTransferVolume = lowerTransfer * transferProgress;
-    const jetTransferVolume = intermediateTransfer * transferProgress;
-    const externallyPouredVolume = externalPourTransfer * transferProgress;
-    const lowerWaterVolume = lowerInitialWaterVolume + drainTransferVolume;
-    const intermediateWaterVolume = intermediateInitialWaterVolume
-      - jetTransferVolume;
-    const upperWaterVolume = topWaterVolume;
-    const lowerGasVolume = lowerCapacity - lowerWaterVolume;
-    const intermediateGasVolume = intermediateCapacity
-      - intermediateWaterVolume;
-    const sharedGasVolume = lowerGasVolume + intermediateGasVolume;
-    const sharedGasPressure = sharedGasPVConstant / sharedGasVolume;
-    const lowerWaterHeight = lowerWaterVolume / lowerArea;
-    const intermediateWaterHeight = fountainBowlLevel(intermediateWaterVolume) - intermediateBottomY;
-    const topWaterHeight = upperWaterVolume / topArea;
-    const lowerWaterSurfaceY = lowerBottomY + lowerWaterHeight;
-    const intermediateWaterSurfaceY = intermediateBottomY
-      + intermediateWaterHeight;
-    const topWaterSurfaceY = topBasinBottomY + topWaterHeight;
-    const pneumaticPressureHead = (sharedGasPressure - atmosphericPressure)
-      / (waterDensity * gravitationalAcceleration);
-    const availableJetHead = pneumaticPressureHead
-      + intermediateWaterSurfaceY - nozzleY;
-    const idealJetHeight = Math.max(0, availableJetHead);
-    const modeledWaterVolume = lowerWaterVolume
-      + intermediateWaterVolume + upperWaterVolume;
-    const initialModeledWaterVolume = lowerInitialWaterVolume
-      + intermediateInitialWaterVolume + topWaterVolume;
-    const waterBalanceResidual = modeledWaterVolume
-      - initialModeledWaterVolume - externallyPouredVolume;
-    return {
-      availableJetHead,
-      drainTransferVolume,
-      externallyPouredVolume,
-      idealJetHeight,
-      intermediateGasVolume,
-      intermediateWaterHeight,
-      intermediateWaterSurfaceY,
-      intermediateWaterVolume,
-      jetTransferVolume,
-      lowerGasVolume,
-      lowerWaterHeight,
-      lowerWaterSurfaceY,
-      lowerWaterVolume,
-      pneumaticPressureHead,
-      sharedGasPV: sharedGasPressure * sharedGasVolume,
-      sharedGasPressure,
-      sharedGasVolume,
-      topWaterHeight,
-      topWaterSurfaceY,
-      upperWaterVolume,
-      waterBalanceResidual,
-      transferProgress,
-    };
-  };
-
-  // Pass 70: the loop shows the fountain in steady play, as Brown draws it
-  // playing, instead of a run followed by a reset whose flows were not drawn
-  // (the bowl refilled and the foot emptied with no water moving). The drain
-  // carries exactly the jet's return, so the upper basin, the shared air
-  // volume and its pressure hold; the slow fall of the bowl and rise of the
-  // foot over a real run (0.24 of volume in some nine seconds at this rate)
-  // are held at the source pose's levels, a disclosed large-vessel
-  // approximation. The operating law (stateAtTransferProgress) is unchanged.
-  const steadyTransferProgress = 0.35;
-  const steadyTransferProgressRate = 1 / (operationEndPhase * cycleDuration);
   const stateAtPhase = (unwrappedPhase) => {
-    const phase = positiveModulo(unwrappedPhase, 1);
-    const hydraulic = stateAtTransferProgress(steadyTransferProgress);
+    const phase = ((unwrappedPhase % 1) + 1) % 1;
     return {
-      ...hydraulic,
-      drainFlowRate: lowerTransfer * steadyTransferProgressRate,
-      externalPourFlowRate: externalPourTransfer * steadyTransferProgressRate,
-      flowFraction: 1,
-      jetFlowRate: intermediateTransfer * steadyTransferProgressRate,
-      levelsHeldInSteadyPlay: true,
       phase,
-      physicalFlowsVisible: true,
+      troughLevel,
+      footLevel,
+      bowlLevel,
+      airGaugeHead,
+      idealJetHead,
+      visibleJetRise,
+      // Steady play: the tube carries exactly the jet's return.
+      drainFlowRate: 1,
+      jetFlowRate: 1,
+      levelsHeldInSteadyPlay: true,
       regime: 'steady-play-drain-equals-jet-levels-held',
-      transferProgressRate: 0,
     };
   };
-
   const stateAtTime = (time) => stateAtPhase(time / cycleDuration);
 
-  const frameMaterial = matte(PALETTE.frame, {
-    metalness: 0.16,
-    roughness: 0.66,
+  const castMaterial = matte(PALETTE.frame, {metalness: 0.16, roughness: 0.66});
+  const cutMaterial = cutFaceMaterial(castMaterial);
+  const pipeMaterial = matte(PALETTE.brass, {metalness: 0.18, roughness: 0.50});
+  const pipeCutMaterial = cutFaceMaterial(pipeMaterial);
+  const waterMaterial = waterVolumeMaterial();
+  waterMaterial.side = THREE.FrontSide;
+
+  const {casting: castingGeometry, slab: slabGeometry} = fountainCastingGeometry();
+  const casting = addRole(new THREE.Mesh(castingGeometry, [castMaterial, cutMaterial]),
+    'hollow-cast-fountain-frame-cut-in-section');
+  const slab = addRole(new THREE.Mesh(slabGeometry, [castMaterial, cutMaterial]),
+    'trough-floor-bored-for-the-jet-pipe');
+  const jetPipe = addRole(new THREE.Mesh(latheSectionGeometry(jetPipeProfile(), {segments: 192}), [pipeMaterial, pipeCutMaterial]),
+    'central-jet-pipe-from-bowl-to-spire');
+  root.add(casting, slab, jetPipe);
+  const bun = bunFootGeometry();
+  const feet = [-1, 1].map((side) => {
+    const foot = addRole(new THREE.Mesh(bun, castMaterial), 'turned-foot-under-the-lower-vessel');
+    foot.position.set(side * FOUNTAIN.foot3d.x, 0, FOUNTAIN.foot3d.z);
+    root.add(foot);
+    return foot;
   });
-  const darkMaterial = matte(PALETTE.ink, {
-    metalness: 0.24,
-    roughness: 0.50,
+
+  const rightWater = addRole(new THREE.Mesh(rightWaterGeometry(troughLevel, footLevel), waterMaterial),
+    'water-in-open-trough-right-tube-and-lower-vessel');
+  const bowlWater = addRole(new THREE.Mesh(bowlWaterGeometry(bowlLevel), waterMaterial),
+    'water-in-bowl-and-jet-pipe');
+  for (const water of [rightWater, bowlWater]) water.renderOrder = 1;
+  root.add(rightWater, bowlWater);
+
+  // The jet: thin streams leaving the spire tip and falling back on both
+  // sides into the trough water (Brown's willow plume), their streaks
+  // running with the water.
+  const tip = new THREE.Vector3(0, pipe.tip, -0.08);
+  const jets = [-14, -8, -3, 3, 8, 14].map((degrees, index) => {
+    const angle = THREE.MathUtils.degToRad(degrees);
+    const stream = new WaterStream(ballisticPath({
+      origin: tip,
+      velocity: new THREE.Vector3(jetSpeed * Math.sin(angle), jetSpeed * Math.cos(angle), 0),
+      gravity,
+      endY: troughLevel,
+      samples: 32,
+    }), {
+      width: 0.018,
+      thickness: 0.018,
+      widthExponent: 0.5,
+      spread: {start: 0.6, width: 1.8, thickness: 1.8},
+      cyclePeriod: cycleDuration,
+      streakRate: 2.4,
+      opacity: 0.5,
+    });
+    stream.userData.role = `fountain-jet-stream-${index + 1}-from-spire-tip-into-trough`;
+    root.add(stream);
+    return stream;
   });
-  const pipeMaterial = matte(PALETTE.brass, {
-    metalness: 0.18,
-    roughness: 0.50,
-  });
-  const shellMaterial = matte(PALETTE.muted, {
-    opacity: 0.24,
-    roughness: 0.30,
-    side: THREE.DoubleSide,
-    transparent: true,
-  });
-  shellMaterial.depthWrite = false;
-  const waterMaterial = matte(PALETTE.fluid, {
-    opacity: 0.44,
-    roughness: 0.25,
-    side: THREE.DoubleSide,
-    transparent: true,
-  });
-  waterMaterial.depthWrite = false;
-  const activeDrainMaterial = matte(PALETTE.fluid, {
-    opacity: 0.58,
-    roughness: 0.22,
-    transparent: true,
-  });
-  activeDrainMaterial.depthWrite = false;
-  const activeJetMaterial = activeDrainMaterial.clone();
-  const activePourMaterial = activeDrainMaterial.clone();
-  const airMaterial = matte(PALETTE.white, {
-    opacity: 0.72,
-    roughness: 0.38,
-    transparent: true,
-  });
-  airMaterial.depthWrite = false;
-
-  const foundation = addRole(new THREE.Mesh(
-    new THREE.BoxGeometry(6.2, 0.16, 2.8),
-    frameMaterial,
-  ), 'fixed-foundation-under-three-vessel-fountain');
-  foundation.position.set(0, groundY + 0.08, 0);
-  root.add(foundation);
-
-  const lowerVessel = addRole(new THREE.Group(),
-    'sealed-lower-vessel-receiving-right-hand-drain-water');
-  root.add(lowerVessel);
-  const lowerShell = addRole(new THREE.Mesh(
-    new THREE.BoxGeometry(4.46, 0.80, 1.78),
-    shellMaterial,
-  ), 'transparent-sealed-lower-vessel-shell');
-  lowerShell.position.set(0, lowerBottomY + lowerInnerHeight / 2, 0);
-  lowerVessel.add(lowerShell);
-  for (const y of [lowerBottomY - 0.05,
-    lowerBottomY + lowerInnerHeight + 0.05]) {
-    const rail = new THREE.Mesh(
-      new THREE.BoxGeometry(4.58, 0.10, 1.90),
-      frameMaterial,
-    );
-    rail.position.set(0, y, 0);
-    lowerVessel.add(rail);
-  }
-  const lowerWater = addRole(new THREE.Mesh(
-    new THREE.BoxGeometry(lowerInnerLength, 1, lowerInnerWidth),
-    waterMaterial,
-  ), 'water-rising-in-sealed-lower-vessel');
-  lowerVessel.add(lowerWater);
-  const lowerAirCavity = addRole(new THREE.Mesh(
-    new THREE.BoxGeometry(lowerInnerLength * 0.96, 1, lowerInnerWidth * 0.96),
-    airMaterial,
-  ), 'compressed-air-cavity-above-lower-vessel-water');
-  lowerVessel.add(lowerAirCavity);
-
-  const intermediateVessel = addRole(new THREE.Group(),
-    'sealed-intermediate-vessel-supplying-central-water-jet');
-  root.add(intermediateVessel);
-  const intermediateCenterY = intermediateBottomY
-    + intermediateInnerHeight / 2;
-  const intermediateShell = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(
-      intermediateInnerRadius + 0.09,
-      intermediateInnerRadius + 0.09,
-      intermediateInnerHeight + 0.12,
-      48,
-      1,
-      true,
-    ),
-    shellMaterial,
-  ), 'transparent-sealed-intermediate-vessel-shell');
-  intermediateShell.position.set(0, intermediateCenterY, 0);
-  intermediateVessel.add(intermediateShell);
-  const intermediateRims = [
-    intermediateBottomY - 0.06,
-    intermediateBottomY + intermediateInnerHeight + 0.06,
-  ].map((y, index) => {
-    const rim = addRole(new THREE.Mesh(
-      new THREE.TorusGeometry(
-        intermediateInnerRadius + 0.09,
-        0.055,
-        10,
-        48,
-      ),
-      frameMaterial,
-    ), index === 0
-      ? 'intermediate-vessel-bottom-seal-rim'
-      : 'intermediate-vessel-top-seal-rim');
-    rim.rotation.x = Math.PI / 2;
-    rim.position.set(0, y, 0);
-    intermediateVessel.add(rim);
-    return rim;
-  });
-  const intermediateWater = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(
-      intermediateInnerRadius,
-      intermediateInnerRadius,
-      1,
-      44,
-    ),
-    waterMaterial,
-  ), 'water-falling-in-intermediate-vessel-as-jet-is-delivered');
-  intermediateVessel.add(intermediateWater);
-  const intermediateAirCavity = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(
-      intermediateInnerRadius * 0.96,
-      intermediateInnerRadius * 0.96,
-      1,
-      40,
-    ),
-    airMaterial,
-  ), 'compressed-air-cavity-above-intermediate-vessel-water');
-  intermediateVessel.add(intermediateAirCavity);
-
-  const topBasin = addRole(new THREE.Group(),
-    'open-upper-basin-receiving-pour-and-returning-fountain-spray');
-  root.add(topBasin);
-  const basinFloor = new THREE.Mesh(
-    new THREE.BoxGeometry(4.62, 0.12, 1.76),
-    frameMaterial,
-  );
-  basinFloor.position.set(0, topBasinBottomY - 0.06, 0);
-  topBasin.add(basinFloor);
-  for (const z of [-0.85, 0.85]) {
-    const wallHeight = z > 0 ? 0.20 : 0.52;
-    const wall = new THREE.Mesh(
-      new THREE.BoxGeometry(4.62, wallHeight, 0.10),
-      frameMaterial,
-    );
-    wall.position.set(0, topBasinBottomY + wallHeight / 2, z);
-    topBasin.add(wall);
-  }
-  for (const x of [-2.26, 2.26]) {
-    const wall = new THREE.Mesh(
-      new THREE.BoxGeometry(0.10, 0.52, 1.70),
-      frameMaterial,
-    );
-    wall.position.set(x, topBasinBottomY + 0.20, 0);
-    topBasin.add(wall);
-  }
-  const topWater = addRole(new THREE.Mesh(
-    new THREE.BoxGeometry(topInnerLength, 1, topInnerWidth),
-    waterMaterial,
-  ), 'constant-level-water-in-open-upper-basin');
-  topBasin.add(topWater);
-
-  const rightDrainOuter = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(0.13, 0.13, 2.62, 24),
-    pipeMaterial,
-  ), 'right-hand-water-drain-from-upper-basin-to-lower-vessel');
-  rightDrainOuter.position.set(1.66, 1.38, 0);
-  root.add(rightDrainOuter);
-  const rightDrainWater = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(0.072, 0.072, 2.54, 20),
-    activeDrainMaterial,
-  ), 'active-downward-water-column-inside-right-drain');
-  rightDrainWater.position.copy(rightDrainOuter.position);
-  root.add(rightDrainWater);
-
-  const airCurve = new THREE.CatmullRomCurve3([
-    new THREE.Vector3(-1.66, 0.53, 0),
-    new THREE.Vector3(-1.66, 1.00, 0),
-    new THREE.Vector3(-1.58, 1.82, 0),
-    new THREE.Vector3(-0.88, 1.88, 0),
-  ]);
-  const leftAirPipe = addRole(new THREE.Mesh(
-    new THREE.TubeGeometry(airCurve, 52, 0.095, 12, false),
-    pipeMaterial,
-  ), 'left-hand-pneumatic-communication-tube-between-two-air-cavities');
-  root.add(leftAirPipe);
-  const airCore = addRole(new THREE.Mesh(
-    new THREE.TubeGeometry(airCurve, 52, 0.045, 10, false),
-    airMaterial,
-  ), 'shared-compressed-air-column-in-left-communication-tube');
-  root.add(airCore);
-
-  const centralRiser = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(0.105, 0.105, 2.25, 24),
-    pipeMaterial,
-  ), 'central-water-riser-from-intermediate-vessel-to-nozzle');
-  centralRiser.position.set(0, 1.86, 0);
-  root.add(centralRiser);
-  const centralRiserWater = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(0.055, 0.055, 2.18, 18),
-    activeJetMaterial,
-  ), 'active-upward-water-column-inside-central-riser');
-  centralRiserWater.position.copy(centralRiser.position);
-  root.add(centralRiserWater);
-  const nozzle = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(0.075, 0.095, 0.20, 22),
-    darkMaterial,
-  ), 'central-fountain-nozzle');
-  nozzle.position.set(0, nozzleY - 0.10, 0);
-  root.add(nozzle);
-
-  const jetColumn = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(0.045, 0.065, 1, 18),
-    activeJetMaterial,
-  ), 'pressure-driven-free-jet-above-central-nozzle');
-  root.add(jetColumn);
-  const nominalJetApexY = nozzleY
-    + stateAtTransferProgress(0.5).idealJetHeight;
-  const makeSprayCurve = (sign) => new THREE.CatmullRomCurve3([
-    new THREE.Vector3(0, nominalJetApexY, 0),
-    new THREE.Vector3(sign * 0.22, nominalJetApexY + 0.07, 0),
-    new THREE.Vector3(sign * 0.58, nominalJetApexY - 0.14, 0),
-    new THREE.Vector3(sign * 0.92, topBasinBottomY + 0.30, 0),
-  ]);
-  const fountainSprays = [-1, 1].map((sign, index) => addRole(
-    new THREE.Mesh(
-      new THREE.TubeGeometry(makeSprayCurve(sign), 38, 0.035, 9, false),
-      activeJetMaterial,
-    ),
-    index === 0
-      ? 'left-returning-fountain-spray-into-upper-basin'
-      : 'right-returning-fountain-spray-into-upper-basin',
-  ));
-  fountainSprays.forEach((spray) => root.add(spray));
-
-  const pourCurve = new THREE.CatmullRomCurve3([
-    new THREE.Vector3(-1.52, 3.82, 0.20),
-    new THREE.Vector3(-1.46, 3.55, 0.12),
-    new THREE.Vector3(-1.31, 3.20, 0.04),
-    new THREE.Vector3(-1.18, topBasinBottomY + 0.30, 0),
-  ]);
-  const externalPour = addRole(new THREE.Mesh(
-    new THREE.TubeGeometry(pourCurve, 36, 0.055, 10, false),
-    activePourMaterial,
-  ), 'external-water-pour-into-open-upper-basin');
-  root.add(externalPour);
 
   const update = (time) => {
-    const state = stateAtTime(time);
-    lowerWater.scale.y = state.lowerWaterHeight;
-    lowerWater.position.set(
-      0,
-      lowerBottomY + state.lowerWaterHeight / 2,
-      0,
-    );
-    const lowerAirHeight = lowerInnerHeight - state.lowerWaterHeight;
-    lowerAirCavity.scale.y = lowerAirHeight;
-    lowerAirCavity.position.set(
-      0,
-      state.lowerWaterSurfaceY + lowerAirHeight / 2,
-      0,
-    );
-    intermediateWater.scale.y = state.intermediateWaterHeight;
-    intermediateWater.position.set(
-      0,
-      intermediateBottomY + state.intermediateWaterHeight / 2,
-      0,
-    );
-    const intermediateAirHeight = intermediateInnerHeight
-      - state.intermediateWaterHeight;
-    intermediateAirCavity.scale.y = intermediateAirHeight;
-    intermediateAirCavity.position.set(
-      0,
-      state.intermediateWaterSurfaceY + intermediateAirHeight / 2,
-      0,
-    );
-    topWater.scale.y = state.topWaterHeight;
-    topWater.position.set(
-      0,
-      topBasinBottomY + state.topWaterHeight / 2,
-      0,
-    );
-    const streamsVisible = state.physicalFlowsVisible;
-    rightDrainWater.visible = streamsVisible;
-    centralRiserWater.visible = streamsVisible;
-    jetColumn.visible = streamsVisible;
-    fountainSprays.forEach((spray) => {
-      spray.visible = streamsVisible;
-    });
-    externalPour.visible = streamsVisible && externalPourTransfer > 0;
-    const flowOpacity = 0.20 + 0.48 * state.flowFraction;
-    activeDrainMaterial.opacity = flowOpacity;
-    activeJetMaterial.opacity = flowOpacity;
-    activePourMaterial.opacity = flowOpacity;
-    const visibleJetHeight = Math.max(0.02, state.idealJetHeight);
-    jetColumn.scale.y = visibleJetHeight;
-    jetColumn.position.set(0, nozzleY + visibleJetHeight / 2, 0);
-    root.userData.updateWorkingParts?.(state);
+    for (const jet of jets) jet.update(time);
   };
 
-  const sourceState = stateAtTransferProgress(0.35);
-  const geometry = {
-    atmosphericPressure,
-    cycleDuration,
-    externalPourTransfer,
-    gravitationalAcceleration,
-    groundY,
-    initialIntermediateGasVolume,
-    initialLowerGasVolume,
-    initialPressureRatio,
-    initialSharedGasPressure,
-    initialSharedGasVolume,
-    intermediateBottomY,
-    intermediateCapacity,
-    intermediateInitialWaterVolume,
-    intermediateInnerHeight,
-    intermediateInnerRadius,
-    intermediateTransfer,
-    lowerArea,
-    lowerBottomY,
-    lowerCapacity,
-    lowerInitialWaterVolume,
-    lowerInnerHeight,
-    lowerInnerLength,
-    lowerInnerWidth,
-    lowerTransfer,
-    nozzleY,
-    operationEndPhase,
-    resetStartPhase,
-    sharedGasPVConstant,
-    topArea,
-    topBasinBottomY,
-    topInnerLength,
-    topInnerWidth,
-    topWaterVolume,
-    waterDensity,
-  };
+  const outlines = fountainOutlines();
   root.userData = {
     archetype:
       'herons-three-vessel-fountain-with-water-drain-shared-air-line-and-pressure-driven-central-jet',
-    blocks: {
-      airCore,
-      basinFloor,
-      centralRiser,
-      centralRiserWater,
-      downstreamWaterPath: rightDrainWater,
-      externalPour,
-      foundation,
-      fountainSprays,
-      intermediateAirCavity,
-      intermediateRims,
-      intermediateShell,
-      intermediateVessel,
-      intermediateWater,
-      jetColumn,
-      leftAirPipe,
-      lowerAirCavity,
-      lowerShell,
-      lowerVessel,
-      lowerWater,
-      nozzle,
-      rightDrainOuter,
-      rightDrainWater,
-      topBasin,
-      topWater,
-    },
-    degreesOfFreedom: {
-      independentPrescribedInputs: 1,
-      operatingDegreesOfFreedom: 1,
-      sharedAirPressureIndependent: false,
-      threeWaterLevelsIndependent: false,
-    },
-    dynamics: {
-      airModel:
-        'The two sealed-vessel headspaces and left communication tube are one ideal isothermal gas volume, so P times V remains constant.',
-      lossesBubbleFlowFreeSurfaceSloshPipeInertiaJetBreakupEvaporationAndHeatTransferModeled:
-        false,
-      resetDisclosure:
-        'No reset: the loop shows steady play. Drain equals jet, so the upper basin, air volume and pressure hold; the slow fall of the bowl and rise of the foot over a real run are held at the source-pose levels (a disclosed large-vessel approximation).',
-      waterModel:
-        'During the physical interval, lower gain equals right-drain transfer and intermediate loss equals jet transfer; the two are equal, so the upper basin level and the shared air volume and pressure stay constant with no external pour.',
-    },
+    blocks: {bowlWater, casting, feet, jetPipe, jets, rightWater, slab},
+    degreesOfFreedom: {independentPrescribedInputs: 1, operatingDegreesOfFreedom: 1},
     fidelity: 'authored',
-    geometry,
-    mechanism:
-      'Water poured into the open upper basin descends only through the right tube into the sealed lower vessel. The rising lower water compresses a single shared air volume connected by the left tube to the sealed intermediate vessel. That pressure acts on the intermediate water and drives it only through the central riser and nozzle; the spray returns to the upper basin.',
-    motion: {
+    geometry: {
+      ...FOUNTAIN,
       cycleDuration,
-      motionType:
-        'steady-play-with-drain-equal-to-jet-and-levels-held',
+      troughLevel,
+      footLevel,
+      bowlLevel,
+      airGaugeHead,
+      idealJetHead,
+      visibleJetRise,
+      jetHeadEfficiency,
+      outlines,
     },
-    sourceAnimation: {
-      available: false,
-      officialCanvasModelPresent: false,
-      officialPageMarksAnimationUnavailable: true,
-      sourcePrescribedAbsoluteTiming: false,
-      sourcePrescribedNormalizedTiming: false,
+    mechanism:
+      'Water in the open trough runs down the right tube into the foot, whose water seals the tube\'s lower end. The trapped air over the foot water, up the hollow left leg and in the chamber over the bowl is one body at the tube\'s head; it presses the bowl water up the central pipe, which leaves the spire as the jet and falls back into the trough.',
+    motion: {cycleDuration, motionType: 'steady-play-with-drain-equal-to-jet-and-levels-held'},
+    dynamics: {
+      resetDisclosure:
+        'No reset: the loop shows steady play. The tube carries the jet\'s return, so the trough holds; the slow fall of the bowl and rise of the foot over a real run are held at the plate levels (a disclosed large-vessel approximation).',
+      jetDisclosure:
+        'Ideal head from hydrostatics (trough to foot column, less the lift from bowl to tip); the drawn rise of about 0.6 implies pipe and orifice losses, applied as one efficiency factor.',
     },
-    sourcePose: {
-      idealJetHeight: sourceState.idealJetHeight,
-      intermediateWaterSurfaceY: sourceState.intermediateWaterSurfaceY,
-      lowerWaterSurfaceY: sourceState.lowerWaterSurfaceY,
-      sharedGasPressure: sourceState.sharedGasPressure,
-      topWaterSurfaceY: sourceState.topWaterSurfaceY,
-      transferProgress: sourceState.transferProgress,
-    },
+    sourceAnimation: {available: false, officialCanvasModelPresent: false, officialPageMarksAnimationUnavailable: true},
     sourceReference: {
-      brownPlate464: {
-        approximateCentralJetBoundsPixels: [226, 47, 61, 201],
-        approximateIntermediateVesselBoundsPixels: [161, 155, 184, 125],
-        approximateLowerVesselBoundsPixels: [105, 402, 297, 65],
-        approximateTopBasinBoundsPixels: [93, 106, 326, 63],
-        imageHeight: 525,
-        imageWidth: 525,
-        measurementUncertaintyPixels: 14,
-      },
-      constructionEvidence: {
-        explicitInBrownDescription: [
-          'water poured into the upper vessel descends the right tube into the lower vessel',
-          'the intermediate vessel is initially filled',
-          'air is confined above water in both sealed vessels',
-          'the left tube communicates between those air cavities',
-          'compressed air drives a jet up the central tube',
-        ],
-        engravingEvidence:
-          'Brown shows an open rectangular upper basin, a right-hand downpipe reaching the lower vessel, a left pneumatic return rising from that vessel to the intermediate bowl, and a central riser passing from the intermediate water through the upper basin to a two-sided fountain spray.',
-        reconstructionDisclosure:
-          'Brown gives no vessel capacities, fill fractions, air pressure, pipe bores, flow rates, loss coefficients, jet height, duration or reset. Vessel dimensions, a 1.22-atmosphere initial shared pressure, ideal isothermal gas law, finite transfer volumes, a twelve-and-a-half-second explanatory cycle, colors and the steady-play loop with held levels are independently engineered.',
-      },
       officialPage: movement.sourceUrl,
       plate: 'Brown 1868, Movement 464',
+      scalePixelsPerUnit: 70,
+      engravingEvidence:
+        'Brown sections one hollow casting: an open trough ruled with water below its rim; a right leg ruled full of water from the trough floor down into the foot, ending just above the foot floor; a hollow, unruled (air) left leg opening at the top into the space over the bowl; the bowl ruled full to its rim; a jet pipe from low in the bowl through the trough to a pointed spire; and the foot ruled with water below an air space.',
+      reconstructionDisclosure:
+        'Brown gives no depth, pressures or flows. The casting depth (1.4), rectangular section front to back, round jet pipe, turned feet in place of the claws, levels and jet loss factor are engineered.',
     },
     stateAtPhase,
     stateAtTime,
-    stateAtTransferProgress,
     transmission: {
-      airPath:
-        'lower sealed headspace <-> left communication tube <-> intermediate sealed headspace',
-      centralJetPath:
-        'intermediate water -> submerged central riser intake -> nozzle -> upper basin',
-      rightDrainPath:
-        'open upper basin -> right downpipe -> sealed lower vessel water',
+      rightDrainPath: 'open trough -> right tube -> lower vessel (foot) water',
+      airPath: 'foot headspace <-> hollow left leg <-> chamber over the bowl',
+      centralJetPath: 'bowl water -> submerged jet pipe foot -> spire tip -> trough',
       topologyInvariant:
-        'The right pipe carries water and never connects to the intermediate vessel; the left pipe carries compressed air and never connects the water volumes.',
+        'The right tube carries water and ends below the foot water; the left leg carries only air; the jet pipe is the bowl water\'s only outlet.',
     },
     update,
+    reconstructionNote:
+      'One hollow casting cut on Brown\'s section plane, with two continuous water bodies (trough, tube and foot; bowl and jet pipe). Levels are held in steady play; the jet is a ballistic stream at the drawn height.',
   };
-  root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-3.22, groundY - 0.02, -1.52),
-    new THREE.Vector3(3.22, 4.02, 1.52),
-  );
-  root.userData.cameraDistanceScale = 1.04;
-  root.userData.cameraDirection = new THREE.Vector3(4.8, 2.7, 11.8);
+  root.userData.cameraDirection = new THREE.Vector3(0.7, 0.65, 15);
+  root.userData.cameraDistanceScale = 1.06;
+  root.userData.cameraFov = 12;
   root.userData.groundFloorY = groundY;
-  correctFountain(root);
+  root.userData.hideGround = true;
+  root.userData.minimumDisplayCycleSeconds = 8;
   markShadows(root);
-  foundation.receiveShadow = true;
-  for (const object of [lowerWater, lowerAirCavity, intermediateWater,
-    intermediateAirCavity, topWater, rightDrainWater, centralRiserWater,
-    jetColumn, ...fountainSprays, externalPour]) {
-    object.castShadow = false;
-  }
-  // Brown's section is a flat engraving: its cut walls cast no shadows.
-  root.userData.sectionFrame?.group.traverse((object) => {
-    object.castShadow = false;
-    object.receiveShadow = false;
-  });
+  for (const object of [rightWater, bowlWater, ...jets]) object.castShadow = false;
   update(0);
-  return {
-    cameraDirection: root.userData.cameraDirection,
-    root,
-    update,
-  };
+  const bounds = new THREE.Box3().setFromObject(root);
+  root.userData.cameraFitBounds = bounds.expandByScalar(0.12);
+  return {cameraDirection: root.userData.cameraDirection, root, update};
 }
 
 export function createAuthoredHeronsFountainMovement(movement) {

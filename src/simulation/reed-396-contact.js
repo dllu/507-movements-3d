@@ -9,8 +9,10 @@ const add = (a,b) => a.map((x,i)=>x+b[i]), sub = (a,b) => a.map((x,i)=>x-b[i]);
 export function reed396Profiles() {
  const wheel=[], teeth=[], pallets={};
  for(let i=0;i<12;i++){
-  for(const [o,r] of [[-.5,1.43],[-.1,1.43],[0,1.72],[.15,1.43],[.5,1.43]])wheel.push(rotate396([r,0],(i+o)*reed396.pitch));
-  teeth.push([rotate396([1.43,0],(i-.1)*reed396.pitch),rotate396([1.72,0],i*reed396.pitch),rotate396([1.43,0],(i+.15)*reed396.pitch)]);
+  // Ratchet teeth raked with the clockwise turn, as Brown draws them: a
+  // near-radial locking face ahead and a long sloping back.
+  for(const [o,r] of [[-.5,1.52],[-.03,1.52],[0,1.72],[.45,1.52],[.5,1.52]])wheel.push(rotate396([r,0],(i+o)*reed396.pitch));
+  teeth.push([rotate396([1.52,0],(i-.03)*reed396.pitch),rotate396([1.72,0],i*reed396.pitch),rotate396([1.52,0],(i+.45)*reed396.pitch)]);
  }
  for(const [name,a,bank]of [['G',Math.PI/8,reed396.leverAmplitude],['F',-Math.PI/8,-reed396.leverAmplitude]]){
   const q=rotate396([1.72,0],a),n=rotate396([-1/Math.hypot(1,.6),.6/Math.hypot(1,.6)],a),t=[n[1],-n[0]];

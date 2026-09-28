@@ -467,11 +467,12 @@ function streamDrivenArchimedesScrew(movement) {
     return bridge;
   });
 
-  // Brown holds the top of the shaft in a flat strap bracket reaching in from
-  // the upper left: its rounded end is a boss bored for the shaft stub above
-  // the casing, and the strap runs left over the trough. The strap's left end
-  // is carried by a saddle resting across the trough's two side walls, so no
-  // bracket end hangs in mid-air when the view is rotated.
+  // Brown holds the top of the shaft in one curved arm reaching in from the
+  // upper left: its rounded end is a boss bored for the shaft stub above the
+  // casing, it hooks up and runs left over the trough, and (Brown crops it
+  // at the plate edge) it turns down past the trough's open end to the
+  // ground, one strap throughout (pass 90: the saddle across the trough
+  // walls and the stud standing on it are gone).
   const upperStubBearing = new THREE.Mesh(
     ring(centralShaftRadius + 0.004, 0.36, -0.14, 0.12),
     frameMaterial,
@@ -490,16 +491,19 @@ function streamDrivenArchimedesScrew(movement) {
   troughFrame.position.set(upperEnd.x - 2.02, dischargeTroughY, 0);
   troughFrame.rotation.z = -0.05;
   troughFrame.updateMatrixWorld(true);
-  const saddleX = -4.55;
-  const saddleLocal = troughFrame.worldToLocal(new THREE.Vector3(saddleX, dischargeTroughY, 0));
-  const wallTop = troughFrame.localToWorld(new THREE.Vector3(saddleLocal.x, 0.37, 0)).y;
   const strapY = bossCenter.y + 0.50;
+  // Clear of the trough's open left end (x -5.41).
+  const armDropX = troughFrame.localToWorld(new THREE.Vector3(-1.67, 0, 0)).x - 0.30;
   const strapPath = new THREE.CatmullRomCurve3([
     bossCenter.clone().addScaledVector(bossSide, 0.26),
     bossCenter.clone().addScaledVector(bossSide, 0.36).add(new THREE.Vector3(0, 0.26, 0)),
     new THREE.Vector3(bossCenter.x - 0.20, strapY, 0),
     new THREE.Vector3(bossCenter.x - 0.90, strapY, 0),
-    new THREE.Vector3(saddleX - 0.12, strapY, 0),
+    new THREE.Vector3(armDropX + 0.55, strapY, 0),
+    new THREE.Vector3(armDropX + 0.08, strapY - 0.12, 0),
+    new THREE.Vector3(armDropX, strapY - 0.60, 0),
+    new THREE.Vector3(armDropX, groundY + 0.40, 0),
+    new THREE.Vector3(armDropX, groundY - 0.02, 0),
   ], false, 'centripetal');
   const sweepStrap = (curve, width, thickness, segments) => {
     const positions = [];
@@ -522,21 +526,10 @@ function streamDrivenArchimedesScrew(movement) {
     geometry.computeVertexNormals();
     return geometry;
   };
-  const bracketArm = new THREE.Mesh(sweepStrap(strapPath, 0.30, 0.16, 64), frameMaterial);
+  const bracketArm = new THREE.Mesh(sweepStrap(strapPath, 0.30, 0.16, 160), frameMaterial);
   bracketArm.userData.role = 'fixed-upper-shaft-bracket-arm';
   root.add(bracketArm);
-  const saddleBar = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.12, 1.34), frameMaterial);
-  saddleBar.position.set(saddleX, wallTop + 0.06, 0);
-  saddleBar.rotation.z = -0.05;
-  saddleBar.userData.role = 'fixed-upper-shaft-bracket-saddle-on-trough-walls';
-  root.add(saddleBar);
-  const legHeight = strapY + 0.12 - (wallTop + 0.10);
-  const bracketStud = new THREE.Mesh(new THREE.BoxGeometry(0.24, legHeight, 0.14), frameMaterial);
-  bracketStud.position.set(saddleX, wallTop + 0.10 + legHeight / 2, 0);
-  bracketStud.userData.role = 'fixed-upper-shaft-bracket-arm';
-  root.add(bracketStud);
-  const headSleeve = saddleBar;
-  const upperBracketArms = [bracketArm, bracketStud, headSleeve];
+  const upperBracketArms = [bracketArm];
 
   const base = new THREE.Mesh(
     // Thin (and hidden in the plate view) so the lowest box float clears it.
@@ -578,17 +571,20 @@ function streamDrivenArchimedesScrew(movement) {
   dischargeTrough.userData.role =
     'fixed-upper-trough-receiving-continuous-screw-discharge';
   root.add(dischargeTrough);
+  // Pass 90: the trough runs on 0.20 past its old left end into the bracket
+  // arm's descending leg, which carries it (the saddle that did is gone).
   const troughBottom = new THREE.Mesh(
-    new THREE.BoxGeometry(3.34, 0.14, 1.28),
+    new THREE.BoxGeometry(3.54, 0.14, 1.28),
     frameMaterial,
   );
+  troughBottom.position.x = -0.10;
   dischargeTrough.add(troughBottom);
   const troughSides = [-1, 1].map((sign) => {
     const side = new THREE.Mesh(
-      new THREE.BoxGeometry(3.34, 0.38, 0.09),
+      new THREE.BoxGeometry(3.54, 0.38, 0.09),
       frameMaterial,
     );
-    side.position.set(0, 0.18, sign * 0.59);
+    side.position.set(-0.10, 0.18, sign * 0.59);
     dischargeTrough.add(side);
     return side;
   });

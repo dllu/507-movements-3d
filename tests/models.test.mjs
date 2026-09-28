@@ -973,6 +973,14 @@ test('movement 17 compounds two constant-length ropes into a 5:1 Spanish Barton'
     assert.ok(attachments.interstageTerminal.distanceTo(pulleys.carrier.position.clone()
       .add(pulleys.carrier.userData.upperAttachment)) < 1e-10,
     'the primary rope reaches the carrier stirrup eye');
+    assert.ok(pulleys.carrier.userData.upperEye, 'the carrier hangs by a stirrup eye, not a bare pin stub');
+    assert.ok(Math.abs(attachments.interstageTerminal.z - pulleys.fixed.position.z) < 1e-10,
+      'the stirrup eye lies in the fixed block rope plane, so the falling leaf stays in its plane');
+    assert.ok(Math.abs(attachments.interstageTerminal.x - (pulleys.fixed.position.x
+      + model.root.userData.kinematics.fixedRadius)) < 1e-10, 'the falling leaf is vertical into the eye');
+    const carrierPinSize = new THREE.Box3().setFromObject(pulleys.carrier.userData.pin).getSize(new THREE.Vector3());
+    assert.ok(carrierPinSize.z <= 2 * (pulleys.carrier.userData.cheekZ + 0.055) + 1e-6,
+      'the carrier pin is no longer than its cheeks');
     const initialPositionSum = model.root.userData.geometry.carrierBaseY + 2 * model.root.userData.geometry.loadBaseY;
     assert.ok(Math.abs(pulleys.carrier.position.y + 2 * attachments.load.y - initialPositionSum) < 1e-10,
       'the primary rope drives the carrier oppositely at twice the load travel');
@@ -30296,9 +30304,9 @@ test('movement 133 raises one guided platen through an exact six-to-one pinion-s
   assert.equal(geometry.sourceTopCapHalfWidth, engravingUnits(127));
   assert.equal(geometry.sourceBaseHalfWidth, engravingUnits(145));
 
-  assert.equal(geometry.pinionTeeth, 8);
-  assert.equal(geometry.sectorEquivalentTeeth, 48);
-  assert.equal(geometry.installedSectorTeeth, 13);
+  assert.equal(geometry.pinionTeeth, 12);
+  assert.equal(geometry.sectorEquivalentTeeth, 72);
+  assert.equal(geometry.installedSectorTeeth, 19);
   assert.equal(geometry.gearRatio, 6);
   assert.equal(
     geometry.gearRatio,

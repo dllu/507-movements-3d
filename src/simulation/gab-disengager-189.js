@@ -243,9 +243,15 @@ export function bellCrankHangerGabDisengager() {
   const forkSlot = polygonClipping.union(poly(rasterRing([[36, 392.5], [112, 392.5], [112, 406.5], [36, 406.5]])),
     disc(fromRaster(112, 399.5), 7 * PX));
   const rodPinBore = .08;
+  // Pass 90: Brown draws the fork as lines on the rod's face, not a hole
+  // through it: the slot is a shallow recess (0.03 deep) in the front face.
   const rodBody = new THREE.Mesh(plate(polygonClipping.difference(rodOutline,
-    poly(notchArc), disc([0, 0], notchHalfWidth), forkSlot, disc(rodPinLocal, rodPinBore)), -.10, .10), rodMaterial);
+    poly(notchArc), disc([0, 0], notchHalfWidth), disc(rodPinLocal, rodPinBore)), -.10, .07), rodMaterial);
   rodBody.userData.role = 'eccentric-rod-body-with-gab-notch-fork-and-eye';
+  const rodFace = new THREE.Mesh(plate(polygonClipping.difference(rodOutline,
+    poly(notchArc), disc([0, 0], notchHalfWidth), forkSlot, disc(rodPinLocal, rodPinBore)), .07, .10), rodMaterial);
+  rodFace.userData.role = 'eccentric-rod-front-face-with-recessed-fork';
+  rodFace.geometry.userData.bores = [{x: rodPinLocal.x, y: rodPinLocal.y, radius: rodPinBore}];
   rodBody.geometry.userData.bores = [{x: rodPinLocal.x, y: rodPinLocal.y, radius: rodPinBore}];
   const rodHangerPin = cylinderAlongZ(.07, .37, pinMaterial, 28);
   rodHangerPin.position.set(rodPinLocal.x, rodPinLocal.y, -.085);
@@ -254,7 +260,7 @@ export function bellCrankHangerGabDisengager() {
     strapLocal: eccLocal.toArray(), restGab: [0, 0], throw: eccentricThrow, fromX: fromRaster(-300, 0).x + .05,
     halfHeight: 17 * PX, z: [-.10, .10], rodMaterial, sheaveMaterial: shaftMaterial, shaftBack: zWall + .01,
   });
-  eccentricRod.add(rodBody, rodHangerPin, eccentric.strap);
+  eccentricRod.add(rodBody, rodFace, rodHangerPin, eccentric.strap);
 
   // Bell crank: upright operating arm, pivot eye, tapered short arm, crank eye.
   const bellCrank = new THREE.Group();
@@ -320,7 +326,7 @@ export function bellCrankHangerGabDisengager() {
   };
 
   const jointChecks = [
-    [valveArm, valveShaft], [valveArm, valvePin], [rodBody, valvePin], [rodBody, rodHangerPin],
+    [valveArm, valveShaft], [valveArm, valvePin], [rodBody, valvePin], [rodBody, rodHangerPin], [rodFace, valvePin], [rodFace, rodHangerPin],
     [hangerLink, rodHangerPin], [hangerLink, crankPin], [bellCrankPlate, crankPin], [bellCrankPlate, pivotPin],
   ];
   const geometry = {
@@ -341,7 +347,7 @@ export function bellCrankHangerGabDisengager() {
     hideGround: true,
     jointChecks,
     rigidBodies: [valveRocker, eccentricRod, bellCrank, hangerLink],
-    blocks: {valveRocker, valveArm, valveShaft, valveShaftFace: valveArm, valvePin, eccentricRod, rodBody,
+    blocks: {valveRocker, valveArm, valveShaft, valveShaftFace: valveArm, valvePin, eccentricRod, rodBody, rodFace,
       rodHangerPin, bellCrank, bellCrankPlate, crankPin, pivotPin, hangerLink, cameraEnvelope,
       eccentricStrap: eccentric.strap, eccentricSheave: eccentric.sheave, frame},
     stateAtTime, poseAt, eccentricTurnsAt, handleFractionAt,

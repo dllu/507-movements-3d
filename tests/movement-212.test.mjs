@@ -634,9 +634,11 @@ test('movement 212 renders every rigid pose and terminal contact while movement 
   ];
   const sweptBounds = new THREE.Box3();
 
+  // Display time t shows demonstration time t + displayTimeOffset.
+  const shown = (time) => time - model.root.userData.displayTimeOffset;
   for (const time of renderedTimes) {
     const state = stateAtTime(time);
-    model.update(time);
+    model.update(shown(time));
     model.root.updateMatrixWorld(true);
     near(blocks.driver.userData.rotor.rotation.z,
       state.driverAngle, 0, 'rendered driver angle');
@@ -699,10 +701,10 @@ test('movement 212 renders every rigid pose and terminal contact while movement 
     sweptBounds.union(new THREE.Box3().setFromObject(model.root));
   }
 
-  model.update(canonicalTimes.firstIndexComplete);
+  model.update(shown(canonicalTimes.firstIndexComplete));
   const firstLockedAngle = blocks.stopWheel.userData.rotor.rotation.z;
   const driverAtLockEntry = blocks.driver.userData.rotor.rotation.z;
-  model.update(canonicalTimes.firstLockedDwellMid);
+  model.update(shown(canonicalTimes.firstLockedDwellMid));
   near(blocks.stopWheel.userData.rotor.rotation.z,
     firstLockedAngle, 0, 'stop wheel is stationary through the free turn');
   assert.notEqual(blocks.driver.userData.rotor.rotation.z,
@@ -710,7 +712,7 @@ test('movement 212 renders every rigid pose and terminal contact while movement 
   assert.equal(model.root.userData.contacts.lockingPocket.active, true);
   assert.equal(model.root.userData.contacts.windingFingerSlot, null);
 
-  model.update(canonicalTimes.terminalStop);
+  model.update(shown(canonicalTimes.terminalStop));
   model.root.updateMatrixWorld(true);
   assert.equal(model.root.userData.contacts.convexTerminalStop.blocked, true);
   assert.equal(model.root.userData.contacts.lockingPocket, null);

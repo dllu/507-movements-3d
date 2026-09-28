@@ -103,9 +103,9 @@ export function makeFrictionClutch() {
   const leverBody = new THREE.Mesh(new THREE.ExtrudeGeometry(leverShape,
     { depth: leverDepth, bevelEnabled: false, curveSegments: 16 }).translate(0, 0, leverBackZ),
   matte(PALETTE.frame, { metalness: 0.15, roughness: 0.61 }));
-  // The handle ends in a turned grip for the hand, and the pivot pin is
-  // carried by a bracket plate on a short pillar standing on the floor below
-  // the clutch (Brown draws no frame for either).
+  // The handle ends in a turned grip for the hand. Brown draws the lever's
+  // fixed pivot as a plain circle with no frame, so the pivot is a short
+  // fixed pin stub, as on 48 and 52.
   const grip = new THREE.Mesh(new THREE.CylinderGeometry(0.036, 0.042, 0.24, 24),
     matte(PALETTE.brass, { metalness: 0.1, roughness: 0.66 }));
   grip.rotation.z = Math.PI / 2;
@@ -125,21 +125,10 @@ export function makeFrictionClutch() {
     mesh.position.z = (low + high) / 2;
     return mesh;
   };
-  const followerPin = pin(0.016, -0.040, 0.10), pivotPin = pin(0.023, -0.13, 0.10);
+  const followerPin = pin(0.016, -0.040, 0.10), pivotPin = pin(0.023, leverBackZ - 0.03, 0.10);
   pivotPin.position.x = lever.position.x;
   pivotPin.position.y = lever.position.y;
-  const pivotSupport = new THREE.Group();
-  pivotSupport.userData.role = 'lever-pivot-bracket';
-  const supportMat = matte(PALETTE.frame, { metalness: 0.15, roughness: 0.65 });
-  const floorY = -1.12, bracketFront = -0.13, bracketDepth = 0.07;
-  const bracket = new THREE.Mesh(new THREE.BoxGeometry(0.16, lever.position.y + 0.08 - floorY, bracketDepth), supportMat);
-  bracket.position.set(lever.position.x, (lever.position.y + 0.08 + floorY) / 2, bracketFront - bracketDepth / 2);
-  bracket.userData.role = 'lever-pivot-bracket-post';
-  const foot = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.05, 0.36), supportMat);
-  foot.position.set(lever.position.x, floorY + 0.025, bracketFront - bracketDepth / 2);
-  foot.userData.role = 'lever-pivot-bracket-foot';
-  pivotSupport.add(bracket, foot);
-  root.add(input, output, shaft, inputSection, outputSection, inputFloor, outputFloor, lever, follower, followerPin, pivotPin, pivotSupport);
+  root.add(input, output, shaft, inputSection, outputSection, inputFloor, outputFloor, lever, follower, followerPin, pivotPin);
   const setSectionView = (enabled) => {
     for (const member of [input, output]) {
       member.userData.body.material.clippingPlanes = enabled ? planes : [];

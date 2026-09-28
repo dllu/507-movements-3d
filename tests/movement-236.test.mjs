@@ -398,3 +398,25 @@ test('movement 236 renderer binds both pawls and closes before movement 339', ()
   disposeModel(model.root);
   disposeModel(model289.root);
 });
+
+test('movement 236 pawls b and c are broad bars with blunt, obliquely cut ends', () => {
+  const model = createMovementModel(catalog.movements[235]);
+  const { blocks, geometry } = model.root.userData;
+  for (const pawl of [blocks.longPawl, blocks.shortPawl]) {
+    const length = pawl.userData.length;
+    const [lower, upper] = geometry.pawlFlankPolylines(length);
+    // Width across the bar one tenth of its length back from the toe.
+    const at = (polyline, x) => {
+      for (let i = 0; i + 1 < polyline.length; i += 1) {
+        const [a, b] = [polyline[i], polyline[i + 1]];
+        if ((a[0] - x) * (b[0] - x) <= 0) return a[1] + (b[1] - a[1]) * (x - a[0]) / (b[0] - a[0]);
+      }
+      return NaN;
+    };
+    const width = at(upper, 0.9 * length) - at(lower, 0.9 * length);
+    assert.ok(width > 0.2, `pawl width near the toe ${width}`);
+    // The outer flank stands full width to within 0.1 of the toe: a blunt end.
+    assert.ok(Math.abs(lower[1][1]) >= 0.2 && length - lower[1][0] <= 0.1);
+  }
+  disposeModel(model.root);
+});

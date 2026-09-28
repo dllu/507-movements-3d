@@ -89,35 +89,29 @@ export function carrierPawlBarLiftLimit225(pivot, baseAngle, wheelAngle, edge, w
   return limit;
 }
 
+export const PAWL_SAGITTA_225 = 0.5;
+export const PAWL_END_RELIEF_225 = THREE.MathUtils.degToRad(9);
+export const PAWL_END_HALF_WIDTH_225 = 0.1;
+
 export function installCarrierPawl225(root) {
   const { blocks: b, geometry: g } = root.userData;
   const replace = (mesh, geometry) => { mesh.geometry.dispose(); mesh.geometry = geometry; };
   const material = b.pawlBody.material, dark = matte(PALETTE.ink, { metalness: 0.22, roughness: 0.48 });
-  // Brown's pawl is a plain curved bar that tapers from a broad hinge end to
-  // a slim rounded point. Its centre line is one smooth cubic: it leaves the
-  // hinge as a shallow arch (sagitta 0.17 over the length) and turns down at
-  // its end along the bisector of the tooth space, so the point reaches the
-  // root while the bar stays clear of the tooth behind as the pawl turns
-  // (about 16 degrees against the wheel) through the drive.
-  const sagitta = 0.17;
+  // Brown's pawl is a plain, slightly curved bar tapering from a broad hinge
+  // end to its nose. Its centre line is one circular arc (sagitta 0.17 over
+  // the length), with no hook turned down into the tooth space. The end is a
+  // straight cut lying along the driven tooth's steep face, as drawn, with
+  // the working nose radius only at its wheel-side corner; the cut stands a
+  // few degrees back from the face (PAWL_END_RELIEF) so the pawl's turn
+  // against the wheel through the drive never brings it into the face.
+  const sagitta = PAWL_SAGITTA_225;
   const arcRadius = (g.pawlLength ** 2 / 4 + sagitta ** 2) / (2 * sagitta);
   const halfAngle = Math.asin(g.pawlLength / 2 / arcRadius);
-  const into = (() => {
-    // The tooth space's bisector at mid-drive, in the pawl's frame.
-    const state = root.userData.stateAtCycleCoordinate(0.25);
-    const outline = b.ratchet.userData.profilePoints;
-    const c = Math.cos(-state.wheelAngle), sn = Math.sin(-state.wheelAngle);
-    const nose = [c * state.pawlContactCenter.x - sn * state.pawlContactCenter.y, sn * state.pawlContactCenter.x + c * state.pawlContactCenter.y];
-    let index = 0;
-    outline.forEach((p, i) => { if (Math.hypot(p.x - nose[0], p.y - nose[1]) < Math.hypot(outline[index].x - nose[0], outline[index].y - nose[1])) index = i; });
-    const rootPoint = outline[index], unit = (p) => p.clone().sub(rootPoint).normalize();
-    const bisector = unit(outline[(index + 1) % outline.length]).add(unit(outline[(index + outline.length - 1) % outline.length])).normalize();
-    const angle = Math.atan2(-bisector.y, -bisector.x) + state.wheelAngle - state.pawlAngle;
-    return [Math.cos(angle), Math.sin(angle)];
-  })();
-  const hook = 0.6, lead = g.pawlLength / 3;
-  const control = [[0, 0], [lead * Math.cos(-halfAngle), lead * Math.sin(-halfAngle)],
-    [g.pawlLength - hook * into[0], -hook * into[1]], [g.pawlLength, 0]];
+  const handle = 4 / 3 * arcRadius * Math.tan(halfAngle / 2);
+  // The arch bows away from the wheel (-y in the pawl's frame; the wheel
+  // lies on its +y side), so the bar passes over the tooth behind the nose.
+  const control = [[0, 0], [handle * Math.cos(halfAngle), -handle * Math.sin(halfAngle)],
+    [g.pawlLength - handle * Math.cos(halfAngle), -handle * Math.sin(halfAngle)], [g.pawlLength, 0]];
   const bezier = (t) => [0, 1].map((k) => (1 - t) ** 3 * control[0][k] + 3 * (1 - t) ** 2 * t * control[1][k]
     + 3 * (1 - t) * t ** 2 * control[2][k] + t ** 3 * control[3][k]);
   const tangentAt = (t) => {
@@ -126,29 +120,70 @@ export function installCarrierPawl225(root) {
     const l = Math.hypot(...d);
     return [d[0] / l, d[1] / l];
   };
+  // The driven face's normal at mid-drive, in the pawl's frame (it points
+  // from the face into the nose).
+  const faceNormal = (() => {
+    const state = root.userData.stateAtCycleCoordinate(0.25), a = -state.pawlAngle;
+    const n = state.contactNormal;
+    return [Math.cos(a) * n.x - Math.sin(a) * n.y, Math.sin(a) * n.x + Math.cos(a) * n.y];
+  })();
   // A single ordered perimeter avoids unions between tangent capsule arcs,
   // which can fail ring reconstruction under browser floating-point arithmetic.
   const count = 64, parameters = Array.from({ length: count + 1 }, (_, i) => i / count);
   const points = parameters.map(bezier), tangents = parameters.map(tangentAt);
-  // Brown's bar thickens steadily from about 0.14 at the point to 0.33 at
-  // the hinge; the wheel-side half stays slim near the nose, so most of the
-  // taper is on the outer edge.
+  // Brown's bar thickens steadily toward the hinge (about 0.33 there); the
+  // wheel-side half stays slim near the nose, so most of the taper is on the
+  // outer edge, which leaves room for the broad straight end cut.
   const noseRadius = g.pawlNoseRadius, hingeHalfWidth = 0.165;
-  const taper = (t, power) => noseRadius + (hingeHalfWidth - noseRadius) * Math.max(0, 1 - t) ** power;
+  const taper = (t, power, end) => end + (hingeHalfWidth - end) * Math.max(0, 1 - t) ** power;
   const offset = (i, width) => [points[i][0] - tangents[i][1] * width, points[i][1] + tangents[i][0] * width];
-  const wheelEdge = parameters.map((t, i) => offset(i, taper(t, 1.2)));
-  const outline = [...wheelEdge];
-  const endAngle = Math.atan2(tangents[count][1], tangents[count][0]);
-  for (let i = 1; i <= 16; i++) {
-    const angle = endAngle + Math.PI / 2 - Math.PI * i / 16;
-    outline.push([g.pawlLength + noseRadius * Math.cos(angle), noseRadius * Math.sin(angle)]);
+  const wheelEdge = parameters.map((t, i) => offset(i, taper(t, 1.2, noseRadius)));
+  const outerEdge = parameters.map((t, i) => offset(i, -taper(t, 0.8, PAWL_END_HALF_WIDTH_225)));
+  // The cut: tangent to the nose circle, turned back from the face by the
+  // relief, running out to the outer edge.
+  const relief = PAWL_END_RELIEF_225;
+  const nose = [g.pawlLength, 0];
+  // Along the face, heading out to the bar's outer edge...
+  let cut = [-faceNormal[1], faceNormal[0]];
+  if (cut[0] * (outerEdge[count][0] - nose[0]) + cut[1] * (outerEdge[count][1] - nose[1]) < 0) cut = [-cut[0], -cut[1]];
+  // ...leaning back from the face into the pawl by the relief.
+  cut = [cut[0] + Math.tan(relief) * faceNormal[0], cut[1] + Math.tan(relief) * faceNormal[1]];
+  const cutLength = Math.hypot(...cut);
+  cut = [cut[0] / cutLength, cut[1] / cutLength];
+  let touch = [-cut[1], cut[0]];
+  if (touch[0] * faceNormal[0] + touch[1] * faceNormal[1] > 0) touch = [-touch[0], -touch[1]];
+  const start = [nose[0] + noseRadius * touch[0], nose[1] + noseRadius * touch[1]];
+  // Where the cut meets the outer edge (extended past the nose if needed).
+  let hit = null, hitIndex = count;
+  for (let i = count; i > 0 && !hit; i--) {
+    const a = outerEdge[i], b = outerEdge[i - 1], e = [b[0] - a[0], b[1] - a[1]];
+    const den = cut[0] * e[1] - cut[1] * e[0];
+    if (Math.abs(den) < 1e-12) continue;
+    const w = [a[0] - start[0], a[1] - start[1]];
+    const t = (w[0] * e[1] - w[1] * e[0]) / den, u = (w[0] * cut[1] - w[1] * cut[0]) / den;
+    if (t > 0 && (u >= 0 || i === count) && u <= 1) {
+      hit = [start[0] + t * cut[0], start[1] + t * cut[1]];
+      hitIndex = u < 0 ? count : i - 1;
+    }
   }
-  for (let i = count - 1; i >= 0; i--) outline.push(offset(i, -taper(parameters[i], 0.55)));
+  if (!hit) throw new Error('225 pawl end cut does not meet the outer edge');
+  const outline = [...wheelEdge];
+  const wheelSideAngle = Math.atan2(wheelEdge[count][1] - nose[1], wheelEdge[count][0] - nose[0]);
+  // Round the corner past the nose's tip (both ends straddle the bar's axis).
+  const touchAngle = Math.atan2(touch[1], touch[0]);
+  const steps = 16;
+  for (let i = 1; i <= steps; i++) {
+    const angle = wheelSideAngle + (touchAngle - wheelSideAngle) * i / steps;
+    outline.push([nose[0] + noseRadius * Math.cos(angle), nose[1] + noseRadius * Math.sin(angle)]);
+  }
+  outline.push(hit);
+  for (let i = hitIndex; i >= 0; i--) outline.push(outerEdge[i]);
   const startAngle = Math.atan2(tangents[0][1], tangents[0][0]);
   for (let i = 1; i < 32; i++) {
     const angle = startAngle - Math.PI / 2 - Math.PI * i / 32;
     outline.push([hingeHalfWidth * Math.cos(angle), hingeHalfWidth * Math.sin(angle)]);
   }
+  g.pawlEndCut = { start, hit, direction: cut, relief };
   g.pawlWheelEdge = wheelEdge.filter(([x, y]) => Math.hypot(x, y) > 0.3);
   replace(b.pawlBody, plate([[outline, circle([0, 0], 0.074, 64)]], -0.065, 0.065));
   g.pawlOutline = outline;

@@ -182,7 +182,8 @@ function makeWheel(
         0,
       ),
       0.055,
-      0.12,
+      // Pass 90: no deeper than the 0.10 rim and tyre (was 0.12, a lip).
+      0.095,
       materials.frame,
     );
     spoke.userData.role = `${role}-spoke-${index + 1}`;

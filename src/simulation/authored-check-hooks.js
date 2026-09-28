@@ -226,7 +226,7 @@ function centrifugalMineDrumCheckHooks(movement) {
   // Brown's long straight hook bars (about 0.57 of A's radius) lean 14
   // degrees forward of radial and end in a forward barb. Stud D is caught in
   // the crook between the bar's forward face and the barb.
-  const hookBarRadius = 0.14;
+  const hookBarRadius = 0.21;
   const studRadius = 0.48;
   const hookLean = THREE.MathUtils.degToRad(14);
   const hookBarDirection = new THREE.Vector2(Math.cos(hookLean), Math.sin(hookLean));

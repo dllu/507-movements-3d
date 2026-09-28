@@ -100,10 +100,17 @@ test('movement 378 is one pendulum-driven bow saw in a counterweighted vertical-
   ]) assert.equal(component.parent, blocks.pendulum);
   for (const component of [
     blocks.sawBlade,
-    ...blocks.sawHandles,
-    ...blocks.sawTeeth,
-    blocks.sawTop,
+    blocks.sawFrame,
   ]) assert.equal(component.parent, blocks.saw);
+  // Brown's bow saw: one symmetric frame extrusion and one toothed blade.
+  assert.equal(blocks.sawFrame.geometry.type, 'ExtrudeGeometry');
+  assert.equal(blocks.sawBlade.geometry.type, 'ExtrudeGeometry');
+  blocks.sawFrame.geometry.computeBoundingBox();
+  const frameBox = blocks.sawFrame.geometry.boundingBox;
+  assert.ok(Math.abs((frameBox.min.x + frameBox.max.x) / 2 - 1.35) < 0.1, 'bow-saw frame is symmetric about the blade middle');
+  // The A-frame legs end on pads at the frame feet's ground line.
+  assert.equal(blocks.pendulumFeet.length, 2);
+  for (const leg of blocks.pendulumSupports) assert.equal(leg.geometry.type, 'CylinderGeometry', 'legs are closed bars');
   assert.equal(blocks.pendulumIndex.parent, null, 'Brown draws no white index');
   for (const rail of blocks.groundRails) assert.equal(rail.parent, null, 'Brown draws no foundation rails');
   assert.equal(blocks.pulleyRoots.length, 2);
@@ -116,8 +123,7 @@ test('movement 378 is one pendulum-driven bow saw in a counterweighted vertical-
   assert.equal(blocks.ropeArcs, undefined);
   assert.equal(blocks.ropeSegments, undefined);
   assert.equal(blocks.carriageSides.length, 2);
-  assert.equal(blocks.sawHandles.length, 2);
-  assert.equal(blocks.sawTeeth.length, 27);
+  assert.equal(blocks.sawBlade.userData.teeth, 27);
   assert.equal(blocks.log.userData.fixed, true);
   assert.equal(blocks.fixedFrame.userData.fixed, true);
   assert.equal(blocks.pendulumFrame.userData.fixed, true);

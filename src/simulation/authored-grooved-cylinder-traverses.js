@@ -48,11 +48,13 @@ function rotatingObliqueGrooveTraverse(movement) {
   const lowerAxisY = -0.42;
   const barrelCenterX = 1.15;
   const barrelRadius = 1.14;
-  const barrelAxialLength = 0.82;
+  // Long enough to leave a solid land about 0.7 groove widths wide beyond
+  // the groove at each turning point, so the pin is captured at both ends.
+  const barrelAxialLength = 0.94;
   const grooveCenterRadius = barrelRadius + 0.014;
   const grooveTubeRadius = 0.047;
   const grooveSegments = 640;
-  const followerAmplitude = 0.32;
+  const followerAmplitude = 0.27;
   const outputStroke = followerAmplitude * 2;
   const groovePitchMagnitude = followerAmplitude;
   // Brown's pin hangs straight down from the upper shaft into the groove at
@@ -599,6 +601,29 @@ function rotatingObliqueGrooveTraverse(movement) {
   // Brown's single straight diagonal groove.
   {
     const grooved = root.userData.blocks.groovedCylinder;
+    // Rebuild the revolved groove section finely (1024 steps round) so the
+    // groove walls run as smooth straight-looking helices, not stair steps.
+    const L = barrelAxialLength / 2, r = barrelRadius, count = 1024;
+    const section = (angle) => {
+      const x = grooveXAtLocalAngle(angle);
+      return [[-L, r], [x - 0.086, r], [x - 0.074, r - 0.084], [x + 0.074, r - 0.084], [x + 0.086, r], [L, r], [L, 0.094], [-L, 0.094]];
+    };
+    const size = section(0).length, positions = [], indices = [];
+    for (let i = 0; i <= count; i += 1) {
+      const a = FULL_TURN * i / count;
+      for (const [x, radius] of section(a)) positions.push(x, radius * Math.cos(a), -radius * Math.sin(a));
+    }
+    for (let i = 0; i < count; i += 1) {
+      for (let j = 0; j < size; j += 1) {
+        const a = i * size + j, b = (i + 1) * size + j, c = (i + 1) * size + (j + 1) % size, d = i * size + (j + 1) % size;
+        indices.push(a, c, b, a, d, c);
+      }
+    }
+    const fine = new THREE.BufferGeometry();
+    fine.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    fine.setIndex(indices);
+    grooved.geometry.dispose();
+    grooved.geometry = fine;
     const flat = grooved.geometry.toNonIndexed();
     flat.computeVertexNormals();
     grooved.geometry.dispose();

@@ -28,12 +28,16 @@ export function makeTrammelEllipsograph(){
  // line lying on it, and give the grooved cross-piece a solid base resting on
  // the board so neither the line nor the cross floats.
  const paperTop=.045,crossFloor=.148,wallBase=.2,ea=b.ellipseTrace.userData.semiMajor,eb=b.ellipseTrace.userData.semiMinor;
- const ellipse=(ra,rb)=>Array.from({length:360},(_,i)=>[ra*Math.cos(i/360*2*Math.PI),rb*Math.sin(i/360*2*Math.PI)]);
+ const ellipse=(ra,rb,n=360)=>Array.from({length:n},(_,i)=>[ra*Math.cos(i/n*2*Math.PI),rb*Math.sin(i/n*2*Math.PI)]);
  b.ellipseTrace.geometry.dispose();
  b.ellipseTrace.geometry=plate(clip.difference(poly(ellipse(ea+.02,eb+.02)),poly(ellipse(ea-.02,eb-.02))),paperTop,paperTop+.004).rotateX(-Math.PI/2);
  b.ellipseTrace.material.color.set(PALETTE.ink);b.ellipseTrace.castShadow=false;b.ellipseTrace.receiveShadow=true;
  const boardMaterial=matte(PALETTE.paper,{roughness:.9});boardMaterial.fog=false;
- add('drawing-board-under-ellipse',new THREE.BoxGeometry(2*ea+.8,.1,2*eb+.8).translate(0,paperTop-.05,0),root,boardMaterial).castShadow=false;
+ // Brown draws only the ellipse, no board edge: the paper is an elliptical
+ // sheet with a plain margin round the line (and round the cross), not an
+ // undrawn rectangular board.
+ const boardMargin=.4;
+ add('drawing-board-under-ellipse',plate(poly(ellipse(ea+boardMargin,eb+boardMargin,720)),paperTop-.1,paperTop).rotateX(-Math.PI/2),root,boardMaterial).castShadow=false;
  {
   const box=new THREE.Box3(),walls=[],floors=[];root.updateMatrixWorld(true);
   const toRoot=new THREE.Matrix4().copy(root.matrixWorld).invert();

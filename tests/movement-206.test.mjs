@@ -814,7 +814,45 @@ test('movement 206 left band tapers and hugs the tips at its square end, as Brow
       outer = Math.max(outer, Math.hypot(point.x, point.y));
     }
   }
-  // Pass 83: the square end stands about 0.25 outside the tips (it stood 0.35 out).
-  // Pass 86: its narrow finger now reaches the root, so the end stands 0.31 out.
+  // Pass 90: the band ends in a rounded heel (no square corner) whose top is
+  // the band's own outer edge, about 0.30 outside the tips.
   assert.ok(outer - tipRadius < 0.33 && outer - tipRadius > 0.15, `left band end ${outer - tipRadius} outside the tips`);
+});
+
+test('movement 206 left pawl is one smooth wedge-nosed plate: only its nose meets the teeth', () => {
+  const model = createMovementModel(catalog.movements[205]);
+  const { blocks, geometry } = model.root.userData;
+  const { leftPawlBody, leftPawlContactFinger, ratchet, ratchetBody } = blocks;
+  const shapes = leftPawlBody.geometry.parameters.shapes;
+  const outline = (Array.isArray(shapes) ? shapes[0] : shapes).getPoints(4);
+  const wheel = ratchet.userData.profilePoints.map((point) => [point.x, point.y]);
+  const segment = (p, a, b) => {
+    const dx = b[0] - a[0], dy = b[1] - a[1];
+    const t = Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / (dx * dx + dy * dy)));
+    return Math.hypot(p[0] - a[0] - t * dx, p[1] - a[1] - t * dy);
+  };
+  // The extrusion bevel grows the outline by this much.
+  const bevel = Math.min(0.025, 0.13 * 0.12);
+  let minimum = Infinity;
+  for (let sample = 0; sample <= 600; sample += 1) {
+    model.update(3 * geometry.inputCyclePeriod * sample / 600);
+    model.root.updateMatrixWorld(true);
+    const inverse = ratchetBody.matrixWorld.clone().invert();
+    const finger = leftPawlContactFinger.getWorldPosition(new THREE.Vector3()).applyMatrix4(inverse);
+    const ring = outline.map((q) => new THREE.Vector3(q.x, q.y, 0)
+      .applyMatrix4(leftPawlBody.matrixWorld).applyMatrix4(inverse))
+      .filter((p) => p.distanceTo(finger) < 0.6).map((p) => [p.x, p.y]);
+    const near = (p) => Math.hypot(p[0] - finger.x, p[1] - finger.y);
+    for (const p of ring) {
+      if (near(p) < 0.06) continue;
+      for (let i = 0; i < wheel.length; i += 1) minimum = Math.min(minimum, segment(p, wheel[i], wheel[(i + 1) % wheel.length]));
+    }
+    for (const w of wheel) {
+      if (near(w) < 0.06 || near(w) > 0.6) continue;
+      for (let i = 0; i + 1 < ring.length; i += 1) minimum = Math.min(minimum, segment(w, ring[i], ring[i + 1]));
+    }
+  }
+  // Away from the nose the outline keeps more than the 0.0156 bevel clear.
+  assert.ok(minimum > bevel + 0.004, `left pawl outline clearance ${minimum}`);
+  disposeModel(model.root);
 });

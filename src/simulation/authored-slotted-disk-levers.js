@@ -132,7 +132,13 @@ function slottedDiskLeverRackAndWeight(movement) {
   // Brown cuts only a short run of teeth into the middle of the long guided
   // bar; the run is set below from the rack's stroke (the teeth the sector
   // can reach), which gives his seven.
-  const toothHeight = 0.16;
+  // Brown's sector and rack teeth are short and square-topped: stub teeth
+  // (addendum 0.8 module) on one 20-degree rack profile shared by both, so
+  // the sector teeth are not undercut petals and the rack teeth keep flat
+  // tops.
+  const toothModule = rackPitch / Math.PI;
+  const toothHeight = 1.6 * toothModule;
+  const toothPressureAngle = THREE.MathUtils.degToRad(20);
   const rackLength = rackPitch * 23.4;
   const rackDepth = 0.32;
   const rackBodyHeight = 0.24;
@@ -663,7 +669,7 @@ function slottedDiskLeverRackAndWeight(movement) {
   const sectorContactAngle = -Math.PI / 2 - sourceLeverAngle;
   const sectorHalfSpan = sectorAngularPitch * sectorToothCount / 2;
   const wholePinion = rackPinionGeometry({radius:sectorPitchRadius, teeth:sectorEquivalentToothCount,
-    addendum:toothHeight/2, depth:rackDepth, bore:.133});
+    addendum:toothHeight/2, depth:rackDepth, bore:.133, pressureAngle:toothPressureAngle});
   const sectorOutline=wholePinion.userData.outline.map(p=>[
     p.x*Math.cos(sectorContactAngle)-p.y*Math.sin(sectorContactAngle),
     p.x*Math.sin(sectorContactAngle)+p.y*Math.cos(sectorContactAngle)]);
@@ -740,7 +746,7 @@ function slottedDiskLeverRackAndWeight(movement) {
   );
   rackBody.userData.role = 'guided-horizontal-rack-body';
   rack.add(rackBody);
-  const rackToothSolid = rackToothGeometry({pitch:rackPitch,addendum:toothHeight/2,depth:rackDepth});
+  const rackToothSolid = rackToothGeometry({pitch:rackPitch,addendum:toothHeight/2,depth:rackDepth,pressureAngle:toothPressureAngle});
   const rackTeeth = [];
   for (let index = 0; index < rackToothCount; index += 1) {
     const tooth = new THREE.Mesh(rackToothSolid, drivenMaterial);
@@ -760,17 +766,29 @@ function slottedDiskLeverRackAndWeight(movement) {
   );
   rackIndex.position.set(rackPitch / 2, rackToothRootY - 0.08, 0.18);
   rackIndex.userData.role = 'white-rack-translation-index';
+  // Each rack guide is one C-section extrusion carried by its frame post:
+  // a rear upright enclosing the post's foot (post radius 0.105 at z -0.42), a bridge under the rack and a
+  // front upright, as Brown draws the posts standing past the rack.
+  const rackBodyBottomY = rackToothRootY - rackBodyHeight;
+  const guideClearance = 0.03;
+  const guideBottomY = rackBodyBottomY - guideClearance - 0.06;
+  const guideTopY = rackToothRootY + 0.13;
+  const rackBackZ = 0.18 - rackDepth / 2;
+  const rackFrontZ = 0.18 + rackDepth / 2;
+  const guideSection = poly([
+    [-0.56, guideBottomY], [rackFrontZ + guideClearance + 0.1, guideBottomY],
+    [rackFrontZ + guideClearance + 0.1, guideTopY], [rackFrontZ + guideClearance, guideTopY],
+    [rackFrontZ + guideClearance, rackBodyBottomY - guideClearance],
+    [rackBackZ - guideClearance, rackBodyBottomY - guideClearance],
+    [rackBackZ - guideClearance, guideTopY], [-0.56, guideTopY],
+  ]);
   for (const x of [leftFoot.x, rightFoot.x]) {
     const guide = new THREE.Group();
     guide.userData.role = 'fixed-rack-slide-guide';
-    const front = new THREE.Mesh(
-      new THREE.BoxGeometry(0.13, 0.58, 0.12),
-      frameMaterial,
-    );
-    front.position.set(x, rackToothRootY - 0.16, 0.42);
-    const rear = front.clone();
-    rear.position.z = -0.12;
-    guide.add(front, rear);
+    const body = new THREE.Mesh(plate(guideSection, -0.12, 0.12).rotateY(-Math.PI / 2), frameMaterial);
+    body.position.x = x;
+    body.userData.role = 'one-piece-C-section-rack-guide-on-frame-post';
+    guide.add(body);
     root.add(guide);
   }
 
@@ -782,11 +800,13 @@ function slottedDiskLeverRackAndWeight(movement) {
   const pulleyRotor = new THREE.Group();
   pulleyRotor.userData.role = 'no-slip-cord-pulley-rotor';
   pulley.add(pulleyRotor);
-  const pulleySheave = boredJournal(pulleyRunningRadius-.029, .048, .08, accentMaterial);
+  // Sheave and flanges are bored 0.003 over the hub's own bore, inside the
+  // hub's wall, so the bores do not coincide (they flickered).
+  const pulleySheave = boredJournal(pulleyRunningRadius-.029, .051, .08, accentMaterial);
   pulleySheave.userData.role = 'cord-running-sheave';
   pulleyRotor.add(pulleySheave);
   const pulleyFlanges = [-1, 1].map((side) => {
-    const flange = boredJournal(pulleyOuterRadius,.048,.055,darkMaterial);
+    const flange = boredJournal(pulleyOuterRadius,.051,.055,darkMaterial);
     flange.position.z=side*.0675;
     flange.userData.role = 'pulley-retaining-flange';
     pulleyRotor.add(flange);

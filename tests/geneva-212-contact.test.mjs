@@ -50,8 +50,18 @@ test('212 terminal remains a real blocking surface and reverse playback declares
 
 test('212 rendered law and public fields agree while reverse cycles retain all buffers',()=>{
  const before=[];m.root.traverse(o=>before.push([o,o.geometry]));
- for(let i=0;i<=64;i++){m.update(d.timeline.demonstrationPeriod*i/64);const s=d.stateAtTime(d.timeline.demonstrationPeriod*i/64);assert.equal(b.stopWheel.userData.rotor.rotation.z,s.stopWheelAngle);assert.equal(d.kinematics.stopWheelAngle,s.stopWheelAngle);assert.equal(Boolean(d.contacts.lockingPocket),s.lock.active);}
+ for(let i=0;i<=64;i++){m.update(d.timeline.demonstrationPeriod*i/64-d.displayTimeOffset);const s=d.stateAtTime(d.timeline.demonstrationPeriod*i/64);assert.equal(b.stopWheel.userData.rotor.rotation.z,s.stopWheelAngle);assert.equal(d.kinematics.stopWheelAngle,s.stopWheelAngle);assert.equal(Boolean(d.contacts.lockingPocket),s.lock.active);}
  const after=[];m.root.traverse(o=>after.push([o,o.geometry]));assert.deepEqual(before,after);
  for(const key of['firstIndexComplete','secondIndexComplete','thirdIndexComplete'])assert.equal(d.canonicalStates[key].lock.active,true);
  assert.equal(d.sourceAnimation.available,true);assert.equal(d.sourceAnimation.runtimeReconstructsFiniteContact,true);
+});
+
+test('212 opens at Brown\'s pose: two indexes done, the convex stop face a-b beside the top slot',()=>{
+ m.update(0);
+ const s=d.kinematics;
+ assert.ok(Math.abs(s.stopWheelAngle+2*g.stopStepAngle)<1e-9,`B turned two steps: ${s.stopWheelAngle}`);
+ // The convex face's midpoint lies up and to the right of B's centre.
+ const arc=g.convexStopArc,mid=arc[Math.floor(arc.length/2)].clone().rotateAround(new T.Vector2(),s.stopWheelAngle);
+ const angle=Math.atan2(mid.y,mid.x)*180/Math.PI;
+ assert.ok(angle>15&&angle<90,`convex face at ${angle} degrees`);
 });

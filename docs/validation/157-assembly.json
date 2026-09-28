@@ -4,7 +4,7 @@
   "parts": 16,
   "pairs": 117,
   "poses": 129,
-  "checks": 5140274,
+  "checks": 5097776,
   "failures": {},
   "sources": [
     {
@@ -21,7 +21,7 @@
     },
     {
       "file": "src/simulation/pinned-elbow-fit.js",
-      "sha256": "4b148301c970cbec6e35155c683ba1d07c1abf76bb4c82441cd7a0661ab8d875"
+      "sha256": "38ae67b483d9c16bb3efa482894c7a8b9345244b6bafb609dda04f457b075865"
     },
     {
       "file": "tests/helpers/solid-surface.mjs",

@@ -1,6 +1,7 @@
 import { correctLensPolisher } from './polishing-joint-parts.js';
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { plate, capsule, poly, polygonClipping as clip } from './finite-plate-geometry.js';
 import {
   PALETTE,
   makeDynamicLink,
@@ -620,6 +621,7 @@ function eccentricLensPolisher(movement) {
   root.userData.groundFloorY = -3.26;
   correctLensPolisher(root);
   fitCarrierClamp(root, darkMaterial);
+  mergeCarrierStrap(root);
   markShadows(root);
   update(0);
   return { root, update, cameraDirection: root.userData.cameraDirection };
@@ -683,6 +685,26 @@ function fitCarrierClamp(root, material) {
   tail.userData.role = 'carrier-tail-through-clamp-block';
   blocks.shaftRotor.add(tail);
   Object.assign(blocks, { carrierClamp: clamp, carrierSetScrew: screwHead, carrierTail: tail });
+}
+
+// Brown's carrier is one bent metal strap: its square tail through the
+// clamp block, a rounded bend and the leg down to the ball joint, as one
+// constant-section extrusion (no separate legs meeting at a kink).
+function mergeCarrierStrap(root) {
+  const b = root.userData.blocks;
+  const slotY = 2.72, half = 0.08, depth = 0.24;
+  const ball = b.ball.position.clone(), bend = new THREE.Vector3(0.44, 2.24, 0);
+  const end = ball.clone().addScaledVector(bend.clone().sub(ball).normalize(), 0.15);
+  const points = [[-0.32, slotY], [0.28, slotY], [bend.x, bend.y], [end.x, end.y]];
+  const outline = clip.union(
+    poly([[-0.40, slotY - half], [-0.32, slotY - half], [-0.32, slotY + half], [-0.40, slotY + half]]),
+    ...points.slice(1).map((point, i) => capsule(points[i], point, half, 32)),
+  );
+  const strap = new THREE.Mesh(plate(outline, -depth / 2, depth / 2), b.bentArmUpper.children[0].material);
+  strap.userData.role = 'one-piece-bent-carrier-strap';
+  for (const group of [b.bentArmUpper, b.bentArmLower, b.carrierTail]) for (const child of group.children) child.visible = false;
+  b.shaftRotor.add(strap);
+  b.carrierStrap = strap;
 }
 
 export function createAuthoredLensPolisherMovement(movement) {

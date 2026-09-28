@@ -20,7 +20,7 @@ test(`${id} selected finite working surfaces stay clear through the cycle`,()=>{
 const byRole=(root,name)=>{let result;root.traverse(o=>{if(o.userData.role===name)result=o});return result};
 test('359 moving sleeve has a real spindle bore and rope buffers remain allocated',()=>{
  const m=a({id:359}),d=m.root.userData,b=d.blocks,sleeve=byRole(m.root,'loose-crossbar-guide-hole-around-spindle'),solid=solidSurface(sleeve.geometry);
- assert.ok(!solid.inside(new T.Vector3(0,0,0)));assert.ok(solid.inside(new T.Vector3(.15,0,0)));
+ assert.ok(!solid.inside(new T.Vector3(0,0,0)));assert.ok(!solid.inside(new T.Vector3(d.geometry.spindleRadius-.04,0,0)));assert.ok(solid.inside(new T.Vector3(d.geometry.spindleRadius+.06,0,0)));
  const original=b.cordBranches.map(o=>o.userData.mesh.geometry);
  for(let i=0;i<=32;i++){m.update(i/4);b.cordBranches.forEach((o,j)=>assert.equal(o.userData.mesh.geometry,original[j]));assert.ok(Math.abs(d.currentState.leftCord.branchLength-d.geometry.branchLength)<1e-10);}
 });
@@ -32,11 +32,12 @@ test('374 finite pulley channels have floors and retaining lips at the actual ba
   assert.ok(solid.inside(new T.Vector3(r-.055,0,0)),'floor has finite material');
   assert.ok(solid.inside(new T.Vector3(r,.075,0)),'side lip retains band');
  }
- for(const [bearing,r]of[[b.shaftBearing,.109],[b.treadlePivotBearing,.079]]){const solid=solidSurface(bearing.geometry);assert.ok(!solid.inside(new T.Vector3(r-.003,0,0)));assert.ok(solid.inside(new T.Vector3(r+.015,0,0)));}
+ // 374's shaft is Brown's large one (radius .26, bore .264).
+ for(const [bearing,r]of[[b.shaftBearing,.264],[b.treadlePivotBearing,.079]]){const solid=solidSurface(bearing.geometry);assert.ok(!solid.inside(new T.Vector3(r-.003,0,0)));assert.ok(solid.inside(new T.Vector3(r+.015,0,0)));}
 });
 test('374 standards support journals without filling their bores',()=>{
  const m=c({id:374}),b=m.root.userData.blocks;m.update(0);m.root.updateMatrixWorld(true);
- for(const [post,bearing,r]of[[b.shaftPost,b.shaftBearing,.23],[b.pivotPost,b.treadlePivotBearing,.20]]){
+ for(const [post,bearing,r]of[[b.shaftPost,b.shaftBearing,.39],[b.pivotPost,b.treadlePivotBearing,.20]]){
   const point=new T.Vector3(bearing.position.x,bearing.position.y-r+.012,-.20);
   assert.ok(solidSurface(post.geometry).inside(post.worldToLocal(point.clone())));
   assert.ok(solidSurface(bearing.geometry).inside(bearing.worldToLocal(point.clone())));

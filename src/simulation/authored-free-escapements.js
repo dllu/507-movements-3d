@@ -1,6 +1,8 @@
 import { correctFreeEscapement, fitFreeEscapement } from './free-escapement-finite-parts.js';
 import * as THREE from 'three';
 import { spokedWheelGeometry } from './spoked-wheel.js';
+import { circle, plate, poly, polygonClipping } from './finite-plate-geometry.js';
+import { makeSeeThrough } from './see-through-part.js';
 import {
   PALETTE,
   markShadows,
@@ -1131,35 +1133,36 @@ function earnshawSpringDetentEscapement(movement) {
   balanceIndex.userData.role = 'visible-index-on-balance-roller';
   const balanceShaft = cylinderAlongZ(0.105, 1.08, darkMaterial, 30);
   balanceShaft.userData.role = 'balance-staff-through-both-rollers';
-  // Brown draws the roller as a plain disc whose edge runs out to pallet P,
-  // with a V notch at P; the open ring and its spokes are not drawn. The
-  // disc sits behind the wheel and detent so the working planes are unchanged.
-  const rollerDiscRadius = palletOuterRadius + 0.03;
-  const rollerNotchHalfAngle = THREE.MathUtils.degToRad(22);
-  const rollerDiscShape = new THREE.Shape();
-  const rollerNotchStart = impulsePalletLocalAngle + rollerNotchHalfAngle;
-  const rollerDiscSteps = 72;
-  for (let step = 0; step <= rollerDiscSteps; step += 1) {
-    const angle = rollerNotchStart
-      + (FULL_TURN - 2 * rollerNotchHalfAngle) * step / rollerDiscSteps;
-    const point = new THREE.Vector2(
-      Math.cos(angle) * rollerDiscRadius,
-      Math.sin(angle) * rollerDiscRadius,
-    );
-    if (step === 0) rollerDiscShape.moveTo(point.x, point.y);
-    else rollerDiscShape.lineTo(point.x, point.y);
+  // Brown draws the impulse roller as one plain disc in the impulse plane,
+  // with pallet P set in its edge (lower left) and a small notch about 70
+  // degrees round from P (upper left). The disc stops 0.035 inside the
+  // escape wheel's tip circle, so only P reaches the teeth; the open ring,
+  // its spokes and P's separate arm are gone. It is see-through (Brown draws
+  // the discharging roller V behind it).
+  const rollerDiscRadius = centerDistance - toothTipRadius - 0.035;
+  const rollerNotchAngle = impulsePalletLocalAngle - THREE.MathUtils.degToRad(69);
+  const rollerNotchHalfAngle = THREE.MathUtils.degToRad(7);
+  const rollerNotchDepth = 0.16;
+  const rollerDiscOutline = [];
+  const rollerDiscSteps = 240;
+  for (let step = 0; step < rollerDiscSteps; step += 1) {
+    const angle = rollerNotchAngle + rollerNotchHalfAngle
+      + (FULL_TURN - 2 * rollerNotchHalfAngle) * step / (rollerDiscSteps - 1);
+    rollerDiscOutline.push([Math.cos(angle) * rollerDiscRadius, Math.sin(angle) * rollerDiscRadius]);
   }
-  rollerDiscShape.lineTo(
-    Math.cos(impulsePalletLocalAngle) * palletInnerRadius * 0.92,
-    Math.sin(impulsePalletLocalAngle) * palletInnerRadius * 0.92,
-  );
-  rollerDiscShape.closePath();
+  rollerDiscOutline.push([
+    Math.cos(rollerNotchAngle) * (rollerDiscRadius - rollerNotchDepth),
+    Math.sin(rollerNotchAngle) * (rollerDiscRadius - rollerNotchDepth),
+  ]);
   const rollerDisc = new THREE.Mesh(
-    centeredExtrusion(rollerDiscShape, 0.08, 0.004),
-    balanceMaterial,
+    plate(polygonClipping.difference(poly(rollerDiscOutline), poly(circle([0, 0], 0.2, 48))),
+      impulsePlaneZ - 0.08, impulsePlaneZ + 0.08),
+    balanceMaterial.clone(),
   );
-  rollerDisc.position.z = -0.49;
-  rollerDisc.userData.role = 'plain-notched-roller-disc-behind-working-planes';
+  rollerDisc.userData.role = 'plain-notched-impulse-roller-disc-carrying-pallet-P';
+  makeSeeThrough(rollerDisc);
+  impulsePalletArm.visible = false;
+  impulsePalletArm.userData.retiredBy = 'impulse-roller-disc-carries-P';
   balanceRotor.add(
     rollerDisc,
     impulseRollerHub,
@@ -1374,8 +1377,12 @@ function earnshawSpringDetentEscapement(movement) {
     ]),
   );
 
+  // Display time starts at Brown's pose: the balance at its plate angle
+  // (pallet P lower left, at tooth A) as the wheel is released, a quarter
+  // cycle into the analytic cycle (which starts at the balance's extreme).
+  const displayTimeOffset = releasePhase * balancePeriod;
   const update = (time) => {
-    const state = stateAtTime(time);
+    const state = stateAtTime(time + displayTimeOffset);
     balanceRotor.rotation.z = state.balanceAngle;
     balanceRotor.userData.angularAcceleration =
       state.balanceAngularAcceleration;
@@ -1660,6 +1667,7 @@ function earnshawSpringDetentEscapement(movement) {
   };
   root.userData.stateAtCyclePhase = stateAtCyclePhase;
   root.userData.stateAtTime = stateAtTime;
+  root.userData.displayTimeOffset = displayTimeOffset;
   root.userData.timeline = {
     demonstrationPeriod: balancePeriod,
     physicalVibrationsPerSecond,

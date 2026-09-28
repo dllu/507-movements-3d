@@ -24,7 +24,7 @@ export function correctCheckHookJournals(root) {
   const { hookCenterline, hookBarRadius, hookBarbOutline } = root.userData.geometry;
   // Brown draws each hook eye as a round boss with a small bore on flange B;
   // a proportionate pin fills that bore rather than swamping the eye.
-  const hookEyeRadius = .36, hookBoreRadius = .155, hookPinRadius = .145;
+  const hookEyeRadius = .43, hookBoreRadius = .155, hookPinRadius = .145;
   const hookMaterial = matte(PALETTE.muted, { metalness: .3, roughness: .45 });
   const plates = [];
   hooks.forEach((hook, index) => {

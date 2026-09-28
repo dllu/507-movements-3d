@@ -21,5 +21,8 @@ test('368/372 actual back-cone profiles have sufficient addendum contact and fin
 });
 test('saved full-solid contact study matches final production and records finite engagement gaps',()=>{
  const report=JSON.parse(fs.readFileSync('docs/validation/368-372-contact-solids.json'));for(const s of report.sources)assert.equal(createHash('sha256').update(fs.readFileSync(s.file)).digest('hex'),s.sha256,s.file);
- for(const r of report.results){assert.equal(r.poses,33);assert.equal(r.penetrations,0);assert.ok(r.queries>400000);for(const p of r.pairs){assert.ok(p.minimumSampledGap>0);assert.ok(p.maximumSampledGap<.002);}}
+ for(const r of report.results){assert.equal(r.poses,33);assert.equal(r.penetrations,0);assert.ok(r.queries>400000);// 372's miters keep only Brown's outer tooth band (inner end at 0.62 of the
+ // 0.94 cone distance), so the smallest sampled backlash is the .96-thickness
+ // clearance at that larger inner radius, about 0.004.
+ for(const p of r.pairs){assert.ok(p.minimumSampledGap>0);assert.ok(p.maximumSampledGap<(r.id===372?.005:.002));}}
 });

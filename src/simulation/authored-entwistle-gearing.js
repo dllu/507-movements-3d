@@ -207,6 +207,68 @@ function presentHousedSection(root, material) {
   });
 }
 
+
+// Pass 90: Brown's bevels are short-faced: the teeth fill only the outer
+// third of the cone distance, and both ends are cut square to the axis (the
+// back face is a flat disc out to the tip circle, the toe a flat face), so
+// no tooth runs in towards the apex or stands past a smaller back disc. The
+// body under the teeth rises 0.012 above their roots (inside the 0.022 tip
+// clearance) and stops 0.003 short of both end planes, so no face of it lies
+// on a tooth face.
+function truncateEntwistleBevel(gear, toeZ, heelZ) {
+  const rotor = gear.userData.rotor;
+  const teethMeshes = rotor.children.filter((o) => o.userData.bevelTooth);
+  const source = teethMeshes[0].geometry;
+  const position = source.attributes.position;
+  // bevelToothGeometry writes the toe cap (n), the heel cap (n), then four
+  // vertices per side quad (4n).
+  const n = position.count / 6;
+  const ray = (i, z) => {
+    const p = new THREE.Vector3().fromBufferAttribute(position, n + i);
+    return p.multiplyScalar(z / p.z);
+  };
+  const toe = Array.from({length: n}, (_, i) => ray(i, toeZ));
+  const heel = Array.from({length: n}, (_, i) => ray(i, heelZ));
+  const cap = THREE.ShapeUtils.triangulateShape(heel.map((p) => new THREE.Vector2(p.x, p.y)), []);
+  const positions = [], indices = [];
+  const face = (vertices, triangles) => {
+    const start = positions.length / 3;
+    for (const v of vertices) positions.push(v.x, v.y, v.z);
+    for (const t of triangles) indices.push(...t.map((k) => start + k));
+  };
+  face(toe, cap.map(([a, b, c]) => [c, b, a]));
+  face(heel, cap);
+  for (let i = 0; i < n; i += 1) {
+    const j = (i + 1) % n;
+    face([toe[i], toe[j], heel[j], heel[i]], [[0, 1, 2], [0, 2, 3]]);
+  }
+  const tooth = new THREE.BufferGeometry();
+  tooth.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  tooth.setIndex(indices);
+  const flat = tooth.toNonIndexed();
+  flat.computeVertexNormals();
+  flat.userData = {...source.userData, profile: 'short-faced-flat-ended-bevel', toeZ, heelZ};
+  for (const mesh of teethMeshes) mesh.geometry = flat;
+  source.dispose();
+  // Root radius on the cone at the heel (the outline's innermost point).
+  let rootHeel = Infinity;
+  for (const p of heel) rootHeel = Math.min(rootHeel, Math.hypot(p.x, p.y));
+  const rootAt = (z) => rootHeel * z / heelZ + 0.012;
+  // The body is carried on the gear's hub (0.005 into it), not bored to the
+  // hub's own bore, where the two bores lay on each other.
+  const hub = gear.userData.hub;
+  hub.geometry.computeBoundingBox();
+  const bore = Math.max(hub.geometry.boundingBox.max.x, hub.geometry.boundingBox.max.y) - 0.005;
+  const body = gear.userData.body;
+  body.geometry.dispose();
+  const z0 = toeZ + 0.003, z1 = heelZ - 0.003;
+  body.geometry = boredLatheGeometry([{axial: z0, radial: rootAt(z0)}, {axial: z1, radial: rootAt(z1)}], bore, 96)
+    .rotateX(Math.PI / 2);
+  body.userData.bevelGearBody = true;
+  for (const part of [gear.userData.inset, gear.userData.indicator]) if (part) part.visible = false;
+  gear.userData.toothFace = {toeZ, heelZ};
+}
+
 function entwistlePatentGearing(movement) {
   const root = new THREE.Group();
   const fullTurn = Math.PI * 2;
@@ -658,6 +720,24 @@ function entwistlePatentGearing(movement) {
   };
   correctEntwistleGearing(root);
   presentHousedSection(root, fixedMaterial);
+  // The heel plane stands where the old back-cone heels' tips did (axial
+  // 1.20), so the planet's tips sweep no further toward the right standard;
+  // the face is the outer third of that.
+  for (const gear of [fixedGearA, outputGearC, planetGearB]) {
+    truncateEntwistleBevel(gear, 0.80, 1.20);
+  }
+  // Brown's carrier is a square block on D, the stud E rising from it
+  // through B (it was a round collar).
+  {
+    const side = 0.40, length = 0.28;
+    const square = poly([[-side / 2, -side / 2], [side / 2, -side / 2], [side / 2, side / 2], [-side / 2, side / 2]]);
+    carrierCollar.geometry.dispose();
+    // Bored along its local y, like the collar it replaces (turned onto x).
+    carrierCollar.geometry = plate(polygonClipping.difference(square, poly(circle([0, 0], 0.087, 64))), -length / 2, length / 2)
+      .rotateX(Math.PI / 2);
+    carrierCollar.userData.boreRadius = 0.087;
+    carrierCollar.userData.role = 'square-carrier-block-securing-stud-E-to-shaft-D';
+  }
   update(0);
   root.userData.fidelity = 'authored';
   markShadows(root);

@@ -7,6 +7,18 @@ import { createAuthoredUniformGrooveCrossheadMovement } from '../src/simulation/
 import { disposeObject3D } from '../src/simulation/dispose-model.js';
 const bounds = object => new THREE.Box3().setFromObject(object, true);
 const ray = new THREE.Raycaster();
+function insideRing(ring, x, y) {
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const [xi, yi] = ring[i], [xj, yj] = ring[j];
+    if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+}
+function inMaterial(polygons, x, y) {
+  return polygons.some(([outer, ...holes]) => insideRing(outer, x, y) && !holes.some((hole) => insideRing(hole, x, y)));
+}
+
 function clearsPin(pin, members, radius = pin.geometry.parameters.radiusTop) {
   const center = pin.getWorldPosition(new THREE.Vector3());
   for (let i = 0; i < 16; i += 1) {
@@ -91,12 +103,17 @@ test('354: finite wrist clears the actual milled groove including both reversal 
     (Math.PI - g.sourcePoseAngle) / g.inputAngularSpeed);
   for (const time of times) {
     update(time); root.updateMatrixWorld(true);
-    clearsPin(b.crankWrist, [b.yokeBody]);
-    // Posts first, then the raised strap.
-    clearsPin(b.wristCap, b.islandRetainer.children.slice(0, -1));
-    assert.ok(bounds(b.islandRetainer.children.at(-1)).min.z > bounds(b.wristCap).max.z);
+    // The groove is blind (pass 90): the wrist's circle must lie in the
+    // milled layer's groove, clear of its material, and reach into it.
+    const radius = b.crankWrist.geometry.parameters.radiusTop;
+    const centre = b.yokeBody.worldToLocal(b.crankWrist.getWorldPosition(new THREE.Vector3()));
+    const polygons = b.yokeBody.geometry.userData.plate.polygons;
+    for (let i = 0; i < 16; i += 1) {
+      const x = centre.x + radius * Math.cos(i * Math.PI / 8), y = centre.y + radius * Math.sin(i * Math.PI / 8);
+      assert.ok(!inMaterial(polygons, x, y), 'the wrist clears the milled groove walls');
+    }
     const pin = bounds(b.crankWrist), yoke = bounds(b.yokeBody);
-    assert.ok(pin.min.z < yoke.min.z && pin.max.z > yoke.max.z);
+    assert.ok(pin.min.z < yoke.min.z && pin.max.z > yoke.min.z, 'the wrist enters the groove from the disk side');
   }
   disposeObject3D(root);
 });

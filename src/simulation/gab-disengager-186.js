@@ -41,10 +41,12 @@ const RIVET_R = 4.5 * S;
 const BORE_GAP = 0.0015;
 const CONTACT_GAP = 0.002; // claw foot / pin and strap tip / drop, visually touching
 const FOOT_Y_PX = 250 - 19 - CONTACT_GAP / S;
+// Pass 90: rocker and lever are thinner and closer, so the loop's step
+// from the rod's plane back to the lever's is half as deep.
 const Z = {
-  rocker: [-0.36, -0.06], shaft: [-0.79, 0], lever: [-0.62, -0.4],
+  rocker: [-0.2, -0.06], shaft: [-0.79, 0], lever: [-0.36, -0.22],
   rodBack: [0, 0.2], rodFront: [0.2, 0.28], blade: [-0.042, -0.002],
-  strapFront: -0.022, strapBack: -0.51, strapDepth: 0.04, pin: [-0.64, 0.3], pinC: [-0.64, 0.3],
+  strapFront: -0.022, strapBack: -0.29, strapDepth: 0.04, pin: [-0.38, 0.3], pinC: [-0.38, 0.3],
 };
 const SHAFT = P(260, 62);
 const C = P(341, 242); // lever pivot c on the rod
@@ -57,7 +59,7 @@ const STRAP_WIDTH = 14 * S; // Brown's broad double-line strap
 // Notch a at the foot of the drop (plate pixels).
 const NOTCH = {flatY: 313.5, flatX0: 457, rampX: 470.5, ceilX: 476.5, ceilY: 309.5, lipX: 485.5, lipY: 318};
 const TIP_SEAT_PX = 3.9;
-const BAR_PX = 150; // length of the diagonal bar below its riveted pad
+const BAR_PX = 200; // flexing length of the diagonal bar below its riveted pad (Pass 90: bar re-traced)
 const ROOT_BEND = 0.2; // share of it that carries the main bend, just below the pad
 
 // Cycle (seconds): run the eccentric three turns, stop, pull, latch, hold,
@@ -237,17 +239,19 @@ export function springHandleGabDisengager() {
   // ---------- spring handle strap (deformable, in rod coordinates) ----------
   const J = [369, 266]; // the strap leaves its riveted pad just below and right of c
   const tipY = NOTCH.flatY + STRAP_WIDTH / 2 / S + CONTACT_GAP / S;
-  // Brown's loop is a narrow U hung from the diagonal bar: its return leg
-  // rises on the outer side of the bar (never crossing it) and turns into
-  // the tongue that bears on the drop.
-  const restPx = [J, [390, 280], [404, 294], [414, 313], [422.3, 335], [437, 382], [446, 436], [448, 470], [456, 490], [467, 488], [475, 466],
-    [479, 432], [477, 396], [469, 368], [461, 348], [456, 334], [456, tipY + 3],
-    [462, tipY], [476, tipY]];
+  // Brown's loop is a narrow U hung from the diagonal bar (Pass 90, re-traced):
+  // the bar runs straight down to a round bottom, the return leg rises
+  // straight on the INNER (left) side, and its top turns right into the
+  // tongue, which passes behind the bar (Brown breaks the tongue's lines
+  // there) to bear on the drop's flat face under notch a.
+  const restPx = [J, [385, 277], [405, 296], [425, 322], [440, 355], [455, 400], [466, 440], [472, 462],
+    [470, 478], [461, 488], [449, 489], [438, 482], [430, 468], [416.8, 433], [403.4, 397.5], [392, 367],
+    [391, 352], [397, 340], [408, 330], [422, 324], [436, tipY + 0.8], [450, tipY], [462, tipY], [476, tipY]];
   const STRAP_POINTS = 121;
   const restCurve = new THREE.CatmullRomCurve3(restPx.map((p) => new THREE.Vector3(...P(...p), 0)), false, 'centripetal');
   const restPoints = restCurve.getSpacedPoints(STRAP_POINTS - 1).map((p) => [p.x, p.y]);
   // Straighten the tongue that bears on the drop's flat face.
-  const flatStart = P(456, 0)[0];
+  const flatStart = P(440, 0)[0];
   for (const p of restPoints) if (p[0] >= flatStart && p[1] > P(0, 330)[1]) p[1] = P(0, tipY)[1];
   const cumulative = [0];
   for (let i = 1; i < restPoints.length; i++) cumulative.push(cumulative[i - 1] + Math.hypot(...sub(restPoints[i], restPoints[i - 1])));
@@ -265,7 +269,10 @@ export function springHandleGabDisengager() {
     const f = clamp01((s - cumulative[i]) / (cumulative[i + 1] - cumulative[i]));
     return THREE.MathUtils.lerp(restAngle[i], restAngle[i + 1], f);
   };
-  const sLegLow = arcAt([477, 450]), sLegHigh = arcAt([469, 368]);
+  // The strap stays in the rod's plane down the bar and round the bottom,
+  // then steps back along the straight return leg to the lever's plane, so
+  // the leg's top and the tongue pass behind the bar and meet the drop.
+  const sLegLow = arcAt([430, 468]), sLegHigh = arcAt([403.4, 397.5]);
   const strapWeights = cumulative.map((s) => ({
     seat: smoother((s - (strapLength - 6 * S)) / (5 * S)),
     z: THREE.MathUtils.lerp(Z.strapFront, Z.strapBack, smoother((s - sLegLow) / (sLegHigh - sLegLow))),
@@ -439,7 +446,7 @@ export function springHandleGabDisengager() {
   // Past the view: the eccentric and the plain frame.
   const frame = gabRodFrame({
     eccentric: {x: eccentric.O.x, y: eccentric.O.y, shaftRadius: eccentric.shaftRadius, zFront: Z.rodBack[0] - 0.02},
-    rockshaft: {x: SHAFT[0], y: SHAFT[1], shaftRadius: 29 * S, zFront: Z.rocker[0] - 0.02},
+    rockshaft: {x: SHAFT[0], y: SHAFT[1], shaftRadius: 29 * S, zFront: Z.lever[0] - 0.02},
     floorY: P(0, 540)[1], beamY: fitBounds.max.y + 3, zWall: Z_WALL,
   });
   root.add(eccentric.sheave, frame);

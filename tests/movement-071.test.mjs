@@ -117,6 +117,7 @@ test('movement 71 pushes one stud one pitch per turn with a driving compressive 
   let maximumPenetration = 0;
   let first = null;
   let last = null;
+  let mouthSamples = 0;
   sampleCycle(model, 3000, (state) => {
     first ??= state;
     last = state;
@@ -131,6 +132,17 @@ test('movement 71 pushes one stud one pitch per turn with a driving compressive 
       assert.equal(state.drivenAngularSpeed, 0);
       const [upper] = state.guardStudContacts;
       assert.ok(upper.error < 1e-12, 'the upper lock stud rests on the inner rim');
+      // While a slit mouth passes the upper lock stud, the lower one still
+      // bears on rim material, so C is never free beyond the lock play.
+      const onRim = (index) => {
+        const bearing = state.planarStud(index).clone()
+          .rotateAround(new THREE.Vector2(), -state.driverAngle);
+        bearing.setLength(geometry.guardInnerRadius + 0.004);
+        return geometry.guardRimRegions.some((region) => ringDistance(region[0], bearing) < 0);
+      };
+      const lowerIndex = THREE.MathUtils.euclideanModulo(upper.index - 2, geometry.studCount);
+      assert.ok(onRim(upper.index) || onRim(lowerIndex), 'a lock stud bears on rim material');
+      if (!onRim(upper.index)) mouthSamples += 1;
       const lower = state.planarStud(THREE.MathUtils.euclideanModulo(
         upper.index - 2, geometry.studCount,
       ));
@@ -149,6 +161,7 @@ test('movement 71 pushes one stud one pitch per turn with a driving compressive 
   });
   assert.deepEqual([...stages].sort(),
     ['guard-locked', 'tappet-flank-push', 'tappet-tip-push']);
+  assert.ok(mouthSamples < 200, `upper lock stud over a slit mouth in ${mouthSamples} of 3001 samples`);
   assert.ok(maximumPenetration < 1e-9, `studs only cross the rim through the slit channels: ${maximumPenetration}`);
   assert.ok(Math.abs(minimumOtherClearance - geometry.lockPlay) < 1e-6,
     'the tappet passes the lock studs with the lock play as clearance');
@@ -197,4 +210,36 @@ test('movement 71 checks reject a trailing push, a long tappet and an uncut rim'
   });
   assert.ok(longTappetClearance < -0.01);
   assert.ok(uncutPenetration > 0.01);
+});
+
+test('movement 71 cuts plain slits that leave no knife-edge rim tips', () => {
+  const { geometry } = build().root.userData;
+  // Every radial line through the rim meets either no material, the full
+  // rim, or a piece at least nearly minimumRimTip thick.
+  let thinnest = Infinity;
+  for (let sample = 0; sample < 7200; sample += 1) {
+    const angle = FULL_TURN * (sample + 0.37) / 7200;
+    const direction = new THREE.Vector2(Math.cos(angle), Math.sin(angle));
+    const crossings = [];
+    for (const region of geometry.guardRimRegions) {
+      const ring = region[0];
+      for (let i = 0, j = ring.length - 1; i < ring.length; j = i, i += 1) {
+        const a = new THREE.Vector2(...ring[j]);
+        const b = new THREE.Vector2(...ring[i]);
+        const edge = b.clone().sub(a);
+        const denominator = cross(direction, edge);
+        if (Math.abs(denominator) < 1e-14) continue;
+        const t = cross(a, edge) / denominator;
+        const u = cross(a, direction) / denominator;
+        if (t > 0 && u >= 0 && u < 1) crossings.push(t);
+      }
+    }
+    crossings.sort((a, b) => a - b);
+    for (let index = 0; index + 1 < crossings.length; index += 2) {
+      thinnest = Math.min(thinnest, crossings[index + 1] - crossings[index]);
+    }
+  }
+  assert.ok(thinnest > geometry.minimumRimTip * 0.9, `thinnest rim piece ${thinnest}`);
+  assert.equal(geometry.guardRimRegions.length, 2);
+  for (const region of geometry.guardRimRegions) assert.equal(region.length, 1);
 });

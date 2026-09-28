@@ -746,14 +746,16 @@ function commonWindmill(movement) {
     // swelling to a round end, rising slightly as it trails away. The loop
     // springs straight from the cap, so no separate beam shows.
     const vane = root.userData.blocks.tailVane;
-    const tailLength = 2.30, endRadius = 0.46, rootHalf = 0.05, rise = 0.14;
+    // Pass 90: the root is 0.24 deep (it was 0.10, a near point contact) and
+    // runs 0.15 into the dome, so the vane is seated in the cap.
+    const tailLength = 2.30, endRadius = 0.46, rootHalf = 0.12, rise = 0.14, rootInset = 0.15;
     const beta = Math.asin(endRadius / tailLength);
-    const loop = [[0, rootHalf]];
+    const loop = [[-rootInset, rootHalf]];
     for (let i = 0; i <= 64; i += 1) {
       const angle = Math.PI / 2 + beta - (Math.PI + 2 * beta) * i / 64;
       loop.push([tailLength + endRadius * Math.cos(angle), endRadius * Math.sin(angle)]);
     }
-    loop.push([0, -rootHalf]);
+    loop.push([-rootInset, -rootHalf]);
     const tilt = ([u, v]) => new THREE.Vector2(
       u * Math.cos(rise) - v * Math.sin(rise), u * Math.sin(rise) + v * Math.cos(rise));
     const loopShape = new THREE.Shape(loop.map(tilt));

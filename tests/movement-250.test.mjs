@@ -260,7 +260,10 @@ test('movement 250 renders distinct rotating members and a fixed pedestal', () =
       quaternion: object.quaternion.clone(),
     }));
 
-  assert.equal(blocks.mainFlywheelSpokes.length, 4);
+  // Brown's upper wheel is a plain web disk with a thin rim and a boss.
+  assert.equal(blocks.mainFlywheelSpokes.length, 0);
+  assert.equal(blocks.mainFlywheelRim.userData.role, 'thin-rimmed-web-disk-main-wheel');
+  assert.ok(blocks.mainFlywheelRim.userData.innerRadius > 3.6);
   assert.equal(blocks.leftSupportSpokes.length, 4);
   assert.equal(blocks.rightSupportSpokes.length, 4);
   assert.equal(blocks.leftSupportWheel.userData.axialPlane, 0.22);

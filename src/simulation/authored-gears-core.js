@@ -200,6 +200,7 @@ function makeCrownWheel({
   color = PALETTE.driven,
   faceWidth = 0.42,
   pitchRadius = 1.35,
+  faceCenterRadius = pitchRadius,
   pinion,
   pinionCenterX,
   teeth = 36,
@@ -211,8 +212,8 @@ function makeCrownWheel({
   root.quaternion.setFromUnitVectors(Z_AXIS, axis.clone().normalize());
   root.userData.rotor = rotor;
 
-  const innerRadius = pitchRadius - faceWidth / 2;
-  const outerRadius = pitchRadius + faceWidth / 2;
+  const innerRadius = faceCenterRadius - faceWidth / 2;
+  const outerRadius = faceCenterRadius + faceWidth / 2;
   const bodyRadius = outerRadius + 0.07;
   const body = new THREE.Mesh(
     new THREE.CylinderGeometry(bodyRadius, bodyRadius, bodyThickness, 80),
@@ -247,11 +248,14 @@ function makeCrownWheel({
     rotor.add(tooth);
   }
 
+  // Plate 26 draws the crown's boss only on its plain back face, in the
+  // wheel's own colour; the toothed face stays clear.
   const hub = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.2, 0.2, bodyThickness * 2.3, 30),
-    matte(PALETTE.ink, { metalness: 0.22, roughness: 0.5 }),
+    new THREE.CylinderGeometry(0.28, 0.28, 0.12, 48),
+    body.material,
   );
   hub.rotation.x = Math.PI / 2;
+  hub.position.z = bodyThickness / 2 + 0.06 - 0.002;
   rotor.add(hub);
 
   const faceRing = new THREE.Mesh(
@@ -526,9 +530,26 @@ function crownAndSpur() {
   const moduleScale = 0.0375;
   const crownPitchRadius = crownTeeth * moduleScale;
   const spurPitchRadius = spurTeeth * moduleScale;
-  const bodyThickness = 0.2;
-  const toothHeight = 2.25 * moduleScale * 2;
-  const faceWidth = 0.42;
+  // Plate 26 draws the crown as a deep flat rim, about a tenth of its
+  // diameter, with square flat-topped teeth as high as the spur's.
+  const bodyThickness = 0.27;
+  const squareTeeth = {
+    addendum: 1.3 * moduleScale,
+    dedendum: 1.6 * moduleScale,
+    width: 0.5 * 2 * Math.PI * moduleScale,
+    taper: 0.2 * moduleScale,
+    depth: 0.42 * 0.82,
+  };
+  // The crown's teeth reach only the spur's addendum depth, so their tips
+  // stay flat where the square spur teeth never sweep.
+  const toothHeight = 2 * squareTeeth.addendum + 0.3 * moduleScale;
+  // A square spur tooth sweeps the inner part of a face gear's teeth to
+  // nothing (the undercut of face gearing). The toothed band therefore runs
+  // from 1.27 to 1.49, where the generated crown teeth keep flat tips
+  // 0.17-0.33 of a pitch wide and stay thinner than their spaces at the
+  // pitch plane, as the caption requires, inside the spur's 0.34 face.
+  const faceWidth = 0.22;
+  const faceCenterRadius = 1.38;
   const contactPoint = new THREE.Vector3(
     -bodyThickness / 2 - toothHeight / 2,
     crownPitchRadius,
@@ -546,12 +567,25 @@ function crownAndSpur() {
     dedendum: moduleScale * 2.5,
     chamfer: 0.008,
   });
+  // Brown's spur has the same square straight-flanked teeth as plate 24's.
+  applySquareTeeth(spur, squareTeeth);
+  {
+    // A turned boss, in the wheel's own colour, runs through both faces of
+    // the spur as drawn (about twice the shaft's width, 1.8 face widths long).
+    const hub = spur.userData.rotor.children.find((part) => part.geometry?.type === 'CylinderGeometry');
+    hub.geometry.dispose();
+    hub.geometry = new THREE.CylinderGeometry(0.22, 0.22, 0.62, 48);
+    hub.material.color.set(PALETTE.driver);
+    spur.userData.hubRadius = 0.22;
+    spur.userData.hubLength = 0.62;
+  }
   spur.position.copy(spurCenter);
   const crown = makeCrownWheel({
     axis: crownAxis,
     bodyThickness,
     color: PALETTE.driven,
     faceWidth,
+    faceCenterRadius,
     pitchRadius: crownPitchRadius,
     teeth: crownTeeth,
     pinion: spur,
@@ -1007,21 +1041,16 @@ function makeBrushDisk({
   root.quaternion.setFromUnitVectors(Z_AXIS, Y_AXIS);
   root.userData.rotor = rotor;
 
+  // Brown draws one plain flat board: the friction facing is not a
+  // separate stepped layer, so the disk is a single cylinder whose top is
+  // the working face (p90; a stepped lip read as a second thickness).
   const body = new THREE.Mesh(
-    new THREE.CylinderGeometry(radius, radius, bodyThickness, 88),
+    new THREE.CylinderGeometry(radius, radius, bodyThickness + rubberThickness, 88),
     matte(PALETTE.driven, { metalness: 0.1, roughness: 0.68 }),
   );
   body.rotation.x = Math.PI / 2;
-  // Brown draws one plain disk: the friction facing is in the disk's own
-  // colour (a black facing read as a dark rim, and its quadrant cue as a
-  // harsh checkerboard).
-  const rubber = new THREE.Mesh(
-    new THREE.CylinderGeometry(radius * 0.965, radius * 0.965, rubberThickness, 88),
-    matte(PALETTE.driven, { metalness: 0.06, roughness: 0.8 }),
-  );
-  rubber.rotation.x = Math.PI / 2;
-  rubber.position.z = bodyThickness / 2 + rubberThickness / 2;
-  rotor.add(body, rubber);
+  body.position.z = rubberThickness / 2;
+  rotor.add(body);
 
   // Plate 28 turns the boss as a concave trumpet: 0.56 under the disk,
   // flaring in to a short 0.40 collar about 0.53 lower.
@@ -1056,7 +1085,7 @@ function makeBrushDisk({
   root.userData.axis = Y_AXIS.clone();
   root.userData.bodyThickness = bodyThickness;
   root.userData.radius = radius;
-  root.userData.rubberRadius = radius * 0.965;
+  root.userData.rubberRadius = radius;
   root.userData.rubberThickness = rubberThickness;
   root.userData.surfaceOffset = bodyThickness / 2 + rubberThickness;
   return markShadows(root);
@@ -2991,7 +3020,10 @@ function mangleWheel() {
   wheel.userData.axis = Z_AXIS.clone();
   wheel.userData.rotor = wheelRotor;
   const wheelMaterial = matte(PALETTE.driven, { metalness: 0.10, roughness: 0.68 });
-  const bodyRadius = 1.78;
+  // The plain disk runs 0.02 past the pinion's tip circle on the outer
+  // arc, so the pinion stays over the disk as Brown draws it (p90; at 1.78
+  // it hung about half its radius past the edge).
+  const bodyRadius = outerPitchRadius + 2 * pinionPitchRadius + module + 0.02;
   const backing = new THREE.Mesh(new THREE.CylinderGeometry(bodyRadius, bodyRadius, 0.12, 192), wheelMaterial);
   backing.rotation.x = Math.PI / 2;
   backing.position.z = -0.06;
@@ -14228,14 +14260,20 @@ function handCrankPinionSectorRodPress() {
   const sourceTopCapHalfWidth = engravingUnits(127);
   const sourceBaseHalfWidth = engravingUnits(145);
 
-  const pinionTeeth = 8;
-  const sectorEquivalentTeeth = 48;
-  const installedSectorTeeth = 13;
+  // Brown draws a 12-tooth pinion with square teeth; the 6:1 ratio then needs
+  // a 72-tooth equivalent sector, whose drawn quarter arc carries 19 teeth.
+  // Profiles: stub involutes generated by scripts/generate-sector-press-teeth.mjs.
+  const pinionTeeth = sectorPressTeeth.pinionTeeth;
+  const sectorEquivalentTeeth = sectorPressTeeth.sectorEquivalentTeeth;
+  const installedSectorTeeth = 19;
   const gearRatio = sectorEquivalentTeeth / pinionTeeth;
   const pinionPitchRadius = sourcePinionPitchRadius * sourceScale;
   const sectorPitchRadius = sourceSectorPitchRadius * sourceScale;
-  const pinionRootRadius = sourcePinionRootRadius * sourceScale;
-  const pinionOuterRadius = sourcePinionOuterRadius * sourceScale;
+  const toothModule = sectorPressTeeth.settings.module;
+  const pinionRootRadius = pinionTeeth * toothModule / 2
+    - (sectorPressTeeth.settings.dedendum - sectorPressTeeth.profileShift) * toothModule;
+  const pinionOuterRadius = pinionTeeth * toothModule / 2
+    + (sectorPressTeeth.settings.addendum + sectorPressTeeth.profileShift) * toothModule;
   const sectorRootRadius = sourceSectorRootRadius * sourceScale;
   const sectorOuterRadius = sourceSectorOuterRadius * sourceScale;
   const sectorBodyInnerRadius = sourceSectorBodyInnerRadius * sourceScale;
@@ -14431,7 +14469,7 @@ function handCrankPinionSectorRodPress() {
   pinionAssembly.position.set(pinionCenter.x, pinionCenter.y, 0);
   pinionAssembly.userData.axis = Z_AXIS.clone();
   pinionAssembly.userData.rotor = pinionRotor;
-  pinionAssembly.userData.role = 'eight-tooth-hand-crank-pinion-on-fixed-axis';
+  pinionAssembly.userData.role = 'twelve-tooth-hand-crank-pinion-on-fixed-axis';
   pinionAssembly.userData.pitchRadius = pinionPitchRadius;
   pinionAssembly.userData.teeth = pinionTeeth;
 
@@ -14444,7 +14482,7 @@ function handCrankPinionSectorRodPress() {
     driverMaterial,
   );
   pinionBody.position.z = gearPlaneZ;
-  pinionBody.userData.role = 'source-profile-eight-tooth-driving-pinion';
+  pinionBody.userData.role = 'source-profile-twelve-tooth-driving-pinion';
   pinionBody.userData.pitchRadius = pinionPitchRadius;
   pinionBody.userData.rootRadius = pinionRootRadius;
   pinionBody.userData.outerRadius = pinionOuterRadius;
@@ -14543,7 +14581,7 @@ function handCrankPinionSectorRodPress() {
   sectorAssembly.userData.axis = Z_AXIS.clone();
   sectorAssembly.userData.rotor = sectorRotor;
   sectorAssembly.userData.role =
-    'thirteen-visible-teeth-of-equivalent-forty-eight-tooth-sector';
+    'nineteen-visible-teeth-of-equivalent-seventy-two-tooth-sector';
   sectorAssembly.userData.equivalentTeeth = sectorEquivalentTeeth;
   sectorAssembly.userData.pitchRadius = sectorPitchRadius;
   sectorAssembly.userData.teeth = installedSectorTeeth;
@@ -14575,7 +14613,7 @@ function handCrankPinionSectorRodPress() {
       tooth.position.z = gearPlaneZ;
       tooth.userData.centerAngle = centerAngle;
       tooth.userData.index = toothIndex;
-      tooth.userData.role = 'one-of-thirteen-source-sector-teeth';
+      tooth.userData.role = 'one-of-nineteen-sector-teeth';
       return tooth;
     },
   );
@@ -17462,7 +17500,11 @@ function progressiveSpeedScrollGears() {
   const centerDistance = sourceCenterDistance * sourceScale;
   const upperCenter = new THREE.Vector3(0, centerDistance / 2, 0);
   const lowerCenter = new THREE.Vector3(0, -centerDistance / 2, 0);
-  const minimumDriverRadiusFraction = 0.38;
+  // Brown's seam step is about 0.13 of the centre distance (33 of 257.5
+  // source pixels between the rim lines either side of the upper step),
+  // roughly two tooth depths.  Closure after one turn then fixes the
+  // starting fraction at 0.436 (driver pitch radius 0.436-0.564 C).
+  const minimumDriverRadiusFraction = 0.436;
 
   // Brown's two gears each close after one turn.  With an Archimedean
   // driver scroll, r1 = a + k phi, fixed centers require r2 = C - r1.
@@ -32653,36 +32695,38 @@ function splitTwoCamInvolutePinionDrive() {
   };
   update(0);
   correctVariableDrive(root, 205);
-  // Brown draws the front series as long bars that run in across the wheel
-  // face and the rear series as short stubs whose inner ends the wheel
-  // hides. Each front tooth carries a thin face bar in front of the cam
-  // plane: its outer part is fused to the tooth, its inner part clears the
-  // front cam, which reaches in to radius 2.53 between the teeth.
-  // The bar follows the thinned tooth (idle flank rotated by idleFlankShift).
-  const faceBarWidth = 2 * wheelOuterRadius
-    * Math.sin(wheelTipHalfToothAngle - SPLIT_CAM_IDLE_FLANK_SHIFT / 2);
-  const faceBarOuter = wheelOuterRadius - 0.04;
-  const faceBarInner = wheelRootRadius - 0.38;
-  const faceBarFront = toothDepth / 2 + 0.045;
-  const faceBarParts = [
-    { inner: wheelRootRadius, outer: faceBarOuter, back: toothDepth / 2 - 0.005 },
-    { inner: faceBarInner, outer: wheelRootRadius, back: toothDepth / 2 + 0.007 },
-  ].map(({ inner, outer, back }) => new THREE.BoxGeometry(outer - inner, faceBarWidth, faceBarFront - back)
-    .translate((inner + outer) / 2, 0, (faceBarFront + back) / 2)
-    .rotateZ(SPLIT_CAM_IDLE_FLANK_SHIFT / 2));
-  // A lighter shade keeps the long front series legible against the face.
+  // Brown draws the front series as long plain bars that run in across the
+  // wheel face and the rear series as short stubs whose inner ends the wheel
+  // hides. Each front tooth is therefore one extrusion in its own row plane:
+  // the working involute tooth plus a straight shank that continues its two
+  // root corners in to radius 2.62, lying on the wheel face. The front cam
+  // sweeps only the tooth spaces below the root, never the band under a
+  // tooth (its convex hull, swept over a whole wheel turn, stays at least
+  // 0.044 clear of the shank), so the shank needs no raised face bar.
+  const frontShankInner = wheelRootRadius - 0.38;
   const frontSeriesMaterial = matte(PALETTE.brass, { metalness: 0.16, roughness: 0.6 });
   frontSeriesMaterial.fog = false;
-  for (const tooth of wheelRows[1].userData.teeth) {
+  const frontTeeth = wheelRows[1].userData.teeth;
+  const frontToothShape = frontTeeth[0].geometry.parameters.shapes;
+  const frontToothOutline = (frontToothShape.getPoints ? frontToothShape : frontToothShape[0])
+    .extractPoints(64).shape.map((point) => [point.x, point.y]);
+  // The shank's edges run straight in from the tooth's two root corners.
+  const rootCorners = frontToothOutline.filter(([x]) => x < wheelRootRadius + 1e-3);
+  const shankLow = Math.min(...rootCorners.map(([, y]) => y));
+  const shankHigh = Math.max(...rootCorners.map(([, y]) => y));
+  const frontToothGeometry = finiteSlotPlate(slotClipping.union(
+    [[...frontToothOutline, frontToothOutline[0]]],
+    [[[frontShankInner, shankLow], [wheelRootRadius + 0.002, shankLow], [wheelRootRadius + 0.002, shankHigh],
+      [frontShankInner, shankHigh], [frontShankInner, shankLow]]],
+  // It sinks 0.01 into the wheel body so the shank's back face is not
+  // coplanar with the body's front face.
+  ), -toothDepth / 2 - 0.01, toothDepth / 2);
+  for (const tooth of frontTeeth) {
+    tooth.geometry = frontToothGeometry;
     tooth.material = frontSeriesMaterial;
-    for (const geometry of faceBarParts) {
-      const bar = new THREE.Mesh(geometry, frontSeriesMaterial);
-      bar.userData.role = 'long-front-series-tooth-face-bar';
-      tooth.add(bar);
-    }
   }
-  root.userData.geometry.frontSeriesFaceBar = {
-    inner: faceBarInner, outer: faceBarOuter, width: faceBarWidth, front: faceBarFront,
+  root.userData.geometry.frontSeriesShank = {
+    inner: frontShankInner, outer: wheelRootRadius, low: shankLow, high: shankHigh,
   };
   // Each tooth runs into the rim on a short root key (pass 86): the rows
   // stand beside the wheel body, so without it a tooth met the rim only along

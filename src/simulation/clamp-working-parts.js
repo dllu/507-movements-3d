@@ -103,6 +103,48 @@ function correctProny(root) {
     const lug=add(root,new THREE.BoxGeometry(.1,beamBottom-pinY+.01,.05),b.stopPost.children[0].material,'scale-ring-hook-lug-under-beam');
     lug.position.set(eye.position.x,(beamBottom+pinY)/2,eye.position.z-tube-.035);
   }
+  // Brown's 244: a hatched wooden block fills the space between the lever D
+  // and the top of pulley A (flat top under the lever, straight sides, its
+  // bottom the pulley's arc); the jointed strap's end bolts run straight up
+  // through the lever to their nuts; and only the stop blocks C and C' are
+  // drawn, with no standard. Everything here is stationary.
+  {
+    const leverBack=g.leverPlaneZ-g.leverDepth/2,blockTop=g.leverCenterY+g.leverThickness/2-.01;
+    const [first,last]=[b.strapPins[0],b.strapPins.at(-1)];
+    const endPins=[first,last].sort((p,q)=>p.position.x-q.position.x);
+    const strapTop=Math.max(...b.lowerStraps.map(strap=>{strap.geometry.computeBoundingBox();return strap.geometry.boundingBox.max.y;}));
+    const halfWidth=Math.min(...endPins.map(pin=>Math.abs(pin.position.x)))-.055;
+    const outline=clip.difference(poly([[-halfWidth,strapTop+.005],[halfWidth,strapTop+.005],[halfWidth,blockTop],[-halfWidth,blockTop]]),
+      poly(circle([0,0],g.drumRadius/Math.cos(Math.PI/512),512)));
+    const wood=new THREE.MeshStandardMaterial({color:0x8c5d31,roughness:.8,metalness:.02});
+    replace(b.upperShoe,plate(outline,-g.brakeDepth/2,leverBack-.005));
+    b.upperShoe.material=wood;b.upperShoe.userData.role='upper-wooden-brake-block-under-lever-D';
+    b.upperShoe.position.z=0;
+    // Its working arc is where the block's straight sides meet the pulley.
+    const side=Math.asin(Math.min(1,(strapTop+.005)/g.drumRadius));
+    b.upperShoe.userData.startAngle=side;b.upperShoe.userData.endAngle=Math.PI-side;
+    for(const part of [...b.shoeHangers,b.leftBandLink,b.rightBandLink])part.traverse(o=>{o.visible=false;});
+    // Straight eye bolts: an eye round each strap-end pin, a vertical shank
+    // through the lever, and the nut on top.
+    b.endBolts=b.clampScrews.map(({screw,nut},index)=>{
+      const pin=endPins[index],x=pin.position.x,y=pin.position.y,z=g.leverPlaneZ;
+      const top=nut.position.y,radius=.045,eyeOuter=.085;
+      screw.traverse(o=>{if(o.isMesh)o.visible=false;});
+      const bolt=add(b.brakeAssembly??root,new THREE.CylinderGeometry(radius,radius,top-(y+eyeOuter)+.01,32),nut.material,'straight-strap-end-eye-bolt');
+      bolt.position.set(x,(top+y+eyeOuter-.01)/2,z);
+      const eye=add(bolt.parent,boredLatheGeometry([{axial:-.045,radial:eyeOuter},{axial:.045,radial:eyeOuter}],.047,64).rotateX(Math.PI/2),nut.material,'strap-end-bolt-eye');
+      eye.position.set(x,y,z);
+      nut.position.x=x;
+      // The strap-end pin reaches forward through the bolt eye.
+      const pinMesh=pin.userData.rotor?.children[0]??pin.children[0];
+      const pinLow=pin.position.z-pinMesh.geometry.parameters.height/2,pinHigh=z+.07;
+      replace(pinMesh,new THREE.CylinderGeometry(.043,.043,pinHigh-pinLow,32));
+      pin.position.z=(pinLow+pinHigh)/2;
+      return {bolt,eye};
+    });
+    for(const part of [b.stopPost,...b.stopBridges])part.traverse(o=>{o.visible=false;});
+    root.traverse(o=>{if(/^stop-standard-(lower-length|foot)$/.test(o.userData.role??''))o.visible=false;});
+  }
   root.userData.minimumDisplayCycleSeconds=g.cyclePeriod;
   root.userData.workingClampReview={
     interfaces:'Unbeveled finite friction liners tangent to the drum, connected fixed stops, an open suspension eye and flush rotation index.',

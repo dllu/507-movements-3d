@@ -275,7 +275,7 @@ test('movement 407 update binds the dynamic ribbon, tip pencil, and both cord en
   const sourcePositions = Array.from(positions.array);
 
   assert.equal(positions.usage, THREE.DynamicDrawUsage);
-  assert.equal(positions.count, geometry.barSampleCount * 4);
+  assert.equal(positions.count, geometry.barSampleCount * 8 + 8); // flat-shaded lath faces
   assert.equal(blocks.workingEdge.geometry.getAttribute('position').count,
     geometry.barSampleCount);
   for (const fraction of [0, 0.13, 0.31, 0.5, 0.79, 1]) {

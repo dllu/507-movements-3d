@@ -1,3 +1,4 @@
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { makeBoredLinkRod } from './bored-link-rod.js';
 import { circle, plate, poly, polygonClipping as clip } from './finite-plate-geometry.js';
 import * as THREE from 'three';
@@ -600,7 +601,8 @@ function sideLeverRockshaftParallelMotion(movement) {
   const rockshaftBearings = [standardAndDiagonal];
 
   const beamShaftLow = leverPlaneZ - leverHalfDepth - 0.14;
-  const beamShaftHigh = leverPlaneZ + leverHalfDepth + 0.02;
+  // The shaft's cut end stands clearly proud of the boss (Brown hatches it).
+  const beamShaftHigh = leverPlaneZ + leverHalfDepth + 0.07;
   const beamShaft = fixedPart(cylinderAlongZ(0.37 * s,
     beamShaftHigh - beamShaftLow, darkMaterial, 34),
   'fixed-sectioned-side-lever-shaft-O');
@@ -626,17 +628,25 @@ function sideLeverRockshaftParallelMotion(movement) {
   const leverBores = [
     { x: 0, y: 0, radius: 0.37 * s + runningFit },
   ];
+  // Brown's side lever is double-armed: his straps run on left past the
+  // round boss on shaft O (he breaks them off at the plate edge). The whole
+  // lever is shown: the left arm mirrors the right one out to the hidden
+  // driving station, ending in a round end concentric with it.
+  const leftEnd = -hiddenDrivenBeamRadius / s;
   const leverOutline = clip.difference(
     clip.union(
       poly([
-        [-2.6, -1.35], [0, -1.45], [2.2, -1.00], [9.35, -0.45],
+        [leftEnd + 0.7, -0.45], [-2.2, -1.00], [0, -1.45], [2.2, -1.00], [9.35, -0.45],
         [10.05, -0.25], [10.05, 0.25], [9.35, 0.45], [2.2, 1.05],
-        [0, 1.60], [-2.6, 1.55],
+        [0, 1.60], [-2.2, 1.05], [leftEnd + 0.7, 0.45],
       ].map(([x, y]) => [x * s, y * s])),
       poly(circle([0, 0], 1.125 * s, 72)),
       poly(circle([sideLeverRightRadius, 0], 0.875 * s, 64)),
+      poly(circle([leftEnd * s, 0], 0.7 * s, 64)),
     ),
     poly([[1.55, -0.26], [8.70, -0.16], [8.70, 0.16], [1.55, 0.26]]
+      .map(([x, y]) => [x * s, y * s])),
+    poly([[-1.55, -0.26], [leftEnd + 1.35, -0.16], [leftEnd + 1.35, 0.16], [-1.55, 0.26]]
       .map(([x, y]) => [x * s, y * s])),
     ...leverBores.map((bore) => poly(circle([bore.x, bore.y], bore.radius, 64))),
   );
@@ -1592,7 +1602,10 @@ function sideLeverMarineParallelMotion(movement) {
   housingShape.lineTo(0.50 * s, 0.75 * s);
   housingShape.absarc(0, 0.75 * s, 0.375 * s, 0, Math.PI, false);
   housingShape.closePath();
-  const crossheadLow = vesselAxisZ - 0.12;
+  // Brown's capped block E stands in the link plane, only as deep as a
+  // link. The piston rod is behind the right link (on the vessel's axis),
+  // so a slim transverse arm, not a loaf, carries the block back to it.
+  const crossheadLow = 0.0;
   const crossheadHigh = 0.29;
   const housingGeometry = new THREE.ExtrudeGeometry(housingShape, {
     bevelEnabled: false,
@@ -1600,7 +1613,16 @@ function sideLeverMarineParallelMotion(movement) {
     depth: crossheadHigh - crossheadLow,
   });
   housingGeometry.translate(0, 0, crossheadLow);
-  const crossheadHousing = new THREE.Mesh(housingGeometry, outputMaterial);
+  const crossheadArmLow = vesselAxisZ - 0.5 * s;
+  const crossheadArm = new THREE.BoxGeometry(0.5 * s, 0.5 * s, crossheadLow + 0.02 - crossheadArmLow);
+  crossheadArm.translate(0, -0.35 * s, (crossheadLow + 0.02 + crossheadArmLow) / 2);
+  const crossheadHousing = new THREE.Mesh(
+    mergeGeometries([housingGeometry, crossheadArm.toNonIndexed()].map((geometry) => {
+      geometry.deleteAttribute('uv');
+      return geometry;
+    })),
+    outputMaterial,
+  );
   crossheadHousing.userData.role = 'source-crosshead-E-with-rounded-cap';
   const pistonRodTop = -0.55 * s;
   const pistonRodBottom = -6.45 * s;
@@ -2374,6 +2396,10 @@ function doubleParallelMotion(movement) {
   const leftPiston = new THREE.Group();
   leftPiston.userData.role = 'cut-off-rod-guided-by-point-P';
   leftPiston.userData.rotationDegreesOfFreedom = 0;
+  // P's straight line runs right through O's position (Brown breaks the rod
+  // off above O), and pin P itself comes down past O, so the rod and pin P
+  // must stay behind O's pin, lug and pedestal (p90: a rod in front made
+  // pin P cross them).
   const leftPistonPlaneZ = -0.10;
   // Brown cuts this rod off below P. It runs on straight and ends cleanly
   // below the plate's crop even at the top of P's stroke (1.2 below the

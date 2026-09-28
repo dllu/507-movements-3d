@@ -171,7 +171,7 @@ function makeHalfTubeSidePiece({
   // little below its face so the passing complement clears it.
   addEndPlug(side, side);
   addEndPlug(-side, side);
-  addEndPlug(side, -side, 0.09);
+  addEndPlug(side, -side, 0.02);
 
   const pivotPins = [];
   const pivotIndexes = [];

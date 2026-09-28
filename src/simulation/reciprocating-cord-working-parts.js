@@ -21,7 +21,7 @@ export function correctReciprocatingCordParts(root,id,update){
  if(id===359){
   // The analytic radius is the cord centreline; reserve its finite radial thickness.
   replace(b.spindle,new T.CylinderGeometry(g.spindleRadius-.037,g.spindleRadius-.037,4.03,48));
-  const sleeve=role(root,'loose-crossbar-guide-hole-around-spindle');replace(sleeve,ring(.24,g.spindleRadius-.033,.20));sleeve.rotation.set(0,0,0);
+  const sleeve=role(root,'loose-crossbar-guide-hole-around-spindle');replace(sleeve,ring(g.spindleRadius+.13,g.spindleRadius-.033,.20));sleeve.rotation.set(0,0,0);
   // The laid-rope branches already reuse their buffers as the curve changes.
   d.minimumDisplayCycleSeconds=8;
  }else if(id===374){

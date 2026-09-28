@@ -11,6 +11,7 @@ const catalog = JSON.parse(await readFile(
 const build = () => createMovementModel(
   catalog.movements.find(({ id }) => id === 73),
 );
+const cross2 = (a, b) => a.x * b.y - a.y * b.x;
 const zRange = (object) => {
   object.updateWorldMatrix(true, true);
   const box = new THREE.Box3().setFromObject(object);
@@ -263,10 +264,38 @@ test('movement 73 bends B and C as smooth cantilevers from their clamps', () => 
     );
   }
   assert.ok(leaf < 0.06, `no kink: largest turn per 1/96 of B and of C’s web is ${leaf}`);
-  assert.ok(tightest > 3 * geometry.strongHalfWidth,
-    `C’s hook bends with radius ${tightest}, well over its half-width, so the band never folds`);
-  // The largest departure (0.011) is where the straight web runs into the
-  // hook; a 0.02 rad (1.1°) corner anywhere in the hook would exceed it.
+  // C's end is one arc that lifts radially over a crest, so its tightest
+  // bend (about 2.8 half-widths at full lift) is short of the old J-hook's.
+  assert.ok(tightest > 2.5 * geometry.strongHalfWidth,
+    `C’s end bends with radius ${tightest}, well over its half-width, so the band never folds`);
+  // A 0.02 rad (1.1°) corner anywhere in C's end would exceed the largest
+  // departure where the long arc runs into the tip arc.
   assert.ok(kink < 0.02, `C’s hook is a smooth bend, not a corner (departure ${kink})`);
   assert.ok(clampSlip < 0.01, `each leaf leaves its clamp along its clamped direction (${clampSlip})`);
+});
+
+test('movement 73 draws C as one smooth leaf of two tangent arcs bending one way', () => {
+  const { geometry } = build().root.userData;
+  const points = geometry.relaxedStrongPoints.map((point) => new THREE.Vector2(point.x, point.y));
+  const webCount = Math.floor(geometry.webEndFraction * (points.length - 1));
+  // Every point lies on the long web arc up to the web's end and on the
+  // tighter tip arc after it.
+  points.forEach((point, index) => {
+    const onWeb = Math.abs(point.distanceTo(geometry.webArcCenter) - geometry.webArcRadius);
+    const onTip = Math.abs(point.distanceTo(geometry.tipArcCenter) - geometry.tipArcRadius);
+    if (index < webCount - 1) assert.ok(onWeb < 2e-3, `point ${index} is off the web arc by ${onWeb}`);
+    if (index > webCount + 1) assert.ok(onTip < 2e-3, `point ${index} is off the tip arc by ${onTip}`);
+  });
+  assert.ok(geometry.tipArcRadius > 4 * geometry.strongHalfWidth
+    && geometry.tipArcRadius < geometry.webArcRadius);
+  // No kink, J-hook or reversal: the leaf turns clockwise at every vertex.
+  for (let index = 1; index + 1 < points.length; index += 1) {
+    const before = points[index].clone().sub(points[index - 1]);
+    const after = points[index + 1].clone().sub(points[index]);
+    const turn = Math.atan2(cross2(before, after), before.dot(after));
+    assert.ok(turn < 1e-9 && turn > -0.08, `vertex ${index} turns ${turn}`);
+  }
+  // It rises from the block's corner and ends in C's seat.
+  assert.ok(points[0].distanceTo(new THREE.Vector2(geometry.strongSpringAnchor.x,
+    geometry.strongSpringAnchor.y)) < 1e-9);
 });

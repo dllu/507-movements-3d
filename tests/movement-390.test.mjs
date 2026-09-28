@@ -81,7 +81,7 @@ test('movement 390 is one rocking sector, exactly two distinct bands, two loose 
   assert.ok(blocks.openPawl.parent === blocks.openCarrier, 'blocks.openPawl parent');
   assert.ok(blocks.sectorArc.parent === blocks.rockingSector, 'blocks.sectorArc parent');
   assert.ok(blocks.topLever.parent === blocks.rockingSector, 'blocks.topLever parent');
-  assert.equal(blocks.anchorKnots.length, 4);
+  assert.equal(blocks.bandAnchorsLocal.length, 4, 'two fastened ends per band');
   assert.equal(blocks.openBandMarkers.length, 6);
   assert.equal(blocks.crossedBandMarkers.length, 6);
   for (const marker of [...blocks.openBandMarkers, ...blocks.crossedBandMarkers]) {
@@ -176,19 +176,22 @@ test('movement 390 keeps both compensated anchored bands exactly constant length
     near(
       state.openCurve.userData.firstWrapAngle
         + state.openCurve.userData.secondWrapAngle,
-      2 * geometry.upperBaseWrap,
-      3e-16,
+      2 * geometry.openUpperBaseWrap,
+      1e-15,
       'open compensated upper wraps',
     );
     near(
       state.crossedCurve.userData.firstWrapAngle
         + state.crossedCurve.userData.secondWrapAngle,
-      2 * geometry.upperBaseWrap,
-      3e-16,
+      2 * geometry.crossedUpperBaseWrap,
+      1e-15,
       'crossed compensated upper wraps',
     );
-    assert.ok(state.openCurve.userData.firstWrapAngle > 0);
-    assert.ok(state.openCurve.userData.secondWrapAngle > 0);
+    // Both ends of both bands always keep a real wrap on A's rim.
+    for (const curve of [state.openCurve, state.crossedCurve]) {
+      assert.ok(curve.userData.firstWrapAngle > 0.13);
+      assert.ok(curve.userData.secondWrapAngle > 0.13);
+    }
     for (const dot of [
       ...state.openCurve.userData.joinTangentDots,
       ...state.crossedCurve.userData.joinTangentDots,
@@ -197,31 +200,81 @@ test('movement 390 keeps both compensated anchored bands exactly constant length
   disposeModel(model.root);
 });
 
-test('movement 390 crossed spans have opposite axial lifts while open spans remain planar', () => {
+test('movement 390 bands are taut: straight spans, wraps on the groove radii, crossed spans pass at D in parallel planes', () => {
   const model = createMovementModel(catalog.movements[389]);
   const data = model.root.userData;
   const { geometry, stateAtTime, timeline } = data;
+  const sector = new THREE.Vector3(geometry.sectorCenter.x, geometry.sectorCenter.y, 0);
+  const radial = (point, center) => Math.hypot(point.x - center.x, point.y - center.y);
 
-  for (const phase of [0, 0.13, 0.25, 0.49, 0.75, 0.93]) {
-    const state = stateAtTime(timeline.cycleDuration * phase);
-    const openFirstSpan = state.openCurve.curves[1];
-    const openSecondSpan = state.openCurve.curves[3];
-    const crossedFirstSpan = state.crossedCurve.curves[1];
-    const crossedSecondSpan = state.crossedCurve.curves[3];
-    near(openFirstSpan.getPoint(0.5).z, geometry.openPlaneZ, 0,
-      'open first span remains planar');
-    near(openSecondSpan.getPoint(0.5).z, geometry.openPlaneZ, 0,
-      'open second span remains planar');
-    assert.ok(crossedFirstSpan.getPoint(0.5).z
-      > geometry.crossedPlaneZ);
-    assert.ok(crossedSecondSpan.getPoint(0.5).z
-      < geometry.crossedPlaneZ);
-    near(
-      crossedFirstSpan.getPoint(0.5).z - geometry.crossedPlaneZ,
-      geometry.crossedPlaneZ - crossedSecondSpan.getPoint(0.5).z,
-      3e-16,
-      'opposed equal crossover lifts',
-    );
+  for (let sample = 0; sample <= 64; sample += 1) {
+    const state = stateAtTime(timeline.cycleDuration * sample / 64);
+    for (const [curve, shift, plane] of [
+      [state.openCurve, 0, geometry.openPlaneZ],
+      [state.crossedCurve, geometry.crossShift, geometry.crossedPlaneZ],
+    ]) {
+      const [upperRight, spanRight, lower, spanLeft, upperLeft] = curve.curves;
+      // Taut: both free spans are straight lines, in one plane each.
+      for (const span of [spanRight, spanLeft]) {
+        assert.ok(span.isLineCurve3, 'free span is a straight line');
+        near(span.v1.z, span.v2.z, 0, 'span lies in one plane');
+      }
+      near(spanRight.v1.z, plane - shift, 1e-15, 'right-hand span plane');
+      near(spanLeft.v1.z, plane + shift, 1e-15, 'left-hand span plane');
+      for (let t = 0; t <= 1; t += 1 / 16) {
+        near(radial(upperRight.getPoint(t), sector), geometry.sectorRadius, 1e-14, 'right wrap on A groove radius');
+        near(radial(upperLeft.getPoint(t), sector), geometry.sectorRadius, 1e-14, 'left wrap on A groove radius');
+        near(radial(lower.getPoint(t), geometry.lowerCenter), geometry.loosePulleyRadius, 1e-14, 'lower wrap on pulley groove radius');
+      }
+    }
+    // The crossed spans cross at D, above the pulley, in planes 2 * shift apart.
+    const a = state.crossedCurve.curves[1], b = state.crossedCurve.curves[3];
+    const d1 = a.v2.clone().sub(a.v1), d2 = b.v2.clone().sub(b.v1);
+    const denominator = d1.x * d2.y - d1.y * d2.x;
+    const t = ((b.v1.x - a.v1.x) * d2.y - (b.v1.y - a.v1.y) * d2.x) / denominator;
+    const crossing = a.getPoint(t);
+    assert.ok(t > 0 && t < 1 && crossing.y > geometry.loosePulleyRadius, 'crossing D above the pulley');
+    assert.ok(2 * geometry.crossShift - geometry.bandWidth >= 0.02 - 1e-12, 'crossed spans clear at D');
+  }
+  disposeModel(model.root);
+});
+
+test('movement 390 band ends are fastened where A meets its bar, and every band lies in its grooves', () => {
+  const model = createMovementModel(catalog.movements[389]);
+  const data = model.root.userData;
+  const { blocks, geometry, stateAtTime, timeline } = data;
+  const section = blocks.sectorArc.userData.section;
+  const floor = section[3][0], outer = section[2][0];
+  const grooves = [[section[2][1], section[4][1]], [section[6][1], section[8][1]]];
+  const halfWidth = geometry.bandWidth / 2, halfThickness = geometry.bandThickness / 2;
+  for (let sample = 0; sample <= 32; sample += 1) {
+    const time = timeline.cycleDuration * sample / 32;
+    model.update(time);
+    model.root.updateMatrixWorld(true);
+    const state = stateAtTime(time);
+    for (const [index, curve] of [state.openCurve, state.crossedCurve].entries()) {
+      for (const [end, parameter] of [[0, 0], [1, 1]]) {
+        const anchor = blocks.bandAnchorsLocal.find((a) => a.bandName.startsWith(index ? 'crossed' : 'open') && a.anchorNumber === end);
+        const world = blocks.rockingSector.localToWorld(anchor.local.clone());
+        vectorNear(curve.getPoint(parameter), world, 2e-15, 'band end turns with A');
+        // The end stands just up inside the bar's underside (y -0.08 in A's frame).
+        const lift = Math.abs(anchor.local.y);
+        assert.ok(lift < 0.08 && lift > 0.065, `end ${lift} under the bar`);
+      }
+      // Band section inside its groove on A: floor below, walls either side.
+      for (const wrap of [curve.curves[0], curve.curves[4]]) {
+        const z = wrap.getPoint(0.5).z;
+        const [low, high] = grooves[index];
+        assert.ok(z - halfWidth > low + 0.009 && z + halfWidth < high - 0.009, 'band between groove walls');
+        assert.ok(geometry.sectorRadius - halfThickness > floor + 0.004, 'band clear of groove floor');
+        assert.ok(geometry.sectorRadius + halfThickness < outer, 'band sunk below the rim');
+      }
+      for (const t of [0, 0.5, 1]) {
+        const z = curve.curves[2].getPoint(t).z - (index ? geometry.crossedPlaneZ : geometry.openPlaneZ);
+        const pulley = blocks.openCarrier.userData.pulley.userData;
+        assert.ok(Math.abs(z) + halfWidth <= pulley.grooveHalfWidth - 0.01 + 1e-12, 'band inside the pulley groove');
+      }
+    }
   }
   disposeModel(model.root);
 });
@@ -259,14 +312,14 @@ test('movement 390 open and crossed loose pulleys obey exact equal-magnitude opp
   disposeModel(model.root);
 });
 
-test('movement 390 takes up finite pawl overtravel and rectifies one oscillation into one positive flywheel turn', () => {
+test('movement 390 takes up finite pawl overtravel and rectifies one oscillation into a positive half turn', () => {
   const model = createMovementModel(catalog.movements[389]);
   const data = model.root.userData;
   const { geometry, stateAtTime, timeline, transmission } = data;
   assert.match(transmission.outputLaw, /abs/);
   assert.match(transmission.pawlLaw, /positive angular speed/);
-  near(geometry.outputAdvancePerCycle, Math.PI * 2, 0,
-    'one-turn output closure');
+  near(geometry.outputAdvancePerCycle, Math.PI, 0,
+    'half-turn output closure (two quarter-turn strokes)');
 
   let previousAngle = -Infinity;
   for (let sample = 0; sample < 20000; sample += 1) {
@@ -346,26 +399,13 @@ test('movement 390 renderer binds both belt curves and markers, both carriers, b
       state.crossedCurve.getLength(), 0,
       'rendered crossed curve length');
 
-    const openAnchorWorld = blocks.anchorKnots[0].getWorldPosition(
-      new THREE.Vector3(),
-    );
-    const openOtherWorld = blocks.anchorKnots[1].getWorldPosition(
-      new THREE.Vector3(),
-    );
-    const crossedAnchorWorld = blocks.anchorKnots[2].getWorldPosition(
-      new THREE.Vector3(),
-    );
-    const crossedOtherWorld = blocks.anchorKnots[3].getWorldPosition(
-      new THREE.Vector3(),
-    );
-    vectorNear(state.openCurve.getPointAt(0), openAnchorWorld, 8e-16,
-      'open band first fixed end');
-    vectorNear(state.openCurve.getPointAt(1), openOtherWorld, 8e-16,
-      'open band second fixed end');
-    vectorNear(state.crossedCurve.getPointAt(0), crossedAnchorWorld,
-      8e-16, 'crossed band first fixed end');
-    vectorNear(state.crossedCurve.getPointAt(1), crossedOtherWorld,
-      8e-16, 'crossed band second fixed end');
+    for (const [curve, band] of [[state.openCurve, 'open'], [state.crossedCurve, 'crossed']]) {
+      for (const [end, parameter] of [[0, 0], [1, 1]]) {
+        const anchor = blocks.bandAnchorsLocal.find((a) => a.bandName.startsWith(band) && a.anchorNumber === end);
+        vectorNear(curve.getPointAt(parameter), blocks.rockingSector.localToWorld(anchor.local.clone()), 2e-15,
+          `${band} band fixed end ${end}`);
+      }
+    }
 
     for (let index = 0; index < blocks.openBandMarkers.length;
       index += 1) {
@@ -420,5 +460,48 @@ test('movement 390 closes one full oscillation and positive output turn before m
   assert.equal(model507.root.userData.fidelity, 'authored');
   assert.notEqual(model507.root.userData.archetype, movement.archetype);
   disposeModel(model507.root);
+  disposeModel(model.root);
+});
+
+test('movement 390 bands pass through no part: only the fastened ends stand up into the lever bar', async () => {
+  const { solidSurface } = await import('./helpers/solid-surface.mjs');
+  const model = createMovementModel(catalog.movements[389]);
+  const { blocks, timeline } = model.root.userData;
+  const targets = [];
+  const add = (mesh, minimum) => targets.push({ mesh, minimum, field: solidSurface(mesh.geometry), gap: Infinity });
+  add(blocks.sectorArc, 0.003);
+  add(blocks.topLever, -0.009);
+  add(blocks.pivotPin, 0.003);
+  add(blocks.flywheelRim, 0.003);
+  for (const spoke of blocks.flywheelSpokes) add(spoke, 0.003);
+  add(blocks.shaft, 0.003);
+  add(blocks.openRatchet, 0.003);
+  add(blocks.crossedRatchet, 0.003);
+  for (const carrier of [blocks.openCarrier, blocks.crossedCarrier]) {
+    add(carrier.userData.pulley, 0.003);
+    add(carrier.userData.hub, 0.003);
+    for (const body of carrier.userData.pawlBodies) add(body, 0.003);
+    for (const pin of carrier.userData.pawlPins) add(pin, 0.003);
+  }
+  for (let sample = 0; sample < 24; sample += 1) {
+    model.update(timeline.cycleDuration * sample / 24);
+    model.root.updateMatrixWorld(true);
+    for (const band of [blocks.openBand, blocks.crossedBand]) {
+      const mesh = band.userData.mesh, position = mesh.geometry.attributes.position;
+      const points = [];
+      for (let i = 0; i < position.count; i += 1) points.push(new THREE.Vector3().fromBufferAttribute(position, i).applyMatrix4(mesh.matrixWorld));
+      for (const target of targets) {
+        const inverse = target.mesh.matrixWorld.clone().invert();
+        for (const point of points) {
+          const local = point.clone().applyMatrix4(inverse);
+          if (target.field.box.distanceToPoint(local) > target.gap) continue;
+          target.gap = Math.min(target.gap, target.field.signedDistance(local));
+        }
+      }
+    }
+  }
+  for (const target of targets) {
+    assert.ok(target.gap > target.minimum, `${target.mesh.userData.role}: band gap ${target.gap}`);
+  }
   disposeModel(model.root);
 });

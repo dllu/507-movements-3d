@@ -411,33 +411,41 @@ test('movement 468 has finite render bounds and movement 507 remains the next au
     assert.ok(bounds.max.x > bounds.min.x);
     assert.ok(bounds.max.y > bounds.min.y);
     assert.ok(bounds.max.z > bounds.min.z);
-    // Brown draws two figures of one joint (elevation above, plan below).
-    // The analytic crossing stays hidden; the visible figures fill the fit.
+    // Brown draws two figures (elevation and plan) of one joint; it is ONE
+    // animated model. The analytic crossing stays hidden.
     const blocks = model468.root.userData.blocks;
     for (const object of blocks.crossing) assert.equal(object.visible, false);
-    const { elevation, plan } = blocks.plateFigures;
+    const { elevation } = blocks.plateFigures;
+    assert.deepEqual(Object.keys(blocks.plateFigures), ['elevation']);
+    model468.root.traverse((object) => {
+      assert.ok(!/^plate-plan-/.test(object.userData.role ?? ''), `no plan copy: ${object.userData.role}`);
+    });
     const visible = new THREE.Box3();
-    for (const figure of [elevation, plan]) {
-      figure.traverseVisible((object) => {
-        if (!object.isMesh) return;
-        object.geometry.computeBoundingBox();
-        visible.union(object.geometry.boundingBox.clone().applyMatrix4(object.matrixWorld));
-      });
-    }
-    assert.ok(fitBounds.clone().expandByScalar(0.01).containsBox(visible), `figures fit at ${phase}: ${JSON.stringify([visible.min, visible.max])}`);
-    const elevationBox = new THREE.Box3().setFromObject(elevation);
-    const planBox = new THREE.Box3().setFromObject(plan);
-    assert.ok(elevationBox.min.y > planBox.max.y, 'elevation drawn above plan');
-    // Both figures reproduce the front main's middle-joint deflection.
+    elevation.traverseVisible((object) => {
+      if (!object.isMesh) return;
+      object.geometry.computeBoundingBox();
+      visible.union(object.geometry.boundingBox.clone().applyMatrix4(object.matrixWorld));
+    });
+    assert.ok(fitBounds.clone().expandByScalar(0.01).containsBox(visible), `figure fits at ${phase}: ${JSON.stringify([visible.min, visible.max])}`);
     const time = phase * model468.root.userData.geometry.cycleDuration;
     const deflection = model468.root.userData.plateFigures.figureDeflectionAtTime(time);
     near(elevation.userData.upstream.rotation.z, -deflection, 1e-12, 'elevation deflection');
-    near(plan.userData.upstream.rotation.z, -deflection, 1e-12, 'plan deflection');
     assert.ok(Math.abs(deflection) <= model468.root.userData.geometry.socketAngularCapacity);
   }
-  // The default pose is Brown's flexed elevation.
+  // The default pose is Brown's flexed elevation; the joint then flexes
+  // through straight into a reverse bend, and the log ends never meet.
   model468.update(0);
-  assert.ok(model468.root.userData.plateFigures.figureDeflectionAtTime(0) > THREE.MathUtils.degToRad(20));
+  const figures = model468.root.userData.plateFigures;
+  assert.ok(figures.figureDeflectionAtTime(0) > THREE.MathUtils.degToRad(20));
+  const period = model468.root.userData.geometry.cycleDuration;
+  near(figures.figureDeflectionAtTime(period / 2), THREE.MathUtils.degToRad(-14), 1e-12, 'reverse bend');
+  const f = figures.geometry;
+  for (let i = 0; i <= 64; i += 1) {
+    const angle = figures.figureDeflectionAtTime(period * i / 64);
+    // Lower inner corner of the upstream log end, turned about the pin.
+    const x = -f.logGap * Math.cos(angle) - (f.logCenterY - f.logHalfWidth) * Math.sin(-angle);
+    assert.ok(x < f.logGap - 0.015, `log ends clear at ${i}: ${x}`);
+  }
   assert.equal(movement468.fidelity, 'authored');
   assert.equal(movement507.id, 507);
   assert.equal(movement507.fidelity, 'authored');

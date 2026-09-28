@@ -1,5 +1,6 @@
 import {correctVariableFaceGear} from './variable-face-gear-parts.js';
 import * as THREE from 'three';
+import { plate, circle, poly as crossPoly, polygonClipping } from './finite-plate-geometry.js';
 import {
   PALETTE,
   makeGear,
@@ -244,33 +245,33 @@ function eccentricCrownWheelAndSlidingPinion(movement) {
   crownHub.userData.role = 'eccentric-crown-wheel-arbor-hub';
   crownRotor.add(crownHub);
 
-  // Brown draws the wheel as an open toothed rim with one broad cross-bar
-  // through the arbor boss, running from rim to rim along the line through
-  // the wheel's geometric centre. No spokes or solid web.
+  // Brown draws the wheel as an open toothed rim with a four-armed cross:
+  // two straight bars crossing at right angles at the arbor boss, which sits
+  // off the wheel's geometric centre. One flat extrusion, arms running into
+  // the rim, the boss a circle concentric with the arbor.
   const spokeAngles = [];
   const crownSpokes = [];
   const webDepth = 0.17;
-  const barHalfWidth = 0.46;
+  const armHalfWidth = 0.3;
   const barRadius = crownInnerRadius + 0.06;
-  const barEndAngle = Math.asin(barHalfWidth / barRadius);
-  const webShape = new THREE.Shape();
-  webShape.moveTo(eccentricity + barRadius * Math.cos(-barEndAngle), barRadius * Math.sin(-barEndAngle));
-  webShape.absarc(eccentricity, 0, barRadius, -barEndAngle, barEndAngle, false);
-  webShape.lineTo(eccentricity - barRadius * Math.cos(barEndAngle), barHalfWidth);
-  webShape.absarc(eccentricity, 0, barRadius, Math.PI - barEndAngle, Math.PI + barEndAngle, false);
-  webShape.closePath();
-  const webBore = new THREE.Path();
-  webBore.absarc(0, 0, 0.345, 0, FULL_TURN, true);
-  webShape.holes.push(webBore);
-  const webGeometry = new THREE.ExtrudeGeometry(webShape, {
-    bevelEnabled: false,
-    curveSegments: 96,
-    depth: webDepth,
-    steps: 1,
+  const armReach = barRadius + eccentricity + 0.5;
+  const arms = [Math.PI / 4, 3 * Math.PI / 4].map((angle) => {
+    const c = Math.cos(angle), s = Math.sin(angle);
+    return [[[-armReach * c - armHalfWidth * -s, -armReach * s - armHalfWidth * c],
+      [armReach * c - armHalfWidth * -s, armReach * s - armHalfWidth * c],
+      [armReach * c + armHalfWidth * -s, armReach * s + armHalfWidth * c],
+      [-armReach * c + armHalfWidth * -s, -armReach * s + armHalfWidth * c]]];
   });
-  webGeometry.translate(0, 0, spokeZ - webDepth / 2);
+  const crossOutline = polygonClipping.difference(
+    polygonClipping.union(
+      polygonClipping.intersection(polygonClipping.union(...arms), crossPoly(circle([eccentricity, 0], barRadius, 256))),
+      crossPoly(circle([0, 0], 0.62, 96)),
+    ),
+    crossPoly(circle([0, 0], 0.345, 96)),
+  );
+  const webGeometry = plate(crossOutline, spokeZ - webDepth / 2, spokeZ + webDepth / 2);
   const crownWeb = new THREE.Mesh(webGeometry, driverMaterial);
-  crownWeb.userData.role = 'crown-wheel-cross-bar-through-arbor-boss';
+  crownWeb.userData.role = 'crown-wheel-four-arm-cross-through-arbor-boss';
   crownRotor.add(crownWeb);
 
   // Brown's vertical arbor is long: it runs well down below the wheel to a

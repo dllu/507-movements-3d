@@ -448,11 +448,25 @@ function springBiasedOverrunningPulley(movement) {
     pivotBosses.push(boss);
     carrierRotor.add(boss);
 
-    const spring = makeDynamicCable({
-      color: PALETTE.ink,
-      maxSegments: 8,
-      radius: 0.022,
-    });
+    // Brown draws each spring as a small flat block beside the arm's root.
+    // Here it is a short flat leaf standing on a seat on the carrier's lobe,
+    // its free end bearing on the arm's clockwise edge; it swings about its
+    // seat as the arm retracts (a stiff cantilever), always in contact.
+    const spring = new THREE.Group();
+    spring.position.set(0, 0, 0);
+    const seat = new THREE.Mesh(
+      new THREE.BoxGeometry(0.1, 0.1, 0.16),
+      darkMaterial,
+    );
+    seat.userData.role = 'block-spring-seat-on-carrier-lobe';
+    const leaf = new THREE.Mesh(
+      new THREE.BoxGeometry(1, 0.036, 0.12),
+      darkMaterial,
+    );
+    leaf.userData.role = 'flat-block-spring-leaf-bearing-on-arm';
+    spring.add(seat, leaf);
+    spring.userData.seat = seat;
+    spring.userData.leaf = leaf;
     spring.userData.role = 'spring-holding-eccentric-arm-toward-rim';
     springs.push(spring);
     carrierRotor.add(spring);
@@ -751,20 +765,73 @@ function springBiasedOverrunningPulley(movement) {
     outputAdvancePerDemonstrationCycle: FULL_TURN,
   };
 
+  // The arm's clockwise edge near its root, in arm coordinates.
+  const armEdge = [];
+  for (let index = 0; index <= 48; index += 1) {
+    const progress = index / 48;
+    const center = cubicPoint(armControlPoints, progress);
+    const tangent = cubicTangent(armControlPoints, progress);
+    const halfWidth = THREE.MathUtils.lerp(
+      armStartHalfWidth, armEndHalfWidth, smootherStep(progress),
+    );
+    armEdge.push(center.addScaledVector(new THREE.Vector2(-tangent.y, tangent.x), -halfWidth));
+  }
+  // Signed distance of an arm-frame point from the edge (positive outside).
+  const edgeOffset = (point) => {
+    let best = Infinity;
+    let sign = 1;
+    for (let index = 0; index < armEdge.length - 1; index += 1) {
+      const a = armEdge[index];
+      const b = armEdge[index + 1];
+      const ab = b.clone().sub(a);
+      const t = THREE.MathUtils.clamp(point.clone().sub(a).dot(ab) / ab.lengthSq(), 0, 1);
+      const foot = a.clone().addScaledVector(ab, t);
+      const distance = point.distanceTo(foot);
+      if (distance < best) {
+        best = distance;
+        sign = Math.sign(ab.x * (point.y - a.y) - ab.y * (point.x - a.x)) || 1;
+      }
+    }
+    return -sign * best;
+  };
+  const springSeat = new THREE.Vector2(-0.12, -0.26);
+  const springLeafLength = 0.27;
+  const leafHalfThickness = 0.018;
+  const leafAngleAt = (armPivotAngle) => {
+    // Bisect the leaf angle so its outer face touches the arm edge.
+    const gap = (angle) => {
+      const tip = springSeat.clone().add(new THREE.Vector2(Math.cos(angle), Math.sin(angle)).multiplyScalar(springLeafLength));
+      return edgeOffset(rotate2(tip, -armPivotAngle)) - leafHalfThickness;
+    };
+    let low = -0.2;
+    let high = 1.2;
+    for (let step = 0; step < 40; step += 1) {
+      const middle = (low + high) / 2;
+      if (gap(middle) > 0) low = middle; else high = middle;
+    }
+    return (low + high) / 2;
+  };
+  const seatAngle = leafAngleAt(0);
   const updateSprings = (armPivotAngle) => {
+    const leafAngle = leafAngleAt(armPivotAngle);
     springDefinitions.forEach((definition) => {
-      const anchor = definition.pivot.clone().add(
-        rotate2(definition.anchorOffset, definition.baseAngle),
+      const seat = definition.pivot.clone().add(rotate2(springSeat, definition.baseAngle));
+      const { seat: seatMesh, leaf } = definition.spring.userData;
+      seatMesh.position.set(seat.x, seat.y, armPlaneZ - 0.02);
+      seatMesh.rotation.z = definition.baseAngle + seatAngle;
+      const direction = new THREE.Vector2(
+        Math.cos(definition.baseAngle + leafAngle),
+        Math.sin(definition.baseAngle + leafAngle),
       );
-      const attachment = definition.pivot.clone().add(
-        rotate2(
-          definition.attachmentOffset,
-          definition.baseAngle + armPivotAngle,
-        ),
+      leaf.scale.x = springLeafLength;
+      leaf.position.set(
+        seat.x + direction.x * springLeafLength / 2,
+        seat.y + direction.y * springLeafLength / 2,
+        // Clear of the carrier's bevelled face (0.255), within the arm's depth.
+        armPlaneZ + 0.02,
       );
-      definition.spring.userData.setPoints(
-        zigzagSpringPoints(anchor, attachment, springPlaneZ),
-      );
+      leaf.rotation.z = definition.baseAngle + leafAngle;
+      definition.spring.userData.leafAngle = leafAngle;
     });
   };
 

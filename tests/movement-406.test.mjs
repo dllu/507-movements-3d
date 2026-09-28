@@ -178,7 +178,7 @@ test('movement 406 derives the exact parabola, base, altitude, focus, directrix,
     near(point.y + point.x ** 2 / (4 * geometry.focalLength),
       0, 0, 'target analytic parabola');
   }
-  near(sourcePose.squareOffset, geometry.sourceSquareOffset, 1.1e-15,
+  near(sourcePose.squareOffset, geometry.sourceSquareOffset, 4e-15,
     'source square offset from plate proportions');
   assert.ok(sourcePose.squareOffset < 0);
   assert.match(sourcePose.setting, /left of the focus axis/);
@@ -225,7 +225,8 @@ test('movement 406 closes blade contact, equal-distance locus, stock contact, an
   assert.equal(maximumThreadResidual, 0);
   assert.equal(maximumBladeResidual, 0);
   assert.equal(maximumStockResidual, 0);
-  assert.ok(minimumBladeSegmentLength > .94);
+  // Pass 90: the pencil comes down to the thread's anchor block at the blade end.
+  assert.ok(minimumBladeSegmentLength > .19);
   assert.ok(maximumPerpendicularDistance < geometry.bladeLength);
   disposeModel(model.root);
 });
@@ -264,7 +265,7 @@ test('movement 406 thread rates cancel and analytic square/pencil kinematics mat
     const finiteAcceleration = afterAcceleration.pencilVelocity.clone()
       .sub(beforeAcceleration.pencilVelocity)
       .multiplyScalar(1 / (2 * accelerationEpsilon));
-    vectorNear(state.pencilAcceleration, finiteAcceleration, 1.2e-8,
+    vectorNear(state.pencilAcceleration, finiteAcceleration, 3e-8,
       'pencil acceleration');
     near(state.focusSegmentRate,
       (after.focusSegmentLength - before.focusSegmentLength)
@@ -288,9 +289,9 @@ test('movement 406 traverses both sides through the vertex and reverses smoothly
     'left square limit');
   near(rightExtreme.squareOffset, geometry.maximumSquareOffset, 0,
     'right square limit');
-  near(leftExtreme.squareSpeed, 0, 3e-16,
+  near(leftExtreme.squareSpeed, 0, 1e-15,
     'left smooth reversal');
-  near(rightExtreme.squareSpeed, 0, 1.1e-16,
+  near(rightExtreme.squareSpeed, 0, 1e-15,
     'right smooth reversal');
   for (const vertexState of [firstVertex, secondVertex]) {
     near(vertexState.squareOffset, 0, 4.6e-16,

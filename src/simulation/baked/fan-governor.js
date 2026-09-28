@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import {loadBakedBundle,sampleBakedMotion} from './playback.js';
 import {disposeObject3D} from '../dispose-model.js';
+import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
+import {turned} from '../finite-plate-geometry.js';
 import {fanGovernorTrack as track} from '../mujoco-fan-governor/source.js';
 
 // Brown draws a straight-sided trough with a concave dish inside. The baked
@@ -51,6 +53,22 @@ export function makeFanGovernorModel(bundle){
   const material=driver[0]?.material;
   for(const mesh of driver){mesh.geometry.dispose();blocks.shaft.remove(mesh);}
   if(material)for(const [name,geometry]of Object.entries(tub)){if(!geometry.isBufferGeometry)continue;const mesh=new THREE.Mesh(geometry,material);mesh.name='tub-'+name;mesh.castShadow=mesh.receiveShadow=true;blocks.shaft.add(mesh);}}
+ // Brown caps the bulb's neck above the collar with a stepped finial and a
+ // small knob. It is turned on the neck (one solid with the bulb carrier),
+ // closing the bore; the spindle, which only has to stay inside the
+ // carrier's bore, now ends below the neck top at the lowest lift instead
+ // of standing bare above the collar.
+ {const carrier=blocks.crosshead.children.find(o=>o.isMesh),spindle=blocks.shaft.children.find(o=>o.isMesh&&!o.name);
+  if(carrier&&spindle){
+   const neckTop=3.1,spindleTop=2.75,p=spindle.geometry.attributes.position;
+   for(let i=0;i<p.count;i++)if(p.getY(i)>spindleTop)p.setY(i,spindleTop);
+   p.needsUpdate=true;spindle.geometry.computeBoundingBox();spindle.geometry.computeBoundingSphere();
+   const steps=turned([[neckTop,0],[neckTop,.25],[neckTop+.07,.25],[neckTop+.07,.2],[neckTop+.13,.2],[neckTop+.13,.15],[neckTop+.19,.15],[neckTop+.19,.055],[neckTop+.31,.055],[neckTop+.31,0]],192).rotateX(-Math.PI/2);
+   steps.deleteAttribute('color');
+   const knob=new THREE.SphereGeometry(.1,48,24).translate(0,neckTop+.38,0).toNonIndexed();knob.deleteAttribute('uv');
+   const finial=new THREE.Mesh(mergeGeometries([steps,knob]),carrier.material);steps.dispose();knob.dispose();
+   finial.name='bulb-neck-finial';finial.castShadow=finial.receiveShadow=true;blocks.crosshead.add(finial);
+  }}
  // Brown breaks the regulating lever off at its fulcrum and draws no stand
  // for it (p60 support policy): the baked fixed body's small rear bracket
  // at the lever's fulcrum is dropped, leaving only the fulcrum pin through
@@ -77,6 +95,9 @@ export function makeFanGovernorModel(bundle){
  Object.assign(root.userData,{blocks,mechanism:'air-drag-fan-inclined-plane-governor',simulationBackend:'baked-mujoco',fidelity:'authored',reconstructionStatus:'candidate',supportsRestart:true,hideGround:true,cameraFov:12,cameraFitBounds:bounds,sampledMotionBounds:bundle.bounds,
   animationTiming:{authoredCyclePeriod:bundle.period,displayCycleDuration:bundle.period,playbackTimeScale:1},displayTimeOffset,
   reconstructionNote:'Air drag retards the heavy fan carrier, causing its rollers to climb the rotating ramps. Motion is baked from passive contact dynamics. Ramp curvature, depths, drag and uniform density are reconstructed. The collar and slotted regulating lever follow the lift without a valve load.'});
+ // The finial rides above the recorded bodies' bounds: frame it too.
+ {const finial=blocks.crosshead.getObjectByName('bulb-neck-finial');
+  if(finial)for(let i=0;i<=128;i++){update(bundle.period*i/128);bounds.union(new THREE.Box3().setFromObject(finial,true));}}
  update(0);return {root,update,reset:()=>update(0),focus:bounds.getCenter(new THREE.Vector3()),cameraDirection:new THREE.Vector3(0,0,1),dispose:()=>{if(!disposed){disposed=true;disposeObject3D(root);}}};
 }
 export async function makeBakedFanGovernor(){return makeFanGovernorModel(await loadBakedBundle(new URL('./assets/147.json.gz',import.meta.url)));}

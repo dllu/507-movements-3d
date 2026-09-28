@@ -15,7 +15,7 @@ export const conicalStudParameters = Object.freeze({
   // stud body can sit close to its pitch cone and the round heads, faced
   // parallel to the cone, stand only about 0.05 proud while still entering
   // the tooth spaces.
-  halfHeight: 1.1, teeth: 24, studCount: 20, studRadius: 0.055,
+  halfHeight: 1.1, teeth: 17, studCount: 14, studRadius: 0.07,
   studFront: 0.025, studBack: 0.20, toothAddendumFactor: 0.15,
 });
 

@@ -77,9 +77,12 @@ test('movement 429 has two distinct conjugate toothed elliptical pistons on fixe
   assert.equal(blocks.rightRotor.parent, model.root);
   assert.equal(blocks.leftShaft.parent, model.root);
   assert.equal(blocks.rightShaft.parent, model.root);
-  // Brown's packing strips are painted marks; pass 71 builds none.
-  assert.equal(blocks.leftPackingStrips.length, 0);
-  assert.equal(blocks.rightPackingStrips.length, 0);
+  // Pass 90: Brown's packing strips are inset flush in each piston tip.
+  assert.equal(blocks.leftPackingStrips.length, 2);
+  assert.equal(blocks.rightPackingStrips.length, 2);
+  for (const strip of [...blocks.leftPackingStrips, ...blocks.rightPackingStrips]) {
+    assert.ok([blocks.leftRotor, blocks.rightRotor].includes(strip.parent));
+  }
 
   const roles = [];
   const belts = [];
@@ -89,8 +92,8 @@ test('movement 429 has two distinct conjugate toothed elliptical pistons on fixe
   });
   assert.deepEqual(belts, []);
   for (const role of [
-    'left-exact-official-profile-elliptical-piston',
-    'right-swept-conjugate-profile-elliptical-piston',
+    'left-rounded-conjugate-elliptical-piston',
+    'right-rounded-conjugate-elliptical-piston',
     'fixed-double-lobed-cylinder-around-both-elliptical-pistons',
     'fixed-solid-back-cover-of-double-lobed-casing',
     'live-steam-in-top-induction-channel',

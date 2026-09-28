@@ -6,7 +6,7 @@
     },
     {
       "file": "src/simulation/authored-entwistle-gearing.js",
-      "sha256": "5a1b5b5a91c2ca146a4e72c5da32993fdf2fb7f46feb7f30a6f2b59e0526f1f3"
+      "sha256": "a48494d96ce314ec3ed1d34da8c654eb491a2d96f9eac19c39573242c18604ca"
     },
     {
       "file": "src/simulation/capstan-entwistle-corrections.js",
@@ -29,7 +29,7 @@
       "sha256": "8a18febf166575f8b51189f3b9907fa06d0874c93da0a4b08ca516d108f10ba7"
     }
   ],
-  "method": "Actual rendered gear teeth/body vertices, edge midpoints and triangle centers tested bidirectionally with BVH surface containment through one full programmed 412 mode cycle and one complete 495 tooth period. Hubs, shafts, supports excluded. Distances capped at .15; sampled closest points bound engagement gaps.",
+  "method": "Actual rendered gear teeth/body vertices, edge midpoints and triangle centers tested bidirectionally with BVH surface containment through one full programmed 412 mode cycle and one complete 495 tooth period. Hubs, shafts, supports excluded. Each tooth and body is tested as its own closed part (inside any part, distance to the nearest). Distances capped at .15; sampled closest points bound engagement gaps.",
   "results": [
     {
       "id": 412,
@@ -74,20 +74,20 @@
     {
       "id": 495,
       "poses": 33,
-      "queries": 441886,
+      "queries": 271270,
       "penetrations": 0,
       "maxDepth": 0,
       "worst": null,
       "pairs": [
         {
           "pair": "fixed-equal-bevel-gear-A-carried-equal-bevel-planet-B",
-          "maximumSampledGap": 0.0018519838293603922,
-          "minimumSampledGap": 0.0018421205733242403
+          "maximumSampledGap": 0.004861688631930773,
+          "minimumSampledGap": 0.004805337375537995
         },
         {
           "pair": "loose-equal-bevel-output-gear-C-carried-equal-bevel-planet-B",
-          "maximumSampledGap": 0.0018519838293603922,
-          "minimumSampledGap": 0.0018421205733242503
+          "maximumSampledGap": 0.00486168863193072,
+          "minimumSampledGap": 0.004805337375538093
         }
       ]
     }

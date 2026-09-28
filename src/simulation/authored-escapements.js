@@ -4751,6 +4751,41 @@ function hideGroundFor234(model) {
   root.userData.hideGround = true;
   const mat = supportMaterial();
   const vergeZ = g.axialLayers.vergeAxis;
+  // Brown's crown is an open cup: its floor shows only the arbor's hole, so
+  // the hub and the arbor end stop inside the floor, under a dark bore.
+  let floorTop = null, bore = null;
+  root.traverse((o) => {
+    if (o.userData.role === 'crown-wheel-floor') {
+      const p = o.geometry.parameters;
+      floorTop = o.position.z + p.height / 2;
+      bore = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.17, 0.012, 32), matte(PALETTE.ink, { metalness: 0.25, roughness: 0.48 }));
+      bore.rotation.x = Math.PI / 2;
+      bore.position.z = floorTop + 0.004;
+      bore.userData.role = 'crown-wheel-arbor-bore';
+    }
+  });
+  root.updateMatrixWorld(true);
+  root.traverse((o) => {
+    if (!o.isMesh || floorTop === null) return;
+    let role = '';
+    for (let a = o; a && !role; a = a.parent) role = a.userData.role ?? '';
+    if (o.userData.role === 'crown-wheel-hub') {
+      const low = floorTop - 0.4, high = floorTop - 0.02;
+      o.geometry.dispose();
+      o.geometry = new THREE.CylinderGeometry(0.28, 0.28, high - low, 32);
+      o.position.z = (low + high) / 2;
+      o.parent.add(bore);
+    } else if (o.geometry.type === 'CylinderGeometry' && /vertical-crown-wheel-arbor/.test(role)) {
+      const box = new THREE.Box3().setFromObject(o), p = o.geometry.parameters;
+      const low = box.min.z, high = floorTop - 0.02;
+      o.geometry.dispose();
+      o.geometry = new THREE.CylinderGeometry(p.radiusTop, p.radiusBottom, p.height * (high - low) / (box.max.z - box.min.z), p.radialSegments);
+      // The shaft's axis is the world z axis; recentre it on the new span.
+      o.updateMatrixWorld(true);
+      const shift = (low + high) / 2 - new THREE.Box3().setFromObject(o).getCenter(new THREE.Vector3()).z;
+      o.parent.position.z += shift;
+    }
+  });
   let spindleHalf = 0, arborBottom = 0, arborRadius = 0;
   root.traverse((o) => {
     if (o.userData.role === 'oscillating-spindle-S') spindleHalf = o.geometry.parameters.height / 2;
@@ -4803,9 +4838,9 @@ export function createAuthoredEscapementMovement(movement) {
       // raises S to 0.35 above the tips and gives flags 0.77 long.
       bodyDepth: 0.44,
       flagPallets: true,
-      floorAtToothBase: true,
       includeFrame: false,
-      palletWidth: 0.7,
+      palletIncludedAngleDegrees: 70,
+      palletWidth: 0.9,
       roundSpindle: true,
       spindleLength: 8.4,
       toothRadialDepth: 0.14,

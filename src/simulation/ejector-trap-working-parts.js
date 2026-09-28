@@ -23,6 +23,40 @@ function portedMeridian(levels,outer,inner,open=()=>false) {
   }
   const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));g.computeVertexNormals();return g;
 }
+// Pass 90 (475): a closed wall of revolution (outer radius R(y), inner Ri(y))
+// with one round bored port where a straight pipe axis (P0, T) of radius rho
+// crosses it. The shell is a (theta, y) grid; cells cut by the port are
+// clipped against its exact outline on each surface, the bore joins the two
+// outlines, and the ends are capped. Normals are analytic, so the curved
+// shell shades smoothly.
+function roundPortedShell(levels,R,Ri,P0,T,rho,n=128){
+ const pos=[],nor=[],dR=(f,y)=>(f(y+1e-4)-f(y-1e-4))/2e-4;
+ const U=new THREE.Vector3(0,1,0).cross(T).normalize(),V=T.clone().cross(U).normalize();
+ const outline=(f)=>{const pts=[];for(let k=0;k<96;k++){const phi=k/96*2*Math.PI,off=U.clone().multiplyScalar(rho*Math.cos(phi)).addScaledVector(V,rho*Math.sin(phi));
+  const g=s=>{const q=P0.clone().addScaledVector(T,s).add(off);return Math.hypot(q.x,q.z)-f(q.y);};let a=-.6,b=.6;const ga=g(a);for(let i=0;i<60;i++){const m=(a+b)/2;if((g(m)>0)===(ga>0))a=m;else b=m;}
+  const q=P0.clone().addScaledVector(T,(a+b)/2).add(off);pts.push({p:q,phi,uv:[Math.atan2(q.z,q.x),q.y]});}return pts;};
+ const tri=(a,b,c,na,nb,nc,want)=>{const e=b.clone().sub(a).cross(c.clone().sub(a));if(e.dot(want)<0){[b,c]=[c,b];[nb,nc]=[nc,nb];}for(const v of[a,b,c])pos.push(v.x,v.y,v.z);for(const m of[na,nb,nc])nor.push(m.x,m.y,m.z);};
+ const surface=(f,sign,hole)=>{
+  const P=(t,y)=>new THREE.Vector3(f(y)*Math.cos(t),y,f(y)*Math.sin(t)),N=(t,y)=>new THREE.Vector3(Math.cos(t),-dR(f,y),Math.sin(t)).normalize().multiplyScalar(sign);
+  const holeRing=hole.map(h=>h.uv);holeRing.push(holeRing[0]);let tMin=Infinity,tMax=-Infinity,yMin=Infinity,yMax=-Infinity;for(const[t,y]of holeRing){tMin=Math.min(tMin,t);tMax=Math.max(tMax,t);yMin=Math.min(yMin,y);yMax=Math.max(yMax,y);}
+  const emit=(poly2)=>{const ring=poly2[0].slice(0,-1).map(([t,y])=>new THREE.Vector2(t,y)),holes=poly2.slice(1).map(r=>r.slice(0,-1).map(([t,y])=>new THREE.Vector2(t,y)));
+   const all=[...ring,...holes.flat()];for(const[a,b,c]of THREE.ShapeUtils.triangulateShape(ring,holes)){const[A,B,C]=[all[a],all[b],all[c]];tri(P(A.x,A.y),P(B.x,B.y),P(C.x,C.y),N(A.x,A.y),N(B.x,B.y),N(C.x,C.y),N((A.x+B.x+C.x)/3,(A.y+B.y+C.y)/3));}};
+  for(let j=0;j<levels.length-1;j++)for(let i=0;i<n;i++){const t0=-Math.PI+i*2*Math.PI/n,t1=t0+2*Math.PI/n,y0=levels[j],y1=levels[j+1];
+   const quad=[[[t0,y0],[t1,y0],[t1,y1],[t0,y1],[t0,y0]]];
+   if(t1<tMin||t0>tMax||y1<yMin||y0>yMax){emit(quad);continue;}
+   for(const piece of clip.difference(quad,[holeRing]))emit(piece);}
+  return P;};
+ const outerHole=outline(R),innerHole=outline(Ri);
+ surface(R,1,outerHole);surface(Ri,-1,innerHole);
+ // The bore of the port, facing the pipe.
+ for(let k=0;k<96;k++){const a=outerHole[k],b=outerHole[(k+1)%96],c=innerHole[(k+1)%96],d=innerHole[k];
+  const na=U.clone().multiplyScalar(-Math.cos(a.phi)).addScaledVector(V,-Math.sin(a.phi)),nb=U.clone().multiplyScalar(-Math.cos(b.phi)).addScaledVector(V,-Math.sin(b.phi));
+  tri(a.p,b.p,c.p,na,nb,nb,na.clone().add(nb));tri(a.p,c.p,d.p,na,nb,na,na.clone().add(nb));}
+ // End rims.
+ for(const[y,sy]of[[levels[0],-1],[levels.at(-1),1]])for(let i=0;i<n;i++){const t0=i*2*Math.PI/n,t1=t0+2*Math.PI/n,q=(r,t)=>new THREE.Vector3(r*Math.cos(t),y,r*Math.sin(t)),up=new THREE.Vector3(0,sy,0);
+  tri(q(Ri(y),t0),q(R(y),t0),q(R(y),t1),up,up,up,up);tri(q(Ri(y),t0),q(R(y),t1),q(Ri(y),t1),up,up,up,up);}
+ const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setAttribute('normal',new THREE.Float32BufferAttribute(nor,3));return g;
+}
 const sweepShape=(curve,r)=>{const points=curve.getPoints(40);return clip.union(...points.slice(1).map((p,i)=>capsule([points[i].x,points[i].y],[p.x,p.y],r,12)));};
 
 // The start, run and stop loop shared by the jet ejectors 475 and 476. The
@@ -66,8 +100,13 @@ export function correctEjectorTrapParts(root,id,update) {
     // silhouette is a continuous curve instead of a seven-facet polygon.
     const smooth=new THREE.SplineCurve(profile.map(([y,r])=>new THREE.Vector2(y,r))).getPoints(240).map(p=>[p.x,p.y]);
     const radius=y=>{const found=smooth.findIndex(p=>p[0]>=y),k=found<0?smooth.length-1:Math.max(1,found);const[a,r]=smooth[k-1],[c,s]=smooth[k];return r+(s-r)*(y-a)/(c-a);};
-    const levels=[...Array.from({length:61},(_,i)=>-1.16+2.72*i/60).filter(y=>Math.abs(y+.20)>.02&&Math.abs(y-.34)>.02),-.20,.34].sort((a,b)=>a-b);
-    replace(b.chamber,portedMeridian(levels,radius,y=>radius(y)-.065,(a,y)=>y>-.20&&y<.34&&Math.cos(a)>.976));
+    // Pass 90: pipe A passes through D's wall in a round bore 0.002 larger
+    // than the pipe (it was a square window of grid cells, leaving a wedge
+    // sliver over the pipe), and the shell shades smoothly.
+    const levels=Array.from({length:61},(_,i)=>-1.16+2.72*i/60);
+    {const c=d.flowPaths.steamPipeCurve,f=t=>{const q=c.getPoint(t);return Math.hypot(q.x,q.z)-radius(q.y);};let lo=0,hi=.6;for(let i=0;i<60;i++){const m=(lo+hi)/2;if(f(m)>0)lo=m;else hi=m;}
+     const t=(lo+hi)/2,P0=c.getPoint(t),T=c.getTangent(t).normalize();
+     replace(b.chamber,roundPortedShell(levels,radius,y=>radius(y)-.065,P0,T,.202));b.chamber.userData.port={center:P0,axis:T,radius:.202};}
     replace(b.suctionPipe,horizontalRing(.40,.47,-.895,.895,64));
     // The water itself shows the ejector working (the streamline tubes and
     // markers are flow notation and are not presented). Translucent water
@@ -115,6 +154,10 @@ export function correctEjectorTrapParts(root,id,update) {
     replace(b.steamPipe,curvedPipeWall(d.flowPaths.steamPipeCurve,.105,.20,90,32));
     Object.assign(b.steamPipe.material,{transparent:false,opacity:1});
     replace(b.nozzle,horizontalRing(.125,.19,-.11,.11,64));
+    // Brown's flange on the outer end of A: it covers the pipe's end face
+    // (0.01 proud of it) and is bored 0.005 over the pipe's bore.
+    {const end=d.flowPaths.steamPipeCurve.points[0];
+     b.steamPipeFlange=add(root,horizontalRing(.110,.32,end.x-.075,end.x+.01,64).rotateZ(-Math.PI/2).translate(0,end.y,end.z),b.steamPipe.material,'flange-on-outer-end-of-steam-pipe-A');}
   } else if(id===476) {
     const steamCurve=d.flowPaths.steamPipeCurve;
     for(let i=0;i<steamCurve.points.length-1;i++)steamCurve.points[i].z=i===5?-.35:-.72;

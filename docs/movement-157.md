@@ -53,6 +53,25 @@ claim about the inventor's intended dimensions. The margin avoids a toggle.
 | Upper bell joint | (328,134) | (319.88,129.57) | 9.25px |
 | Fixed bell pivot | (343,265) | (351.56,271.82) | 10.94px |
 
+**Pass 90 refit.** That bare projection left the drawn pose next to the inner
+toggle: the bell crank swung 95° (+21°/−75° about the drawn pose, the output
+arm turning to point nearly straight down) and the output rod leaned up to 18°
+from its guide line. A second stage now refines the same three centers by
+weighted least squares from the measured centers (crank pin weighted 3×, as it
+fixes the visible crank radius), keeping both reach margins at least 10px and
+requiring the swing to be within 30° of symmetric about the drawn pose and the
+rod within 12° of vertical. Result: swing +21.8°/−51.8° (74°), rod lean at most
+7.8°, crank radius 84.4px (unchanged).
+
+| Joint | Measured center | Reconstructed center (p90) | Shift |
+| --- | --- | --- | ---: |
+| Crank pin | (57,220) | (72.48,217.49) | 15.7px |
+| Upper bell joint | (328,134) | (310.62,118.34) | 23.4px |
+| Fixed bell pivot | (343,265) | (357.08,275.88) | 17.8px |
+
+The input arm is 164px where Brown draws 132px, and the coupler 258px where he
+draws 284px.
+
 This is closer to the engraving overall than retaining the oracle's dimensions,
 but is deliberately not an exact superposition. The production note discloses
 these changes. The lower rod is cropped; its complete 250px length, guide at

@@ -216,7 +216,10 @@ function treadleBevelDrillingMachine(movement) {
     outerSlantDistance,
   );
 
-  const linkagePlaneZ = 0.72;
+  // Brown's levers, link and treadle lie in the drill shaft's plane. They run
+  // just behind the shaft (clear of the thrust collar and of the bit, which
+  // Brown draws in front of the treadle) and in front of the C-frame.
+  const linkagePlaneZ = -0.36;
   // Brown's treadle fulcrum lies well below the frame (plate pivots 404 px
   // apart against 78 px from the drill axis), so the treadle passes under
   // the frame and across the drill below its chuck.
@@ -227,7 +230,10 @@ function treadleBevelDrillingMachine(movement) {
   const treadleRightArmLength = 3.05;
   const restLeverAngle = THREE.MathUtils.degToRad(12);
   const depressedLeverAngle = THREE.MathUtils.degToRad(-7);
-  const thrustLinkLength = 0.40;
+  // The upper lever's right end is an eye with a short slot riding the
+  // thrust-collar pin on the shaft top, as Brown joins the lever straight to
+  // the shaft; the slot takes up the 0.018 change in the tip's reach.
+  const slotCentre = 0.8292, slotHalfTravel = 0.0095, slotPinRadius = 0.06;
   const drillAxisX = 0;
   const feedCycle = {
     pressStart: 0.12,
@@ -256,17 +262,9 @@ function treadleBevelDrillingMachine(movement) {
     pivot.y + length * Math.sin(angle),
     pivot.z,
   );
-  const collarYAtLeverAngle = (angle) => {
-    const upperTip = pointOnLever(
-      upperLeverPivot,
-      upperRightArmLength,
-      angle,
-    );
-    const horizontalOffset = upperTip.x - drillAxisX;
-    return upperTip.y - Math.sqrt(
-      thrustLinkLength ** 2 - horizontalOffset ** 2,
-    );
-  };
+  // The collar pin stays on the drill axis and on the lever's centreline.
+  const collarYAtLeverAngle = (angle) => upperLeverPivot.y
+    + (drillAxisX - upperLeverPivot.x) * Math.tan(angle);
   const neutralCollarY = collarYAtLeverAngle(restLeverAngle);
   const depressedCollarY = collarYAtLeverAngle(depressedLeverAngle);
   const maximumFeedDown = neutralCollarY - depressedCollarY;
@@ -456,11 +454,13 @@ function treadleBevelDrillingMachine(movement) {
   shaftSpinRotor.userData.axis = Y_AXIS.clone();
   shaftSpinRotor.userData.role =
     'rotating-keyed-drillshaft-chuck-and-bit';
+  // The shaft runs up past the frame to the collar and lever, as drawn.
+  const drillShaftTop = neutralCollarY + .18;
   const drillShaft = new THREE.Mesh(
-    new THREE.CylinderGeometry(.095,.095,3.43,32),
+    new THREE.CylinderGeometry(.095,.095,drillShaftTop-.115,32),
     drivenMaterial,
   );
-  drillShaft.position.y = 1.83;
+  drillShaft.position.y = (drillShaftTop+.115)/2;
   drillShaft.userData.role =
     'vertical-drillshaft-sliding-through-small-bevel-pinion';
   shaftSpinRotor.add(drillShaft);
@@ -526,14 +526,6 @@ function treadleBevelDrillingMachine(movement) {
   thrustCollar.userData.role =
     'nonrotating-thrust-collar-translating-with-drillshaft';
   drillSlide.add(thrustCollar);
-  const collarYoke = makeBeam(
-    new THREE.Vector3(0, neutralCollarY, .18),
-    new THREE.Vector3(0, neutralCollarY, linkagePlaneZ),
-    { color: PALETTE.accent, depth: 0.10, thickness: 0.11 },
-  );
-  collarYoke.userData.role =
-    'nonrotating-yoke-from-thrust-collar-to-upper-feed-link';
-  drillSlide.add(collarYoke);
   root.add(drillSlide);
 
   const lowerLeverRotor = new THREE.Group();
@@ -583,33 +575,45 @@ function treadleBevelDrillingMachine(movement) {
   ) / 2;
   upperLeverBeam.userData.role = 'two-sided-upper-feed-lever';
   upperLeverRotor.add(upperLeverBeam);
-  const upperPivotHub = boredJournal(.16,.084,.48,darkMaterial);
+  // Short enough to stay in front of the frame's top arm (front face -0.54).
+  const upperPivotHub = boredJournal(.16,.084,.30,darkMaterial);
   upperPivotHub.userData.role = 'fixed-pivot-boss-of-upper-feed-lever';
   upperLeverRotor.add(upperPivotHub);
   root.add(upperLeverRotor);
 
   const makeFeedRod=(length,width,role)=>{
     const {rod}=makeBoredLinkRod({bodyMaterial:accentMaterial,length,width,depth:.13,planeZ:0,boreRadius:.064,role});
-    rod.userData.setEndpoints=(a,b)=>{rod.position.set(a.x,a.y,.94);rod.rotation.z=Math.atan2(b.y-a.y,b.x-a.x);};
+    rod.userData.setEndpoints=(a,b)=>{rod.position.set(a.x,a.y,linkagePlaneZ+.22);rod.rotation.z=Math.atan2(b.y-a.y,b.x-a.x);};
     root.add(rod);return rod;
   };
   const verticalConnector=makeFeedRod(upperLeverPivot.distanceTo(lowerLeverPivot),.10,'rigid-vertical-link-joining-left-ends-of-treadle-and-upper-lever');
-  const upperThrustLink=makeFeedRod(thrustLinkLength,.095,'finite-link-from-upper-lever-to-nonrotating-thrust-collar');
   const feedPins=[];
-  for(const [lever,x] of [[lowerLeverRotor,-leftLeverArmLength],[upperLeverRotor,-leftLeverArmLength],[upperLeverRotor,upperRightArmLength]]){
+  for(const [lever,x] of [[lowerLeverRotor,-leftLeverArmLength],[upperLeverRotor,-leftLeverArmLength]]){
     const pin=cylinderAlongZ(.06,.56,darkMaterial);pin.position.set(x,0,.14);lever.add(pin);feedPins.push(pin);
   }
-  const collarPin=cylinderAlongZ(.06,.56,darkMaterial);collarPin.position.set(0,neutralCollarY,.82);drillSlide.add(collarPin);
+  // The collar pin runs back from inside the collar wall through the lever slot.
+  const collarPinFront=-.12,collarPinBack=linkagePlaneZ-.13;
+  const collarPin=cylinderAlongZ(slotPinRadius,collarPinFront-collarPinBack,darkMaterial);collarPin.position.set(0,neutralCollarY,(collarPinFront+collarPinBack)/2);collarPin.userData.role='thrust-collar-pin-riding-in-upper-lever-slot';drillSlide.add(collarPin);
   const thrustRings=[neutralCollarY-.15,neutralCollarY+.15].map(y=>{
     const ring=new THREE.Mesh(new THREE.CylinderGeometry(.14,.14,.06,48),drivenMaterial);ring.position.y=y;shaftSpinRotor.add(ring);return ring;
   });
   const pivotShafts=[lowerLeverPivot,upperLeverPivot].map(p=>{
-    const pin=cylinderAlongZ(.08,.64,darkMaterial);pin.position.set(p.x,p.y,.66);root.add(pin);return pin;
+    const pin=cylinderAlongZ(.08,.64,darkMaterial);pin.position.set(p.x,p.y,linkagePlaneZ-.06);root.add(pin);return pin;
   });
   for(const beam of [treadleBeam,upperLeverBeam]){
     const p=beam.geometry.parameters;
-    const outline=poly([[-p.width/2,-p.height/2],[p.width/2,-p.height/2],[p.width/2,p.height/2],[-p.width/2,p.height/2]]);
-    beam.geometry.dispose();beam.geometry=plate(clip.difference(outline,poly(circle([-beam.position.x,0],.084,64))),-p.depth/2,p.depth/2);
+    let outline=poly([[-p.width/2,-p.height/2],[p.width/2,-p.height/2],[p.width/2,p.height/2],[-p.width/2,p.height/2]]);
+    const holes=[poly(circle([-beam.position.x,0],.084,64))];
+    if(beam===upperLeverBeam){
+      // Round eye at the right end, concentric with the slot, as one plate.
+      const eye=slotCentre-beam.position.x;
+      outline=clip.union(poly([[-p.width/2,-p.height/2],[eye,-p.height/2],[eye,p.height/2],[-p.width/2,p.height/2]]),poly(circle([eye,0],.15,96)));
+      const a=eye-slotHalfTravel,b=eye+slotHalfTravel,r=slotPinRadius+.004,slot=[];
+      for(let i=0;i<=24;i++){const t=Math.PI/2+Math.PI*i/24;slot.push([a+r*Math.cos(t),r*Math.sin(t)]);}
+      for(let i=0;i<=24;i++){const t=-Math.PI/2+Math.PI*i/24;slot.push([b+r*Math.cos(t),r*Math.sin(t)]);}
+      holes.push([slot]);
+    }
+    beam.geometry.dispose();beam.geometry=plate(clip.difference(outline,...holes),-p.depth/2,p.depth/2);
   }
 
   const frame = new THREE.Group();
@@ -687,15 +691,15 @@ function treadleBevelDrillingMachine(movement) {
   // The treadle fulcrum stands on its own post, as the plate's cropped
   // stand below the lever shows.
   const lowerLeverSupport = makeBeam(
-    new THREE.Vector3(lowerLeverPivot.x, frameBaseY, .30),
-    lowerLeverPivot.clone().setZ(.30),
+    new THREE.Vector3(lowerLeverPivot.x, frameBaseY, linkagePlaneZ-.42),
+    lowerLeverPivot.clone().setZ(linkagePlaneZ-.42),
     { color: PALETTE.frame, depth: 0.16, thickness: 0.16 },
   );
   lowerLeverSupport.userData.role = 'fixed-support-for-treadle-pivot';
   frame.add(lowerLeverSupport);
   const upperLeverSupport = makeBeam(
     new THREE.Vector3(upperLeverPivot.x, 3.25, frameRearZ),
-    upperLeverPivot.clone().setZ(.36),
+    upperLeverPivot.clone().setZ(linkagePlaneZ-.36),
     { color: PALETTE.frame, depth: 0.16, thickness: 0.16 },
   );
   upperLeverSupport.userData.role = 'fixed-support-for-upper-lever-pivot';
@@ -780,16 +784,11 @@ function treadleBevelDrillingMachine(movement) {
       linkagePlaneZ,
     );
     const feedDown = neutralCollarY - collarY;
-    const upperTipHorizontalOffset = upperTip.x - drillAxisX;
     const upperTipHorizontalRate = -upperRightArmLength
       * Math.sin(leverAngle) * leverAngularSpeed;
-    const collarRatePerLeverRadian = upperRightArmLength
-      * Math.cos(leverAngle)
-      + upperTipHorizontalOffset * (
-        -upperRightArmLength * Math.sin(leverAngle)
-      ) / Math.sqrt(
-        thrustLinkLength ** 2 - upperTipHorizontalOffset ** 2,
-      );
+    const collarRatePerLeverRadian = (drillAxisX - upperLeverPivot.x)
+      / Math.cos(leverAngle) ** 2;
+    const slotPosition = (drillAxisX - upperLeverPivot.x) / Math.cos(leverAngle);
     const feedVelocityDown = -collarRatePerLeverRadian
       * leverAngularSpeed;
     const driverAngularVelocity = driverAxis.clone()
@@ -837,8 +836,11 @@ function treadleBevelDrillingMachine(movement) {
       pinionLocalAngularSpeed,
       pinionSurfaceVelocity,
       stage: depression.stage,
-      thrustLinkLengthError: upperTip.distanceTo(collarConnectionPoint)
-        - thrustLinkLength,
+      slotPosition,
+      // The collar pin lies on the lever centreline, inside the slot's travel.
+      slotLineError: Math.abs((collarConnectionPoint.y - upperLeverPivot.y) * Math.cos(leverAngle)
+        - (collarConnectionPoint.x - upperLeverPivot.x) * Math.sin(leverAngle)),
+      slotTravelExcess: Math.max(0, Math.abs(slotPosition - slotCentre) - slotHalfTravel),
       upperLeftPoint,
       upperTip,
       upperTipHorizontalRate,
@@ -861,10 +863,6 @@ function treadleBevelDrillingMachine(movement) {
       state.lowerLeftPoint,
       state.upperLeftPoint,
     );
-    upperThrustLink.userData.setEndpoints(
-      state.upperTip,
-      state.collarConnectionPoint,
-    );
     root.userData.currentState = state;
     root.userData.contacts = {
       bevelMesh: {
@@ -880,7 +878,8 @@ function treadleBevelDrillingMachine(movement) {
         shaftFeedDown: state.feedDown,
       },
       feedLinkage: {
-        thrustLinkLengthError: state.thrustLinkLengthError,
+        slotLineError: state.slotLineError,
+        slotTravelExcess: state.slotTravelExcess,
         verticalConnectorLengthError: state.verticalConnectorLengthError,
       },
     };
@@ -892,7 +891,6 @@ function treadleBevelDrillingMachine(movement) {
     blocks: {
       bitFlutes,
       chuck,
-      collarYoke,
       crankArm,
       crankHandle,
       crankIndex,
@@ -927,7 +925,6 @@ function treadleBevelDrillingMachine(movement) {
       upperLeverSupport,
       upperPivotHub,
       upperShaftGuide,
-      upperThrustLink,
       verticalConnector, feedPins, collarPin, pivotShafts, thrustRings,
     },
     degreesOfFreedom: {
@@ -994,7 +991,8 @@ function treadleBevelDrillingMachine(movement) {
       pinionTeeth,
       restLeverAngle,
       shaftAngle,
-      thrustLinkLength,
+      slotCentre,
+      slotHalfTravel,
       treadleRightArmLength,
       upperLeverPivot: upperLeverPivot.clone(),
       upperRightArmLength,
@@ -1034,7 +1032,7 @@ function treadleBevelDrillingMachine(movement) {
         engravingEvidence:
           'the plate shows the right-hand crank and horizontal shaft, unequal right-angle bevel pair, fixed rectangular frame, vertical drillshaft and bit, long lower foot treadle, far-left vertical link, and two-sided upper lever attached to the shaft top',
         reconstructionDisclosure:
-          'tooth counts, pitch-cone dimensions, speed, treadle travel, smooth operator schedule, thrust-link length, and omitted bearing details are engineered choices; Brown supplies the component chain but no dimensions or timing',
+          'tooth counts, pitch-cone dimensions, speed, treadle travel, smooth operator schedule, lever slot, and omitted bearing details are engineered choices; Brown supplies the component chain but no dimensions or timing',
       },
       primaryScan: {
         archiveIdentifier: 'fivehundredseven00browiala',
@@ -1054,7 +1052,7 @@ function treadleBevelDrillingMachine(movement) {
       featherLaw:
         'drillshaft world angle equals pinion local angle because both axes point up; their physical world angular velocities are identical at every axial feed position',
       feedLaw:
-        'equal-angle upper and lower levers keep the far-left connector rigid; the finite upper link converts the upper lever tip arc to exact vertical thrust-collar travel',
+        'equal-angle upper and lower levers keep the far-left connector rigid; the slotted end of the upper lever rides the thrust-collar pin on the drill axis, so the collar has exact vertical travel',
       motionSuperposition:
         'spindle rotation is independent of axial feed, so the bit continues rotating during press, both dwells, and release',
     },

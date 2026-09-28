@@ -575,9 +575,13 @@ function bailingScoop(movement) {
   const highPoint = (x, y) => scoopPivot.clone().add(rotateLocal(new THREE.Vector3(x, y, 0), highState.scoopAngle));
   const spoutLip = highPoint(-0.58, -0.17);
   const spoutDirection = highPoint(-0.58, -0.17).sub(highPoint(0, -0.17)).normalize();
+  // Pass 90: the run-off leaves the draining water in the bucket as a sheet
+  // the width of the scoop's mouth (0.68 between the side plates), deep
+  // enough to read from the front, and pours off the spout lip.
+  const dischargeRun = () => guidedPath([highPoint(1.78, -0.80), highPoint(0.95, -0.42), highPoint(0.15, -0.02),
+    highPoint(0.0, -0.17), spoutLip], {speedAt: (u) => 0.7 + 0.7 * u, samples: 32});
   const dischargeFullPath = joinPaths(
-    guidedPath([highPoint(2.2, -0.96), highPoint(1.78, -0.80), highPoint(0.95, -0.42), highPoint(0.15, -0.02),
-      highPoint(0.0, -0.17), spoutLip], {speedAt: (u) => 0.4 + 1.0 * u, samples: 32}),
+    dischargeRun(),
     ballisticPath({origin: spoutLip, velocity: spoutDirection.clone().multiplyScalar(1.4), endY: -0.60, samples: 16}),
   );
   const dischargePath = {points: dischargeFullPath.points.map((point) => point.clone()),
@@ -594,10 +598,9 @@ function bailingScoop(movement) {
     }
   };
   const dischargeStream = addRole(new WaterStream(joinPaths(
-    guidedPath([highPoint(2.2, -0.96), highPoint(1.78, -0.80), highPoint(0.95, -0.42), highPoint(0.15, -0.02),
-      highPoint(0.0, -0.17), spoutLip], {speedAt: (u) => 0.4 + 1.0 * u, samples: 32}),
+    dischargeRun(),
     ballisticPath({origin: spoutLip, velocity: spoutDirection.multiplyScalar(1.4), endY: -0.60, samples: 16}),
-  ), {width: 0.3, thickness: 0.05, widthAxis: new THREE.Vector3(0, 0, 1), widthExponent: 0.3,
+  ), {width: 0.34, thickness: 0.12, widthAxis: new THREE.Vector3(0, 0, 1), widthExponent: 0.15,
     foam: {start: 0.9, amount: 0.4}, cyclePeriod: cycleDuration, streakRate: 1.2, opacity: 0.5}),
   'intermittent-discharge-from-raised-scoop-to-left-channel');
   root.add(dischargeStream);

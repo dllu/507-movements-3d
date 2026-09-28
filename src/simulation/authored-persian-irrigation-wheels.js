@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {WaterStream,collectWaterStreams} from './water-stream.js';
 import {makeCellWaterGeometry,updateClippedCell} from './clipped-fluid-cell.js';
 import { curvedFloatChannel, portedFloatHub } from './water-lifting-solids.js';
@@ -449,34 +450,26 @@ function persianIrrigationWheel(movement) {
     bucketRim.rotation.x = Math.PI / 2;
     bucketRim.position.y = -0.14;
     bucket.add(bucketRim);
-    const hangerLeft = beamBetween(
-      new THREE.Vector3(-.08, -.085, 0),
-      new THREE.Vector3(-0.28, -0.18, 0),
-      0.045,
-      0.045,
-      darkMaterial,
-    );
-    const hangerRight = beamBetween(
-      new THREE.Vector3(.08, -.085, 0),
-      new THREE.Vector3(0.28, -0.18, 0),
-      0.045,
-      0.045,
-      darkMaterial,
-    );
-    hangerLeft.userData.role = `bucket-hanger-${index + 1}`;
-    hangerRight.userData.role = `bucket-hanger-${index + 1}`;
-    bucket.add(hangerLeft, hangerRight);
-    const hinge = new THREE.Mesh(
-      new THREE.TorusGeometry(0.105, 0.035, 8, 24),
-      darkMaterial,
-    );
-    hinge.geometry.dispose();
-    hinge.geometry = ring(.072,.14,-.035,.035);
+    // Pass 90: one bail: an eye round the float-tip pin (bore 0.072 on the
+    // 0.068 pin) and one arc from rim to rim through it (the two hanger bars
+    // are gone). The arc passes through the eye's middle and lands on the
+    // rim's centre line at both sides.
+    const eyeMiddle = 0.106, rimY = -0.14, rimR = 0.30;
+    const bailCenterY = (eyeMiddle * eyeMiddle - rimR * rimR - rimY * rimY) / (2 * (eyeMiddle - rimY));
+    const bailRadius = eyeMiddle - bailCenterY, bailTube = 0.025;
+    const bailEnd = Math.atan2(rimY - bailCenterY, rimR);
+    const bailArc = new THREE.TorusGeometry(bailRadius, bailTube, 12, 48, Math.PI - 2 * bailEnd)
+      .rotateZ(bailEnd).translate(0, bailCenterY, 0);
+    const hinge = new THREE.Mesh(mergeGeometries([bailArc, ring(.072,.14,-.035,.035)].map((g) => {
+      const flat = g.index ? g.toNonIndexed() : g;
+      for (const k of Object.keys(flat.attributes)) if (!['position', 'normal'].includes(k)) flat.deleteAttribute(k);
+      return flat;
+    })), darkMaterial);
     const suspensionPin = cylinderAlongZ(.068,.64,darkMaterial,32);
     suspensionPin.position.set(bucketPivotRadius,0,.30);
     suspensionPin.userData.role = `finite-bucket-suspension-pin-${index + 1}`;
     arm.add(suspensionPin);
-    hinge.userData.role = `free-bucket-suspension-pivot-${index + 1}`;
+    hinge.userData.role = `bucket-bail-hung-on-float-tip-pin-${index + 1}`;
     bucket.add(hinge);
     // Pass 69: a level body inscribed in the tapered bucket and clipped at
     // its lowest rim point, so a tipped bucket pours rather than holding a
@@ -486,18 +479,16 @@ function persianIrrigationWheel(movement) {
       `gravity-level-water-load-in-bucket-${index + 1}`;
     bucket.add(bucketWater);
     bucketWaters.push(bucketWater);
-    const tripLug = new THREE.Mesh(plate(capsule(
-      [trip.shoeX,trip.shoeBottom],[trip.shoeX,trip.shoeTop],trip.shoeRadius,48),
-      -.03,.03),darkMaterial);
-    tripLug.position.z=trip.pin.z-bucketPlaneZ;
+    // The trip lug: a flat shoe beside the bucket, out in front of it at the
+    // pin's plane, carried by one arm from the bucket's rim.
+    const lugZ = trip.pin.z - bucketPlaneZ;
+    const lugArm = new THREE.CylinderGeometry(.03, .03, lugZ + .03, 24).rotateX(Math.PI / 2).translate(trip.shoeX + .01, -.14, lugZ / 2);
+    const tripLug = new THREE.Mesh(mergeGeometries([
+      plate(capsule([trip.shoeX,trip.shoeBottom],[trip.shoeX,trip.shoeTop],trip.shoeRadius,48),-.03,.03).translate(0,0,lugZ).toNonIndexed(),
+      lugArm.toNonIndexed(),
+    ].map((g)=>{for(const k of Object.keys(g.attributes))if(!['position','normal'].includes(k))g.deleteAttribute(k);return g;})),darkMaterial);
     tripLug.userData.role = `stationary-pin-trip-lug-${index + 1}`;
     bucket.add(tripLug);tripLugs.push(tripLug);
-    for(const y of [-.20,-.49]) {
-      const brace=beamBetween(new THREE.Vector3(-.23,y,0),new THREE.Vector3(trip.shoeX,y,0),.045,.045,darkMaterial);
-      brace.position.z=trip.pin.z-bucketPlaneZ;bucket.add(brace);
-      const standoff=cylinderAlongZ(.025,trip.pin.z-bucketPlaneZ,darkMaterial);
-      standoff.position.set(-.23,y,(trip.pin.z-bucketPlaneZ)/2);bucket.add(standoff);
-    }
 
     // Pass 69 (p69-w1): each tipped bucket pours from its lip as one
     // continuous stream that falls under gravity (recomputed in place as the
@@ -600,32 +591,34 @@ function persianIrrigationWheel(movement) {
     darkMaterial, 64);
   stationaryTripPin.position.copy(tripPinPosition);
   stationaryTripPin.position.z=1.11;
+  // Pass 90: the caption's stationary pin is shown (it and its bracket had
+  // been removed from the presentation, so the buckets tipped by themselves).
   stationaryTripPin.userData.role =
-    'fixed-pin-tilting-each-bucket-at-high-station';
+    'stationary-tipping-pin-at-high-station';
   root.add(stationaryTripPin);
   const tripPinBracket = beamBetween(
     new THREE.Vector3(3.42, tripPinPosition.y, 1.34),
-    new THREE.Vector3(tripPinPosition.x,tripPinPosition.y,1.34),
+    new THREE.Vector3(tripPinPosition.x - 0.04,tripPinPosition.y,1.34),
     0.12,
-    0.16,
+    0.12,
     frameMaterial,
   );
-  tripPinBracket.userData.role = 'fixed-stationary-trip-pin-bracket';
+  tripPinBracket.userData.role = 'stationary-tipping-pin-arm';
   root.add(tripPinBracket);
   const tripPinPost = new THREE.Mesh(
     new THREE.BoxGeometry(
-      0.20,
-      tripPinPosition.y - groundY - 0.16,
-      0.20,
+      0.12,
+      tripPinPosition.y - groundY,
+      0.12,
     ),
     frameMaterial,
   );
   tripPinPost.position.set(
     3.42,
-    (tripPinPosition.y + groundY + 0.16) / 2,
+    (tripPinPosition.y + groundY) / 2,
     1.34,
   );
-  tripPinPost.userData.role = 'fixed-trip-pin-support-post';
+  tripPinPost.userData.role = 'stationary-tipping-pin-post';
   root.add(tripPinPost);
 
   const deliveryTrough = new THREE.Group();

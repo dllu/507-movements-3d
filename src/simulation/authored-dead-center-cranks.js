@@ -132,47 +132,64 @@ function beamBetween(start, end, width, depth, material) {
   return beam;
 }
 
+// Spring B: a flat steel strip of rectangular section (width in the
+// faceplate's plane, `thickness` along the axis) wound as a volute from its
+// hub anchor and running out to the slide. It is rebuilt each frame so it
+// winds up as A advances. Four walls and two end caps, each with its own
+// vertices, so the flat faces shade flat.
 function makeVoluteRibbon({
   innerRadius,
   outerRadius,
   sampleCount,
   slideHalfHeight,
   slideRadius,
+  thickness,
   turns,
   width,
 }) {
-  const positions = new Float32Array(sampleCount * 2 * 3);
-  const normals = new Float32Array(sampleCount * 2 * 3);
+  // Walls: front, back, outer edge, inner edge (sampleCount x 2 vertices
+  // each), then the two end caps (4 vertices each).
+  const wallVertices = sampleCount * 2;
+  const vertexCount = wallVertices * 4 + 8;
+  const positions = new Float32Array(vertexCount * 3);
+  const normals = new Float32Array(vertexCount * 3);
   const indices = [];
-  for (let index = 0; index < sampleCount - 1; index += 1) {
-    const lowerLeft = index * 2;
-    const lowerRight = lowerLeft + 1;
-    const upperLeft = lowerLeft + 2;
-    const upperRight = lowerLeft + 3;
-    indices.push(
-      lowerLeft,
-      upperLeft,
-      lowerRight,
-      lowerRight,
-      upperLeft,
-      upperRight,
-    );
+  for (let wall = 0; wall < 4; wall += 1) {
+    const base = wall * wallVertices;
+    for (let index = 0; index < sampleCount - 1; index += 1) {
+      const a = base + index * 2, b = a + 1, c = a + 2, d = a + 3;
+      if (wall === 1 || wall === 2) indices.push(a, c, b, b, c, d);
+      else indices.push(a, b, c, b, d, c);
+    }
+  }
+  for (let cap = 0; cap < 2; cap += 1) {
+    const a = wallVertices * 4 + cap * 4;
+    if (cap === 0) indices.push(a, a + 1, a + 2, a, a + 2, a + 3);
+    else indices.push(a, a + 2, a + 1, a, a + 3, a + 2);
   }
   const geometry = new THREE.BufferGeometry();
   const positionAttribute = new THREE.BufferAttribute(positions, 3);
   positionAttribute.setUsage(THREE.DynamicDrawUsage);
+  const normalAttribute = new THREE.BufferAttribute(normals, 3);
+  normalAttribute.setUsage(THREE.DynamicDrawUsage);
   geometry.setAttribute('position', positionAttribute);
-  geometry.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
+  geometry.setAttribute('normal', normalAttribute);
   geometry.setIndex(indices);
 
   const centers = Array.from(
     { length: sampleCount },
     () => new THREE.Vector2(),
   );
-  const spiralFraction = 0.91;
+  const spiralFraction = 0.84;
   const span = turns * FULL_TURN;
   const endAngle = Math.PI / 2;
   const startAngle = endAngle - span;
+  const tailStart = new THREE.Vector2(), tailOut = new THREE.Vector2(), tailIn = new THREE.Vector2();
+  const half = thickness / 2;
+  const setVertex = (vertex, x, y, z, nx, ny, nz) => {
+    positions.set([x, y, z], vertex * 3);
+    normals.set([nx, ny, nz], vertex * 3);
+  };
 
   const update = (advance) => {
     const twist = Math.asin(THREE.MathUtils.clamp(
@@ -199,12 +216,21 @@ function makeVoluteRibbon({
           radius * Math.sin(angle),
         );
       } else {
-        centers[index].copy(outerEnd).lerp(
-          attachment,
-          (u - spiralFraction) / (1 - spiralFraction),
+        // The tail curls smoothly from the volute's end (leaving along the
+        // spiral) down to the slide's lower edge (arriving heading +x), a
+        // cubic Bezier, so the strip never folds on itself.
+        const t = (u - spiralFraction) / (1 - spiralFraction), m = 1 - t;
+        const a = endAngle + twist;
+        tailStart.set(outerRadius * Math.cos(a), outerRadius * Math.sin(a));
+        tailOut.set(-Math.sin(a), Math.cos(a)).multiplyScalar(0.14).add(tailStart);
+        tailIn.set(attachment.x - 0.14, attachment.y);
+        centers[index].set(
+          m ** 3 * tailStart.x + 3 * m * m * t * tailOut.x + 3 * m * t * t * tailIn.x + t ** 3 * attachment.x,
+          m ** 3 * tailStart.y + 3 * m * m * t * tailOut.y + 3 * m * t * t * tailIn.y + t ** 3 * attachment.y,
         );
       }
     }
+    const edges = [];
     for (let index = 0; index < sampleCount; index += 1) {
       const previous = centers[Math.max(0, index - 1)];
       const next = centers[Math.min(sampleCount - 1, index + 1)];
@@ -216,19 +242,32 @@ function makeVoluteRibbon({
       );
       const normalX = -tangentY * inverseLength;
       const normalY = tangentX * inverseLength;
-      for (let side = 0; side < 2; side += 1) {
-        const sign = side === 0 ? -1 : 1;
-        const offset = (index * 2 + side) * 3;
-        positions[offset] = centers[index].x + sign * width * normalX / 2;
-        positions[offset + 1] = centers[index].y
-          + sign * width * normalY / 2;
-        positions[offset + 2] = 0;
-        normals[offset] = 0;
-        normals[offset + 1] = 0;
-        normals[offset + 2] = 1;
-      }
+      const c = centers[index];
+      const left = [c.x + width * normalX / 2, c.y + width * normalY / 2];
+      const right = [c.x - width * normalX / 2, c.y - width * normalY / 2];
+      edges.push([left, right, normalX, normalY, tangentX * inverseLength, tangentY * inverseLength]);
+      const row = index * 2;
+      // Front and back faces.
+      setVertex(row, ...left, half, 0, 0, 1);
+      setVertex(row + 1, ...right, half, 0, 0, 1);
+      setVertex(wallVertices + row, ...left, -half, 0, 0, -1);
+      setVertex(wallVertices + row + 1, ...right, -half, 0, 0, -1);
+      // Edge walls.
+      setVertex(2 * wallVertices + row, ...left, half, normalX, normalY, 0);
+      setVertex(2 * wallVertices + row + 1, ...left, -half, normalX, normalY, 0);
+      setVertex(3 * wallVertices + row, ...right, half, -normalX, -normalY, 0);
+      setVertex(3 * wallVertices + row + 1, ...right, -half, -normalX, -normalY, 0);
+    }
+    for (const [cap, index, sign] of [[0, 0, -1], [1, sampleCount - 1, 1]]) {
+      const [left, right, , , tx, ty] = edges[index];
+      const vertex = wallVertices * 4 + cap * 4;
+      setVertex(vertex, ...left, half, sign * tx, sign * ty, 0);
+      setVertex(vertex + 1, ...left, -half, sign * tx, sign * ty, 0);
+      setVertex(vertex + 2, ...right, -half, sign * tx, sign * ty, 0);
+      setVertex(vertex + 3, ...right, half, sign * tx, sign * ty, 0);
     }
     positionAttribute.needsUpdate = true;
+    normalAttribute.needsUpdate = true;
     geometry.computeBoundingSphere();
     return {
       attachment,
@@ -242,11 +281,12 @@ function makeVoluteRibbon({
     matte(PALETTE.accent, {
       metalness: 0.32,
       roughness: 0.46,
-      side: THREE.DoubleSide,
     }),
   );
   spring.userData.role =
     'volute-spring-B-anchored-to-faceplate-and-returning-tangent-slide';
+  // A strip, not a solid of revolution: no quadrant speed cue.
+  spring.userData.noRotationIndicator = true;
   spring.userData.updateForAdvance = update;
   spring.userData.sampleCount = sampleCount;
   return spring;
@@ -375,7 +415,9 @@ function brownellDeadCenterCrank(movement) {
     'single-rotating-flywheel-faceplate-carrying-tangent-slide';
   root.add(faceplate);
 
-  const faceDisc = boredJournal(wheelRadius-.035,.124,.20,driverMaterial);
+  // The faceplate's bore is a shade wider than the hub's, and the hub stands
+  // proud of both faces, so no bore walls or faces coincide.
+  const faceDisc = boredJournal(wheelRadius-.035,.128,.20,driverMaterial);
   faceDisc.position.z = 0.02;
   faceDisc.userData.role = 'rigid-flywheel-faceplate';
   faceplate.add(faceDisc);
@@ -396,7 +438,7 @@ function brownellDeadCenterCrank(movement) {
   faceRing.position.z = 0.135;
   faceRing.userData.role = 'faceplate-inner-turned-ring';
   faceplate.add(faceRing);
-  const hub = boredJournal(.28,.124,.18,inkMaterial);
+  const hub = boredJournal(.28,.124,.26,inkMaterial);
   hub.position.z = .02;
   hub.userData.role = 'flywheel-hub';
   faceplate.add(hub);
@@ -404,13 +446,15 @@ function brownellDeadCenterCrank(movement) {
   const voluteSpring = makeVoluteRibbon({
     innerRadius: 0.21,
     outerRadius: springOuterRadius,
-    sampleCount: 96,
+    sampleCount: 144,
     slideHalfHeight,
     slideRadius: crankRadius,
+    thickness: 0.05,
     turns: springTurns,
     width: 0.075,
   });
-  voluteSpring.position.z = .225;
+  // The strip lies between the faceplate and slide A (z 0.19-0.24).
+  voluteSpring.position.z = .215;
   faceplate.add(voluteSpring);
   const springAnchor = cylinderAlongZ(.045,.15,inkMaterial);
   const anchorAngle = Math.PI/2-springTurns*FULL_TURN;
@@ -448,8 +492,9 @@ function brownellDeadCenterCrank(movement) {
   wristBoss.userData.role = 'wrist-boss-rigidly-fixed-to-slide-A';
   tangentSlide.add(wristBoss);
   // The pin's rear end stops in front of spring B's plane (z .225).
-  const wristPin = cylinderAlongZ(0.075, 0.94, inkMaterial, 32);
-  wristPin.position.z = .39;
+  // It ends just proud of the pitman's front face (z 0.88).
+  const wristPin = cylinderAlongZ(0.075, 0.65, inkMaterial, 32);
+  wristPin.position.z = .245;
   wristPin.userData.role = 'crank-wrist-pin-fixed-on-tangent-slide';
   tangentSlide.add(wristPin);
 
@@ -483,14 +528,15 @@ function brownellDeadCenterCrank(movement) {
     [treadleRearArm-beamCenterX,-.065],
     [treadleRearArm-beamCenterX,.065],
     [-treadleForwardArm-beamCenterX,.03],
-  ]),poly(circle([-beamCenterX,0],.094,64))),-.075,.075);
+  ]),poly(circle([-beamCenterX,0],.10,64))),-.075,.075);
   treadleBeam.userData.role = 'rigid-treadle-rocker';
   treadle.add(treadleBeam);
   const treadlePivotBoss = boredJournal(.18,.094,.38,inkMaterial);
   treadlePivotBoss.userData.role = 'treadle-fulcrum-boss';
   treadle.add(treadlePivotBoss);
-  const rearJointBoss = cylinderAlongZ(.09, 1.02, whiteMaterial, 30);
-  rearJointBoss.position.z = .25;
+  // From just behind the treadle to just proud of the pitman's front face.
+  const rearJointBoss = cylinderAlongZ(.09, .675, whiteMaterial, 30);
+  rearJointBoss.position.z = .2425;
   rearJointBoss.position.x = treadleRearArm;
   rearJointBoss.userData.role = 'pitman-to-treadle-pin';
   treadle.add(rearJointBoss);

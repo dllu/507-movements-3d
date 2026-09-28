@@ -1,7 +1,10 @@
 // Ideal one-way capture with a prescribed positive coast speed. This is a
 // kinematic impact/coast reconstruction, not an inertia or torque solution.
-export const drumContact = { period:6, amplitude:.38*1.55/.64, coastSpeed:.20, pitch:2*Math.PI/16, advance:6*2*Math.PI/16, lockPhase:2.46, pivotRadius:.53, pivotPhase:1.96, rollerRadius:.035, faceRadius:.375, rootRadius:.29, tipRadius:.39 };
+export const drumContact = { period:6, amplitude:.38*1.55/.64, coastSpeed:.20, pitch:2*Math.PI/20, advance:7*2*Math.PI/20, lockPhase:2.46, pivotRadius:.53, pivotPhase:1.96, rollerRadius:.035, faceRadius:.375, rootRadius:.29, tipRadius:.38 };
+// Brown's ratchet has twenty teeth; seven pass per beam oscillation, so the ratchet repeats every oscillation and the four-spoked flywheel every five (30 s).
+drumContact.toothCount=Math.round(2*Math.PI/drumContact.pitch);
 const p=drumContact,w=2*Math.PI/p.period;
+
 const angle=t=>-p.amplitude*Math.cos(w*t),speed=t=>p.amplitude*w*Math.sin(w*t);
 p.releaseTime=(Math.PI-Math.asin(p.coastSpeed/(p.amplitude*w)))/w;
 p.startAngle=angle(p.releaseTime)+p.lockPhase+p.coastSpeed*(p.period-p.releaseTime)-p.advance;

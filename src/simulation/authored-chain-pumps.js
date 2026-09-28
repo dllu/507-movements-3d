@@ -619,21 +619,30 @@ function chainPump(movement) {
     b.dischargeWater.visible = false;
     b.dischargeWater.material = b.dischargeWater.material.clone();
     b.dischargeWater.material.visible = false;
-    // Brown's flume: an open timber trough below the lip, closed at its
-    // right end and open at the left.
+    // Brown's delivery ledge: an open trough closed at its right end and
+    // open at the left. It is the top of one solid bank standing on the
+    // pool floor (Brown crops it at the left), so nothing floats; the sheet
+    // leaving its open end falls back into the pool beyond the bank.
     const flumeLeft = -2.96, flumeRight = -1.55, flumeFloorTop = 0.70;
+    const flumeWallTop = flumeFloorTop + 0.24, flumeHalfWidth = 0.4175, flumeWall = 0.055;
     const flume = addRole(new THREE.Group(), 'receiving-flume-under-spout-lip');
-    // Floor between the sides and short of the end wall (no coincident faces).
-    const flumeFloor = new THREE.Mesh(new THREE.BoxGeometry(flumeRight - 0.055 - flumeLeft, 0.10, 0.725), floor.material);
-    flumeFloor.position.set((flumeLeft + flumeRight - 0.055) / 2, flumeFloorTop - 0.05, 0);
-    flume.add(flumeFloor);
-    for (const z of [-0.39, 0.39]) {
-      const side = new THREE.Mesh(new THREE.BoxGeometry(flumeRight - flumeLeft, 0.34, 0.055), floor.material);
-      side.position.set((flumeLeft + flumeRight) / 2, flumeFloorTop + 0.07, z);
-      flume.add(side);
-    }
-    const flumeEnd = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.34, 0.725), floor.material);
-    flumeEnd.position.set(flumeRight - 0.0275, flumeFloorTop + 0.07, 0);
+    // One U-section (bank, floor and both side walls) extruded along x.
+    // Its foot runs 0.01 below the pool floor (no coincident face with the
+    // water volume's bottom).
+    const bankFoot = groundY - 0.01;
+    const bankSection = poly([
+      [-flumeHalfWidth, bankFoot], [flumeHalfWidth, bankFoot], [flumeHalfWidth, flumeWallTop],
+      [flumeHalfWidth - flumeWall, flumeWallTop], [flumeHalfWidth - flumeWall, flumeFloorTop],
+      [-flumeHalfWidth + flumeWall, flumeFloorTop], [-flumeHalfWidth + flumeWall, flumeWallTop],
+      [-flumeHalfWidth, flumeWallTop],
+    ]);
+    const bank = new THREE.Mesh(plate(bankSection, flumeLeft, flumeRight).rotateY(Math.PI / 2), floor.material);
+    bank.userData.role = 'solid-bank-carrying-the-delivery-trough';
+    flume.add(bank);
+    // The closed right end runs into the floor and side walls, its top just
+    // below theirs (no coincident faces).
+    const flumeEnd = new THREE.Mesh(new THREE.BoxGeometry(flumeWall, 0.24, 2 * (flumeHalfWidth - 0.03)), floor.material);
+    flumeEnd.position.set(flumeRight - flumeWall / 2 - 0.004, flumeFloorTop + 0.115, 0);
     flume.add(flumeEnd);
     root.add(flume);
     b.flume = flume;

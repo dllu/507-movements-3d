@@ -2,7 +2,7 @@ import {correctElasticGaugeParts} from './elastic-gauge-working-parts.js';
 import * as THREE from 'three';
 import {applyCutawayFor} from './cutaway-presentations.js';
 import {horizontalRing} from './horizontal-turbine-solids.js';
-import {plate, poly, circle, capsule, sector as wedge, polygonClipping as clip} from './finite-plate-geometry.js';
+import {makeSeeThrough} from './see-through-part.js';
 import {
   PALETTE,
   makeDynamicLink,
@@ -111,383 +111,6 @@ function makeCorrugatedDiaphragm({
     (_, angularIndex) => ringIndex(radialSegments, angularIndex),
   );
   return diaphragm;
-}
-
-// Closed thin strip of in-plane half-width w and depth 2d along an open
-// polyline. Its vertex topology is fixed, so the diaphragm section can be
-// reshaped in place every frame.
-function sectionStrip(count, w, d) {
-  const geometry = new THREE.BufferGeometry();
-  const quads = (count - 1) * 4 + 2;
-  geometry.setAttribute('position',
-    new THREE.Float32BufferAttribute(new Float32Array(quads * 18), 3));
-  const setPoints = (points) => {
-    const edge = points.map((p, i) => {
-      const a = points[Math.max(0, i - 1)], b = points[Math.min(count - 1, i + 1)];
-      const tx = b[0] - a[0], ty = b[1] - a[1], l = Math.hypot(tx, ty);
-      const nx = -ty / l * w, ny = tx / l * w;
-      return [[p[0] + nx, p[1] + ny], [p[0] - nx, p[1] - ny]];
-    });
-    const out = geometry.attributes.position.array;
-    let k = 0;
-    const quad = (a, b, c, e) => {
-      for (const v of [a, b, c, a, c, e]) { out[k++] = v[0]; out[k++] = v[1]; out[k++] = v[2]; }
-    };
-    const v = (i, side, z) => [edge[i][side][0], edge[i][side][1], z];
-    for (let i = 0; i < count - 1; i += 1) {
-      quad(v(i, 0, d), v(i, 1, d), v(i + 1, 1, d), v(i + 1, 0, d));
-      quad(v(i, 1, -d), v(i, 0, -d), v(i + 1, 0, -d), v(i + 1, 1, -d));
-      quad(v(i, 0, -d), v(i, 0, d), v(i + 1, 0, d), v(i + 1, 0, -d));
-      quad(v(i + 1, 1, -d), v(i + 1, 1, d), v(i, 1, d), v(i, 1, -d));
-    }
-    quad(v(0, 1, -d), v(0, 1, d), v(0, 0, d), v(0, 0, -d));
-    const n = count - 1;
-    quad(v(n, 0, -d), v(n, 0, d), v(n, 1, d), v(n, 1, -d));
-    geometry.attributes.position.needsUpdate = true;
-    geometry.computeVertexNormals();
-    geometry.computeBoundingBox();
-    geometry.computeBoundingSphere();
-  };
-  return { geometry, setPoints };
-}
-
-// Half of a solid of revolution: the closed profile `loop` of [a, r] points
-// (a along the axis, r >= 0 its radius) swept through the half turn behind
-// the cut plane z = 0, closed there by two plain cut faces. The lathe axis is
-// local Y and the radial direction at the cut is local +/-X. Topology is
-// fixed, so a profile of the same point count can be reshaped every frame.
-// Geometry group 0 is the turned surface, group 1 the cut faces.
-function halfRevolvedSolid(count, { segments = 48, capTriangles = null } = {}) {
-  const geometry = new THREE.BufferGeometry();
-  const ringVertices = count * (segments + 1);
-  const positions = new Float32Array((ringVertices + 2 * count) * 3);
-  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-  let indexed = false;
-  const setLoop = (loop) => {
-    if (!indexed) {
-      const triangles = capTriangles ?? THREE.ShapeUtils.triangulateShape(
-        loop.map(([a, r]) => new THREE.Vector2(a, r)), []);
-      const index = [];
-      for (let k = 0; k < count; k += 1) {
-        const l = (k + 1) % count;
-        for (let j = 0; j < segments; j += 1) {
-          const v = (i, jj) => i * (segments + 1) + jj;
-          index.push(v(k, j), v(l, j), v(l, j + 1), v(k, j), v(l, j + 1), v(k, j + 1));
-        }
-      }
-      const ringIndexCount = index.length;
-      for (const [t0, t1, t2] of triangles) {
-        index.push(ringVertices + t0, ringVertices + t1, ringVertices + t2);
-        index.push(ringVertices + count + t2, ringVertices + count + t1, ringVertices + count + t0);
-      }
-      geometry.setIndex(index);
-      geometry.addGroup(0, ringIndexCount, 0);
-      geometry.addGroup(ringIndexCount, index.length - ringIndexCount, 1);
-      indexed = true;
-    }
-    let o = 0;
-    for (let k = 0; k < count; k += 1) {
-      const [a, r] = loop[k];
-      for (let j = 0; j <= segments; j += 1) {
-        const phi = Math.PI / 2 + Math.PI * j / segments;
-        positions[o++] = r * Math.sin(phi); positions[o++] = a; positions[o++] = Math.min(0, r * Math.cos(phi));
-      }
-    }
-    for (const side of [1, -1]) {
-      for (const [a, r] of loop) { positions[o++] = side * r; positions[o++] = a; positions[o++] = 0; }
-    }
-    geometry.attributes.position.needsUpdate = true;
-    geometry.computeVertexNormals();
-    geometry.computeBoundingBox();
-    geometry.computeBoundingSphere();
-  };
-  return { geometry, setLoop };
-}
-
-// Brown's plate pairs the face view with a vertical section to its right:
-// the shallow case with its front lip and glass, corrugated disk A clamped at
-// its rim, sector e and the pointer pinion ahead of it, and the pressure
-// passage running down the back of the case to the foot. This figure follows
-// the plate's section proportions (plate pixels mapped at the face view's
-// scale). The gauge front is on the left, as Brown draws it, and disk A bows
-// toward the front with the same prescribed pressure fraction.
-// It is modelled as the real gauge cut on its axial plane: the case, clamp
-// ring, glass, dial, spindle, pinion and disk A are the back halves of solids
-// of revolution about the gauge axis, the pressure pipe and foot the back
-// halves of solids about the pipe axis, all closed by plain cut faces at
-// z = 0 (Brown's section hatching is engraving notation, not modelled).
-function brownSectionView({ frameMaterial, diaphragmMaterial, sectorMaterial, inkMaterial, pointerSweep }) {
-  const s = 6.9 / 318;
-  const P = ([x, y]) => [(x - 1029) * s, (375 - y) * s];
-  const group = addRole(new THREE.Group(), 'brown-section-view-beside-face');
-  const axisY = 369;
-  const sided = (material, shade = 1) => {
-    const clone = material.clone();
-    clone.side = THREE.DoubleSide;
-    if (shade !== 1) clone.color.multiplyScalar(shade);
-    return clone;
-  };
-  const caseMaterials = [sided(frameMaterial), sided(frameMaterial, 0.82)];
-  const inkMaterials = [sided(inkMaterial), sided(inkMaterial)];
-  const dialMaterials = [sided(matte(PALETTE.white, { roughness: 0.5 })), sided(matte(PALETTE.white, { roughness: 0.5 }), 0.9)];
-  const glassMaterial = matte(0xcfe3ea, { roughness: 0.1, metalness: 0.05, transparent: true, opacity: 0.32, side: THREE.DoubleSide });
-  glassMaterial.depthWrite = false;
-  const diaphragmMaterials = [sided(diaphragmMaterial), sided(diaphragmMaterial, 0.85)];
-  // Solid about the gauge axis (horizontal, at plate row `centre`): profile
-  // points are plate [x, y] with y above the centre.
-  const aboutGaugeAxis = (points, materials, role, centre = axisY) => {
-    const solid = halfRevolvedSolid(points.length);
-    solid.setLoop(points.map(([x, y]) => [(x - 1029) * s, (centre - y) * s]));
-    const mesh = addRole(new THREE.Mesh(solid.geometry, materials), role);
-    mesh.rotation.z = -Math.PI / 2;
-    mesh.position.y = (375 - centre) * s;
-    return mesh;
-  };
-  // Solid about the vertical pipe axis at plate column `centreX`: profile
-  // points are plate [x, y] with x right of the axis.
-  const pipeX = 1332.5;
-  const aboutPipeAxis = (points, materials, role) => {
-    const solid = halfRevolvedSolid(points.length);
-    solid.setLoop(points.map(([x, y]) => [(375 - y) * s, (x - pipeX) * s]));
-    const mesh = addRole(new THREE.Mesh(solid.geometry, materials), role);
-    mesh.position.x = (pipeX - 1029) * s;
-    return mesh;
-  };
-  const holeY = axisY - 8;
-  // Coincident faces: every part here is a half solid closed by cut faces on
-  // one plane, drawn double-sided. Parts that merely touched (clamp ring,
-  // nipple, foot, boss, disk rim, glass and dial rims) showed both faces at
-  // one depth and flickered, while parts of different materials that
-  // overlapped showed two cut faces in one plane. Joints of one material now
-  // overlap by half a plate pixel (their cut faces are then one look, and
-  // the touching faces lie inside the other part); the disk rim, glass and
-  // dial sit in pockets 0.1 px larger than themselves.
-  const sink = 0.5, pocket = 0.1;
-  const caseShell = aboutGaugeAxis([[1200, 213], [1312, 213], [1312, holeY], [1302, holeY],
-    [1302, 223], [1224 + pocket, 223], [1224 + pocket, 222 - pocket], [1221 - pocket, 222 - pocket],
-    [1221 - pocket, 223], [1217 + pocket, 223], [1217 + pocket, 222 - pocket], [1213 - pocket, 222 - pocket],
-    [1213 - pocket, 223], [1210, 223], [1210, 236], [1200, 236]], caseMaterials,
-  'fixed-case-of-diaphragm-gauge-in-section');
-  // Disk A's rim (x 1288-1292 at rows 247-249) sits in a pocket in the ring.
-  const clampRing = aboutGaugeAxis([[1266, 236], [1302 + sink, 236], [1302 + sink, 249],
-    [1292 + pocket, 249], [1292 + pocket, 247 - pocket], [1288 - pocket, 247 - pocket], [1288 - pocket, 249],
-    [1266, 249]], caseMaterials, 'rim-clamp-ring-of-disk-A-in-section');
-  // The passage leaves the back of the case on the axis through a short
-  // nipple seated in the pipe wall, and the pipe runs down to the foot.
-  // Its bore is 0.3 px wider than the case's hole, so the two walls do not
-  // coincide where the nipple is sunk into the case.
-  const nipple = aboutGaugeAxis([[1312 - sink, holeY - 0.3], [1320, holeY - 0.3], [1320, axisY - 14], [1312 - sink, axisY - 14]],
-    caseMaterials, 'passage-nipple-behind-case-in-section');
-  const pipe = aboutPipeAxis([[pipeX, 349.5], [1352, 349.5], [1352, 600], [1340, 600],
-    [1340, 361.5], [pipeX, 361.5]], caseMaterials,
-  'pressure-pipe-down-back-of-case-in-section');
-  const foot = aboutPipeAxis([[1340.3, 600 - sink], [1366, 600 - sink], [1366, 610], [1340.3, 610]], caseMaterials,
-    'pipe-foot-flange-in-section');
-  // Brown carries the glass and the dial plate across the whole case: both
-  // run out into the case wall (its inner face is row 223), where they are
-  // seated behind the front lip, so neither hangs free inside the case; they
-  // end 1 px inside the wall so their rims do not share its face.
-  const glass = aboutGaugeAxis([[1213, axisY], [1217, axisY], [1217, 222], [1213, 222]],
-    [glassMaterial, glassMaterial], 'front-glass-in-section');
-  const dial = aboutGaugeAxis([[1221, axisY - 1.6], [1224, axisY - 1.6], [1224, 222], [1221, 222]],
-    dialMaterials, 'dial-plate-in-section');
-  // Pass 58: the moving train is complete from disk A to the pointer.
-  // The pointer spindle runs on the gauge axis from the pointer, just behind
-  // the glass, through a bore in the dial to the pinion. Sector e turns on a
-  // stud across the section (Brown's small circle) carried by a plain bracket
-  // screwed to the back of the dial; its toothed rim lies just behind the
-  // pinion and engages the pinion's back as a crown sector (Brown's toothed
-  // arcs above and below the pinion). Arm e carries a pin, and a short rod
-  // links it to a lug on the boss at the centre of disk A. These moving parts
-  // are whole (not cut by the section plane) so their motion reads in every
-  // view; the pointer's sweep is centred on the cut so it lies mostly inside
-  // the case.
-  // Brown's disk spans rows 251-487; its rim runs 2 px on into the clamp
-  // ring (inner radius 120 px), where it is held.
-  const rimRadius = 122;
-  const diskX = (r, bow) => {
-    const dish = r < 0.28 ? 1 : (1 - ((r - 0.28) / 0.72) ** 2) ** 2;
-    const ripple = r < 0.28 ? 0 : 3 * Math.sin(4 * Math.PI * (r - 0.28) / 0.72) * (1 - r);
-    return 1290 - bow * dish - ripple;
-  };
-  const bowAt = (pressureFraction) => 6 + 12 * pressureFraction;
-  const X = (x) => (x - 1029) * s;
-  const Y = (row) => (375 - row) * s;
-  const px = (value) => value * s;
-  const pinionRadius = 7;
-  const crownRadius = 28;
-  const crownRatio = crownRadius / pinionRadius;
-  const pinionTeeth = 8;
-  const contactX = 1229;
-  const sectorPivot = new THREE.Vector3(X(contactX + crownRadius), Y(axisY), 0);
-  const sweep = pointerSweep;
-  const needleZero = sweep / 2 - Math.PI / 2;
-  const spindleGroup = addRole(new THREE.Group(), 'pointer-spindle-assembly-in-section');
-  spindleGroup.position.set(0, Y(axisY), 0);
-  const alongX = (geometry) => geometry.rotateZ(-Math.PI / 2);
-  // The spindle's front end stops inside the hub (it was flush with the hub's face).
-  const spindle = addRole(new THREE.Mesh(alongX(new THREE.CylinderGeometry(px(1.2), px(1.2), px(1233 - 1218.4), 32))
-    .translate(X((1233 + 1218.4) / 2), 0, 0), inkMaterial), 'pointer-spindle-on-gauge-axis-in-section');
-  const needleHub = addRole(new THREE.Mesh(alongX(new THREE.CylinderGeometry(px(2.6), px(2.6), px(2.1), 32))
-    .translate(X(1219.25), 0, 0), sectorMaterial), 'pointer-hub-in-section');
-  const needleBody = addRole(new THREE.Mesh(new THREE.BoxGeometry(px(1.5), px(85 + 30), px(2))
-    .translate(X(1219.25), px((85 - 30) / 2), 0), inkMaterial), 'pointer-needle-behind-glass-in-section');
-  // Pinion: teeth centred so that a tooth space faces the crown sector at zero
-  // pressure; the pitch then keeps the crown teeth in the spaces.
-  const toothPitch = Math.PI * 2 / pinionTeeth;
-  const pinionOutline = [];
-  for (let k = 0; k < pinionTeeth; k += 1) {
-    const centre = -needleZero + toothPitch / 2 + k * toothPitch;
-    for (const [offset, radius] of [[-0.5, 5.6], [-0.26, 5.6], [-0.15, 8.0], [0.15, 8.0], [0.26, 5.6]]) {
-      const angle = centre + offset * toothPitch;
-      pinionOutline.push([px(radius) * Math.cos(angle), px(radius) * Math.sin(angle)]);
-    }
-  }
-  const pinionGeometry = plate(clip.difference(poly(pinionOutline), poly(circle([0, 0], px(1.2), 32))), X(1225), X(1233));
-  // rotateY maps the extrusion axis z onto x (and local x onto -z).
-  pinionGeometry.rotateY(Math.PI / 2);
-  const pinion = addRole(new THREE.Mesh(pinionGeometry, sectorMaterial), 'pointer-pinion-in-section');
-  spindleGroup.add(spindle, needleHub, needleBody, pinion);
-  // Sector e: crown rim, two spokes, hub and arm e, one plate behind the pinion.
-  const sectorBack = -0.225, sectorFront = -0.177;
-  const ridgePitch = toothPitch * pinionRadius / crownRadius;
-  const sectorTravel = sweep / crownRatio;
-  const ridgeCount = Math.ceil(sectorTravel / ridgePitch) + 2;
-  const bandStart = Math.PI - (ridgeCount - 1) * ridgePitch - 0.1, bandEnd = Math.PI + ridgePitch + 0.1;
-  const L = (v) => px(v);
-  const armLength = sectionArmLength(sectorTravel);
-  const armStart = Math.PI / 3;
-  const pinLocal = [L(armLength) * Math.cos(armStart), L(armLength) * Math.sin(armStart)];
-  const sectorShape = clip.difference(clip.union(
-    wedge(L(crownRadius - 4), L(crownRadius + 3.5), bandStart, bandEnd, 96),
-    capsule([0, 0], [L(crownRadius - 3) * Math.cos(bandStart + 0.12), L(crownRadius - 3) * Math.sin(bandStart + 0.12)], L(1.8), 16),
-    capsule([0, 0], [L(crownRadius - 3) * Math.cos(bandEnd - 0.12), L(crownRadius - 3) * Math.sin(bandEnd - 0.12)], L(1.8), 16),
-    capsule([0, 0], pinLocal, L(2.2), 16),
-    poly(circle([0, 0], L(4), 48)),
-  ), poly(circle([0, 0], L(1.3), 32)), poly(circle(pinLocal, L(1.0), 24)));
-  const sectorE = addRole(new THREE.Group(), 'sector-e-in-section');
-  sectorE.position.copy(sectorPivot);
-  const sectorBody = addRole(new THREE.Mesh(plate(sectorShape, sectorBack, sectorFront), sectorMaterial),
-    'sector-e-lever-in-section');
-  sectorE.add(sectorBody);
-  for (let j = -1; j < ridgeCount - 1; j += 1) {
-    const angle = Math.PI - j * ridgePitch;
-    const ridge = addRole(new THREE.Mesh(new THREE.BoxGeometry(L(7), L(1.4), 0.029)
-      .translate(L(crownRadius - 0.5), 0, sectorFront + 0.0145).rotateZ(angle), sectorMaterial),
-    `crown-tooth-${j + 2}-of-sector-e-in-section`);
-    sectorE.add(ridge);
-  }
-  const armPin = addRole(new THREE.Mesh(new THREE.CylinderGeometry(L(1.0), L(1.0), -0.105 - sectorFront, 24)
-    .rotateX(Math.PI / 2).translate(pinLocal[0], pinLocal[1], (sectorFront - 0.105) / 2), inkMaterial),
-  'pin-in-arm-e-in-section');
-  const armPinHead = addRole(new THREE.Mesh(new THREE.CylinderGeometry(L(1.8), L(1.8), 0.012, 24)
-    .rotateX(Math.PI / 2).translate(pinLocal[0], pinLocal[1], -0.105 + 0.006), inkMaterial),
-  'pin-head-on-arm-e-in-section');
-  sectorE.add(armPin, armPinHead);
-  // Fixed bracket behind sector e, screwed to the back of the dial, and the
-  // stud on which the sector turns.
-  const bracketBack = -0.29, bracketFront = -0.25;
-  const bracket = addRole(new THREE.Mesh(plate(poly([[X(1224), Y(axisY) - L(5)], [sectorPivot.x + L(4), Y(axisY) - L(5)],
-    [sectorPivot.x + L(4), Y(axisY) + L(5)], [X(1224), Y(axisY) + L(5)]]), bracketBack, bracketFront), caseMaterials[0]),
-  'bracket-for-sector-e-behind-dial-in-section');
-  const stud = addRole(new THREE.Mesh(new THREE.CylinderGeometry(L(1.3), L(1.3), sectorFront + 0.012 - bracketFront, 24)
-    .rotateX(Math.PI / 2).translate(sectorPivot.x, sectorPivot.y, (bracketFront + sectorFront + 0.012) / 2), inkMaterial),
-  'fixed-stud-of-sector-e-in-section');
-  const studHead = addRole(new THREE.Mesh(new THREE.CylinderGeometry(L(2.4), L(2.4), 0.01, 24)
-    .rotateX(Math.PI / 2).translate(sectorPivot.x, sectorPivot.y, sectorFront + 0.017), inkMaterial),
-  'fixed-stud-head-of-sector-e-in-section');
-  // Disk A: a thin corrugated plate of revolution, 4 plate pixels thick,
-  // clamped at its rim; its profile is reshaped each frame. Its centre boss
-  // carries a lug and pin for the rod.
-  const diaphragmSamples = 49;
-  const diaphragmCap = [];
-  for (let i = 0; i < diaphragmSamples - 1; i += 1) {
-    const front = [i, i + 1], back = [2 * diaphragmSamples - 1 - i, 2 * diaphragmSamples - 2 - i];
-    diaphragmCap.push([front[0], front[1], back[1]], [front[0], back[1], back[0]]);
-  }
-  const diaphragmSolid = halfRevolvedSolid(2 * diaphragmSamples, { capTriangles: diaphragmCap });
-  const diaphragmSection = addRole(new THREE.Mesh(diaphragmSolid.geometry, diaphragmMaterials),
-    'corrugated-disk-A-in-section');
-  diaphragmSection.rotation.z = -Math.PI / 2;
-  diaphragmSection.position.y = (375 - axisY) * s;
-  const boss = aboutGaugeAxis([[-6, axisY], [-2 + sink, axisY], [-2 + sink, axisY - 10], [-6, axisY - 10]].map(([x, y]) => [x + 1029, y]),
-    diaphragmMaterials, 'centre-boss-of-disk-A-in-section');
-  const lugZ = [-0.195, -0.155];
-  boss.position.y = 0;
-  // The lug runs 0.3 px into the boss, and the pin's back end stops inside
-  // the lug (both were flush).
-  const lug = addRole(new THREE.Mesh(new THREE.BoxGeometry(L(3.9), L(4.4), lugZ[1] - lugZ[0])
-    .translate(L(-7.8 + 0.15), 0, (lugZ[0] + lugZ[1]) / 2), diaphragmMaterial), 'rod-lug-on-boss-of-disk-A-in-section');
-  const lugPin = addRole(new THREE.Mesh(new THREE.CylinderGeometry(L(1.0), L(1.0), 0.085, 24)
-    .rotateX(Math.PI / 2).translate(L(-7.8), 0, -0.1475), inkMaterial), 'pin-in-rod-lug-in-section');
-  const lugPinHead = addRole(new THREE.Mesh(new THREE.CylinderGeometry(L(1.8), L(1.8), 0.012, 24)
-    .rotateX(Math.PI / 2).translate(L(-7.8), 0, -0.105 + 0.006), inkMaterial), 'pin-head-on-rod-lug-in-section');
-  const bossGroup = addRole(new THREE.Group(), 'moving-centre-of-disk-A-in-section');
-  bossGroup.add(boss, lug, lugPin, lugPinHead);
-  const rodZ = -0.135, rodHalf = 0.02;
-  const rodStrip = sectionStrip(2, L(1.2), rodHalf);
-  const rod = addRole(new THREE.Mesh(rodStrip.geometry, inkMaterial),
-    'rod-from-disk-A-to-arm-e-in-section');
-  rod.position.z = rodZ;
-  const eyeGeometry = () => plate(clip.difference(poly(circle([0, 0], L(2.4), 32)), poly(circle([0, 0], L(1.0), 24))),
-    rodZ - rodHalf, rodZ + rodHalf);
-  const rodEyes = [0, 1].map((i) => addRole(new THREE.Mesh(eyeGeometry(), inkMaterial),
-    `rod-eye-${i + 1}-in-section`));
-  group.add(caseShell, clampRing, nipple, pipe, foot, glass, dial, spindleGroup, sectorE, bracket, stud, studHead,
-    diaphragmSection, bossGroup, rod, ...rodEyes);
-  const lugPinAt = (bow) => new THREE.Vector3(X(diskX(0, bow) - 2 - 4) - L(1.8), Y(axisY), 0);
-  const pinAt = (angle) => new THREE.Vector3(pinLocal[0], pinLocal[1], 0).applyAxisAngle(Z_AXIS, angle).add(sectorPivot);
-  const rodLength = lugPinAt(bowAt(0)).distanceTo(pinAt(0));
-  // The rod is one rigid bar of constant length between its two eyes; it is
-  // built once and carried by its transform, not reshaped every frame.
-  rodStrip.setPoints([[L(2), 0], [rodLength - L(2), 0]]);
-  const solveSector = (bow) => {
-    const lug = lugPinAt(bow);
-    let lower = 0, upper = 1.6;
-    for (let i = 0; i < 60; i += 1) {
-      const middle = (lower + upper) / 2;
-      if (lug.distanceTo(pinAt(middle)) < rodLength) lower = middle; else upper = middle;
-    }
-    return (lower + upper) / 2;
-  };
-  const update = (state) => {
-    const bow = bowAt(state.pressureFraction);
-    const mid = Array.from({ length: diaphragmSamples }, (_, i) => {
-      const r = i / (diaphragmSamples - 1);
-      return [(diskX(r, bow) - 1029) * s, r * rimRadius * s];
-    });
-    const w = 2 * s;
-    diaphragmSolid.setLoop([...mid.map(([a, r]) => [a - w, r]),
-      ...[...mid].reverse().map(([a, r]) => [a + w, r])]);
-    bossGroup.position.set(X(diskX(0, bow)), Y(axisY), 0);
-    const sectorAngle = solveSector(bow);
-    sectorE.rotation.z = sectorAngle;
-    spindleGroup.rotation.x = needleZero - crownRatio * sectorAngle;
-    const lugPin = lugPinAt(bow), pin = pinAt(sectorAngle);
-    rod.position.set(lugPin.x, lugPin.y, rodZ);
-    rod.rotation.z = Math.atan2(pin.y - lugPin.y, pin.x - lugPin.x);
-    rodEyes[0].position.set(lugPin.x, lugPin.y, 0);
-    rodEyes[1].position.set(pin.x, pin.y, 0);
-    group.userData.sectionState = { sectorAngle, needleAngle: spindleGroup.rotation.x, rodLength: lugPin.distanceTo(pin) };
-  };
-  // Arm length chosen so the section pointer sweeps the same angle as the
-  // face-view pointer at full pressure.
-  function sectionArmLength(travel) {
-    const lugAt = (bow) => [(diskX(0, bow) - 6) - 1.8, 0];
-    const rotation = (length) => {
-      const pin = (t) => [contactX + crownRadius + length * Math.cos(Math.PI / 3 + t), length * Math.sin(Math.PI / 3 + t)];
-      const d = (t, bow) => Math.hypot(pin(t)[0] - lugAt(bow)[0], pin(t)[1] - lugAt(bow)[1]);
-      const target = d(0, bowAt(0));
-      let lower = 0, upper = 1.6;
-      for (let i = 0; i < 60; i += 1) { const m = (lower + upper) / 2; if (d(m, bowAt(1)) < target) lower = m; else upper = m; }
-      return (lower + upper) / 2;
-    };
-    let shorter = 9, longer = 18;
-    for (let i = 0; i < 50; i += 1) { const m = (shorter + longer) / 2; if (rotation(m) > travel) shorter = m; else longer = m; }
-    return (shorter + longer) / 2;
-  }
-  return { group, update, blocks: { caseSection: caseShell, clampRing, pipe, foot, diaphragmSection,
-    rod, rodEyes, sectorE, pinion, spindle, needle: needleBody, spindleGroup, bracket, stud, bossGroup, glass, dial } };
 }
 
 function diaphragmPressureGauge(movement) {
@@ -833,30 +456,6 @@ function diaphragmPressureGauge(movement) {
     pinion,
     pointer,
   );
-  const sectionView = brownSectionView({
-    pointerSweep: maximumSectorAngle * gearRatio,
-    diaphragmMaterial,
-    frameMaterial,
-    inkMaterial,
-    sectorMaterial,
-  });
-  // Pass 56: Brown's section is a separate figure: stand it clear of the
-  // gauge (a 1.86 gap instead of the old 0.26) so that in rotated views its cut
-  // back half does not read as a half-drum stuck to the gauge's side.
-  sectionView.group.position.x += 1.6;
-  root.add(sectionView.group);
-  // The section's pointer turns about the gauge axis, which lies in the cut
-  // plane, so half its sweep would stand in front of the cut. Like every
-  // other part of the section it keeps only the half behind the plane.
-  {
-    const needle = sectionView.blocks.needle;
-    sectionView.group.updateMatrixWorld(true);
-    const cut = new THREE.Plane(new THREE.Vector3(0, 0, -1), 0).applyMatrix4(sectionView.group.matrixWorld);
-    needle.material = needle.material.clone();
-    Object.assign(needle.material, { clippingPlanes: [cut], side: THREE.DoubleSide });
-    root.userData.localClippingEnabled = true;
-  }
-
   const stateAtTime = (time) => {
     const cycleTime = THREE.MathUtils.euclideanModulo(time, cycleDuration);
     const cyclePosition = cycleTime / cycleDuration;
@@ -951,7 +550,6 @@ function diaphragmPressureGauge(movement) {
     sectorInputArm,
     sectorRim,
     sectorTeeth,
-    sectionView: sectionView.blocks,
   };
   root.userData.cameraFitBounds = new THREE.Box3(
     new THREE.Vector3(-3.62, -5.35, -1.18),
@@ -1043,7 +641,6 @@ function diaphragmPressureGauge(movement) {
     inletPressureCore.material.opacity = 0.10
       + 0.48 * state.pressureFraction;
     pressureFill.userData.gaugePressurePascal = state.gaugePressurePascal;
-    sectionView.update(state);
     root.userData.kinematics = state;
   };
   update(0);
@@ -1119,5 +716,24 @@ function diaphragmPressureGauge(movement) {
 
 export function createAuthoredDiaphragmPressureGaugeMovement(movement) {
   if (movement.id !== 500) return null;
-  return applyCutawayFor(diaphragmPressureGauge(movement), movement.id);
+  const model = applyCutawayFor(diaphragmPressureGauge(movement), movement.id);
+  // Brown's face view and his section are two figures of ONE gauge, so they
+  // are one model. His section shows disk A, rod, sector e and the pinion
+  // inside the case; the case drum is see-through (the shared style) so they
+  // show from any side view, while the face keeps its dial.
+  model.root.traverse((object) => {
+    if (object.userData.role === 'whole-round-gauge-case-drum') makeSeeThrough(object);
+  });
+  // The fit covers the one gauge, including its stem and union nut (added
+  // after the working-part fit) and the case drum.
+  const period = model.root.userData.geometry.cycleDuration;
+  const bounds = model.root.userData.cameraFitBounds.clone();
+  for (let i = 0; i <= 32; i += 1) {
+    model.update(period * i / 32);
+    model.root.updateMatrixWorld(true);
+    bounds.union(new THREE.Box3().setFromObject(model.root));
+  }
+  model.root.userData.cameraFitBounds = bounds.expandByScalar(0.03);
+  model.update(0);
+  return model;
 }

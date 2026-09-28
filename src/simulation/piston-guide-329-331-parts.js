@@ -78,7 +78,27 @@ export function correctSlottedGuide(root){
   passageY(glandNeck,.50,.76,.252,.172,.32);glandNeck.position.set(0,-2.19,.64);
   glandNeck.userData.role='ported-neck-joining-fixed-gland-to-crossbase';b.fixedFrame.add(glandNeck);b.glandNeck=glandNeck;
   const connector=new THREE.Mesh(new THREE.BoxGeometry(.24,.20,.16),b.pistonRod.material);connector.position.set(0,-.60,.64);connector.userData.role='crosshead-to-piston-rod-neck';b.crossheadA.add(connector);b.rodNeck=connector;
-  d.finiteGuideReview={slotRunningClearance:.0005,guideRunningClearance:.002,qualification:'Exact source crank/slot motion; finite running allowances, inferred rear braces and rod/gland depth. No bearing loads or friction simulation.'};
+  // Brown's crossbase is the cylinder cover (the gland stands on it); the
+  // plate crops the cylinder below. A closed bored barrel on the rod axis
+  // hangs from the crossbase and encloses the whole stroke, with a round
+  // piston running in it: nothing moves bare below the frame.
+  const rodZ=b.pistonRod.position.z,half=(g.outputStroke??2*g.crankRadius)/2,baseBottom=b.lowerCrossBase.position.y-.12;
+  const headTop=g.pistonHeadTopOffsetY-.04,headBottom=g.pistonHeadBottomOffsetY+.02,barrelOuter=.7,barrelInner=.64;
+  replace(b.pistonHead,new THREE.CylinderGeometry(barrelInner-.01,barrelInner-.01,headTop-headBottom,64));
+  b.pistonHead.position.set(0,(headTop+headBottom)/2,rodZ);b.pistonHead.userData.role='round-piston-head-in-closed-cylinder';
+  const rodTop=g.pistonRodTopOffsetY,rodBottom=headTop-.02;
+  replace(b.pistonRod,new THREE.BoxGeometry(.24,rodTop-rodBottom,.16));b.pistonRod.position.y=(rodTop+rodBottom)/2;
+  const coverTop=baseBottom+.005,coverBottom=baseBottom-.06,barrelBottom=headBottom-half-.06;
+  const cover=new THREE.Mesh(plate(clip.difference(poly(circle([0,0],barrelOuter+.04,96)),rect(.26,.18)),coverBottom,coverTop).rotateX(-Math.PI/2),b.lowerCrossBase.material);
+  cover.position.set(0,0,rodZ);cover.userData.role='cylinder-cover-under-crossbase-with-rod-passage';
+  const barrel=new THREE.Mesh(tube(barrelOuter,barrelInner,coverBottom+.005-barrelBottom).translate(0,(coverBottom+.005+barrelBottom)/2,0),b.lowerCrossBase.material);
+  barrel.position.set(0,0,rodZ);barrel.userData.role='closed-steam-cylinder-enclosing-piston-stroke';
+  const end=new THREE.Mesh(new THREE.CylinderGeometry(barrelOuter+.04,barrelOuter+.04,.06,96),b.lowerCrossBase.material);
+  end.position.set(0,barrelBottom+.005-.03,rodZ);end.userData.role='cylinder-bottom-cover';
+  // The default view frames the stroke as before; the barrel's foot may crop.
+  barrel.userData.cameraFitGuide=true;end.userData.cameraFitGuide=true;
+  b.fixedFrame.add(cover,barrel,end);b.cylinderCover=cover;b.cylinderBarrel=barrel;b.cylinderEnd=end;
+  d.finiteGuideReview={cylinderTop:coverTop,cylinderBottom:barrelBottom-.055,barrelInnerRadius:barrelInner,pistonClearanceAtTop:coverBottom-(headTop+half),slotRunningClearance:.0005,guideRunningClearance:.002,qualification:'Exact source crank/slot motion; finite running allowances, inferred rear braces, rod/gland depth and closed cylinder below the crossbase. No steam, bearing loads or friction simulation.'};
 }
 export function finishPistonGuides(root,update){
   const d=root.userData;d.hideGround=true;d.minimumDisplayCycleSeconds=d.geometry.cyclePeriod;

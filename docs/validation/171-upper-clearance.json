@@ -28,18 +28,18 @@
       "plate"
     ]
   ],
-  "queries": 8596528,
+  "queries": 8992288,
   "intersections": {},
   "sampledDuration": 18,
   "method": "Bidirectional visible mesh vertices, edge midpoints and triangle centers. Selected upper-slot die, pivot pins and bored plate interfaces only; not whole-assembly qualification.",
   "sources": [
     {
       "file": "scripts/review-marine-valve-upper-solids.mjs",
-      "sha256": "d8a051d2d82131f6d9867a9076dbed15a2cbee2054f93d1972e2ded70df9b19c"
+      "sha256": "65017f1fa154a8bec69785c45d13c9ec538c322a3a53047b86e5b62450954395"
     },
     {
       "file": "src/simulation/authored-marine-valve-gears.js",
-      "sha256": "095390c2de4a286cb46cd5619db53f07e2f5d8bc93c90e6fe8c0a4a2dac748c3"
+      "sha256": "a67489de28c63c554ac33e6acfc7f160bd2af0fe01fb42b0edfef49b0df00c91"
     },
     {
       "file": "src/simulation/finite-plate-geometry.js",

@@ -118,19 +118,17 @@ function makeHangingWeight({ material, whiteMaterial }) {
   // Brown's weight is a small pear-shaped bulb, about a quarter of a link
   // length tall, hanging close under its neck.
   // The profile is closed on the axis at both ends, so the bulb is solid.
+  // Pass 90: one smooth spline (a round bulb tapering into the neck), not a
+  // few straight facets; the lathe has enough segments to read round.
   const profile = [
-    new THREE.Vector2(0, -0.291),
-    new THREE.Vector2(0.062, -0.291),
-    new THREE.Vector2(0.186, -0.267),
-    new THREE.Vector2(0.260, -0.143),
-    new THREE.Vector2(0.242, 0.019),
-    new THREE.Vector2(0.174, 0.149),
-    new THREE.Vector2(0.100, 0.229),
-    new THREE.Vector2(0.090, 0.267),
+    ...new THREE.SplineCurve([
+      [0, -0.291], [0.13, -0.262], [0.22, -0.175], [0.25, -0.055], [0.228, 0.065],
+      [0.165, 0.160], [0.112, 0.225], [0.092, 0.267],
+    ].map(([x, y]) => new THREE.Vector2(x, y))).getPoints(48),
     new THREE.Vector2(0, 0.267),
   ];
   const body = new THREE.Mesh(
-    new THREE.LatheGeometry(profile, 48),
+    new THREE.LatheGeometry(profile, 72),
     material,
   );
   body.position.y = 0.138;
@@ -794,6 +792,9 @@ export function createAuthoredDoorCloserMovement(movement) {
       bounds.union(box.copy(o.geometry.boundingBox).applyMatrix4(o.matrixWorld));
     });
   }
+  // Frame Brown's view: the pins, toggle and weight, with the door and wall
+  // that carry the pins below the default view.
+  bounds.min.y = Math.max(bounds.min.y, model.root.userData.geometry.endpointY - 1.35);
   model.update(0);
   return model;
 }

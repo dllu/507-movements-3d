@@ -367,11 +367,18 @@ function bentShaftSlide(movement) {
   rodBody.add(rodB);
   // Head A: Brown's thick sleeve turning on the bent end, a collar at its
   // outer end; B leaves its underside near the bend.
+  // Pass 90: Brown's head has a conical collar flaring from the bend and a
+  // chamfered nut-like cap at its outer end.
+  const headInner = headStart - rodRootOnBentEnd, headOuter = headEnd - rodRootOnBentEnd;
   const headProfile = [
-    [0.34, headStart - rodRootOnBentEnd],
-    [0.34, headEnd - rodRootOnBentEnd - 0.10],
-    [0.40, headEnd - rodRootOnBentEnd - 0.10],
-    [0.40, headEnd - rodRootOnBentEnd],
+    [0.27, headInner],
+    [0.38, headInner + 0.10],
+    [0.38, headInner + 0.14],
+    [0.34, headInner + 0.14],
+    [0.34, headOuter - 0.17],
+    [0.41, headOuter - 0.17],
+    [0.41, headOuter - 0.07],
+    [0.33, headOuter],
   ].map(([radius, axial]) => ({ axial, radial: radius }));
   const headGeometry = boredLatheGeometry(headProfile, 0.135, 64);
   // Lathe axis Y becomes rod-local -X (the bent end runs out along it).

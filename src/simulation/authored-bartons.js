@@ -11,7 +11,7 @@ function spanishBarton(nominalAdvantage) {
   const five = nominalAdvantage === 5;
   const root = new THREE.Group();
   const radius = 0.44;
-  const planeSeparation = 0.44;
+  const planeSeparation = five ? 0.32 : 0.44;
   const fixedY = 1.72;
   const loadBaseY = -1.02;
   const carrierBaseY = 0.28;
@@ -21,20 +21,24 @@ function spanishBarton(nominalAdvantage) {
   // Brown's 4:1 barton (16) has no crossing ropes, so all three sheaves and
   // both ropes share one plane and each moving block hangs from an eye in
   // line above its sheave, as the plate's S-links show. In the 5:1 barton (17)
-  // the diagonal becket crosses the load-to-fixed leg, so the carrier and that
-  // becket sit in a second plane; Brown runs both terminating ropes straight to
-  // the moving blocks' hubs, so both end on their block pins (no stirrups).
+  // the diagonal becket crosses in front of the load-to-fixed leg, so the
+  // carrier and that becket sit in a second plane just in front of the first.
+  // The diagonal ends on the load pin's front end, as Brown draws it running to
+  // the hub. The fixed block's falling leaf hangs the carrier by a stirrup like
+  // 16's: its eye sits in the fixed rope plane, straight above the carrier's
+  // centre, on the stirrup's crossbar, so the leaf stays in its own plane and
+  // the carrier pin is no longer than its cheeks.
   const fixedZ = 0;
   const carrierZ = five ? planeSeparation : 0;
   const fixed = makeHoistBlock({ radius, color: PALETTE.driver, upperEyeZ: 0 });
   const load = makeHoistBlock({ radius, color: PALETTE.driven, lowerHook: true,
     ...(five ? { pinBecketZ: planeSeparation } : { upperEyeZ: 0 }) });
   const carrier = makeHoistBlock({ radius, color: PALETTE.accent,
-    ...(five ? { pinBecketZ: -planeSeparation } : { upperEyeZ: 0 }) });
+    upperEyeZ: five ? -planeSeparation : 0 });
   fixed.position.set(fixedX, fixedY, fixedZ);
   load.position.set(loadX, loadBaseY, 0);
   carrier.position.set(carrierX, carrierBaseY, carrierZ);
-  const weight = makeHoistLoad({ radius: 0.40, height: 0.60 });
+  const weight = makeHoistLoad({ radius: 0.40, height: 0.60, eyeBoss: true });
   const anchor = new THREE.Vector3(loadX - radius, 2.48, 0);
   const ceiling = new THREE.Mesh(new THREE.BoxGeometry(2.7, 0.12, 1.05), matte(PALETTE.frame));
   ceiling.position.set(five ? 0 : -0.25, 2.62, 0.2);

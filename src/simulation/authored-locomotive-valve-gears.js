@@ -185,10 +185,17 @@ function makeIndexedEccentricSheave({
   return group;
 }
 
-function makeEccentricStrap({ material, radius, z }) {
+function makeEccentricStrap({ material, radius, z, boreRadius = radius - 0.08 }) {
   const group = new THREE.Group();
+  // Pass 90: Brown's strap is a flat ring with two square bolt-lug ears
+  // across the rod line (the strap turns with its rod).
+  const outerRadius = radius + 0.072;
+  const ears = [-1, 1].map(sign => poly([[-0.08, sign * (outerRadius - 0.05)],
+    [0.08, sign * (outerRadius - 0.05)], [0.08, sign * (outerRadius + 0.12)],
+    [-0.08, sign * (outerRadius + 0.12)]]));
   const ring = new THREE.Mesh(
-    new THREE.TorusGeometry(radius, 0.072, 12, 64),
+    plate(clip.difference(clip.union(poly(circle([0, 0], outerRadius, 128)), ...ears),
+      poly(circle([0, 0], boreRadius, 128))), -0.072, 0.072),
     material,
   );
   ring.position.z = z;
@@ -809,12 +816,14 @@ function locomotiveStephensonExpansionLinkValveGear() {
   root.add(inputRotor);
 
   const forwardStrap = makeEccentricStrap({
+    boreRadius: sheaveRadius + 0.006,
     material: brassMaterial,
     radius: strapPitchRadius,
     z: forwardLayerZ,
   });
   forwardStrap.userData.role = 'forward-eccentric-strap';
   const backwardStrap = makeEccentricStrap({
+    boreRadius: sheaveRadius + 0.006,
     material: brassMaterial,
     radius: strapPitchRadius,
     z: backwardLayerZ,
@@ -822,8 +831,17 @@ function locomotiveStephensonExpansionLinkValveGear() {
   backwardStrap.userData.role = 'backward-eccentric-strap';
   const makeStrapRod = (length, role) => {
     // Rod starts at the strap rim: it must not sweep through its rotating sheave.
-    const outline = clip.union(poly([[strapPitchRadius - 0.02, -0.0625],
-      [length, -0.0625], [length, 0.0625], [strapPitchRadius - 0.02, 0.0625]]),
+    // Pass 90: Brown's rod flares into the strap and tapers to its eye.
+    const x0 = strapPitchRadius - 0.02;
+    const flare = new THREE.Shape();
+    flare.moveTo(x0, -0.2);
+    flare.bezierCurveTo(x0 + 0.2, -0.2, x0 + 0.25, -0.095, x0 + 0.6, -0.09);
+    flare.lineTo(length, -0.058);
+    flare.lineTo(length, 0.058);
+    flare.lineTo(x0 + 0.6, 0.09);
+    flare.bezierCurveTo(x0 + 0.25, 0.095, x0 + 0.2, 0.2, x0, 0.2);
+    flare.closePath();
+    const outline = clip.union(poly(flare.getPoints(32).map(point => point.toArray())),
       poly(circle([length, 0], 0.13, 64)));
     const body = new THREE.Mesh(plate(clip.difference(outline,
       poly(circle([length, 0], 0.075, 64))), -0.065, 0.065), drivenMaterial);
@@ -926,10 +944,11 @@ function locomotiveStephensonExpansionLinkValveGear() {
     const group = new THREE.Group();
     group.position.set(localPoint.x, localPoint.y, 0);
     group.userData.role = role;
-    const eye = makeEye(0.13, 0.052, drivenMaterial, z);
-    const pin = cylinderAlongZ(0.07, 0.72, darkMaterial, 24);
-    pin.position.z = z;
-    group.add(eye, pin);
+    // Pass 90: no loose torus over the rod's own eye; the pin runs from the
+    // link's far face through the eye and stands just proud of it.
+    const pin = cylinderAlongZ(0.07, 0.43, darkMaterial, 24);
+    pin.position.z = Math.sign(z) * 0.115;
+    group.add(pin);
     expansionLink.add(group);
     return group;
   });
@@ -1095,11 +1114,9 @@ function locomotiveStephensonExpansionLinkValveGear() {
     const wallMaterial = matte(0xcfcabf, { roughness: 0.8 });
     const topLeft = sourcePointFromRaster(new THREE.Vector2(60, 86));
     const bottomRight = sourcePointFromRaster(new THREE.Vector2(187, 220));
-    const bandBottom = sourcePointFromRaster(new THREE.Vector2(0, 105)).y;
-    const bandLeft = sourcePointFromRaster(new THREE.Vector2(165, 0)).x;
+    // Pass 90: Brown's hatching shades one massive block; it is one solid.
     const bands = [
-      [topLeft.x, bandBottom, bottomRight.x, topLeft.y],
-      [bandLeft, bottomRight.y, bottomRight.x, bandBottom],
+      [topLeft.x, bottomRight.y, bottomRight.x, topLeft.y],
     ];
     bands.forEach(([x0, y0, x1, y1], bandIndex) => {
       const band = new THREE.Mesh(
@@ -1108,7 +1125,7 @@ function locomotiveStephensonExpansionLinkValveGear() {
       );
       band.position.set((x0 + x1) / 2, (y0 + y1) / 2, (wallFrontZ + wallBackZ) / 2);
       band.userData.role = bandIndex === 0
-        ? 'top-band-of-sectioned-wall'
+        ? 'solid-sectioned-wall-block'
         : 'right-band-of-sectioned-wall';
       sectionedWall.add(band);
     });
@@ -1456,6 +1473,8 @@ function locomotiveStephensonExpansionLinkValveGear() {
         backwardLayerZ,
       ),
     );
+    forwardStrap.rotation.z = forwardEccentricRod.rotation.z;
+    backwardStrap.rotation.z = backwardEccentricRod.rotation.z;
     expansionLink.position.set(
       state.linkPosition.x,
       state.linkPosition.y,
@@ -1562,8 +1581,8 @@ function locomotiveStephensonExpansionLinkValveGear() {
     wallSupports.add(mesh);
     return mesh;
   };
-  supportBox('slide-valve-bed-on-wall', [-2.25, 1.405, -0.5], [-1.13, 1.505, 1.14]);
-  supportBox('reversing-axis-lug-on-wall', [-2.08, 1.61, -0.5], [-1.64, 2.44, 0.02]);
+  supportBox('slide-valve-bed-on-wall', [-2.25, 1.405, -0.55], [-1.13, 1.505, 1.14]);
+  supportBox('reversing-axis-lug-on-wall', [-2.08, 1.61, -0.55], [-1.64, 2.44, 0.02]);
   root.add(wallSupports);
   // Brown draws no index marks, and each eccentric shows one strap outline
   // over its sheave, not a second painted rim.

@@ -429,6 +429,11 @@ const CLICK_FACE_UNDERCUT = THREE.MathUtils.degToRad(10);
 // into the root and rides a little up the next back), then the chain load
 // turns it back onto the click at the start of going.
 const RATCHET_OVERSHOOT = 0.05;
+const RATCHET_ROOT_RATIO = 0.74;
+// The click's eye clears the tooth tips it overhangs.
+const CLICK_EYE_RADIUS = 0.1;
+const CLICK_PIN_RADIUS = 0.05;
+const CLICK_ARM_HALF_WIDTH = 0.05;
 
 function seatClickAndRatchet(root) {
   const b = root.userData.blocks;
@@ -436,7 +441,9 @@ function seatClickAndRatchet(root) {
   const wheel = old.wheel;
   const profile = wheel.userData.ratchetProfile;
   const { radius, bore, teeth, depth } = profile;
-  const rootRadius = radius * 0.84;
+  // Plate: Brown's ten saw teeth are cut deep, roots at about three
+  // quarters of the tip radius.
+  const rootRadius = radius * RATCHET_ROOT_RATIO;
   const pitch = FULL_TURN / teeth;
   const pivot = old.pivot;
   const turn = (q, a) => [q[0] * Math.cos(a) - q[1] * Math.sin(a), q[0] * Math.sin(a) + q[1] * Math.cos(a)];
@@ -476,7 +483,8 @@ function seatClickAndRatchet(root) {
   const half = Math.acos(dot(face, back)) / 2;
   const bisector = unit(add(face, back));
   const noseCenter = add(root0, scale(bisector, CLICK_NOSE_RADIUS / Math.sin(half)));
-  const faceEnd = add(root0, scale(face, 0.8 * faceLength));
+  // 0.0005 off the tooth face, so the two outlines only touch.
+  const faceEnd = add(add(root0, scale(face, 0.8 * faceLength)), scale([-face[1], face[0]], 0.0005 * Math.sign(dot([-face[1], face[0]], bisector))));
   const backEnd = add(root0, scale(back, 0.07));
   const hullOf = (points) => {
     const sorted = [...points].sort((p, q) => p[0] - q[0] || p[1] - q[1]);
@@ -491,18 +499,67 @@ function seatClickAndRatchet(root) {
     };
     return [...chain(sorted), ...chain([...sorted].reverse())];
   };
+  // Brown's click: an arm on a circular arc concentric with p (so it rides
+  // clear over the tooth between its eye and its root), ending in a toe
+  // that drops into the root with its working face on the tooth face and
+  // its underside on the back of the tooth behind.
+  const armRadius = Math.hypot(...pivot);
+  const armHalfWidth = CLICK_ARM_HALF_WIDTH;
+  const armStart = Math.atan2(pivot[1], pivot[0]);
+  const armEnd = Math.atan2(tip0[1], tip0[0]);
+  const armSweep = wrap(armEnd - armStart);
+  const armBand = [];
+  for (let i = 0; i <= 48; i += 1) {
+    const a = armStart + armSweep * i / 48;
+    armBand.push([(armRadius + armHalfWidth) * Math.cos(a), (armRadius + armHalfWidth) * Math.sin(a)]);
+  }
+  for (let i = 48; i >= 0; i -= 1) {
+    const a = armStart + armSweep * i / 48;
+    armBand.push([(armRadius - armHalfWidth) * Math.cos(a), (armRadius - armHalfWidth) * Math.sin(a)]);
+  }
+  const armEndOuter = [(armRadius + armHalfWidth) * Math.cos(armEnd), (armRadius + armHalfWidth) * Math.sin(armEnd)];
+  const armEndInner = [(armRadius - armHalfWidth) * Math.cos(armEnd), (armRadius - armHalfWidth) * Math.sin(armEnd)];
+  // The toe is a solid wedge: it fills the corner between the arm and the
+  // tooth behind, lying along that tooth's back.
+  const toeHeel = add(add(root0, scale(back, 0.16)), scale(bisector, 0.002));
+  const armJoin = [(armRadius - armHalfWidth) * Math.cos(armEnd - 0.2 * armSweep),
+    (armRadius - armHalfWidth) * Math.sin(armEnd - 0.2 * armSweep)];
   const finger = hullOf([
-    ...circle(pivot, 0.07, 48), faceEnd, backEnd, ...circle(noseCenter, CLICK_NOSE_RADIUS, 48),
+    armEndOuter, armEndInner, armJoin, faceEnd, backEnd, toeHeel,
+    ...circle(noseCenter, CLICK_NOSE_RADIUS, 48),
   ]);
   const seatRotation = Math.atan2(arm[1], arm[0]);
   const worldShape = polygonClipping.difference(
-    polygonClipping.union(poly(finger), poly(circle(pivot, 0.13, 64))),
-    poly(circle(pivot, 0.082, 48)),
+    polygonClipping.union(poly(finger), poly(armBand), poly(circle(pivot, CLICK_EYE_RADIUS, 64)),
+      poly(circle(armEndOuter.map((v, i) => (v + armEndInner[i]) / 2), armHalfWidth, 32))),
+    poly(circle(pivot, CLICK_PIN_RADIUS + 0.002, 48)),
   );
   const local = worldShape.map((polygon) => polygon.map((ring) => ring.map((q) => turn(sub(q, pivot), -seatRotation))));
   old.body.geometry.dispose();
   old.body.geometry = plate(local, -0.06, 0.06);
   old.body.userData.role = 'flat-click-with-valley-toe';
+  // A short fixed stud through the click's eye only (no long rear pin).
+  const clickZ = old.group.position.z;
+  old.pin.geometry.dispose();
+  old.pin.geometry = new THREE.CylinderGeometry(CLICK_PIN_RADIUS, CLICK_PIN_RADIUS, 0.16, 32);
+  old.pin.position.z = clickZ + 0.01;
+  old.pin.userData.role = 'short-fixed-click-stud-through-eye';
+  // Brown marks each pulley's arbor with a dot: short fixed arbors through
+  // the hubs (the undrawn clock frame that carries them is not shown).
+  for (const [role, pulley] of [['fixed-arbor-p', b.ratchetPulley], ['going-wheel-arbor-P', b.goingPulley]]) {
+    let axle = null;
+    root.traverse((object) => { if (object.userData.role === role) axle = object; });
+    const hub = pulley.userData.workingHub;
+    hub.geometry.computeBoundingBox();
+    const hubBox = hub.geometry.boundingBox;
+    const back = pulley.position.z + hubBox.min.y - 0.02;
+    const front = pulley.position.z + hubBox.max.y + 0.02;
+    axle.geometry.dispose();
+    axle.geometry = new THREE.CylinderGeometry(0.124, 0.124, front - back, 40);
+    axle.position.z = (front + back) / 2;
+    root.add(axle);
+    b[role === 'fixed-arbor-p' ? 'arborP' : 'arborBigP'] = axle;
+  }
 
   // Exact rest angle on the wheel.
   const clickRing = local[0][0].slice(0, -1);
@@ -544,7 +601,10 @@ function seatClickAndRatchet(root) {
     return seatRotation + liftSign * lift;
   };
   const bakeKey = '320-p';
-  const bakeSignature = { pivot, length: clickLength, base: seatRotation, sign: liftSign, outline };
+  // The click's own outline is part of the signature, so a changed click
+  // cannot play back a stale path.
+  const bakeSignature = { pivot, length: clickLength, base: seatRotation, sign: liftSign, outline,
+    clickOutline: clickRing.map((q) => [Number(q[0].toFixed(9)), Number(q[1].toFixed(9))]) };
   const path = clickPaths[bakeKey];
   const baked = path && JSON.stringify(path.signature) === JSON.stringify(bakeSignature);
   const playbackAngleAt = baked ? (angle) => {
@@ -1167,8 +1227,9 @@ function endlessChainMaintainingPower(movement) {
   chain.userData.markers = chainMarkers;
   chain.userData.mesh = chainMesh;
 
+  // Plate: the click's eye is inside p's rim, at (0.47, 0.76) of its radius.
   const pawlPivot = referencePath.centers.A.clone().add(
-    new THREE.Vector3(0.48, 1.03, 0.34),
+    new THREE.Vector3(0.47, 0.76, 0.34),
   );
   const pawlContact = referencePath.centers.A.clone().add(
     new THREE.Vector3(-0.12, 0.73, 0.34),

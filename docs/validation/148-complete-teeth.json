@@ -9,11 +9,11 @@
   "sources": [
     {
       "file": "scripts/review-geared-crank-teeth.mjs",
-      "sha256": "9d55d069276e6e7c61b46b353a341b0f7ba1013ebd465cda8b75e2b88fcff4cf"
+      "sha256": "8d5bffc549d96dd23bec065d294426b639027c782d44696f236cefdcae7ac782"
     },
     {
       "file": "src/simulation/geared-crank.js",
-      "sha256": "d862ee064c002afbe14fea3a23cfaf257a80fbfd0e2235205e6e3c96b46189bb"
+      "sha256": "979b6bbb4b1f47603b9282b8d8f371b7a4a8a3358d8dfb7592828cec810fa408"
     },
     {
       "file": "src/simulation/geared-crank-source.js",
@@ -21,11 +21,11 @@
     },
     {
       "file": "src/simulation/geared-crank-frame.js",
-      "sha256": "981d232d1c83fe4ce6fefecf7954064ce977d9890c29d21163af03df060208b6"
+      "sha256": "47dca3995f1973484b12773fb54c0fb8eea00a2a195e788e45461d05a5305301"
     },
     {
       "file": "src/simulation/primitives.js",
-      "sha256": "3680440619d216471bba569bf1461c143c6501b68f43291ecbf564249dbafaa0"
+      "sha256": "c09dbdfc48b4680ae1194d6b1471ff33d437bc8e8a28f6b290044eba746c9367"
     }
   ]
 }

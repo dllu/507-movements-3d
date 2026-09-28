@@ -372,3 +372,18 @@ test('403 brace fastener 1 ends 0.01 inside the left rule, not flush in its back
   const [pin] = p89Box(model, 'fixed-brace-fastener-1');
   assert.ok(Math.abs(pin.min.z - (rule.min.z + 0.01)) < 1e-6, `${pin.min.z} ${rule.min.z}`);
 });
+
+test('movement 403 rules are Brown’s broad laths and lie on each other where they cross (pass 90)', () => {
+  const model = createMovementModel(catalog.movements[402]);
+  const { geometry } = model.root.userData;
+  assert.ok(geometry.ruleWidth / (geometry.ruleLengthMax - geometry.ruleLengthMin) > 0.05);
+  let leftBody, rightBody;
+  model.root.traverse((o) => {
+    if (o.userData.role === 'left-sloping-rule-guided-by-left-chord-pin-straight-rigid-body') leftBody = o;
+    if (o.userData.role === 'right-sloping-rule-guided-by-right-chord-pin-straight-rigid-body') rightBody = o;
+  });
+  model.root.updateMatrixWorld(true);
+  const lb = new THREE.Box3().setFromObject(leftBody), rb = new THREE.Box3().setFromObject(rightBody);
+  assert.ok(rb.min.z >= lb.max.z - 1e-9, 'right rule rests on the left rule');
+  disposeModel(model.root);
+});

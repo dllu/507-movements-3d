@@ -23,7 +23,7 @@ test('148 lever pin starts at the drawn pin and runs once round the gear groove 
 test('148 groove walls, lever bore and pin clear each other throughout the turn',()=>{
  const v=makeGearedCrankFrame();
  try{
-  const parts=v.root.userData.parts,walls=['oblong-groove-outer-wall','oblong-groove-inner-wall'].map(n=>[parts[n],solidSurface(parts[n].geometry)]);
+  const parts=v.root.userData.parts,walls=['oblong-groove-band'].map(n=>[parts[n],solidSurface(parts[n].geometry)]);
   const lever=parts['rocking-lever'],leverSolid=solidSurface(lever.geometry);let pinClearance=Infinity,pivotClearance=Infinity;
   for(let i=0;i<=128;i++){
    const s=v.update(i*8/128);

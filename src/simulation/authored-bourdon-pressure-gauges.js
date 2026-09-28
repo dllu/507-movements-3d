@@ -1,5 +1,6 @@
 import {correctElasticGaugeParts} from './elastic-gauge-working-parts.js';
 import {horizontalRing} from './horizontal-turbine-solids.js';
+import {plate, poly, circle, polygonClipping as clip} from './finite-plate-geometry.js';
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import {
@@ -109,23 +110,6 @@ function setCapAtEnd(cap, points) {
   const tangent = endpoint.clone().sub(before).normalize();
   cap.position.copy(endpoint);
   cap.rotation.z = Math.atan2(tangent.y, tangent.x);
-}
-
-function makeArcTube({ center, color, radius, role, start, end, z }) {
-  const points = [];
-  for (let index = 0; index <= 64; index += 1) {
-    const angle = THREE.MathUtils.lerp(start, end, index / 64);
-    points.push(new THREE.Vector3(
-      center.x + radius * Math.cos(angle),
-      center.y + radius * Math.sin(angle),
-      z,
-    ));
-  }
-  const curve = new THREE.CatmullRomCurve3(points, false, 'centripetal');
-  return addRole(new THREE.Mesh(
-    new THREE.TubeGeometry(curve, 96, 0.025, 8, false),
-    matte(color, { roughness: 0.58 }),
-  ), role);
 }
 
 function bourdonPressureGauge(movement) {
@@ -428,16 +412,17 @@ function bourdonPressureGauge(movement) {
   pointer.position.copy(pinionCenter);
   pointer.position.z = 0.48;
   const pointerNeedle = addRole(new THREE.Mesh(
-    new THREE.BoxGeometry(2.25, 0.055, 0.075),
+    new THREE.BoxGeometry(2.83, 0.055, 0.075),
     inkMaterial,
   ), 'pressure-indicating-pointer-needle');
-  pointerNeedle.position.x = 1.08;
+  // Brown's pointer reaches the lower edge of the graduated band.
+  pointerNeedle.position.x = 1.37;
   const pointerTip = addRole(new THREE.Mesh(
     new THREE.ConeGeometry(0.11, 0.30, 3),
     inkMaterial,
   ), 'pressure-pointer-arrowhead');
   pointerTip.rotation.z = -Math.PI / 2;
-  pointerTip.position.x = 2.25;
+  pointerTip.position.x = 2.83;
   const pointerHub = addRole(new THREE.Mesh(
     new THREE.CylinderGeometry(0.13, 0.13, 0.12, 28),
     sectorMaterial,
@@ -445,19 +430,53 @@ function bourdonPressureGauge(movement) {
   pointerHub.rotation.x = Math.PI / 2;
   pointer.add(pointerNeedle, pointerTip, pointerHub);
 
+  // Brown's scale is a broad arched band concentric with the pointer
+  // spindle, running edge to edge across the case in front of tube B; its
+  // graduations stand on the band's lower edge, which the pointer reaches.
+  // One flat plate (z 0.14-0.20, clear of the tube's face and caps at 0.12); where it
+  // passes over the bezel its two ends run back into the case rim, so the
+  // band is carried by the case.
   const scaleCenter = pinionCenter.clone();
-  const scaleRadius = 2.34;
+  const scaleRadius = 3.0;
+  const scaleBandOuter = 3.4;
+  const scaleBand = { inner: scaleRadius, outer: scaleBandOuter, front: 0.20, back: 0.14, seat: -0.06, caseRadius: 3.40, bezelRadius: 3.10 };
+  const bandShape = clip.intersection(
+    clip.difference(
+      poly(circle([scaleCenter.x, scaleCenter.y], scaleBandOuter, 256)),
+      poly(circle([scaleCenter.x, scaleCenter.y], scaleRadius, 256)),
+    ),
+    poly(circle([0, 0], scaleBand.caseRadius, 256)),
+    poly([[-4, scaleCenter.y], [4, scaleCenter.y], [4, 4], [-4, 4]]),
+  );
+  const bandEnds = clip.difference(bandShape, poly(circle([0, 0], scaleBand.bezelRadius, 256)));
+  const bandMaterial = matte(PALETTE.paper, { roughness: 0.82 });
+  const scaleArc = addRole(new THREE.Mesh(
+    mergeGeometries([
+      plate(bandShape, scaleBand.back, scaleBand.front),
+      plate(bandEnds, scaleBand.seat, scaleBand.back),
+    ].map((geometry) => {
+      const flat = geometry.index ? geometry.toNonIndexed() : geometry;
+      for (const key of Object.keys(flat.attributes)) if (!['position', 'normal'].includes(key)) flat.deleteAttribute(key);
+      return flat;
+    })),
+    bandMaterial,
+  ), 'graduated-pressure-dial-arc');
+  scaleArc.userData.scaleBand = scaleBand;
   const pointerMaximumAngle = pointerZeroAngle
     - maximumSectorAngle * gearRatio;
-  const scaleArc = makeArcTube({
-    center: scaleCenter,
-    color: PALETTE.ink,
-    radius: scaleRadius,
-    role: 'graduated-pressure-dial-arc',
-    start: pointerMaximumAngle,
-    end: pointerZeroAngle,
-    z: 0.03,
-  });
+  // Graduations are ink lines printed on the band's face.
+  const graduationMaterial = inkMaterial.clone();
+  graduationMaterial.polygonOffset = true;
+  graduationMaterial.polygonOffsetFactor = -2;
+  graduationMaterial.polygonOffsetUnits = -2;
+  const printZ = scaleBand.front + 0.002;
+  const edgeLine = addRole(new THREE.Mesh(
+    new THREE.RingGeometry(scaleRadius + 0.005, scaleRadius + 0.04, 128, 1,
+      pointerMaximumAngle - 0.12, pointerZeroAngle - pointerMaximumAngle + 0.24),
+    graduationMaterial,
+  ), 'printed-lower-edge-line-of-scale-band');
+  edgeLine.position.set(scaleCenter.x, scaleCenter.y, printZ);
+  scaleArc.add(edgeLine);
   const scaleTicks = [];
   for (let value = 0; value <= maximumScaleReading; value += 1) {
     const fraction = value / maximumScaleReading;
@@ -467,14 +486,15 @@ function bourdonPressureGauge(movement) {
       fraction,
     );
     const major = value % 5 === 0;
+    const length = major ? 0.26 : 0.16;
     const tick = addRole(new THREE.Mesh(
-      new THREE.BoxGeometry(0.055, major ? 0.30 : 0.19, 0.075),
-      inkMaterial,
+      new THREE.PlaneGeometry(major ? 0.04 : 0.028, length),
+      graduationMaterial,
     ), `dial-scale-mark-${value}`);
     tick.position.set(
-      scaleCenter.x + scaleRadius * Math.cos(angle),
-      scaleCenter.y + scaleRadius * Math.sin(angle),
-      0.06,
+      scaleCenter.x + (scaleRadius + length / 2) * Math.cos(angle),
+      scaleCenter.y + (scaleRadius + length / 2) * Math.sin(angle),
+      printZ,
     );
     tick.rotation.z = angle - Math.PI / 2;
     tick.userData.angle = angle;

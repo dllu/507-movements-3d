@@ -94,7 +94,7 @@ function pointedArchInstrument(movement) {
   const elasticBarLength = selectedTemplate.length;
   const apex = new THREE.Vector2(0, rise);
   const barDepth = 0.22;
-  const barThickness = 0.18;
+  const barThickness = 0.10;
   const barSampleCount = 257;
   const slidePin = new THREE.Vector2(0, -0.23);
   const slotLeft = -1.90;
@@ -306,31 +306,26 @@ function pointedArchInstrument(movement) {
     };
   };
 
-  const barPositions = new Float32Array(barSampleCount * 4 * 3);
+  // Brown's bar is a flat lath of rectangular section. Each of its four
+  // long faces has its own vertices (8 per sample) and the two end caps
+  // their own 4, so the normals split at the edges and the faces shade
+  // flat instead of reading as a round tube.
+  const barPositions = new Float32Array((barSampleCount * 8 + 8) * 3);
   const barIndices = [];
+  // Face vertex pairs per sample: [top outer, top inner], [bottom outer,
+  // bottom inner], [outer top, outer bottom], [inner top, inner bottom].
   for (let index = 0; index < barSampleCount - 1; index += 1) {
-    const current = index * 4;
-    const next = current + 4;
+    const c = index * 8, n = c + 8;
     barIndices.push(
-      current, current + 1, next,
-      next, current + 1, next + 1,
-      current + 2, next + 2, current + 3,
-      next + 2, next + 3, current + 3,
-      current, next, current + 2,
-      next, next + 2, current + 2,
-      current + 1, current + 3, next + 1,
-      next + 1, current + 3, next + 3,
+      c, c + 1, n, n, c + 1, n + 1, // top (+z)
+      c + 2, n + 2, c + 3, n + 2, n + 3, c + 3, // bottom (-z)
+      c + 4, n + 4, c + 5, n + 4, n + 5, c + 5, // outer edge
+      c + 6, c + 7, n + 6, n + 6, c + 7, n + 7, // inner edge
     );
   }
-  barIndices.push(
-    0, 2, 1, 1, 2, 3,
-    (barSampleCount - 1) * 4,
-    (barSampleCount - 1) * 4 + 1,
-    (barSampleCount - 1) * 4 + 2,
-    (barSampleCount - 1) * 4 + 1,
-    (barSampleCount - 1) * 4 + 3,
-    (barSampleCount - 1) * 4 + 2,
-  );
+  const capStart = barSampleCount * 8, capEnd = capStart + 4;
+  barIndices.push(capStart, capStart + 2, capStart + 1, capStart + 1, capStart + 2, capStart + 3,
+    capEnd, capEnd + 1, capEnd + 2, capEnd + 1, capEnd + 3, capEnd + 2);
   const barGeometry = new THREE.BufferGeometry();
   const barPositionAttribute = new THREE.BufferAttribute(barPositions, 3);
   barPositionAttribute.setUsage(THREE.DynamicDrawUsage);
@@ -366,19 +361,18 @@ function pointedArchInstrument(movement) {
       const u=index/(barSampleCount-1)*(1-.115/elasticBarLength);
       const outer=pointOnWorkingEdge(u,bend),tangent=tangentOnWorkingEdge(u,bend);
       const inner=outer.clone().addScaledVector(new THREE.Vector2(tangent.y,-tangent.x),barDepth);
-      const offset = index * 12;
-      barPositions[offset] = outer.x;
-      barPositions[offset + 1] = outer.y;
-      barPositions[offset + 2] = barThickness / 2;
-      barPositions[offset + 3] = inner.x;
-      barPositions[offset + 4] = inner.y;
-      barPositions[offset + 5] = barThickness / 2;
-      barPositions[offset + 6] = outer.x;
-      barPositions[offset + 7] = outer.y;
-      barPositions[offset + 8] = -barThickness / 2;
-      barPositions[offset + 9] = inner.x;
-      barPositions[offset + 10] = inner.y;
-      barPositions[offset + 11] = -barThickness / 2;
+      const top = barThickness / 2, bottom = -barThickness / 2;
+      const corners = [
+        [outer.x, outer.y, top], [inner.x, inner.y, top],
+        [outer.x, outer.y, bottom], [inner.x, inner.y, bottom],
+        [outer.x, outer.y, top], [outer.x, outer.y, bottom],
+        [inner.x, inner.y, top], [inner.x, inner.y, bottom],
+      ];
+      corners.forEach((corner, k) => barPositions.set(corner, (index * 8 + k) * 3));
+      if (index === 0 || index === barSampleCount - 1) {
+        const cap = index === 0 ? capStart : capEnd;
+        [corners[0], corners[1], corners[2], corners[3]].forEach((corner, k) => barPositions.set(corner, (cap + k) * 3));
+      }
       const edgeOffset = index * 3;
       edgePositions[edgeOffset] = path.outerPoints[index].x;
       edgePositions[edgeOffset + 1] = path.outerPoints[index].y;

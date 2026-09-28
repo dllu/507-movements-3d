@@ -269,7 +269,8 @@ function seesawMovement(movement) {
       ]);
     }
     heelOutline.push([endX, beamThickness / 2 + shoeReach]);
-    const seatGeometry = plate(poly(heelOutline.map(([x, y]) => [side * x, y])), -0.26, 0.26);
+    // Shoe, end board and cleat are exactly as wide as the plank (no overhang).
+    const seatGeometry = plate(poly(heelOutline.map(([x, y]) => [side * x, y])), -beamDepth / 2, beamDepth / 2);
     const seat = new THREE.Mesh(seatGeometry, seatMaterial);
     seat.userData.role = 'rounded-shoe-heel-fastened-in-plank-end';
     seat.userData.side = side;
@@ -278,7 +279,7 @@ function seesawMovement(movement) {
 
     const boardHeight = shoeReach + 0.12;
     const endBoard = new THREE.Mesh(
-      new THREE.BoxGeometry(endBoardThickness, boardHeight, 0.56),
+      new THREE.BoxGeometry(endBoardThickness, boardHeight, beamDepth),
       seatMaterial,
     );
     endBoard.position.set(
@@ -292,7 +293,7 @@ function seesawMovement(movement) {
     handlePosts.push(endBoard);
 
     const cleat = new THREE.Mesh(
-      new THREE.BoxGeometry(0.07, 0.11, 0.52),
+      new THREE.BoxGeometry(0.07, 0.11, beamDepth),
       seatMaterial,
     );
     cleat.position.set(

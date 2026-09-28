@@ -203,7 +203,8 @@ function seatGoingBarrelClicks(root) {
       depth: 0.16,
       // Going: B and the larger ratchet turn together, R seated.
       seatWheelAngle: 0,
-      width: 0.15,
+      // Brown's clicks are broad strips, not wires.
+      width: 0.22,
       shank: 0.58,
       // The face leans a little more than R's nose drifts as it drops about
       // its pivot, so R slides down the face instead of snapping past it.
@@ -220,7 +221,7 @@ function seatGoingBarrelClicks(root) {
       depth: 0.19,
       // Winding: the larger ratchet slips back onto T.
       seatWheelAngle: -g.clickTBacklash,
-      width: 0.14,
+      width: 0.22,
       shank: 0.75,
       rake: 0.04,
       fillet: 1.0,
@@ -376,6 +377,10 @@ function harrisonGoingBarrel(movement) {
   // (Brown: 0.19 below his slightly smaller G) and stays 0.08 clear of them
   // at the top of its travel.
   const ropeDrumPitchRadius = 0.20;
+  // The drum is on B's arbor behind the wheels, as Brown's cord leaves B
+  // behind them; the cord hangs from its tangent in that plane (it used to
+  // loop round the arbor in front of ratchet B and hang across its face).
+  const ropePlaneZ = -1.0;
   const weightHalfHeight = 0.45;
   const greatWheelTipClearanceY = -3.12;
   // B is wound back past the plate pose by the recoil of the larger ratchet
@@ -683,7 +688,7 @@ function harrisonGoingBarrel(movement) {
       weightPosition: new THREE.Vector3(
         weightX,
         referenceWeightY - ropeDrumPitchRadius * barrelAngle,
-        1.48,
+        ropePlaneZ,
       ),
       weightVelocity: -ropeDrumPitchRadius * barrelAngularVelocity,
     };
@@ -936,7 +941,7 @@ function harrisonGoingBarrel(movement) {
   );
   weight.userData.role = 'driving-weight-on-barrel-B';
   // Brown's weight cord is one laid rope: wound 1.7 turns-worth of arc on
-  // the drum's exposed front groove, then hanging straight to the weight.
+  // the drum behind the wheels, then hanging straight to the weight.
   const rope = new THREE.Mesh(
     new THREE.BufferGeometry(),
     matte(PALETTE.belt, { roughness: 0.78 }),
@@ -946,7 +951,7 @@ function harrisonGoingBarrel(movement) {
   const ropeContact = new THREE.Vector3(
     weightX,
     0,
-    1.48,
+    ropePlaneZ,
   );
 
   const fixedFrame = new THREE.Group();
@@ -1147,6 +1152,7 @@ function harrisonGoingBarrel(movement) {
     springWireRadius,
     referenceWeightY,
     ropeDrumPitchRadius,
+    ropePlaneZ,
     sourceImageHeight,
     sourceImageWidth,
     sourceScale,
@@ -1225,7 +1231,7 @@ function harrisonGoingBarrel(movement) {
 
   // Brown draws no frame, bearing or stud: T turns on a short journal pin
   // through its eye, and the common arbor ends as a plain cut stub just
-  // behind G, so no undrawn back bar is needed.
+  // behind the rope drum, so no undrawn back bar is needed.
   {
     const { blocks } = root.userData;
     const clickT = blocks.finiteClicks.find((follower) => follower.name === 'T');
@@ -1236,7 +1242,10 @@ function harrisonGoingBarrel(movement) {
     root.updateMatrixWorld(true);
     const hubBox = new THREE.Box3().setFromObject(blocks.barrelHub);
     const wheelBox = new THREE.Box3().setFromObject(blocks.greatWheelBody);
-    const arborBack = wheelBox.min.z - 0.08;
+    // It runs on back through the rope drum (behind the wheels) to a cut
+    // stub just behind the drum.
+    const drumBox = new THREE.Box3().setFromObject(blocks.ropeDrum);
+    const arborBack = Math.min(wheelBox.min.z - 0.08, drumBox.min.z - 0.06);
     const arborLength = hubBox.max.z - arborBack;
     blocks.barrelHub.geometry.dispose();
     blocks.barrelHub.geometry = new THREE.CylinderGeometry(0.14, 0.14, arborLength, 40);

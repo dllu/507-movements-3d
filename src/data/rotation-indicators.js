@@ -110,7 +110,7 @@ export default {
   355: ['rapidly-spinning-metallic-disk-C', 'hub-rigid-with-metallic-disk-C-and-spindle'],
   356: [{ pattern: 'rapidly-rotating-heavy-ball-B', axis: 'z' }, 'hub-rigid-with-heavy-ball-B'],
   359: ['heavy-momentum-flywheel-fixed-to-spindle', 'flywheel-hub'],
-  360: ['oscillating-annular-cord-drum', 'loose-drum-cord-groove', 'heavy-continuously-rotating-flywheel-rim'],
+  360: ['oscillating-annular-cord-drum', 'loose-drum-cord-groove'],
   361: ['left-handwheel-fast-on-upper-shaft', '(upper-driving-pulley|lower-loose-sliding-pulley)-(solid-sheave|belt-retaining-flange|hub)'],
   // 362: the upper drum only traverses; the turning lower cylinder takes the cue.
   362: ['lower-cylinder-carrying-one-closed-oblique-groove'],

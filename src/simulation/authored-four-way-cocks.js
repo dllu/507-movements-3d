@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {applyCutawayFor} from './cutaway-presentations.js';
-import {cockPassagePath, correctFourWayCock, makeBrownPortPipes, sectionFourWayCockParts} from './four-way-cock-parts.js';
+import {cockPassagePath, correctFourWayCock, sectionFourWayCockParts} from './four-way-cock-parts.js';
 import {
   PALETTE,
   markShadows,
@@ -198,11 +198,17 @@ function fourWaySteamCock(movement) {
   // clockwise by exactly 90 degrees produces the lower engraving.
   const plugRadius = 1.72;
   const passageEndpointRadius = plugRadius;
-  const passageRadius = 1.46;
+  // Brown's passages are quarter circles of the plug's own radius about the
+  // body's outside corners, so each meets its two ports radially.
+  const passageRadius = plugRadius;
   const bodyInnerRadius = 1.728;
   const bodyOuterRadius = 2.10;
-  const bodyDepth = 0.58;
-  const plugDepth = 0.43;
+  const bodyDepth = 0.60;
+  const plugDepth = 0.60;
+  // The port pipes leave the ring radially and bend on the same radius
+  // toward the corner the upper figure's passage turns to.
+  const pipeBendRadius = plugRadius;
+  const pipeBendSweep = 0.62;
   const pipeRadius = 0.34;
   const pipeLength = 2.10;
   const pipeCenterRadius = bodyOuterRadius + pipeLength / 2 - 0.08;
@@ -503,7 +509,7 @@ function fourWaySteamCock(movement) {
         ? forwardParameter
         : 1 - forwardParameter;
       marker.position.copy(passage.userData.curve.getPoint(parameter));
-      marker.position.z = 0.125;
+      marker.position.z = 0;
     });
   }
 
@@ -674,6 +680,8 @@ function fourWaySteamCock(movement) {
       lowerPositionAngle,
       passageEndpointRadius,
       passageRadius,
+      pipeBendRadius,
+      pipeBendSweep,
       pipeCenterRadius,
       pipeLength,
       pipeRadius,
@@ -762,15 +770,7 @@ function fourWaySteamCock(movement) {
 
   // Brown draws the plug twice only to show its two positions; the one
   // animated plug turns through both, so a single figure is modelled.
-  const portPipes = makeBrownPortPipes(matte(0xd6d0c4, { metalness: 0.12, roughness: 0.55 }));
-  fixedBody.add(portPipes);
-  root.userData.blocks.portPipes = portPipes;
   root.userData.cameraFov = 14;
-  const portPipeReach = 2.45;
-  root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-portPipeReach, -portPipeReach, -0.35),
-    new THREE.Vector3(portPipeReach, portPipeReach, 0.35),
-  );
   return {
     root,
     update,

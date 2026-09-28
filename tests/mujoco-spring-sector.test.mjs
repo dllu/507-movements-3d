@@ -124,3 +124,13 @@ test('083 visible hardware remains closed and clear at both reversals and both d
     t.diagnostic(JSON.stringify({checks, softContacts}));
   } finally { v.dispose(); }
 });
+
+test('083 presents no undrawn spring guide: frames, rods, housings and coils are hidden, the sector hubs stay',async()=>{
+  const {makeSpringSectorGeometry}=await import('../src/simulation/mujoco-spring-sector/geometry.js');
+  const g=makeSpringSectorGeometry(),parts=g.root.userData.parts;
+  for(const side of ['front','rear']){
+    for(const name of ['GuideFrame','CarrierBridge','CarrierHub','SliderHousing0','SliderHousing1','GuideRod0','GuideRod1','Spring0','Spring1'])
+      assert.equal(parts[side+name].visible,false,side+name);
+    for(const name of ['Sector','HubCover','NotchBacking'])assert.equal(parts[side+name].visible,true,side+name);
+  }
+});

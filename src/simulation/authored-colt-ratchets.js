@@ -1,3 +1,4 @@
+import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import * as THREE from 'three';
 import {
   circle,
@@ -966,31 +967,51 @@ function coltCylinderRatchet(movement) {
   hammer.add(hammerRotor);
   root.add(hammer);
 
-  const hammerRasterOutline = [
-    [242, 66], [302, 48], [352, 64], [392, 76], [425, 62],
-    [462, 43], [500, 32], [515, 42], [507, 61], [487, 92],
-    [471, 126], [454, 157], [429, 179], [424, 215], [408, 251],
-    [386, 287], [365, 322], [383, 347], [405, 374], [419, 407],
-    // Lower belly retraced pass 51: Brown's round bottom reaches y 477 and
-    // passes behind dog a's eye to the tumbler notch at x 196.
-    [419, 436], [415, 443], [405, 454], [385, 465], [365, 472],
-    [345, 477], [305, 476], [285, 472], [265, 467], [245, 457],
-    [225, 443], [210, 432], [199, 418], [197, 400], [199, 378],
-    [205, 352], [211, 330], [224, 303], [240, 280], [260, 269], [286, 264],
-    [307, 247], [320, 218], [329, 185], [330, 154], [320, 124],
-    [302, 101], [275, 85], [243, 78],
+  // Brown's hammer and tumbler, retraced (pass 90) as smooth runs between
+  // his real corners: each run is a centripetal Catmull-Rom spline through
+  // points on his line, and the corners (nose, spur root, breast notch,
+  // belly foot, tumbler notch) stay sharp. Points are plate raster pixels,
+  // written as doubled offsets from x 150 (a 2x crop) for tracing.
+  const hammerRuns = [
+    [[185, 130], [305, 95]],
+    [[305, 95], [400, 122], [485, 148], [550, 128], [620, 88], [700, 62], [728, 70], [735, 88],
+      [715, 122], [680, 185], [640, 245], [600, 280], [555, 298]],
+    [[555, 298], [552, 360], [535, 440], [500, 515], [462, 585], [430, 645]],
+    [[430, 645], [540, 815]],
+    [[540, 815], [542, 860], [520, 905], [470, 935], [390, 955], [310, 955], [230, 935],
+      [160, 895], [110, 850], [100, 835]],
+    [[100, 835], [95, 790], [100, 740], [108, 700], [122, 660], [150, 605], [182, 566],
+      [222, 540], [290, 515]],
+    [[290, 515], [318, 490], [340, 437], [358, 370], [362, 310], [345, 250], [308, 205],
+      [255, 172], [185, 155]],
+    [[185, 155], [185, 130]],
   ];
   const hammerShape = new THREE.Shape();
-  hammerRasterOutline.forEach(([x, y], index) => {
-    const point = sourcePointToModel({ x, y });
-    if (index === 0) hammerShape.moveTo(point.x, point.y);
-    else hammerShape.lineTo(point.x, point.y);
-  });
+  let hammerPointCount = 0;
+  for (const run of hammerRuns) {
+    const points = run.map(([x, y]) => {
+      const point = sourcePointToModel({ x: 150 + x / 2, y: y / 2 });
+      return new THREE.Vector3(point.x, point.y, 0);
+    });
+    const sampled = points.length > 2
+      ? new THREE.CatmullRomCurve3(points, false, 'centripetal').getPoints((points.length - 1) * 16)
+      : points;
+    sampled.forEach((point, index) => {
+      if (hammerPointCount === 0) hammerShape.moveTo(point.x, point.y);
+      else if (index > 0) hammerShape.lineTo(point.x, point.y);
+      hammerPointCount += 1;
+    });
+  }
   hammerShape.closePath();
-  const hammerBody = new THREE.Mesh(
-    centeredExtrusion(hammerShape, hammerHalfDepth * 2, hammerBevel),
-    driverMaterial,
-  );
+  // Smooth walls along the splines, creased only at the real corners.
+  const hammerRaw = centeredExtrusion(hammerShape, hammerHalfDepth * 2, hammerBevel);
+  hammerRaw.deleteAttribute('normal');
+  hammerRaw.deleteAttribute('uv');
+  const hammerGeometry = mergeVertices(hammerRaw, 1e-7);
+  hammerRaw.dispose();
+  hammerGeometry.clearGroups();
+  creaseIndexedNormals(hammerGeometry, Math.PI / 5);
+  const hammerBody = new THREE.Mesh(hammerGeometry, driverMaterial);
   hammerBody.userData.role = 'source-profiled-hammer-tumbler-body';
   hammerRotor.add(hammerBody);
   // The tumbler arbor runs back through the hammer into a bore in the lock

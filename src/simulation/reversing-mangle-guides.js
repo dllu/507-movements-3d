@@ -28,7 +28,9 @@ function replace(mesh,geometry){mesh.geometry.dispose();mesh.geometry=geometry;m
 export function finishReversingMangleGuides(root,update,id) {
   const d=root.userData,b=d.blocks,g=d.geometry;
   const halfWidth=.064,loops=channelLoops(d,halfWidth),disk=poly(circle([0,0],g.wheelRadius,256));
-  const bore=poly(circle([0,0],.111,96));
+  // The wheel shaft (r 0.075) leaves the backing through a close bore, not a
+  // wide annulus that showed a lit crescent from behind.
+  const bore=poly(circle([0,0],.079,128));
   const floor=-.06,front=.14;
   replace(b.wheelBody,plate(clip.difference(disk,bore),-.14,floor));
   replace(b.guideGrooveOuter,plate(clip.difference(disk,loops.outer,bore),floor,front));
@@ -70,6 +72,18 @@ export function finishReversingMangleGuides(root,update,id) {
     b.wheelIndex.position.z=.405;
     const hub=b.wheelRotor.children.find(o=>o.userData.role?.includes('mangle-wheel-hub'));
     if(hub)hub.position.z=.25;
+  }
+  // The factory's pinion carried a one-segment chamfer (bevel inset 0.035)
+  // round a coarse polyline, so each tooth shaded as a faceted petal. Extrude
+  // the same involute outline (the cavity's cutter) flat, over the same
+  // depth, with flat end faces and creased flank normals.
+  {
+    const gear=b.pinion.userData.rotor.children[0],old=gear.geometry;
+    old.computeBoundingBox();const {min,max}=old.boundingBox;
+    const shapes=old.parameters.shapes,flat=new THREE.ExtrudeGeometry(shapes,{depth:max.z-min.z,bevelEnabled:false,curveSegments:1,steps:1});
+    flat.translate(0,0,min.z);flat.userData={...old.userData,pinionOutlineShapes:shapes};
+    gear.geometry=flat;old.dispose();
+    gear.userData.role??='flat-involute-mangle-pinion';
   }
   d.finiteGuide={halfWidth,journalRadius:.055,collarRadius:.062,collarBore:.056,floorZ:floor,frontZ:front,pinionPlaneZ:.37};
   d.sourceAnimation={available:false,officialCanvasModelPresent:false,modelDefinitionsChecked:true};

@@ -92,6 +92,25 @@ test('242 new end pins span bored strap eyes and lever layers without cutting th
   console.log({ id: 242, ...a.report() });
 });
 
+test('242 strap eyes, anchor link and lever form one flat joint with pins trimmed to the stack', () => {
+  const m = create({ id: 242 }), d = m.root.userData, b = d.blocks, j = d.flatBrakeJoint;
+  m.update(0); m.root.updateMatrixWorld(true);
+  const box = (o) => new THREE.Box3().setFromObject(o);
+  // Lever against the strap front, link against its back: the whole joint
+  // is under half a unit deep.
+  assert.ok(j.leverFront - j.stackBack < 0.46, `stack ${j.leverFront - j.stackBack}`);
+  assert.ok(box(d.workingParts.short).min.z - j.bandFront < 0.01);
+  assert.ok(j.bandBack - box(d.workingParts.anchor).max.z < 0.01);
+  // The fulcrum boss joins the lever eye to the link.
+  const boss = box(d.workingParts.boss);
+  assert.ok(boss.min.z - box(d.workingParts.anchor).max.z < 0.002);
+  assert.ok(box(d.workingParts.short).min.z - boss.max.z < 0.002);
+  for (const pin of [b.leverFulcrumShaft, b.upperEndpointShaft, d.workingParts.lowerPin]) {
+    const p = box(pin);
+    assert.ok(p.min.z > j.stackBack - 0.035 && p.max.z < j.leverFront + 0.1, `${p.min.z} ${p.max.z}`);
+  }
+});
+
 test('243 finite belt surfaces clear all five actual pulleys; undrawn band markers are not rendered', () => {
   const m = create({ id: 243 }), d = m.root.userData, b = d.blocks, a = audit();
   assert.ok(b.belt.userData.markers.every((marker) => marker.parent === null), 'Brown draws no marks on the band');

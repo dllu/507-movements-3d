@@ -11,7 +11,7 @@ const blocks = model.root.userData.blocks;
 const meshes = {aheadRod:blocks.aheadStrap.children[0], asternRod:blocks.asternStrap.children[0],
   aheadSheave:blocks.aheadSheave.userData.body, asternSheave:blocks.asternSheave.userData.body,
   aheadRim:blocks.aheadSheave.userData.rim, asternRim:blocks.asternSheave.userData.rim,
-  aheadPin:blocks.linkPinAssemblies[0].children[1], asternPin:blocks.linkPinAssemblies[1].children[1],
+  aheadPin:blocks.linkPinAssemblies[0].children.at(-1), asternPin:blocks.linkPinAssemblies[1].children.at(-1),
   aheadCap:blocks.linkPinAssemblies[0].children[0], asternCap:blocks.linkPinAssemblies[1].children[0],
   plate:blocks.upperLinkPlate, outputRod:blocks.outputRadiusRod.children[0]};
 const parts = Object.fromEntries(Object.entries(meshes).map(([name, mesh]) =>

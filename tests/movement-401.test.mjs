@@ -280,30 +280,31 @@ test('movement 401 sliding wrist never reverses around the faceplate and clears 
   disposeModel(model.root);
 });
 
-test('movement 401 renders spring B from either viewing side and binds every animated body to the solved state', () => {
+test('movement 401 renders spring B as a closed flat strip and binds every animated body to the solved state', () => {
   const model = createMovementModel(catalog.movements[400]);
   const data = model.root.userData;
   const { blocks, geometry, stateAtTime, timeline } = data;
   const springGeometry = blocks.voluteSpring.geometry;
   const index = springGeometry.index;
   const positions = springGeometry.getAttribute('position');
-  let positiveFacingTriangles = 0;
+  const normals = springGeometry.getAttribute('normal');
 
-  assert.equal(blocks.voluteSpring.material.side, THREE.DoubleSide);
-  assert.equal(index.count / 3, 190);
+  // Pass 90: a strip with thickness (four walls and two end caps), not a
+  // zero-thickness decal; every triangle faces along its stored normal.
+  const sampleCount = blocks.voluteSpring.userData.sampleCount;
+  assert.equal(index.count / 3, 4 * 2 * (sampleCount - 1) + 4);
+  assert.equal(blocks.voluteSpring.userData.noRotationIndicator, true);
+  const zs = Array.from({ length: positions.count }, (_, i) => positions.getZ(i));
+  near(Math.max(...zs) - Math.min(...zs), 0.05, 1e-6, 'strip thickness');
+  const p = [0, 1, 2].map(() => new THREE.Vector3());
+  const n = new THREE.Vector3();
   for (let offset = 0; offset < index.count; offset += 3) {
-    const a = index.getX(offset);
-    const b = index.getX(offset + 1);
-    const c = index.getX(offset + 2);
-    const signedAreaTwice = (
-      (positions.getX(b) - positions.getX(a))
-        * (positions.getY(c) - positions.getY(a))
-      - (positions.getY(b) - positions.getY(a))
-        * (positions.getX(c) - positions.getX(a))
-    );
-    if (signedAreaTwice > 0) positiveFacingTriangles += 1;
+    for (let k = 0; k < 3; k += 1) p[k].fromBufferAttribute(positions, index.getX(offset + k));
+    const face = p[1].clone().sub(p[0]).cross(p[2].clone().sub(p[0]));
+    if (face.length() < 1e-12) continue;
+    n.fromBufferAttribute(normals, index.getX(offset));
+    assert.ok(face.dot(n) > 0, `triangle ${offset / 3} faces its normal`);
   }
-  assert.ok(positiveFacingTriangles >= 189);
 
   for (const phase of [0, 0.12, 0.40, 0.86, 0.92, 0.98, 1]) {
     const time = timeline.cycleDuration * phase;

@@ -416,3 +416,54 @@ test('movement 377 closes one clockwise wheel turn and seven gait cycles before 
   disposeModel(model.root);
   disposeModel(model507.root);
 });
+
+// Pass 90: the diagonal plank lies in the plane of the wheel's face, in front
+// of the spur wheel and its standard; the rail the man holds runs along the
+// drum's axis through the plank's hole; the man is centred across the drum.
+test('movement 377 plank lies in the wheel-face plane, the rail passes through its hole, and the man is centred on the drum', () => {
+  const model = createMovementModel(catalog.movements[376]);
+  const { blocks, geometry } = model.root.userData;
+  const plank = blocks.diagonalGuard;
+  const plane = plank.userData.plane;
+  plank.geometry.computeBoundingBox();
+  const box = plank.geometry.boundingBox;
+  near(box.min.z, plane.z - plane.thickness / 2, 1e-6, 'plank back face is one z plane');
+  near(box.max.z, plane.z + plane.thickness / 2, 1e-6, 'plank front face is one z plane');
+  assert.ok(box.max.y - box.min.y > 4, 'plank runs from above the rail to the ground');
+  near(plane.leanFromUpright, THREE.MathUtils.degToRad(36), 1e-12, 'plank lean');
+  // The plank stands in front of the end gear, bearing and standard.
+  blocks.endGear.geometry.computeBoundingBox();
+  assert.ok(box.min.z > blocks.endGear.geometry.boundingBox.max.z + 0.5);
+  assert.ok(box.min.z > blocks.rearPedestal.position.z + 0.5);
+  // The rail is a rod along z through the hole and 0.03 proud of the plank.
+  blocks.handRail.geometry.computeBoundingBox();
+  const rail = blocks.handRail.geometry.boundingBox;
+  const railCenter = rail.getCenter(new THREE.Vector3());
+  near(railCenter.x, plane.holeCenter.x, 1e-6, 'rail axis x at the hole');
+  near(railCenter.y, plane.holeCenter.y, 1e-6, 'rail axis y at the hole');
+  near(rail.max.z, box.max.z + 0.03, 1e-6, 'rail end stands proud of the plank');
+  assert.ok(rail.min.z < -geometry.drumWidth / 2, 'rail runs past the far end ring');
+  const position = plank.geometry.attributes.position;
+  let holeRadius = Infinity;
+  for (let index = 0; index < position.count; index += 1) {
+    holeRadius = Math.min(holeRadius, Math.hypot(
+      position.getX(index) - plane.holeCenter.x,
+      position.getY(index) - plane.holeCenter.y,
+    ));
+  }
+  near(holeRadius, 0.055, 1e-6, 'the rod fills the plank hole');
+  near(plane.top.distanceTo(plane.holeCenter), 0.6, 1e-6, 'hole 0.6 below the plank top');
+  // The man is centred across the drum's width, both hands on the rail.
+  near(geometry.personCenterOfMass.z, 0, 0, 'man centred across the drum');
+  assert.equal(blocks.arms.length, 2);
+  const hands = blocks.arms.map((arm) => {
+    model.root.updateMatrixWorld(true);
+    const fist = arm.children.find((child) => child.userData.role === 'person-hand-gripping-rail' && child.visible);
+    return fist.getWorldPosition(new THREE.Vector3());
+  });
+  near(hands[0].z + hands[1].z, 0, 1e-6, 'hands symmetric about the drum centre');
+  for (const hand of hands) {
+    near(Math.hypot(hand.x - railCenter.x, hand.y - railCenter.y), 0, 1e-6, 'fist closed round the rail axis');
+  }
+  disposeModel(model.root);
+});

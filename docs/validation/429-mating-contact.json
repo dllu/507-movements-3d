@@ -2,16 +2,13 @@
   "poses": 1025,
   "maximumOverlapArea": 0.0,
   "penetratingPoses": 0,
-  "maximumGap": 0.013372017685485021,
-  "minimumGap": 0.0002533396809992407,
-  "originalPenetratingPoses": 338,
-  "originalMaximumOverlapArea": 0.0009428954198437528,
-  "originalMaximumGap": 0.0028039776309545395,
+  "maximumGap": 0.010026356964290715,
+  "minimumGap": 0.00718338591562723,
   "method": "Intersection and distance of actual rendered rotor triangle projections at 1025 interleaved poses. Parallel solid extrusions share the same axial span. Shafts, packing, pressure, sealing and torque are outside this profile audit.",
   "sources": [
     {
       "file": "src/simulation/authored-double-elliptical-rotary-engines.js",
-      "sha256": "417be29a8c1203d8c6833c32991f7085fdb46d4552d37c43a87bfe120efa476b"
+      "sha256": "649f69c77aa939d2f0fbcb20e9e234b38ef26c70f889f191ee9a2f02afcca9eb"
     },
     {
       "file": "src/simulation/movement-429-source-profiles.js",
@@ -19,7 +16,7 @@
     },
     {
       "file": "src/simulation/generated-holly-mate.js",
-      "sha256": "e5ea7efa4733913a981602c191ef7c664e9c050535a5510608a13b647e77e1b3"
+      "sha256": "ccc4b4b84d923a1c29348e4005e7b8e6e31cfd1631b219ed5f7f2a4196b6e7b2"
     },
     {
       "file": "scripts/export-holly-contact.mjs",
@@ -27,11 +24,11 @@
     },
     {
       "file": "scripts/generate-holly-mate.py",
-      "sha256": "f99e9dbd57f660b8c41a25a9e804e14b81827300b9d7955583f2d3fb7b484e86"
+      "sha256": "c5a8cbca8bc58748521398b169985bd7c8a146d32635748c6027f088e111203c"
     },
     {
       "file": "scripts/review-holly-contact.py",
-      "sha256": "2ae5034304f95bfeeb4a7875ac19a0a96961d0289b2c05fa8043bbbd52a3bf45"
+      "sha256": "999dc7913e5fe8608811694a1b712a08b29139b0bd3b4e07d2382d6af2bc421f"
     }
   ]
 }

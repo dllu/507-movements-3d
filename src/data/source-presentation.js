@@ -161,8 +161,7 @@ export default {
     note: 'The eccentrics, rods, curved link, die, the vertical rod and the curved slide on its two guide columns over the trunnion; no white index marks are drawn. Brown draws no base or trunnion bracket, and none are shown (p60 support policy): the guide columns run on and end cleanly and the trunnion shaft ends as a stub behind its bearing face.',
   },
   172: {
-    remove: ['backBar', 'guideFramePost', 'shaftBearingFlange', 'guideFrameFlange', 'guideFrame', 'slider'],
-    note: 'Brown draws the crank, the link and the rod broken off at the right; the reconstructed slider, its guide frame, back bar, posts and flanges are not shown (p60 support policy).',
+    note: 'Brown draws the crank, the link and the rod broken off at the right, the rod carrying his large eye on a crosshead bar; the reconstruction builds no slider, guide frame, back bar, posts or flanges.',
   },
   178: {
     remove: ['fixed-horizontal-guide-rail-for-cutting-slide', 'fixed-end-stop-of-horizontal-output-guide', 'nonrotating-horizontal-cutting-tool-slide'],
@@ -541,8 +540,10 @@ export default {
     note: 'Plan of the carriage: the fusee on its shaft with the crank at the large end, Brown\'s two long flat side bars running from under the wheel frame past the crank and off the plate, the cross bar carrying the crank-end bearing, the cross-member and bed carrying the two edge-on wheels on their axles, and the band crossing the fusee; no guide rail or travel ticks are drawn under the wheels.',
   },
   354: {
+    rotate: [0, Math.PI, 0],
+    camera: [0.086, 0.043, 1],
     remove: ['visible-radial-index-on-input-disk', 'visible-linear-index-on-output-stem'],
-    note: 'Brown\'s layout taken from the crosshead side: the grooved crosshead and stem in front of the opaque disk, whose raised rim reads as his ring (Brown views from the disk side and dashes the groove and stem behind it). Both stems are framed through their guides over the whole stroke. Like the plate, only the two guide blocks are drawn: no rear frame, brackets or shaft bearing; the guides and the input axis are fixed ideal constraints. No white indices are drawn.',
+    note: 'Brown\'s view from the disk side: the disk, with its raised ring on the viewer\'s face, is see-through (he dashes what it covers), and behind it the crosshead\'s blind endless groove carries the wrist, with the one straight stem on the crosshead\'s back face. Both stems are framed through their guides over the whole stroke. Like the plate, only the two guide blocks are drawn: no rear frame, brackets or shaft bearing; the guides and the input axis are fixed ideal constraints. No white indices are drawn.',
   },
   363: {
     camera: [0, 0.03, 1],
@@ -637,16 +638,16 @@ export default {
   },
   383: {
     remove: ['white-winding-roll-rotation-index', 'white-dressing-cylinder-rotation-index', 'moving-transverse-cloth-material-registration-stripe'],
-    note: 'End elevation of the broad arched strap frame with its crossbars, the two winding rolls and the brush cylinder between them, the cloth running on its S path; no white indices or cloth stripes are drawn.',
+    note: 'End elevation of the arched end plates (flanged rim, ribs under the rolls, see-through near web) bearing the two winding rolls and the spoked brush cylinder with its eight bristle boards between them, the cloth running on its S path; no white indices or cloth stripes are drawn.',
   },
   384: {
-    camera: [0, 0.36, 1],
+    camera: [0.3, 0.36, 1],
     remove: ['stationary-drawing-and-transfer-paper', 'white-wheel-spin-index-on-(?:near-face|tread)', 'stationary-reference-index'],
-    note: 'Side view (raised about 20° so the arm still reads when it turns toward the viewer) of the point, screw-threaded arm and small milled wheel, framed on the arm\'s whole sweep round the point; no paper or white indices are drawn.',
+    note: 'Oblique side view (turned about 17° and raised about 20°, so the wheel\'s face shows as Brown draws it) of the point, screw-threaded arm and the solid milled wheel with its long nut, framed on the arm\'s whole sweep round the point; no paper or white indices are drawn.',
   },
   385: {
     remove: ['fixed-vertical-door-jamb', 'fixed-door-frame-lintel', 'one-of-four-door-face-trim-bars', 'door-opening-handle', '(frame|door)-side-white-pin-turn-index', 'white-toggle-height-index', 'white-weight-height-index'],
-    note: 'The two long upright pins, the toggle links and the small pear weight hung from the apex. Brown crops the pins; their sockets stand on bored blocks on the door top and on the wall beside the opening, and the door hangs on plain knuckle hinges. No lintel, jamb, trim, handle or white indices are drawn.',
+    note: 'The two long upright pins, each ending in a plain eye beside its link\'s eye, the toggle links and the small pear weight hung on an S-hook from the apex pin. Brown crops the pins, and the default view frames the linkage above the door; their sockets stand on bored blocks on the door top and on the wall beside the opening, and the door hangs on plain knuckle hinges. No lintel, jamb, trim, handle or white indices are drawn.',
   },
   387: {
     note: 'Side elevation of the one wharf ladder, level at high water as in Brown\'s upper figure; the animation carries it down to the boat at low water, his lower figure, so it is not drawn twice. The wharf rail panels (posts with ball finials, top and bottom rails, crossed braces) are joined to the fixed ladder posts. The tide is a shallow translucent surface layer, fading with depth, for Brown\'s surface lines, and the dinghy is his length, about 0.31 of the ladder. The factory omits the undrawn white rail and tread indices.',
@@ -698,7 +699,7 @@ export default {
   395: {
     camera: [0, 0.02, 1],
     remove: ['white-.*', '.*-fixed-external-port-pipe', 'explanatory-fixed-pipe-flow-indices', 'passage-[AB]-flow-direction-index', 'plug-operating-stem', 'quarter-turn-operating-handle', 'fixed-ninety-degree-handle-travel-reference'],
-    note: 'One section of the plug in its bored body: Brown\'s two figures are its two positions a quarter turn apart, which the single animated plug turns through. Steam enters at the top, the cylinder ports are right and left and the exhaust is below. No pipes, handle or flow markers are drawn.',
+    note: 'The plug in its bored body, sealed: the plug\'s two closed quarter-circle passages (seen through the see-through plug) meet the body\'s four closed port ducts, which run out as Brown\'s curved port pipes. Brown\'s two figures are its two positions a quarter turn apart, which the single animated plug turns through. Steam enters at the top, the cylinder ports are right and left and the exhaust is below. No handle or flow markers are drawn.',
   },
   400: {
     camera: [0, 0.08, 1],
@@ -710,16 +711,16 @@ export default {
     note: 'The faceplate wheel, tangent slide A, B, pitman and treadle; no floor or standards are drawn.',
   },
   402: {
-    remove: ['fixed-rear-bearing-frame-bar-\\d', '.*-white-balance-angular-index', 'white-escape-wheel-angular-index', '.*-balance-spoke-[23]', 'visible-active-escape-tooth-pallet-contact'],
-    note: 'Face view of the two open balance rims, each joined to its arbor by one slim two-armed bar as in a watch balance, crossing so both racks show, with their pinions, the lever B carrying both toothed sectors, and anchor A as one plate (a curved upper arm to its pointed pallet, a lower arm to its block pallet) working the fifteen-tooth escape wheel in its own plane, and the bar Brown draws in front of the wheel from the anchor pivot to the wheel\'s centre as the fixed bridge carrying both arbors, see-through where it covers the teeth he dots; no frame bars or white indices are drawn.',
+    remove: [],
+    note: 'Face view of the two open balance rims (each with one slim bar, as in a watch balance) crossing so the toothed arm shows, their pinions meshing the internal teeth (upper) and external teeth (left) of lever B\'s single curved arm, anchor A one plate with B, and the twelve-tooth escape wheel in the same plane; the bar Brown draws in front of the wheel from B\'s pivot to the wheel\'s centre is the fixed bridge carrying both arbors, see-through where it covers the teeth he dots.',
   },
   403: {
     remove: ['(?:left|right)-sloping-rule-guided-by-(?:left|right)-chord-pin-end-index-[12]', '(?:left|right)-sloping-rule-guided-by-(?:left|right)-chord-pin-pin-contact-working-edge', 'laid-out-(?:chord-line|versed-sine)', '(?:left|right)-fixed-chord-end-guide-pin-white-cap'],
     note: 'The two sloping rules crossed at the pencil and braced by the third rule, sliding against the two pins at the chord ends, which stand in a plain drawing board carrying the traced arc; no end indices, painted working edges, white pin caps or laid-out chord and versed-sine construction lines are drawn.',
   },
   404: {
-    remove: ['(?:left|right)-white-roller-angular-index', 'white-screw-handwheel-angular-index', 'given-required-arc-point-[123]'],
-    note: 'The straight bar with its two end standards and rollers, the elastic arched bar and the central screw with its thumb grip; no index marks or given points are drawn.',
+    remove: ['(?:left|right)-white-roller-angular-index', 'given-required-arc-point-[123]'],
+    note: 'The straight bar with its two end standards and rollers, the elastic arched bar and the central screw with Brown\'s wing thumbscrew (a collar, then a flat head with a neck and two round lobes); no index marks or given points are drawn.',
   },
   405: {
     remove: ['rule-distance-index-\\d+', '(?:upper-focus-rule-pivot|lower-focus-fixed-thread-loop-pin)-white-center-index', 'given-(?:upper|lower)-hyperbola-vertex'],
@@ -858,13 +859,13 @@ export default {
   },
   440: {
     camera: [-0.18, 1.0, 1],
-    remove: ['visible-trough-angle-index', 'fixed-(?:left|right)-trough-travel-stop', 'continuous-inlet-flow-marker-\\d+'],
+    remove: ['fixed-(?:left|right)-trough-travel-stop', 'continuous-inlet-flow-marker-\\d+'],
     note: 'View of the wedge-shaped double trough on its pivot standard, braces and open plank frame under the inlet flume, which Brown breaks off and which ends just beyond the crop with its water; no angle index or travel-stop blocks are drawn. No flow beads in the falling stream. The view is from the left and well above, so the water standing in the raised half shows over its front wall; the flume ends cleanly just past the crop. The flume water and its fall are one continuous stream landing beside the divider foot in the raised half; each half empties from its open outer end in one falling stream as it tips.',
   },
   441: {
     camera: [0, 0.01, 1],
-    remove: ['fixed-persian-wheel-base', 'fixed-hollow-shaft-bearing-standard', 'fixed-(?:rear|front)-hollow-shaft-bearing', 'fixed-stationary-trip-pin-bracket', 'fixed-trip-pin-support-post', 'fixed-pin-tilting-each-bucket-at-high-station', 'fixed-high-level-trough-receiving-tipped-bucket-water', 'fixed-outboard-receiver-standard', 'fixed-receiver-to-standard-bridge', 'rightward-driving-stream-marker-\\d+', 'inward-moving-float-water-marker-\\d+', 'visible-hollow-shaft-rotation-index'],
-    note: 'Front elevation of the Persian wheel with its light rim, curved floats, hollow shaft and hung buckets over the stream; no base slab, trip pin or its post, trough or white current/rotation markers are drawn. Brown draws no axle support, so the hollow shaft ends plainly either side of the wheel.',
+    remove: ['fixed-persian-wheel-base', 'fixed-hollow-shaft-bearing-standard', 'fixed-(?:rear|front)-hollow-shaft-bearing', 'fixed-high-level-trough-receiving-tipped-bucket-water', 'fixed-outboard-receiver-standard', 'fixed-receiver-to-standard-bridge', 'rightward-driving-stream-marker-\\d+', 'inward-moving-float-water-marker-\\d+', 'visible-hollow-shaft-rotation-index'],
+    note: 'Front elevation of the Persian wheel with its light rim, curved floats, hollow shaft and hung buckets over the stream. The caption\'s stationary pin tips each bucket at the top, shown on a minimal arm and post; no base slab, trough or white current/rotation markers are drawn. Brown draws no axle support, so the hollow shaft ends plainly either side.',
   },
   442: {
     camera: [1, 0.28, 0.30],
@@ -943,8 +944,7 @@ export default {
     note: 'The two hinged leaves of the weir as plain planks, as Brown draws them in section; no dark straps across their faces.',
   },
   464: {
-    remove: ['external-water-pour-into-open-upper-basin'],
-    note: 'Sectional elevation of the open basin on its two legs, the bowl in its air chamber, the pipes and the central nozzle throwing a willow plume of spray, playing steadily through the loop (no reset); Brown draws no stream being poured into the basin.',
+    note: 'Sectional elevation of the one hollow casting: the open trough on top draining down the right tube to the foot, the hollow left leg carrying air up to the chamber over the bowl, and the jet playing from the spire back into the trough, steadily through the loop; no stream is poured in from outside.',
   },
   465: {
     remove: ['left-operator-pressure-pad', 'right-operator-pressure-pad'],
@@ -963,7 +963,7 @@ export default {
   468: {
     camera: [0.015, 0.012, 1],
     remove: ['plate-.*-crossed-tie-end-mark'],
-    note: 'Brown\'s X-in-box section marks on the tie ends are notation and are not painted on the logs. Brown gives two figures of one ball-and-socket joint between log frames: a sectional elevation, flexed as the frames follow the bed, above a plan. The default view shows the same two figures face-on; both reproduce the front main\'s middle joint of the analytic crossing, which the factory keeps hidden (with its banks, winches and river strips) because the plate does not draw it.',
+    note: 'Brown\'s X-in-box section marks on the tie ends are notation and are not painted on the logs. Brown gives two figures of one ball-and-socket joint between log frames, a sectional elevation above a plan; here one model shows the joint, flexing from +23° through straight to −14° about its trunnions as the frames follow the bed.',
   },
   469: {
     camera: [0, 0.02, 1],

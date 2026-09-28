@@ -82,22 +82,32 @@ export function makeJointedTappetCounter({strikeKink=.3,studOverlap=.05,dogBeak=
     dogHead=spline([[944,645],[955,642],[993,629],[1035,665],[1009,708],[966,713]].map(lobe)),
     dogWeight=spline([[966,713],[974,742],[970,771],[953,794],[925,803],[890,799],...dogBeak.lowerLeft,dogBeak.lowerPixel].map(lobe)),
     dogOutline=[...[...dogTip.arc].reverse(),...dogHead,...dogWeight.slice(1)],
-    // B's heel: a sector behind the joint along the bar, hidden between the
-    // cheeks. Its upper face is radial about the joint pin and bears flush on
-    // the web's slot end, so the lift loads it as a pure stop torque.
-    heelAngle=Math.atan2(-p.B[1],-p.B[0]),heelSpread=.4,heelRadius=.2,
-    heel=poly([[0,0],...Array.from({length:33},(_,i)=>rotate([heelRadius,0],heelAngle-heelSpread+heelSpread*i/32))]),
-    dogSolid=clip.union(poly(dogOutline),poly(circle([0,0],.112)),heel),dogShape=clip.difference(dogSolid,poly(circle([0,0],.032)));
+    // B's heel: a short sector behind the joint along the bar, between the
+    // cheeks. Its counterclockwise face is radial about the joint pin and
+    // bears flush on the web's slot end, so the lift loads it as a pure stop
+    // torque. It spans heelStart..heelStart+heelSpread above the bar's axis,
+    // placed so the fold (about 0.9 rad) swings it to the mirror band below
+    // the axis, and it is short (heelRadius), so through B's whole fold it
+    // stays inside the tappet's outline and never shows below the bar.
+    heelAngle=Math.atan2(-p.B[1],-p.B[0]),heelStart=.325,heelSpread=.25,heelRadius=.165,bossRadius=.112,
+    heel=poly([[0,0],...Array.from({length:33},(_,i)=>rotate([heelRadius,0],heelAngle+heelStart+heelSpread*i/32))]),
+    dogSolid=clip.union(poly(dogOutline),poly(circle([0,0],bossRadius)),heel),dogShape=clip.difference(dogSolid,poly(circle([0,0],.032)));
   // The slot in the web: B's boss and heel swept through its folding range.
   // Its counterclockwise end is the radial stop face the heel bears on.
-  const foldRange=[-1.3,0],slotClearance=.004,
-    slotSector=poly([[0,0],...Array.from({length:129},(_,i)=>rotate([heelRadius+slotClearance+.002,0],heelAngle+(foldRange[0]-heelSpread-.05)*(1-i/128)))]).map(rings=>rings.map(r=>r.map(q=>add(p.B,q)))),
+  const foldRange=[-.95,0],slotClearance=.004,heelStop=heelAngle+heelStart+heelSpread,
+    slotSector=poly([[0,0],...Array.from({length:129},(_,i)=>rotate([heelRadius+slotClearance,0],heelStop+(foldRange[0]-heelSpread-.03)*(1-i/128)))]).map(rings=>rings.map(r=>r.map(q=>add(p.B,q)))),
     slot=clip.union(poly(circle(p.B,.128+slotClearance)),slotSector),
-    webShape=clip.difference(barShape,slot);
+    // The tappet's rest stop: a fixed key on pivot C, inside the web layer
+    // and hidden by both cheeks. Its face at restKeyAngle bears flush on the
+    // radial end of a cutout in the web when the tappet falls back to restQ.
+    restKeyAngle=1.2,restKeySpread=.5,restKeyRadius=.085,restKeyInner=.045,restSweep=[-1.0,restQ],
+    restKey=clip.difference(poly([[0,0],...Array.from({length:33},(_,i)=>rotate([restKeyRadius,0],restKeyAngle+restKeySpread*i/32))]),poly(circle([0,0],restKeyInner))),
+    restCutout=poly([[0,0],...Array.from({length:129},(_,i)=>rotate([restKeyRadius+slotClearance,0],restKeyAngle-restQ+(restKeySpread+restQ-restSweep[0]+.05)*i/128))]),
+    webShape=clip.difference(barShape,slot,restCutout,poly(circle([0,0],.056)));
   attach('tappetBody',plate(barShape,...Z.front),'tappet',PALETTE.brass);
   attach('tappetRearCheek',plate(barShape,...Z.rear),'tappet',PALETTE.brass);
   attach('tappetWeb',plate(webShape,...Z.web),'tappet',PALETTE.brass);
-  attach('fixedPivotC',disk(.053,-.157,Z.front[1]),'fixed',PALETTE.muted,[...p.C,0]);
+  attach('fixedPivotC',disk(.053,Z.rear[0]-.02,Z.front[1]),'fixed',PALETTE.muted,[...p.C,0]);
   attach('fixedPivotCap',disk(.064,Z.front[1],Z.front[1]+.013),'fixed',PALETTE.muted,[...p.C,0]);
   attach('dogPivotPin',disk(.029,Z.rear[0],Z.front[1]),'tappet',PALETTE.muted,[...p.B,0]);
   attach('dogPivotCap',disk(.046,Z.front[1],Z.front[1]+.01),'tappet',PALETTE.muted,[...p.B,0]);
@@ -111,22 +121,13 @@ export function makeJointedTappetCounter({strikeKink=.3,studOverlap=.05,dogBeak=
     holdingSolid=clip.union(poly([...[...outer].reverse(),...clickTip.arc,...inner]),poly(circle([0,0],.106))),
     holdingShape=clip.difference(holdingSolid,poly(circle([0,0],.039)));
   attach('holdingBody',plate(holdingShape,...Z.holding),'holding',PALETTE.brass);
-  // Brown draws no frame. Both fixed pivots stand on one fixed bracket plate
-  // clamped on the fixed common axle, in the gap between the count wheel and
-  // the coaxial driver (the driver's spokes and stud sweep everything behind
-  // and around them). The axle ends in a plain stub behind the driver; no
-  // floor pillar is added (p60 support policy). The tappet returns by its own
-  // weight (Brown's text) onto one plain rest pin on the bracket, under its
-  // arm beside C: nothing Brown draws can stop it, and B's point would
-  // otherwise run on down the teeth.
-  const bracketBack=-.192,bracketFront=-.157,restPinRadius=.022,restAlong=.16,
-    armDirection=p.B.map(v=>v/Math.hypot(...p.B)),restPinLocal=add(armDirection.map(v=>v*restAlong),rotate(armDirection,Math.PI/2).map(v=>v*(barRadius+restPinRadius))),
-    restPin=add(p.C,rotate(restPinLocal,restQ));
-  attach('holdingPivotPin',disk(.036,bracketFront,Z.holding[1]),'fixed',PALETTE.muted,[...p.PH,0]);
+  // Brown draws no frame, so none is modelled: the fixed pivots C and H are
+  // plain stubs, as on the other plates. The tappet returns by its own weight
+  // (Brown's text) onto the hidden rest key on pivot C (nothing Brown draws
+  // can stop it, and B's point would otherwise run on down the teeth).
+  attach('holdingPivotPin',disk(.036,Z.holding[0]-.02,Z.holding[1]),'fixed',PALETTE.muted,[...p.PH,0]);
   attach('holdingPivotCap',disk(.049,Z.holding[1],Z.holding[1]+.013),'fixed',PALETTE.muted,[...p.PH,0]);
-  attach('tappetRestPin',disk(restPinRadius,bracketFront,Z.front[1]),'fixed',PALETTE.muted,[...restPin,0]);
-  attach('fixedPivotBracket',plate(clip.difference(clip.union(capsule([0,0],p.PH,.075),capsule([0,0],p.C,.075),capsule(p.C,restPin,.05),poly(circle([0,0],.2))),
-    poly(circle([0,0],axleRadius))),bracketBack,bracketFront),'fixed',PALETTE.frame);
+  attach('tappetRestKey',plate(restKey,...Z.web),'fixed',PALETTE.muted,[...p.C,0]);
   const masses=Object.fromEntries(['driver','wheel','tappet','dog','holding'].map(family=>[family,familyMass(parts,families,family)]));
   const setState=({q=0,alpha=0,theta=p.wheelStart,driverAngle=0,holdingAngle=contact.closeH(theta).angle-H0.angle}={})=>{
     blocks.driver.rotation.z=driverAngle;blocks.wheel.rotation.z=theta;blocks.tappet.rotation.z=q;
@@ -153,12 +154,12 @@ export function makeJointedTappetCounter({strikeKink=.3,studOverlap=.05,dogBeak=
   const sectionFitBounds=sweptWorkingParts.clone().union(segmentAtPlatePose);
   sectionFitBounds.min.z=-.46;sectionFitBounds.max.z=.09;
   root.userData={parts,families,blocks,contact,masses,setState,segmentAtPlatePose,sweptWorkingParts,cameraFitBounds:sectionFitBounds.clone(),
-    geometry:{...p,bore,axleRadius,driverInner,driverOuter,studVector,studCount,studRadius,studOrbit,studOverlap,strikeKink,strikeArmStart:[0,0],barRadius,end,restQ,restPin,restPinRadius,Z,foldRange,dogBeak,clickWedge,heelAngle,heelSpread,heelRadius,H0Angle:H0.angle,holdingNose},
+    geometry:{...p,bore,axleRadius,driverInner,driverOuter,studVector,studCount,studRadius,studOrbit,studOverlap,strikeKink,strikeArmStart:[0,0],barRadius,end,restQ,restKeyAngle,restKeySpread,restKeyRadius,restKeyInner,restKeyLever:(restKeyRadius+restKeyInner)/2,Z,foldRange,dogBeak,clickWedge,heelAngle,heelStart,heelSpread,heelRadius,bossRadius,H0Angle:H0.angle,holdingNose},
     outlines:{bar:barShape,web:webShape,dog:dogSolid,holding:holdingSolid},lobe:{turn:lobeTurn,scale:lobeScale},
     hideGround:true,cameraFov:8,fullCameraDirection:new THREE.Vector3(0,0,10),shadowCameraHalfExtent:4,
     shadowBias:-.00005,shadowNormalBias:.005,mechanism:'stud-struck-jointed-tappet-ratchet-counter',fidelity:'authored',reconstructionStatus:'rebuilt',
     profile,playbackPeriod:profile.period,animationTiming:{authoredCyclePeriod:profile.period},minimumDisplayCycleSeconds:profile.period,
-    idealConstraints:'Four clockwise studs, one on each spoke of the driver, each strike the jointed tappet in turn; at every strike the 20-tooth count wheel turns counterclockwise and settles one tooth ahead. Gravity, finite normal contact and inelastic impact determine the cached trajectory. Common material density, viscous bearing damping and an opposing output load are reconstruction assumptions, as are B\'s heel stop on the tappet web and the tappet\'s rest pin on the fixed bracket. Each strike takes a 6-second physical cycle (a quarter of the driver\'s 24-second turn), displayed in 3 seconds. The complete coaxial driver is modelled; the default view frames Brown\'s window onto rim segment D.'};
+    idealConstraints:'Four clockwise studs, one on each spoke of the driver, each strike the jointed tappet in turn; at every strike the 20-tooth count wheel turns counterclockwise and settles one tooth ahead. Gravity, finite normal contact and inelastic impact determine the cached trajectory. Common material density, viscous bearing damping and an opposing output load are reconstruction assumptions, as are B\'s heel stop on the tappet web and the tappet\'s hidden rest key on pivot C. Each strike takes a 6-second physical cycle (a quarter of the driver\'s 24-second turn), displayed in 3 seconds. The complete coaxial driver is modelled; the default view frames Brown\'s window onto rim segment D.'};
   const stateAtTime=time=>sampleJointedTappetMotion(time);
   const update=time=>{const state=stateAtTime(time);setState(state);Object.assign(root.userData.kinematics,state);};
   root.userData.stateAtTime=stateAtTime;

@@ -8,10 +8,10 @@
     "radius": 0.5731177889404585,
     "rightSpan": 2.376969499173265,
     "leftSpan": 2.2351268420382766,
-    "rockerLength": 7.776,
+    "rockerLength": 2.5,
     "rockerPivot": [
-      -4.185302820325981,
-      -7.7477485949321325
+      -3.016029877790586,
+      -2.60294764777639
     ],
     "mainPivot": [
       1.9080000000000001,
@@ -41,10 +41,10 @@
         286
       ],
       "projected": [
-        61.83524009848628,
-        288.7596256914786
+        61.83524009848617,
+        288.7596256914783
       ],
-      "pixelError": 2.88325510130273
+      "pixelError": 2.88325510130237
     },
     {
       "name": "slotPin",
@@ -53,10 +53,10 @@
         172
       ],
       "projected": [
-        428.87659142056975,
-        174.7467808666348
+        428.87659142056987,
+        174.7467808666351
       ],
-      "pixelError": 2.883265101916139
+      "pixelError": 2.8832651019164715
     },
     {
       "name": "mainPin",
@@ -65,15 +65,15 @@
         218
       ],
       "projected": [
-        490.5936121441997,
-        219.78020570862338
+        490.5936121441998,
+        219.7802057086236
       ],
-      "pixelError": 2.3892953001159323
+      "pixelError": 2.389295300116178
     }
   ],
   "poses": 1441,
-  "minimumInnerCircleMargin": 0.1337110376930884,
-  "minimumOuterCircleMargin": 0.5702166735544532,
+  "minimumInnerCircleMargin": 0.13235405577770512,
+  "minimumOuterCircleMargin": 0.5463630864219224,
   "sources": [
     {
       "file": "scripts/measure-linked-variable-crank.mjs",
@@ -81,11 +81,11 @@
     },
     {
       "file": "src/simulation/linked-variable-crank-motion.js",
-      "sha256": "0347cdbe2af34819b76ce5268f05cb0c784f2ca2d9bd16b50f3ba91727c29357"
+      "sha256": "a2c92a4578d982d05796edad692128206dd56e90fdb2cc13fcbc661b6c74d780"
     },
     {
       "file": "src/simulation/variable-radius-crank-motion.js",
-      "sha256": "50a759f29481f201a478f41f2ce3156fe8f09071d2682a821123689d80d4b460"
+      "sha256": "67588a13b8a40b9b61f52de03f990156ab48f77def2242b603571a84eb0ff583"
     },
     {
       "file": "public/engravings/mm_169.png",

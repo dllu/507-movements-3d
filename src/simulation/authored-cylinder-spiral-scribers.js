@@ -2,6 +2,7 @@ import {correctScriberDynamometer} from './scriber-dynamometer-gears.js';
 import * as THREE from 'three';
 import { makeSeeThrough } from './see-through-part.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { circle, plate, poly, polygonClipping } from './finite-plate-geometry.js';
 import {
   PALETTE,
   makeGear,
@@ -826,25 +827,24 @@ function spiralCylinderScriber(movement) {
   contactBead.userData.role = 'visible-exact-scribing-contact-point';
   rackAssembly.add(contactBead);
 
+  // Each input-shaft bearing is one flat standard: a post as wide as its
+  // round, bored top (Brown's plain pillow block), rising from the table.
   const makeShaftBearing = (x) => {
     const group = new THREE.Group();
-    const post = new THREE.Mesh(
-      new THREE.BoxGeometry(0.20, 1.14, 0.35),
-      frameMaterial,
+    const halfWidth = 0.175;
+    const tableTop = 1.80;
+    const region = polygonClipping.difference(
+      polygonClipping.union(
+        poly([[-halfWidth, tableTop], [halfWidth, tableTop], [halfWidth, apex.y], [-halfWidth, apex.y]]),
+        poly(circle([0, apex.y], halfWidth, 96)),
+      ),
+      poly(circle([0, apex.y], 0.076, 64)),
     );
-    post.position.set(x, 2.35, 0);
+    const post = new THREE.Mesh(plate(region, -0.10, 0.10).rotateY(Math.PI / 2), frameMaterial);
+    post.position.set(x, 0, 0);
     post.userData.fixed = true;
     post.userData.role = 'horizontal-input-shaft-bearing-post';
     group.add(post);
-    const collar = new THREE.Mesh(
-      new THREE.TorusGeometry(0.16, 0.055, 9, 32),
-      frameMaterial,
-    );
-    collar.position.set(x, apex.y, 0);
-    collar.rotation.y = Math.PI / 2;
-    collar.userData.fixed = true;
-    collar.userData.role = 'horizontal-input-shaft-bearing-collar';
-    group.add(collar);
     return group;
   };
   const shaftBearings = [-0.10, 1.32].map((x) => {
@@ -1090,6 +1090,19 @@ function spiralCylinderScriber(movement) {
   );
   root.userData.cameraFitCropsSource = true;
   correctScriberDynamometer(root, 368);
+  // Brown stands the horizontal bevel on a broad block on the table, not a
+  // small collar: a bored rectangular pedestal round the cylinder shaft.
+  {
+    const width = 0.66, height = 0.25, depth = 0.50, tableTop = 1.80;
+    const region = polygonClipping.difference(
+      poly([[-width / 2, -depth / 2], [width / 2, -depth / 2], [width / 2, depth / 2], [-width / 2, depth / 2]]),
+      poly(circle([0, 0], 0.084, 64)),
+    );
+    verticalBearing.geometry.dispose();
+    verticalBearing.geometry = plate(region, 0, height).rotateX(-Math.PI / 2);
+    verticalBearing.position.set(cylinderCenter.x, tableTop, 0);
+    verticalBearing.userData.role = 'table-pedestal-block-for-cylinder-shaft';
+  }
   // Brown draws the rack's teeth and the spur pinion in mesh at the default
   // view, but his rack behind the pinion cannot also give his helix sense
   // with the bevel pair where he draws it: the model keeps the rack on the

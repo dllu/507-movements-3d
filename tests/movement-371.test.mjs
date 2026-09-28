@@ -80,6 +80,12 @@ test('movement 371 contains one open four-spoke wheel, opposed face teeth, one r
   assert.equal(blocks.terminalPairs.length, 2);
   assert.equal(blocks.guideRails.length, 2);
   assert.equal(blocks.guideCrossbars.length, 2);
+  assert.ok(blocks.guidePlate.parent === model.root && blocks.guidePlate.visible, 'one fixed slotted shaft guide');
+  for (const part of [...blocks.guideRails, ...blocks.guideCrossbars]) assert.equal(part.visible, false);
+  // Solid rims as deep as the tooth stock, and one tooth colour on both faces.
+  blocks.wheelBody.geometry.computeBoundingBox();
+  assert.ok(blocks.wheelBody.geometry.boundingBox.max.z >= 0.134);
+  for (const tooth of blocks.rearFaceTeeth) assert.equal(tooth.material, blocks.frontFaceTeeth[0].material);
   assert.equal(blocks.wheelWeb.userData.lobeCount, 4);
   for (const component of [
     blocks.outputRotor,

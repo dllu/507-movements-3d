@@ -2,7 +2,8 @@ import * as T from 'three';
 import {boredLatheGeometry} from './bored-lathe-geometry.js';
 import {plate, poly, circle, capsule, polygonClipping as clip} from './finite-plate-geometry.js';
 
-// Brown's elbow lever C: a slim curved arm hanging from the pivot, a short
+// Brown's elbow lever C: a broad curved arm (about half the rack's width)
+// hanging from the pivot, a short
 // straight arm running left from it to a small knob under its tip, and a short link
 // hung from a pin on the curved arm, whose lower end bears on the top of rack
 // A1. Spring d, hooked just below the pivot, returns C to its rest angle
@@ -15,8 +16,8 @@ import {plate, poly, circle, capsule, polygonClipping as clip} from './finite-pl
 // falls back to hang from its pin.
 const R = 2, pinPhi = -.6;
 export const selectorGeometry = Object.freeze({
-  radius: R, halfWidth: .04, tipHalfWidth: .03, endAngle: -1.1,
-  shortArmEnd: [-1.03, .03], shortArmHalfWidth: .04, bossRadius: .13, boreRadius: .064,
+  radius: R, halfWidth: .085, tipHalfWidth: .06, endAngle: -1.1,
+  shortArmEnd: [-1.03, .03], shortArmHalfWidth: .07, bossRadius: .16, boreRadius: .064,
   linkPin: [-R + R * Math.cos(pinPhi), R * Math.sin(pinPhi)], linkPinRadius: .03,
   linkLength: .8, linkHalfWidth: .045, linkEyeRadius: .075,
   restAngle: 0, stopRadius: .045, springStud: [0, -.33],
@@ -114,9 +115,28 @@ export function installWeightedRackSelector(root) {
   cam.geometry = plate(outline, .23, .37);
   cam.userData.role = 'elbow-lever-C-curved-arm-short-arm-and-bored-pivot';
   const pivotPin = lever.children[1]; pivotPin.geometry.dispose();
-  pivotPin.geometry = new T.CylinderGeometry(g.boreRadius - .004, g.boreRadius - .004, .20, 32); // the mesh stands along z
-  pivotPin.position.z = .30; // just through C's boss
+  // The pin runs from C's boss back to a small lug rising from the top of
+  // guide b's back (behind the groove floor, clear of the rack's guide
+  // pin), which carries C's fixed pivot.
+  const pinBack = -.57 - lever.position.z, pinFront = .40;
+  pivotPin.geometry = new T.CylinderGeometry(g.boreRadius - .004, g.boreRadius - .004, pinFront - pinBack, 32); // the mesh stands along z
+  pivotPin.position.z = (pinFront + pinBack) / 2;
   const add = (geometry, material, role, parent) => {const o = new T.Mesh(geometry, material); o.userData.role = role; parent.add(o); o.castShadow = o.receiveShadow = true; return o;};
+  {
+    root.updateMatrixWorld(true);
+    let surround = null; b.rightGuide.traverse(o => { if (o.isMesh && /fixed-cast-surround$/.test(o.userData.role ?? '')) surround = o; });
+    const P = lever.position, v = new T.Vector3(), position = surround.geometry.attributes.position;
+    let best = null, bestDistance = Infinity;
+    for (let i = 0; i < position.count; i++) {
+      v.fromBufferAttribute(position, i).applyMatrix4(surround.matrixWorld);
+      const distance = Math.hypot(v.x - P.x, v.y - P.y);
+      if (distance < bestDistance) { bestDistance = distance; best = [v.x, v.y]; }
+    }
+    const toward = [(best[0] - P.x) / bestDistance, (best[1] - P.y) / bestDistance], root0 = [best[0] + toward[0] * .15, best[1] + toward[1] * .15];
+    const lugShape = clip.difference(clip.union(capsule([P.x, P.y], root0, .10, 32), poly(circle([P.x, P.y], .15, 64))), poly(circle([P.x, P.y], g.boreRadius, 64)));
+    const lug = add(plate(lugShape, -.58, -.465), surround.material, 'fixed-lug-on-guide-b-carrying-pivot-of-C', root);
+    b.elbowPivotLug = lug;
+  }
   // The link: a flat bar with an eye at its pin and a rounded lower end, in
   // front of C, swinging on a pin fixed in C.
   const linkPivot = new T.Group(); linkPivot.position.set(...g.linkPin, 0); linkPivot.userData.role = 'short-link-swinging-on-pin-in-C'; lever.add(linkPivot);

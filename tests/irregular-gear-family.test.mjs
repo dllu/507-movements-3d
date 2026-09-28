@@ -35,3 +35,16 @@ test('saved audit checks actual rendered finite planar solids at interleaved ful
  const report=JSON.parse(fs.readFileSync('docs/validation/191-196-201-contact.json'));for(const source of report.sources)assert.equal(createHash('sha256').update(fs.readFileSync(source.file)).digest('hex'),source.sha256,source.file);
  for(const row of report.results){assert.equal(row.poses,513);assert.equal(row.penetratingPoses,0);assert.ok(row.maximumOverlapArea<1e-10);assert.ok(row.maximumGap<(row.id===191?.0105:.0021));assert.ok(row.minimumGap>0);}
 });
+
+test('196 strap arm is one flat tapered extrusion and the stand pivot is a plain pin, not a barrel', () => {
+  const model = createAuthoredGearMovement({id: 196}), b = model.root.userData.blocks;
+  const strap = b.boredCarrierLink;
+  assert.equal(strap.userData.role, 'flat-tapered-strap-arm-A-to-stand');
+  strap.geometry.computeBoundingBox();
+  const size = strap.geometry.boundingBox.getSize(new THREE.Vector3());
+  assert.ok(size.y > 0.49 && size.z < 0.151, `strap ${size.toArray()}`);
+  const eye = new THREE.Box3().setFromObject(b.carrierBearing);
+  assert.ok(eye.max.z - eye.min.z < 0.25 && eye.max.z < -0.45, 'stand eye stays in the pedestal plane');
+  const pin = b.carrierPivotPin.geometry.parameters;
+  assert.ok(pin.radiusTop < 0.08 && b.carrierPivotPin.position.z + pin.height / 2 < 0.51);
+});

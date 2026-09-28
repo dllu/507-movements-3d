@@ -24,29 +24,18 @@ export function createAuthoredCurveGeneratorMovement(movement) {
     hole([g.length*g.fraction,0],.046)),.13,.27),PALETTE.driven,'rod',rod);
   const tracer=add('tracer',disk(.04,.21,.4),PALETTE.brass,'rod',rod);tracer.position.x=g.length*g.fraction;
   add('wristPin',disk(.14,.07,.57),PALETTE.ink,'slider',slider);
-  // Brown breaks the fixed end off with a jagged mark. Model a whole
-  // crosshead block riding in a closed fixed guide frame along guideY.
-  add('slider',plate(clip.difference(poly([[-.34,-.28],[.34,-.28],[.34,.28],[-.34,.28]]),hole([0,0],.146)),.36,.50),PALETTE.frame,'slider',slider);
-  const [gx0,gx1]=[3.55,6.75],gy=g.guideY;
-  add('guideFrame',plate(clip.difference(poly([[gx0,gy-.37],[gx1,gy-.37],[gx1,gy+.37],[gx0,gy+.37]]),
-    poly([[gx0+.1,gy-.29],[gx1-.1,gy-.29],[gx1-.1,gy+.29],[gx0+.1,gy+.29]])),.36,.50),PALETTE.frame,'fixed');
-  // Brown draws neither the crank shaft's bearing nor what holds the guide
-  // frame. A slim fixed back bar behind the moving parts carries the shaft
-  // end, runs behind the rod's mean line (mostly hidden by it) and joins an
-  // open ring under the guide frame, which stands on two posts at its closed right end.
-  const frameRing=clip.difference(poly([[gx0,gy-.37],[gx1,gy-.37],[gx1,gy+.37],[gx0,gy+.37]]),
-    poly([[gx0+.1,gy-.29],[gx1-.1,gy-.29],[gx1-.1,gy+.29],[gx0+.1,gy+.29]]));
-  add('backBar',plate(clip.union(hole([0,0],.32),capsule([0,0],[gx0+.05,gy],.08),frameRing),-.40,-.24),PALETTE.frame,'fixed');
-  // Posts only at the closed right end: the rod sweeps past the left end.
-  for(const [x,y] of [[gx1-.05,gy-.33],[gx1-.05,gy+.33]]){
-    const post=add('guideFramePost',plate(poly([[x-.05,y-.04],[x+.05,y-.04],[x+.05,y+.04],[x-.05,y+.04]]),-.24,.36),PALETTE.frame,'fixed');
-    delete parts.guideFramePost;parts[`guideFramePost${Object.keys(parts).filter(n=>n.startsWith('guideFramePost')).length}`]=post;
-  }
-  // The back bar is bolted to the framing behind the mechanism by two
-  // flanges: one behind the crank-shaft boss (the shaft's bearing) and one
-  // behind the guide frame's closed end.
-  add('shaftBearingFlange',plate(clip.difference(poly([[-.42,-.42],[.42,-.42],[.42,.42],[-.42,.42]]),hole([0,0],.1)),-.48,-.40),PALETTE.frame,'fixed');
-  add('guideFrameFlange',plate(poly([[gx1-.9,gy-.45],[gx1+.08,gy-.45],[gx1+.08,gy+.45],[gx1-.9,gy+.45]]),-.48,-.40),PALETTE.frame,'fixed');
+  // Brown draws the wrist as a large eye, the crank bosses' size, whose
+  // flat-topped end runs on to the right and is broken off: the end of a
+  // horizontal crosshead bar. Pass 90 models it whole as one flat plate, the
+  // eye round and concentric with the wrist pin, the bar running straight on
+  // along guideY and ending square 0.6 past the pin, just beyond Brown's
+  // break. (The reconstructed square slider block is gone and its guide
+  // frame is not shown.)
+  add('crossheadEye',plate(clip.difference(clip.union(hole([0,0],.30),poly([[0,-.30],[.6,-.30],[.6,.30],[0,.30]])),
+    hole([0,0],.146)),.36,.50),PALETTE.accent,'slider',slider);
+  // Pass 90: Brown draws no guide, frame or bearing; the reconstructed guide
+  // frame, back bar, posts and flanges (always hidden by the source
+  // presentation) are no longer built. The crosshead's line is guideY.
   // Brown's dashed egg is the tracer's path in his notation; it is not drawn.
   const update=time=>{const s=eggAtTime(time);rotor.rotation.z=s.angle;rod.position.set(...s.crank,0);
     rod.rotation.z=s.rodAngle;slider.position.set(...s.wrist,0);root.userData.kinematics=s;};

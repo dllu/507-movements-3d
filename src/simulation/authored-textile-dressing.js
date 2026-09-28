@@ -5,8 +5,9 @@ import {
   matte,
 } from './primitives.js';
 
-import { boredRollGeometry, boredBlockGeometry, textileBrushGeometry, finishProcessPresentation } from './textile-planer-working-parts.js';
-import { plate } from './finite-plate-geometry.js';
+import { boredRollGeometry, finishProcessPresentation } from './textile-planer-working-parts.js';
+import { circle, plate, poly, polygonClipping, sector } from './finite-plate-geometry.js';
+import { makeSeeThrough } from './see-through-part.js';
 
 const FULL_TURN = Math.PI * 2;
 const Z_AXIS = new THREE.Vector3(0, 0, 1);
@@ -191,7 +192,7 @@ function textileDressingElements(movement) {
   ];
   const dressingStartAngle = THREE.MathUtils.degToRad(6);
   const markerCount = 9;
-  const brushCount = 12;
+  const brushCount = 8;
   const topContactRadius = webPath.topTangent.clone().sub(
     webPath.topCenter,
   );
@@ -320,12 +321,52 @@ function textileDressingElements(movement) {
       point.y - outward.y * archStrapHalfWidth,
     ]);
   }
-  const arch = new THREE.Mesh(
-    plate([[[...archOuter, ...archInner.reverse(), archOuter[0]]]], -1.18, -1.06),
-    frameMaterial,
+  // Brown's end elevation is a section through an arched end plate: the
+  // outer and inner outlines are a flanged rim, the two bars are cast ribs
+  // just under the rolls, and all three axles bear in the plate itself (no
+  // bar crosses the brush cylinder). The rim and ribs are one extrusion; the
+  // thinner web fills the arch behind them. The near plate is the same
+  // casting with its web in the see-through style, so the rolls read as in
+  // Brown's section.
+  const archInterior = [...archInner, archInner[0]];
+  const ribHeight = 0.20;
+  const ribClearance = 0.03;
+  const ribRegion = (rollY) => {
+    const top = rollY - rollRadius - ribClearance;
+    return poly([[-2.2, top - ribHeight], [2.2, top - ribHeight], [2.2, top], [-2.2, top]]);
+  };
+  const interior = [[archInterior]];
+  const ribs = polygonClipping.intersection(
+    interior,
+    polygonClipping.union(ribRegion(centerSpacing), ribRegion(-centerSpacing)),
   );
-  arch.userData.role = 'source-arched-side-frame';
+  const bearingOuterRadius = 0.19;
+  const axleHoles = polygonClipping.union(
+    ...[centerSpacing, 0, -centerSpacing].map((y) => poly(circle([0, y], bearingOuterRadius, 96))),
+  );
+  const rimRegion = polygonClipping.union(
+    [[[...archOuter, ...[...archInner].reverse(), archOuter[0]]]],
+    ribs,
+  );
+  const webRegion = polygonClipping.difference(interior, ribs, axleHoles);
+  const endPlate = (side) => {
+    const z0 = side * 1.12;
+    const rim = new THREE.Mesh(
+      plate(rimRegion, z0 - 0.06, z0 + 0.06),
+      frameMaterial,
+    );
+    // The web lies on the outer side of the rim, recessed from its inner face.
+    const webLow = side < 0 ? z0 - 0.06 : z0 + 0.02;
+    const web = new THREE.Mesh(plate(webRegion, webLow, webLow + 0.04), frameMaterial);
+    return { rim, web };
+  };
+  const farPlate = endPlate(-1);
+  const arch = farPlate.rim;
+  arch.userData.role = 'source-arched-end-plate-flanged-rim-and-roll-ribs';
   fixedFrame.add(arch);
+  const archWeb = farPlate.web;
+  archWeb.userData.role = 'source-arched-end-plate-web';
+  fixedFrame.add(archWeb);
   const frameFeet = [];
   for (const x of [-1.78, 1.78]) {
     const foot = new THREE.Mesh(
@@ -338,44 +379,31 @@ function textileDressingElements(movement) {
     fixedFrame.add(foot);
   }
   const bearingBars = [];
-  for (const y of [centerSpacing, 0, -centerSpacing]) {
-    const bar = new THREE.Mesh(
-      boredBlockGeometry(2.84, 0.34, 0.17, 0.14),
-      frameMaterial,
-    );
-    bar.position.set(0, y, -1.12);
-    bar.userData.role = 'fixed-winding-roll-bearing-crossbar';
-    bearingBars.push(bar);
-    fixedFrame.add(bar);
-  }
   const bearingBlocks = [];
   for (const y of [centerSpacing, 0, -centerSpacing]) {
     const bearing = cylinderAlongZ(0.19, 0.30, darkMaterial, 28);
     bearing.geometry.dispose();
     // The dressing-cylinder bearing is shorter so its face clears the
     // rotating core's end.
-    bearing.geometry = boredRollGeometry(0.19, y === 0 ? 0.24 : 0.30, y === 0 ? 0.134 : 0.114);
+    bearing.geometry = boredRollGeometry(bearingOuterRadius + 0.005, y === 0 ? 0.24 : 0.30, y === 0 ? 0.134 : 0.114);
     bearing.position.set(0, y, y === 0 ? -1.11 : -1.08);
     bearing.userData.role = 'fixed-parallel-axis-bearing';
     bearingBlocks.push(bearing);
     fixedFrame.add(bearing);
   }
-  // The machine has a matching side frame at the other end of the rolls,
-  // so every shaft runs in a bearing at both ends (Brown's end elevation
-  // shows the two frames in line).
-  const nearArch = new THREE.Mesh(arch.geometry.clone().translate(0, 0, 2.24), frameMaterial);
-  nearArch.userData.role = 'source-arched-side-frame-far-end-pair';
+  // The matching end plate at the near end of the rolls.
+  const nearPlate = endPlate(1);
+  const nearArch = nearPlate.rim;
+  nearArch.userData.role = 'source-arched-end-plate-near-flanged-rim-and-roll-ribs';
   fixedFrame.add(nearArch);
+  const nearArchWeb = nearPlate.web;
+  nearArchWeb.userData.role = 'source-arched-end-plate-near-web-see-through';
+  fixedFrame.add(nearArchWeb);
+  makeSeeThrough(nearArchWeb);
   for (const foot of [...frameFeet]) {
     const pair = foot.clone();
     pair.position.z = -foot.position.z;
     frameFeet.push(pair);
-    fixedFrame.add(pair);
-  }
-  for (const bar of [...bearingBars]) {
-    const pair = bar.clone();
-    pair.position.z = -bar.position.z;
-    bearingBars.push(pair);
     fixedFrame.add(pair);
   }
   for (const bearing of [...bearingBlocks]) {
@@ -447,21 +475,48 @@ function textileDressingElements(movement) {
   dressingCylinder.userData.role =
     'interposed-brush-armed-dressing-cylinder';
   root.add(dressingCylinder);
-  const dressingCore = cylinderAlongZ(
-    dressingCoreRadius,
-    webWidth + 0.20,
-    dressingMaterial,
-    48,
+  // Brown's brush cylinder: a hub on four spokes inside a ring, carrying
+  // eight boards, each faced with bristles out to the cloth. The spoked ring
+  // is one extrusion along the cylinder; boards and bristle pads are staves.
+  const hubRadius = 0.23;
+  const ringInner = 0.32;
+  const ringOuter = 0.40;
+  const boardOuter = 0.82;
+  const spokeHalfWidth = 0.045;
+  const spokes = [0, 1, 2, 3].map((k) => {
+    const c = Math.cos(k * Math.PI / 2), sn = Math.sin(k * Math.PI / 2);
+    const pts = [[hubRadius - 0.02, -spokeHalfWidth], [ringInner + 0.02, -spokeHalfWidth], [ringInner + 0.02, spokeHalfWidth], [hubRadius - 0.02, spokeHalfWidth]];
+    return poly(pts.map(([x, y]) => [x * c - y * sn, x * sn + y * c]));
+  });
+  const spiderRegion = polygonClipping.difference(
+    polygonClipping.union(
+      polygonClipping.difference(poly(circle([0, 0], ringOuter, 192)), poly(circle([0, 0], ringInner, 192))),
+      polygonClipping.difference(poly(circle([0, 0], hubRadius, 96)), poly(circle([0, 0], 0.132, 96))),
+      ...spokes,
+    ),
+    poly(circle([0, 0], 0.132, 96)),
   );
-  dressingCore.geometry.dispose();
-  dressingCore.geometry = boredRollGeometry(dressingCoreRadius, webWidth + 0.20, 0.132);
-  dressingCore.userData.role = 'dressing-cylinder-core';
+  const coreLength = webWidth + 0.20;
+  const dressingCore = new THREE.Mesh(plate(spiderRegion, -coreLength / 2, coreLength / 2), dressingMaterial);
+  dressingCore.userData.role = 'dressing-cylinder-spoked-hub-and-ring';
   dressingCylinder.add(dressingCore);
+  const boardGap = 0.05;
+  const boards = [];
   const brushBars = [];
   for (let index = 0; index < brushCount; index += 1) {
-    const angle = index * FULL_TURN / brushCount;
+    const angle = (index + 0.5) * FULL_TURN / brushCount;
+    const half = Math.PI / brushCount - boardGap;
+    const board = new THREE.Mesh(
+      plate(sector(ringOuter - 0.01, boardOuter, -half, half, 48), -webWidth * 0.48, webWidth * 0.48),
+      dressingMaterial,
+    );
+    board.rotation.z = angle;
+    board.userData.index = index;
+    board.userData.role = 'one-of-eight-dressing-cylinder-boards';
+    boards.push(board);
+    dressingCylinder.add(board);
     const brush = new THREE.Mesh(
-      textileBrushGeometry(dressingCoreRadius - 0.015, dressingContactRadius - webRelief, webWidth * 0.90),
+      plate(sector(boardOuter - 0.005, dressingContactRadius - webRelief, -half + 0.01, half - 0.01, 48), -webWidth * 0.45, webWidth * 0.45),
       brushMaterial,
     );
     brush.rotation.z = angle;
@@ -541,7 +596,11 @@ function textileDressingElements(movement) {
       arch,
       bearingBars,
       bearingBlocks,
+      boards,
       brushBars,
+      archWeb,
+      nearArch,
+      nearArchWeb,
       dressingAxle,
       dressingCore,
       dressingCylinder,

@@ -80,3 +80,19 @@ test('235 keeps stable rendered buffers, clear display settings and the six-toot
  const m=create({id:235}),d=m.root.userData;const meshes=[];m.root.traverse(o=>{if(o.isMesh)meshes.push(o);});const buffers=meshes.map(o=>o.geometry.attributes.position.array);for(let i=0;i<=32;i++)m.update(i/32*4);
  meshes.forEach((o,i)=>{assert.equal(o.geometry.attributes.position.array,buffers[i]);assert.ok(o.castShadow);for(const mat of[].concat(o.material))assert.equal(mat.fog,false);});assert.equal(d.geometry.toothCount,6);assert.equal(d.hideGround,true);assert.ok(d.minimumDisplayCycleSeconds>=6);assert.ok(m.cameraDirection.z>15);
 });
+
+test('235 tappet is one flat beak blade with a notched back, not an even-width rod',async()=>{
+  const {TAPPET_BLADE_235:B}=await import('../src/simulation/star-tappet-working-parts.js');
+  const d=create({id:235}).root.userData,g=d.geometry,polygons=d.blocks.tappetBody.geometry.userData.plate.polygons;
+  assert.equal(polygons.length,1,'one extrusion');
+  assert.equal(polygons[0].length,2,'outline plus the hinge bore');
+  const field=solidSurface(d.blocks.tappetBody.geometry),inside=(x,y)=>field.signedDistance(new THREE.Vector3(x,y,0))<0;
+  // The notch: a point between its two sides is open, the blade either side is solid.
+  const [nx,ny]=B.notch;assert.ok(!inside(nx,ny-.06),'the notch is open');
+  assert.ok(inside(nx-.3,ny-.05)&&inside(nx,ny+.08),'blade material round the notch');
+  // Broad behind the beak (wider than the arm's half width), narrow at the beak.
+  let wide=0;for(let y=-.3;y<=.6;y+=.005)if(inside(1.0,y))wide+=.005;
+  assert.ok(wide>.4,`blade width ${wide}`);
+  let beak=0;for(let y=-.3;y<=.6;y+=.005)if(inside(g.tappetLength-.02,y))beak+=.005;
+  assert.ok(beak<.2,`beak width ${beak}`);
+});

@@ -1,6 +1,7 @@
 import {correctCordTraverseParts} from './cord-traverse-working-parts.js';
 import * as THREE from 'three';
 import { plate, polygonClipping } from './finite-plate-geometry.js';
+import { boredLatheGeometry } from './bored-lathe-geometry.js';
 import {
   CircularArcCurve3,
   PALETTE,
@@ -599,18 +600,41 @@ function redirectedChineseWindlass(movement) {
   const legXAtY = (y) => 3.0 - (y - frameBottomY)
     / (frameCrownY - 0.32 - frameBottomY) * (3.0 - 0.66);
   const hookY = fixedGuideY + 0.36;
-  const leftGuideSupport = makeBeam(
-    new THREE.Vector3(-legXAtY(hookY) + 0.05, hookY, frameRearZ),
-    leftFixedCenter.clone().addScaledVector(pulleyAxis, -0.38),
-    { color: PALETTE.frame, depth: 0.10, thickness: 0.09 },
-  );
-  leftGuideSupport.userData.role = 'left-fixed-sheave-support';
-  const rightGuideSupport = makeBeam(
-    new THREE.Vector3(legXAtY(hookY) - 0.05, hookY, frameRearZ),
-    rightFixedCenter.clone().addScaledVector(pulleyAxis, -0.38),
-    { color: PALETTE.frame, depth: 0.10, thickness: 0.09 },
-  );
-  rightGuideSupport.userData.role = 'right-fixed-sheave-support';
+  // The bracket arm ends in a bored eye that wraps the rear end of the
+  // sheave axle (0.13 radius round the 0.065 axle, 0.20 long, 0.05 clear of
+  // the sheave's rear face), so the arm joins the axle solidly instead of
+  // touching its end face.
+  const eyeCentreOffset = -0.25;
+  const eyeLength = 0.20;
+  const guideSupport = (side, center, role) => {
+    const eyeCentre = center.clone().addScaledVector(pulleyAxis, eyeCentreOffset);
+    const arm = makeBeam(
+      new THREE.Vector3(side * (legXAtY(hookY) - 0.05), hookY, frameRearZ),
+      eyeCentre,
+      { color: PALETTE.frame, depth: 0.10, thickness: 0.09 },
+    );
+    let armMaterial = null;
+    arm.traverse((child) => { if (child.isMesh && !armMaterial) armMaterial = child.material; });
+    const eye = new THREE.Mesh(
+      boredLatheGeometry([
+        { axial: -eyeLength / 2, radial: 0.13 },
+        { axial: eyeLength / 2, radial: 0.13 },
+      ], 0.067, 96),
+      armMaterial,
+    );
+    eye.quaternion.setFromUnitVectors(Y_AXIS, pulleyAxis);
+    eye.position.copy(eyeCentre);
+    eye.userData.role = `${role}-bored-eye`;
+    const support = new THREE.Group();
+    support.add(arm, eye);
+    support.userData.role = role;
+    support.userData.eye = eye;
+    return support;
+  };
+  const leftGuideSupport = guideSupport(-1, leftFixedCenter,
+    'left-fixed-sheave-support');
+  const rightGuideSupport = guideSupport(1, rightFixedCenter,
+    'right-fixed-sheave-support');
   frame.add(
     leftLeg,
     rightLeg,
@@ -722,13 +746,18 @@ function redirectedChineseWindlass(movement) {
     pulley.position.copy(center);
     pulley.userData.pitchRadius = fixedGuidePitchRadius;
     pulley.userData.role = `${name}-fixed-rope-redirect-sheave`;
+    // The axle runs from the rear face of the bracket eye to just proud of
+    // the sheave's front face (sheave half-width 0.09).
+    const axleRear = eyeCentreOffset - eyeLength / 2;
+    const axleFront = 0.12;
     const axle = makeShaft({
       axis: pulleyAxis,
       color: PALETTE.ink,
-      length: 0.72,
+      length: axleFront - axleRear,
       radius: 0.065,
     });
-    axle.position.copy(center);
+    axle.position.copy(center)
+      .addScaledVector(pulleyAxis, (axleFront + axleRear) / 2);
     axle.userData.role = `${name}-fixed-redirect-sheave-axle`;
     root.add(pulley, axle);
     return { axle, pulley };

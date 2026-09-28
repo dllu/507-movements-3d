@@ -1,6 +1,7 @@
 import { correctDicksonParts, finishOneWayFamily } from './one-way-clutch-working-parts.js';
 import * as THREE from 'three';
 import { replaceWithLaidRope } from './laid-rope.js';
+import { polygonClipping } from './steam-section-kit.js';
 import {
   PALETTE,
   markShadows,
@@ -106,6 +107,7 @@ function beamBetween(start, end, width, depth, material) {
 }
 
 function makePawl({
+  chamferSide,
   material,
   pawlLength,
   role,
@@ -113,14 +115,26 @@ function makePawl({
 }) {
   const pawl = new THREE.Group();
   pawl.userData.role = role;
-  const body = extrudedShape([
-    [0, -0.095],
-    [pawlLength - 0.22, -0.095],
-    [pawlLength, -0.015],
-    [pawlLength, 0.040],
-    [pawlLength - 0.22, 0.095],
-    [0, 0.095],
-  ], 0.15, material);
+  // Brown's pawls are straight blades of constant width with an obliquely
+  // cut end. The blade runs on past the rim; correctDicksonParts clips it to
+  // D's inner circle at the seated angle, so the end bears on the rim along
+  // an arc. The oblique cut removes the trailing corner, the one part of a
+  // square end that would swing outward into the rim as the pawl lifts.
+  const halfWidth = 0.095;
+  const cut = chamferSide; // lateral side (local y sign) of the oblique cut
+  const blade = [
+    [0, cut * halfWidth],
+    [pawlLength - 0.16, cut * halfWidth],
+    [pawlLength, cut * 0.045],
+    [pawlLength + 0.6, cut * 0.045],
+    [pawlLength + 0.6, -cut * halfWidth],
+    [0, -cut * halfWidth],
+  ];
+  for (let index = 1; index < 16; index += 1) {
+    const angle = -cut * Math.PI / 2 - cut * Math.PI * index / 16;
+    blade.push([halfWidth * Math.cos(angle), halfWidth * Math.sin(angle)]);
+  }
+  const body = extrudedShape(blade, 0.15, material);
   body.userData.role = `${role}-rigid-body`;
   pawl.add(body);
   const hinge = cylinderAlongZ(0.12, 0.23, material, 28);
@@ -189,7 +203,10 @@ function makeDynamicCord(material, role) {
   // Pass 57: the slack is a smooth circular sag of the cord's material
   // length on the bend side, not two straight runs meeting at a corner.
   cord.userData.setRoute = (route) => {
-    const path = new CordSag(route.start, route.end, route.materialLength, route.bend);
+    // Pass 90: each cord is drawn straight and taut, as Brown draws it; the
+    // cord's length change (up to 0.24) is taken up on E's pin, not shown as
+    // a sag, since a cord can only pull.
+    const path = new CordSag(route.start, route.end, 0, route.bend);
     replaceWithLaidRope(rope, path, { radius: 0.024 });
     cord.userData.renderedLength = path.straight ? route.start.distanceTo(route.end) : 2 * path.halfAngle * path.radius;
   };
@@ -687,20 +704,30 @@ function dicksonReversibleDrive(movement) {
 
   const leverRotor = new THREE.Group();
   leverRotor.userData.role = 'coaxially-oscillating-lever-A-input-carrier';
-  const leverBody = extrudedShape([
-    [-0.17, -1.48],
-    [0.17, -1.48],
-    [0.23, -0.56],
-    [0.65, -0.43],
-    [0.78, -0.18],
-    [0.75, 0.18],
-    [0.53, 0.31],
-    [-0.53, 0.31],
-    [-0.75, 0.18],
-    [-0.78, -0.18],
-    [-0.65, -0.43],
-    [-0.23, -0.56],
-  ], 0.19, leverMaterial);
+  // Lever A is Brown's T, one flat plate: a flat-topped crossbar whose ends
+  // curl down into horns (arcs about points on the top line), a straight
+  // underside filleted into the stem, a stem ending in an arc concentric
+  // with the input pin, a round boss about the shaft, and round lugs under
+  // the pawl hinges (0.015 inside the hinge eyes, so no faces coincide).
+  const leverOutline = (() => {
+    const arc = (cx, cy, r, from, to, steps = 24) => Array.from({ length: steps + 1 },
+      (_, i) => { const a = from + (to - from) * i / steps; return [cx + r * Math.cos(a), cy + r * Math.sin(a)]; });
+    const DEG = Math.PI / 180;
+    const half = [
+      ...arc(-0.75, 0, 0.36, 180 * DEG, 236 * DEG),
+      [-0.36, -0.36],
+      ...arc(-0.36, -0.50, 0.14, 90 * DEG, 0),
+      [-0.22, -1.48],
+      ...arc(0, -1.48, 0.22, 180 * DEG, 270 * DEG, 16),
+    ];
+    const right = half.slice(0, -1).reverse().map(([x, y]) => [-x, y]);
+    const tee = [...half, ...right];
+    const circle = (cx, cy, r) => [Array.from({ length: 64 }, (_, i) => [cx + r * Math.cos(i * Math.PI / 32), cy + r * Math.sin(i * Math.PI / 32)])];
+    const union = polygonClipping.union([[tee]], [circle(0, 0, 0.30)], [circle(bPawlPivot.x, bPawlPivot.y, 0.105)],
+      [circle(cPawlPivot.x, cPawlPivot.y, 0.105)]);
+    return union[0][0].slice(0, -1);
+  })();
+  const leverBody = extrudedShape(leverOutline, 0.19, leverMaterial);
   leverBody.position.z = 0.34;
   leverBody.userData.role = 'T-shaped-rigid-body-of-lever-A';
   leverRotor.add(leverBody);
@@ -718,6 +745,7 @@ function dicksonReversibleDrive(movement) {
 
   const bPawl = makePawl({
     material: pawlMaterial,
+    chamferSide: 1,
     pawlLength,
     role: 'selectable-left-pawl-B',
     whiteMaterial,
@@ -725,6 +753,7 @@ function dicksonReversibleDrive(movement) {
   bPawl.position.copy(bPawlPivot);
   const cPawl = makePawl({
     material: pawlMaterial,
+    chamferSide: -1,
     pawlLength,
     role: 'selectable-right-pawl-C',
     whiteMaterial,
@@ -930,7 +959,7 @@ function dicksonReversibleDrive(movement) {
         engravingEvidence:
           'Brown’s plate shows one smooth annular wheel D, a T-shaped lever A loose on the same central shaft, opposed outward-pointing pawls B and C on A, a two-ended selector crank E between them, and two dotted cord paths from E to the pawls.',
         reconstructionDisclosure:
-          'Brown fixes the topology, selection rule, and reversible intermittent result but gives no dimensions, friction coefficients, pawl profiles, stroke law, angular advance, or timing. Smooth inner-rim wedge contact is inferred from the explicitly named interior rim and toothless engraving. The dimensions, constant-length two-segment cord display, smooth stroke ramps, at-rest automatic selector demonstration, translucent wheel web, input slider, and frame are independently engineered.',
+          'Brown fixes the topology, selection rule, and reversible intermittent result but gives no dimensions, friction coefficients, pawl profiles, stroke law, angular advance, or timing. Smooth inner-rim wedge contact is inferred from the explicitly named interior rim and toothless engraving. The dimensions, straight taut cords with the slack taken up at E’s pin, smooth stroke ramps, at-rest automatic selector demonstration, translucent wheel web, input slider, and frame are independently engineered.',
       },
       officialPage: movement.sourceUrl,
       plate: 'Brown 1868, Movement 415',
@@ -942,7 +971,7 @@ function dicksonReversibleDrive(movement) {
       bSelectedDrive:
         'wheelSpeed=0 on B’s positive overrun; wheelSpeed=leverSpeed<0 on B’s locking half-stroke',
       cordConstraint:
-        'each E-to-pawl cord is displayed as two straight material segments whose summed length is constant',
+        'each E-to-pawl cord is drawn as one straight taut run from E’s pin to the pawl eye; the slack (material length less the chord, up to 0.24) is taken up at E’s pin and is not drawn',
       inputRodConstraint:
         'distance between the rotating lever-tail pin and horizontal slider pin is constant',
       selectionConstraint:

@@ -15,11 +15,12 @@ function audit(){const fields=new Map(),points=new Map();return(a,b,journal=fals
 test('371 rotating shafts and translating guide rails clear actual bored support surfaces',()=>{
  const m=mangle({id:371}),d=m.root.userData,b=d.blocks,check=audit();let minimum=Infinity;
  for(let i=0;i<=16;i++){m.update(d.geometry.mechanismCyclePeriod*i/16);m.root.updateMatrixWorld(true);
-  for(const p of[b.carrierCollar,b.carrierBridge])minimum=Math.min(minimum,check(b.inputShaft,p,true));
+  // The input shaft rides in the one fixed slotted guide (the undrawn yoke is retired).
+  minimum=Math.min(minimum,check(b.inputShaft,b.guidePlate,true));
   for(const p of[b.fixedBearing,b.bearingPost,b.wheelHub,b.wheelWeb])minimum=Math.min(minimum,check(b.outputShaft,p,true));
-  for(let j=0;j<2;j++)minimum=Math.min(minimum,check(b.guideRails[j],b.guideShoes[j],true));
  }assert.ok(minimum>.0038);console.log({mangleJournalClearance:minimum});
  m.update(0);m.root.updateMatrixWorld(true);
+ for(const part of[...b.guideRails,...b.guideCrossbars,...b.guideShoes,b.carrierBridge,b.carrierCollar])assert.equal(part.visible,false);
  const sample=new THREE.Vector3(1.335,0,0),web=solidSurface(b.wheelWeb.geometry),rim=solidSurface(b.wheelBody.geometry);
  assert.ok(web.signedDistance(sample.clone().applyMatrix4(b.wheelWeb.matrixWorld.clone().invert()))<-.001);
  assert.ok(rim.signedDistance(sample.clone().applyMatrix4(b.wheelBody.matrixWorld.clone().invert()))<-.001,'the finite web reaches the rim');

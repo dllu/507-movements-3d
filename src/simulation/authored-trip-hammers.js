@@ -416,36 +416,24 @@ function firstOrderTripHammer(movement) {
   const wiperProfiles = [];
   for (let index = 0; index < lobeCount; index += 1) {
     const leadingAngle = leadingFaceMountAngle + index * lobePitch;
-    // Brown draws slender fins: a radial working face and a concave back.
-    const trailingAngle = leadingAngle - wiperAngularWidth * 0.7;
-    const trailingBase = new THREE.Vector2(
-      Math.cos(trailingAngle) * camBaseRadius * 0.96,
-      Math.sin(trailingAngle) * camBaseRadius * 0.96,
+    // Brown's wipers are broad straight-flanked triangles (base about half
+    // the wheel radius) whose leading flank is the radial working face. Below
+    // the working band that face steps back in a small barb (Brown's
+    // zigzag), which the tail never reaches: contact stays above r = 1.39.
+    const trailingAngle = leadingAngle - wiperAngularWidth;
+    const polar = (angle, radius) => new THREE.Vector2(
+      Math.cos(angle) * radius,
+      Math.sin(angle) * radius,
     );
-    const tipPoint = new THREE.Vector2(
-      Math.cos(leadingAngle) * wiperTipRadius,
-      Math.sin(leadingAngle) * wiperTipRadius,
-    );
-    const backControlAngle = leadingAngle - wiperAngularWidth * 0.3;
-    const backControl = new THREE.Vector2(
-      Math.cos(backControlAngle) * camBaseRadius * 1.12,
-      Math.sin(backControlAngle) * camBaseRadius * 1.12,
-    );
-    const backCurve = [0.25, 0.5, 0.75].map((t) => new THREE.Vector2()
-      .addScaledVector(trailingBase, (1 - t) ** 2)
-      .addScaledVector(backControl, 2 * (1 - t) * t)
-      .addScaledVector(tipPoint, t ** 2));
+    const barbRadius = 1.24;
+    const barbStep = 0.09;
+    const barbLowRadius = 1.14;
     const wiperPoints = [
-      trailingBase,
-      ...backCurve,
-      new THREE.Vector2(
-        Math.cos(leadingAngle) * wiperTipRadius,
-        Math.sin(leadingAngle) * wiperTipRadius,
-      ),
-      new THREE.Vector2(
-        Math.cos(leadingAngle) * camBaseRadius * 0.94,
-        Math.sin(leadingAngle) * camBaseRadius * 0.94,
-      ),
+      polar(trailingAngle, camBaseRadius * 0.96),
+      polar(leadingAngle, wiperTipRadius),
+      polar(leadingAngle, barbRadius),
+      polar(leadingAngle - barbStep / barbRadius, barbLowRadius),
+      polar(leadingAngle - barbStep / camBaseRadius, camBaseRadius * 0.94),
     ];
     const wiper = new THREE.Mesh(
       centeredExtrusion(polygonShape(wiperPoints), camDepth, false),
@@ -615,10 +603,12 @@ function firstOrderTripHammer(movement) {
   movingPivotRing.position.z = 0.56;
   movingPivotRing.userData.role = 'front-ring-on-oscillating-fulcrum-block';
 
+  // The nose is the helve's own rounded end (Brown's D-shaped tail), in
+  // the helve colour rather than a black pin.
   const followerNose = cylinderAlongZ(
     followerRadius,
     hammerDepth + 0.16,
-    darkMaterial,
+    hammerMaterial,
     34,
   );
   followerNose.position.set(

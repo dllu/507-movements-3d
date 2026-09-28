@@ -3,6 +3,7 @@ import source from './source.js';
 import {makeEndlessGrooveProfile} from './profile.js';
 import {plate,poly,circle,capsule,disk,ring,rotate,polygonClipping as clip} from '../finite-plate-geometry.js';
 import {PALETTE,matte,markShadows} from '../primitives.js';
+import {makeSeeThrough} from '../see-through-part.js';
 export {THREE};
 
 export function makeEndlessGrooveGeometry(options={}) {
@@ -16,7 +17,9 @@ export function makeEndlessGrooveGeometry(options={}) {
   const shaftRadius=source.shaftRadius/100,pivotShaftRadius=source.pivotShaftRadius/100;
   // Viewed from the arm side (+z) the opaque disk lies behind the grooved
   // arm, with the plate's layout and without a mirror; the default section
-  // view lifts the arm's front cover to show the pin in its groove. (Brown
+  // view renders the arm's front cover in the shared see-through style, so
+  // the pin shows in its groove while the island stays visibly joined to the
+  // arm through the cover (removing the cover left it floating). (Brown
   // views from the disk side and dashes the arm; the arm-in-front view is
   // the requested presentation.) Physics is unaffected.
   const diskMesh=attach('disk',ring(shaftRadius,source.diskRadius/100,-.50,-.30,256),'input',PALETTE.driver);
@@ -37,7 +40,9 @@ export function makeEndlessGrooveGeometry(options={}) {
   // joining the two shafts; neither is part of the native model.
   attach('pivotShaft',disk(pivotShaftRadius,-.34,.26,128),'frame',PALETTE.ink,[...f.pivot,0]);
   blocks.rocker.position.set(...f.pivot,0);blocks.rocker.rotation.z=f.initialAngle;blocks.input.rotation.z=f.phase;blocks.input.position.set(...f.inputCenter,0);
-  const setSectionView=enabled=>{root.userData.sectionView=Boolean(enabled);parts.cover.visible=!enabled;};
+  const coverSolid=parts.cover.material;makeSeeThrough(parts.cover);const coverSeeThrough=parts.cover.material;
+  const setSectionView=enabled=>{root.userData.sectionView=Boolean(enabled);const see=Boolean(enabled);
+    parts.cover.material=see?coverSeeThrough:coverSolid;parts.cover.userData.seeThrough=see;parts.cover.renderOrder=see?2:0;parts.cover.castShadow=!see;};
   Object.assign(root.userData,{parts,families,blocks,source,profile,hideGround:true,setSectionView,
     geometry:{shaftRadius,pivotShaftRadius,outline,bodyCenter,bodyAngle}});
   setSectionView(true);markShadows(root);root.updateMatrixWorld(true);

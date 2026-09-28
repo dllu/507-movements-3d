@@ -187,9 +187,11 @@ function rollingCarriageFrictionExperiment(movement) {
   const drivePulleyCenter = new THREE.Vector3(
     largeWheelCenter.x,
     largeWheelCenter.y,
-    0.52,
+    1.11,
   );
-  const beltPlaneZ = 0.70;
+  // Brown draws the pulley in front of the rig's rail (z 0.94..1.16), which
+  // shows through its openings; pulley and belt stand just forward of it.
+  const beltPlaneZ = 1.29;
   const drivePulleyPitchPlaneCenter = new THREE.Vector3(
     drivePulleyCenter.x,
     drivePulleyCenter.y,
@@ -1004,6 +1006,14 @@ export function createAuthoredRollingFrictionExperimentMovement(movement) {
   const {blocks: b, geometry: g} = root.userData;
   const center = g.indicatorCenter;
   const dark = b.dialRim.material;
+  // The wheel's axle runs through the rail to the pulley in front of it.
+  {
+    const back = -0.25, front = g.beltPlaneZ + 0.10;
+    b.largeAxle.geometry.dispose();
+    b.largeAxle.geometry = new THREE.CylinderGeometry(0.11, 0.11, front - back, 64).rotateX(Math.PI / 2);
+    b.largeAxle.rotation.set(0, 0, 0);
+    b.largeAxle.position.z = (front + back) / 2;
+  }
   // Brown's hand is an eyed pointer with a tapering blade; the eye rings the
   // pivot pin instead of the pin passing through a solid bar.
   const handShape = new THREE.Shape();
@@ -1073,10 +1083,11 @@ export function createAuthoredRollingFrictionExperimentMovement(movement) {
   // heap of stones in the centre.
   const stoneSpecs = [
     // x, width, height, depth, tilt
-    [-1.38, 0.26, 0.78, 0.36, -0.28],
-    [-1.16, 0.25, 0.92, 0.38, 0.16],
-    [-0.46, 0.25, 0.88, 0.36, -0.20],
-    [-0.24, 0.26, 0.74, 0.38, 0.30],
+    // Blocks heaped against the sides, lower and blockier as Brown draws them.
+    [-1.38, 0.26, 0.62, 0.38, -0.22],
+    [-1.16, 0.25, 0.76, 0.38, 0.12],
+    [-0.46, 0.25, 0.72, 0.38, -0.14],
+    [-0.24, 0.26, 0.60, 0.38, 0.24],
   ];
   const settle = (mesh, x) => {
     const box = mesh.geometry.boundingBox;

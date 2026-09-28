@@ -79,7 +79,23 @@ function makeAxialNotchedVBody({
   const grooveRootRadius = outerRadius - grooveDepth;
   const notchAngularPitch = FULL_TURN / notchCount;
   const notchAngularHalfWidth = notchAngularWidth / 2;
-  const angularSegments = notchCount * 8;
+  // Angular samples: each V notch gets vertices at its two edges, its
+  // mid-flanks and its bottom, so it is cut crisply; the lands between
+  // notches are sampled evenly.
+  const angles = [];
+  for (let notch = 0; notch < notchCount; notch += 1) {
+    const center = notch * notchAngularPitch;
+    for (const u of [-1, -0.5, 0, 0.5, 1]) angles.push(center + u * notchAngularHalfWidth);
+    const landSteps = 3;
+    for (let step = 1; step < landSteps; step += 1) {
+      angles.push(center + notchAngularHalfWidth
+        + (notchAngularPitch - 2 * notchAngularHalfWidth) * step / landSteps);
+    }
+  }
+  const firstAngle = -notchAngularHalfWidth;
+  angles.push(firstAngle + FULL_TURN);
+  const angularSegments = angles.length - 1;
+  const angleAt = (index) => angles[index];
   const flankSegments = 24;
   const leftFlank = Array.from({ length: flankSegments + 1 }, (_, index) => (
     -grooveHalfWidth + grooveHalfWidth * index / flankSegments
@@ -106,9 +122,8 @@ function makeAxialNotchedVBody({
   const notchDepthAtAngle = (angle) => {
     const offset = nearestNotchAngularOffset(angle);
     if (Math.abs(offset) >= notchAngularHalfWidth) return 0;
-    return notchDepth * 0.5 * (
-      1 + Math.cos(Math.PI * offset / notchAngularHalfWidth)
-    );
+    // A sharp V cut, as Brown's crisp notch lines.
+    return notchDepth * (1 - Math.abs(offset) / notchAngularHalfWidth);
   };
   const axialNotchEnvelope = (axial) => {
     if (Math.abs(axial) >= grooveHalfWidth - 1e-12) return 0;
@@ -128,7 +143,7 @@ function makeAxialNotchedVBody({
   axialSamples.forEach((axial) => {
     for (let angularIndex = 0; angularIndex <= angularSegments;
       angularIndex += 1) {
-      const angle = FULL_TURN * angularIndex / angularSegments;
+      const angle = angleAt(angularIndex);
       const radial = surfaceRadiusAt(axial, angle);
       positions.push(
         axial,
@@ -163,7 +178,7 @@ function makeAxialNotchedVBody({
     const axial = side * pulleyHalfWidth;
     const ringStart = positions.length / 3;
     for (let angularIndex = 0; angularIndex <= angularSegments; angularIndex += 1) {
-      const angle = FULL_TURN * angularIndex / angularSegments;
+      const angle = angleAt(angularIndex);
       for (const radial of [boreRadius, outerRadius]) {
         positions.push(axial, radial * Math.cos(angle), radial * Math.sin(angle));
       }
@@ -177,7 +192,7 @@ function makeAxialNotchedVBody({
     }
     const boreStart = positions.length / 3;
     for (let angularIndex = 0; angularIndex <= angularSegments; angularIndex += 1) {
-      const angle = FULL_TURN * angularIndex / angularSegments;
+      const angle = angleAt(angularIndex);
       positions.push(axial, boreRadius * Math.cos(angle), boreRadius * Math.sin(angle));
     }
     boreRings.push(boreStart);
@@ -1258,10 +1273,12 @@ function notchedVGroovedRoundBandPulley(movement) {
   const hubWidth = 1.83;
   const shaftRadius = 0.365;
   const shaftLength = 4.56;
-  const notchCount = 48;
+  // Plate: the notch lines are about 11 px apart on a 152 px radius, so
+  // about 88 notches round the groove.
+  const notchCount = 88;
   const notchAngularPitch = FULL_TURN / notchCount;
-  const notchAngularWidth = notchAngularPitch * 0.38;
-  const notchDepth = 0.105;
+  const notchAngularWidth = notchAngularPitch * 0.5;
+  const notchDepth = 0.09;
   const angularSpeed = FULL_TURN / 5.4;
   const cyclePeriod = FULL_TURN / angularSpeed;
   const maximumFullySeatedBandRadius = grooveDepth / (
@@ -1597,7 +1614,7 @@ export function createAuthoredPulleyFormMovement(movement) {
     fitClearance: 0.008,
     rigidAssembly: true,
     motion: 'scripted constant rotation; no band route or friction transfer is specified',
-    notchCount259: '48 evenly spaced notches inferred from the visible front half',
+    notchCount259: '88 evenly spaced sharp V notches, from the plate\'s notch spacing (about 11 px on a 152 px radius)',
   };
   return result;
 }

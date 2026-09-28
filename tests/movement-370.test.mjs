@@ -425,10 +425,10 @@ test('movement 370 click advances exactly one tooth on each forward half-turn an
   const data = model.root.userData;
   const { geometry, stateAtTime } = data;
   const period = geometry.inputCyclePeriod;
-  // Brown's click turns the wheel clockwise (clickHand -1): the signed
-  // advance is clickHand times the tooth count.
+  // Brown's click pushes the wheel anticlockwise (clickHand +1, p90): the
+  // signed advance is clickHand times the tooth count.
   const pitch = geometry.clickHand * geometry.ratchetToothPitch;
-  assert.equal(geometry.clickHand, -1);
+  assert.equal(geometry.clickHand, 1);
 
   const backlash = geometry.clickBacklash;
   const stroke = geometry.ratchetToothPitch + backlash;
@@ -605,7 +605,7 @@ test('movement 370 is continuous at every crank boundary and completes one ratch
     'twelve input revolutions');
   near(fullIndex.ratchetAngle - start.ratchetAngle,
     geometry.clickHand * FULL_TURN, 9e-16,
-    'one complete mirror-ratchet revolution (clockwise)');
+    'one complete mirror-ratchet revolution (anticlockwise)');
   vectorNear(fullIndex.crankPin, start.crankPin, 0,
     'full-index crankpin closure');
   vectorNear(fullIndex.mirrorCenter, start.mirrorCenter, 0,

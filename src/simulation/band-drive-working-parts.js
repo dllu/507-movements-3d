@@ -55,7 +55,37 @@ export function correctCraneBrakeJoints(root) {
   const f = g.leverFulcrum.toArray();
   const fulcrumPost = boredBar(b.fulcrumPost, [f[0] + .18, -2.15], f, { width: .15, depth: .19,
     holes: [{ center: f, radius: fulcrumBore }], eyes: [{ center: f, radius: .18 }] }); fulcrumPost.position.z = -.35;
-  d.workingParts = { short, long, anchor, lowerPin, upperEye, lowerEye, lowerRing, wheelPost, fulcrumPost };
+  // Brown draws the strap eyes, the anchor link and the lever as one flat
+  // joint. Stack them tightly about the strap plane: the lever lies against
+  // the strap's front face, the anchor link against its back, and the
+  // lever's fulcrum eye is a boss reaching back to the link; every pin ends
+  // just proud of the stack it joins.
+  const bandFront = g.bandPlaneZ + g.bandDepth / 2 + eyeProud, bandBack = g.bandPlaneZ - g.bandDepth / 2 - eyeProud;
+  const gap = .005, leverDepth = .14, linkDepth = .10, proud = .03;
+  const leverZ = bandFront + gap + leverDepth / 2;
+  b.lever.position.z = leverZ;
+  lowerEye.position.z = g.bandPlaneZ - leverZ;
+  lowerRing.position.z = leverDepth / 2 + .035 + .002;
+  const linkZ = bandBack - gap - linkDepth / 2;
+  anchor.position.z = linkZ;
+  const stackBack = linkZ - linkDepth / 2, leverFront = leverZ + leverDepth / 2;
+  const bossLow = linkZ + linkDepth / 2 + .001, bossHigh = leverZ - leverDepth / 2 - .001;
+  const boss = mesh(b.lever, bore(.17, fulcrumBore, bossHigh - bossLow).rotateX(Math.PI / 2), short.material, 'lever-fulcrum-boss-reaching-the-anchor-link');
+  boss.position.z = (bossLow + bossHigh) / 2 - leverZ;
+  const pinSpan = (pin, radius, low, high) => {
+    replace(pin, new THREE.CylinderGeometry(radius, radius, high - low, 48));
+    return (low + high) / 2;
+  };
+  const lowerHead = leverZ + lowerRing.position.z + .035;
+  lowerPin.geometry.dispose();
+  lowerPin.geometry = new THREE.CylinderGeometry(pinRadius, pinRadius, lowerHead - (bandBack - proud), 48).rotateX(Math.PI / 2);
+  lowerPin.position.z = (lowerHead + bandBack - proud) / 2 - leverZ;
+  const fulcrumPin = b.leverFulcrumShaft.userData.rotor.children[0];
+  b.leverFulcrumShaft.position.z = pinSpan(fulcrumPin, .115, stackBack - proud, leverFront + proud);
+  const upperPin = b.upperEndpointShaft.userData.rotor.children[0];
+  b.upperEndpointShaft.position.z = pinSpan(upperPin, pinRadius, stackBack - proud, bandFront + proud);
+  d.workingParts = { short, long, anchor, lowerPin, upperEye, lowerEye, lowerRing, wheelPost, fulcrumPost, boss };
+  d.flatBrakeJoint = { bandBack, bandFront, leverZ, linkZ, stackBack, leverFront };
 }
 
 export function correctSpatialPulley(pulley, shaftRadius) {

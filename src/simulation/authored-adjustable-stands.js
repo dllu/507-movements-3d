@@ -243,9 +243,11 @@ function adjustableMirrorStand(movement) {
   const tiltPhaseOffset = -Math.PI / 2;
   // The frame stands far enough behind the hinge that its lower edge clears
   // the socket collar and set screw at full inclination.
-  const mirrorCenterLocal = new THREE.Vector3(0, 0.62, -0.90);
-  const mirrorOuterWidth = 2.48;
-  const mirrorOuterHeight = 2.86;
+  // Brown's frame is about 1.2 base diameters wide and 1.35 high; it grows
+  // upward from the old lower edge, which keeps the tested collar clearance.
+  const mirrorCenterLocal = new THREE.Vector3(0, 0.99, -0.90);
+  const mirrorOuterWidth = 3.20;
+  const mirrorOuterHeight = 3.60;
   // The glass fills the broad frame's rounded opening (0.30 border, let
   // 0.005 into the frame).
   const mirrorGlassWidth = mirrorOuterWidth - 2 * 0.295;
@@ -618,7 +620,8 @@ function adjustableMirrorStand(movement) {
   mirrorBackBoard.userData.role = 'mirror-back-board-recessed-pocket-floor';
   mirrorAssembly.add(mirrorBackBoard);
   const backPanels = [-1, 1].map((side) => {
-    const inner = 0.20, outer = 0.70, bottom = -0.84, top = 0.84, r = 0.14;
+    // Brown's two long panels fill most of the back, either side of the hinge land.
+    const inner = 0.25, outer = 1.00, bottom = -1.22, top = 1.22, r = 0.18;
     const [left, right] = side > 0 ? [inner, outer] : [-outer, -inner];
     return roundedRectangle(right - left, top - bottom, r).map((ring) => ring.map((loop) => loop.map(([x, y]) => [x + (left + right) / 2, y + (top + bottom) / 2])));
   });
@@ -801,10 +804,21 @@ function adjustableMirrorStand(movement) {
   };
 
   update(0);
-  root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-1.88, -1.62, -1.82),
-    new THREE.Vector3(1.88, 4.22, 1.82),
-  );
+  // Frame the whole adjustment envelope of the (larger) mirror.
+  {
+    const bounds = new THREE.Box3();
+    for (let i = 0; i <= 96; i += 1) {
+      update(demonstrationPeriod * i / 96);
+      root.updateMatrixWorld(true);
+      root.traverseVisible((o) => {
+        if (!o.geometry) return;
+        o.geometry.computeBoundingBox();
+        bounds.union(o.geometry.boundingBox.clone().applyMatrix4(o.matrixWorld));
+      });
+    }
+    update(0);
+    root.userData.cameraFitBounds = bounds.expandByScalar(0.04);
+  }
   root.userData.groundFloorY = -1.42;
   // Brown's elevation is nearly level: the foot's rim reads as a line and
   // its flared cone in profile, so keep perspective from tipping it open.

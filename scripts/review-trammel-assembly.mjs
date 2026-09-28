@@ -10,6 +10,7 @@ try{
  const parts=[];v.root.traverse(mesh=>{
   if(!mesh.isMesh||mesh.material.opacity===0||mesh===b.ellipseTrace)return;
   let parent=mesh,family;while(parent&&!family){family=groups.get(parent);parent=parent.parent;}
+  if(!family&&mesh.parent===v.root)family='fixed';
   if(!family)throw Error('Unclassified mesh');
   parts.push({name:(mesh.name||mesh.userData.role||'part')+'-'+parts.length,mesh,family,solid:solidSurface(mesh.geometry),points:surfacePoints(mesh.geometry)});
  });

@@ -164,7 +164,18 @@ function doubleQuadrantEngine(movement) {
   const passageOuter = 5.55;
   const wallThickness = 0.28;
 
-  const topQuadrant = quadrant(pivotTop, topInnerEnd, topWallAxis, wallOffset, passageOuter, 0);
+  // Pass 90: the steam passage over the top quadrant is one smooth channel
+  // of constant width: the arc between bar and outer wall down to
+  // channelStart, then a tangent-continuous cubic into valve a's top port,
+  // entering along the port's radius. Below channelStart the quadrant ends
+  // at its own curved wall, so the casing between channel and quadrant is
+  // solid (Brown's hatched wedge) and no pocket or kink is left.
+  const channelStart = 36 * DEG;
+  const passageMid = (barOuter + passageOuter) / 2;
+  const topQuadrant = polygonClipping.union(
+    quadrant(pivotTop, topInnerEnd, topWallAxis, wallOffset, arcRadius, 0),
+    quadrant(pivotTop, channelStart, topWallAxis, wallOffset, passageOuter, 0),
+  );
   const bar = polygonClipping.union(
     ringPolygon([
       ...arcPoints(pivotTop, barOuter, topInnerEnd - 2 * DEG, barEnd, 40),
@@ -174,12 +185,17 @@ function doubleQuadrantEngine(movement) {
   );
   const bottomQuadrant = quadrant(pivotBottom, bottomInnerEnd, bottomWallAxis, wallOffset, arcRadius, 0);
   const valveOnBore = (angle, radius = valveBore) => polar(valveCenter, radius, angle);
-  const topChannel = bandPolygon([
-    polar(pivotTop, (barOuter + passageOuter) / 2, 30 * DEG),
-    polar(pivotTop, (barOuter + passageOuter) / 2, 28 * DEG),
-    [1.45, 2.66], valveOnBore(portAngles.top, 1.45), valveOnBore(portAngles.top, 1.2),
-    valveOnBore(portAngles.top, valveBore - 0.1),
-  ], 0.14);
+  const topChannelLine = (() => {
+    const arc = arcPoints(pivotTop, passageMid, channelStart + 6 * DEG, channelStart, 8);
+    const p0 = new THREE.Vector2(...polar(pivotTop, passageMid, channelStart));
+    const t0 = new THREE.Vector2(Math.sin(channelStart), -Math.cos(channelStart));
+    const p3 = new THREE.Vector2(...valveOnBore(portAngles.top, valveBore - 0.1));
+    const t3 = new THREE.Vector2(-Math.cos(portAngles.top), -Math.sin(portAngles.top));
+    const reach = p0.distanceTo(p3) * 0.42;
+    const curve = new THREE.CubicBezierCurve(p0, p0.clone().addScaledVector(t0, reach), p3.clone().addScaledVector(t3, -reach), p3);
+    return [...arc.slice(0, -1), ...curve.getSpacedPoints(40).map((p) => [p.x, p.y])];
+  })();
+  const topChannel = bandPolygon(topChannelLine, (passageOuter - barOuter) / 2);
   const bottomPassageLine = [
     valveOnBore(portAngles.bottom, valveBore - 0.1), valveOnBore(portAngles.bottom, 1.2),
     [3.72, 1.12], [4.1, 0.66], [4.32, 0.0],
@@ -224,6 +240,7 @@ function doubleQuadrantEngine(movement) {
   const outerBottom = quadrant(pivotBottom, bottomInnerEnd - 3 * DEG, bottomWallAxis, wallOffset + 0.88, arcRadius + wallThickness, 0);
   const outerOutline = polygonClipping.union(
     outerTop, outerBottom, central,
+    bandPolygon(topChannelLine, (passageOuter - barOuter) / 2 + wallThickness),
     bandPolygon(smoothLine(bottomPassageLine), 0.15 + wallThickness),
     ringPolygon([wallPoint(pivotBottom, bottomWallAxis, wallOffset + 0.88, 4.0), wallPoint(pivotBottom, bottomWallAxis, wallOffset + 0.88, 5.16),
       wallPoint(pivotBottom, bottomWallAxis, -0.3, 5.16), wallPoint(pivotBottom, bottomWallAxis, -0.3, 4.0)]),
@@ -464,7 +481,7 @@ function doubleQuadrantEngine(movement) {
       topWallAxis, bottomWallAxis, wallOffset, topMin, topMax, bottomMin, bottomMax,
       powerStrokeFraction: topPoweredCount / 720,
       overlapFraction: poweredOverlap / 720,
-      workingCavity, casingOutline, depth,
+      workingCavity, casingOutline, depth, topChannelLine, channelStart, passageHalfWidth: (passageOuter - barOuter) / 2, wallThickness,
     },
     mechanism: 'Two single-acting vane pistons B on their own pivots share one open cavity with crank D between them. Each works on its outer side in a quadrant closed by a curved wall and an end wall; the space between the pistons is not walled off and is the exhaust. Rocking plug valve a joins the inlet to the top passage (over the top quadrant’s curved wall and round its end), to the bottom passage (down the right wall into the bottom corner), or to both at mid-travel, and joins the idle passage to the port into the space between the pistons.',
     motion: { cycleDuration, inputAngularSpeed },

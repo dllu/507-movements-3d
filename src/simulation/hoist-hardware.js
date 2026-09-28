@@ -111,7 +111,7 @@ export function makeHoistHook() {
   return new THREE.Mesh(new THREE.TubeGeometry(curve, 64, 0.035, 12, false), matte(PALETTE.ink));
 }
 
-export function makeHoistLoad({ radius = 0.42, height = 0.62, round = false } = {}) {
+export function makeHoistLoad({ radius = 0.42, height = 0.62, round = false, eyeBoss = false } = {}) {
   const group = new THREE.Group();
   const body = new THREE.Mesh(round
     ? new THREE.SphereGeometry(radius, 48, 32)
@@ -121,6 +121,15 @@ export function makeHoistLoad({ radius = 0.42, height = 0.62, round = false } = 
   eye.rotation.y = Math.PI / 2;
   eye.position.y = 0.11;
   group.add(body, eye);
+  if (eyeBoss) {
+    // The eye is cast into a short round boss standing on the weight's top,
+    // so its foot is seated rather than sunk into the solid.
+    const boss = new THREE.Mesh(new THREE.CylinderGeometry(0.058, 0.07, 0.07, 32), matte(PALETTE.ink));
+    boss.position.y = 0.035 - (round ? 0.012 : 0.02);
+    boss.userData.role = 'weight-eye-boss';
+    group.add(boss);
+    group.userData.eyeBoss = boss;
+  }
   group.userData.body = body;
   group.userData.eye = eye;
   return markShadows(group);

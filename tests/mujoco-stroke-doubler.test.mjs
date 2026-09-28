@@ -11,7 +11,7 @@ const mujoco=await loadMujoco();
 test('118 visible hardware is closed and retains the source pinion, rack and pitman topology',()=>{
  const v=makeStrokeDoublerGeometry(),u=v.root.userData;
  try{
-  assert.equal(Object.keys(u.parts).length,11);
+  assert.equal(Object.keys(u.parts).length,8);
   // p60 support policy: Brown draws no stands, guides or back bars here.
   assert.deepEqual(Object.keys(u.parts).filter(n=>/Guide|Pillar|Foot|Bearing|BackBar|Post|Clip|Strap|TieBar/.test(n)),[]);assert.equal(u.source.teeth,14);assert.equal(u.families.crankPin,'carrier');
   assert.equal(u.families.pinion,'pinion');assert.equal(u.families.pitman,'carrier');assert.equal(u.families.spindle,'carrier');assert.equal(u.families.upperRack,'rack');assert.equal(u.families.lowerRack,'fixed');

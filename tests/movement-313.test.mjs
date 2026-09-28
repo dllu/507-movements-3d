@@ -375,7 +375,9 @@ test('movement 313 keeps one fixed no-recoil lock station T and catches B after 
     15,
   ), 1, 'A is immediately ahead of successor locking tooth B');
 
-  model.update(geometry.releasePhase * geometry.balancePeriod);
+  // Playback starts at Brown's pose; analytic time = display time + offset.
+  const displayOffset = model.root.userData.displayTimeOffset ?? 0;
+  model.update(geometry.releasePhase * geometry.balancePeriod - displayOffset);
   const expectedReleasedLock = geometry.lockingPoint.clone().add(
       new THREE.Vector2(
         Math.cos(geometry.lockAngle),
@@ -387,7 +389,7 @@ test('movement 313 keeps one fixed no-recoil lock station T and catches B after 
     blocks.lockingStoneT.position.y,
   ).distanceTo(expectedReleasedLock), 0, 2e-15,
   'locking stone moves radially clear at release');
-  model.update(geometry.detentBankPhase * geometry.balancePeriod);
+  model.update(geometry.detentBankPhase * geometry.balancePeriod - displayOffset);
   const heel = new THREE.Vector2(
     blocks.bankingHeel.position.x,
     blocks.bankingHeel.position.y,

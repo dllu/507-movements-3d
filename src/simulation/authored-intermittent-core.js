@@ -2334,9 +2334,90 @@ function internalGuardTappetStudIndex() {
       ...cap(path[0], startNormal, -Math.PI).slice(1, -1),
     ]);
   };
+  // The stud crosses the rim on a curved path that runs almost tangent to the
+  // rim at both ends, so the bare swept channel left long knife-edge tongues
+  // of rim beside each slit. A straight parallel slot cannot contain that
+  // path (its walls would run on as chords through the rim), so each slit
+  // stays the swept channel, and any rim tip beside it thinner than
+  // minimumRimTip, measured along the radius, is cut back to a radial face.
+  // The inner lock face is only cut where it was already thinner than that.
+  const minimumRimTip = 0.08;
+  const trimmedSlit = (path) => {
+    const channel = channelRegion(path);
+    const channelPoints = channel.flat(2);
+    const rings = channel.flat(1);
+    const midAngle = Math.atan2(
+      channelPoints.reduce((sum, [, y]) => sum + y, 0),
+      channelPoints.reduce((sum, [x]) => sum + x, 0),
+    );
+    const relative = (x, y) => wrapNear(Math.atan2(y, x), midAngle) - midAngle;
+    const offsets = channelPoints.map(([x, y]) => relative(x, y));
+    const step = 0.001;
+    const firstOffset = Math.min(...offsets) - step;
+    const rayCount = Math.ceil((Math.max(...offsets) + step - firstOffset) / step) + 1;
+    // Bucket the slot's edges by the rays whose angles they span.
+    const buckets = Array.from({ length: rayCount }, () => []);
+    for (const ring of rings) {
+      for (let index = 0; index + 1 < ring.length; index += 1) {
+        const [ax, ay] = ring[index];
+        const [bx, by] = ring[index + 1];
+        const from = relative(ax, ay);
+        const to = relative(bx, by);
+        const low = Math.max(0, Math.floor((Math.min(from, to) - firstOffset) / step));
+        const high = Math.min(rayCount - 1, Math.ceil((Math.max(from, to) - firstOffset) / step));
+        for (let ray = low; ray <= high; ray += 1) buckets[ray].push([ax, ay, bx - ax, by - ay]);
+      }
+    }
+    // Radial extent [near, far] of the slot along each ray.
+    const rays = buckets.map((edges, ray) => {
+      const angle = midAngle + firstOffset + ray * step;
+      const dx = Math.cos(angle);
+      const dy = Math.sin(angle);
+      let near = Infinity;
+      let far = -Infinity;
+      for (const [ax, ay, ex, ey] of edges) {
+        const denominator = dx * ey - dy * ex;
+        if (Math.abs(denominator) < 1e-14) continue;
+        const u = (ax * dy - ay * dx) / denominator;
+        if (u < 0 || u >= 1) continue;
+        const t = (ax * ey - ay * ex) / denominator;
+        if (t > 0) {
+          near = Math.min(near, t);
+          far = Math.max(far, t);
+        }
+      }
+      return [angle, near < far ? [near, far] : null];
+    });
+    const trims = [];
+    for (const side of ['inner', 'outer']) {
+      let run = [];
+      const flush = () => {
+        if (run.length > 1) {
+          trims.push(clipPoly([
+            ...run.map(([angle, edge]) => [Math.cos(angle) * edge, Math.sin(angle) * edge]),
+            ...run.reverse().map(([angle]) => {
+              const radius = side === 'inner' ? guardInnerRadius - 0.02 : guardOuterRadius + 0.02;
+              return [Math.cos(angle) * radius, Math.sin(angle) * radius];
+            }),
+          ]));
+        }
+        run = [];
+      };
+      for (const [angle, interval] of rays) {
+        const thickness = interval && (side === 'inner'
+          ? interval[0] - guardInnerRadius
+          : guardOuterRadius - interval[1]);
+        if (interval && thickness < minimumRimTip) {
+          run.push([angle, side === 'inner' ? interval[0] + 0.002 : interval[1] - 0.002]);
+        } else flush();
+      }
+      flush();
+    }
+    return polygonClipping.union(channel, ...trims);
+  };
   const notchChannels = polygonClipping.union(
-    channelRegion(notchPaths.entering),
-    channelRegion(notchPaths.leaving),
+    trimmedSlit(notchPaths.entering),
+    trimmedSlit(notchPaths.leaving),
   );
   // The inner lock face is circumscribed, so its chords never reach inside
   // the true lock circle the resting studs bear on.
@@ -2345,6 +2426,10 @@ function internalGuardTappetStudIndex() {
     clipPoly(clipCircle([0, 0], guardOuterRadius, 720)),
     clipPoly(clipCircle([0, 0], guardInnerPolygonRadius, 720)),
     notchChannels,
+  );
+  const notchCuts = polygonClipping.difference(
+    notchChannels,
+    clipPoly(clipCircle([0, 0], guardInnerPolygonRadius, 720)),
   );
 
   const drivenDepth = 0.24;
@@ -2446,7 +2531,7 @@ function internalGuardTappetStudIndex() {
   });
   const plateRegion = polygonClipping.difference(
     clipPoly(clipCircle([0, 0], guardOuterRadius, 720)),
-    polygonClipping.difference(notchChannels, clipPoly(clipCircle([0, 0], guardInnerPolygonRadius, 720))),
+    notchCuts,
   );
   const plateOutline = regionPoints(plateRegion[0][0]);
   const driverBody = new THREE.Mesh(
@@ -2695,6 +2780,8 @@ function internalGuardTappetStudIndex() {
     guardInnerRadius,
     guardOuterRadius,
     guardRimRegions: orderedRimRegions,
+    notchChannels,
+    minimumRimTip,
     initialDriverAngle,
     layoutTilt,
     leavingNotchEnd,
@@ -2943,35 +3030,32 @@ function springPressedRatchetIndex() {
     }
     return radius;
   };
-  const stopContactAtDrivenAngle = (drivenAngle) => {
-    const localCenterAtRadius = (radius) => stopPawlDirection.clone()
-      .multiplyScalar(radius).rotateAround(new THREE.Vector2(), -drivenAngle);
-    const collidesAtRadius = (radius) => {
-      const localCenter = localCenterAtRadius(radius);
+  // C's round end rests where it meets A's profile moving along a path
+  // pathAt(s), s from inner (in A) to outer (clear of A).
+  const solveStopContact = (drivenAngle, pathAt, inner, outer) => {
+    const collidesAt = (parameter) => {
+      const localCenter = pathAt(parameter).rotateAround(new THREE.Vector2(), -drivenAngle);
       return pointInsideRatchet(localCenter)
         || closestRatchetProfilePoint(localCenter).distance < stopPadRadius;
     };
-    let low = ratchetRootRadius * 0.5;
-    let high = ratchetOuterRadius + stopPadRadius + 0.28;
-    if (!collidesAtRadius(low) || collidesAtRadius(high)) {
+    let low = inner;
+    let high = outer;
+    if (!collidesAt(low) || collidesAt(high)) {
       throw new RangeError('The fixed strong spring cannot reach ratchet A.');
     }
     // A shark-fin crest overhangs its root; step out before bisecting so C
     // lands in its seat rather than on the crest.
-    const inner = low;
-    const outer = high;
     for (let index = 1; index <= 256; index += 1) {
-      const radius = inner + (outer - inner) * index / 256;
-      if (!collidesAtRadius(radius)) { high = radius; break; }
-      low = radius;
+      const parameter = inner + (outer - inner) * index / 256;
+      if (!collidesAt(parameter)) { high = parameter; break; }
+      low = parameter;
     }
     for (let iteration = 0; iteration < 58; iteration += 1) {
       const middle = (low + high) / 2;
-      if (collidesAtRadius(middle)) low = middle;
+      if (collidesAt(middle)) low = middle;
       else high = middle;
     }
-    const centerRadius = (low + high) / 2;
-    const center = stopPawlDirection.clone().multiplyScalar(centerRadius);
+    const center = pathAt((low + high) / 2);
     const localCenter = center.clone().rotateAround(new THREE.Vector2(), -drivenAngle);
     const closest = closestRatchetProfilePoint(localCenter);
     const contactPoint = closest.point.clone().rotateAround(new THREE.Vector2(), drivenAngle);
@@ -2979,7 +3063,7 @@ function springPressedRatchetIndex() {
     const padPoint = center.clone().addScaledVector(normal, -stopPadRadius);
     return {
       center,
-      centerRadius,
+      centerRadius: center.length(),
       contactError: padPoint.distanceTo(contactPoint),
       contactPoint,
       localCenter,
@@ -2989,7 +3073,15 @@ function springPressedRatchetIndex() {
       segmentIndex: closest.segmentIndex,
     };
   };
+  // C's round end rides radially over A's teeth and drops into each seat.
+  const stopContactAtDrivenAngle = (drivenAngle) => solveStopContact(
+    drivenAngle,
+    (radius) => stopPawlDirection.clone().multiplyScalar(radius),
+    ratchetRootRadius * 0.5,
+    ratchetOuterRadius + stopPadRadius + 0.28,
+  );
   const restStopContact = stopContactAtDrivenAngle(0);
+
 
   // --- C and the path of B's nib, in world polar coordinates (ψ is the
   // angle of the nib's front face, r the radius of its centre line). The nib
@@ -3019,12 +3111,36 @@ function springPressedRatchetIndex() {
   const escapeSpan = THREE.MathUtils.degToRad(9);
   const relaxSpan = THREE.MathUtils.degToRad(10);
   const escapeStartPsi = driveEndPsi + escapeSpan;
-  // C is a nearly straight strong leaf, as Brown draws it, from the block
-  // towards A. Its deep part is straight: its inner edge is the line at
-  // distance webDistance from A's centre, normal at the middle of the drive.
+  // C is one smooth leaf, as Brown draws it: a long circular arc rising from
+  // the block and bending round towards A, then a tighter tangent arc that
+  // carries its end into A's teeth. The long arc is also the deep web that
+  // presses B's nib: it passes nearest A (its inner edge at webDistance) at
+  // webNormalAngle, just before the escape, and A's centre lies inside it.
+  const strongHalfWidth = stopPadRadius;
+  const strongSpringAnchor = new THREE.Vector3(-1.56, -1.14, 0);
   const webDistance = driveRadius + nibHalfWidth + pressGap;
-  const webNormalAngle = drivePsi0 - toothPitch / 2;
-  const webInnerAt = (theta) => webDistance / Math.cos(theta - webNormalAngle);
+  // The web passes nearest A at the end of the drive (fraction 1 of a
+  // pitch from ψ0), which bends it most while the nib still spans the crest
+  // through the drive (the path checks below fail from about 1.1).
+  const webNearestFraction = 1;
+  const webNormalAngle = drivePsi0 - toothPitch * webNearestFraction;
+  const webNearest = new THREE.Vector2(Math.cos(webNormalAngle), Math.sin(webNormalAngle));
+  const anchor2 = new THREE.Vector2(strongSpringAnchor.x, strongSpringAnchor.y);
+  const webCenterlineNearest = webDistance + strongHalfWidth;
+  // Offset e of the arc's centre from A, opposite webNearest, so that the
+  // centre-line circle (radius webCenterlineNearest + e) passes the anchor.
+  const webOffset = (webCenterlineNearest ** 2 - anchor2.lengthSq())
+    / (2 * (anchor2.dot(webNearest) - webCenterlineNearest));
+  const webArcCenter = webNearest.clone().multiplyScalar(-webOffset);
+  const webArcRadius = webCenterlineNearest + webOffset;
+  // Distance from A's centre along the ray at theta to a circle about the
+  // web's centre (A is inside it).
+  const webCircleAt = (theta, radius) => {
+    const along = Math.cos(theta) * webArcCenter.x + Math.sin(theta) * webArcCenter.y;
+    return along + Math.sqrt(along ** 2 - webArcCenter.lengthSq() + radius ** 2);
+  };
+  const webInnerAt = (theta) => webCircleAt(theta, webArcRadius - strongHalfWidth);
+  const anchorTheta = wrapNear(Math.atan2(anchor2.y, anchor2.x), webNormalAngle);
   // The deep web ends where the nib's rear corner is at escape start; C
   // continues shallow (in A's front half) to its end in C's seat.
   const webEndTheta = escapeStartPsi + nibAngle(driveRadius);
@@ -3035,7 +3151,7 @@ function springPressedRatchetIndex() {
     let radius = relaxedNibRadius;
     for (let k = 0; k <= 32; k += 1) {
       const theta = psi + alpha * k / 32;
-      if (theta < webEndTheta - 1e-9 || Math.abs(theta - webNormalAngle) > 1.4) continue;
+      if (theta < webEndTheta - 1e-9 || theta > anchorTheta) continue;
       radius = Math.min(radius, webInnerAt(theta) - nibHalfWidth - pressGap);
     }
     return radius;
@@ -3070,47 +3186,40 @@ function springPressedRatchetIndex() {
     throw new RangeError(`movement 73 nib path fails: tooth margin ${pressToothMargin}, crest span ${driveCrestSpan}`);
   }
 
-  // C's centre line: from the block's corner, joining the straight web, and
-  // at the end curving in to its seat.
-  const strongHalfWidth = stopPadRadius;
-  const webNormal = new THREE.Vector3(Math.cos(webNormalAngle), Math.sin(webNormalAngle), 0);
-  const webDirection = new THREE.Vector3(Math.sin(webNormalAngle), -Math.cos(webNormalAngle), 0); // clockwise
-  const webLinePoint = (theta) => webNormal.clone().multiplyScalar(webDistance + strongHalfWidth)
-    .addScaledVector(webDirection, (webDistance + strongHalfWidth) * Math.tan(theta - webNormalAngle) * -1);
-  // C rises from the top right corner of Brown's hatched block, which
-  // stands just clear of D's rim at the lower left.
-  const strongSpringAnchor = new THREE.Vector3(-1.56, -1.14, 0);
-  const webJoinTheta = pressStartPsi + THREE.MathUtils.degToRad(10);
-  const webJoin = webLinePoint(webJoinTheta);
-  const rootPoints = hermitePoints(
-    strongSpringAnchor,
-    webDirection.clone().multiplyScalar(strongSpringAnchor.distanceTo(webJoin)),
-    webJoin,
-    webDirection.clone().multiplyScalar(strongSpringAnchor.distanceTo(webJoin)),
-    40,
-  );
-  const webCenter = Array.from({ length: 81 }, (_, index) => webLinePoint(
-    THREE.MathUtils.lerp(webJoinTheta, webEndTheta, index / 80)));
+  // C's centre line: the long arc from the block's corner to the end of the
+  // web, then one tangent arc, bending the same way, into its seat.
   const stopCenter3 = new THREE.Vector3(restStopContact.center.x, restStopContact.center.y, 0);
-  const hookStart = webCenter.at(-1);
-  const hookEntry = (() => {
-    // Arriving inward and a little clockwise, into the tooth space.
-    const direction = stopPawlDirection.clone().negate().rotateAround(new THREE.Vector2(), 0.5);
-    return new THREE.Vector3(direction.x, direction.y, 0);
-  })();
-  const hookPoints = hermitePoints(
-    hookStart,
-    webDirection.clone().multiplyScalar(hookStart.distanceTo(stopCenter3) * 1.1),
-    stopCenter3,
-    hookEntry.multiplyScalar(hookStart.distanceTo(stopCenter3) * 1.1),
-    40,
-  );
+  const arcPoints = (center, radius, from, sweep, count) => Array.from({ length: count + 1 }, (_, index) => {
+    const angle = from + sweep * index / count;
+    return new THREE.Vector3(center.x + Math.cos(angle) * radius, center.y + Math.sin(angle) * radius, 0);
+  });
+  const webEndRadius = webCircleAt(webEndTheta, webArcRadius);
+  const webEnd = new THREE.Vector2(Math.cos(webEndTheta), Math.sin(webEndTheta)).multiplyScalar(webEndRadius);
+  const angleAbout = (center, point) => Math.atan2(point.y - center.y, point.x - center.x);
+  const webFrom = angleAbout(webArcCenter, anchor2);
+  // The leaf runs clockwise about A and about the web's centre.
+  const webSweep = -THREE.MathUtils.euclideanModulo(webFrom - angleAbout(webArcCenter, webEnd), fullTurn);
+  const webPoints = arcPoints(webArcCenter, webArcRadius, webFrom, webSweep, 160);
+  const webTangent = webEnd.clone().sub(webArcCenter).rotateAround(new THREE.Vector2(), -Math.PI / 2).normalize();
+  // Tip arc: tangent to the web at its end and through C's seat; its centre
+  // lies on the web end's inward normal, at signed distance tipOffset.
+  const tipNormal = webTangent.clone().rotateAround(new THREE.Vector2(), -Math.PI / 2);
+  const seat = new THREE.Vector2(stopCenter3.x, stopCenter3.y);
+  const toSeat = seat.clone().sub(webEnd);
+  const tipArcRadius = toSeat.lengthSq() / (2 * tipNormal.dot(toSeat));
+  if (!(tipArcRadius > 0 && tipArcRadius < webArcRadius)) {
+    throw new RangeError(`movement 73 C's end must bend on towards A (radius ${tipArcRadius})`);
+  }
+  const tipArcCenter = webEnd.clone().addScaledVector(tipNormal, tipArcRadius);
+  const tipFrom = angleAbout(tipArcCenter, webEnd);
+  const tipSweep = -THREE.MathUtils.euclideanModulo(tipFrom - angleAbout(tipArcCenter, seat), fullTurn);
+  const tipPoints = arcPoints(tipArcCenter, tipArcRadius, tipFrom, tipSweep, 60);
   const polylineLength = (points) => points.reduce(
     (length, point, index) => index ? length + point.distanceTo(points[index - 1]) : 0, 0);
-  const strongRaw = [...rootPoints, ...webCenter.slice(1), ...hookPoints.slice(1)];
+  const strongRaw = [...webPoints, ...tipPoints.slice(1)];
   const strongEven = evenPolyline(strongRaw, 257);
   const relaxedStrongPoints = strongEven.points;
-  const webEndFraction = (polylineLength(rootPoints) + polylineLength(webCenter)) / strongEven.total;
+  const webEndFraction = polylineLength(webPoints) / strongEven.total;
   const webTaper = 0.004;
   const strongCurveAt = (tipCenter) => new ClampedTipLeafCurve(
     relaxedStrongPoints,
@@ -3423,6 +3532,11 @@ function springPressedRatchetIndex() {
     webEndFraction,
     webEndTheta,
     webNormalAngle,
+    webArcCenter,
+    webArcRadius,
+    tipArcCenter,
+    tipArcRadius,
+    relaxedStrongPoints,
   };
   root.userData.stateAtTime = stateAtTime;
   root.userData.stopContactAtDrivenAngle = stopContactAtDrivenAngle;
@@ -7696,7 +7810,133 @@ function sharedPivotDoubleStrokeRatchet() {
   // Brown's short left band tapers and hugs the tips at its square end: it
   // ends about 0.1 inside a band of the right one's section.
   const leftBandEndHalfWidth = 0.09;
-  const leftBandClearance = 0.05;
+  const leftBandClearance = 0.08;
+  // Brown's short left pawl, as one smooth flat plate: a band hugging the
+  // tips that ends in a rounded heel just past the tooth ahead of its nose,
+  // and a wedge nose whose two flanks are the tangents from the nose circle
+  // to points just outside the two neighbouring tips, so the tip is cut to
+  // the tooth space's valley with no finger, notch or proud square corner.
+  const leftWedgeTipClearance = 0.1;
+  const leftInnerBlendAngle = 0.06;
+  const leftHeelBeyondTip = -0.01;
+  const leftWedgeFaceRelief = THREE.MathUtils.degToRad(8);
+  const leftWedgePawlOutline = ({
+    pivot, pivotAngle, contact, contactAngle, direction, bandRadius,
+    endHalfWidth, aheadTip, behindTip, faceNormal,
+  }) => {
+    const polar = (angle, radius) => new THREE.Vector2(
+      Math.cos(angle) * radius,
+      Math.sin(angle) * radius,
+    );
+    const unwrap = (point) => unwrapNear(Math.atan2(point.y, point.x), contactAngle);
+    const endTip = direction > 0 ? behindTip : aheadTip;
+    const edgeRadius = ratchetOuterRadius + leftWedgeTipClearance;
+    const pivotPoint = new THREE.Vector2();
+    const r = pawlNoseOutlineRadius;
+    // The pivot-side flank runs up the undercut working face it pulls on,
+    // turned a few degrees off it so only the nose bears, out past the tip.
+    let faceAlong = new THREE.Vector2(-faceNormal.y, faceNormal.x);
+    if (faceAlong.dot(contact) < 0) faceAlong.negate();
+    faceAlong.addScaledVector(faceNormal, Math.tan(leftWedgeFaceRelief)).normalize();
+    let faceSide = new THREE.Vector2(-faceAlong.y, faceAlong.x);
+    if (faceSide.dot(faceNormal) > 0) faceSide.negate();
+    const pivotTangent = contact.clone().addScaledVector(faceSide, r);
+    {
+      const along = pivotTangent.dot(faceAlong);
+      const reach = -along + Math.sqrt(along ** 2 - pivotTangent.lengthSq() + edgeRadius ** 2);
+      pivotPoint.copy(pivotTangent).addScaledVector(faceAlong, reach);
+    }
+    const heelAngle = contactAngle + endTip - direction * leftHeelBeyondTip;
+    const radiusAt = (angle) => {
+      const fraction = THREE.MathUtils.clamp(
+        (angle - heelAngle) / (pivotAngle - heelAngle), 0, 1);
+      return THREE.MathUtils.lerp(bandRadius, pivot.length(), Math.sin(Math.PI / 2 * fraction));
+    };
+    const halfWidthAt = (angle) => {
+      const fraction = (angle - heelAngle) / (pivotAngle - heelAngle);
+      const bandHalfWidth = THREE.MathUtils.lerp(endHalfWidth, pawlBandHalfWidth,
+        smoothStep01(THREE.MathUtils.clamp(fraction / 0.6, 0, 1)));
+      return THREE.MathUtils.lerp(bandHalfWidth, 0.09,
+        smoothStep01(THREE.MathUtils.clamp((fraction - 0.8) / 0.2, 0, 1)));
+    };
+    const points = [];
+    const arcSteps = 72;
+    for (let index = 0; index <= arcSteps; index += 1) {
+      const angle = THREE.MathUtils.lerp(pivotAngle, heelAngle, index / arcSteps);
+      points.push(polar(angle, radiusAt(angle) + halfWidthAt(angle)));
+    }
+    // The rounded heel: an arc of the band's end half width, running on
+    // into the straight bottom flank, which is the common tangent of the heel
+    // and the nose circles on the wheel side.
+    const heelCenter = polar(heelAngle, bandRadius);
+    const radial = heelCenter.clone().normalize();
+    const towardPivot = new THREE.Vector2(-radial.y, radial.x).multiplyScalar(direction);
+    const joint = heelCenter.clone().sub(contact);
+    const jointLength = joint.length();
+    const jointAngle = Math.atan2(joint.y, joint.x);
+    const tilt = Math.acos((r - endHalfWidth) / jointLength);
+    const normals = [jointAngle + tilt, jointAngle - tilt].map(
+      (angle) => new THREE.Vector2(Math.cos(angle), Math.sin(angle)),
+    );
+    const bottomNormal = normals.sort((a, b) => a.dot(radial) - b.dot(radial))[0];
+    const heelFoot = heelCenter.clone().addScaledVector(bottomNormal, endHalfWidth);
+    const endTangent = contact.clone().addScaledVector(bottomNormal, r);
+    // Heel arc from the outer edge (radial) round the end to the foot.
+    const footAngle = Math.atan2(
+      bottomNormal.dot(towardPivot) * -1,
+      bottomNormal.dot(radial),
+    );
+    let heelSweep = footAngle;
+    if (heelSweep < 0) heelSweep += 2 * Math.PI;
+    for (let index = 1; index < 32; index += 1) {
+      const phi = heelSweep * index / 32;
+      points.push(heelCenter.clone()
+        .addScaledVector(radial, endHalfWidth * Math.cos(phi))
+        .addScaledVector(towardPivot, -endHalfWidth * Math.sin(phi)));
+    }
+    points.push(heelFoot, endTangent.clone());
+    const angleOf = (point) => Math.atan2(point.y - contact.y, point.x - contact.x);
+    const startNose = angleOf(endTangent);
+    let sweep = angleOf(pivotTangent) - startNose;
+    // Sweep the way round that passes the wheel side of the nose.
+    const inward = Math.atan2(-contact.y, -contact.x);
+    const passes = (delta) => {
+      const rel = THREE.MathUtils.euclideanModulo(inward - startNose, 2 * Math.PI);
+      return delta > 0 ? rel < delta : rel - 2 * Math.PI > delta;
+    };
+    if (!passes(sweep)) sweep -= Math.sign(sweep) * 2 * Math.PI;
+    const noseSteps = 20;
+    for (let index = 1; index < noseSteps; index += 1) {
+      points.push(polar(startNose + sweep * index / noseSteps, r).add(contact));
+    }
+    points.push(pivotTangent.clone());
+    // The flank turns smoothly into the inner edge, which rises back to the
+    // pin (a quadratic blend with its corner at the flank's end).
+    const innerStart = unwrap(pivotPoint) + direction * leftInnerBlendAngle;
+    const innerAt = (angle) => polar(angle, radiusAt(angle) - halfWidthAt(angle));
+    const blendFrom = pivotTangent.clone().lerp(pivotPoint, 0.55);
+    const blendTo = innerAt(innerStart);
+    for (let index = 0; index < 16; index += 1) {
+      const t = index / 16;
+      points.push(blendFrom.clone().multiplyScalar((1 - t) ** 2)
+        .addScaledVector(pivotPoint, 2 * t * (1 - t))
+        .addScaledVector(blendTo, t ** 2));
+    }
+    for (let index = 0; index <= arcSteps; index += 1) {
+      const angle = THREE.MathUtils.lerp(innerStart, pivotAngle, index / arcSteps);
+      points.push(innerAt(angle));
+    }
+    const pawlAngle = Math.atan2(contact.y - pivot.y, contact.x - pivot.x);
+    const local = points.map((point) => point.clone().sub(pivot)
+      .rotateAround(origin, -pawlAngle));
+    let area = 0;
+    for (let index = 0; index < local.length; index += 1) {
+      const current = local[index];
+      const next = local[(index + 1) % local.length];
+      area += current.x * next.y - next.x * current.y;
+    }
+    return area < 0 ? local.reverse() : local;
+  };
   const hookedPawlOutline = (right) => {
     const pivot = sharedPawlPivotAtRockerAngle(handleMeanAngle);
     const endHalfWidth = right ? pawlBandHalfWidth : leftBandEndHalfWidth;
@@ -7780,6 +8020,10 @@ function sharedPivotDoubleStrokeRatchet() {
         unwrapToPivot(first) - unwrapToPivot(second)
       ),
     );
+    if (!right) return leftWedgePawlOutline({
+      pivot, pivotAngle, contact, contactAngle, direction, bandRadius,
+      endHalfWidth, aheadTip, behindTip, faceNormal,
+    });
     // bases[0] is the flank nearer the band's square end, bases[1] nearer
     // the pivot.
     // The square end continues the outer nose flank straight out to the
@@ -16901,8 +17145,8 @@ function rollerAndLatchStopsForLanternWheel(movement) {
     };
     root.userData.kinematics = state;
   };
-  installLanternStop233(root, latchShape, update);
-  return finish(root, update, new THREE.Vector3(0.4, 0.2, 15));
+  const drivenUpdate = installLanternStop233(root, latchShape, update);
+  return finish(root, drivenUpdate, new THREE.Vector3(0.4, 0.2, 15));
 }
 
 function springTappetArmStarRatchet(movement) {
@@ -18459,13 +18703,16 @@ function alternatingTwoPawlContinuousRatchet(movement) {
   // gravity or spring bias) until it lands on the next flank.
   // Straight flanks of the flat pawl outline in its own frame, from the ends
   // of its rounded toe back to the hinge (see alternating-pawl-236 parts).
+  // Brown's b and c are broad bars with blunt, obliquely cut ends whose
+  // wheel-side corner is the toe: the outer flank (-y) stands 0.2 out almost
+  // to the end, and the end is cut straight back from the toe to it.
   const pawlToeSpan = THREE.MathUtils.degToRad(105);
   const pawlFlankPolylines = (length) => {
     const toeX = length + pawlNoseRadius * Math.cos(pawlToeSpan);
     const toeY = pawlNoseRadius * Math.sin(pawlToeSpan);
     return [
-      [[toeX, -toeY], [length - 0.18, -0.065], [length * 0.16, -0.115],
-        [-0.04, -0.1]],
+      [[toeX, -toeY], [length - 0.08, -0.2], [length * 0.16, -0.2],
+        [-0.04, -0.14]],
       [[toeX, toeY], [length - 0.17, 0.05], [length * 0.5, 0.1],
         [-0.04, 0.11]],
     ];

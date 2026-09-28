@@ -455,3 +455,17 @@ test('movement 471 has finite fitted render bounds and movement 507 remains the 
   disposeModel(model471.root);
   disposeModel(model507.root);
 });
+
+test('movement 471 cylinder B is see-through so the dotted crank A, rod D and piston show', () => {
+  const model = createMovementModel(catalog.movements[470]);
+  const roles = new Map();
+  model.root.traverse((object) => { if (object.isMesh) roles.set(object.userData.role, object); });
+  for (const role of ['front-cutaway-moving-cylinder-shell-B', 'bored-lower-cylinder-head', 'closed-upper-cylinder-head']) {
+    assert.ok(roles.get(role)?.userData.seeThrough, `${role} is see-through`);
+  }
+  for (const role of ['crank-A-disk', 'constant-length-connecting-rod-D', 'free-air-piston']) {
+    const mesh = roles.get(role);
+    assert.ok(mesh && mesh.visible && !mesh.userData.seeThrough, `${role} is shown solid`);
+  }
+  disposeModel(model.root);
+});

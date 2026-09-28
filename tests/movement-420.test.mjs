@@ -292,3 +292,18 @@ test('movement 507 remains the next authored frontier and does not reuse movemen
   disposeModel(model420.root);
   disposeModel(model507.root);
 });
+
+test('movement 420 short pull cord keeps the ringer’s hand in the default view; bell has a flat canon loop (pass 90)', () => {
+  const model = createMovementModel(catalog.movements[419]);
+  const { geometry, stateAtTime } = model.root.userData;
+  assert.ok(geometry.pullCordLength < 1.5);
+  const bounds = model.root.userData.cameraFitBounds;
+  for (let index = 0; index <= 80; index += 1) {
+    const hand = stateAtTime(4 * index / 80).handPosition;
+    assert.ok(hand.y >= bounds.min.y && hand.x >= bounds.min.x, `hand in the fitted view at ${index}`);
+  }
+  let canon;
+  model.root.traverse((o) => { if (o.userData.role === 'bell-canon-loop-on-hanger') canon = o; });
+  assert.equal(canon.geometry.type, 'ExtrudeGeometry');
+  disposeModel(model.root);
+});

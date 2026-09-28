@@ -106,3 +106,8 @@ test('198 suspension eyes and fixed guide rollers have finite journals and rail 
     assert.ok(Math.abs(roller.position.y) - d.geometry.guideRollerRadius - edge - 0.0525 < 0.0021);
   }
 });
+
+test('197 plate back shows no undrawn slide rail or channel', () => {
+  const b = create({ id: 197 }).root.userData.blocks;
+  for (const part of [b.frameBackRail, b.frameChannel]) part.traverse((o) => { if (o.isMesh) assert.equal(o.visible, false); });
+});

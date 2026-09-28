@@ -8,9 +8,9 @@ import {polygonClipping as clip} from '../src/simulation/finite-plate-geometry.j
 import {disposeObject3D} from '../src/simulation/dispose-model.js';
 const full=process.env.FULL_ASSEMBLY==='1',model=full?makeGearedCrank():createAuthoredGearLinkageMovement({id:148});
 try{
- const {blocks:b,parts}=model.root.userData,g=model.root.userData.geometry??{cyclePeriod:8},gears=full?[parts['involute-pinion'],parts['large-involute-rim']]:[b.pinion,b.largeGear];
+ const {blocks:b,parts}=model.root.userData,g=model.root.userData.geometry??{cyclePeriod:8},gears=full?[parts['involute-pinion'],parts['large-spoked-gear']]:[b.pinion,b.largeGear];
  const outline=gear=>{
-  if(full){const points=gear.geometry.parameters.shapes.getPoints().map(p=>new Vector3(p.x,p.y,-.2).applyMatrix4(gear.matrixWorld)).map(p=>[p.x,p.y].map(v=>Math.round(v*1e9)/1e9));return [[points]];}
+  if(full){const points=(gear.geometry.userData.toothOutline??gear.geometry.parameters.shapes.getPoints().map(p=>[p.x,p.y])).map(([x,y])=>new Vector3(x,y,-.2).applyMatrix4(gear.matrixWorld)).map(p=>[p.x,p.y].map(v=>Math.round(v*1e9)/1e9));return [[points]];}
   const mesh=gear.userData.rotor.children[0],angle=gear.userData.rotor.rotation.z;
   const points=mesh.geometry.parameters.shapes.getPoints().map(p=>[gear.position.x+p.x*Math.cos(angle)-p.y*Math.sin(angle),gear.position.y+p.x*Math.sin(angle)+p.y*Math.cos(angle)]);
   return [[points.map(p=>p.map(v=>Math.round(v*1e9)/1e9))]];

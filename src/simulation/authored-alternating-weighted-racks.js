@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {installWeightedRackSelector, makeSelectorLinkSchedule, selectorGeometry, selectorState} from './weighted-rack-selector-contact.js';
+import {plate, capsule, circle, poly, polygonClipping as clip} from './finite-plate-geometry.js';
 import { correctWeightedRackInterfaces, correctWeightedRackTeeth, finishAlternatingDrive } from './alternating-drive-finite-parts.js';
 import {
   PALETTE,
@@ -185,16 +186,14 @@ function makeRack({
     teeth.push(tooth);
   }
 
-  const guideArmLink = makeDynamicLink({
-    color: PALETTE.driver,
-    depth: depth * 0.72,
-    jointRadius: 0.055,
-    thickness: 0.105,
-  });
-  guideArmLink.userData.setEndpoints(
-    new THREE.Vector3(0, guideY, 0),
-    new THREE.Vector3(side * guideArm, guideY, 0),
-  );
+  // Each arm is one flat bar with round ends concentric with its pins.
+  const flatArm = (from, to) => {
+    const arm = new THREE.Group();
+    const bar = new THREE.Mesh(plate(capsule(from, to, 0.0525, 32), -depth * 0.36, depth * 0.36), bodyMaterial);
+    arm.add(bar);
+    return arm;
+  };
+  const guideArmLink = flatArm([0, guideY], [side * guideArm, guideY]);
   guideArmLink.userData.role = `${name}-rigid-outward-guide-arm`;
   rack.add(guideArmLink);
 
@@ -220,16 +219,7 @@ function makeRack({
   // The unequal-looking lower arms follow the source plate: A has its
   // conspicuous weight outboard; A1's ball lies inboard of its lower pivot.
   const weightX = side < 0 ? -1.02 : -0.91;
-  const weightArm = makeDynamicLink({
-    color: PALETTE.driver,
-    depth: depth * 0.72,
-    jointRadius: 0.001,
-    thickness: 0.105,
-  });
-  weightArm.userData.setEndpoints(
-    new THREE.Vector3(0, 0.02, 0),
-    new THREE.Vector3(weightX, 0.02, 0),
-  );
+  const weightArm = flatArm([0, 0.02], [weightX, 0.02]);
   weightArm.userData.role = `${name}-lower-weight-arm`;
   rack.add(weightArm);
   const weight = new THREE.Mesh(

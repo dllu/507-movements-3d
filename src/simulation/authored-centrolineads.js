@@ -597,6 +597,20 @@ function centrolinead(movement) {
     ...Object.values(legs).map((leg) => leg.clamp.children[1]),
   ]) index.visible = false;
   correctCentrolinead(root);
+  // Brown's blade root carries a round screw head and a small square rivet
+  // just outside the head; both are shallow fastener heads on the blade's
+  // top face (sunk 0.01 into it).
+  {
+    const bladeTop = blade.position.z + 0.09;
+    const screw = cylinderAlongZ(0.105, 0.045, toolMaterial, 48);
+    screw.position.set(0.87, -bladeWidth / 2, bladeTop + 0.0125);
+    screw.userData.role = 'blade-root-screw-head';
+    const rivet = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.075, 0.035), toolMaterial);
+    rivet.position.set(1.13, -bladeWidth / 2, bladeTop + 0.0075);
+    rivet.userData.role = 'blade-root-square-rivet';
+    instrument.add(screw, rivet);
+    markShadows(screw); markShadows(rivet);
+  }
   return finishDrawingGauge(root,update,cycleDuration);
 }
 

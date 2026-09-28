@@ -65,6 +65,9 @@ export function pawl390RestingLift(relativeAngle,lift){
 }
 export function install390Pawls(root){
   const b=root.userData.blocks;
+  // Brown draws a point-symmetric pair of pawls on the ratchet face. Each loose
+  // pulley carries two identical pawls half a turn apart; with twelve teeth
+  // both sit in roots at once, so they share one lift law and share the load.
   for(const[carrier,wheel,phase]of[[b.openCarrier,b.openRatchet,d.mountPhase],[b.crossedCarrier,b.crossedRatchet,d.mountPhase+Math.PI]]){
     const pawl=carrier.userData.pawl,oldBody=carrier.userData.pawlBody;
     let material;oldBody.traverse(o=>{if(o.isMesh&&!material)material=o.material;});
@@ -74,25 +77,36 @@ export function install390Pawls(root){
     // One flat bored curled link: a circular-arc band whose chisel nose sits in
     // the V root, working face along the driving flank (designed offline).
     const shape=clip.difference(clip.union(poly(dualBand390Pawl.outline),poly(circle([0,0],.047,64))),poly(circle([0,0],d.bore,64)));
-    const body=new THREE.Mesh(plate(shape,-d.depth/2,d.depth/2),material);
-    body.userData.role='finite-curved-bored-ratchet-pawl';pawl.add(body);
+    const bodyGeometry=plate(shape,-d.depth/2,d.depth/2);
+    const pinGeometry=new THREE.CylinderGeometry(d.pinRadius,d.pinRadius,.11,48).rotateX(Math.PI/2);
+    const nose=dualBand390Pawl.outline.reduce((best,q)=>Math.hypot(...q)>Math.hypot(...best)?q:best);
+    const twin=new THREE.Group();twin.userData.role=`${pawl.userData.role}-mirrored-twin`;carrier.add(twin);
     const plane=carrier.userData.pulley.position.z;
-    pawl.position.set(d.pivotRadius*Math.cos(phase),d.pivotRadius*Math.sin(phase),plane+.165);
-    pawl.userData.baseAngle=phase+d.seatAngle;
-    pawl.userData.mountPhase=phase;
-    const pin=new THREE.Mesh(new THREE.CylinderGeometry(d.pinRadius,d.pinRadius,.11,48).rotateX(Math.PI/2),pinMaterial);
-    pin.position.set(pawl.position.x,pawl.position.y,plane+.145);pin.userData.role='carrier-fixed-pawl-journal';carrier.add(pin);
-    // Brown draws no stop beside the pawl: the ratchet root itself seats it.
-    const index=new THREE.Mesh(new THREE.CircleGeometry(.008,24),white);
-    const nose=dualBand390Pawl.outline.reduce((best,q)=>Math.hypot(...q)>Math.hypot(...best)?q:best);index.position.set(nose[0],nose[1],d.depth/2+.0003);index.userData.role='white-active-pawl-contact-index';pawl.add(index);
+    const pawls=[],bodies=[],pins=[],indices=[];
+    for(const[group,mount]of[[pawl,phase],[twin,phase+Math.PI]]){
+      const body=new THREE.Mesh(bodyGeometry,material);
+      body.userData.role='finite-curved-bored-ratchet-pawl';group.add(body);
+      group.position.set(d.pivotRadius*Math.cos(mount),d.pivotRadius*Math.sin(mount),plane+.165);
+      group.userData.baseAngle=mount+d.seatAngle;
+      group.userData.mountPhase=mount;
+      const pin=new THREE.Mesh(pinGeometry,pinMaterial);
+      pin.position.set(group.position.x,group.position.y,plane+.145);pin.userData.role='carrier-fixed-pawl-journal';carrier.add(pin);
+      // Brown draws no stop beside the pawl: the ratchet root itself seats it.
+      const index=new THREE.Mesh(new THREE.CircleGeometry(.008,24),white);
+      index.position.set(nose[0],nose[1],d.depth/2+.0003);index.userData.role='white-active-pawl-contact-index';group.add(index);
+      pawls.push(group);bodies.push(body);pins.push(pin);indices.push(index);
+    }
     const outline=ratchet390Outline(d.mountPhase+dualBandSeatPhase);
     wheel.geometry.dispose();wheel.geometry=plate(clip.difference(poly(outline),poly(circle([0,0],.107,64))),-.05,.05);
     wheel.userData.finiteOutline=outline;
-    carrier.userData.pawlBody=body;carrier.userData.pawlLength=d.length;carrier.userData.contactIndex=index;
-    carrier.userData.pawlPin=pin;carrier.userData.pawlStop=null;
+    carrier.userData.pawls=pawls;carrier.userData.pawlBodies=bodies;carrier.userData.pawlPins=pins;carrier.userData.contactIndices=indices;
+    carrier.userData.twinPawl=twin;
+    carrier.userData.pawlBody=bodies[0];carrier.userData.pawlLength=d.length;carrier.userData.contactIndex=indices[0];
+    carrier.userData.pawlPin=pins[0];carrier.userData.pawlStop=null;
   }
   b.openPawlContactIndex=b.openCarrier.userData.contactIndex;b.crossedPawlContactIndex=b.crossedCarrier.userData.contactIndex;
+  b.openTwinPawl=b.openCarrier.userData.twinPawl;b.crossedTwinPawl=b.crossedCarrier.userData.twinPawl;
   root.userData.finiteInterfaceReview.qualification='Finite pulley grooves, journals and pawl/ratchet geometry; carrier take-up and pawl bias/return are prescribed, not a force solution.';
-  root.userData.finitePawlReview={dimensions:d,seatPhase:dualBandSeatPhase,seatContact:toe390Contact(d.seatAngle,dualBandSeatPhase),
-    qualification:'Least-clearance lift of the finite curled pawl: it rides each tooth back in overrun, drops into the next root as the crest passes, and the carrier overtravel is the backlash taken up before it drives with the nose in the root. Spring bias, drop dynamics, impact, flywheel inertia and load transfer are not force-solved.',outline:dualBand390Pawl.outline};
+  root.userData.finitePawlReview={dimensions:d,seatPhase:dualBandSeatPhase,seatContact:toe390Contact(d.seatAngle,dualBandSeatPhase),pawlsPerCarrier:2,
+    qualification:'Two identical point-symmetric pawls per loose pulley, half a turn (six teeth) apart, with one least-clearance lift law: each rides a tooth back in overrun, drops into the next root as the crest passes, and the carrier overtravel is the backlash taken up before both drive with their noses in roots. Spring bias, drop dynamics, impact, flywheel inertia and load transfer are not force-solved.',outline:dualBand390Pawl.outline};
 }

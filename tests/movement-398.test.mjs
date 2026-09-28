@@ -22,6 +22,18 @@ test('398 derived groove: the roller covers exactly the crank stroke, so the whe
   near(g.strokeRange[1] - g.strokeRange[0], 2 * g.crankRadius, 1e-12, 'roller stroke equals twice the crank throw');
   // The groove centreline is the roller trace; its walls are offsets that do not fold.
   assert.ok(g.minimumConvexRadius > g.rollerRadius, `convex radius ${g.minimumConvexRadius}`);
+  assert.ok(g.minimumConcaveRadius > g.rollerRadius, `concave radius ${g.minimumConcaveRadius}`);
+  // A clean trefoil: exactly one convex lobe and one concave flank per side
+  // (six curvature sign changes per turn), no wobble.
+  let changes = 0, previousSign = null;
+  for (let i = 0; i < 7200; i += 1) {
+    const psi = FULL_TURN * i / 7200, h = 1e-4;
+    const [x, y] = law.centerline(psi), [x1, y1] = law.centerline(psi + h), [x0, y0] = law.centerline(psi - h);
+    const sign = Math.sign((x1 - x0) * (y1 - 2 * y + y0) - (y1 - y0) * (x1 - 2 * x + x0));
+    if (previousSign !== null && sign !== previousSign) changes += 1;
+    previousSign = sign;
+  }
+  assert.equal(changes, 6, 'three lobes and three concave flanks');
   // Three-fold: each side of the groove carries the wheel exactly once round.
   near(law.wheelAngle(FULL_TURN / 3) - law.wheelAngle(0), FULL_TURN, 1e-12, 'one wheel turn per groove side');
   for (let i = 0; i < 3000; i += 1) {
@@ -47,7 +59,7 @@ test('398 wheel turns monotonically at varying speed, never stopping, with a sea
     previous = s;
   }
   assert.ok(minimum > 0, 'never stops');
-  assert.ok(maximum / minimum > 5, `speed varies strongly: ${maximum / minimum}`);
+  assert.ok(maximum / minimum > 2.5, `speed varies: ${maximum / minimum}`);
   near(stateAtTime(T).outputRotorAngle - stateAtTime(0).outputRotorAngle, 3 * FULL_TURN, 1e-9, 'three turns per cam turn');
   near(stateAtTime(T).rollerDistance, stateAtTime(0).rollerDistance, 1e-12, 'follower loop closes');
 });

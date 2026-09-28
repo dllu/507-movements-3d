@@ -71,7 +71,9 @@ test('189 plate landmarks map onto the rendered bodies at the source pose', () =
   assert.ok(zRange(b.valveArm).max.z < zRange(b.rodBody).min.z);
   assert.ok(zRange(b.hangerLink).max.z < zRange(b.rodBody).min.z);
   assert.ok(zRange(b.hangerLink).max.z < zRange(b.bellCrankPlate).min.z);
-  assert.ok(Math.abs(zRange(b.valvePin).max.z - zRange(b.rodBody).max.z) < 1e-6, 'pin face flush with rod face');
+  assert.ok(Math.abs(zRange(b.valvePin).max.z - zRange(b.rodFace).max.z) < 1e-6, 'pin face flush with rod face');
+  // Pass 90: the fork is a shallow recess in the rod's face, not a through slot.
+  assert.ok(zRange(b.rodBody).max.z > zRange(b.rodBody).min.z + 0.15, 'rod body backs the recessed fork');
 }));
 
 test('189 joints stay connected and the gab captures then clears the pin', () => withModel((model, u) => {

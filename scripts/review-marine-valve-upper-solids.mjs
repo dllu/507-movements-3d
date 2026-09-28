@@ -8,7 +8,7 @@ import {solidSurface, surfacePoints} from '../tests/helpers/solid-surface.mjs';
 
 const model = createAuthoredMarineValveGearMovement({id: 171});
 const blocks = model.root.userData.blocks;
-const meshes = {plate:blocks.upperLinkPlate, die:blocks.dieBody, diePin:blocks.diePin, aheadPin:blocks.linkPinAssemblies[0].children[1], asternPin:blocks.linkPinAssemblies[1].children[1], reachPin:blocks.reachLug.children[1]};
+const meshes = {plate:blocks.upperLinkPlate, die:blocks.dieBody, diePin:blocks.diePin, aheadPin:blocks.linkPinAssemblies[0].children.at(-1), asternPin:blocks.linkPinAssemblies[1].children.at(-1), reachPin:blocks.reachLug.children[1]};
 const parts = Object.fromEntries(Object.entries(meshes).map(([name, mesh]) =>
   [name, {mesh, surface: solidSurface(mesh.geometry), points: surfacePoints(mesh.geometry)}]));
 const pairs = [['die','plate'],['diePin','plate'],['diePin','die'],['aheadPin','plate'],['asternPin','plate'],['reachPin','plate']];

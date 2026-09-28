@@ -549,3 +549,14 @@ test('333 pin P ends 0.01 inside the rod eye, not flush in its back face', () =>
   const [pin] = p89Box(model, 'common-working-pin-P');
   assert.ok(Math.abs(pin.min.z - (rod.min.z + 0.01)) < 1e-6, `${pin.min.z} ${rod.min.z}`);
 });
+
+test('333 P runs behind pedestal O: pin P comes down past O, so it must stay clear of O in depth', () => {
+  const model = createMovementModel(catalog.movements[332]);
+  model.update(0); model.root.updateMatrixWorld(true);
+  const [pin] = p89Box(model, 'common-working-pin-P');
+  for (const role of ['left-pivot-O-fixed-bearing-pin', 'left-pivot-O-fixed-bearing-bracket', 'left-pivot-O-frame-block-under-lug']) {
+    const [box] = p89Box(model, role);
+    assert.ok(pin.max.z < box.min.z, `pin P stays behind ${role}`);
+  }
+});
+

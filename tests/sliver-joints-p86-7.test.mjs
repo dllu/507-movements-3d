@@ -130,13 +130,16 @@ test('385: the weight neck is centred on and sunk into the solid bulb', async ()
   } finally { disposeObject3D(model.root); }
 });
 
-test('400: the pad ball hangs on a stem set into feed bar B', async () => {
+test('400: the cam-following pad and the feeder plate are set into feed bar B', async () => {
+  // Pass 90 replaced the pad ball's stem with Brown's raked feeder plate; the
+  // pad under the bar and the plate must both be joined to bar B.
   const model = await load(400);
   try {
     const beam = localBox(byRole(model.root, 'rigid-feed-bar-B'));
-    const ball = byRole(model.root, 'underside-pad-resting-by-gravity-on-radial-cam-prominence');
-    const stem = localBox(byRole(model.root, 'underside-pad-stem-set-into-bar-B'));
-    assert.ok(stem.max.y > beam.min.y + 0.05, 'stem runs into the bar');
-    assert.ok(stem.min.y <= ball.position.y + 1e-9, 'stem reaches the ball centre');
+    const plate = localBox(byRole(model.root, 'raked-toothed-feeder-plate-with-upturned-toe'));
+    const pad = localBox(byRole(model.root, 'underside-pad-resting-by-gravity-on-radial-cam-prominence'));
+    for (const [name, part] of [['feeder plate', plate], ['pad', pad]]) {
+      assert.ok(part.intersectsBox(beam), `${name} meets bar B`);
+    }
   } finally { disposeObject3D(model.root); }
 });

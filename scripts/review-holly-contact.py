@@ -8,23 +8,15 @@ from shapely.ops import unary_union
 source=json.load(open('/dev/shm/holly-contact.json'))
 left,right=[unary_union([Polygon(t) for t in triangles]) for triangles in source['rendered']]
 results=[]
-original=Polygon(source['right'])
-original_overlaps=[]
-original_gaps=[]
 for i in range(1025):
     angle=math.tau*(i+0.413)/1025
     cosine,sine=math.cos(2*angle),math.sin(2*angle)
     transformed=affine_transform(left,[cosine,-sine,sine,cosine,
         -source['centerDistance']*math.cos(angle),-source['centerDistance']*math.sin(angle)])
     results.append((transformed.intersection(right).area,transformed.distance(right)))
-    original_overlaps.append(transformed.intersection(original).area)
-    original_gaps.append(transformed.distance(original))
 report={'poses':len(results),'maximumOverlapArea':max(r[0] for r in results),
     'penetratingPoses':sum(r[0]>1e-10 for r in results),'maximumGap':max(r[1] for r in results),
     'minimumGap':min(r[1] for r in results),
-    'originalPenetratingPoses':sum(a>1e-10 for a in original_overlaps),
-    'originalMaximumOverlapArea':max(original_overlaps),
-    'originalMaximumGap':max(original_gaps),
     'method':'Intersection and distance of actual rendered rotor triangle projections at 1025 interleaved poses. Parallel solid extrusions share the same axial span. Shafts, packing, pressure, sealing and torque are outside this profile audit.',
     'sources':[]}
 for file in ['src/simulation/authored-double-elliptical-rotary-engines.js','src/simulation/movement-429-source-profiles.js','src/simulation/generated-holly-mate.js','scripts/export-holly-contact.mjs','scripts/generate-holly-mate.py','scripts/review-holly-contact.py']:

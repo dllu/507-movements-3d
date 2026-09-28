@@ -17,8 +17,8 @@ test('133 generated teeth engage without overlap through the press stroke',()=>{
  const sample=(angle,wrong=0,checkGap=false)=>{
   const pinion=rotate(profiles.pinion,u.toothProfiles.pinionMountPhase-6*angle+wrong,b.pinionAssembly.position.x,b.pinionAssembly.position.y);
   let overlap=0,gap=Infinity;
-  for(let tooth=0;tooth<13;tooth++){
-   const sector=rotate(profiles.sectorTooth,angle+tooth*2*Math.PI/48);
+  for(let tooth=0;tooth<d.installedSectorTeeth;tooth++){
+   const sector=rotate(profiles.sectorTooth,angle+tooth*2*Math.PI/d.sectorEquivalentTeeth);
    const center=sector[Math.floor(profiles.settings.samples/2)];
    if(Math.hypot(center[0]-b.pinionAssembly.position.x,center[1]-b.pinionAssembly.position.y)>.7)continue;
    overlap=Math.max(overlap,area(clip.intersection([pinion],[sector])));
@@ -29,7 +29,7 @@ test('133 generated teeth engage without overlap through the press stroke',()=>{
  try{
   for(let i=0;i<=720;i++){const r=sample(i*d.sectorAngularTravel/720,0,i%12===0);maximumOverlap=Math.max(maximumOverlap,r.overlap);if(i%12===0)maximumGap=Math.max(maximumGap,r.gap);}
   console.log({maximumOverlap,maximumGap});assert(maximumOverlap<1e-10);assert(maximumGap<.006);
-  assert(sample(0,Math.PI/8).overlap>.001,'wrong-phase control');
+  assert(sample(0,Math.PI/d.pinionTeeth).overlap>.001,'wrong-phase control');
   applyDisplayTiming(v,movement);assert.equal(u.animationTiming.displayCycleDuration,6);assert(u.hideGround);assert(u.supportsRestart);
   assert.equal(b.pinionBody.geometry.parameters.options.bevelSize,0);assert.equal(b.pinionBody.geometry.parameters.shapes.holes.length,1);
  }finally{disposeObject3D(v.root);}

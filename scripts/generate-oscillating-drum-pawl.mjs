@@ -14,7 +14,12 @@ const rot=(q,a)=>[q[0]*Math.cos(a)-q[1]*Math.sin(a),q[0]*Math.sin(a)+q[1]*Math.c
 const polar=(r,a)=>[r*Math.cos(a),r*Math.sin(a)];
 const area=mp=>mp.reduce((s,polygon)=>s+polygon.reduce((t,ring,k)=>{let A=0;for(let i=0,j=ring.length-1;i<ring.length;j=i++)A+=(ring[j][0]+ring[i][0])*(ring[j][1]-ring[i][1]);return t+(k?-1:1)*Math.abs(A/2);},0),0);
 const face=p.lockPhase,P=p.pivot,pitch=p.pitch,root=p.rootRadius,tip=p.tipRadius;
-const width=.075,halfWidth=width/2,noseClearance=.002,faceGap=0;
+const width=.085,halfWidth=width/2,noseClearance=.002,faceGap=0;
+// Brown's pawl is a hook: an eye on the pin and a body that bows outward
+// (away from the ratchet) as it curves down into the teeth. The body is a
+// constant-width circular-arc band whose inner edge passes through the nose
+// vertex A; bulge is the arc's sagitta as a fraction of the chord.
+const bulge=.20;
 const A=polar(root+noseClearance,face-noseClearance/root);
 // The drum pivot trails the face and lies well outside the teeth, so the
 // link meets the root almost along the back of the tooth behind: its
@@ -33,9 +38,35 @@ const choose=(through,dir,test)=>{for(const s of[1,-1]){const h=side(through,dir
 const faceThrough=polar(root,face-faceGap/root);
 const faceHalf=choose(faceThrough,radial,polar(root+.05,face-.06));
 const backHalf=choose(A,back,polar(tip+.03,face-.02));
-const u=[Math.cos(base),Math.sin(base)],n=[-u[1],u[0]],far=length+.2;
-const strip=[[P[0]+halfWidth*n[0],P[1]+halfWidth*n[1]],[P[0]+far*u[0]+halfWidth*n[0],P[1]+far*u[1]+halfWidth*n[1]],[P[0]+far*u[0]-halfWidth*n[0],P[1]+far*u[1]-halfWidth*n[1]],[P[0]-halfWidth*n[0],P[1]-halfWidth*n[1]]];
-const body=clip.intersection([strip],[faceHalf],[backHalf]);
+// Arc through P and the band centreline point C beside A (iterated so the
+// band's edge passes through A). The arc bows away from the ratchet centre.
+let C=A.slice(),arc;
+for(let it=0;it<40;it++){
+ const d=[C[0]-P[0],C[1]-P[1]],L=Math.hypot(...d),m=[(P[0]+C[0])/2,(P[1]+C[1])/2];
+ let q=[-d[1]/L,d[0]/L];if(q[0]*m[0]+q[1]*m[1]<0)q=[-q[0],-q[1]]; // q points outward
+ const sag=bulge*L,R=(L*L/4+sag*sag)/(2*sag),O=[m[0]-q[0]*(R-sag),m[1]-q[1]*(R-sag)];
+ arc={O,R};
+ // Radial of A from O; the band spans R-halfWidth..R+halfWidth, so A sits on
+ // whichever edge is nearer and C is A moved to the centreline.
+ const ra=Math.hypot(A[0]-O[0],A[1]-O[1]),dir=[(A[0]-O[0])/ra,(A[1]-O[1])/ra];
+ const target=ra+halfWidth; // A on the inner edge, the band outside it
+ const Cn=[O[0]+dir[0]*target,O[1]+dir[1]*target];
+ if(Math.hypot(Cn[0]-C[0],Cn[1]-C[1])<1e-12){C=Cn;break;}C=Cn;
+}
+{const {O,R}=arc,aP=Math.atan2(P[1]-O[1],P[0]-O[0]),aC=Math.atan2(C[1]-O[1],C[0]-O[0]);
+ let sweep=aC-aP;while(sweep>Math.PI)sweep-=2*Math.PI;while(sweep<-Math.PI)sweep+=2*Math.PI;
+ // Tangent at A along the arc back towards P: the underside runs this way.
+ const sgn=Math.sign(sweep);back=[sgn*Math.sin(aC),-sgn*Math.cos(aC)];
+ arc.aP=aP;arc.sweep=sweep;}
+const bandPoints=(extra)=>{const {O,R,aP,sweep}=arc,N=96,out=[],inn=[];
+ const a0=aP-Math.sign(sweep)*.02,a1=aP+sweep+Math.sign(sweep)*extra;
+ for(let i=0;i<=N;i++){const a=a0+(a1-a0)*i/N;out.push([O[0]+(R+halfWidth)*Math.cos(a),O[1]+(R+halfWidth)*Math.sin(a)]);inn.push([O[0]+(R-halfWidth)*Math.cos(a),O[1]+(R-halfWidth)*Math.sin(a)]);}
+ return [...out,...inn.reverse()];};
+const backHalf2=choose(A,back,polar(tip+.03,face-.02));
+// The hooked nose stops on the root circle (plus clearance) instead of
+// curling below it.
+const clearDisk=[Array.from({length:384},(_,i)=>polar(root+noseClearance,2*Math.PI*i/384))];
+const body=clip.difference(clip.intersection([bandPoints(.12/arc.R)],[faceHalf]),clearDisk);
 if(body.length!==1)throw Error('pawl body not one piece');
 const outline=body[0][0].slice(0,-1).map(toLocal).map(q=>q.map(v=>+v.toFixed(9)));
 const rootDisk=Array.from({length:192},(_,i)=>polar(root,2*Math.PI*i/192));

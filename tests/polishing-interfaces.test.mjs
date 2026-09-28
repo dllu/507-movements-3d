@@ -30,13 +30,22 @@ for(const id of [370,393])test(`${id}: finite repaired polishing interfaces over
 
 
 test('370 finite click drops continuously and stays close to working teeth',()=>{
- const m=mirror({id:370}),r=m.root,b=r.userData.blocks,f=b.finiteClick,pitch=2*Math.PI/12,maxima=[];
- for(const N of [256,4096]){let previous=f.angleAt(0),max=0;for(let i=1;i<=N;i++){const a=f.angleAt(pitch*i/N);max=Math.max(max,Math.abs(a-previous));previous=a;}maxima.push(max);}
- assert.ok(maxima[1]<maxima[0]/4);assert.ok(maxima[1]<.001);assert.ok(Math.abs(f.angleAt(pitch)-f.angleAt(0))<1e-12);
- const shape=f.body.geometry.parameters.shapes,outline=(Array.isArray(shape)?shape[0]:shape).getPoints(1),points=outline.flatMap((p,i)=>Array.from({length:8},(_,j)=>{const q=outline[(i+1)%outline.length];return new THREE.Vector3(p.x+(q.x-p.x)*j/8,p.y+(q.y-p.y)*j/8,0);})),solid=solidSurface(f.wheel.geometry);let largestGap=0,smallestGap=Infinity;
- for(let i=0;i<=32;i++){m.update(r.userData.geometry.inputCyclePeriod*i/32);r.updateMatrixWorld(true);const tr=f.wheel.matrixWorld.clone().invert().multiply(f.body.matrixWorld);let gap=Infinity;
- for(const p of points)gap=Math.min(gap,solid.distance(p.clone().applyMatrix4(tr),gap));largestGap=Math.max(largestGap,gap);smallestGap=Math.min(smallestGap,gap);}
- assert.ok(smallestGap>.001);assert.ok(largestGap<.01);console.log({clickCoarseStep:maxima[0],clickFineStep:maxima[1],smallestGap,largestGap});
+ // Brown's click pushes the ratchet anticlockwise (p90): the wheel turns one
+ // pitch anticlockwise per crank turn, and the click's rendered angle is
+ // continuous over time, including its finite-rate fall into the root.
+ const m=mirror({id:370}),r=m.root,b=r.userData.blocks,f=b.finiteClick,g=r.userData.geometry,pitch=2*Math.PI/12;
+ assert.equal(g.clickHand,1);
+ const steps=[];for(const N of [1000,8000]){let previous=null,max=0;for(let i=0;i<=N;i++){m.update(g.inputCyclePeriod*i/N);const a=f.group.rotation.z;if(previous!==null)max=Math.max(max,Math.abs(a-previous));previous=a;}steps.push(max);}
+ assert.ok(steps[1]<steps[0]/4&&steps[1]<.003,`click steps ${steps}`);
+ assert.ok(Math.abs(f.angleAt(f.seatWheelAngle+pitch)-f.angleAt(f.seatWheelAngle))<1e-12);
+ assert.ok(Math.abs(f.angleAt(f.seatWheelAngle))<1e-9,'seated in the root at the drive');
+ const shape=f.body.geometry.parameters.shapes,outline=(Array.isArray(shape)?shape[0]:shape).getPoints(1),points=outline.flatMap((p,i)=>Array.from({length:8},(_,j)=>{const q=outline[(i+1)%outline.length];return new THREE.Vector3(p.x+(q.x-p.x)*j/8,p.y+(q.y-p.y)*j/8,0);})),solid=solidSurface(f.wheel.geometry);let largestGap=0,smallestGap=Infinity,falling=0;
+ for(let i=0;i<=32;i++){m.update(g.inputCyclePeriod*i/32);r.updateMatrixWorld(true);const tr=f.wheel.matrixWorld.clone().invert().multiply(f.body.matrixWorld);let gap=Infinity;
+  for(const p of points)gap=Math.min(gap,solid.distance(p.clone().applyMatrix4(tr),gap));smallestGap=Math.min(smallestGap,gap);
+  // Off the teeth only while it falls from the passed tip into the root.
+  if(gap>=.01)falling++;else largestGap=Math.max(largestGap,gap);}
+ assert.ok(smallestGap>.001);assert.ok(largestGap<.01);assert.ok(falling<=1,`${falling} poses off the teeth`);
+ console.log({smallestGap,largestGap,falling});
 });
 
 

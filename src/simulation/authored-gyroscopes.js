@@ -218,7 +218,9 @@ function singleSupportSteadyPrecessionGyroscope(movement) {
     gravityTorqueMagnitude / spinAngularMomentumMagnitude;
   const precessionCyclePeriod = fullTurn / precessionAngularSpeed;
   const spinCyclePeriod = fullTurn / spinAngularSpeed;
-  const sourcePrecessionAngle = 0.08;
+  // Brown shows the pintle-side face of C (its bell hub): the axis runs right
+  // and slightly away from the viewer.
+  const sourcePrecessionAngle = 0.8;
   const sourceSpinAngle = 0.42;
 
   const driverMaterial = matte(PALETTE.driver, {

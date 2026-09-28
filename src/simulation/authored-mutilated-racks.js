@@ -1268,43 +1268,71 @@ function installConjugateReliefTeeth(root) {
     : null;
   const outlines = baked ?? computeOutlines();
   let reliefCount = 0;
-  // Relief in depth: behind the pinion's rear face each relieved tooth keeps
-  // Brown's full straight-flanked outline as a web on a backing strip behind
-  // the rail. From the front every tooth reads full, as drawn; the swept
-  // pinion teeth pass in front of these webs at the handoffs and never reach
-  // the working (front) depth of the relieved outline.
-  const webFront = -g.pinionDepth / 2 - 0.012;
-  const webBack = webFront - 0.05;
-  const backingTop = g.rackToothRootY + 0.12;
-  const reliefWebs = [];
+  // Every rack tooth is one full-depth extrusion of its relieved outline.
+  // The relief is cut in the plane only (no depth-split webs or backing
+  // strips): the handoff teeth show honestly shortened flanks where the
+  // reversing pinion sweeps through them.
+  // The swept relief itself is ragged. Each relieved tooth is instead
+  // Brown's straight-flanked tooth with its tip cut by one straight chamfer
+  // line: the largest such tooth lying wholly inside its relieved outline,
+  // so it keeps the same in-plane clearance from the reversing pinion.
+  const area = (polygons) => polygons.reduce((sum, polygon) => sum + polygon.reduce((ringSum, ring, ringIndex) => {
+    let a = 0;
+    for (let i = 0; i < ring.length - 1; i += 1) a += ring[i][0] * ring[i + 1][1] - ring[i + 1][0] * ring[i][1];
+    return ringSum + (ringIndex ? -1 : 1) * Math.abs(a / 2);
+  }, 0), 0);
+  const toothHeights = [];
   b.rackTeeth.forEach((tooth, index) => {
-    tooth.geometry = plate(outlines[index], -g.rackDepth / 2, g.rackDepth / 2);
-    if (outlines[index].flat(2).length <= 5) return;
-    reliefCount += 1;
     const side = tooth.userData.rack === 'upper' ? 1 : -1;
-    const full = straightRackTooth({
-      x: 0, side, pitchY: g.pinionPitchRadius, rootY: g.rackToothRootY + 0.02,
+    const rootY = g.rackToothRootY + 0.02;
+    const nominal = poly(straightRackTooth({
+      x: 0, side, pitchY: g.pinionPitchRadius, rootY,
       tipY: g.rackToothRootY - g.pinionToothHeight, circularPitch: g.circularPitch, backlash: g.toothBacklash,
-    });
-    const half = g.circularPitch / 2;
-    const web = new THREE.Mesh(plate(polygonClipping.union(poly(full)), webBack, webFront), tooth.material);
-    const strip = new THREE.Mesh(plate(poly([[-half, side * (g.rackToothRootY + 0.01)], [half, side * (g.rackToothRootY + 0.01)],
-      [half, side * backingTop], [-half, side * backingTop]]), webBack, -g.rackDepth / 2 + 0.01), tooth.material);
-    web.userData.role = `${tooth.userData.rack}-rack-relieved-tooth-full-outline-web-behind-pinion`;
-    strip.userData.role = `${tooth.userData.rack}-rack-relieved-tooth-web-backing-strip`;
-    tooth.add(web, strip);
-    reliefWebs.push(web, strip);
+    }));
+    // Chamfered tooth: the nominal tooth below the line through heights
+    // left and right (measured from the rail face) at x = -/+ w.
+    const w = g.circularPitch / 2;
+    const chamfered = (left, right) => polygonClipping.intersection(nominal, poly([
+      [-w, side * rootY], [w, side * rootY],
+      [w, side * (g.rackToothRootY - right)], [-w, side * (g.rackToothRootY - left)],
+    ]));
+    const inside = (candidate) => area(polygonClipping.difference(candidate, outlines[index])) < 1e-7;
+    let shape = nominal;
+    let height = [g.pinionToothHeight, g.pinionToothHeight];
+    if (outlines[index].flat(2).length > 5) {
+      reliefCount += 1;
+      let best = null;
+      for (let k = -12; k <= 12; k += 1) {
+        const slope = k * 0.05;
+        // Heights at -w and +w are h - slope w and h + slope w.
+        let low = 0;
+        let high = 0.4;
+        for (let step = 0; step < 20; step += 1) {
+          const middle = (low + high) / 2;
+          if (inside(chamfered(middle - slope * w, middle + slope * w))) low = middle; else high = middle;
+        }
+        const candidate = chamfered(low - slope * w, low + slope * w);
+        const candidateArea = area(candidate);
+        if (!best || candidateArea > best.area) best = { area: candidateArea, shape: candidate, height: [low - slope * w, low + slope * w] };
+      }
+      shape = best.shape;
+      height = best.height.map((value) => Math.min(g.pinionToothHeight, Math.max(0, value)));
+    }
+    toothHeights.push(height.map((value) => Number(value.toFixed(4))));
+    tooth.userData.reliefChamferHeights = height;
+    tooth.geometry = plate(shape, -g.rackDepth / 2, g.rackDepth / 2);
   });
-  b.rackReliefWebs = reliefWebs;
   d.computeRackReliefOutlines = computeOutlines;
+  d.rackReliefOutlines = outlines;
   d.rackReliefSignature = reliefSignature;
   d.conjugateTeeth = {
     addendum,
     rackTeethRelieved: reliefCount,
+    rackToothWorkingHeights: toothHeights,
     bakedRelief: Boolean(baked),
     reliefClearance,
     reliefTrigger,
-    toothProfile: 'Brown-style tapered teeth: 14.5-degree involute pinion and straight-flanked rack, conjugate in rolling; each rack tooth outline is still relieved wherever the pinion swept through the prescribed stroke (handoff reversals) comes within the trigger distance',
+    toothProfile: 'Brown-style tapered teeth: 14.5-degree involute pinion and straight-flanked rack, conjugate in rolling; each rack tooth the reversing pinion sweeps at a handoff keeps Brown’s flanks with its tip cut by one straight chamfer inside its swept relief, one full-depth extrusion with no depth-split webs',
   };
 }
 

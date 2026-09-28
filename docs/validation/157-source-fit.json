@@ -1,6 +1,34 @@
 {
   "movement": 157,
-  "method": "Read engraving centers; ideal rigid four-bar reach inequality. Local constrained least-squares correction of crank pin, upper bell joint and fixed bell pivot, with equal weights, disk and output centers fixed, and 10px inner full-turn reach margin. Not a claim of uniquely intended hidden geometry.",
+  "method": "Read engraving centers; ideal rigid four-bar reach inequality. Stage 1: local constrained least-squares projection of crank pin, upper bell joint and fixed bell pivot onto a 10px inner full-turn reach margin (equal weights, disk and output centers fixed). Stage 2 (p90): weighted least squares from the engraving (crank pin 3x) with both reach margins >= 10px, bell-crank swing within 30 degrees of symmetric about the drawn pose and output rod within 12 degrees of its vertical guide line, by deterministic Nelder-Mead from stage 1. Not a claim of uniquely intended hidden geometry.",
+  "projectedCenters": {
+    "crankPin": [
+      69.17676688759641,
+      221.84457124220546
+    ],
+    "input": [
+      319.87633209957085,
+      129.56737260991412
+    ],
+    "pivot": [
+      351.5561855351868,
+      271.82201592205934
+    ]
+  },
+  "projectedMotion": {
+    "inner": 9.999999999999943,
+    "outer": 113.16708266518762,
+    "swingLowDegrees": -74.68807609405432,
+    "swingHighDegrees": 20.75972779374697,
+    "maximumRodTiltDegrees": 18.448783099803627
+  },
+  "fittedMotion": {
+    "inner": 43.04347444459208,
+    "outer": 116.75135573353046,
+    "swingLowDegrees": -51.8434623110202,
+    "swingHighDegrees": 21.839468396841635,
+    "maximumRodTiltDegrees": 7.777581684551811
+  },
   "rawLengthsPixels": {
     "r": 95.13148795220225,
     "d": 207.1545316907163,
@@ -13,13 +41,14 @@
   "firstInvalidPhase": 0.480224609375,
   "lastInvalidPhase": 0.72021484375,
   "fittedLengthsPixels": {
-    "r": 84.15594081815271,
-    "d": 215.55940426937477,
-    "l": 267.1429456019686,
-    "a": 145.7394821507465
+    "r": 84.35513490072879,
+    "d": 221.10219230126964,
+    "l": 257.95613294573883,
+    "a": 164.25254998979005
   },
-  "fittedInnerReachMarginPixels": 9.999999999999943,
-  "minimumIntersectionHeightWorld": 1.0483902372027385,
+  "fittedInnerReachMarginPixels": 43.04347444459208,
+  "fittedOuterReachMarginPixels": 116.75135573353046,
+  "minimumIntersectionHeightWorld": 1.9419322043818465,
   "iterations": 12,
   "adjustments": [
     {
@@ -29,10 +58,10 @@
         220
       ],
       "fitted": [
-        69.17676688759641,
-        221.84457124220546
+        72.48218303454419,
+        217.49076011993134
       ],
-      "distancePixels": 12.31568491406125
+      "distancePixels": 15.684204675113591
     },
     {
       "name": "input",
@@ -41,10 +70,10 @@
         134
       ],
       "fitted": [
-        319.87633209957085,
-        129.56737260991412
+        310.6220049561166,
+        118.34041095523361
       ],
-      "distancePixels": 9.254305254085939
+      "distancePixels": 23.39267921372419
     },
     {
       "name": "pivot",
@@ -53,10 +82,10 @@
         265
       ],
       "fitted": [
-        351.5561855351868,
-        271.82201592205934
+        357.0833716952099,
+        275.8848224044626
       ],
-      "distancePixels": 10.942952625017192
+      "distancePixels": 17.799458336762132
     }
   ],
   "fittedSource": {
@@ -66,16 +95,16 @@
     ],
     "diskRadius": 117,
     "crankPin": [
-      69.17676688759641,
-      221.84457124220546
+      72.48218303454419,
+      217.49076011993134
     ],
     "pivot": [
-      351.5561855351868,
-      271.82201592205934
+      357.0833716952099,
+      275.8848224044626
     ],
     "input": [
-      319.87633209957085,
-      129.56737260991412
+      310.6220049561166,
+      118.34041095523361
     ],
     "output": [
       468,
@@ -89,7 +118,7 @@
   "sources": [
     {
       "file": "scripts/fit-pinned-elbow-source.mjs",
-      "sha256": "80179ab86776d95e8ea1e8dd9968fcf83f07f2c7f5d64d8508349ace15e84a91"
+      "sha256": "bec829448460ca1d75ef818891f86a207f0e0e98dd62f19cf1bf60c24e411ee0"
     },
     {
       "file": "src/simulation/pinned-elbow-motion.js",

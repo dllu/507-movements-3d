@@ -96,7 +96,7 @@ test('movement 384 is one fixed-centre screw helicograph with one threaded rolli
     blocks.threadedWheel,
   ]) assert.ok(component.parent === blocks.orbitingArm, `${component.userData.role} parent`);
   assert.ok(blocks.wheelRotor.parent === blocks.threadedWheel, 'blocks.wheelRotor parent');
-  assert.equal(blocks.wheelSpokes.length, 8);
+  assert.equal(blocks.wheelSpokes.length, 16); // pass 90: sixteen face ribs
   assert.equal(blocks.fixedPivot.userData.fixed, true);
   assert.equal(blocks.paperAssembly.userData.fixed, true);
   assert.equal(blocks.transferredTrace.userData.isOutcomeTrace, true);

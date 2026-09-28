@@ -215,7 +215,8 @@ export const CUTAWAY_SPECS = {
     hide: [/^fixed-cylinder-ring-/],
   },
   471: {
-    // Brown draws cylinder B as an exterior (the dotted piston is hidden).
+    // Brown draws cylinder B as an exterior with its piston dotted; the
+    // factory makes B's shell and heads see-through (p90).
     prepare(root) {wholeTube(findRole(root, 'front-cutaway-moving-cylinder-shell-B'), {y0: -1.30, y1: 1.30});},
     hide: ['upper-air-charge-compressed-during-cylinder-descent', 'lower-air-charge-compressed-during-cylinder-ascent'],
   },
@@ -354,10 +355,11 @@ export const CUTAWAY_SPECS = {
     colors: {'open-spout-lip-1': 0x59605f, 'open-spout-lip-2': 0x59605f},
   },
   500: {
-    // The face view is a whole round case: an opaque drum closes the space
-    // between the pressure chamber and the bezel, which now seats on the
-    // dial edge; disk A shows only through the dial's centre opening, as
-    // Brown draws it. Brown's side figure stays his single clean section.
+    // The face view is a whole round case: a drum closes the space between
+    // the pressure chamber and the bezel, which now seats on the dial edge;
+    // disk A shows through the dial's centre opening, as Brown draws it.
+    // Brown's side section is the same gauge, so it is not built again: the
+    // factory makes the drum see-through so the section's parts show.
     prepare(root) {
       const rim = findRole(root, 'fixed-round-magdeburg-gauge-case-rim');
       rim.position.z = 0.50;

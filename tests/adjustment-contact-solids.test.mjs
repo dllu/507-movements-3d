@@ -26,7 +26,8 @@ test('381 wedges actually overlap the board, match the inclined dovetail and rea
    assert.ok(Math.min(wb.max.x,wood.max.x)-Math.max(wb.min.x,wood.min.x)>.44);
   }
  }
- update(g.demonstrationPeriod/2);root.updateMatrixWorld(true);
+ // The cycle starts clamped, as Brown draws it.
+ update(0);root.updateMatrixWorld(true);
  for(let j=0;j<2;j++){
   const w=bounds(b.wedges[j]),wood=bounds(b.workpiece);
   assert.ok(Math.abs(j===0?w.max.z-wood.min.z:w.min.z-wood.max.z)<1e-6);

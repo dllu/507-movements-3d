@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import {circle, ring, plate, poly, polygonClipping} from './finite-plate-geometry.js';
 import {boredCylinderGeometry, fitPistonGuide} from './piston-guide-parts.js';
+import {creaseLatheNormals} from './crease-normals.js';
+import {applyRotationIndicator} from './rotation-indicator.js';
 
 function replace(mesh, geometry) {
   mesh.geometry.dispose();
@@ -70,7 +72,21 @@ function correctWheelBearing(root) {
       `${side}-fixed-axle-through-bored-support-wheel`, x, g.supportCenterY));
     b.pivotCaps[index].position.z = 2.0;
   }
-  replace(b.mainFlywheelRim, ring(g.flywheelInnerRadius, g.flywheelOuterRadius, -.2, .2, 256));
+  // Brown's upper wheel shows no spokes: a thin rim on a plain web disk, a
+  // raised centre plate (the inner circle) and a large boss round the axle.
+  // One lathe section, flat faces creased from the rim's cylinder.
+  const rimInner = g.flywheelOuterRadius - .36, plateEdge = 2.6, hubR = 1.05;
+  const section = [[hubR - .02, -.13], [plateEdge, -.13], [plateEdge, -.07], [rimInner, -.07], [rimInner, -.2],
+    [g.flywheelOuterRadius, -.2], [g.flywheelOuterRadius, .2], [rimInner, .2], [rimInner, .07], [plateEdge, .07],
+    [plateEdge, .13], [hubR - .02, .13], [hubR - .02, -.13]].map(([r, z]) => new THREE.Vector2(r, z));
+  const web = creaseLatheNormals(new THREE.LatheGeometry(section, 256)).rotateX(Math.PI / 2);
+  replace(b.mainFlywheelRim, web);
+  b.mainFlywheelRim.userData.role = 'thin-rimmed-web-disk-main-wheel';
+  b.mainFlywheelRim.userData.innerRadius = rimInner;
+  for (const spoke of b.mainFlywheelSpokes) { spoke.geometry.dispose(); spoke.removeFromParent(); }
+  b.mainFlywheelSpokes = [];
+  replace(b.mainFlywheelHub, boredCylinderGeometry(hubR, g.journalRadius + .004, .62));
+  applyRotationIndicator(b.mainFlywheelRim, {axis: 'auto'});
   b.mainFlywheelIndex.position.z = b.mainFlywheelRim.position.z + .235;
   b.shaftJournalIndex.position.z = 1.1575;
   // Contact dots label the interface from in front of the shaft, rather than

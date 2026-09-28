@@ -5,7 +5,7 @@ import {plate,poly,polygonClipping,disk} from '../finite-plate-geometry.js';
 import {convexPlateCells} from '../mujoco/convex-plate.js';
 import {PALETTE,matte,markShadows} from '../primitives.js';
 export {THREE};
-export function makeEqualRacksGeometry({samples=96,cutterSteps=2048,amplitude=.75,addendum=.8,dedendum=1.25}={}){
+export function makeEqualRacksGeometry({samples=96,cutterSteps=2048,amplitude=.75,addendum=.6,dedendum=1.1}={}){
  if(!Number.isInteger(samples)||samples<32||!Number.isInteger(cutterSteps)||cutterSteps<256||!Number.isFinite(amplitude)||amplitude<=0||amplitude>1||![addendum,dedendum].every(x=>Number.isFinite(x)&&x>0))throw new RangeError('Invalid 115 geometry options');
  const root=new THREE.Group(),parts={},families={},blocks={},cells={},m=s.module,R=s.teeth*m/2,O=s.workingRadius,pitch=Math.PI*m,alpha=Math.PI/9,workingAngle=Math.acos(R*Math.cos(alpha)/O),inv=a=>Math.tan(a)-a,shift=s.teeth*(inv(workingAngle)-inv(alpha))/(2*Math.tan(alpha)),cutterR=R+shift*m,corner=.12*m,clearance=.001;
  const local=([x,y])=>[(Math.cos(s.tilt)*(x-s.axis[0])+Math.sin(s.tilt)*(s.axis[1]-y))/100,(-Math.sin(s.tilt)*(x-s.axis[0])+Math.cos(s.tilt)*(s.axis[1]-y))/100];

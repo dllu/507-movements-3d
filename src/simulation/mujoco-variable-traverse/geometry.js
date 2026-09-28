@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import source from './source.js';
 import {roundedRackGear} from '../coaxial-gear-geometry.js';
-import {plate,poly,circle,ring,disk,polygonClipping as clip} from '../finite-plate-geometry.js';
+import {plate,poly,circle,ring,disk,capsule,polygonClipping as clip} from '../finite-plate-geometry.js';
 import {segmentClampContactCells} from '../mujoco-segment-clamp/contact.js';
 import {PALETTE,matte,markShadows} from '../primitives.js';
 export {THREE};
@@ -38,10 +38,11 @@ export function makeVariableTraverseGeometry({upperTeeth=29,lowerTeeth=23,crankS
   add(n+'Rod',plate(shape,.26,.38),n+'Rod',color);
   add(n+'RodEye',ring(source.circles[n+'Crank'].radius/100+.0015,eye,.38,.42,128),n+'Rod',color);
  }
- const floatingLocal=p=>sub(local(p),position.floating),path=new THREE.Shape();
- path.moveTo(337,85);path.bezierCurveTo(338,63,370,63,373,85);path.bezierCurveTo(383,136,390,219,386,301);path.bezierCurveTo(384,321,354,323,350,302);path.bezierCurveTo(338,252,334,158,337,85);
- const pins=['topPin','bottomPin'];
- const shape=clip.difference(poly(path.getPoints(32).map(p=>floatingLocal(p.toArray()))),...pins.map(n=>poly(circle(floatingLocal(source.circles[n].center),source.circles[n].radius/100+.0015,96))));
+ // The vertical link is a straight bar of uniform width whose round ends are
+ // concentric with its two pins (radius of the drawn pin eyes).
+ const floatingLocal=p=>sub(local(p),position.floating);
+ const pins=['topPin','bottomPin'],linkRadius=Math.max(source.circles.topEye.radius,source.circles.bottomEye.radius)/100;
+ const shape=clip.difference(capsule(...pins.map(n=>floatingLocal(source.circles[n].center)),linkRadius,64),...pins.map(n=>poly(circle(floatingLocal(source.circles[n].center),source.circles[n].radius/100+.0015,96))));
  add('floatingLink',plate(shape,.44,.6),'floating',PALETTE.brass);
  for(const n of pins){const p=floatingLocal(source.circles[n].center);f[n]=p;add(n,translated(disk(source.circles[n].radius/100,.26,.67,96),p),'floating',PALETTE.ink);const eye=source.circles[n==='topPin'?'topEye':'bottomEye'].radius/100;add(n+'Eye',translated(ring(source.circles[n].radius/100+.0015,eye,.6,.64,128),p),'floating',PALETTE.brass);}
  const bar=new THREE.Shape();bar.moveTo(350,174);bar.bezierCurveTo(330,177,333,214,351,219);bar.lineTo(407,209);bar.lineTo(416,195);bar.lineTo(495,180);bar.bezierCurveTo(507,182,510,157,499,156);bar.lineTo(416,174);bar.lineTo(410,176);bar.lineTo(404,169);bar.closePath();

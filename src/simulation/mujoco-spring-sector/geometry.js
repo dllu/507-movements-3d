@@ -203,6 +203,14 @@ export function makeSpringSectorGeometry() {
     blocks.slider.position.set(...input.remotePin,0);
     root.updateMatrixWorld(true); root.userData.state = {shaftAngle, wheelAngle, lifts: [...lifts], input};
   };
+  // Brown's text asks for springs but the plate draws none, nor any guide.
+  // The spring guides (frame, bridge, carrier hub, slider housings, rods and
+  // coils) stay in the model and physics but are not shown; the sector-coloured
+  // hub cover and backing keep the sector reading as hung on shaft B.
+  for (const [name, mesh] of Object.entries(parts))
+    if (/^(?:front|rear)(?:GuideFrame|CarrierBridge|CarrierHub|SliderHousing\d|GuideRod\d|Spring\d)$/.test(name)) {
+      mesh.visible = false; mesh.userData.presentationHidden = true;
+    }
   root.userData = {parts, families, blocks, profiles, source, setState, linkage, springs, geometry: {sectorPitchRadius,
     wheelTeeth, wheelPitchRadius, wheelInnerRadius, wheelOuterRadius, wheelTop, wheelBottom, toothHeight, depth, guideOffset},
     mechanism: 'spring-sector-crown-ratchet-geometry', hideGround: true, cameraFov: 8,

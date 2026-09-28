@@ -825,3 +825,25 @@ test('movement 185 rendered transforms keep every analytical joint visibly attac
   disposeModel(movement190.root);
   disposeModel(model.root);
 });
+
+test('185 (pass 90): one solid wall block, flat eared straps turning with their rods, no loose rod-eye tori', () => {
+  const model = createMovementModel(catalog.movements[184]);
+  const {blocks: b} = model.root.userData;
+  const wall = model.root.getObjectsByProperty('isMesh', true)
+    .filter((o) => /sectioned-wall/.test(o.userData.role ?? ''));
+  assert.equal(wall.length, 1);
+  const size = new THREE.Box3().setFromObject(wall[0]).getSize(new THREE.Vector3());
+  assert.ok(size.x > 2.5 && size.y > 2.6, `massive block ${size.toArray()}`);
+  for (const strap of [b.forwardStrap, b.backwardStrap]) {
+    assert.equal(strap.userData.ring.geometry.type, 'ExtrudeGeometry');
+  }
+  for (const time of [0, 3, 7.5]) {
+    model.update(time, 0.016);
+    near(b.forwardStrap.rotation.z, b.forwardEccentricRod.rotation.z, 1e-15, 'forward strap turns with its rod');
+    near(b.backwardStrap.rotation.z, b.backwardEccentricRod.rotation.z, 1e-15, 'backward strap turns with its rod');
+  }
+  for (const assembly of b.linkPinAssemblies) {
+    assert.ok(assembly.children.every((c) => c.geometry.type === 'CylinderGeometry'));
+  }
+  disposeModel(model.root);
+});

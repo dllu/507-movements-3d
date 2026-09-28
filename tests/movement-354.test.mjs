@@ -354,11 +354,11 @@ test('movement 354 renderer binds disk, wrist, crosshead, and fixed guides', () 
       `rendered crank wrist ${phase}`,
     );
 
-    const renderedGroovePoint = new THREE.Vector3(
+    const renderedGroovePoint = model.root.worldToLocal(new THREE.Vector3(
       state.grooveCenter.x,
       state.grooveCenter.y,
       geometry.grooveFaceZ,
-    ).applyMatrix4(blocks.yoke.matrixWorld);
+    ).applyMatrix4(blocks.yoke.matrixWorld));
     near(renderedGroovePoint.x, state.pinPosition.x, 2e-15,
       `rendered groove x contact ${phase}`);
     near(renderedGroovePoint.y, state.pinPosition.y, 2e-15,
@@ -373,8 +373,21 @@ test('movement 354 renderer binds disk, wrist, crosshead, and fixed guides', () 
       `reported guide rotation ${phase}`);
   }
 
-  assert.ok(geometry.wristFrontZ > geometry.yokeFrontZ,
-    'wrist cap projects visibly in front of the moving crosshead');
+  // Blind groove: the wrist ends inside the crosshead, short of the back
+  // plate, and no retainer strap or front stem crosses the groove (p90).
+  assert.ok(geometry.wristFrontZ < geometry.yokeFrontZ,
+    'wrist ends inside the blind groove');
+  assert.ok(geometry.wristFrontZ > geometry.yokePlaneZ,
+    'wrist reaches well into the groove');
+  assert.equal(blocks.wristCap.visible, false);
+  assert.equal(blocks.lowerStem.visible, false);
+  let retainerVisible = false;
+  model.root.traverse((object) => {
+    if (object.isMesh && object.visible && /retainer/.test(object.parent?.userData.role ?? '')) retainerVisible = true;
+  });
+  assert.equal(retainerVisible, false);
+  assert.ok(blocks.upperStem.position.z - 0.245 / 2 < geometry.yokeFrontZ,
+    'the one stem is embedded in the crosshead back face');
   assert.ok(geometry.diskFrontZ < geometry.yokePlaneZ,
     'disk lies beyond the crosshead; the presentation mirror turns it to the front as Brown draws');
   let meshCount = 0;
@@ -395,7 +408,7 @@ test('movement 354 closes one turn, differs from Scotch yoke 93, and leaves 364 
     2e-15, 'one input turn');
   near(finish.driverPhase, start.driverPhase, 2e-15,
     'driver phase closure');
-  vector3Near(finish.pinPosition, start.pinPosition, 3e-15,
+  vector3Near(finish.pinPosition, start.pinPosition, 6e-15,
     'wrist orbit closure');
   vector3Near(finish.outputPosition, start.outputPosition, 3e-15,
     'crosshead closure');

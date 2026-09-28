@@ -232,8 +232,9 @@ test('movement 381 mirrored wedge inner faces approach symmetrically and touch t
   const model = createMovementModel(catalog.movements[380]);
   const data = model.root.userData;
   const { geometry, stateAtTime, transmission } = data;
-  const rest = stateAtTime(0);
-  const clamped = stateAtTime(geometry.demonstrationPeriod / 2);
+  // Brown draws the wedges driven home: the cycle starts clamped.
+  const clamped = stateAtTime(0);
+  const rest = stateAtTime(geometry.demonstrationPeriod / 2);
 
   near(geometry.maximumLateralTravel,
     geometry.cheekFaceSlope * geometry.wedgeTravel, 0,

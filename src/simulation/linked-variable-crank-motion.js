@@ -5,7 +5,9 @@ export function linkedVariableCrankGeometry() {
   const rightSpan = Math.hypot(190, 56) * scale, leftSpan = Math.hypot(177, 58) * scale;
   const direction = Math.atan2(114, 367), radius = Math.hypot(16, 45) * scale;
   const wrist = [-16 * scale - rightSpan * Math.cos(direction), 45 * scale - rightSpan * Math.sin(direction)];
-  const rockerLength = 648 * scale, norm = Math.hypot(25, 110);
+  // As in 168, the undrawn rocker fulcrum sits 2.5 along Brown's broken-off
+  // continuation (about one pitman length), not 7.776 away.
+  const rockerLength = 2.5, norm = Math.hypot(25, 110);
   return {scale, phase, radius, rightSpan, leftSpan, rockerLength,
     rockerPivot: [wrist[0] - rockerLength * 25 / norm, wrist[1] - rockerLength * 110 / norm],
     mainPivot: [159 * scale, -scale], mainRadius: Math.hypot(63, 58) * scale,

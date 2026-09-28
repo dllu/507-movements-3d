@@ -1,6 +1,9 @@
 import { correctRunnerTreadParts, finishRunnerTread } from './treadwheel-working-parts.js';
 import { correctEdgeRunnerBevels } from './edge-runner-bevel-parts.js';
 import * as THREE from 'three';
+import { bevelBodyGeometry } from './bevel-geometry.js';
+import { boredLatheGeometry } from './bored-lathe-geometry.js';
+import { circle, plate, poly, polygonClipping } from './finite-plate-geometry.js';
 import { makePitchConeGear } from './authored-dynamometers.js';
 import {
   PALETTE,
@@ -579,6 +582,7 @@ function pairedEdgeRunnerMill(movement) {
 
   correctRunnerTreadParts(root, 375);
   correctEdgeRunnerBevels(root);
+  carryShaftInOverheadFrame(root);
   update(0);
   root.userData.cameraFitBounds = new THREE.Box3(
     new THREE.Vector3(-2.48, -2.02, -2.48),
@@ -594,6 +598,60 @@ function pairedEdgeRunnerMill(movement) {
     root,
     update,
   };
+}
+
+// Brown's overhead frame is the shaft's own plane: the crossbar carries the
+// vertical shaft in a bearing boss, and the right standard the input shaft.
+function carryShaftInOverheadFrame(root) {
+  const b = root.userData.blocks;
+  const shaftRadius = 0.095;
+  const bore = shaftRadius + 0.004;
+  const top = b.frameTop;
+  const { width, height, depth } = top.geometry.parameters;
+  const bar = polygonClipping.difference(
+    poly([[-width / 2, -depth / 2], [width / 2, -depth / 2], [width / 2, depth / 2], [-width / 2, depth / 2]]),
+    poly(circle([0, 0], bore, 64)),
+  );
+  top.geometry.dispose();
+  top.geometry = plate(bar, -height / 2, height / 2).rotateX(-Math.PI / 2);
+  top.position.z = 0;
+  for (const post of b.framePosts) post.position.z = 0;
+  if (b.inputBearingSupport) b.inputBearingSupport.position.z = 0;
+  const boss = new THREE.Mesh(
+    boredLatheGeometry([
+      // Stands 0.03 proud of the crossbar top, clear of the bevel's body.
+      { axial: -0.20, radial: 0.19 },
+      { axial: 0.12, radial: 0.19 },
+    ], bore, 64),
+    top.material,
+  );
+  boss.position.set(0, top.position.y, 0);
+  boss.userData.fixed = true;
+  boss.userData.role = 'bearing-boss-carrying-vertical-shaft-in-overhead-crossbar';
+  b.upperFrame.add(boss);
+  b.shaftBearingBoss = boss;
+  // Each stone is bored clear of the axle inside its hub (the hub alone
+  // fits the axle, so no two bore walls coincide), and the axle runs out
+  // flush with the hub ends.
+  const g = root.userData.geometry;
+  for (const runner of b.edgeRunners) {
+    const stone = runner.userData.stone;
+    stone.geometry.dispose();
+    stone.geometry = boredLatheGeometry([
+      { axial: -g.runnerWidth / 2, radial: g.runnerRadius },
+      { axial: g.runnerWidth / 2, radial: g.runnerRadius },
+    ], 0.12, 64);
+  }
+  // The hub is 1.34 runner widths long (treadwheel-working-parts).
+  const axleLength = 2 * (g.trackRadius + g.runnerWidth * 1.34 / 2);
+  b.crossAxle.geometry.dispose();
+  b.crossAxle.geometry = new THREE.CylinderGeometry(0.085, 0.085, axleLength, 26);
+  // The large bevel is keyed on the shaft: its bore fits the shaft.
+  const gear = b.largeBevelGear.userData;
+  gear.boreRadius = shaftRadius + 0.001;
+  const tooth = gear.toothMeshes[0].geometry;
+  gear.body.geometry.dispose();
+  gear.body.geometry = bevelBodyGeometry(tooth, gear.boreRadius);
 }
 
 export function createAuthoredEdgeRunnerMovement(movement) {
