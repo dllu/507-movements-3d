@@ -347,14 +347,21 @@ async function detailView(movement) {
   const abortController = new AbortController();
   let engine;
   const onCanvasKeyDown = (event) => {
-    if (event.code === 'Space') {
-      event.preventDefault();
-      engine?.togglePlaying();
-    }
     if (event.key.toLowerCase() === 'r') engine?.resetView();
   };
+  // Space plays and pauses from anywhere on the page, except where the
+  // focused control uses Space itself (buttons, links and form fields).
+  const onSpaceKey = (event) => {
+    if (event.code !== 'Space' || event.repeat || event.metaKey || event.ctrlKey || event.altKey) return;
+    if (event.target.closest?.('input, select, textarea, button, a, [contenteditable]')) return;
+    if (!engine) return;
+    event.preventDefault();
+    engine.togglePlaying();
+  };
+  document.addEventListener('keydown', onSpaceKey);
   activeCleanup = () => {
     document.removeEventListener('keydown', onSequenceKey);
+    document.removeEventListener('keydown', onSpaceKey);
     abortController.abort();
     engine?.renderer.domElement.removeEventListener('keydown', onCanvasKeyDown);
     engine?.dispose();

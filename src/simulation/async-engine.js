@@ -182,7 +182,7 @@ export class MovementEngine {
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.08;
     this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.renderer.domElement.className = 'simulation-canvas';
     this.renderer.domElement.setAttribute('aria-label', `Interactive 3D simulation of movement ${movement.id}: ${movement.title}`);
     this.renderer.domElement.setAttribute('role', 'img');
@@ -202,17 +202,6 @@ export class MovementEngine {
     const playbackDuration = this.model.root.userData.playbackDuration;
     this.playbackDuration = Number.isFinite(playbackDuration) && playbackDuration > 0
       ? playbackDuration : Infinity;
-    const shadowExtent = this.model.root.userData.shadowCameraHalfExtent;
-    if (shadowExtent) {
-      // Small, tightly packed mechanisms need the shadow map concentrated
-      // around their metalwork to keep tooth shadows from becoming blotches.
-      for (const light of this.scene.children.filter((object) => object.isDirectionalLight && object.castShadow)) {
-        Object.assign(light.shadow.camera, { left: -shadowExtent, right: shadowExtent, top: shadowExtent, bottom: -shadowExtent });
-        light.shadow.camera.updateProjectionMatrix();
-        light.shadow.bias = this.model.root.userData.shadowBias ?? light.shadow.bias;
-        light.shadow.normalBias = this.model.root.userData.shadowNormalBias ?? light.shadow.normalBias;
-      }
-    }
     this.renderer.localClippingEnabled = Boolean(this.model.root.userData.localClippingEnabled);
     this.playbackTimeScale = this.model.root.userData.animationTiming
       ?.playbackTimeScale ?? 1;
@@ -220,6 +209,7 @@ export class MovementEngine {
     this.model.update?.(0, 0);
     this.fitCamera(this.model.cameraDirection);
     this.addGround();
+    this.fitShadowCamera();
 
     // Screen-space AO is an interactive-viewer option ('auto' | 'on' | 'off';
     // off unless requested). Offline reviews render with renderer.render and
@@ -245,7 +235,12 @@ export class MovementEngine {
     const key = new THREE.DirectionalLight(0xfff9eb, 3.15);
     key.position.set(6, 9, 8);
     key.castShadow = true;
-    key.shadow.mapSize.set(1536, 1536);
+    // Desktop GPUs get a 4096 map; phones and small GPUs 2048. The shadow
+    // camera is fitted to each model (fitShadowCamera), so either is dense.
+    const coarse = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+    const mapSize = !coarse && this.renderer.capabilities.maxTextureSize >= 8192 ? 4096 : 2048;
+    key.shadow.mapSize.set(mapSize, mapSize);
+    key.shadow.radius = 2;
     key.shadow.camera.left = -8;
     key.shadow.camera.right = 8;
     key.shadow.camera.top = 8;
@@ -257,6 +252,8 @@ export class MovementEngine {
     // diagonal shadow acne on large flat faces.
     key.shadow.normalBias = 0.02;
     this.scene.add(key);
+    this.scene.add(key.target);
+    this.keyLight = key;
     const fill = new THREE.DirectionalLight(0xb9d8e2, 1.15);
     fill.position.set(-6, 3, 4);
     this.scene.add(fill);
@@ -379,6 +376,44 @@ export class MovementEngine {
     this.controls.update();
   }
 
+  // Concentrate the key light's shadow map on the model and the shadow it
+  // casts on the ground, keeping the light's direction: the frustum is the
+  // bounding sphere of the model's (motion) bounds plus their projection on
+  // the floor along the light.
+  fitShadowCamera() {
+    const key = this.keyLight;
+    if (!key) return;
+    const userData = this.model.root.userData;
+    const bounds = new THREE.Box3().setFromObject(this.model.root, true);
+    const motion = userData.sampledMotionBounds;
+    if (motion) bounds.union(new THREE.Box3(new THREE.Vector3().fromArray(motion.min), new THREE.Vector3().fromArray(motion.max)));
+    if (bounds.isEmpty()) return;
+    const toLight = key.position.clone().sub(key.target.position).normalize();
+    const covered = bounds.clone();
+    if (this.ground?.visible && toLight.y > 0.05) {
+      const floorY = Math.min(this.ground.position.y, bounds.min.y);
+      for (const x of [bounds.min.x, bounds.max.x]) for (const z of [bounds.min.z, bounds.max.z]) {
+        const drop = (bounds.max.y - floorY) / toLight.y;
+        covered.expandByPoint(new THREE.Vector3(x - toLight.x * drop, floorY, z - toLight.z * drop));
+      }
+    }
+    const sphere = covered.getBoundingSphere(new THREE.Sphere());
+    const radius = Math.max(sphere.radius * 1.02, 0.5);
+    key.target.position.copy(sphere.center);
+    key.position.copy(sphere.center).addScaledVector(toLight, radius * 2 + 1);
+    key.target.updateMatrixWorld();
+    key.updateMatrixWorld();
+    Object.assign(key.shadow.camera, {left: -radius, right: radius, top: radius, bottom: -radius,
+      near: radius + 1 - radius * 1.05, far: radius * 3.05 + 1});
+    key.shadow.camera.near = Math.max(0.05, key.shadow.camera.near);
+    key.shadow.camera.updateProjectionMatrix();
+    // About two texels along the normal removes acne on large flat faces.
+    const texel = 2 * radius / key.shadow.mapSize.x;
+    key.shadow.normalBias = userData.shadowNormalBias ?? Math.max(0.004, 2 * texel);
+    key.shadow.bias = userData.shadowBias ?? -0.0004;
+    key.shadow.needsUpdate = true;
+  }
+
   addGround() {
     const bounds = new THREE.Box3().setFromObject(this.model.root, true);
     const floorY = groundFloorFor(this.model, bounds);
@@ -460,9 +495,10 @@ export class MovementEngine {
     const interval = this.clock.getDelta();
     this.advance(Math.min(interval, 0.05));
     this.controls.update();
+    // AO is computed first; the lit materials apply it to their ambient light.
+    this.ambientOcclusion?.render();
     this.renderer.render(this.scene, this.camera);
     if (this.ambientOcclusion) {
-      this.ambientOcclusion.render();
       this.trackFrameInterval(interval);
     } else {
       this.trackResolution(interval);

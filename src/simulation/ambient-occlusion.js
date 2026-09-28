@@ -1,24 +1,21 @@
 import * as THREE from 'three';
 import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
-import { FullScreenQuad } from 'three/addons/postprocessing/Pass.js';
 
 // Subtle screen-space ambient occlusion for the interactive viewer.
 //
-// The scene is still drawn straight to the canvas exactly as before (same
-// tone mapping, background, shadows and rotation cue). Afterwards a reduced
-// resolution normal/depth prepass feeds three's GTAO and Poisson denoise
-// shaders, and the result multiplies the finished frame. Background pixels
-// stay 1.0, so the paper colour is untouched and only contact creases and
-// inner corners darken slightly.
+// Before the frame is drawn, a reduced-resolution normal/depth prepass feeds
+// three's GTAO and Poisson denoise shaders. The lit materials then sample
+// the result by screen position and apply it to their INDIRECT (hemisphere)
+// light only, as a baked AO map would: direct sunlight, colour saturation
+// and the background are untouched, and a crease that the key light still
+// reaches darkens only by its share of ambient light.
 //
 // The prepass mirrors what the main pass draws: each opaque mesh gets a
 // normal material that keeps its side, flat shading and clipping planes (so
 // clean cutaways stay clean) and any vertex-deforming shader hook (laid rope).
-// Transparent materials (water, glass) add no depth; instead they scale the
-// buffer's alpha by (1 - opacity), and the final multiply fades AO by that
-// transmittance, so water-filled channels in sections are not greyed while
-// parts inside thin glass keep most of their AO. The shadow-catching floor,
-// lines, points and sprites are left out.
+// Transparent materials (water, glass) add no depth and take no AO, so a
+// surface seen through water keeps its own occlusion. The shadow-catching
+// floor, lines, points and sprites are left out.
 export const AMBIENT_OCCLUSION_SETTINGS = Object.freeze({
   // AO buffer size relative to the canvas drawing buffer (pixel ratio 2), so
   // 0.5 renders AO at one sample per CSS pixel.
@@ -28,10 +25,13 @@ export const AMBIENT_OCCLUSION_SETTINGS = Object.freeze({
   samples: 16,
   denoiseSamples: 16,
   denoiseRadius: 10,
-  thickness: 1,
+  // Occluders count only within this depth of the surface, as a fraction of
+  // the AO radius, so parts far in front of a face (not touching it) cast no
+  // AO onto it.
+  thicknessFraction: 1,
   distanceExponent: 1.5,
-  // Fraction of the computed occlusion applied to the frame.
-  intensity: 0.9,
+  // Fraction of the computed occlusion applied to the indirect light.
+  intensity: 1,
   // Adaptive switch-off ('auto'): after warm-up, AO is dropped for the view
   // once frames slower than slowFrameSeconds run back to back for
   // slowRunSeconds (so about 1.5 s of sub-34 fps playback).
@@ -47,27 +47,54 @@ function isRenderedOpaque(material) {
     && material.opacity >= 1 && material.depthWrite !== false && material.colorWrite !== false;
 }
 
-function isSeenTransparent(material) {
-  return material && material.visible !== false && material.colorWrite !== false
-    && !material.isShadowMaterial && material.opacity > 0.01;
+// Injected after three's own aomap_fragment: the screen-space AO scales the
+// indirect light only.
+const SSAO_PARS = `uniform sampler2D tScreenSpaceAO;
+uniform vec2 screenSpaceAOSize;
+uniform float screenSpaceAOIntensity;
+`;
+const SSAO_FRAGMENT = `
+{
+  float screenSpaceAO = mix(1.0, texture2D(tScreenSpaceAO, gl_FragCoord.xy / screenSpaceAOSize).r, screenSpaceAOIntensity);
+  reflectedLight.indirectDiffuse *= screenSpaceAO;
+  reflectedLight.indirectSpecular *= screenSpaceAO;
+}
+`;
+const WHITE = new THREE.DataTexture(new Uint8Array([255, 255, 255, 255]), 1, 1);
+WHITE.needsUpdate = true;
+// Shared by every patched material; intensity 0 (and a white map) when AO is
+// off, so patched materials render exactly as before.
+export const SCREEN_SPACE_AO_UNIFORMS = {
+  tScreenSpaceAO: { value: WHITE },
+  screenSpaceAOSize: { value: new THREE.Vector2(1, 1) },
+  screenSpaceAOIntensity: { value: 0 },
+};
+const patchedMaterials = new WeakSet();
+
+function isLit(material) {
+  return material.isMeshStandardMaterial || material.isMeshLambertMaterial
+    || material.isMeshPhongMaterial || material.isMeshToonMaterial;
 }
 
-// Final multiply. The normal buffer's alpha holds the transmittance of the
-// transparent surfaces (water, glass) in front of the opaque surface, so AO
-// fades behind water instead of greying it.
-const BLEND_SHADER = {
-  uniforms: { tAO: { value: null }, tNormal: { value: null }, intensity: { value: 1 } },
-  vertexShader: 'varying vec2 vUv;\nvoid main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
-  fragmentShader: `uniform sampler2D tAO;
-uniform sampler2D tNormal;
-uniform float intensity;
-varying vec2 vUv;
-void main() {
-  float ao = texture2D(tAO, vUv).r;
-  float transmittance = texture2D(tNormal, vUv).a;
-  gl_FragColor = vec4(vec3(mix(1.0, ao, intensity * transmittance * transmittance * transmittance)), 1.0);
-}`,
-};
+// Chain the AO hook onto a lit opaque material (once; later AO toggles only
+// change the shared uniforms, so there is no recompile).
+export function patchMaterialForScreenSpaceAO(material) {
+  if (!material || patchedMaterials.has(material) || !isLit(material) || !isRenderedOpaque(material)) return false;
+  patchedMaterials.add(material);
+  const previous = material.onBeforeCompile;
+  const previousKey = material.customProgramCacheKey;
+  material.onBeforeCompile = function onBeforeCompile(shader, renderer) {
+    previous?.call(this, shader, renderer);
+    Object.assign(shader.uniforms, SCREEN_SPACE_AO_UNIFORMS);
+    shader.fragmentShader = SSAO_PARS + shader.fragmentShader
+      .replace('#include <aomap_fragment>', `#include <aomap_fragment>${SSAO_FRAGMENT}`);
+  };
+  material.customProgramCacheKey = function customProgramCacheKey() {
+    return `${previousKey.call(this)}|screen-space-ao`;
+  };
+  material.needsUpdate = true;
+  return true;
+}
 
 export class ScreenSpaceAmbientOcclusion {
   constructor(renderer, scene, camera, settings = {}) {
@@ -81,7 +108,7 @@ export class ScreenSpaceAmbientOcclusion {
     this.pass._renderGBuffer = false;
     this.pass.updateGtaoMaterial({
       samples: this.settings.samples,
-      thickness: this.settings.thickness,
+      thickness: 0.25 * this.settings.thicknessFraction,
       distanceExponent: this.settings.distanceExponent,
       distanceFallOff: 1,
       scale: 1,
@@ -91,21 +118,7 @@ export class ScreenSpaceAmbientOcclusion {
       samples: this.settings.denoiseSamples, rings: 2, radius: this.settings.denoiseRadius,
       lumaPhi: 10, depthPhi: 2, normalPhi: 3,
     });
-    this.blendMaterial = new THREE.ShaderMaterial({
-      ...BLEND_SHADER,
-      uniforms: THREE.UniformsUtils.clone(BLEND_SHADER.uniforms),
-      depthTest: false,
-      depthWrite: false,
-      transparent: true,
-      blending: THREE.CustomBlending,
-      blendSrc: THREE.DstColorFactor,
-      blendDst: THREE.ZeroFactor,
-      blendSrcAlpha: THREE.ZeroFactor,
-      blendDstAlpha: THREE.OneFactor,
-    });
-    this.quad = new FullScreenQuad(this.blendMaterial);
     this.normalMaterials = new WeakMap();
-    this.maskMaterials = new WeakMap();
     this.ownedMaterials = [];
     this.swapped = [];
     this.hidden = [];
@@ -115,7 +128,7 @@ export class ScreenSpaceAmbientOcclusion {
 
   setModelRadius(radius) {
     const aoRadius = Math.max(0.02, radius * this.settings.radiusFraction);
-    this.pass.updateGtaoMaterial({ radius: aoRadius });
+    this.pass.updateGtaoMaterial({ radius: aoRadius, thickness: aoRadius * this.settings.thicknessFraction });
     // Denoise depth tolerance in world units, so blur does not cross steps.
     this.pass.updatePdMaterial({ depthPhi: aoRadius * 0.5 });
   }
@@ -128,35 +141,8 @@ export class ScreenSpaceAmbientOcclusion {
     this.pass.setSize(width, height);
   }
 
-  // Transparent surfaces leave colour, normal and depth alone and only scale
-  // the buffer's alpha by (1 - opacity).
-  transmittanceMaterialFor(material) {
-    let mask = this.maskMaterials.get(material);
-    if (!mask) {
-      mask = new THREE.MeshBasicMaterial({
-        transparent: true,
-        depthWrite: false,
-        blending: THREE.CustomBlending,
-        blendSrc: THREE.ZeroFactor,
-        blendDst: THREE.OneFactor,
-        blendSrcAlpha: THREE.ZeroFactor,
-        blendDstAlpha: THREE.OneMinusSrcAlphaFactor,
-      });
-      this.maskMaterials.set(material, mask);
-      this.ownedMaterials.push(mask);
-    }
-    mask.opacity = material.opacity;
-    mask.side = material.side;
-    mask.depthTest = material.depthTest;
-    mask.clippingPlanes = material.clippingPlanes;
-    mask.clipIntersection = material.clipIntersection;
-    return mask;
-  }
-
   normalMaterialFor(material) {
-    if (!isRenderedOpaque(material)) {
-      return isSeenTransparent(material) ? this.transmittanceMaterialFor(material) : HIDDEN;
-    }
+    if (!isRenderedOpaque(material)) return HIDDEN;
     let normal = this.normalMaterials.get(material);
     if (normal) {
       normal.side = material.side;
@@ -190,6 +176,8 @@ export class ScreenSpaceAmbientOcclusion {
     this.scene.traverseVisible((object) => {
       if (object.isMesh) {
         const original = object.material;
+        if (Array.isArray(original)) original.forEach(patchMaterialForScreenSpaceAO);
+        else patchMaterialForScreenSpaceAO(original);
         const replacement = Array.isArray(original)
           ? original.map((material) => this.normalMaterialFor(material))
           : this.normalMaterialFor(original);
@@ -224,7 +212,8 @@ export class ScreenSpaceAmbientOcclusion {
     hidden.length = 0;
   }
 
-  // Call after the frame has been rendered to the canvas.
+  // Call before the frame is drawn: computes the AO buffer that the lit
+  // materials sample.
   render() {
     const renderer = this.renderer;
     renderer.getDrawingBufferSize(this.drawingSize);
@@ -239,20 +228,16 @@ export class ScreenSpaceAmbientOcclusion {
     this.pass._renderPass(renderer, pd, this.pass.gtaoRenderTarget, 0xffffff, 1);
     pd.uniforms.tDiffuse.value = this.pass.gtaoRenderTarget.texture;
     pd.uniforms.index.value = 0;
-    const autoClear = renderer.autoClear;
-    renderer.autoClear = false;
     renderer.setRenderTarget(null);
-    this.blendMaterial.uniforms.intensity.value = this.settings.intensity;
-    this.blendMaterial.uniforms.tAO.value = this.pass.gtaoRenderTarget.texture;
-    this.blendMaterial.uniforms.tNormal.value = this.pass.normalRenderTarget.texture;
-    this.quad.render(renderer);
-    renderer.autoClear = autoClear;
+    SCREEN_SPACE_AO_UNIFORMS.tScreenSpaceAO.value = this.pass.gtaoRenderTarget.texture;
+    SCREEN_SPACE_AO_UNIFORMS.screenSpaceAOSize.value.copy(this.drawingSize);
+    SCREEN_SPACE_AO_UNIFORMS.screenSpaceAOIntensity.value = this.settings.intensity;
   }
 
   dispose() {
+    SCREEN_SPACE_AO_UNIFORMS.tScreenSpaceAO.value = WHITE;
+    SCREEN_SPACE_AO_UNIFORMS.screenSpaceAOIntensity.value = 0;
     this.pass.dispose();
-    this.quad.dispose();
-    this.blendMaterial.dispose();
     for (const material of this.ownedMaterials) material.dispose();
     this.ownedMaterials.length = 0;
   }

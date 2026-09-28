@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {
-  AMBIENT_OCCLUSION_SETTINGS, ScreenSpaceAmbientOcclusion, shouldStartAmbientOcclusion,
+  AMBIENT_OCCLUSION_SETTINGS, SCREEN_SPACE_AO_UNIFORMS, ScreenSpaceAmbientOcclusion,
+  patchMaterialForScreenSpaceAO, shouldStartAmbientOcclusion,
 } from '../src/simulation/ambient-occlusion.js';
 
 const fakeRenderer = (name) => ({
@@ -23,7 +24,7 @@ test('AO preference: explicit settings win, auto skips software renderers', () =
   assert.equal(shouldStartAmbientOcclusion('auto', fakeRenderer('llvmpipe (LLVM 15)')), false);
 });
 
-test('AO prepass mirrors opaque materials and turns transparent ones into transmittance masks', () => {
+test('AO prepass mirrors opaque materials and leaves transparent ones out', () => {
   const ao = new ScreenSpaceAmbientOcclusion({}, new THREE.Scene(), new THREE.PerspectiveCamera());
   const plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
   const opaque = new THREE.MeshStandardMaterial({ side: THREE.DoubleSide, clippingPlanes: [plane] });
@@ -33,12 +34,25 @@ test('AO prepass mirrors opaque materials and turns transparent ones into transm
   assert.deepEqual(normal.clippingPlanes, [plane]);
   assert.equal(ao.normalMaterialFor(opaque), normal);
   const water = new THREE.MeshStandardMaterial({ transparent: true, opacity: 0.4, depthWrite: false });
-  const mask = ao.normalMaterialFor(water);
-  assert.ok(mask.isMeshBasicMaterial && mask.transparent);
-  assert.equal(mask.opacity, 0.4);
-  assert.equal(mask.blendDstAlpha, THREE.OneMinusSrcAlphaFactor);
+  assert.equal(ao.normalMaterialFor(water).visible, false);
   assert.equal(ao.normalMaterialFor(new THREE.ShadowMaterial({ opacity: 0.14 })).visible, false);
-  assert.equal(ao.normalMaterialFor(new THREE.MeshBasicMaterial({ transparent: true, opacity: 0 })).visible, false);
   assert.ok(AMBIENT_OCCLUSION_SETTINGS.intensity > 0 && AMBIENT_OCCLUSION_SETTINGS.intensity <= 1);
   ao.dispose();
+});
+
+test('AO scales only the indirect light of lit opaque materials, once', () => {
+  const lit = new THREE.MeshStandardMaterial();
+  let hooked = 0;
+  lit.onBeforeCompile = () => { hooked += 1; };
+  assert.equal(patchMaterialForScreenSpaceAO(lit), true);
+  assert.equal(patchMaterialForScreenSpaceAO(lit), false);
+  const shader = { uniforms: {}, fragmentShader: 'void main() {\n#include <aomap_fragment>\n}' };
+  lit.onBeforeCompile(shader, null);
+  assert.equal(hooked, 1, 'the original hook still runs');
+  assert.match(shader.fragmentShader, /reflectedLight\.indirectDiffuse \*= screenSpaceAO/);
+  assert.doesNotMatch(shader.fragmentShader, /\.directDiffuse \*=|gl_FragColor/);
+  assert.equal(shader.uniforms.screenSpaceAOIntensity, SCREEN_SPACE_AO_UNIFORMS.screenSpaceAOIntensity);
+  assert.match(lit.customProgramCacheKey(), /screen-space-ao/);
+  assert.equal(patchMaterialForScreenSpaceAO(new THREE.MeshBasicMaterial()), false);
+  assert.equal(patchMaterialForScreenSpaceAO(new THREE.MeshStandardMaterial({ transparent: true, opacity: 0.5 })), false);
 });
