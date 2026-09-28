@@ -127,12 +127,85 @@ const cut = (blankShape) => {
   const round = (ring) => ring.slice(0, -1).map(([x, y]) => [Number(x.toFixed(6)), Number(y.toFixed(6))]);
   return { outer: round(kept[0]), holes: kept.slice(1).map(round), discardedPieces: pieces.length - 1 };
 };
-const result = { left: cut(left.shape), right: cut(right.shape) };
+// Pallet ends: past the impulse face's exit the swept envelope leaves a
+// hooked tip and then a spike and a stepped notch (E) or a bump and a notch
+// (D) cut by the next tooth; at the lock face's entry it leaves a small
+// jog. Trim each end along the chord that reaches furthest toward the back, starting as far
+// as END_BACKOFF back along the face and running at most MAX_END_CHORD
+// toward the pallet's back (arm), such that every skipped vertex lies
+// outside the pallet. The back leaves each face as one straight edge, and,
+// since this only removes material, all the cut outline's clearances hold.
+const END_BACKOFF = 0.025;
+const MAX_END_CHORD = { impulse: 0.36, lock: 0.2 };
+// The lock entry's nick (D, 0.004 deep) is filled; the running clearance
+// there stays above zero (tests/graham-303-working-solids).
+const LOCK_ENTRY_FILL = 0.005;
+function trimEnd(ring, end, inward, maxChord, fill = 0, extend = false) {
+  const n = ring.length;
+  const signedArea = ring.reduce((sum, [x, y], i) => { const [u, v] = ring[(i + 1) % n]; return sum + x * v - u * y; }, 0) / 2;
+  let t = 0;
+  ring.forEach(([x, y], i) => { if (Math.hypot(x - end.x, y - end.y) < Math.hypot(ring[t][0] - end.x, ring[t][1] - end.y)) t = i; });
+  const at = (k) => ring[((k % n) + n) % n];
+  // Walk away from the face (from a point well inside it).
+  const along = (k) => Math.hypot(at(k)[0] - inward.x, at(k)[1] - inward.y);
+  const step = along(t + 12) > along(t - 12) ? 1 : -1;
+  // Outside the pallet: right of the chord for a counter-clockwise ring
+  // walked forward (the sign flips with either reversal).
+  // With fill > 0, a skipped vertex may also lie up to fill inside (a nick
+  // that the chord fills).
+  const outside = ([sx, sy], [cx, cy], [x, y]) => Math.sign(signedArea) * step * ((cx - sx) * (y - sy) - (cy - sy) * (x - sx))
+    <= 1e-9 + fill * Math.hypot(cx - sx, cy - sy);
+  let best = { s: 0, k: 0 };
+  for (let s = 0; Math.hypot(at(t - step * s)[0] - at(t)[0], at(t - step * s)[1] - at(t)[1]) <= END_BACKOFF; s += 1) {
+    const start = at(t - step * s);
+    for (let k = 1; k < 400; k += 1) {
+      const end = at(t + step * k);
+      if (Math.hypot(end[0] - start[0], end[1] - start[1]) > maxChord) break;
+      let valid = true;
+      for (let j = -s + 1; j < k && valid; j += 1) valid = outside(start, end, at(t + step * j));
+      if (valid && (k > best.k || (k === best.k && s > best.s))) best = { s, k };
+    }
+  }
+  const drop = new Set();
+  for (let j = -best.s + 1; j < best.k; j += 1) drop.add(((t + step * j) % n + n) % n);
+  const kept = ring.map((p) => [...p]);
+  // If the face, run on straight, meets the back's next edge beyond a
+  // corner that stands proud of it, end the face there (the corner and the
+  // short ledge to it are cut off).
+  let met = false;
+  if (extend) {
+    const start = at(t - step * best.s);
+    let back = best.s + 1;
+    while (Math.hypot(at(t - step * back)[0] - start[0], at(t - step * back)[1] - start[1]) < 0.04) back += 1;
+    const inner = at(t - step * back);
+    const cornerIndex = ((t + step * best.k) % n + n) % n;
+    const [ax, ay] = ring[cornerIndex];
+    const [bx, by] = at(t + step * (best.k + 1));
+    const [dx, dy] = [start[0] - inner[0], start[1] - inner[1]];
+    const denominator = dx * (by - ay) - dy * (bx - ax);
+    if (Math.abs(denominator) > 1e-12) {
+      const u = ((ax - start[0]) * dy - (ay - start[1]) * dx) / denominator;
+      const meet = [ax + u * (bx - ax), ay + u * (by - ay)];
+      if (u > 0 && u < 0.5 && outside(start, meet, ring[cornerIndex])) {
+        kept[cornerIndex] = meet.map((v) => Number(v.toFixed(6)));
+        met = true;
+      }
+    }
+  }
+  return { ring: kept.filter((_, i) => !drop.has(i)), trimmed: drop.size, met };
+}
+function trimEnds(side, profile) {
+  const middle = (points) => points[Math.floor(points.length / 2)];
+  const exit = trimEnd(side.outer, profile.impulsePoints.at(-1), middle(profile.impulsePoints), MAX_END_CHORD.impulse);
+  const entry = trimEnd(exit.ring, profile.lockPoints.at(-1), middle(profile.lockPoints), MAX_END_CHORD.lock, LOCK_ENTRY_FILL, true);
+  return { ...side, outer: entry.ring, tipTrimmedVertices: exit.trimmed, lockEntryTrimmedVertices: entry.trimmed, lockFaceRunsToArm: entry.met };
+}
+const result = { left: trimEnds(cut(left.shape), data.palletProfiles.left), right: trimEnds(cut(right.shape), data.palletProfiles.right) };
 // Production must match these values for the baked outlines to be current.
 const fingerprint = Object.fromEntries(['anchorAmplitude', 'impulseAdvance', 'leftLockReferenceAngle', 'lockingAmplitudeFraction',
   'pendulumPeriod', 'releaseAmplitudeFraction', 'rightLockReferenceAngle', 'toothCount', 'toothLeanAngle', 'toothTipRadius',
   'wheelRootRadius'].map((key) => [key, g[key]]).concat([['anchorPivot', [pivot.x, pivot.y]]]));
-const inputs = JSON.stringify({ SAMPLES, CLEARANCE, PALLET_THICKNESS, ARM_WIDTH, CORNER_OFFSET, g: { ...g, anchorPivot: [pivot.x, pivot.y] } });
+const inputs = JSON.stringify({ SAMPLES, CLEARANCE, PALLET_THICKNESS, ARM_WIDTH, CORNER_OFFSET, END_TRIM: ['reach-first-extend-lock', END_BACKOFF, MAX_END_CHORD, LOCK_ENTRY_FILL], g: { ...g, anchorPivot: [pivot.x, pivot.y] } });
 const hash = createHash('sha256').update(inputs).digest('hex').slice(0, 16);
 const file = `// Generated by scripts/generate-graham-303-anchor.mjs; do not edit.
 export const GRAHAM_303_ANCHOR = Object.freeze(${JSON.stringify({

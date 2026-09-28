@@ -44,14 +44,13 @@ export function correctGyroscopeParts(root,id) {
       for(const fixed of[b.ringBody,...b.bearingHousings,b.pillar,b.supportCup,b.pintle,b.curvedNeck])pair(moving,fixed);
     }
     d.cameraDirection=new THREE.Vector3(1,3.4,12);
-    // The full precession sweep, so disk C and ring A stay in view as they
-    // turn round the pillar.
     d.sweptBounds=new THREE.Box3(new THREE.Vector3(-4.75,-2.48,-4.75),new THREE.Vector3(4.75,3.55,4.75));
-    // View-fit proxy: the sweep is a circle about the pintle, whose square
-    // box would project with inflated corners; this box has the circle's
-    // projected width and height in the raised plate view.
-    d.cameraFitBounds=new THREE.Box3(new THREE.Vector3(-2.7,-2.48,-2.7),new THREE.Vector3(2.7,3.55,2.7));
-    d.cameraFramingScope='Whole precession sweep (proxy box inside sweptBounds for the circular path).';
+    // Pass 94: frame Brown's pose, not the whole sweep. The box is the
+    // phase-0 pillar, ring and disk (the plate's pose), so the opening view
+    // matches the plate's size and placement; as the ring precesses round
+    // the pillar it leaves this box and may pass beyond the frame edge.
+    d.cameraFitBounds=new THREE.Box3(new THREE.Vector3(-1.3,-2.40,-2.2),new THREE.Vector3(4.25,3.50,0.0));
+    d.cameraFramingScope='Brown\'s phase-0 pose (pillar, ring A and disk C); the precession sweep runs past the frame.';
     d.minimumDisplayCycleSeconds=12;
     d.reconstructionNote='The disk and ring follow ideal steady horizontal precession, with twelve rotor turns per precession. Masses and dimensions are inferred. Nutation, release transients, bearing friction and stability under disturbance are not simulated.';
     d.dynamics.validationScope='Prescribed horizontal regular-precession solution and spin-angular-momentum balance; no release or contact-dynamics validation.';
@@ -98,6 +97,6 @@ export function correctGyroscopeParts(root,id) {
     d.reconstructionNote='The outer ring is deliberately turned while equal opposite gimbal motion holds the ball axis fixed. Eighteen rotor turns accompany each handling cycle. This is a prescribed frictionless illustration; resistance to applied pressure, bearing friction and transient dynamics are not simulated.';
     d.dynamics.validationScope='Prescribed gimbal compensation and ideal spin momentum only; no applied-pressure or passive-response validation.';
   }
-  d.gyroscopeParts=p;d.hideGround=true;d.cameraDistanceScale=id===355?.64:1;
+  d.gyroscopeParts=p;d.hideGround=true;d.cameraDistanceScale=id===355?.55:1;
   root.traverse(o=>{for(const material of[].concat(o.material??[]))material.fog=false;});
 }

@@ -70,6 +70,13 @@ export function makeOpposedArmGeometry({phase=.04480311998100515,crest=.035,pivo
  const root=new THREE.Group(),parts={},families={},blocks={},p={center:sourceCenter,scale:sourceScale,teeth:33,pitch:2*Math.PI/33,phase,
   outerRadius:1,innerRadius:338.90038109631433/sourceScale,crest,valley:-.02,pivotZ,sourceBeta,stroke,sourceSlider:source(measured.slider),arms:{},
   pawl:{halfWidth:.029,root:.03,length:pawlLength,sagitta:.008,halfThickness:.011}};
+ // The blade is extruded along the direction that is vertical when it lies
+ // seated in a root (tip corner on the valley floor), so its tip edge then
+ // lies flat on the vertical driving face instead of touching it only at the
+ // upper corner. Seated tilt: pivotZ - length sin(b) - halfThickness/cos(b) = valley.
+ {const {length:L,halfThickness:h}=p.pawl,drop=pivotZ-p.valley;let b=.45;
+  for(let i=0;i<60;i++){const f=L*Math.sin(b)+h/Math.cos(b)-drop,df=L*Math.cos(b)+h*Math.sin(b)/Math.cos(b)**2;b-=f/df;}
+  p.pawl.seatedTilt=b;p.pawl.shear=Math.tan(b);}
  for(const family of ['wheel','upperArm','lowerArm','upperRod','lowerRod','upper','lower','slider']){blocks[family]=new THREE.Group();root.add(blocks[family]);}
  const attach=(name,geometry,family,color,position=[0,0,0])=>{
   const mesh=new THREE.Mesh(geometry,matte(color,{metalness:.16,roughness:.58}));mesh.name=name;mesh.position.fromArray(position);
@@ -130,7 +137,8 @@ export function makeOpposedArmGeometry({phase=.04480311998100515,crest=.035,pivo
   attach(key+'PawlFastenerSeat',ring(.032,.054,armHigh,armHigh+.012,128),armFamily,PALETTE.brass,[...P,0]);
   attach(key+'PawlFastener',disk(.030,armHigh-.010,armHigh+.014,128),armFamily,PALETTE.muted,[...P,0]);
   const trimmed=poly(blade),journal=clip.difference(poly([[-.025,-.04],[.025,-.04],[.025,.025],[-.025,.025]]),poly(circle([0,0],.012,128)));
-  attach(key+'Pawl',plate(trimmed,-p.pawl.halfThickness,p.pawl.halfThickness),key,PALETTE.brass);
+  const bladeSolid=plate(trimmed,-p.pawl.halfThickness,p.pawl.halfThickness).applyMatrix4(new THREE.Matrix4().set(1,0,0,0,0,1,p.pawl.shear,0,0,0,1,0,0,0,0,1));
+  attach(key+'Pawl',bladeSolid,key,PALETTE.brass);
   attach(key+'PawlJournal',axisGeometry(plate(journal,-.029,.029)),key,PALETTE.brass);
   a.pawlContour=trimmed;a.pawlTip=[0,-p.pawl.length];
  }

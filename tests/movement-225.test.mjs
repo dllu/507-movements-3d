@@ -168,7 +168,9 @@ test('movement 225 maintains drive contact and return clearance for 32,769 state
     maximumRideClearance = Math.max(maximumRideClearance, whole);
   }
   assert.ok(maximumReturnClearance > 0.002, `return clearance ${maximumReturnClearance}`);
-  assert.ok(maximumRideClearance > 0.002 && maximumRideClearance < 0.0045,
+  // Off each crest the pawl falls (it is not lowered onto the next back),
+  // so the largest gap is part-way through a drop.
+  assert.ok(maximumRideClearance > 0.002 && maximumRideClearance < 0.1,
     `ride clearance ${maximumRideClearance}`);
   near(lastWheelAngle, Math.PI / 10, 0, 'one-cycle index');
   disposeModel(model.root);
@@ -187,7 +189,13 @@ test('movement 225 has smooth drive, dwell, click-over, and accumulated indexing
   const returnMiddle = stateAtCycleCoordinate(0.75);
   const nextDrive = stateAtCycleCoordinate(1);
 
-  assert.equal(driveStart.driving, true);
+  // The drive stroke opens with the nose sliding down into its root (the
+  // carrier's overtravel); the pawl then meets the face and drives.
+  const { transmission } = model.root.userData;
+  assert.equal(driveStart.drivingStroke, true);
+  assert.equal(driveStart.driving, false);
+  assert.equal(driveStart.stage, 'pawl-sliding-into-root');
+  assert.equal(stateAtCycleCoordinate(transmission.engagePhase + 1e-9).driving, true);
   assert.equal(driveEnd.driving, false);
   assert.equal(returnMiddle.wheelDwelling, true);
   near(driveStart.carrierAngularSpeed, 0, 0, 'drive-start dwell');
@@ -197,8 +205,9 @@ test('movement 225 has smooth drive, dwell, click-over, and accumulated indexing
   near(returnMiddle.wheelAngle, driveEnd.wheelAngle, 0,
     'return-stroke wheel dwell');
   const rideMiddle = carrierPawlBarClearance225(returnMiddle.pawlPivot, returnMiddle.pawlAngle, returnMiddle.wheelAngle, geometry.pawlOutline, model.root.userData.blocks.ratchet.userData.profilePoints.map(p => p.toArray()));
-  near(rideMiddle, 0.003, 2e-4, 'pawl rides the teeth mid-return');
-  near(nextDrive.returnClearance, 0, 0, 'pawl reseated at closure');
+  assert.ok(rideMiddle > 0.0002 && rideMiddle < 0.004, `pawl rides the teeth mid-return ${rideMiddle}`);
+  const seated = stateAtCycleCoordinate(1 + transmission.engagePhase - 1e-9);
+  near(seated.pawlAngle, stateAtCycleCoordinate(1 + transmission.engagePhase + 1e-9).pawlAngle, 1e-6, 'pawl reseated at engagement');
   const oneBefore = stateAtCycleCoordinate(0.25);
   const threeAfter = stateAtCycleCoordinate(3.25);
   near(

@@ -2773,11 +2773,11 @@
       "id": 76,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-93 lane, integrated by primary agent",
-        "reviewPass": 93,
+        "reviewer": "Claude Opus 5.5 — pass-94 lane, integrated by primary agent",
+        "reviewPass": 94,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p93-fa-review.md",
-        "note": "Pass 93: B's point works on the lower middle of the tooth face and cannot reach the root with the plate's pivot positions."
+        "evidence": "docs/p94-p-review.md",
+        "note": "Pass 94: B's point seats in the root but is a narrower wedge than the valley (lower flank about 36° off the tooth back); the struck arm's kink is 27.5° where Brown draws the bar straight."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -2803,7 +2803,8 @@
         "docs/p62-audit-review.md",
         "docs/p86-4a-review.md",
         "docs/p90-fa-review.md",
-        "docs/p93-fa-review.md"
+        "docs/p93-fa-review.md",
+        "docs/p94-p-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -2811,8 +2812,8 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-27",
-      "visibleFlaws": "B's point works on the lower middle of the tooth face and cannot reach the root with the plate's pivot positions.",
-      "limits": "The default view frames Brown's window onto rim segment D of the complete wheel, so the rim runs off its edges and D leaves the view for most of each turn; B's lobe is Brown's outline turned so his corner sits on the contact nose. Four studs, one per spoke, each strike once per turn; the default view frames Brown's window onto segment D. Undrawn supports and extensions removed (pass 60); rods end straight and cleanly. The click and dog B are single plates in the wheel's plane; the nose pins and stop sectors are removed; the click overshoots slightly and settles in the root; B's stop is a heel in a slot in the bar; the tappet rests on one plain pin on the existing fixed bracket (nothing drawn can stop it). Motion regenerated (scripts/lib/jointed-tappet-076-dynamics.mjs). p90: the undrawn bracket and rest pin are removed; a fixed key hidden inside the tappet at C is the rest stop; B's heel stays inside the bar at every pose (rebaked). p93: the rim band is centred on stud D's orbit at Brown's width; D sits mid-band (rebaked).",
+      "visibleFlaws": "B's point seats in the root but is a narrower wedge than the valley (lower flank about 36° off the tooth back); the struck arm's kink is 27.5° where Brown draws the bar straight.",
+      "limits": "The default view frames Brown's window onto rim segment D of the complete wheel, so the rim runs off its edges and D leaves the view for most of each turn; B's lobe is Brown's outline turned so his corner sits on the contact nose. Four studs, one per spoke, each strike once per turn; the default view frames Brown's window onto segment D. Undrawn supports and extensions removed (pass 60); rods end straight and cleanly. The click and dog B are single plates in the wheel's plane; the nose pins and stop sectors are removed; the click overshoots slightly and settles in the root; B's stop is a heel in a slot in the bar; the tappet rests on one plain pin on the existing fixed bracket (nothing drawn can stop it). Motion regenerated (scripts/lib/jointed-tappet-076-dynamics.mjs). p90: the undrawn bracket and rest pin are removed; a fixed key hidden inside the tappet at C is the rest stop; B's heel stays inside the bar at every pose (rebaked). p93: the rim band is centred on stud D's orbit at Brown's width; D sits mid-band (rebaked). p94: the tappet is set in 0.029 and the wheel turned 3.4° so B slides down the face to within 0.0011 of the root seat (rebaked).",
       "assessment": "minor"
     },
     {
@@ -2897,11 +2898,11 @@
       "id": 79,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-86 lane, integrated by primary agent",
-        "reviewPass": 86,
+        "reviewer": "Claude Opus 5.5 — pass-94 lane, integrated by primary agent",
+        "reviewPass": 94,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p86-2-review.md",
-        "note": "Pass 86: At the root the tilted flat blade touches the tooth face at its upper corner, leaving a wedge about 0.01 deep, visible only in zoomed side views."
+        "evidence": "docs/p94-p-review.md",
+        "note": "Pass 94: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -2916,7 +2917,8 @@
         "docs/visual-assessment-pass52.md",
         "docs/p60-supports-review.md",
         "docs/p62-audit-review.md",
-        "docs/p86-2-review.md"
+        "docs/p86-2-review.md",
+        "docs/p94-p-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -2924,9 +2926,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-27",
-      "visibleFlaws": "At the root the tilted flat blade touches the tooth face at its upper corner, leaving a wedge about 0.01 deep, visible only in zoomed side views.",
-      "limits": "Identical pawls: one blade of two circular arcs on the drawn pivots, replacing Brown's unequal hand-drawn pair. Kinematic playback (scripts/generate-opposed-arm-kinematics.mjs): pawls fall onto the crown teeth and push the root face; the wheel coasts between pushes against assumed friction; 3 teeth per cycle, still about 2% of the time. It replaces the earlier integrated physics.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "Identical pawls: one blade of two circular arcs on the drawn pivots, replacing Brown's unequal hand-drawn pair. Kinematic playback (scripts/generate-opposed-arm-kinematics.mjs): pawls fall onto the crown teeth and push the root face; the wheel coasts between pushes against assumed friction; 3 teeth per cycle, still about 2% of the time. It replaces the earlier integrated physics. p94: the blade is extruded along its seated vertical, so its tip edge lies flat on the face with the lower corner in the root (gap 3e-6).",
+      "assessment": "reasonable"
     },
     {
       "id": 80,
@@ -3164,11 +3166,11 @@
       "id": 86,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-93 lane, integrated by primary agent",
-        "reviewPass": 93,
+        "reviewer": "Claude Opus 5.5 — pass-94 lane, integrated by primary agent",
+        "reviewPass": 94,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p93-fb-review.md",
-        "note": "Pass 93: While the wheel returns and rests, the catch holds a fixed −0.12 rad with no visible contact."
+        "evidence": "docs/p94-p-review.md",
+        "note": "Pass 94: For about 0.3 s before pick-up the catch hovers up to 0.019 clear of cam C."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -3196,7 +3198,8 @@
         "docs/p81-fa-review.md",
         "docs/p86-4a-review.md",
         "docs/p92-r-review.md",
-        "docs/p93-fb-review.md"
+        "docs/p93-fb-review.md",
+        "docs/p94-p-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -3204,8 +3207,8 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-27",
-      "visibleFlaws": "While the wheel returns and rests, the catch holds a fixed −0.12 rad with no visible contact.",
-      "limits": "Hangers from the guide crossbar carry the lower bed and pump barrel. The band ends past the crop and the pump rod hangs unguided below the plinth (Brown draws neither). From level views the plinth's edge hides the rope's passage through its hole. The band runs continue straight off-screen in every orbit (open lengths standing in for the omitted remote sheave). The catch is one plain extrusion (the slab behind its head and the heel lug and stop are removed from the display); the motion still comes from the provenance-locked contact study with them. Pass 92: rope/belt recoloured to the shared hemp brown so it contrasts with the pulleys. p93: pump rope in the shared hemp brown.",
+      "visibleFlaws": "For about 0.3 s before pick-up the catch hovers up to 0.019 clear of cam C.",
+      "limits": "Hangers from the guide crossbar carry the lower bed and pump barrel. The band ends past the crop and the pump rod hangs unguided below the plinth (Brown draws neither). From level views the plinth's edge hides the rope's passage through its hole. The band runs continue straight off-screen in every orbit (open lengths standing in for the omitted remote sheave). The catch is one plain extrusion (the slab behind its head and the heel lug and stop are removed from the display); the motion still comes from the provenance-locked contact study with them. Pass 92: rope/belt recoloured to the shared hemp brown so it contrasts with the pulleys. p93: pump rope in the shared hemp brown. p94: the motion is re-solved without the undisplayed heel lug and stop: after the trip the catch swings free, lands on cam C and is lifted and picked up by it; a hidden head weight remains an assumption.",
       "assessment": "minor"
     },
     {
@@ -4113,11 +4116,11 @@
       "id": 109,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-93 lane, integrated by primary agent",
-        "reviewPass": 93,
+        "reviewer": "Claude Opus 5.5 — pass-94 lane, integrated by primary agent",
+        "reviewPass": 94,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p93-fb-review.md",
-        "note": "Pass 93: At the top of each cycle the finished screw is swapped for a fresh blank (a visible jump)."
+        "evidence": "docs/p94-a-review.md",
+        "note": "Pass 94: After the opening cut the screw stays fully threaded (the tool re-chases the finished thread), so the plate's half-threaded look shows only in the first seconds."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -4135,7 +4138,8 @@
         "docs/visual-assessment-pass52.md",
         "docs/p60-bake-b-review.md",
         "docs/p62-audit-review.md",
-        "docs/p93-fb-review.md"
+        "docs/p93-fb-review.md",
+        "docs/p94-a-review.md"
       ],
       "mujoco": {
         "mode": "baked",
@@ -4146,8 +4150,8 @@
         "note": "Production model-loader plays a baked, whole-period looping recording of the live MuJoCo solve (src/simulation/baked/assets/mujoco-NNN.json.gz); ?live runs the live physics."
       },
       "updatedOn": "2026-09-27",
-      "visibleFlaws": "At the top of each cycle the finished screw is swapped for a fresh blank (a visible jump).",
-      "limits": "Thread-cutting contact/force assumptions remain. Production plays a baked, seamlessly looping MuJoCo recording; the live simulation remains available with ?live. p93: the work screw is threaded only down to the cutter, blank below; the tool runs back up its own groove; the 52:76 gears make the work pitch 1.46× the lead screw's (the gears match the drawn rims).",
+      "visibleFlaws": "After the opening cut the screw stays fully threaded (the tool re-chases the finished thread), so the plate's half-threaded look shows only in the first seconds.",
+      "limits": "Thread-cutting contact/force assumptions remain. Production plays a baked, seamlessly looping MuJoCo recording; the live simulation remains available with ?live. p93: the work screw is threaded only down to the cutter, blank below; the tool runs back up its own groove; the 52:76 gears make the work pitch 1.46× the lead screw's (the gears match the drawn rims). p94: playback opens part-way down the first cut (threaded above the tool, plain below, as drawn); the work is never exchanged, so the loop has no jump (rebaked).",
       "assessment": "minor"
     },
     {
@@ -8769,11 +8773,11 @@
       "id": 225,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-93 lane, integrated by primary agent",
-        "reviewPass": 93,
+        "reviewer": "Claude Opus 5.5 — pass-94 lane, integrated by primary agent",
+        "reviewPass": 94,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p93-g-review.md",
-        "note": "Pass 93: The pawl bar is arched where Brown's is nearly straight; the tooth behind the nose forces it."
+        "evidence": "docs/p94-p-review.md",
+        "note": "Pass 94: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -8796,7 +8800,8 @@
         "docs/p73-audit-review.md",
         "docs/p86-9-review.md",
         "docs/p91-w-review.md",
-        "docs/p93-g-review.md"
+        "docs/p93-g-review.md",
+        "docs/p94-p-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -8804,9 +8809,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-27",
-      "visibleFlaws": "The pawl bar is arched where Brown's is nearly straight; the tooth behind the nose forces it.",
-      "limits": "The nose seats in the root, 0.002 clear of the back; the bar's end turns down along the tooth space so the bar clears the tooth behind through the pawl's 16° turn against the wheel; return lift and load are prescribed. p91: white or near-white parts recoloured by role (pins steel, washers brass, panels stone); no geometry change.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "The nose seats in the root, 0.002 clear of the back; the bar's end turns down along the tooth space so the bar clears the tooth behind through the pawl's 16° turn against the wheel; return lift and load are prescribed. p91: white or near-white parts recoloured by role (pins steel, washers brass, panels stone); no geometry change. p94: the drive is re-phased (pawl 2.3, carrier 2° right of plumb) so the bar is Brown's shallow arch (sagitta 0.12) with the nose seated in the root; tracked return with 1.5° overtravel.",
+      "assessment": "reasonable"
     },
     {
       "id": 226,
@@ -9202,11 +9207,11 @@
       "id": 236,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-93 lane, integrated by primary agent",
-        "reviewPass": 93,
+        "reviewer": "Claude Opus 5.5 — pass-94 lane, integrated by primary agent",
+        "reviewPass": 94,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p93-g-review.md",
-        "note": "Pass 93: The pawl noses bear on tooth corners, not roots."
+        "evidence": "docs/p94-p-review.md",
+        "note": "Pass 94: The wheel stands 42% of each lever cycle while the returning pawl slides into its root (Brown: nearly continuous); the pawls are shorter than drawn (b 2.53/2.86, c 1.39/2.07)."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -9227,7 +9232,8 @@
         "docs/p66-fix-review.md",
         "docs/p86-1-review.md",
         "docs/p90-fa-review.md",
-        "docs/p93-g-review.md"
+        "docs/p93-g-review.md",
+        "docs/p94-p-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -9235,8 +9241,8 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-27",
-      "visibleFlaws": "The pawl noses bear on tooth corners, not roots.",
-      "limits": "The idle pawl rides back over the teeth; its drop off each tooth corner uses a prescribed angular acceleration; hinge bias, spring and contact forces are not solved. p86: the pawls' eye bosses are solid. p90: the pawls are broad bars.",
+      "visibleFlaws": "The wheel stands 42% of each lever cycle while the returning pawl slides into its root (Brown: nearly continuous); the pawls are shorter than drawn (b 2.53/2.86, c 1.39/2.07).",
+      "limits": "The idle pawl rides back over the teeth; its drop off each tooth corner uses a prescribed angular acceleration; hinge bias, spring and contact forces are not solved. p86: the pawls' eye bosses are solid. p90: the pawls are broad bars. p94: the toes sit in the roots touching face and back; straight bars with valley-fitted wedge ends; the idle pawl is tracked on the tooth outline.",
       "assessment": "minor"
     },
     {
@@ -9622,11 +9628,11 @@
       "id": 247,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-93 lane, integrated by primary agent",
-        "reviewPass": 93,
+        "reviewer": "Claude Opus 5.5 — pass-94 lane, integrated by primary agent",
+        "reviewPass": 94,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p93-fc-review.md",
-        "note": "Pass 93: The rod leaves the view during the loop reset."
+        "evidence": "docs/p94-a-review.md",
+        "note": "Pass 94: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -9657,7 +9663,8 @@
         "docs/p84-d-review.md",
         "docs/p86-3-review.md",
         "docs/p91-w-review.md",
-        "docs/p93-fc-review.md"
+        "docs/p93-fc-review.md",
+        "docs/p94-a-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -9665,9 +9672,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-27",
-      "visibleFlaws": "The rod leaves the view during the loop reset.",
-      "limits": "The camera looks up 5° from the bottom's level, so the bottom is edge-on at the lower frame edge (it would show below the foot only at aspects narrower than about 0.5, where the width governs the fit). Between soundings the vessel moves on 40 to the next station: the bottom and the spent weight move off sideways together while the rod returns (a reconstruction device to close the loop, not from the caption). The weight left at the previous station is lifted and carried back by unmodelled gear far to the side and above; that route could be seen by panning far to the side. The catch is Brown's sloped barb, loaded outward by a curled leaf spring set in the rod and bearing on the upper arm (anchored top right, since the arm's tip sweeps Brown's top left); the probe cams it in; after the trip it rubs the spent weight's bore and snaps out over the rim; on reload the rising weight cams it aside until it springs out under the weight. Spring force, friction and snap timing are prescribed, not solved. p91: white or near-white parts recoloured by role (pins steel, washers brass, panels stone); no geometry change. p93: the sea bottom has tone bands so its move to the next station visibly carries the spent weight.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "The camera looks up 5° from the bottom's level, so the bottom is edge-on at the lower frame edge (it would show below the foot only at aspects narrower than about 0.5, where the width governs the fit). Between soundings the vessel moves on 40 to the next station: the bottom and the spent weight move off sideways together while the rod returns (a reconstruction device to close the loop, not from the caption). The weight left at the previous station is lifted and carried back by unmodelled gear far to the side and above; that route could be seen by panning far to the side. The catch is Brown's sloped barb, loaded outward by a curled leaf spring set in the rod and bearing on the upper arm (anchored top right, since the arm's tip sweeps Brown's top left); the probe cams it in; after the trip it rubs the spent weight's bore and snaps out over the rim; on reload the rising weight cams it aside until it springs out under the weight. Spring force, friction and snap timing are prescribed, not solved. p91: white or near-white parts recoloured by role (pins steel, washers brass, panels stone); no geometry change. p93: the sea bottom has tone bands so its move to the next station visibly carries the spent weight. p94: the rod lifts only to 4.75 and stays in view; a fresh weight comes down the line from above and lands on the catch; the undrawn leadsman's hand is removed.",
+      "assessment": "reasonable"
     },
     {
       "id": 248,
@@ -11795,11 +11802,11 @@
       "id": 303,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-93 lane, integrated by primary agent",
-        "reviewPass": 93,
+        "reviewer": "Claude Opus 5.5 — pass-94 lane, integrated by primary agent",
+        "reviewPass": 94,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p93-fd-review.md",
-        "note": "Pass 93: Pallet E's tip shows a facet."
+        "evidence": "docs/p94-a-review.md",
+        "note": "Pass 94: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -11815,7 +11822,8 @@
         "docs/w2f-274-333-review.md",
         "docs/p64-audit-review.md",
         "docs/p89-review.md",
-        "docs/p93-fd-review.md"
+        "docs/p93-fd-review.md",
+        "docs/p94-a-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -11823,9 +11831,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-27",
-      "visibleFlaws": "Pallet E's tip shows a facet.",
-      "limits": "Working faces 0.014–0.030 from the nominal tip; anchor outline reconstructed from proportions, not traced; arbors shown without a frame, as drawn. Pendulum, impulse and drop dynamics prescribed. p89: the pallet arbor ends 0.01 inside the pendulum rod (its flush end hatched). p93: the strap ends in an eye around the arbor; the hub slot is removed.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "Working faces 0.014–0.030 from the nominal tip; anchor outline reconstructed from proportions, not traced; arbors shown without a frame, as drawn. Pendulum, impulse and drop dynamics prescribed. p89: the pallet arbor ends 0.01 inside the pendulum rod (its flush end hatched). p93: the strap ends in an eye around the arbor; the hub slot is removed. p94: the pallet tips are trimmed after the envelope cut (no spike or notch on E or D); working contact still clear.",
+      "assessment": "reasonable"
     },
     {
       "id": 304,
@@ -11983,11 +11991,11 @@
       "id": 308,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-93 lane, integrated by primary agent",
-        "reviewPass": 93,
+        "reviewer": "Claude Opus 5.5 — pass-94 lane, integrated by primary agent",
+        "reviewPass": 94,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p93-fd-review.md",
-        "note": "Pass 93: The hook locks at the tooth tip, not as deep as Brown sketches."
+        "evidence": "docs/p94-p-review.md",
+        "note": "Pass 94: The hook locks about a third of the way down the tooth face, not at root depth (a root lock needs about 19° of lift; C gives at most 11.4°)."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -12003,7 +12011,8 @@
         "docs/p64-audit-review.md",
         "docs/p90-fd-review.md",
         "docs/p91-w-review.md",
-        "docs/p93-fd-review.md"
+        "docs/p93-fd-review.md",
+        "docs/p94-p-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -12011,8 +12020,8 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-27",
-      "visibleFlaws": "The hook locks at the tooth tip, not as deep as Brown sketches.",
-      "limits": "Inferred, not drawn: the nib on pallet I, the lock pin on Q, C's round tip, pivot studs and pendulum translation. The lock has no draw, so the wheel creeps ≈3.5° as Q lifts. Q's banking and C's spring are prescribed; impulse energy is not simulated. p90: a small lug in the cock's plane carries Q's pivot stud. p91: white or near-white parts recoloured by role (pins steel, washers brass, panels stone); no geometry change. p93: Q is a broad bell crank ending in a hook; the rear pin is gone.",
+      "visibleFlaws": "The hook locks about a third of the way down the tooth face, not at root depth (a root lock needs about 19° of lift; C gives at most 11.4°).",
+      "limits": "Inferred, not drawn: the nib on pallet I, the lock pin on Q, C's round tip, pivot studs and pendulum translation. The lock has no draw, so the wheel creeps ≈3.5° as Q lifts. Q's banking and C's spring are prescribed; impulse energy is not simulated. p90: a small lug in the cock's plane carries Q's pivot stud. p91: white or near-white parts recoloured by role (pins steel, washers brass, panels stone); no geometry change. p93: Q is a broad bell crank ending in a hook; the rear pin is gone. p94: the hook end sits 12 px inside the tip circle with its bar along the face; the wheel creeps about 6°.",
       "assessment": "minor"
     },
     {
@@ -12507,11 +12516,11 @@
       "id": 321,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-93 lane, integrated by primary agent",
-        "reviewPass": 93,
+        "reviewer": "Claude Opus 5.5 — pass-94 lane, integrated by primary agent",
+        "reviewPass": 94,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p93-fd-review.md",
-        "note": "Pass 93: The spring's bottom loop is a tight bend."
+        "evidence": "docs/p94-a-review.md",
+        "note": "Pass 94: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "known",
@@ -12536,7 +12545,8 @@
         "docs/p66-audit-review.md",
         "docs/p86-4b-review.md",
         "docs/p90-fd-review.md",
-        "docs/p93-fd-review.md"
+        "docs/p93-fd-review.md",
+        "docs/p94-a-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -12544,9 +12554,9 @@
         "note": "Baked geometric ratchet-click paths with prescribed clock motion; not MuJoCo."
       },
       "updatedOn": "2026-09-27",
-      "visibleFlaws": "The spring's bottom loop is a tight bend.",
-      "limits": "Clicks are seated finite plates on saw ratchets (B's 18 teeth as drawn); backlash (T 0.08, R 0.12 pitch) is prescribed; T's nose droops more steeply than Brown's; impact, spring bias and loaded holding not force-validated. p90: clicks T and R are broader flat plates (0.22); the cord leaves a drum behind the wheels on its tangent. p93: the spring lies in the ratchet plane on short supports and casts a shadow; the arbor end is flush.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "Clicks are seated finite plates on saw ratchets (B's 18 teeth as drawn); backlash (T 0.08, R 0.12 pitch) is prescribed; T's nose droops more steeply than Brown's; impact, spring bias and loaded holding not force-validated. p90: clicks T and R are broader flat plates (0.22); the cord leaves a drum behind the wheels on its tangent. p93: the spring lies in the ratchet plane on short supports and casts a shadow; the arbor end is flush. p94: the spring is a smooth curve through Brown's centre line (tightest bend 0.185).",
+      "assessment": "reasonable"
     },
     {
       "id": 322,
@@ -12688,11 +12698,11 @@
       "id": 326,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-93 lane, integrated by primary agent",
-        "reviewPass": 93,
+        "reviewer": "Claude Opus 5.5 — pass-94 lane, integrated by primary agent",
+        "reviewPass": 94,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p93-fd-review.md",
-        "note": "Pass 93: A shallow recess shows from above and the foot is deeper than Brown's."
+        "evidence": "docs/p94-a-review.md",
+        "note": "Pass 94: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -12712,7 +12722,8 @@
         "docs/p55-geo-a-review.md",
         "docs/p64-audit-review.md",
         "docs/p88-y-review.md",
-        "docs/p93-fd-review.md"
+        "docs/p93-fd-review.md",
+        "docs/p94-a-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -12720,9 +12731,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-27",
-      "visibleFlaws": "A shallow recess shows from above and the foot is deeper than Brown's.",
-      "limits": "The rod clears the side walls by about 0.011; the rendered piston rod is shorter than the official stroke geometry. p88: the dark planed strips sit 0.003 off the slot wall and stand 0.003 proud of the frame (they were flush). p93: inset cap with a narrow rod slot; round rod inside the standard; rear bridge removed.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "The rod clears the side walls by about 0.011; the rendered piston rod is shorter than the official stroke geometry. p88: the dark planed strips sit 0.003 off the slot wall and stand 0.003 proud of the frame (they were flush). p93: inset cap with a narrow rod slot; round rod inside the standard; rear bridge removed. p94: the cap is flush with the crown, cut by a crank pit concentric with the shaft (the crank dips 0.50 below the crown); the rod runs into a bored foot deep enough to hide its 1.76 stroke (Brown crops the base).",
+      "assessment": "reasonable"
     },
     {
       "id": 327,
@@ -12885,11 +12896,11 @@
       "id": 331,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-93 lane, integrated by primary agent",
-        "reviewPass": 93,
+        "reviewer": "Claude Opus 5.5 — pass-94 lane, integrated by primary agent",
+        "reviewPass": 94,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p93-fd-review.md",
-        "note": "Pass 93: One vertical spoke shows where Brown draws none."
+        "evidence": "docs/p94-a-review.md",
+        "note": "Pass 94: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -12910,7 +12921,8 @@
         "docs/p81-audit-review.md",
         "docs/p87-e-review.md",
         "docs/p90-fd-review.md",
-        "docs/p93-fd-review.md"
+        "docs/p93-fd-review.md",
+        "docs/p94-a-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -12918,19 +12930,19 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-27",
-      "visibleFlaws": "One vertical spoke shows where Brown draws none.",
-      "limits": "Rigid piston/link constraints prescribed; pressure, sealing, friction, inertia and untested support interfaces remain unvalidated. The flickering planed-face strips are hidden. The crossbeam and pediment are one extrusion with the hand hole, and the pillars run half-way up into the beam. Each shoe is one C-section bearing on the pillar's inner face; in oblique views its front flange shows as a recessed block beside the yoke end. The crossbase's depth is inferred, stopping 0.02 in front of the flywheel (pass 87 removed a real 0.098 spoke overlap). p90: the piston runs in a closed inferred cylinder under the crossbase; no steam or ports are modelled. p93: the pin starts left of the shaft as on the plate; four spokes; pillars reach the cylinder bottom.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "Rigid piston/link constraints prescribed; pressure, sealing, friction, inertia and untested support interfaces remain unvalidated. The flickering planed-face strips are hidden. The crossbeam and pediment are one extrusion with the hand hole, and the pillars run half-way up into the beam. Each shoe is one C-section bearing on the pillar's inner face; in oblique views its front flange shows as a recessed block beside the yoke end. The crossbase's depth is inferred, stopping 0.02 in front of the flywheel (pass 87 removed a real 0.098 spoke overlap). p90: the piston runs in a closed inferred cylinder under the crossbase; no steam or ports are modelled. p93: the pin starts left of the shaft as on the plate; four spokes; pillars reach the cylinder bottom. p94: the flywheel is two-armed (the horizontal pair Brown draws); the arms are plain bars without his rim flares.",
+      "assessment": "reasonable"
     },
     {
       "id": 332,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-93 lane, integrated by primary agent",
-        "reviewPass": 93,
+        "reviewer": "Claude Opus 5.5 — pass-94 lane, integrated by primary agent",
+        "reviewPass": 94,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p93-fd-review.md",
-        "note": "Pass 93: An arm runs from E to the inferred piston rod."
+        "evidence": "docs/p94-a-review.md",
+        "note": "Pass 94: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -12953,7 +12965,8 @@
         "docs/p81-audit-review.md",
         "docs/p90-fd-review.md",
         "docs/p91-w-review.md",
-        "docs/p93-fd-review.md"
+        "docs/p93-fd-review.md",
+        "docs/p94-a-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -12961,9 +12974,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-27",
-      "visibleFlaws": "An arm runs from E to the inferred piston rod.",
-      "limits": "Stroke reduced to fit the drawn cylinder; D–E 4 against the plate's ≈4.6. Inferred explanatory piston application. p90: crosshead E is a link-deep capped block with a slim arm back to the rod (the vessel must stay behind the right link). p91: white or near-white parts recoloured by role (pins steel, washers brass, panels stone); no geometry change. p93: the bracket is 0.2 deep in F's plane on a small foot.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "Stroke reduced to fit the drawn cylinder; D–E 4 against the plate's ≈4.6. Inferred explanatory piston application. p90: crosshead E is a link-deep capped block with a slim arm back to the rod (the vessel must stay behind the right link). p91: white or near-white parts recoloured by role (pins steel, washers brass, panels stone); no geometry change. p93: the bracket is 0.2 deep in F's plane on a small foot. p94: crosshead E is one transverse extrusion of Brown's capped end outline, running back to the inferred piston rod.",
+      "assessment": "reasonable"
     },
     {
       "id": 333,
@@ -13348,11 +13361,11 @@
       "id": 342,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-91/92 lane, integrated by primary agent",
-        "reviewPass": 92,
+        "reviewer": "Claude Opus 5.5 — pass-94 lane, integrated by primary agent",
+        "reviewPass": 94,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p91-w-review.md",
-        "note": "Pass 91–92: The slot panel reads only faintly in the default view; the wrapped chain is hidden behind the head face in strongly rotated views (as in 334)."
+        "evidence": "docs/p94-a-review.md",
+        "note": "Pass 94: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -13372,7 +13385,8 @@
         "docs/visual-assessment-pass52.md",
         "docs/p64-audit-review.md",
         "docs/p87-c-review.md",
-        "docs/p91-w-review.md"
+        "docs/p91-w-review.md",
+        "docs/p94-a-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -13380,9 +13394,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-27",
-      "visibleFlaws": "The slot panel reads only faintly in the default view; the wrapped chain is hidden behind the head face in strongly rotated views (as in 334).",
-      "limits": "The beam's outer end and the pump-rod foot are cropped by the frame, as in the plate. Pass 87: the chain is the shared plate chain in the beam plane, riding the 11.7 rim with 0.0097 clearance; headed pins; the terminal link straddles a bored lug on the head and a bored eye on the crosshead; Brown's slot is a raised panel, bolts removed. p91: white or near-white parts recoloured by role (pins steel, washers brass, panels stone); no geometry change.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "The beam's outer end and the pump-rod foot are cropped by the frame, as in the plate. Pass 87: the chain is the shared plate chain in the beam plane, riding the 11.7 rim with 0.0097 clearance; headed pins; the terminal link straddles a bored lug on the head and a bored eye on the crosshead; Brown's slot is a raised panel, bolts removed. p91: white or near-white parts recoloured by role (pins steel, washers brass, panels stone); no geometry change. p94: the chain line stands 0.13 in front of the beam mid-plane so its front plates show in rotated views; the slot panel is a darker emboss.",
+      "assessment": "reasonable"
     },
     {
       "id": 343,
@@ -13880,11 +13894,11 @@
       "id": 355,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-93 lane, integrated by primary agent",
-        "reviewPass": 93,
+        "reviewer": "Claude Opus 5.5 — pass-94 lane, integrated by primary agent",
+        "reviewPass": 94,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p93-fe-review.md",
-        "note": "Pass 93: The default view frames the full precession sweep, so at phase 0 the ring sits right of centre and small."
+        "evidence": "docs/p94-a-review.md",
+        "note": "Pass 94: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -13902,7 +13916,8 @@
         "docs/u5-341-507-review.md",
         "docs/p64-audit-review.md",
         "docs/p90-fe-review.md",
-        "docs/p93-fe-review.md"
+        "docs/p93-fe-review.md",
+        "docs/p94-a-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -13910,9 +13925,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-27",
-      "visibleFlaws": "The default view frames the full precession sweep, so at phase 0 the ring sits right of centre and small.",
-      "limits": "Precession rate prescribed. p90: lathed flywheel disk (rim, web, bell hub); bell face shown. p93: ring A is a broad flat band (rebaked).",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "Precession rate prescribed. p90: lathed flywheel disk (rim, web, bell hub); bell face shown. p93: ring A is a broad flat band (rebaked). p94: the opening view frames Brown's phase-0 pose; in square or narrow viewports the ring passes partly beyond the left edge mid-sweep.",
+      "assessment": "reasonable"
     },
     {
       "id": 356,
@@ -14072,11 +14087,11 @@
       "id": 360,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-93 lane, integrated by primary agent",
-        "reviewPass": 93,
+        "reviewer": "Claude Opus 5.5 — pass-94 lane, integrated by primary agent",
+        "reviewPass": 94,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p93-fe-review.md",
-        "note": "Pass 93: The pawl drops from each crest in one frame."
+        "evidence": "docs/p94-p-review.md",
+        "note": "Pass 94: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -14097,7 +14112,8 @@
         "docs/p86-4b-review.md",
         "docs/p90-fe-review.md",
         "docs/p92-h-review.md",
-        "docs/p93-fe-review.md"
+        "docs/p93-fe-review.md",
+        "docs/p94-p-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -14105,9 +14121,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-27",
-      "visibleFlaws": "The pawl drops from each crest in one frame.",
-      "limits": "The pawl is a flat bored link with a chisel nose that drives from the root and slides into the root before each capture. Capture/coast law prescribed; the pawl's lift is a baked least-clearance table (drops snap as each crest passes); inertia, return bias and loaded torque not dynamically validated. p90: 20 teeth; a curved hook pawl seated in the root; the shared four-spoke flywheel sits behind the rear post (it had passed through the upright and braces); the upright's head meets the pivot pin with a small lip. Pass 92: pins no longer sit on part edges; each carrying part has a round eye or end centred on its pin. p93: the pawl pivots on a round boss on the drum, centred on its pin.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "The pawl is a flat bored link with a chisel nose that drives from the root and slides into the root before each capture. Capture/coast law prescribed; the pawl's lift is a baked least-clearance table (drops snap as each crest passes); inertia, return bias and loaded torque not dynamically validated. p90: 20 teeth; a curved hook pawl seated in the root; the shared four-spoke flywheel sits behind the rear post (it had passed through the upright and braces); the upright's head meets the pivot pin with a small lip. Pass 92: pins no longer sit on part edges; each carrying part has a round eye or end centred on its pin. p93: the pawl pivots on a round boss on the drum, centred on its pin. p94: the pawl rides each tip then falls onto the next back in about 0.07 s (baked contact solve, assumed 60 rad/s² bias) and seats in the root before each capture.",
+      "assessment": "reasonable"
     },
     {
       "id": 361,
@@ -14305,11 +14321,11 @@
       "id": 366,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-91/92 lane, integrated by primary agent",
-        "reviewPass": 92,
+        "reviewer": "Claude Opus 5.5 — pass-94 lane, integrated by primary agent",
+        "reviewPass": 94,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p92-h-review.md",
-        "note": "Pass 91–92: The crank shaft is long and the drill is a plain cone."
+        "evidence": "docs/p94-a-review.md",
+        "note": "Pass 94: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -14330,7 +14346,8 @@
         "docs/p54-geo-b-review.md",
         "docs/p64-audit-review.md",
         "docs/p90-fe-review.md",
-        "docs/p92-h-review.md"
+        "docs/p92-h-review.md",
+        "docs/p94-a-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -14338,9 +14355,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-27",
-      "visibleFlaws": "The crank shaft is long and the drill is a plain cone.",
-      "limits": "Feed schedules and screw dimensions inferred; cutting forces unvalidated. p90: levers, link and treadle in the shaft plane; yoke and extra link removed; slotted lever end on the collar pin. Pass 92: pins no longer sit on part edges; each carrying part has a round eye or end centred on its pin.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "Feed schedules and screw dimensions inferred; cutting forces unvalidated. p90: levers, link and treadle in the shaft plane; yoke and extra link removed; slotted lever end on the collar pin. Pass 92: pins no longer sit on part edges; each carrying part has a round eye or end centred on its pin. p94: the frame column and crank stand where Brown draws them (crank radius 0.85); the bit is a flat spear-point blade.",
+      "assessment": "reasonable"
     },
     {
       "id": 367,
@@ -14514,11 +14531,11 @@
       "id": 371,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-90 lane, integrated by primary agent",
-        "reviewPass": 90,
+        "reviewer": "Claude Opus 5.5 — pass-94 lane, integrated by primary agent",
+        "reviewPass": 94,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p90-fe-review.md",
-        "note": "Pass 90: Tooth sections vary along the radius; a small rim step shows."
+        "evidence": "docs/p94-b-review.md",
+        "note": "Pass 94: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -14535,7 +14552,8 @@
         "docs/visual-assessment-pass52.md",
         "docs/m5-326-400-review.md",
         "docs/p64-audit-review.md",
-        "docs/p90-fe-review.md"
+        "docs/p90-fe-review.md",
+        "docs/p94-b-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -14543,9 +14561,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-27",
-      "visibleFlaws": "Tooth sections vary along the radius; a small rim step shows.",
-      "limits": "The rim gap is ≈8° wider than Brown's, the smallest the pinion clears. p90: solid rims hide the necks; one colour per bar; a small guide plate replaces the yoke. A web cannot be added where the pinion tips pass.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "The rim gap is ≈8° wider than Brown's, the smallest the pinion clears. p90: solid rims hide the necks; one colour per bar; a small guide plate replaces the yoke. A web cannot be added where the pinion tips pass. p94: each tooth bar has one radial section between plain rim sectors (no step); crossover backlash up to 0.0075.",
+      "assessment": "reasonable"
     },
     {
       "id": 372,
@@ -14636,11 +14654,11 @@
       "id": 374,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-90 lane, integrated by primary agent",
-        "reviewPass": 90,
+        "reviewer": "Claude Opus 5.5 — pass-94 lane, integrated by primary agent",
+        "reviewPass": 94,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p90-fe-review.md",
-        "note": "Pass 90: Brown's dotted wheel behind the eccentric is not modelled."
+        "evidence": "docs/p94-b-review.md",
+        "note": "Pass 94: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -14656,7 +14674,8 @@
         "docs/visual-assessment-pass52.md",
         "docs/p64-fix-c2-review.md",
         "docs/p66-audit-review.md",
-        "docs/p90-fe-review.md"
+        "docs/p90-fe-review.md",
+        "docs/p94-b-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -14664,9 +14683,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-27",
-      "visibleFlaws": "Brown's dotted wheel behind the eccentric is not modelled.",
-      "limits": "Foot force, inertia and belt slip idealized.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "Foot force, inertia and belt slip idealized. p94: Brown's dashed circle is the eccentric's half-turn position (same radius, far side of the shaft), which the animation shows; no separate wheel is modelled.",
+      "assessment": "reasonable"
     },
     {
       "id": 375,
@@ -14804,11 +14823,11 @@
       "id": 378,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-91/92 lane, integrated by primary agent",
-        "reviewPass": 92,
+        "reviewer": "Claude Opus 5.5 — pass-94 lane, integrated by primary agent",
+        "reviewPass": 94,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p92-r-review.md",
-        "note": "Pass 91–92: The saw lifts out of its cut once per cycle; the rod's adjustment holes are missing; the standards are short."
+        "evidence": "docs/p94-b-review.md",
+        "note": "Pass 94: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -14830,7 +14849,8 @@
         "docs/p57-c-review.md",
         "docs/p64-audit-review.md",
         "docs/p90-fe-review.md",
-        "docs/p92-r-review.md"
+        "docs/p92-r-review.md",
+        "docs/p94-b-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -14838,9 +14858,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-27",
-      "visibleFlaws": "The saw lifts out of its cut once per cycle; the rod's adjustment holes are missing; the standards are short.",
-      "limits": "Spring shapes/deflections prescribed; cutting force not simulated. p90: symmetric bow-saw frame; legs closed and standing on the ground; spade bob. Pass 92: rope/belt recoloured to the shared hemp brown so it contrasts with the pulleys.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "Spring shapes/deflections prescribed; cutting force not simulated. p90: symmetric bow-saw frame; legs closed and standing on the ground; spade bob. Pass 92: rope/belt recoloured to the shared hemp brown so it contrasts with the pulleys. p94: the saw stays in its kerf all cycle; the pendulum rod has Brown's three adjustment holes; taller A-frame; the bow saw at Brown's proportions; see-through slice in front of the kerf.",
+      "assessment": "reasonable"
     },
     {
       "id": 379,
@@ -14955,11 +14975,11 @@
       "id": 382,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-90 lane, integrated by primary agent",
-        "reviewPass": 90,
+        "reviewer": "Claude Opus 5.5 — pass-94 lane, integrated by primary agent",
+        "reviewPass": 94,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p90-fe-review.md",
-        "note": "Pass 90: The hinge sits lower than drawn."
+        "evidence": "docs/p94-b-review.md",
+        "note": "Pass 94: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -14983,7 +15003,8 @@
         "docs/p56-d-review.md",
         "docs/p64-audit-review.md",
         "docs/p87-l-review.md",
-        "docs/p90-fe-review.md"
+        "docs/p90-fe-review.md",
+        "docs/p94-b-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -14991,9 +15012,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-27",
-      "visibleFlaws": "The hinge sits lower than drawn.",
-      "limits": "Mirror adjustment prescribed; thread friction and clamp preload unsolved. Pass 87: pillar, neck and collar are one turned solid with the set screw in the neck; the mirror has a moulded frame and a symmetric panelled back (a reconstruction). p90: low-severity audit findings fixed (see review).",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "Mirror adjustment prescribed; thread friction and clamp preload unsolved. Pass 87: pillar, neck and collar are one turned solid with the set screw in the neck; the mirror has a moulded frame and a symmetric panelled back (a reconstruction). p90: low-severity audit findings fixed (see review). p94: the hinge sits just below mid-frame on a longer stem; tilt ±18°.",
+      "assessment": "reasonable"
     },
     {
       "id": 383,
@@ -15539,11 +15560,11 @@
       "id": 396,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-93 lane, integrated by primary agent",
-        "reviewPass": 93,
+        "reviewer": "Claude Opus 5.5 — pass-94 lane, integrated by primary agent",
+        "reviewPass": 94,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p93-fe-review.md",
-        "note": "Pass 93: The balance has two arms where the plate draws a plain rim."
+        "evidence": "docs/p94-b-review.md",
+        "note": "Pass 94: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "known",
@@ -15567,7 +15588,8 @@
         "docs/p73-audit-review.md",
         "docs/p90-fe-review.md",
         "docs/p91-w-review.md",
-        "docs/p93-fe-review.md"
+        "docs/p93-fe-review.md",
+        "docs/p94-b-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -15575,9 +15597,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-27",
-      "visibleFlaws": "The balance has two arms where the plate draws a plain rim.",
-      "limits": "The escapement bracket and impulse pallet are single extruded plates in the wheel plane (no hidden pins); detent pallet f can still receive work while withdrawing; the direct impulse is a short contact; the balance motion is prescribed. p90: lever C is one flat plate with fork, crook and hand-shaped tail; raked teeth. The plate's balance spacing is blocked by pallet j's contact and needs a redesigned half-beat assignment (about 400 bake trials failed). p91: white or near-white parts recoloured by role (pins steel, washers brass, panels stone); no geometry change. p93: the wheel rim and crossings are slender; the balance is at the plate's size and spacing; each half-beat is reassigned so the returning tooth drives pallet j directly (the wheel snaps about 10° in 0.03 s).",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "The escapement bracket and impulse pallet are single extruded plates in the wheel plane (no hidden pins); detent pallet f can still receive work while withdrawing; the direct impulse is a short contact; the balance motion is prescribed. p90: lever C is one flat plate with fork, crook and hand-shaped tail; raked teeth. The plate's balance spacing is blocked by pallet j's contact and needs a redesigned half-beat assignment (about 400 bake trials failed). p91: white or near-white parts recoloured by role (pins steel, washers brass, panels stone); no geometry change. p93: the wheel rim and crossings are slender; the balance is at the plate's size and spacing; each half-beat is reassigned so the returning tooth drives pallet j directly (the wheel snaps about 10° in 0.03 s). p94: the balance is a plain beaded rim and hub joined by a thin see-through web.",
+      "assessment": "reasonable"
     },
     {
       "id": 397,
@@ -15796,11 +15818,11 @@
       "id": 402,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-90 lane, integrated by primary agent",
-        "reviewPass": 90,
+        "reviewer": "Claude Opus 5.5 — pass-94 lane, integrated by primary agent",
+        "reviewPass": 94,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p90-u1-review.md",
-        "note": "Pass 90: The toothed runs on B's arm are shorter than Brown's (9 teeth each where he draws about 13, as the anchor's swing uses), and the arm is a true arc about B where Brown's curve bulges further out. Pallet A points further right than Brown's hanging blade."
+        "evidence": "docs/p94-b-review.md",
+        "note": "Pass 94: Pallet A points further right than Brown's hanging blade; each run's teeth stop where the swing stops using them, where Brown carries teeth to the arm ends."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -15821,7 +15843,8 @@
         "docs/p70-b-review.md",
         "docs/p73-audit-review.md",
         "docs/p88-y-review.md",
-        "docs/p90-u1-review.md"
+        "docs/p90-u1-review.md",
+        "docs/p94-b-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -15829,8 +15852,8 @@
         "note": "Baked pallet geometry and prescribed motion; rejected geometric continuation was not MuJoCo."
       },
       "updatedOn": "2026-09-27",
-      "visibleFlaws": "The toothed runs on B's arm are shorter than Brown's (9 teeth each where he draws about 13, as the anchor's swing uses), and the arm is a true arc about B where Brown's curve bulges further out. Pallet A points further right than Brown's hanging blade.",
-      "limits": "p90: rebuilt from flat extrusions. The 12-tooth saw wheel turns clockwise as Brown's steep faces require. Lever B, anchor A and one curved arm concentric with B are one plate. Internal teeth on the arm turn the upper pinion; external teeth turn the left one. Each pallet blade lies along a tooth's front face with its nose in the root at the end of its swing. Wheel motion is baked from outline contact (recoil anchor, one tooth per period); the lever swing is a prescribed 8° sinusoid, with no springs, torque or inertia. The see-through bridge carries the lever and wheel arbors; the balance arbors run from small rear bearings.",
+      "visibleFlaws": "Pallet A points further right than Brown's hanging blade; each run's teeth stop where the swing stops using them, where Brown carries teeth to the arm ends.",
+      "limits": "p90: rebuilt from flat extrusions. The 12-tooth saw wheel turns clockwise as Brown's steep faces require. Lever B, anchor A and one curved arm concentric with B are one plate. Internal teeth on the arm turn the upper pinion; external teeth turn the left one. Each pallet blade lies along a tooth's front face with its nose in the root at the end of its swing. Wheel motion is baked from outline contact (recoil anchor, one tooth per period); the lever swing is a prescribed 8° sinusoid, with no springs, torque or inertia. The see-through bridge carries the lever and wheel arbors; the balance arbors run from small rear bearings. p94: 20-tooth pinions and a ±10° swing give 13 meshing teeth on each run; the arm is two true arcs about B; plain-rim balances.",
       "assessment": "minor"
     },
     {
@@ -15953,11 +15976,11 @@
       "id": 406,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-91/92 lane, integrated by primary agent",
-        "reviewPass": 92,
+        "reviewer": "Claude Opus 5.5 — pass-94 lane, integrated by primary agent",
+        "reviewPass": 94,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p91-w-review.md",
-        "note": "Pass 91–92: The T stock is symmetric where Brown draws it one-sided; the foot anchor block is kept."
+        "evidence": "docs/p94-b-review.md",
+        "note": "Pass 94: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -15975,7 +15998,8 @@
         "docs/p57-d-review.md",
         "docs/p64-audit-review.md",
         "docs/p90-fe-review.md",
-        "docs/p91-w-review.md"
+        "docs/p91-w-review.md",
+        "docs/p94-b-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -15983,9 +16007,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-27",
-      "visibleFlaws": "The T stock is symmetric where Brown draws it one-sided; the foot anchor block is kept.",
-      "limits": "Finite-radius string length/tension remain approximate; two cord planes/helical pencil wrap are inferred. p90: the pencil and curve reach the blade foot. p91: white or near-white parts recoloured by role (pins steel, washers brass, panels stone); no geometry change.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "Finite-radius string length/tension remain approximate; two cord planes/helical pencil wrap are inferred. p90: the pencil and curve reach the blade foot. p91: white or near-white parts recoloured by role (pins steel, washers brass, panels stone); no geometry change. p94: the stock runs to one side with a cove end; the blade's curved foot turns out to a toe carrying the thread anchor.",
+      "assessment": "reasonable"
     },
     {
       "id": 407,
@@ -16303,11 +16327,11 @@
       "id": 415,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-91/92 lane, integrated by primary agent",
-        "reviewPass": 92,
+        "reviewer": "Claude Opus 5.5 — pass-94 lane, integrated by primary agent",
+        "reviewPass": 94,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p91-w-review.md",
-        "note": "Pass 91–92: The cords attach 0.58 along each blade."
+        "evidence": "docs/p94-b-review.md",
+        "note": "Pass 94: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -16331,7 +16355,8 @@
         "docs/p75-fa-review.md",
         "docs/p81-audit-review.md",
         "docs/p90-fe-review.md",
-        "docs/p91-w-review.md"
+        "docs/p91-w-review.md",
+        "docs/p94-b-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -16339,9 +16364,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-27",
-      "visibleFlaws": "The cords attach 0.58 along each blade.",
-      "limits": "Rod D is a flat bar running straight past the crop; its far end is guided horizontally beyond the crop by an ideal constraint that is not drawn. p90: T lever with horns; straight blade pawls; straight taut cords. p91: white or near-white parts recoloured by role (pins steel, washers brass, panels stone); no geometry change.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "Rod D is a flat bar running straight past the crop; its far end is guided horizontally beyond the crop by an ideal constraint that is not drawn. p90: T lever with horns; straight blade pawls; straight taut cords. p91: white or near-white parts recoloured by role (pins steel, washers brass, panels stone); no geometry change. p94: both cords tie on 0.70 along the blade (Brown about 0.66 and 0.72).",
+      "assessment": "reasonable"
     },
     {
       "id": 416,
@@ -17044,11 +17069,11 @@
       "id": 433,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-90 lane, integrated by primary agent",
-        "reviewPass": 90,
+        "reviewer": "Claude Opus 5.5 — pass-94 lane, integrated by primary agent",
+        "reviewPass": 94,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p90-u3-review.md",
-        "note": "Pass 90: The water film across each board, from the jet's strike to the board's end, isn't drawn."
+        "evidence": "docs/p94-b-review.md",
+        "note": "Pass 94: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -17076,7 +17101,8 @@
         "docs/p80-3-review.md",
         "docs/p81-audit-review.md",
         "docs/p86-8-review.md",
-        "docs/p90-u3-review.md"
+        "docs/p90-u3-review.md",
+        "docs/p94-b-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -17084,9 +17110,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-27",
-      "visibleFlaws": "The water film across each board, from the jet's strike to the board's end, isn't drawn.",
-      "limits": "The spout is free and runs off the upper right as drawn; the flow is illustrative and the runner speed prescribed. The hub fills the support ring and the boards butt onto it. p86: the board roots are sunk 0.24 into a 0.56-deep hub, deeper than Brown's thin collar, so it encloses the pitched boards. p90: one discharge sheet per board (16) starts on its board's outer end, sweeps round with the runner and thins as the board leaves the wet sector. The jet strikes near the outer rim, where Brown's lands nearer the hub; the splash droplets come from one fixed point.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "The spout is free and runs off the upper right as drawn; the flow is illustrative and the runner speed prescribed. The hub fills the support ring and the boards butt onto it. p86: the board roots are sunk 0.24 into a 0.56-deep hub, deeper than Brown's thin collar, so it encloses the pitched boards. p90: one discharge sheet per board (16) starts on its board's outer end, sweeps round with the runner and thins as the board leaves the wet sector. The jet strikes near the outer rim, where Brown's lands nearer the hub; the splash droplets come from one fixed point. p94: each board carries a water film from the jet's strike to its end, running into its spill sheet.",
+      "assessment": "reasonable"
     },
     {
       "id": 434,
@@ -18987,11 +19013,11 @@
       "id": 478,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-87 lane, integrated by primary agent",
-        "reviewPass": 87,
+        "reviewer": "Claude Opus 5.5 — pass-94 lane, integrated by primary agent",
+        "reviewPass": 94,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p87-w-review.md",
-        "note": "Pass 87: Support B and the pipe's anchor end sit closer to C than Brown draws."
+        "evidence": "docs/p94-b-review.md",
+        "note": "Pass 94: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -19011,7 +19037,8 @@
         "docs/p64-audit-review.md",
         "docs/p69-w3-review.md",
         "docs/p73-audit-review.md",
-        "docs/p87-w-review.md"
+        "docs/p87-w-review.md",
+        "docs/p94-b-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -19019,9 +19046,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-27",
-      "visibleFlaws": "Support B and the pipe's anchor end sit closer to C than Brown draws.",
-      "limits": "C is one watertight cast section on z = 0 (sphere, pipe hub, stuffing-box hub, flared outlet neck) with Brown's thick wall, shaded smoothly inside and out; A and the plunger run in 0.003-clearance hub bores. The plunger's outer end is crowned 0.034 so it bears on D's straight edge. Stop-screw b runs through D's lower arm and beyond it; its tip rests on post c cold, stopping the lever coming out too far. D's support stands behind the lever, undrawn by Brown. The base is bored only to the outlet bore. The condensate is one continuous sheet whose thickness follows the prescribed gap flow.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "C is one watertight cast section on z = 0 (sphere, pipe hub, stuffing-box hub, flared outlet neck) with Brown's thick wall, shaded smoothly inside and out; A and the plunger run in 0.003-clearance hub bores. The plunger's outer end is crowned 0.034 so it bears on D's straight edge. Stop-screw b runs through D's lower arm and beyond it; its tip rests on post c cold, stopping the lever coming out too far. D's support stands behind the lever, undrawn by Brown. The base is bored only to the outlet bore. The condensate is one continuous sheet whose thickness follows the prescribed gap flow. p94: support B and the anchored pipe end sit where the plate draws them (about 0.9 further from C).",
+      "assessment": "reasonable"
     },
     {
       "id": 479,
@@ -19325,11 +19352,11 @@
       "id": 486,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-93 lane, integrated by primary agent",
-        "reviewPass": 93,
+        "reviewer": "Claude Opus 5.5 — pass-94 lane, integrated by primary agent",
+        "reviewPass": 94,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p93-ff-review.md",
-        "note": "Pass 93: Sails are 0.94 of the pivot radius (Brown about 1.05); longer boards collide under the flip timing."
+        "evidence": "docs/p94-b-review.md",
+        "note": "Pass 94: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -19348,7 +19375,8 @@
         "docs/p64-audit-review.md",
         "docs/p88-y-review.md",
         "docs/p90-ff-review.md",
-        "docs/p93-ff-review.md"
+        "docs/p93-ff-review.md",
+        "docs/p94-b-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -19356,9 +19384,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-27",
-      "visibleFlaws": "Sails are 0.94 of the pivot radius (Brown about 1.05); longer boards collide under the flip timing.",
-      "limits": "Sail flip imposed after dead line; passive flap stops, impacts and aerodynamic equilibrium unsolved. p88: the square boss and the lower bearing seat on the hub and supports instead of sharing their bores. p90: the hinge pin heads sit in their sleeves with no lip. p93: flat-bar arms with square end brackets and slim stiles; Brown's thin ring is notation and not modelled.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "Sail flip imposed after dead line; passive flap stops, impacts and aerodynamic equilibrium unsolved. p88: the square boss and the lower bearing seat on the hub and supports instead of sharing their bores. p90: the hinge pin heads sit in their sleeves with no lip. p93: flat-bar arms with square end brackets and slim stiles; Brown's thin ring is notation and not modelled. p94: sails at Brown's 1.05 of the pivot radius; each board stays edge-on to 120° then flips over 120–180° (departing from the site's timing to avoid collisions).",
+      "assessment": "reasonable"
     },
     {
       "id": 487,
@@ -19519,11 +19547,11 @@
       "id": 491,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-93 lane, integrated by primary agent",
-        "reviewPass": 93,
+        "reviewer": "Claude Opus 5.5 — pass-94 lane, integrated by primary agent",
+        "reviewPass": 94,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p93-ff-review.md",
-        "note": "Pass 93: The pawl pivot is turned 15° round (0.30 off the collar centre) so the seated nose reads in the root."
+        "evidence": "docs/p94-p-review.md",
+        "note": "Pass 94: From the default view a strip of the seated tooth face, about 0.06 wide, shows beyond the pawl's front edge (Brown's tooth-ring proportions)."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -19547,7 +19575,8 @@
         "docs/p81-audit-review.md",
         "docs/p82-fig-review.md",
         "docs/p83-c-review.md",
-        "docs/p93-ff-review.md"
+        "docs/p93-ff-review.md",
+        "docs/p94-p-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -19555,8 +19584,8 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-27",
-      "visibleFlaws": "The pawl pivot is turned 15° round (0.30 off the collar centre) so the seated nose reads in the root.",
-      "limits": "The pawl is a curved flat dog turning on the radial pin Brown draws; its drop is prescribed (12.5% of a tooth); gravity, impact, friction and holding load are not solved. The cable lead ends off-view. Each cycle hauls, eases back 7.9° and holds with the nose seated in the root against the face (Brown's held pose); while hauling, each drop lands about a third up the ramp, as a gravity pawl must; the recoil and hold are prescribed.",
+      "visibleFlaws": "From the default view a strip of the seated tooth face, about 0.06 wide, shows beyond the pawl's front edge (Brown's tooth-ring proportions).",
+      "limits": "The pawl is a curved flat dog turning on the radial pin Brown draws; its drop is prescribed (12.5% of a tooth); gravity, impact, friction and holding load are not solved. The cable lead ends off-view. Each cycle hauls, eases back 7.9° and holds with the nose seated in the root against the face (Brown's held pose); while hauling, each drop lands about a third up the ramp, as a gravity pawl must; the recoil and hold are prescribed. p94: the pivot is back on Brown's axis at the collar centre; the pawl is one flat hooked plate whose point fills the root at the valley angle (contact table regenerated).",
       "assessment": "minor"
     },
     {
@@ -19686,11 +19715,11 @@
       "id": 495,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-93 lane, integrated by primary agent",
-        "reviewPass": 93,
+        "reviewer": "Claude Opus 5.5 — pass-94 lane, integrated by primary agent",
+        "reviewPass": 94,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p93-ff-review.md",
-        "note": "Pass 93: The bevels keep flat toothed backs (a full back disc at the tip circle cannot clear the mating teeth)."
+        "evidence": "docs/p94-b-review.md",
+        "note": "Pass 94: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -19707,7 +19736,8 @@
         "docs/p59-audit-bd-review.md",
         "docs/p62-audit-review.md",
         "docs/p90-ff-review.md",
-        "docs/p93-ff-review.md"
+        "docs/p93-ff-review.md",
+        "docs/p94-b-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -19715,9 +19745,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-27",
-      "visibleFlaws": "The bevels keep flat toothed backs (a full back disc at the tip circle cannot clear the mating teeth).",
-      "limits": "The gears are whole rather than cut in section. Approximate bevel conjugacy. p90: short-faced bevels with flat ends and a square carrier block for stud E. p93: Brown's large square carrier block for stud E.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "The gears are whole rather than cut in section. Approximate bevel conjugacy. p90: short-faced bevels with flat ends and a square carrier block for stud E. p93: Brown's large square carrier block for stud E. p94: each bevel has a plain flat back disc beyond the reach of the mating teeth.",
+      "assessment": "reasonable"
     },
     {
       "id": 496,

@@ -133,17 +133,20 @@ test('movement 486 preserves the official six-vane canvas timing and editorial c
   assert.match(evidence.officialEditorialNote,
     /animation illustrates the intended motion.*Brown.*flip.*too early/s);
   assert.match(evidence.reconstructionDisclosure,
-    /30-degree post-top flip.*four-second source cycle.*C2 flip timing/s);
+    /four-second source cycle.*60-degree flip at 120-180 degrees.*official canvas flips over the 30 degrees after the top.*C2 flip timing/s);
   disposeModel(model.root);
 });
 
-test('movement 486 holds a sail radial for the power half-turn, flips it after the top, and returns it edge-on', () => {
+test('movement 486 holds a sail radial for the power half-turn, holds it edge-on past the top, flips it on the return, and returns it edge-on', () => {
   const { model } = movementModel();
   const { dynamics, geometry, sailStateAtRotorAngle, transmission } =
     model.root.userData;
   const delta = geometry.pivotTransitionAngleRadian;
+  const start = Math.PI / 2 + geometry.flipStartAfterTopRadian;
 
-  near(delta, Math.PI / 6, 0, 'official 30-degree change sector');
+  near(delta, Math.PI / 3, 0, '60-degree flip sector');
+  near(geometry.flipStartAfterTopRadian, Math.PI / 6, 0,
+    'flip starts 30 degrees past the top');
   for (const angle of [-Math.PI / 3, 0, Math.PI / 3, Math.PI / 2]) {
     const state = sailStateAtRotorAngle(angle, 0);
     assert.equal(state.pivotMode, 'radial-face-presenting-power-stroke');
@@ -152,17 +155,18 @@ test('movement 486 holds a sail radial for the power half-turn, flips it after t
     near(state.faceProjectionFraction, Math.abs(Math.cos(angle)),
       1e-14, `face projection at azimuth ${angle}`);
   }
-  const flipStart = sailStateAtRotorAngle(Math.PI / 2, 0);
-  const flipMiddle = sailStateAtRotorAngle(Math.PI / 2 + delta / 2, 0);
-  const flipEnd = sailStateAtRotorAngle(Math.PI / 2 + delta, 0);
-  near(flipStart.worldPanelYawRadian, Math.PI / 2, 0, 'flip start');
-  assert.equal(flipMiddle.pivotMode,
-    'C2-180-degree-flip-after-top-dead-line');
-  assert.ok(flipMiddle.worldPanelYawRadian > Math.PI / 2);
-  assert.ok(flipMiddle.worldPanelYawRadian < 3 * Math.PI / 2);
+  for (const angle of [Math.PI / 2 + 0.1, start]) {
+    const state = sailStateAtRotorAngle(angle, 0);
+    assert.equal(state.pivotMode, 'wind-aligned-edge-on-hold-before-flip');
+    near(state.worldPanelYawRadian, Math.PI / 2, 0, `hold at ${angle}`);
+  }
+  const flipMiddle = sailStateAtRotorAngle(start + delta / 2, 0);
+  const flipEnd = sailStateAtRotorAngle(start + delta, 0);
+  assert.equal(flipMiddle.pivotMode, 'C2-180-degree-flip-on-return');
+  near(flipMiddle.worldPanelYawRadian, Math.PI, 1e-14, 'flip midpoint');
   near(flipEnd.worldPanelYawRadian, 3 * Math.PI / 2, 0,
     '180-degree flip end');
-  for (const angle of [2 * Math.PI / 3, Math.PI, 4 * Math.PI / 3]) {
+  for (const angle of [Math.PI, 7 * Math.PI / 6, 4 * Math.PI / 3]) {
     const state = sailStateAtRotorAngle(angle, 0);
     assert.equal(state.pivotMode, 'wind-aligned-edge-on-return-stroke');
     near(state.worldPanelYawRadian, 3 * Math.PI / 2, 0,
@@ -173,27 +177,21 @@ test('movement 486 holds a sail radial for the power half-turn, flips it after t
   near(sailStateAtRotorAngle(FULL_TURN, 0).worldPanelYawRadian,
     FULL_TURN, 0, 'oriented vane closes after one rotor turn');
   assert.match(dynamics.sourceTimingDisclosure,
-    /radial half-turn.*30-degree post-top flip.*wind-aligned remainder/s);
+    /radial half-turn and wind-aligned return.*30-degree post-top flip is moved to 120-180 degrees/s);
   assert.match(transmission.hingeConstraint,
-    /radial power half-turn.*advances pi.*wind_axis/s);
+    /radial power half-turn.*advances pi.*120 to 180.*wind_axis/s);
   disposeModel(model.root);
 });
 
-test('movement 486 endpoint-matched flip law is C2 at both 30-degree boundaries', () => {
+test('movement 486 flip law is rest-to-rest C2 at both ends of the 60-degree sector', () => {
   const { model } = movementModel();
   const { dynamics, geometry, sailStateAtRotorAngle } =
     model.root.userData;
   const epsilon = 1e-5;
   const yaw = (angle) =>
     sailStateAtRotorAngle(angle, 0).worldPanelYawRadian;
-  const boundaries = [
-    { angle: Math.PI / 2, derivative: 1 },
-    {
-      angle: Math.PI / 2 + geometry.pivotTransitionAngleRadian,
-      derivative: 0,
-    },
-  ];
-  for (const { angle, derivative } of boundaries) {
+  const start = Math.PI / 2 + geometry.flipStartAfterTopRadian;
+  for (const angle of [start, start + geometry.pivotTransitionAngleRadian]) {
     const leftVelocity = (yaw(angle) - yaw(angle - epsilon)) / epsilon;
     const rightVelocity = (yaw(angle + epsilon) - yaw(angle)) / epsilon;
     const leftAcceleration = (
@@ -202,20 +200,62 @@ test('movement 486 endpoint-matched flip law is C2 at both 30-degree boundaries'
     const rightAcceleration = (
       yaw(angle + 2 * epsilon) - 2 * yaw(angle + epsilon) + yaw(angle)
     ) / epsilon ** 2;
-    near(leftVelocity, derivative, 3e-7,
-      `left angular derivative at ${angle}`);
-    near(rightVelocity, derivative, 3e-7,
-      `right angular derivative at ${angle}`);
-    near(leftAcceleration, 0, 0.02,
-      `left angular acceleration at ${angle}`);
-    near(rightAcceleration, 0, 0.02,
-      `right angular acceleration at ${angle}`);
+    near(leftVelocity, 0, 3e-7, `left angular derivative at ${angle}`);
+    near(rightVelocity, 0, 3e-7, `right angular derivative at ${angle}`);
+    near(leftAcceleration, 0, 0.02, `left angular acceleration at ${angle}`);
+    near(rightAcceleration, 0, 0.02, `right angular acceleration at ${angle}`);
   }
-  const flipPolynomial = geometry.sourcePhaseFlipQuintic;
+  const flipPolynomial = geometry.restToRestFlipQuintic;
   near(flipPolynomial(0), 0, 0, 'flip polynomial start value');
-  near(flipPolynomial(1), 6, 0, 'six transition radians per sector radian');
+  near(flipPolynomial(1), 1, 0, 'flip polynomial end value');
   assert.match(dynamics.c2PivotTiming,
-    /180 degrees.*30-degree sector.*position, angular velocity, and angular acceleration.*continuously/s);
+    /held edge-on.*180 degrees during the next 60-degree sector.*zero angular velocity and acceleration/s);
+  disposeModel(model.root);
+});
+
+test('movement 486 Brown-length boards clear their neighbours over the whole cycle and keep the plate pose', () => {
+  const { model } = movementModel();
+  const { blocks, geometry } = model.root.userData;
+  near(geometry.sailWidthSceneUnit / geometry.rotorRadiusSceneUnit, 1.05,
+    0.005, 'board length about 1.05 pivot radii');
+  const cross = (o, p, q) => (p.x - o.x) * (q.y - o.y) - (p.y - o.y) * (q.x - o.x);
+  const pointSegment = (p, a, b) => {
+    const ab = b.clone().sub(a);
+    const t = THREE.MathUtils.clamp(p.clone().sub(a).dot(ab) / ab.lengthSq(), 0, 1);
+    return p.distanceTo(a.clone().addScaledVector(ab, t));
+  };
+  const segmentDistance = (a, b, c, d) => {
+    if ((cross(a, b, c) > 0) !== (cross(a, b, d) > 0)
+      && (cross(c, d, a) > 0) !== (cross(c, d, b) > 0)) return 0;
+    return Math.min(pointSegment(a, c, d), pointSegment(b, c, d),
+      pointSegment(c, a, b), pointSegment(d, a, b));
+  };
+  const half = geometry.sailWidthSceneUnit / 2;
+  const plan = (vector) => new THREE.Vector2(vector.x, vector.z);
+  let minimum = Infinity;
+  for (let pose = 0; pose < 1440; pose += 1) {
+    model.update(geometry.cycleDuration * pose / 1440);
+    model.root.updateMatrixWorld(true);
+    const segments = blocks.armAssemblies.map(({ panel }) => [
+      plan(new THREE.Vector3(-half, 0, 0).applyMatrix4(panel.matrixWorld)),
+      plan(new THREE.Vector3(half, 0, 0).applyMatrix4(panel.matrixWorld)),
+    ]);
+    for (let i = 0; i < 6; i += 1) {
+      for (let j = i + 1; j < 6; j += 1) {
+        minimum = Math.min(minimum, segmentDistance(...segments[i], ...segments[j])
+          - geometry.sailThicknessSceneUnit);
+      }
+    }
+  }
+  assert.ok(minimum > 0.45, `board-to-board face gap ${minimum}`);
+  model.update(0);
+  const undirected = (angle) => THREE.MathUtils.euclideanModulo(
+    THREE.MathUtils.radToDeg(angle), 180);
+  const plate = model.root.userData.stateAtTime(0).sailStates
+    .map((state) => undirected(state.worldPanelYawRadian));
+  [0, 60, 90, 90, 90, 120].forEach((expected, index) => {
+    near(plate[index], expected, 1e-9, `plate pose board ${index}`);
+  });
   disposeModel(model.root);
 });
 
@@ -239,7 +279,7 @@ test('movement 486 uses the correct wind, shaft, and torque directions in plan',
   near(left.faceProjectionFraction, 0, 2e-16, 'left edge-on sail');
   assert.ok(left.signedLeverFraction < 0);
   near(left.torqueWeight, 0, 2e-16, 'left return torque');
-  const flip = sailStateAtRotorAngle(7 * Math.PI / 12, 0);
+  const flip = sailStateAtRotorAngle(5 * Math.PI / 6, 0);
   assert.ok(flip.signedLeverFraction < 0);
   assert.ok(flip.faceProjectionFraction > 0.9);
   assert.ok(flip.torqueWeight < 0,

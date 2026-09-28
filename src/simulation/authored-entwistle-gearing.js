@@ -1,5 +1,6 @@
 import { correctEntwistleGearing } from './capstan-entwistle-corrections.js';
 import * as THREE from 'three';
+import { toCreasedNormals } from 'three/addons/utils/BufferGeometryUtils.js';
 import { makeMiterGear } from './miter-gear.js';
 import { boredLatheGeometry } from './bored-lathe-geometry.js';
 import {
@@ -110,7 +111,10 @@ function presentHousedSection(root, material) {
   replace(blocks.outputDrum, boredLatheGeometry([
     { axial: -(drumRight - drumLeft) / 2, radial: drumRadius },
     { axial: (drumRight - drumLeft) / 2, radial: drumRadius },
-  ], blocks.outputDrum.userData.boreRadius ?? 0.115, 96).rotateX(Math.PI / 2));
+  // p94: the drum is cast over sleeve C' (bored 0.005 inside its 0.245
+  // outside), so no drum bore lies on the sleeve's own bore.
+  ], 0.24, 96).rotateX(Math.PI / 2));
+  blocks.outputDrum.userData.castOnSleeve = true;
   blocks.outputDrum.rotation.set(0, -Math.PI / 2, 0);
   blocks.outputDrum.position.x = (drumLeft + drumRight) / 2;
 
@@ -209,12 +213,18 @@ function presentHousedSection(root, material) {
 
 
 // Pass 90: Brown's bevels are short-faced: the teeth fill only the outer
-// third of the cone distance, and both ends are cut square to the axis (the
-// back face is a flat disc out to the tip circle, the toe a flat face), so
-// no tooth runs in towards the apex or stands past a smaller back disc. The
-// body under the teeth rises 0.012 above their roots (inside the 0.022 tip
-// clearance) and stops 0.003 short of both end planes, so no face of it lies
-// on a tooth face.
+// part of the cone distance and the toe is cut square to the axis.
+// p94: Brown's section shows each wheel with a plain flat back, as wide as
+// the tooth tips, not a flat toothed back. Three equal miters can carry such
+// a back only if every wheel's teeth stay inside the cylinder of radius
+// backZ - clearance and its back plane stands at backZ: then the planet's
+// teeth (radius < backZ about their own axis) never reach A's or C's back
+// plane, and vice versa. So the teeth run on along their cone from the old
+// heel (axial 1.20, tip radius 1.34) to the back plane at 1.36, their tips
+// turned to that cylinder where they would pass it (a short turned band,
+// as Brown draws at A), and a plain back disc closes them. The body under
+// the teeth rises 0.012 above their roots and runs into the disc.
+const BEVEL_BACK = {heelZ: 1.20, clearance: 0.02, thickness: 0.07};
 function truncateEntwistleBevel(gear, toeZ, heelZ) {
   const rotor = gear.userData.rotor;
   const teethMeshes = rotor.children.filter((o) => o.userData.bevelTooth);
@@ -223,36 +233,49 @@ function truncateEntwistleBevel(gear, toeZ, heelZ) {
   // bevelToothGeometry writes the toe cap (n), the heel cap (n), then four
   // vertices per side quad (4n).
   const n = position.count / 6;
-  const ray = (i, z) => {
+  const heelOutline = Array.from({length: n}, (_, i) => {
     const p = new THREE.Vector3().fromBufferAttribute(position, n + i);
-    return p.multiplyScalar(z / p.z);
-  };
-  const toe = Array.from({length: n}, (_, i) => ray(i, toeZ));
-  const heel = Array.from({length: n}, (_, i) => ray(i, heelZ));
-  const cap = THREE.ShapeUtils.triangulateShape(heel.map((p) => new THREE.Vector2(p.x, p.y)), []);
-  const positions = [], indices = [];
-  const face = (vertices, triangles) => {
-    const start = positions.length / 3;
-    for (const v of vertices) positions.push(v.x, v.y, v.z);
-    for (const t of triangles) indices.push(...t.map((k) => start + k));
-  };
-  face(toe, cap.map(([a, b, c]) => [c, b, a]));
-  face(heel, cap);
-  for (let i = 0; i < n; i += 1) {
-    const j = (i + 1) % n;
-    face([toe[i], toe[j], heel[j], heel[i]], [[0, 1, 2], [0, 2, 3]]);
+    return p.multiplyScalar(heelZ / p.z);
+  });
+  let tipHeel = 0, rootHeel = Infinity;
+  for (const p of heelOutline) {
+    const r = Math.hypot(p.x, p.y);
+    tipHeel = Math.max(tipHeel, r); rootHeel = Math.min(rootHeel, r);
   }
-  const tooth = new THREE.BufferGeometry();
-  tooth.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-  tooth.setIndex(indices);
-  const flat = tooth.toNonIndexed();
-  flat.computeVertexNormals();
-  flat.userData = {...source.userData, profile: 'short-faced-flat-ended-bevel', toeZ, heelZ};
+  const tipLimit = tipHeel, backZ = tipLimit + BEVEL_BACK.clearance;
+  const toothEnd = backZ + 0.01;
+  // Stations along the cone; dense where the tips meet the turned band.
+  const stations = [];
+  for (let k = 0; k <= 8; k += 1) stations.push(toeZ + (heelZ - toeZ) * k / 8);
+  for (let k = 1; k <= 8; k += 1) stations.push(heelZ + (toothEnd - heelZ) * k / 8);
+  // Inside the back disc the tips step 0.003 in, off the disc's own rim.
+  stations.splice(stations.findIndex((z) => z > backZ), 0, backZ);
+  const ring = (z) => heelOutline.map((p) => {
+    const q = p.clone().multiplyScalar(z / heelZ), r = Math.hypot(q.x, q.y);
+    const limit = z > backZ + 1e-9 ? tipLimit - 0.003 : tipLimit;
+    if (r > limit) { q.x *= limit / r; q.y *= limit / r; }
+    return q;
+  });
+  const rings = stations.map(ring);
+  const positions = [];
+  const push = (...points) => { for (const v of points) positions.push(v.x, v.y, v.z); };
+  const cap = THREE.ShapeUtils.triangulateShape(heelOutline.map((p) => new THREE.Vector2(p.x, p.y)), []);
+  const toe = rings[0], end = rings.at(-1);
+  for (const [a, b, c] of cap) { push(toe[c], toe[b], toe[a]); push(end[a], end[b], end[c]); }
+  for (let k = 0; k + 1 < rings.length; k += 1) {
+    const lo = rings[k], hi = rings[k + 1];
+    for (let i = 0; i < n; i += 1) {
+      const j = (i + 1) % n;
+      push(lo[i], lo[j], hi[j], lo[i], hi[j], hi[i]);
+    }
+  }
+  const raw = new THREE.BufferGeometry();
+  raw.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  const flat = toCreasedNormals(raw, Math.PI / 4.5);
+  raw.dispose();
+  flat.userData = {...source.userData, profile: 'flat-backed-bevel-with-turned-tip-band', toeZ, heelZ, backZ, tipLimit};
   for (const mesh of teethMeshes) mesh.geometry = flat;
   source.dispose();
-  // Root radius on the cone at the heel (the outline's innermost point).
-  let rootHeel = Infinity;
-  for (const p of heel) rootHeel = Math.min(rootHeel, Math.hypot(p.x, p.y));
   const rootAt = (z) => rootHeel * z / heelZ + 0.012;
   // The body is carried on the gear's hub (0.005 into it), not bored to the
   // hub's own bore, where the two bores lay on each other.
@@ -261,12 +284,21 @@ function truncateEntwistleBevel(gear, toeZ, heelZ) {
   const bore = Math.max(hub.geometry.boundingBox.max.x, hub.geometry.boundingBox.max.y) - 0.005;
   const body = gear.userData.body;
   body.geometry.dispose();
-  const z0 = toeZ + 0.003, z1 = heelZ - 0.003;
+  const z0 = toeZ + 0.003, z1 = backZ + 0.02;
   body.geometry = boredLatheGeometry([{axial: z0, radial: rootAt(z0)}, {axial: z1, radial: rootAt(z1)}], bore, 96)
     .rotateX(Math.PI / 2);
   body.userData.bevelGearBody = true;
+  // The plain back: a disc from the hub out to the tip cylinder.
+  const back = new THREE.Mesh(
+    boredLatheGeometry([{axial: backZ, radial: tipLimit}, {axial: backZ + BEVEL_BACK.thickness, radial: tipLimit}], bore, 128).rotateX(Math.PI / 2),
+    body.material,
+  );
+  back.userData.role = 'plain-flat-back-of-bevel-wheel';
+  back.userData.bevelGearBody = true;
+  rotor.add(back);
+  gear.userData.back = back;
   for (const part of [gear.userData.inset, gear.userData.indicator]) if (part) part.visible = false;
-  gear.userData.toothFace = {toeZ, heelZ};
+  gear.userData.toothFace = {toeZ, heelZ, backZ, tipLimit, backThickness: BEVEL_BACK.thickness};
 }
 
 function entwistlePatentGearing(movement) {
@@ -736,7 +768,10 @@ function entwistlePatentGearing(movement) {
     const outer = Math.max(box.max.x, box.max.y), center = hub.position.z;
     const boreRadius = gear === planetGearB ? 0.074 : looseBoreRadius;
     hub.geometry.dispose();
-    hub.geometry = boredLatheGeometry([{axial: 0.80 - center, radial: outer}, {axial: 1.38 - center, radial: outer}], boreRadius, 64)
+    // p94: B's boss stands 0.06 proud of its plain back, as Brown draws it
+    // round stud E; A's back meets the standard's bearing, C's its sleeve.
+    const bossEnd = gear === planetGearB ? gear.userData.toothFace.backZ + gear.userData.toothFace.backThickness + 0.06 : 1.38;
+    hub.geometry = boredLatheGeometry([{axial: 0.80 - center, radial: outer}, {axial: bossEnd - center, radial: outer}], boreRadius, 64)
       .rotateX(Math.PI / 2);
     hub.userData.boreRadius = boreRadius;
   }

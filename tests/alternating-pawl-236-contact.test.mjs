@@ -3,42 +3,41 @@ import test from 'node:test';
 import * as THREE from 'three';
 import { createAuthoredIntermittentMovement as create } from '../src/simulation/authored-intermittent.js';
 import { nearest390Outline } from '../src/simulation/dual-band-pawl-contact.js';
-import { solidSurface, surfacePoints, surfaceTriangles } from './helpers/solid-surface.mjs';
+import { solidSurface, surfacePoints } from './helpers/solid-surface.mjs';
 const make = () => create({ id: 236 });
 const at = (m, phase) => { m.update((phase - m.root.userData.geometry.initialCyclePhase) * 4); m.root.updateMatrixWorld(true); return m.root.userData.kinematics; };
 const cross = (a, b) => a.x * b.y - a.y * b.x;
 
-// Check the normal cone of the actual two side faces meeting at the corner,
-// not the old rod-direction surrogate for torque.
-test('236 both strokes touch an actual tooth corner with positive normal torque', () => {
-  const m = make(), d = m.root.userData, wheel = d.blocks.ratchet.userData.body;
-  const triangles = surfaceTriangles(wheel.geometry);
-  let minTorque = Infinity, maxGap = 0;
+// Each driving toe is seated in its root: it touches the steep face and the
+// previous tooth's back of the actual outline, and drives along the face
+// normal with positive torque.
+test('236 both strokes drive from a toe seated in the root with positive normal torque', () => {
+  const m = make(), d = m.root.userData, g = d.geometry, outline = d.blocks.ratchet.userData.profilePoints;
+  const segment = (p, a, b) => { const ab = b.clone().sub(a); const t = Math.max(0, Math.min(1, p.clone().sub(a).dot(ab) / ab.lengthSq())); return p.distanceTo(a.clone().addScaledVector(ab, t)); };
+  let minTorque = Infinity, maxGap = 0, engaged = 0;
   for (let i = 0; i <= 64; i++) {
-    const s = at(m, i / 64), target = new THREE.Vector3(s.activeProfilePoint.x, s.activeProfilePoint.y, d.blocks.ratchet.position.z);
-    const local = target.clone().applyMatrix4(wheel.matrixWorld.clone().invert());
-    const normals = [];
-    for (const triangle of triangles) {
-      const q = triangle.closestPointToPoint(local, new THREE.Vector3());
-      if (q.distanceTo(local) < 2e-7) {
-        const normal = triangle.getNormal(new THREE.Vector3()).transformDirection(wheel.matrixWorld);
-        if (Math.abs(normal.z) < 1e-8 && !normals.some(n => n.distanceTo(normal) < 1e-6)) normals.push(normal);
-      }
-    }
-    assert.equal(normals.length, 2);
-    const n = s.activeContactNormal, [a, b] = normals, determinant = cross(a, b);
-    assert.ok(cross(n, b) / determinant > 0 && cross(a, n) / determinant > 0, 'force is in actual convex corner normal cone');
-    const moment = -cross(s.activeProfilePoint, n);
+    const s = at(m, i / 64);
+    if (!s.engaged) continue;
+    engaged += 1;
+    const c = s.activeContactCenter.clone().rotateAround(new THREE.Vector2(), -s.wheelAngle);
+    let root = 0;
+    for (let k = 0; k < outline.length; k += 3) if (outline[k].distanceTo(c) < outline[root].distanceTo(c)) root = k;
+    const face = segment(c, outline[root], outline[root + 1]) - g.pawlNoseRadius;
+    const back = segment(c, outline[(root - 1 + outline.length) % outline.length], outline[root]) - g.pawlNoseRadius;
+    assert.ok(Math.abs(face) < 1e-9 && Math.abs(back) < 1e-9, `seated: face ${face} back ${back}`);
+    const moment = -cross(s.activeProfilePoint, s.activeContactNormal);
     minTorque = Math.min(minTorque, moment);
-    assert.ok(moment > 0.28130);
+    assert.ok(moment > 1);
     assert.ok(Math.abs(moment - s.activeCompressionTorque) < 1e-12);
-    // The toe is the flat pawl's own rounded end (24 chords, sagitta 0.00013).
+    // The toe is the flat pawl's own rounded end.
+    const target = new THREE.Vector3(s.activeProfilePoint.x, s.activeProfilePoint.y, d.blocks.ratchet.position.z);
     const body = s.longDriving ? d.blocks.longPawlBody : d.blocks.shortPawlBody;
     const field = solidSurface(body.geometry), point = target.clone().applyMatrix4(body.matrixWorld.clone().invert());
     const gap = field.distance(point); maxGap = Math.max(maxGap, gap);
     assert.ok(gap < 0.00015, `finite inscribed toe gap ${gap}`);
   }
-  console.log({ minimumActualCornerMoment: minTorque, maximumFiniteToeGap: maxGap });
+  assert.ok(engaged > 30);
+  console.log({ minimumSeatedMoment: minTorque, maximumFiniteToeGap: maxGap });
 });
 
 test('236 complete nose circles clear every float32 tooth edge and reseat continuously', () => {
@@ -54,7 +53,9 @@ test('236 complete nose circles clear every float32 tooth edge and reseat contin
   for (const phase of [0, 0.5, 1, 1.5, 15]) {
     const a = d.stateAtCycleCoordinate(phase - 1e-7), b = d.stateAtCycleCoordinate(phase + 1e-7);
     for (const key of ['longTipCenter', 'shortTipCenter']) assert.ok(a[key].distanceTo(b[key]) < 2e-6);
-    for (const key of ['longPawlAngularSpeed', 'shortPawlAngularSpeed', 'wheelAngularSpeed']) assert.ok(Math.abs(a[key] - b[key]) < 3e-6);
+    assert.ok(Math.abs(a.wheelAngularSpeed - b.wheelAngularSpeed) < 3e-6);
+    // Returning pawls' speeds are the slopes of their tracked tables.
+    for (const key of ['longPawlAngularSpeed', 'shortPawlAngularSpeed']) assert.ok(Math.abs(a[key] - b[key]) < 5e-5);
     assert.ok(Math.abs(a.wheelAngle - b.wheelAngle) < 1e-11);
   }
   console.log({ minimumEnclosingCircleClearance: minimum });

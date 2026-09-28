@@ -420,26 +420,30 @@ function treadleBevelDrillingMachine(movement) {
   inputRotor.userData.axis = driverAxis.clone();
   inputRotor.userData.role =
     'horizontal-input-shaft-crank-and-handle-one-rigid-rotor';
-  const inputShaft = cylinderAlongX(.090,2.43,darkMaterial,32);
-  inputShaft.position.x = 1.355;
+  // Pass 94: Brown's crank stands just outside the frame's bearing boss
+  // (plate x 350 against the drill axis at 213 and the column's outer edge
+  // at 305), so the shaft ends 0.2 past the bearing, not 0.9.
+  const crankX = 1.12, crankRadius = 0.85;
+  const inputShaft = cylinderAlongX(.090,crankX+.05-.14,darkMaterial,32);
+  inputShaft.position.x = (crankX+.05+.14)/2; // ends buried 0.02 inside the arm
   inputShaft.userData.role = 'horizontal-hand-crank-input-shaft';
   inputRotor.add(inputShaft);
   const crankArm = makeBeam(
-    new THREE.Vector3(2.42, 0, 0),
-    new THREE.Vector3(2.42, 0.60, 0),
+    new THREE.Vector3(crankX, 0, 0),
+    new THREE.Vector3(crankX, crankRadius, 0),
     { color: PALETTE.driver, depth: 0.13, thickness: 0.14 },
   );
   crankArm.userData.role = 'radial-hand-crank-arm';
   inputRotor.add(crankArm);
   const crankHandle = cylinderAlongX(0.105, 0.58, darkMaterial, 28);
-  crankHandle.position.set(2.67, 0.60, 0);
+  crankHandle.position.set(crankX+.25, crankRadius, 0);
   crankHandle.userData.role = 'free-hand-grip-on-input-crank';
   inputRotor.add(crankHandle);
   const crankIndex = new THREE.Mesh(
     new THREE.SphereGeometry(0.065, 18, 12),
     whiteMaterial,
   );
-  crankIndex.position.set(2.42, 0.60, 0.14);
+  crankIndex.position.set(crankX, crankRadius, 0.14);
   crankIndex.userData.role = 'white-index-on-rotating-hand-crank';
   inputRotor.add(crankIndex);
   // Gear tooth indexing need not put the visible hand crank end-on at rest.
@@ -490,12 +494,31 @@ function treadleBevelDrillingMachine(movement) {
   chuck.position.y = 0.02;
   chuck.userData.role = 'rotating-drill-chuck-fixed-to-sliding-shaft';
   shaftSpinRotor.add(chuck);
+  // Pass 94: Brown's bit is a flat spear-point drill, not a cone: a blade
+  // leaving the chuck at its full width, waisted by two concave edges, then
+  // a diamond head whose straight edges meet at the point. One flat 0.07
+  // extrusion in the shaft's plane (it turns with the shaft), its top
+  // buried 0.03 in the chuck; tip at -0.71 as before.
+  const spearOutline=(()=>{
+    const top=-.12,waistY=-.53,shoulderY=-.60,tipY=-.71;
+    const topHalf=.080,waistHalf=.042,shoulderHalf=.092;
+    const right=[];
+    for(let i=0;i<=24;i++){
+      const t=i/24,y=top+(waistY-top)*t;
+      // Smooth concave taper: a cosine blend from the chuck width to the waist.
+      right.push([waistHalf+(topHalf-waistHalf)*(.5+.5*Math.cos(Math.PI*t)),y]);
+    }
+    // Waist to shoulder: a quarter-sine flare that leaves the waist vertically.
+    for(let i=1;i<=10;i++){
+      const t=i/10;right.push([waistHalf+(shoulderHalf-waistHalf)*Math.sin(Math.PI/2*t),waistY+(shoulderY-waistY)*t]);
+    }
+    const ring=[...right,[0,tipY],...right.slice().reverse().map(([x,y])=>[-x,y])];
+    return [[ring]];
+  })();
   const drillBit = new THREE.Mesh(
-    new THREE.ConeGeometry(0.115, 0.56, 8),
+    plate(spearOutline,-.035,.035),
     drivenMaterial,
   );
-  drillBit.position.y = -0.43;
-  drillBit.rotation.x=Math.PI;
   drillBit.userData.role = 'rotating-pointed-drill-bit';
   shaftSpinRotor.add(drillBit);
   const bitFlutes = [0, Math.PI / 2].map((angle) => {
@@ -625,7 +648,9 @@ function treadleBevelDrillingMachine(movement) {
   frame.userData.role = 'fixed-c-frame-and-bearings-of-drilling-machine';
   const frameRearZ = -0.68;
   const frameBaseY = -1.05;
-  const frameColumnX = 1.52;
+  // Pass 94: the column stands where Brown draws it (plate x 290–305),
+  // 0.2 clear of the large bevel's back, not 1.0 out.
+  const frameColumnX = 0.84;
   // Brown draws a C-bracket: a right-hand column (the crank shaft passes
   // through it) with upper and lower arms reaching left past the drill
   // shaft, open on the left, and no bed beneath it.
@@ -653,8 +678,8 @@ function treadleBevelDrillingMachine(movement) {
   frameTop.userData.role = 'upper-arm-of-drill-c-frame';
   frame.add(frameTop);
   const inputBearingBridge = makeBeam(
-    new THREE.Vector3(1.48, apex.y, frameRearZ),
-    new THREE.Vector3(1.48, apex.y, -.205),
+    new THREE.Vector3(frameColumnX-.04, apex.y, frameRearZ),
+    new THREE.Vector3(frameColumnX-.04, apex.y, -.205),
     { color: PALETTE.frame, depth: 0.16, thickness: 0.16 },
   );
   inputBearingBridge.userData.role =
@@ -667,7 +692,7 @@ function treadleBevelDrillingMachine(movement) {
     X_AXIS,
     48,
   );
-  inputBearing.position.set(1.48, apex.y, 0);
+  inputBearing.position.set(frameColumnX-.04, apex.y, 0);
   inputBearing.userData.role = 'fixed-horizontal-input-shaft-bearing';
   frame.add(inputBearing);
   const lowerShaftGuide = torusNormalToAxis(

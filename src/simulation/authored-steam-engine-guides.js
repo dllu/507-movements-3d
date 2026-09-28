@@ -626,26 +626,33 @@ function verticalPlanedSlotPistonGuide(movement) {
   standardSideWalls.userData.role =
     'hollow-standard-side-walls-under-the-cap';
 
-  // The crank dips below the standard's top edge, so the cap is set down
-  // inside the walls, just below the crank's sweep: it closes the hollow
-  // standard except for a narrow transverse slot in front of it, through
-  // which the connecting rod swings. Its outline is the walls' own inner
+  // The crank dips 0.50 below the standard's top edge and its sweep spans
+  // nearly the whole crown (half-chord 0.93 of the crown's 0.97), so the cap
+  // is one extrusion across the crank's depth: flush with the top edge and
+  // cut by a crank pit whose floor is an arc concentric with the shaft,
+  // 0.06 outside the crank's sweep. In front of it a narrow transverse slot
+  // stays open for the connecting rod. Its outline is the walls' own inner
   // outline, so it meets them exactly.
-  const capTopY = -(crankRadius + crankPinRadius * 1.65) - 0.065;
-  const capThickness = 0.06;
+  const crankSweepRadius = crankRadius + crankPinRadius * 1.65;
+  const crankPitRadius = crankSweepRadius + 0.06;
+  const capTopY = -2.25 * sourceScale;
+  const capBottomY = -crankPitRadius - 0.06;
   const connectingRodSlotBackZ = connectingRodPlaneZ
     - connectingRodDepth / 2 - 0.04;
   const capHalfWidth = 5 * sourceScale;
   const standardCap = new THREE.Mesh(
-    plate(polygonClipping.intersection(hollowStandard.inner, poly([
-      [-capHalfWidth, capTopY - capThickness], [capHalfWidth, capTopY - capThickness],
-      [capHalfWidth, capTopY], [-capHalfWidth, capTopY],
-    ])), frameFrontZ, connectingRodSlotBackZ),
+    plate(polygonClipping.difference(
+      polygonClipping.intersection(hollowStandard.inner, poly([
+        [-capHalfWidth, capBottomY], [capHalfWidth, capBottomY],
+        [capHalfWidth, capTopY], [-capHalfWidth, capTopY],
+      ])),
+      poly(circle([0, 0], crankPitRadius, 96)),
+    ), frameFrontZ, connectingRodSlotBackZ),
     frameMaterial,
   );
   standardCap.userData.fixed = true;
   standardCap.userData.role =
-    'hollow-standard-recessed-cap-with-connecting-rod-slot-in-front';
+    'hollow-standard-cap-with-concentric-crank-pit-and-rod-slot-in-front';
 
   // The piston rod runs down inside the hollow standard into a bore in the
   // foot. The foot is deep enough to hide the rod's end at the bottom of

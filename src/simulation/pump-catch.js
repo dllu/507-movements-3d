@@ -36,12 +36,14 @@ function pruneUndrawnHardware(model){
   u.rearDrive={...u.rearDrive,bandEnd:end,bandLength:path.getLength(),openBand:true};
   // Catch B is one plain extrusion of Brown's outline (p86): the hidden
   // slab behind its head and the heel lug with its wheel stop are not built.
-  // The playback was integrated with them (see limits), so the catch's hold
-  // at -0.12 rad against the wheel during the return is supplied by that
-  // trajectory, not by a drawn contact.
+  // The playback (p94, scripts/generate-pump-catch-cam-rest.mjs) is solved
+  // without the heel lug and stop: after the trip the catch swings free on
+  // its damped pin, lands on cam C near the bottom of the return and is
+  // lifted and picked up by C. Only the head backing's weight (it biases the
+  // head toward C) remains an undisplayed assumption.
   delete u.heelStop;
-  u.displayOmitsIntegratedCatchDetails={headBackDepth:u.geometry.headBackDepth,heelStop:true,
-    note:'The trajectory was integrated with a 0.1-deep head backing and a heel lug/stop behind the catch; neither is displayed.'};
+  u.displayOmitsIntegratedCatchDetails={headBackDepth:u.geometry.headBackDepth,heelStop:false,
+    note:'The trajectory is integrated with the weight of a 0.1-deep head backing, which is not displayed. There is no heel stop: every catch contact is with drawn parts (cam C and the trip stop).'};
   delete u.geometry.headBackDepth;delete u.geometry.headWeightQualification;
   u.prunedHardware=removed;
   return removed;
@@ -61,7 +63,7 @@ export function makePumpCatchDrive(){
     profile,motion,playbackPeriod:motion.displayPeriod,animationTiming:{authoredCyclePeriod:motion.displayPeriod},
     minimumDisplayCycleSeconds:motion.displayPeriod,stateAtTime:motion.sample,sampledMotionBounds:bandMotionBounds(u),kinematics:{},
     qualification:'Source-traced loose wheel, hooked catch and cam with complete winding, rear input and guided pump hardware. Motion follows the reviewed finite-contact trajectory.',
-    idealConstraints:'The input shaft alone rotates continuously. Gravity, inertia, unilateral cam/catch/stop contact, a fixed-length massless rope and the guided load determine capture, lift, trip and return. The rear band, hidden winding width, head thickness, heel stop, bearing resistance, normalized load and output guides reconstruct details omitted by the engraving. The slack bow is an explicit massless display shape. Startup is retained before an eight-second physical cycle repeats in four display seconds.'});
+    idealConstraints:'The input shaft alone rotates continuously. Gravity, inertia, unilateral cam/catch/stop contact, a fixed-length massless rope and the guided load determine capture, lift, trip and return; after the trip the catch swings free and comes to rest on cam C. The rear band, hidden winding width, head weighting, catch-pin damping, bearing resistance, normalized load and output guides reconstruct details omitted by the engraving. The slack bow is an explicit massless display shape. Startup is retained before an eight-second physical cycle repeats in four display seconds.'});
   // Brown draws a front elevation cut at the ground line: the rope runs down
   // into the plinth and the input band's two runs leave the plate to the
   // right. The default view frames Brown's window and lets the band runs and

@@ -10,6 +10,10 @@ import {
 
 const FULL_TURN = Math.PI * 2;
 
+// Brown's dotted cords meet B about 0.66 and C about 0.72 of the way from
+// hinge to tip (plate 415); both identical pawls tie on at 0.70.
+const PAWL_CORD_EYE_FRACTION = 0.70;
+
 function smootherStep(value) {
   const bounded = THREE.MathUtils.clamp(value, 0, 1);
   return bounded ** 3 * (bounded * (bounded * 6 - 15) + 10);
@@ -148,7 +152,7 @@ function makePawl({
   contact.userData.role = `${role}-white-rim-contact-index`;
   pawl.add(contact);
   const cordEye = cylinderAlongZ(0.065, 0.22, material, 20);
-  cordEye.position.x = pawlLength * 0.58;
+  cordEye.position.x = pawlLength * PAWL_CORD_EYE_FRACTION;
   cordEye.userData.role = `${role}-cord-eye`;
   pawl.add(cordEye);
   pawl.userData.contact = contact;
@@ -290,7 +294,7 @@ function dicksonReversibleDrive(movement) {
     cSeatedContact.y - cPawlPivot.y,
     cSeatedContact.x - cPawlPivot.x,
   );
-  const pawlCordEyeRadius = pawlLength * 0.58;
+  const pawlCordEyeRadius = pawlLength * PAWL_CORD_EYE_FRACTION;
   // Crank E as Brown draws it: a small bent crank standing on lever A's hub,
   // its journal running up the lever's centre line (in the plane of the
   // wheel), a short web, and a pin rising from the web's end. Both cords are

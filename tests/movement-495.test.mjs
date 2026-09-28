@@ -236,10 +236,12 @@ test('movement 495 closes one D turn, two C turns, and leaves movement 507 next'
     'published output closure');
 
   const swept = new THREE.Box3();
-  for (let sample = 0; sample <= 720; sample += 1) {
-    model.update(geometry.cycleDuration * sample / 720);
+  // p94: precise vertex bounds; the loose box of each wide back disc's
+  // local bounding box overstates its reach once the planet turns.
+  for (let sample = 0; sample <= 240; sample += 1) {
+    model.update(geometry.cycleDuration * sample / 240);
     model.root.updateMatrixWorld(true);
-    swept.union(new THREE.Box3().setFromObject(model.root));
+    swept.union(new THREE.Box3().setFromObject(model.root, true));
   }
   assert.ok(model.root.userData.cameraFitBounds.containsBox(swept));
   assert.ok(Number.isFinite(swept.min.x));
@@ -256,5 +258,24 @@ test('movement 495 closes one D turn, two C turns, and leaves movement 507 next'
   assert.equal(nextModel.root.userData.fidelity, 'authored');
   assert.notEqual(nextModel.root.userData.archetype, ARCHETYPE);
   disposeModel(nextModel.root);
+  disposeModel(model.root);
+});
+
+test('movement 495 bevels have plain flat backs out to the tooth tips that clear the mating wheels', () => {
+  const { model } = movementModel();
+  const { fixedGearA, outputGearC, planetGearB } = model.root.userData.blocks;
+  for (const gear of [fixedGearA, outputGearC, planetGearB]) {
+    const { backZ, tipLimit, backThickness } = gear.userData.toothFace;
+    const back = gear.userData.back;
+    assert.ok(back.visible && back.parent === gear.userData.rotor, 'plain back disc on the rotor');
+    assert.ok(backZ >= tipLimit + 0.02 - 1e-9, 'back plane stands beyond every mating tooth');
+    back.geometry.computeBoundingBox();
+    near(back.geometry.boundingBox.max.x, tipLimit, 1e-3, 'back disc reaches the tooth tips');
+    near(back.geometry.boundingBox.max.z - back.geometry.boundingBox.min.z, backThickness, 1e-6, 'back thickness');
+    const tooth = gear.userData.toothMeshes[0].geometry.attributes.position;
+    let reach = 0;
+    for (let i = 0; i < tooth.count; i += 1) reach = Math.max(reach, Math.hypot(tooth.getX(i), tooth.getY(i)));
+    assert.ok(reach <= tipLimit + 1e-6, 'teeth stay inside the tip cylinder');
+  }
   disposeModel(model.root);
 });

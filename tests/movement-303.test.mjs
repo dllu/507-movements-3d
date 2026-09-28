@@ -554,3 +554,25 @@ test('movement 303 p93: the pendulum strap hangs on the pallet arbor through a r
   assert.ok(arbor.geometry.parameters.radiusTop < 0.24, 'arbor inside the eye');
   disposeModel(model.root);
 });
+
+test('movement 303 p94: pallet tips D and E have no swept spike or stepped notch past the impulse face', async () => {
+  const { GRAHAM_303_ANCHOR } = await import('../src/simulation/baked/graham-303-anchor.js');
+  const model = createMovementModel(catalog.movements[302]);
+  for (const side of ['left', 'right']) {
+  const exit = model.root.userData.palletProfiles[side].impulsePoints.at(-1);
+  const ring = GRAHAM_303_ANCHOR[side].outer;
+  assert.ok(GRAHAM_303_ANCHOR[side].tipTrimmedVertices > 0);
+  let t = 0;
+  ring.forEach(([x, y], i) => {
+    if (Math.hypot(x - exit.x, y - exit.y) < Math.hypot(ring[t][0] - exit.x, ring[t][1] - exit.y)) t = i;
+  });
+  // The next vertex toward the back is the back's outer corner, at least
+  // 0.3 away: one straight edge, with no vertex below it.
+  const n = ring.length;
+  const [prev, next] = [ring[(t - 1 + n) % n], ring[(t + 1) % n]];
+  const longest = Math.max(Math.hypot(next[0] - ring[t][0], next[1] - ring[t][1]),
+    Math.hypot(prev[0] - ring[t][0], prev[1] - ring[t][1]));
+  assert.ok(longest > 0.3, `${side} tip edge ${longest}`);
+  }
+  disposeModel(model.root);
+});

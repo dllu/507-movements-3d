@@ -64,15 +64,14 @@ test('movement 378 is one pendulum-driven bow saw in a counterweighted vertical-
   assert.match(data.mechanism, /one-swinging-pendulum/);
   assert.match(data.mechanism, /one-constant-length-connecting-rod/);
   assert.match(data.mechanism, /horizontal-bow-saw-slider/);
-  assert.match(data.mechanism, /counterweighted-u-carriage/);
+  assert.match(data.mechanism, /counterweighted-u-carriage-holds-the-saw-in-its-kerf/);
   assert.match(data.mechanism, /lying-tree/);
-  assert.equal(degreesOfFreedom.independentPrescribedInputs, 2);
+  assert.equal(degreesOfFreedom.independentPrescribedInputs, 1);
   assert.equal(degreesOfFreedom.storedEnergyStates, 0);
-  assert.equal(degreesOfFreedom.inputs.length, 2);
+  assert.equal(degreesOfFreedom.inputs.length, 1);
   assert.match(degreesOfFreedom.inputs[0], /pendulum oscillation/);
-  assert.match(degreesOfFreedom.inputs[1], /vertical carriage feed/);
   assert.match(degreesOfFreedom.note, /rigid connecting rod/);
-  assert.match(degreesOfFreedom.note, /constant-length rope/);
+  assert.match(degreesOfFreedom.note, /quasi-static feed/);
 
   for (const component of [
     blocks.carriage,
@@ -107,7 +106,23 @@ test('movement 378 is one pendulum-driven bow saw in a counterweighted vertical-
   assert.equal(blocks.sawBlade.geometry.type, 'ExtrudeGeometry');
   blocks.sawFrame.geometry.computeBoundingBox();
   const frameBox = blocks.sawFrame.geometry.boundingBox;
-  assert.ok(Math.abs((frameBox.min.x + frameBox.max.x) / 2 - 1.35) < 0.1, 'bow-saw frame is symmetric about the blade middle');
+  const geometry = data.geometry;
+  assert.ok(Math.abs((frameBox.min.x + frameBox.max.x) / 2 - geometry.sawSpan / 2) < 0.1, 'bow-saw frame is symmetric about the blade middle');
+  // Brown's saw is about as tall as it is wide (plate 124 px wide, 105 px
+  // from scroll tops to teeth).
+  const sawHeight = frameBox.max.y - (-0.705);
+  assert.ok(sawHeight / geometry.sawSpan > 0.8 && sawHeight / geometry.sawSpan < 0.95,
+    `saw standards at Brown's height: ${sawHeight / geometry.sawSpan}`);
+  assert.equal(blocks.sawCord.parent, blocks.saw, 'twisted straining cord across the frame');
+  // The A-frame stands above the saw frame's top beam, as Brown draws it.
+  assert.ok(geometry.pendulumPivot.y > blocks.topBeam.position.y + 1.0,
+    'pendulum standard rises about 1.1 above the frame top');
+  // Three adjustment holes in the rod, pinned in the middle one.
+  const holes = blocks.pendulumRod.userData.adjustmentHoles;
+  assert.equal(holes.length, 3);
+  assert.equal(-holes[1].y, geometry.rodAttachmentRadius);
+  assert.ok(holes[1].boreRadius > geometry.pinRadius);
+  assert.equal(blocks.pendulumRod.geometry.type, 'ExtrudeGeometry');
   // The A-frame legs end on pads at the frame feet's ground line.
   assert.equal(blocks.pendulumFeet.length, 2);
   for (const leg of blocks.pendulumSupports) assert.equal(leg.geometry.type, 'CylinderGeometry', 'legs are closed bars');
@@ -123,7 +138,7 @@ test('movement 378 is one pendulum-driven bow saw in a counterweighted vertical-
   assert.equal(blocks.ropeArcs, undefined);
   assert.equal(blocks.ropeSegments, undefined);
   assert.equal(blocks.carriageSides.length, 2);
-  assert.equal(blocks.sawBlade.userData.teeth, 27);
+  assert.equal(blocks.sawBlade.userData.teeth, 19);
   assert.equal(blocks.log.userData.fixed, true);
   assert.equal(blocks.fixedFrame.userData.fixed, true);
   assert.equal(blocks.pendulumFrame.userData.fixed, true);
@@ -164,15 +179,11 @@ test('movement 378 records Brown, the measured engraving, and the official anima
   assert.equal(sourceAnimation.officialCanvasModelPresent, true);
   assert.equal(sourceAnimation.sourcePrescribedTiming, false);
   assert.equal(
-    sourceAnimation
-      .sourceShowsThreePendulumOscillationsDuringOneDownwardFeedPass,
-    true,
-  );
-  assert.equal(
     dynamics.sourceSpecifiesPendulumPeriodRodLengthFeedRateOrMasses,
     false,
   );
   assert.equal(dynamics.idealizations.length, 5);
+  assert.match(dynamics.idealizations[4], /never leaves its cut/);
   assert.match(dynamics.treatment, /pendulum pin/);
   assert.match(dynamics.treatment, /horizontal rigid-rod slider/);
   assert.match(dynamics.treatment, /paired pulleys/);
@@ -284,34 +295,35 @@ test('movement 378 rigid connecting rod selects the right-hand intersection with
   disposeModel(model.root);
 });
 
-test('movement 378 carriage feed and both opposing counterweights preserve two exact constant-length ropes', () => {
+test('movement 378 saw stays in its kerf all cycle: the carriage is held at cutting depth and the ropes keep constant length', () => {
   const model = createMovementModel(catalog.movements[377]);
   const data = model.root.userData;
-  const { geometry, stateAtTime, transmission } = data;
-  const start = stateAtTime(0);
-  const bottom = stateAtTime(data.timeline.demonstrationPeriod / 2);
-
-  near(start.guideY, geometry.feedMeanY + geometry.feedAmplitude, 0,
-    'feed begins raised');
-  near(bottom.guideY, geometry.feedMeanY - geometry.feedAmplitude, 0,
-    'feed reaches cutting depth at half-cycle');
-  assert.ok(bottom.counterweightY > start.counterweightY,
-    'counterweights rise as carriage descends');
-  assert.match(transmission.feedCounterweightLaw, /rises by exactly/);
-  for (let sample = -1500; sample <= 3000; sample += 1) {
-    const state = stateAtTime(data.timeline.demonstrationPeriod
-      * sample / 1500);
-    near(state.counterweightY + state.guideY,
-      geometry.counterweightMeanY + geometry.feedMeanY,
-      2e-16, 'equal and opposite carriage/counterweight travel');
-    near(state.counterweightVelocity, -state.guideVelocity, 0,
-      'equal and opposite carriage/counterweight velocity');
+  const { blocks, geometry, stateAtTime, transmission } = data;
+  const kerf = blocks.bark.userData.kerf;
+  const kerfFloorWorldY = geometry.logCenter.y + kerf.floorY;
+  const logTopWorldY = geometry.logCenter.y + geometry.logRadius;
+  assert.match(transmission.feedCounterweightLaw, /quasi-static/);
+  for (let sample = 0; sample <= 1500; sample += 1) {
+    const state = stateAtTime(data.timeline.demonstrationPeriod * sample / 1500);
+    const toothTipY = state.sawPin.y - 0.705;
+    assert.ok(toothTipY > kerfFloorWorldY && toothTipY - kerfFloorWorldY < 0.01,
+      'teeth ride on the kerf floor');
+    assert.ok(toothTipY < logTopWorldY - 0.3, 'blade stays deep in the cut');
+    // The blade spans the kerf floor chord over the whole stroke.
+    const chordHalf = Math.sqrt(geometry.logRadius ** 2 - kerf.floorY ** 2);
+    assert.ok(state.sawPin.x < geometry.logCenter.x + chordHalf
+      && state.sawPin.x + geometry.sawSpan > geometry.logCenter.x - chordHalf);
+    near(state.guideVelocity, 0, 0, 'carriage held');
+    near(state.counterweightY, geometry.counterweightMeanY, 0, 'counterweights at rest');
     for (let side = 0; side < 2; side += 1) {
-      near(state.ropeLengths[side],
-        transmission.constantRopeLength, 5e-16,
+      near(state.ropeLengths[side], transmission.constantRopeLength, 5e-16,
         `side ${side} constant rope length`);
     }
   }
+  // The slice in front of the kerf is see-through so the teeth show, as
+  // Brown draws them over the end grain.
+  assert.equal(blocks.log.userData.frontSlice.userData.seeThrough, true);
+  assert.ok(Math.abs(kerf.centerZ + geometry.logCenter.z - geometry.sawPinZ) < 1e-12);
   disposeModel(model.root);
 });
 
@@ -392,7 +404,7 @@ test('movement 378 renderer binds pendulum, fed carriage, saw, rigid rod, ropes,
   disposeModel(model.root);
 });
 
-test('movement 378 closes six pendulum strokes and one smooth feed-return cycle before movement 507 remains the next authored draft', () => {
+test('movement 378 closes one pendulum stroke per loop before movement 507 remains the next authored draft', () => {
   const movement = catalog.movements[377];
   const model = createMovementModel(movement);
   const data = model.root.userData;
@@ -402,9 +414,7 @@ test('movement 378 closes six pendulum strokes and one smooth feed-return cycle 
 
   near(closure.pendulumPhase - start.pendulumPhase,
     geometry.pendulumCyclesPerDemonstration * FULL_TURN, 0,
-    'six unwrapped pendulum cycles');
-  near(closure.feedPhase - start.feedPhase, FULL_TURN, 0,
-    'one unwrapped feed-return cycle');
+    'unwrapped pendulum cycles');
   angleNear(closure.pendulumAngle, start.pendulumAngle, 0,
     'pendulum pose closes');
   vectorNear(closure.rodJoint, start.rodJoint, 5e-16,

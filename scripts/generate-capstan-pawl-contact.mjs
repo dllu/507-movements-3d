@@ -16,6 +16,7 @@ const point = new THREE.Vector3();
 // The crest edges are the only convex ratchet features; test them against
 // the pawl's 2D outline too, so no edge pokes between sampled pawl points.
 const polygon = capstanPawlOutline(g);
+const reachY = Math.max(...polygon.map(([, y]) => Math.abs(y))), reachX = Math.max(...polygon.map(([x]) => x));
 const outlineDistance = (x, y) => {
   let inside = false, best = Infinity;
   for (let i = 0, j = polygon.length-1; i < polygon.length; j = i++) {
@@ -47,7 +48,7 @@ const crestGap = (phase, beta) => {
     const x = x0*c - z0*s, z = x0*s + z0*c;
     const radial = x*Math.cos(pa) + z*Math.sin(pa), u = x*Math.sin(pa) - z*Math.cos(pa), v = y0 - g.pivotHeight;
     const lz = radial - g.planeRadius, lx = u*cb + v*sb, ly = -u*sb + v*cb;
-    if (Math.abs(lz) > g.thickness/2 + 0.01 || lx < 0 || lx > g.length + g.noseRadius + 0.02 || Math.abs(ly) > g.bossRadius + 0.02) continue;
+    if (Math.abs(lz) > g.thickness/2 + 0.01 || lx < 0 || lx > reachX + 0.02 || Math.abs(ly) > reachY + 0.02) continue;
     const planar = outlineDistance(lx, ly), across = Math.abs(lz) - g.thickness/2;
     const gap = planar > 0 ? (across > 0 ? Math.hypot(planar, across) : planar) : (across > 0 ? across : Math.max(planar, across));
     best = Math.min(best, gap);

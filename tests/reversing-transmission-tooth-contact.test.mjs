@@ -48,7 +48,9 @@ test('371 finite working faces supply opposing input and useful output moments o
  const m=mangle({id:371});let largest=0;
  for(const phase of[.0625,.2,.4375,.458333333333,.5,.625,.75,.9375,.958333333333]){
   m.update(27*phase);m.root.updateMatrixWorld(true);const witness=usefulFace(m,371);largest=Math.max(largest,witness.gap);
-  assert.ok(witness.gap<.0045,JSON.stringify({phase,...witness}));assert.ok(Math.abs(witness.outputMoment)>.2);assert.ok(witness.inputMoment<-.03);
+  // p94: uniform-section bars (the common part of every cut station) leave
+  // up to 0.0075 backlash at the crossovers (was 0.0044 with the varying envelope).
+  assert.ok(witness.gap<.008,JSON.stringify({phase,...witness}));assert.ok(Math.abs(witness.outputMoment)>.2);assert.ok(witness.inputMoment<-.03);
  }
  console.log({mangleUsefulFaceMaximum:largest});
  const data=m.root.userData.finiteToothProfiles.data;assert.ok(data.profiles.every(p=>Math.min(...p.heights.flat())>.006));

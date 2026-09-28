@@ -69,7 +69,10 @@ export async function bake(id) {
       try {
         if (variantNames.length > 1) baked.root.userData.setConfiguration(name);
         const {duration, startTime, samples, mode} = variants[name].loop, dt = duration / samples, times = [];
-        for (let j = 0; j <= 8; j++) {const s = Math.round(j * samples / 8);times.push([startTime + s * dt, s * dt]);}
+        // roundTripLoops: compare against a later baked loop, for playback whose
+        // opening loop differs by design (109 opens part-cut, then chases).
+        const offset = (config.roundTripLoops ?? 0) * duration;
+        for (let j = 0; j <= 8; j++) {const s = Math.round(j * samples / 8);times.push([startTime + s * dt, offset + s * dt]);}
         roundTrip[name] = roundTripError(live, baked, times);
         // Seam: playback must be as smooth across the loop end as inside it.
         roundTrip[name].seam = seamContinuity(baked, duration, samples, config.seamExclude);

@@ -225,7 +225,7 @@ test('movement 406 closes blade contact, equal-distance locus, stock contact, an
   assert.equal(maximumThreadResidual, 0);
   assert.equal(maximumBladeResidual, 0);
   assert.equal(maximumStockResidual, 0);
-  // Pass 90: the pencil comes down to the thread's anchor block at the blade end.
+  // Pass 90/94: the pencil comes down to just above the toe at the blade end.
   assert.ok(minimumBladeSegmentLength > .19);
   assert.ok(maximumPerpendicularDistance < geometry.bladeLength);
   disposeModel(model.root);
@@ -387,4 +387,30 @@ test('movement 507 remains the next authored frontier', () => {
   assert.equal(movement507.id, 507);
   assert.equal(movement507.fidelity, 'authored');
   assert.equal(catalog.movements[506].archetype, 'carrier-driven-25000-to-1-slow-bevel-output-compound-planetary');
+});
+
+test('movement 406 square is one-sided as Brown draws it, with a curved foot carrying the anchor and no end block', () => {
+  const model = createMovementModel(catalog.movements[405]);
+  const { blocks, geometry } = model.root.userData;
+  try {
+    assert.equal(blocks.bladeEnd.parent, null, 'no separate end block');
+    blocks.stock.geometry.computeBoundingBox();
+    const box = blocks.stock.geometry.boundingBox;
+    const bladeRight = blocks.blade.position.x + geometry.bladeWidth / 2;
+    near(box.max.x, bladeRight, 1e-6, 'stock ends at the blade');
+    assert.ok(box.min.x < blocks.blade.position.x - geometry.bladeWidth / 2 - 0.4, 'stock runs left of the blade');
+    // Blade and stock tops are flush.
+    blocks.blade.geometry.computeBoundingBox();
+    near(box.max.z + blocks.stock.position.z, blocks.blade.geometry.boundingBox.max.z + blocks.blade.position.z, 1e-6, 'flush tops');
+    // The toe reaches the thread anchor, and the pencil still clears it at its lowest.
+    const foot = blocks.blade.userData.curvedFoot;
+    near(foot.anchorX, blocks.threadAnchor.position.x, 0, 'anchor on the toe');
+    near(blocks.blade.geometry.boundingBox.max.x + blocks.blade.position.x, foot.anchorX + foot.toeRadius, 1e-6, 'toe tip');
+    const lowestPencilBottom = geometry.targetBaseY - 0.085;
+    assert.ok(lowestPencilBottom > foot.footY + foot.toeRadius + 0.03, 'pencil clears the toe');
+    // The stock's left end stays on the straightedge at the square's leftmost travel.
+    assert.ok(-geometry.maximumSquareOffset + box.min.x > -3.25);
+  } finally {
+    disposeModel(model.root);
+  }
 });

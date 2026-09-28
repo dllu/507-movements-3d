@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { createAuthoredIntermittentMovement as create } from '../src/simulation/authored-intermittent.js';
 import { nearest390Outline } from '../src/simulation/dual-band-pawl-contact.js';
 import { carrierPawlBarClearance225 } from '../src/simulation/carrier-pawl-225-working-parts.js';
+import { carrierPawl225Return } from '../src/simulation/baked/carrier-pawl-225-return.js';
 import { solidSurface, surfacePoints, surfaceTriangles } from './helpers/solid-surface.mjs';
 const make = () => create({ id: 225 });
 const at = (model, phase) => { model.update((phase - 0.25) * 4); model.root.updateMatrixWorld(true); return model.root.userData.kinematics; };
@@ -52,7 +53,8 @@ test('225 complete circular nose clears every actual outline edge through return
   for (const phase of [0, 0.5, 1]) {
     const before = d.stateAtCycleCoordinate(phase - 1e-7), after = d.stateAtCycleCoordinate(phase + 1e-7);
     assert.ok(before.pawlContactCenter.distanceTo(after.pawlContactCenter) < 2e-6);
-    assert.ok(Math.abs(before.pawlAngularSpeed - after.pawlAngularSpeed) < 2e-6);
+    // Where the tracked return takes over, its speed is its table's slope.
+    assert.ok(Math.abs(before.pawlAngularSpeed - after.pawlAngularSpeed) < 5e-3);
     assert.ok(Math.abs(before.wheelAngle - after.wheelAngle) < 1e-12);
   }
 });
@@ -143,4 +145,12 @@ test('225 deterministic curved plate has one continuous finite body and a retain
     const a = outline[i], b = outline[(i + 1) % outline.length], c = outline[j], e = outline[(j + 1) % outline.length];
     assert.ok(!(cross(a, b, c) * cross(a, b, e) < 0 && cross(c, e, a) * cross(c, e, b) < 0), `perimeter edges ${i}/${j}`);
   }
+});
+
+test('225 plays the current baked return, and the bar keeps Brown\'s shallow arch', () => {
+  const d = make().root.userData;
+  // A stale bake would be recomputed at load (slowly); regenerate it with
+  // scripts/generate-carrier-pawl-225-return.mjs.
+  assert.equal(d.returnBake225().key, carrierPawl225Return.key);
+  assert.ok(d.geometry.pawlBarSagitta <= 0.13, `sagitta ${d.geometry.pawlBarSagitta}`);
 });

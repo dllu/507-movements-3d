@@ -17,9 +17,10 @@ const dryRun=process.argv.includes('--dry-run');
 const period=8,playbackPeriod=4,stroke=.24,dt=period/16000,fall=150,cycles=4,friction=+(process.env.FRICTION??.035),tolerance=1e-6;
 const model=makeOpposedArmGeometry(process.env.PAWL_LENGTH?{pawlLength:+process.env.PAWL_LENGTH}:{}),u=model.root.userData,p=u.geometry,{phase,pitch,crest,valley,innerRadius,outerRadius,pivotZ}=p;
 const sliderAt=t=>p.sourceSlider[0]+stroke*Math.sin(2*Math.PI*t/period);
-// Outline points of the blade on both faces, in the pawl's local frame.
+// Outline points of the blade on both faces, in the pawl's local frame (the
+// blade is a sheared extrusion: vertical when seated).
 const points=Object.fromEntries(['upper','lower'].map(key=>{
- const ring=p.arms[key].pawlContour[0][0].slice(0,-1);return[key,[-p.pawl.halfThickness,p.pawl.halfThickness].flatMap(z=>ring.map(([x,y])=>[x,y,z]))];
+ const ring=p.arms[key].pawlContour[0][0].slice(0,-1);return[key,[-p.pawl.halfThickness,p.pawl.halfThickness].flatMap(z=>ring.map(([x,y])=>[x,y+z*p.pawl.shear,z]))];
 }));
 const surface=alpha=>{const f=(alpha-phase)/pitch;return valley+(crest-valley)*(f-Math.floor(f));};
 const face=k=>phase+k*pitch;
@@ -50,12 +51,20 @@ const rampDepth=(q,k)=>{let depth=-Infinity;const a=face(k),n=q.length/2;
  return depth;};
 const faceShortfall=(q,k)=>{let d=0;const a=face(k);
  for(const v of q){if(band(v)||v.z>=crest+clearance)continue;const alpha=unwrap(v.alpha,a+pitch),need=a+clearance/v.r;if(alpha<need)d=Math.max(d,need-alpha);}return d;};
-const seat=(key,arm,theta,k)=>{
- let low=0,high=1.2;if(rampDepth(pose(key,arm,low,theta),k)>0)throw Error('Pawl cannot clear the teeth');
- for(let i=0;i<34;i++){const m=(low+high)/2;if(rampDepth(pose(key,arm,m,theta),k)>0)high=m;else low=m;}
+// The deepest tilt reachable by turning down from the current one: the
+// blade cannot swing through a crest corner to a deeper pose beyond it.
+const seat=(key,arm,theta,k,from=0)=>{
+ const bad=beta=>rampDepth(pose(key,arm,beta,theta),k)>0;
+ let low=0,high=1.2;if(bad(low))throw Error('Pawl cannot clear the teeth');
+ if(!bad(from)){low=from;for(high=from+.004;high<1.2&&!bad(high);high+=.004)low=high;high=Math.min(high,1.2);}
+ else high=from;
+ for(let i=0;i<34;i++){const m=(low+high)/2;if(bad(m))high=m;else low=m;}
  return low;
 };
 const tipAlpha=(key,arm,beta,theta)=>{const q=pose(key,arm,beta,theta);return q.reduce((m,v)=>v.z<m.z?v:m).alpha;};
+const tipIndex=Object.fromEntries(Object.entries(points).map(([key,q])=>[key,q.map((v,i)=>[v,i]).filter(([v])=>Math.abs(v[0])<1e-12&&Math.abs(v[1]-v[2]*p.pawl.shear+p.pawl.length)<1e-9).map(([,i])=>i)]));
+if(Object.values(tipIndex).some(v=>v.length!==2))throw Error('Tip edge not found');
+const tipAlphas=(key,arm,beta,theta)=>{const q=pose(key,arm,beta,theta),a=unwrap(tipAlpha(key,arm,beta,theta),0);return[a,...tipIndex[key].map(i=>unwrap(q[i].alpha,a))];};
 
 let theta=0,omega=0,time=0;const state={};
 {const arms=model.root.userData.input(sliderAt(0)).arms;
@@ -74,12 +83,14 @@ for(let step=1;step<=cycles*period/dt;step++){
   for(const key of ['upper','lower']){
    const s=state[key],arm=arms[key];
    // Advance the engaged face once the tip has passed over the next crest.
-   for(;;){const a=unwrap(tipAlpha(key,arm,s.beta,theta),face(s.k)+pitch);if(a>=face(s.k+1))s.k++;else break;}
+   // The whole tip edge must be past the crest: with the sheared blade the
+   // edge leans off vertical on a crest, so its lowest point alone is not enough.
+   for(;;){const a=Math.min(...tipAlphas(key,arm,s.beta,theta).map(v=>unwrap(v,face(s.k)+pitch)));if(a>=face(s.k+1))s.k++;else break;}
    const push=faceShortfall(pose(key,arm,s.beta,theta),s.k);if(push>0){theta-=push;pushers.add(key);}
   }
  }
  for(const key of ['upper','lower']){
-  const s=state[key],arm=arms[key],target=seat(key,arm,theta,s.k);
+  const s=state[key],arm=arms[key],target=seat(key,arm,theta,s.k,s.beta);
   if(target<=s.beta){s.beta=target;s.omega=0;}
   else{s.omega+=fall*dt;s.beta=Math.min(target,s.beta+s.omega*dt);if(s.beta===target)s.omega=0;}
   const push=faceShortfall(pose(key,arm,s.beta,theta),s.k);if(push>0){theta-=push;pushers.add(key);}

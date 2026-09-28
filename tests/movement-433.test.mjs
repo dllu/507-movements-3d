@@ -388,3 +388,44 @@ test('movement 433 spill sheets leave the boards live, move with the runner and 
   });
   disposeModel(model.root);
 });
+
+test('movement 433 water film runs along each struck board from the jet to its spill sheet', () => {
+  const model = createMovementModel(catalog.movements[432]);
+  const { blocks, geometry } = model.root.userData;
+  const { films, spills, jet, bladeGroups } = blocks;
+  assert.equal(films.length, geometry.bladeCount);
+  const strike = jet.path.points.at(-1);
+  const faceNormal = new THREE.Vector3(0, Math.sin(0.62), Math.cos(0.62));
+  let joined = 0;
+  for (const time of [0, 0.37, 1.9, 3.3]) {
+    model.update(time);
+    model.root.updateMatrixWorld(true);
+    const live = films.filter((film) => film.visible);
+    assert.ok(live.length >= 2, `films on the boards at ${time}`);
+    // One film reaches up to the jet's end (the struck board takes it).
+    const reach = Math.min(...live.map((film) => film.localToWorld(film.path.points[0].clone()).distanceTo(strike)));
+    assert.ok(reach < 0.12, `the jet lands on a film at ${time} (${reach})`);
+    for (const film of live) {
+      const index = films.indexOf(film);
+      assert.equal(film.parent, bladeGroups[index], 'the film rides with its board');
+      // Face samples float clear of the board's upper face (no coincident faces).
+      for (let k = 1; k < film.path.points.length - 1; k += 1) {
+        const p = film.path.points[k];
+        const [, b] = film.sectionAt(k);
+        const clearance = p.clone().sub(new THREE.Vector3(p.x, 0.16, 0)).dot(faceNormal) - 0.04 - b;
+        assert.ok(clearance > 0.003, `film ${index} clear of its board`);
+      }
+      // A film carrying water to the end joins that board's spill sheet.
+      // (Dry samples fold onto the last wet one, so the path reaches past
+      // the board's end only when water has run all the way out.)
+      if (film.path.points.at(-1).x > geometry.bladeOuterRadius) {
+        assert.ok(spills[index].visible, `board ${index} sheds what its film brings`);
+        const end = film.localToWorld(film.path.points.at(-1).clone());
+        assert.ok(end.distanceTo(spills[index].path.points[0]) < 0.05, 'film ends in the sheet');
+        joined += 1;
+      }
+    }
+  }
+  assert.ok(joined >= 4, `films run out into sheets (${joined})`);
+  disposeModel(model.root);
+});

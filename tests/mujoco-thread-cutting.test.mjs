@@ -90,7 +90,7 @@ test('109 replay is deterministic and return travel does not restore removed mat
   v.update(2);const early=Array.from(p.data.qpos);v.reset();v.update(2);assert.deepEqual(Array.from(p.data.qpos),early);
  }finally{v.dispose();}
 });
-test('109 cuts the thread only where the tool has passed on its descent, live and baked alike',async()=>{
+test('109 opens part-cut as drawn, finishes the thread on that descent and then chases it without a jump, live and baked alike',async()=>{
  const fs=await import('node:fs'),{gunzipSync}=await import('node:zlib');
  const {makeBakedMujocoModel}=await import('../src/simulation/baked/mujoco-playback.js');
  const {bakedMujocoRoutes}=await import('../src/simulation/baked/mujoco-baked-routes.js');
@@ -98,28 +98,40 @@ test('109 cuts the thread only where the tool has passed on its descent, live an
  const bundle=JSON.parse(gunzipSync(fs.readFileSync(new URL('../src/simulation/baked/assets/mujoco-109.json.gz',import.meta.url))));
  const baked=makeBakedMujocoModel(bundle,await bakedMujocoRoutes[109].geometry(),bakedMujocoRoutes[109]),b=baked.root.userData;
  const volume=g=>inspectWeightedClutchSolid(g).volume,blank=volume(u.workpiece.geometry(-Infinity)),loop=bundle.variants.default.loop;
+ const full=volume(u.workpiece.geometry(f.contactAngle-u.toolHalfAngle-s.bottomWorkAngle));
+ // The loop starts whole periods into the drive, so live time t and baked
+ // playback time t share the same stroke position.
+ assert(Math.abs(loop.startTime/loop.drivePeriod-Math.round(loop.startTime/loop.drivePeriod))<1e-9);
  try {
-  let previous=null,descents=0,returns=0,resets=0;
-  for(let i=0;i<=96;i++) {
-   const time=loop.startTime+i*loop.duration/96;v.update(time);baked.update(time-loop.startTime);
+  let previous=null,first=0,later=0,finished=null;const steps=192,dt=2*loop.duration/steps;
+  for(let i=0;i<=steps;i++) {
+   const time=i*dt;v.update(time);baked.update(time);
    const now=volume(u.parts.workpiece.geometry),tool=f.armY+p.data.qpos[2];
    // Baked playback rebuilds the same cut from its recorded work angle.
    assert(Math.abs(volume(b.parts.workpiece.geometry)-now)<blank*2e-4,'baked cut differs from live at '+time);
-   if(s.descending(time)) {
-    // Brown's state: grooved above the tool, the plain blank below it (the
-    // groove floor, off the end caps, reaches no lower than the cutter).
+   if(previous!==null)assert(now<=previous+blank*1e-9,'stock is only ever removed: no fresh blank, no jump');
+   if(time<s.firstCutEnd(0)) {
+    // Brown's state on the opening descent: grooved above the tool, the
+    // plain blank below it (the groove floor reaches no lower than the cutter).
+    assert(s.descending(time));
     const g=u.parts.workpiece.geometry,pos=g.attributes.position.array;let lowestGroove=Infinity;
     for(let k=0;k<pos.length;k+=3){const r=Math.hypot(pos[k],pos[k+2]);if(r<f.stock.inner+1e-6&&r>1e-6&&pos[k+1]>f.stock.low+1e-6)lowestGroove=Math.min(lowestGroove,pos[k+1]);}
-    if(Number.isFinite(lowestGroove))assert(lowestGroove>tool-f.grooveWidth/2-f.workPitch*.06,`groove below the tool at ${time}`);
-    if(previous!==null&&s.descending(time-loop.duration/96))assert(now<=previous+blank*1e-9,'descent must only remove stock');
-    else if(previous!==null){resets++;assert(now>previous,'a fresh blank replaces the screw at the top');}
-    descents++;
+    assert(Number.isFinite(lowestGroove)&&lowestGroove>tool-f.grooveWidth/2-f.workPitch*.06,`groove below the tool at ${time}`);
+    if(i===0)assert(now>full+.05,'the job opens part-cut');
+    assert(now>=full-blank*1e-9);
+    first++;
    } else {
-    if(previous!==null&&!s.descending(time-loop.duration/96))assert(Math.abs(now-previous)<blank*1e-9,'the tool returns up its finished groove');
-    returns++;
+    // Afterwards the finished thread is chased: the cut volume stays put
+    // across every reversal, including the loop seam.
+    if(finished===null){finished=now;assert(Math.abs(now-full)<blank*1e-4,'the thread is finished to the bottom');}
+    assert(Math.abs(now-finished)<blank*1e-6,'the finished thread is chased unchanged at '+time);
+    later++;
    }
    previous=now;
   }
-  assert(descents>30&&returns>30&&resets===1);
+  assert(first>20&&later>steps/2);
+  // The loop seam: the end of one baked loop matches the start of the next.
+  baked.update(loop.duration*3-1e-6);const a=volume(b.parts.workpiece.geometry);baked.update(loop.duration*3);
+  assert(Math.abs(volume(b.parts.workpiece.geometry)-a)<blank*1e-6);
  }finally{v.dispose();baked.dispose();}
 });

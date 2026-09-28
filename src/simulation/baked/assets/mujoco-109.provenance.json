@@ -4,19 +4,19 @@
   "format": "mujoco-loop",
   "version": 1,
   "asset": "src/simulation/baked/assets/mujoco-109.json.gz",
-  "bytes": 28356,
-  "assetSha256": "0dc42be260ae5f5e2bc0939d74efab7316fe1fe0d2737863675a43d1388786d0",
+  "bytes": 28406,
+  "assetSha256": "7640049f223c94f5fb9403732ba952b1673e10a531da38f84aa39be4513abc95",
   "motionSources": {
     "src/simulation/mujoco-thread-cutting/physics.js": "8683e896192fd092af40a8c4ba4f72cf595ae9e1f52aed7a86dc2ebcfe8e5112",
-    "src/simulation/mujoco-thread-cutting/profile.js": "e8be23750a8e2429c73dfcc2dfacfd1c622b2701ebea3aed1f2a922446e0655c",
+    "src/simulation/mujoco-thread-cutting/profile.js": "4b9d76db0a5a695856a1143ea77f44b51395e207fcccca1c9dc125a6e08a544d",
     "src/simulation/mujoco-thread-cutting/source.js": "4ab4c377e9797f92afef0e27445d87ad1eae73e3d659c952aa826bdaf547e75a",
     "src/simulation/mujoco-thread-cutting/stock.js": "df5513e4251a6ff5794f69ed8313a41463583ae54de48735f518ba36ed818c1f",
-    "src/simulation/mujoco-thread-cutting/visual.js": "ec9965977610a15800c25c148060c7139a28bfece83962250c17eb28fa1e322c",
+    "src/simulation/mujoco-thread-cutting/visual.js": "7fa97a9e3a260cd379765d21bfdbd5b9f41e038673559c695de0fe32c1f9462a",
     "src/simulation/mujoco-thread-cutting/workpiece.js": "329f96428299f2918248424a3b7d2f510add0b4fc90aae1a352f556b98b30737",
     "src/simulation/mujoco/simulation.js": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
   },
   "visualSourcesAtBake": {
-    "src/simulation/mujoco-thread-cutting/geometry.js": "fb4132cfd001718e589a1f8053518ae1e6d3f56b2c5e260703c782371a17b9ca"
+    "src/simulation/mujoco-thread-cutting/geometry.js": "2909e2d1c1ff64d409536e83e521178f1c42e886267e2a61c4c08d683c25947c"
   },
   "physicsXmlSha256": {
     "default": "dbd1e82e43bbdaf7c6d0e2b9c009cf9ad24df3e88c87ff64c6c1af4f6807d0b5"
@@ -39,9 +39,10 @@
     ],
     "seamExclude": [
       "parts.workpiece"
-    ]
+    ],
+    "roundTripLoops": 1
   },
-  "cycleDesign": "The lathe drive reverses each period: the tool carriage descends along the stock cutting the thread, leaving the plain blank below it, and returns up its finished groove; a fresh blank replaces the screw at the top reversal. The route sync rebuilds the cut from the recorded work angle and loop time; one 24 s period closes the loop.",
+  "cycleDesign": "The lathe drive reverses each period: the tool carriage descends along the stock and returns up its groove. Playback opens part-way down the first cut (threaded above the tool, plain blank below); that descent finishes the thread and every later pass chases it, so the loop never exchanges the work. The route sync rebuilds the cut from the recorded work angle and playback time; one 24 s period closes the loop.",
   "variants": {
     "default": {
       "loop": {
@@ -70,7 +71,7 @@
           }
         ]
       },
-      "roundTripPixels": 0.006543567660101794,
+      "roundTripPixels": 0.006543567660093975,
       "seam": {
         "seamStepPixels": 4.4891552922164255,
         "interiorStepPixels": 4.502924866828755,
@@ -81,5 +82,5 @@
   },
   "extras": [],
   "removed": [],
-  "bakeSeconds": 19.6596995306015
+  "bakeSeconds": 4.675663272857666
 }

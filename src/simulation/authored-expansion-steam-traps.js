@@ -275,7 +275,10 @@ function rayExpansionSteamTrap(movement) {
   const pipeAxisY = 0.20;
   const sphereCenter = new THREE.Vector3(0.25, pipeAxisY, 0);
   const coolPipeEndX = 0.30;
-  const fixedPipeAnchorX = -3.42;
+  // Pass 94: re-measured on the plate (C's centre at plate x 272): B's
+  // hatched upright spans plate x 37-64 (scene -4.36 to -3.83), A's anchored
+  // end is at x 30 (-4.49) and the base runs from x 26 (-4.57).
+  const fixedPipeAnchorX = -4.47;
   const basePipeDisplayLength = coolPipeEndX - fixedPipeAnchorX;
   const pipeOuterRadius = 0.20;
   const pipeBoreRadius = 0.11;
@@ -662,7 +665,7 @@ function rayExpansionSteamTrap(movement) {
   // and the plate (which is not sectioned) is bored only to the outlet's bore
   // plus 0.005, so it overlaps the neck's wall instead of sharing its face and
   // stays whole in front of the cut neck.
-  const baseOutline = [[-3.71, -0.65], [3.95, -0.65], [3.95, 0.65], [-3.71, 0.65]];
+  const baseOutline = [[-4.60, -0.65], [3.95, -0.65], [3.95, 0.65], [-4.60, 0.65]];
   const baseHoleRadius = outletBoreRadius + 0.005;
   const baseHole = Array.from({length: 128}, (_, i) => [
     cx + baseHoleRadius * Math.cos(FULL_TURN * i / 128),
@@ -680,18 +683,20 @@ function rayExpansionSteamTrap(movement) {
   fixedSupportB.userData.role =
     'fixed-support-B-anchoring-one-point-of-waste-pipe-A';
   const supportPost = new THREE.Mesh(
-    new THREE.BoxGeometry(0.34, 1.36, 0.82),
+    new THREE.BoxGeometry(0.52, 1.35, 0.82),
     frameMaterial,
   );
-  supportPost.position.set(-3.22, -0.67, 0);
+  // Its top stands 0.003 under A (whose wall slides in C's hubs as it
+  // grows); clamp B holds A to it.
+  supportPost.position.set(-4.10, -0.678, 0);
   supportPost.userData.role = 'fixed-upright-of-support-B';
   const supportClamp = ringNormalToX(
-    pipeOuterRadius + 0.085,
+    pipeOuterRadius + 0.09,
     0.09,
     darkMaterial,
     'fixed-clamp-B-around-pipe-A',
   );
-  supportClamp.position.set(-3.22, pipeAxisY, 0);
+  supportClamp.position.set(-4.10, pipeAxisY, 0);
   fixedSupportB.add(supportPost, supportClamp);
   root.add(fixedSupportB);
 
@@ -1141,7 +1146,7 @@ function rayExpansionSteamTrap(movement) {
     update,
   };
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-3.72, -2.60, -1.32),
+    new THREE.Vector3(-4.61, -2.60, -1.32),
     new THREE.Vector3(4.28, 2.48, 1.32),
   );
   root.userData.cameraDistanceScale = 1.04;

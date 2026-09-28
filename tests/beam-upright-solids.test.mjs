@@ -77,7 +77,9 @@ test('342: plate chain rides on the segment rim in the beam plane with headed pi
             assert.ok(p.min.z < q.min.z - .005 || p.max.z > q.max.z + .005, 'pin head stands proud of its plate');
           }
           assert.ok(p.min.z < g.chainOuterLow - .01 && p.max.z > g.chainOuterHigh + .01, 'pin heads proud of both faces');
-          assert.ok(p.min.z > beamHead.min.z && p.max.z < beamHead.max.z, 'chain lies within the head face');
+          // Pass 94: the chain line stands 0.13 in front of the beam mid-plane so its
+          // front plates show in rotated views; they stand at most ~0.04 proud.
+          assert.ok(p.min.z > beamHead.min.z && p.max.z < beamHead.max.z + .045, 'chain stays within the head, front plates just proud');
         }
       } else {
         const neighbours = [links[j - 1].endPin, links[j + 1]?.startPin].filter(Boolean);
@@ -93,7 +95,8 @@ test('342: plate chain rides on the segment rim in the beam plane with headed pi
       [b.chainLug, b.chainAttachmentPin]]) clearsBore(part, world(pin), g.chainPinRadius);
     assert.ok(bounds(b.pistonCrosshead).max.y < bounds(b.chainLinks[0].plates[0]).min.y, 'crosshead top clears the first link');
   }
-  assert.ok(head.min.z < g.chainOuterLow && head.max.z > g.chainOuterHigh, 'head face spans the chain');
+  // Pass 94: the chain's front outer plate stands just proud of the head face.
+  assert.ok(head.min.z < g.chainOuterLow && head.max.z > g.chainOuterHigh - .045, 'head face spans the chain (front plates just proud)');
   disposeObject3D(root);
 });
 

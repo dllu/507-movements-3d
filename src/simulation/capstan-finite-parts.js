@@ -42,22 +42,62 @@ export function capstanPackingProgress(progress, wrapAngle) {
   return integral / (wrapAngle - lead/2);
 }
 
-// Brown's pawl: a flat dog with a round boss on the radial pivot pin,
-// tapering to a rounded nose. Outline in pawl-local x (along the pawl) and y;
-// the plate is extruded through the pawl thickness along local z (radial).
-export function capstanPawlOutline({ length, bossRadius, noseRadius }, count = 48) {
-  // Brown's dog is curved: its back bulges away from the teeth and it
-  // tapers from the boss to the rounded nose.
-  const bulge = 0.06, steps = 24, left = [], right = [];
-  for (let i = 0; i <= steps; i++) {
-    const u = i / steps, x = u * length, y = bulge * Math.sin(Math.PI * u);
-    const slope = bulge * Math.PI / length * Math.cos(Math.PI * u), n = Math.hypot(1, slope);
-    const w = 0.085 * (1 - u) + noseRadius * u;
-    left.push([x - slope * w / n, y + w / n]); right.push([x + slope * w / n, y - w / n]);
-  }
-  const union = polygonClipping.union(poly([...left, ...right.reverse()]),
-    poly(circle([0, 0], bossRadius, count)), poly(circle([length, 0], noseRadius, count)));
-  return union[0][0].slice(0, -1);
+// Brown's pawl: a flat dog on the radial pivot pin, drawn seated. It is built
+// in that seated pose (pivot at the origin, y up, x toward the recoil side)
+// and turned into pawl-local axes, x from the pivot to the tip.
+// - A round boss on the pin.
+// - A straight back, tangent to the boss, down to a rounded shoulder.
+// - A straight front edge, vertical like the tooth face it bears on, down to
+//   the tip in the root.
+// - A hooked belly: one smooth cubic from under the boss, bending down and
+//   then easing onto a short toe that lies along the ramp, so the tip's
+//   angle is the valley's (face against ramp) and it fills the root corner.
+const turn = ([x, y], angle) => [x*Math.cos(angle) - y*Math.sin(angle), x*Math.sin(angle) + y*Math.cos(angle)];
+const unit = ([x, y]) => { const n = Math.hypot(x, y); return [x/n, y/n]; };
+// Round the corner at b (between a and c) with an arc of radius r.
+function filletCorner(a, b, c, r, steps) {
+  const u = unit([a[0]-b[0], a[1]-b[1]]), v = unit([c[0]-b[0], c[1]-b[1]]);
+  const half = Math.acos(Math.max(-1, Math.min(1, u[0]*v[0] + u[1]*v[1]))) / 2;
+  const back = r / Math.tan(half), bis = unit([u[0]+v[0], u[1]+v[1]]), d = r / Math.sin(half);
+  const center = [b[0]+bis[0]*d, b[1]+bis[1]*d];
+  const p = [b[0]+u[0]*back, b[1]+u[1]*back], q = [b[0]+v[0]*back, b[1]+v[1]*back];
+  let a0 = Math.atan2(p[1]-center[1], p[0]-center[0]), a1 = Math.atan2(q[1]-center[1], q[0]-center[0]);
+  let sweep = a1 - a0; while (sweep > Math.PI) sweep -= 2*Math.PI; while (sweep < -Math.PI) sweep += 2*Math.PI;
+  return Array.from({ length: steps+1 }, (_, i) => [center[0]+r*Math.cos(a0+sweep*i/steps), center[1]+r*Math.sin(a0+sweep*i/steps)]);
+}
+export function capstanPawlSeatPitch({ seatTip }) { return Math.atan2(seatTip[1], seatTip[0]); }
+export function capstanPawlOutline(dimensions, count = 48) {
+  const { seatTip: tip, shoulderHeight, bossRadius: rb, toeLength, toeAngle, shoulderRadius, tipRadius, bellyStart, bellyLead } = dimensions;
+  const shoulder = [tip[0], shoulderHeight];
+  // Back: the line from the shoulder tangent to the boss on its upper side.
+  const d = Math.hypot(...shoulder), phi = Math.atan2(shoulder[1], shoulder[0]);
+  const backAngle = phi + Math.acos(rb / d), backPoint = [rb*Math.cos(backAngle), rb*Math.sin(backAngle)];
+  // Belly: leaves the boss tangentially at bellyStart, ends on the toe.
+  const toe = [Math.cos(toeAngle), Math.sin(toeAngle)], heel = [tip[0] + toe[0]*toeLength, tip[1] + toe[1]*toeLength];
+  const b0 = [rb*Math.cos(bellyStart), rb*Math.sin(bellyStart)], t0 = [-Math.sin(bellyStart), Math.cos(bellyStart)];
+  const span = Math.hypot(heel[0]-b0[0], heel[1]-b0[1]);
+  const p1 = [b0[0] + t0[0]*span*bellyLead, b0[1] + t0[1]*span*bellyLead], p2 = [heel[0] + toe[0]*span*0.35, heel[1] + toe[1]*span*0.35];
+  const belly = Array.from({ length: 33 }, (_, i) => {
+    const t = i/32, s = 1-t;
+    return [0, 1].map(k => s*s*s*b0[k] + 3*s*s*t*p1[k] + 3*s*t*t*p2[k] + t*t*t*heel[k]);
+  });
+  const points = [];
+  // Tip (valley-angle point, slightly rounded), front edge, shoulder, back.
+  points.push(...filletCorner(heel, tip, shoulder, tipRadius, 8));
+  points.push(...filletCorner(tip, shoulder, backPoint, shoulderRadius, 12));
+  // Boss: counter-clockwise from the back's tangent point round to the belly.
+  let sweep = bellyStart - backAngle; while (sweep <= 0) sweep += 2*Math.PI;
+  const steps = Math.max(8, Math.round(count * sweep / (2*Math.PI)));
+  for (let i = 0; i <= steps; i++) { const a = backAngle + sweep*i/steps; points.push([rb*Math.cos(a), rb*Math.sin(a)]); }
+  points.push(...belly.slice(1, -1));
+  // Straight runs are subdivided so every sampled edge point is a vertex.
+  const dense = [];
+  points.forEach((p, i) => {
+    const q = points[(i+1) % points.length], n = Math.max(1, Math.ceil(Math.hypot(q[0]-p[0], q[1]-p[1]) / 0.01));
+    for (let k = 0; k < n; k++) dense.push([p[0] + (q[0]-p[0])*k/n, p[1] + (q[1]-p[1])*k/n]);
+  });
+  const seat = capstanPawlSeatPitch(dimensions);
+  return dense.map(point => turn(point, -seat));
 }
 
 export function capstanPawlGeometry(dimensions) {

@@ -54,7 +54,7 @@ test('079 both fixed-length rods close through the entire horizontal stroke',()=
 
 test('079 preserves startup, nearly continuous three-tooth advance and deterministic seeking',()=>{
  const model=makeOpposedArmDrive(),u=model.root.userData,p=u.geometry;
- near(sampleOpposedArmMotion(0).theta,0);near(-sampleOpposedArmMotion(4).theta/p.pitch,2.2569687534,1e-7);
+ near(sampleOpposedArmMotion(0).theta,0);near(-sampleOpposedArmMotion(4).theta/p.pitch,2.2280797784,1e-7);
  for(const time of [4,4.11,5.7,7.99,12.8,133.71]){
   const a=sampleOpposedArmMotion(time),b=sampleOpposedArmMotion(time+4);near(b.theta-a.theta,-3*p.pitch,1e-9);
   for(const key of ['upperBeta','lowerBeta','sliderX'])near(a[key],b[key]);
@@ -135,6 +135,8 @@ test('079 both pawls are the same simple blade on their drawn pivots, seated on 
  for(let i=0;i<40;i++){
   const time=4+i/10,state=sampleOpposedArmMotion(time);model.update(time);
   for(const key of ['upper','lower']){
+   // Skip a pawl caught mid-fall off a crest (it is dropping, not resting).
+   if(Math.abs(sampleOpposedArmMotion(time+.005)[key+'Beta']-sampleOpposedArmMotion(time-.005)[key+'Beta'])>.02)continue;
    const pawl=u.parts[key+'Pawl'],points=surfacePoints(pawl.geometry);
    u.setState({...state,[key+'Beta']:state[key+'Beta']+.002});
    const matrix=wheel.matrixWorld.clone().invert().multiply(pawl.matrixWorld);
@@ -143,4 +145,29 @@ test('079 both pawls are the same simple blade on their drawn pivots, seated on 
   }
  }
  dispose(model);
+});
+
+test('079 each pushing pawl seats in the root with its tip edge flat on the driving face',()=>{
+ const model=makeOpposedArmDrive(),u=model.root.userData,p=u.geometry,{halfThickness:h,length:L,shear}=p.pawl;
+ // The blade is a sheared extrusion whose tip edge is vertical at the seated tilt.
+ near(Math.atan(shear),p.pawl.seatedTilt,1e-12);
+ near(p.pivotZ-L*Math.sin(p.pawl.seatedTilt)-h/Math.cos(p.pawl.seatedTilt),p.valley,1e-12);
+ const seen={upper:0,lower:0};
+ for(let i=0;i<4000;i++){
+  const time=4+i/1000,a=sampleOpposedArmMotion(time),b=sampleOpposedArmMotion(time+.001);if(!(a.theta-b.theta>1e-4))continue;
+  model.update(time);
+  for(const key of ['upper','lower']){
+   const m=u.parts.wheelBody.matrixWorld.clone().invert().multiply(u.parts[key+'Pawl'].matrixWorld);
+   const [lo,hi]=[-h,h].map(z=>{const c=new THREE.Vector3(0,-L+z*shear,z).applyMatrix4(m),angle=Math.atan2(c.y,c.x),
+    k=Math.round((angle-p.phase)/p.pitch);return{gap:(angle-p.phase-k*p.pitch)*Math.hypot(c.x,c.y),z:c.z};});
+   // A pawl bearing on a face with its low corner at root depth is pushing
+   // (a pawl dropping off a crest passes the next face higher up).
+   if(Math.abs(lo.gap)>2e-4||lo.z>p.valley+.002)continue;
+   // Pushing: both corners of the tip edge bear on the face (no wedge) and
+   // the lower corner is on the valley floor.
+   seen[key]++;assert.ok(Math.abs(hi.gap-lo.gap)<5e-5,`${key} ${time}: wedge ${hi.gap-lo.gap}`);
+   assert.ok(lo.z>=p.valley-1e-9,`${key} ${time}: tip below the root ${lo.z}`);
+  }
+ }
+ assert.ok(seen.upper>50&&seen.lower>50,JSON.stringify(seen));dispose(model);
 });

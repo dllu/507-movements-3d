@@ -177,7 +177,7 @@ function makeFlywheelCrank({
   const rotor = new THREE.Group();
   rotor.userData.axis = Z_AXIS.clone();
   rotor.userData.role =
-    'one-rigid-four-spoke-flywheel-crank-and-wrist-journal';
+    'one-rigid-two-armed-flywheel-crank-and-wrist-journal';
 
   const rim = new THREE.Mesh(
     annulusGeometry(flywheelOuterRadius, flywheelInnerRadius, flywheelDepth),
@@ -190,11 +190,11 @@ function makeFlywheelCrank({
   const spokeLength = flywheelInnerRadius - spokeInnerRadius + 0.05;
   const spokeCenterRadius = (flywheelInnerRadius + spokeInnerRadius) / 2;
   const spokes = [];
-  // Brown shows only the horizontal spokes beside the frame (the vertical
-  // pair is hidden behind the pediment and the piston rod); the diagonals
-  // inside the frame opening are the fixed braces, not spokes.
-  for (let index = 0; index < 4; index += 1) {
-    const angle = index * FULL_TURN / 4;
+  // Brown draws only the horizontal pair of arms beside the frame; the
+  // opening between the crossbeam and crosshead A is empty on his plate,
+  // so the wheel is two-armed (the diagonals there are fixed braces).
+  for (let index = 0; index < 2; index += 1) {
+    const angle = index * FULL_TURN / 2;
     const spoke = new THREE.Mesh(
       new THREE.BoxGeometry(
         spokeLength,
@@ -209,7 +209,7 @@ function makeFlywheelCrank({
       flywheelPlaneZ,
     );
     spoke.rotation.z = angle;
-    spoke.userData.role = `flywheel-rigid-spoke-${index + 1}-of-4`;
+    spoke.userData.role = `flywheel-rigid-arm-${index + 1}-of-2`;
     spokes.push(spoke);
   }
 
@@ -1040,7 +1040,7 @@ function slottedCrossheadPillarEngine(movement) {
     ],
     officialPageAnimatedTabDisabled: false,
     referenceScope:
-      'official flywheel radii, four-spoke crank rotor (plate), 3.75-unit crank, 1.25-unit wrist journal and slot, translating crosshead A, piston, and pillar guides D-D',
+      'official flywheel radii, two-armed crank rotor (plate), 3.75-unit crank, 1.25-unit wrist journal and slot, translating crosshead A, piston, and pillar guides D-D',
     sourceUrl: movement.sourceUrl,
   };
   root.userData.sourceReference = {

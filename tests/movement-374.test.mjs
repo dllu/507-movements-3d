@@ -470,3 +470,17 @@ test('movement 374 closes three shaft turns, ten roller turns, and three treadle
   disposeModel(model.root);
   disposeModel(model507.root);
 });
+
+test('movement 374 half a turn later carries the eccentric onto Brown\'s dashed circle (his second position, not a separate wheel)', () => {
+  const model = createMovementModel(catalog.movements[373]);
+  const { geometry, stateAtTime } = model.root.userData;
+  // Measured on the plate: solid disc centre (253, 105) r 88; shaft (292, 100);
+  // dashed circle centre (340, 106) r 87, the same size, on the far side of
+  // the shaft. Pixels per model unit follow the 89 px disc radius.
+  const pixels = 89 / geometry.eccentricPulleyRadius;
+  const half = stateAtTime(geometry.shaftPeriod / 2);
+  const offset = half.eccentricCenter.clone().sub(geometry.shaftCenter).multiplyScalar(pixels);
+  near(292 + offset.x, 340, 8, 'dashed centre x');
+  near(100 - offset.y, 106, 8, 'dashed centre y');
+  disposeModel(model.root);
+});

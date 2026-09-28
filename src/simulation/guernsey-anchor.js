@@ -8,9 +8,9 @@
 //   urged counter-clockwise.
 // - Anchor A and lever B are one plate: a bored boss at B, a curved upper arm
 //   to pallet A, a straight lower arm to the lower pallet, a straight bar to a
-//   single curved arm (an annular band concentric with B) carrying the
-//   internal teeth that drive the upper balance pinion and the external teeth
-//   that drive the left one.
+//   curved arm of two runs, each an annular band concentric with B, stepped
+//   at the bar: the upper run carries the internal teeth that drive the upper
+//   balance pinion, the lower run the external teeth that drive the left one.
 // - Each pallet is a blade whose working flank lies exactly along a tooth's
 //   front face, with its rounded nose in the root, at the end of the lever's
 //   swing that drives it in (the upper pallet at -A, the lower at +A, half a
@@ -54,7 +54,7 @@ export const DESIGN = Object.freeze({
   tipRound: 0.018,
   rootRound: 0.03,
   // Lever (and anchor) swing either side of the plate pose.
-  leverAmplitude: 8 * DEG,
+  leverAmplitude: 10 * DEG,
   // Angle about the wheel of the root the upper pallet seats in at -A.
   upperSeatAngle: 114 * DEG,
   // Pallet blade: nose this far up the face from the root, flank running this
@@ -64,15 +64,19 @@ export const DESIGN = Object.freeze({
   palletWidth: 0.13,
   palletChisel: 40 * DEG,
   palletNoseRound: 0.012,
-  // Gearing: two equal twelve-tooth involute pinions, 30 degree pressure.
-  pinionTeeth: 12,
-  module: 0.036,
+  // Gearing: two equal twenty-tooth involute pinions (Brown draws 18-20
+  // fine teeth), 30 degree pressure. With the 10 degree swing, thirteen teeth
+  // on each run pass the pitch point.
+  pinionTeeth: 20,
+  module: 0.026,
   pressureAngle: 30 * DEG,
   addendum: 0.9,
   dedendum: 1.15,
   backlash: 0.002,
   // Plate thicknesses and plane.
   armWidth: 0.15,
+  // Radial width of each toothed run of the curved arm.
+  bandWidth: 0.16,
   bossRadius: 0.22,
   boreRadius: 0.075,
   period: 6,
@@ -220,7 +224,12 @@ export function gearing() {
     m, rp, ha, hf, dUpper, dLeft, internalRadius, externalRadius,
     upperAngle: Math.atan2(DESIGN.upperCenter[1], DESIGN.upperCenter[0]),
     leftAngle: Math.atan2(DESIGN.leftCenter[1], DESIGN.leftCenter[0]),
+    // The upper run's plain back stands outside its internal teeth; the lower
+    // run's plain back inside its external teeth. The two runs are each
+    // concentric with B and meet with a step at the bar, as Brown draws.
     bandInner: internalRadius + hf, bandOuter: externalRadius - hf,
+    upperBand: [internalRadius + hf, internalRadius + hf + DESIGN.bandWidth],
+    lowerBand: [externalRadius - hf - DESIGN.bandWidth, externalRadius - hf],
     // Pinion angle per lever angle (internal: same sense; external: opposite).
     upperRatio: internalRadius / rp, leftRatio: -externalRadius / rp,
   };
@@ -285,18 +294,25 @@ const asPolygon = (ring) => [[closeRing(ring)]];
 export function leverOutline() {
   const g = gearing(), s = seats(), A = DESIGN.leverAmplitude, w = DESIGN.armWidth / 2;
   const racks = rackLayout();
-  const band = (() => {
+  const barAngle = 151.8 * DEG;
+  // Two runs, each an annular band concentric with B, overlapping under the
+  // bar: the upper carries the internal teeth, the lower the external.
+  const bands = (() => {
     const beta = (R) => Math.PI * g.m / R;
     const start = racks.internal[0] - 1.2 * beta(g.internalRadius);
     const end = racks.external.at(-1) + 1.2 * beta(g.externalRadius);
-    return ccw([...arc([0, 0], g.bandOuter, start, end, 120), ...arc([0, 0], g.bandInner, end, start, 120)]);
+    const lap = 0.03;
+    const [ui, uo] = g.upperBand, [li, lo] = g.lowerBand;
+    return [
+      ccw([...arc([0, 0], uo, start, barAngle + lap, 120), ...arc([0, 0], ui, barAngle + lap, start, 120)]),
+      ccw([...arc([0, 0], lo, barAngle - lap, end, 80), ...arc([0, 0], li, end, barAngle - lap, 80)]),
+    ];
   })();
-  const parts = [asPolygon(band)];
+  const parts = bands.map(asPolygon);
   for (const center of racks.internal) parts.push(asPolygon(rackTooth(g.internalRadius, true, 0.01).map((q) => rotateAbout(q, center))));
   for (const center of racks.external) parts.push(asPolygon(rackTooth(g.externalRadius, false, 0.01).map((q) => rotateAbout(q, center))));
   // Bar from the boss to the band's middle, along Brown's line of B.
-  const barAngle = 151.8 * DEG;
-  parts.push(asPolygon(stroke([[0, 0], polar([0, 0], (g.bandInner + g.bandOuter) / 2, barAngle)], 0.085)));
+  parts.push(asPolygon(stroke([[0, 0], polar([0, 0], (g.upperBand[0] + g.lowerBand[0]) / 2, barAngle)], 0.085)));
   parts.push(asPolygon(arc([0, 0], DESIGN.bossRadius, 0, TAU, 96).slice(0, -1)));
   // Upper arm: rises from the boss and arches over to pallet A's heel.
   const upperEnd = scale(add(s.upper.heel, s.upper.back), 0.5);

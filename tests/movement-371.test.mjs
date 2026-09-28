@@ -86,6 +86,22 @@ test('movement 371 contains one open four-spoke wheel, opposed face teeth, one r
   blocks.wheelBody.geometry.computeBoundingBox();
   assert.ok(blocks.wheelBody.geometry.boundingBox.max.z >= 0.134);
   for (const tooth of blocks.rearFaceTeeth) assert.equal(tooth.material, blocks.frontFaceTeeth[0].material);
+  // p94: each rim is one plain sector (no terminal step), and every bar has
+  // one section along its length, its width in proportion to the radius.
+  assert.deepEqual(geometry.rimRadii.inner, [1.29, 1.45]);
+  assert.deepEqual(geometry.rimRadii.outer, [2.0, 2.11]);
+  for (const tooth of [...blocks.frontFaceTeeth, ...blocks.rearFaceTeeth]) {
+    assert.equal(tooth.geometry.userData.profileType, 'uniform-section-radial-bar');
+    const p = tooth.geometry.attributes.position, width = new Map(), height = new Map();
+    for (let i = 0; i < p.count; i += 1) {
+      const r = Math.round((p.getX(i) + geometry.toothCenterRadius) * 1e4);
+      width.set(r, Math.max(width.get(r) ?? 0, Math.abs(p.getY(i))));
+      height.set(r, Math.max(height.get(r) ?? 0, Math.abs(p.getZ(i) + Math.sign(tooth.position.z) * geometry.faceToothOffset)));
+    }
+    const stations = [...width.keys()].sort((a, b) => a - b), first = stations[0], last = stations.at(-1);
+    near(width.get(last) / width.get(first), last / first, 1e-3, 'bar width grows in proportion to radius');
+    near(height.get(last), height.get(first), 1e-6, 'bar height is constant along the radius');
+  }
   assert.equal(blocks.wheelWeb.userData.lobeCount, 4);
   for (const component of [
     blocks.outputRotor,

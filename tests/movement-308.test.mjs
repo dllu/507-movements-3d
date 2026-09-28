@@ -63,6 +63,11 @@ test('308 reproduces Brown’s plate: pendulum P, P, hooked wheel under a cock, 
   const head = new THREE.Box3().setFromObject(data.blocks.leverHead);
   const wheel = new THREE.Box3().setFromObject(data.blocks.wheelPlate);
   assert.ok(head.min.z >= wheel.min.z - 1e-9 && head.max.z <= wheel.max.z + 1e-9, 'head in the wheel plane');
+  // p94: the hook's end seats against the locked tooth's leading face,
+  // 12 px (0.216) inside the tip circle, not on the tip.
+  const hookDepth = g.tipRadius - Math.hypot(...g.lockPinCenter);
+  assert.ok(Math.abs(hookDepth - 12 * g.rasterScale) < 1e-9, `hook depth ${hookDepth}`);
+  assert.ok(g.tipRadius - hookDepth - g.lockPinRadius < 0.8 * g.tipRadius, 'hook end reaches a fifth of the way down the tooth');
   assert.equal(data.blocks.click.parent, data.blocks.pendulum);
   assert.equal(data.blocks.palletPlate.parent, data.blocks.pendulum);
   assert.equal(data.blocks.lever.parent, model.root);

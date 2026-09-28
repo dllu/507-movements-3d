@@ -76,7 +76,7 @@ test('movement 331 is the flywheel Scotch-yoke engine in pillar guides D-D', () 
   assert.equal(blocks.guidePosts[1].parent, blocks.fixedFrame);
   assert.equal(blocks.crankRotor.parent, model.root);
   assert.equal(blocks.flywheelRim.parent, blocks.crankRotor);
-  assert.equal(blocks.flywheelSpokes.length, 4);
+  assert.equal(blocks.flywheelSpokes.length, 2);
   assert.equal(blocks.crankArm.parent, blocks.crankRotor);
   assert.equal(blocks.wristJournal.parent, blocks.crankRotor);
   assert.equal(blocks.crankPinAnchor.parent, blocks.crankRotor);
@@ -98,9 +98,9 @@ test('movement 331 is the flywheel Scotch-yoke engine in pillar guides D-D', () 
 
   const roles = [];
   model.root.traverse((object) => roles.push(object.userData.role ?? ''));
-  // Brown draws a four-spoke (H/V) wheel; the diagonals are fixed braces.
-  assert.equal(roles.filter((role) => /flywheel-rigid-spoke-/.test(role)).length,
-    4);
+  // Brown draws a two-armed (horizontal) wheel; the diagonals are fixed braces.
+  assert.equal(roles.filter((role) => /flywheel-rigid-arm-/.test(role)).length,
+    2);
   assert.equal(roles.filter((role) => /fixed-pillar-guide-D$/.test(role)).length,
     2);
   assert.equal(roles.filter((role) => /guide-shoe-embracing-pillar-D$/.test(role))
@@ -471,7 +471,7 @@ test('movement 331 renderer binds the rotor, journal, yoke, and piston in 3D', (
   assert.notEqual(model330.root.userData.archetype,
     model.root.userData.archetype);
   assert.ok(model330.root.userData.blocks.forkBody.isMesh);
-  assert.equal(blocks.flywheelSpokes.length, 4);
+  assert.equal(blocks.flywheelSpokes.length, 2);
   disposeModel(model330.root);
   disposeModel(model.root);
 });

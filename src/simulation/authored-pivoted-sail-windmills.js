@@ -29,9 +29,12 @@ function cylinderBetween(start, end, radius, material, role, sides = 18) {
   return mesh;
 }
 
-function sourcePhaseFlipQuintic(value) {
+// Rest-to-rest quintic (smootherstep): zero angular velocity and
+// acceleration at both ends of the flip, so the vane leaves and rejoins its
+// wind-aligned holds without a jolt.
+function restToRestFlipQuintic(value) {
   const x = THREE.MathUtils.clamp(value, 0, 1);
-  return x + 54 * x ** 3 - 82 * x ** 4 + 33 * x ** 5;
+  return x ** 3 * (10 - 15 * x + 6 * x ** 2);
 }
 
 function makeWindArrow({ material, position, role }) {
@@ -61,13 +64,19 @@ function pivotedSailWindmill(movement) {
   const sailCount = 6;
   const rotorRadiusSceneUnit = 1.72;
   const sweepRadiusSceneUnit = 2.22;
-  // Plate: each board is about 1.05 pivot-circle radii long. 1.62 (0.94 R) is
-  // the longest board that keeps 0.03 clear of its neighbour through the
-  // official flip schedule (closest at phase 0.75); 1.75 would collide.
-  const sailWidthSceneUnit = 1.62;
+  // Plate: each board is about 1.05 pivot-circle radii long. Under the
+  // official schedule (flip over the 30 degrees after the top) two
+  // neighbouring edge-on boards at azimuths 150 and 210 degrees lie on one
+  // line with their pivots one radius apart, so any board longer than
+  // R - thickness collides there. Holding each vane edge-on to 120 degrees
+  // and flipping it over 120-180 degrees means that pair always has one board
+  // mid-flip: 1.80 (1.05 R) boards then keep >= 0.52 clear of one another,
+  // and Brown's plate pose (120, 180 and 240 degree boards edge-on) is kept.
+  const sailWidthSceneUnit = 1.80;
   const sailHeightSceneUnit = 0.72;
   const sailThicknessSceneUnit = 0.065;
-  const pivotTransitionAngleRadian = Math.PI / 6;
+  const pivotTransitionAngleRadian = Math.PI / 3;
+  const flipStartAfterTopRadian = Math.PI / 6;
   const officialCyclesPerMinute = 15;
   const cycleDuration = 60 / officialCyclesPerMinute;
   const shaftAngularVelocityRadianPerSecond = FULL_TURN / cycleDuration;
@@ -113,16 +122,20 @@ function pivotedSailWindmill(movement) {
       worldPanelYawRadian = azimuthRadian
         + orientationCycleOffsetRadian;
       pivotMode = 'radial-face-presenting-power-stroke';
-    } else if (sailCycleAngleRadian < Math.PI
+    } else if (sailCycleAngleRadian <= Math.PI + flipStartAfterTopRadian) {
+      worldPanelYawRadian = Math.PI / 2 + orientationCycleOffsetRadian;
+      pivotMode = 'wind-aligned-edge-on-hold-before-flip';
+    } else if (sailCycleAngleRadian < Math.PI + flipStartAfterTopRadian
       + pivotTransitionAngleRadian) {
-      const transitionAngle = sailCycleAngleRadian - Math.PI;
-      const flipProgress = sourcePhaseFlipQuintic(
+      const transitionAngle = sailCycleAngleRadian - Math.PI
+        - flipStartAfterTopRadian;
+      const flipProgress = restToRestFlipQuintic(
         transitionAngle / pivotTransitionAngleRadian,
       );
       worldPanelYawRadian = Math.PI / 2
-        + pivotTransitionAngleRadian * flipProgress
+        + Math.PI * flipProgress
         + orientationCycleOffsetRadian;
-      pivotMode = 'C2-180-degree-flip-after-top-dead-line';
+      pivotMode = 'C2-180-degree-flip-on-return';
     } else {
       worldPanelYawRadian = 3 * Math.PI / 2
         + orientationCycleOffsetRadian;
@@ -502,6 +515,7 @@ function pivotedSailWindmill(movement) {
     physicalRotorRadiusMetre,
     physicalSailHeightMetre,
     physicalSailWidthMetre,
+    flipStartAfterTopRadian,
     pivotTransitionAngleRadian,
     powerCoefficient,
     rotorRadiusSceneUnit,
@@ -510,7 +524,7 @@ function pivotedSailWindmill(movement) {
     sailThicknessSceneUnit,
     sailWidthSceneUnit,
     shaftAngularVelocityRadianPerSecond,
-    sourcePhaseFlipQuintic,
+    restToRestFlipQuintic,
     summedTorqueWeightAtRotorAngle,
     sweptAreaSquareMetre,
     sweepRadiusSceneUnit,
@@ -555,13 +569,13 @@ function pivotedSailWindmill(movement) {
       aerodynamicAssumption:
         'Brown gives no dimensions, wind speed, load, or efficiency. The displayed physical operating point uses a disclosed mean power coefficient; a flywheel buffer exactly absorbs the small six-sail torque ripple so the source-prescribed rotor speed remains uniform. This is a signed reduced-order model, not CFD.',
       c2PivotTiming:
-        'Each vane stays radial for the full half-turn power stroke, turns through 180 degrees during the 30-degree sector immediately after the top dead line, then stays aligned with the wind for the return. A source-phase quintic matches panel position, angular velocity, and angular acceleration continuously into both adjoining constraints.',
+        'Each vane stays radial for the full half-turn power stroke. At the top dead line the radial board already lies along the wind, so it is released there and held edge-on to the wind until 30 degrees past the top, turns through 180 degrees during the next 60-degree sector (120-180 degrees of azimuth), then stays aligned with the wind for the rest of the return. A rest-to-rest quintic starts and ends the flip with zero angular velocity and acceleration, continuous with both wind-aligned holds. The official 30-degree post-top flip would put two neighbouring 1.05-radius boards on one line at 150 and 210 degrees; the later, longer flip keeps one of that pair turning and clear.',
       directDragAction:
         'Negative-Z wind acts on the positive-X half of the plan. Face projection and positive lever arm give positive-Y torque there; sails on the negative-X return half remain parallel to the wind and expose their edges, apart from the short source-prescribed flip whose signed counter-torque is included.',
       markerContinuity:
         'White wind packets advance from the analytic integral of constant negative-Z velocity and use getPointAt arc-length sampling on uninterrupted paths, with smooth endpoint fades.',
       sourceTimingDisclosure:
-        'The official canvas runs the rotor at 15 cycles per minute, or four seconds per turn. Its six vane offsets, radial half-turn, 30-degree post-top flip, and wind-aligned remainder are retained; only the linear flip interpolation is replaced by endpoint-matched C2 timing.',
+        'The official canvas runs the rotor at 15 cycles per minute, or four seconds per turn. Its six vane offsets, radial half-turn and wind-aligned return are retained. Its 30-degree post-top flip is moved to 120-180 degrees of azimuth and lengthened to 60 degrees, so Brown-length boards clear their neighbours; the plate pose (boards at 120, 180 and 240 degrees edge-on) is unchanged.',
     },
     fidelity: 'authored',
     flow: {
@@ -571,7 +585,7 @@ function pivotedSailWindmill(movement) {
     },
     geometry,
     mechanism:
-      'Six radial arms rotate together about one vertical output shaft. Every outer sail has its own vertical hinge. Across the positive-X power half-turn, each sail is held radial and presents its broad face to the negative-Z wind. Immediately after crossing the top dead line it makes one smooth 180-degree pivot during 30 degrees of rotor travel, then holds a fixed wind-parallel orientation and returns edge-on across the negative-X side. This is the phase ordering shown by the official animation.',
+      'Six radial arms rotate together about one vertical output shaft. Every outer sail has its own vertical hinge. Across the positive-X power half-turn, each sail is held radial and presents its broad face to the negative-Z wind. At the top dead line the radial sail already lies along the wind; it is held there, edge-on, for 30 degrees, makes one smooth 180-degree pivot during the next 60 degrees of rotor travel, then holds a fixed wind-parallel orientation and returns edge-on across the negative-X side. The official animation flips over the 30 degrees just after the top; the later, longer flip lets Brown-length boards pass their neighbours.',
     motion: {
       rotationAxis: new THREE.Vector3(0, 1, 0),
       rotationSenseViewedFromAbovePositiveY: 'counterclockwise',
@@ -629,7 +643,7 @@ function pivotedSailWindmill(movement) {
         officialEditorialNote:
           'The official page says its animation illustrates the intended motion and warns that Brown’s static illustration appears to flip the sails too early.',
         reconstructionDisclosure:
-          'The six-arm topology, individual sail pivots, vertical shaft, plan-view wind direction, face-on radial power half-turn, 30-degree post-top flip, edge-on return, four-second source cycle, and phase ordering are source-grounded. Sail thickness and height, frame, physical dimensions, wind speed, power coefficient, flywheel, colors, particles, and endpoint-matched C2 flip timing are independently engineered and exposed.',
+          'The six-arm topology, individual sail pivots, vertical shaft, plan-view wind direction, face-on radial power half-turn, edge-on return, four-second source cycle, and phase ordering are source-grounded. The 60-degree flip at 120-180 degrees (the official canvas flips over the 30 degrees after the top), sail thickness and height, frame, physical dimensions, wind speed, power coefficient, flywheel, colors, particles, and rest-to-rest C2 flip timing are independently engineered and exposed.',
       },
       officialPage: movement.sourceUrl,
       plate: 'Brown 1868, Movement 486',
@@ -639,7 +653,7 @@ function pivotedSailWindmill(movement) {
       aerodynamicPowerEquation:
         'P_mean=C_P*rho*A*abs(U_z)^3/2; tau_mean=P_mean/omega_y',
       hingeConstraint:
-        'alpha_world=azimuth on the radial power half-turn; alpha_world advances pi during the post-top 30-degree flip; alpha_world=wind_axis on the remaining return; delta_hinge=alpha_world-azimuth',
+        'alpha_world=azimuth on the radial power half-turn; alpha_world=wind_axis from the top to 30 degrees past it; alpha_world advances pi during the 60-degree flip from 120 to 180 degrees; alpha_world=wind_axis on the remaining return; delta_hinge=alpha_world-azimuth',
       torqueRippleBalance:
         'tau_aero(t)+tau_flywheel_buffer(t)+tau_load=0 at uniform omega_y',
       windToRotationSign:
@@ -655,6 +669,7 @@ function pivotedSailWindmill(movement) {
   root.userData.cameraDirection = new THREE.Vector3(7.4, 9.2, 10.8);
   root.userData.groundFloorY = -0.64;
   correctWindRotorWorkingParts(root, 486);
+  root.userData.reconstructionNote = 'Each sail holds edge-on for 30 degrees past the top and flips over the next 60 degrees (the official animation flips over the first 30), so Brown-length boards clear their neighbours. Sail hinges and rotor motion are prescribed; aerodynamic loads, passive flipping, stop impacts and flywheel speed regulation are not dynamically validated.';
   // Pass 90: each hinge pin's head stops 0.005 below its sleeve's top (it
   // stood 0.08 proud and read as an off-centre crescent from above), and its
   // foot runs on below the arm so the arm enters the pin's side rather than

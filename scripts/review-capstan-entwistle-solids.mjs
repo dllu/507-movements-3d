@@ -12,7 +12,7 @@ for(const id of (process.env.IDS??'412,495').split(',').map(Number)){
  const pairs=id===412?b.planets.flatMap(planet=>[[b.sunGear,planet],[b.annulusGear,planet]]):[[b.fixedGearA,b.planetGearB],[b.outputGearC,b.planetGearB]];
 
  const parts=new Map();
- for(const gear of new Set(pairs.flat())){const rotor=gear.userData.rotor??gear,children=rotor.children.filter((c,i)=>i===0||c.userData.bevelTooth),geometries=children.map(mesh=>{mesh.updateMatrix();let g=mesh.geometry.clone().applyMatrix4(mesh.matrix);if(g.index)g=g.toNonIndexed();for(const name of Object.keys(g.attributes))if(name!=='position')g.deleteAttribute(name);return g;});const geometry=mergeGeometries(geometries);
+ for(const gear of new Set(pairs.flat())){const rotor=gear.userData.rotor??gear,children=rotor.children.filter((c,i)=>i===0||c.userData.bevelTooth||c.userData.role==='plain-flat-back-of-bevel-wheel'),geometries=children.map(mesh=>{mesh.updateMatrix();let g=mesh.geometry.clone().applyMatrix4(mesh.matrix);if(g.index)g=g.toNonIndexed();for(const name of Object.keys(g.attributes))if(name!=='position')g.deleteAttribute(name);return g;});const geometry=mergeGeometries(geometries);
   // Pass 90: 495's teeth are seated 0.012 into their body, so the merged
   // soup is not one closed surface; test each closed part and take the union
   // (inside any part; distance to the nearest part).

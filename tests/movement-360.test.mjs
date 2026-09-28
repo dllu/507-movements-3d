@@ -459,3 +459,35 @@ test('movement 360 carries the pawl eye on a round drum boss concentric with its
   }
   disposeModel(model.root);
 });
+
+test('movement 360 (pass 94): the pawl falls from each passed tip over several frames, never in one', async () => {
+  const { drumPawl } = await import('../src/simulation/oscillating-drum-pawl-data.js');
+  const { drumContact } = await import('../src/simulation/oscillating-drum-contact.js');
+  const model = createMovementModel(catalog.movements[359]);
+  const data = model.root.userData;
+  const { fall } = drumPawl;
+  assert.equal(fall.lifts.length, Math.round(drumContact.period / fall.dt) + 1);
+  assert.equal(fall.lifts[0], 0, 'seated at capture');
+  assert.equal(fall.lifts.at(-1), 0, 'seated again at the next capture');
+  assert.equal(data.dynamics.pawlReturnAcceleration, fall.returnAcceleration);
+  // At 60 frames per second of physical time no frame moves the pawl more
+  // than 0.1 rad; the least-clearance table used to snap 0.2 rad in one.
+  let largest = 0;
+  for (let i = 0; i < 6 * 60 * 4; i++) {
+    const t = i / 240;
+    largest = Math.max(largest, Math.abs(data.stateAtTime(t + 1 / 60).pawlLift - data.stateAtTime(t).pawlLift));
+  }
+  assert.ok(largest < 0.1, `largest per-frame lift change ${largest}`);
+  // Seven tips pass per oscillation; each fall from the tip takes at least 0.06 s.
+  const falls = [];
+  let start = null;
+  for (let i = 1; i < fall.lifts.length; i++) {
+    const falling = fall.lifts[i] < fall.lifts[i - 1] - 2e-3;
+    if (falling && start === null) start = i - 1;
+    if (!falling && start !== null) { falls.push({ duration: (i - 1 - start) * fall.dt, drop: fall.lifts[start] - fall.lifts[i - 1] }); start = null; }
+  }
+  const tipFalls = falls.filter((f) => f.drop > 0.1);
+  assert.equal(tipFalls.length, 7);
+  for (const f of tipFalls) assert.ok(f.duration >= 0.06, `fall of ${f.drop} took ${f.duration} s`);
+  disposeModel(model.root);
+});

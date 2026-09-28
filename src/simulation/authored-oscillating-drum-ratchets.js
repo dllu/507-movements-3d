@@ -974,10 +974,10 @@ function fitBrownRatchetAndFlywheel(model) {
     markShadows(boss);
     b.pawlPivotBoss = boss;
   }
-  // The least-clearance table drops the pawl from each crest in one frame.
-  // That snap is physical here: during overrun a tooth passes in about 0.3 s,
-  // and a pawl held up for even 0.01 s would have its hooked nose struck by
-  // the next crest, so it must be down within a frame.
+  // The pawl's overrun lift is a baked time-domain contact solve (see
+  // scripts/generate-oscillating-drum-pawl.mjs): it rides each tooth's back
+  // up to the tip, falls onto the next back over about 0.085 s, and slides
+  // into the root before capture.
   return model;
 }
 

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import polygonClipping from 'polygon-clipping';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { ring } from './finite-plate-geometry.js';
 import { bandInvoluteGear, involute } from './band-epicyclic-geometry.js';
 import { makeSeeThrough } from './see-through-part.js';
@@ -11,9 +12,10 @@ import {
 import { guernseyAnchorBake } from './baked/guernsey-anchor-402.js';
 
 // Movement 402, G. O. Guernsey's escapement: one escape wheel drives anchor A,
-// which is one piece with lever B. B's single curved arm is a band concentric
-// with its pivot: internal teeth on its inner edge turn the upper balance's
-// pinion one way, external teeth on its outer edge turn the left balance's
+// which is one piece with lever B. B's curved arm is two runs, each a band
+// concentric with its pivot and stepped at the bar: internal teeth on the
+// upper run turn the upper balance's pinion one way, external teeth on the
+// lower run turn the left balance's
 // pinion the other way, so the two balances oscillate in opposite
 // directions. Every working part is one flat extrusion in one plane; the
 // geometry and the contact-solved wheel motion live in guernsey-anchor.js.
@@ -28,22 +30,20 @@ const LEFT_BALANCE = Object.freeze({ low: -0.08, high: 0.02 });
 const BRIDGE = Object.freeze({ low: 0.58, high: 0.66 });
 const BALANCE_OUTER = 1.50;
 const BALANCE_INNER = 1.36;
-const HUB_RADIUS = 0.12;
+// The hub stands 0.01 proud of the 0.12 collar, so their faces never coincide.
+const HUB_RADIUS = 0.13;
 
 const close = (points) => [...points, points[0]];
 
-// Balance: flat rim, one diametral bar and a hub, bored for its arbor.
-function balanceOutline() {
-  const bar = [[-BALANCE_INNER - 0.01, -0.045], [BALANCE_INNER + 0.01, -0.045], [BALANCE_INNER + 0.01, 0.045], [-BALANCE_INNER - 0.01, 0.045]];
-  const solid = polygonClipping.union(
-    polygonClipping.difference([close(circlePoints([0, 0], BALANCE_OUTER, 240))], [close(circlePoints([0, 0], BALANCE_INNER, 240))]),
-    [close(bar)],
-    [close(circlePoints([0, 0], HUB_RADIUS, 64))],
-  );
-  const bored = polygonClipping.difference(solid, [close(circlePoints([0, 0], DESIGN.boreRadius, 48))]);
-  if (bored.length !== 1) throw new Error('402 balance is not one piece');
-  const [outer, ...holes] = bored[0].map((r) => r.slice(0, -1));
-  return { outer, holes };
+// Balance: Brown's plain rim and a hub bored for its arbor, as one flat
+// solid (two pieces). A thin web in the shared see-through style joins them
+// (built in makeBalance), so the plate's open rim reads.
+function balanceGeometry(low, high) {
+  const annulus = (outerRadius, innerRadius, count) => extrudeOutline(
+    circlePoints([0, 0], outerRadius, count), [circlePoints([0, 0], innerRadius, count).reverse()], low, high);
+  const geometry = mergeGeometries([annulus(BALANCE_OUTER, BALANCE_INNER, 240), annulus(HUB_RADIUS, DESIGN.boreRadius, 64)]);
+  if (!geometry) throw new Error('402 balance rim and hub do not merge');
+  return geometry;
 }
 
 function pinionGeometry() {
@@ -100,17 +100,20 @@ function guernseyEscapement(movement) {
     const group = new THREE.Group();
     group.position.set(center[0], center[1], 0);
     group.userData.role = `${label}-balance-with-pinion`;
-    const { outer, holes } = balanceOutline();
-    const wheel = tagged(new THREE.Mesh(extrudeOutline(outer, holes, plane.low, plane.high), balanceMaterial), `${label}-balance-wheel`);
-    const collar = tagged(new THREE.Mesh(ring(DESIGN.boreRadius + 0.008, HUB_RADIUS, plane.high - 0.01, PLANE.low + 0.01, 64), balanceMaterial), `${label}-balance-collar-to-pinion`);
+    const wheel = tagged(new THREE.Mesh(balanceGeometry(plane.low, plane.high), balanceMaterial), `${label}-balance-wheel`);
+    // The web is sunk 0.03 into the rim and hub and is thinner than both,
+    // so none of its faces lies on theirs.
+    const web = tagged(new THREE.Mesh(ring(HUB_RADIUS - 0.03, BALANCE_INNER + 0.03, plane.low + 0.02, plane.high - 0.03, 240), balanceMaterial.clone()), `${label}-balance-see-through-web`);
+    makeSeeThrough(web);
+    const collar = tagged(new THREE.Mesh(ring(DESIGN.boreRadius + 0.008, 0.12, plane.high - 0.01, PLANE.low + 0.01, 64), balanceMaterial), `${label}-balance-collar-to-pinion`);
     const pinion = tagged(new THREE.Mesh(pinionGeometry(), pinionMaterial), `${label}-balance-involute-pinion`);
-    group.add(wheel, collar, pinion);
+    group.add(wheel, web, collar, pinion);
     root.add(group);
     const bearing = tagged(new THREE.Mesh(ring(DESIGN.boreRadius - 0.006, 0.2, plane.low - 0.14, plane.low - 0.02, 64), arborMaterial), `${label}-balance-rear-bearing`);
     bearing.position.set(center[0], center[1], 0);
     const arbor = arborMesh(center, DESIGN.boreRadius, plane.low - 0.10, PLANE.high + 0.03, arborMaterial, `${label}-balance-fixed-arbor`);
     root.add(bearing, arbor);
-    return { group, wheel, collar, pinion, bearing, arbor };
+    return { group, wheel, web, collar, pinion, bearing, arbor };
   };
   const upper = makeBalance(U, UPPER_BALANCE, 'upper');
   const left = makeBalance(L, LEFT_BALANCE, 'left');
@@ -195,7 +198,7 @@ function guernseyEscapement(movement) {
       internalMesh: 'Internal involute teeth on the arm (pitch radius = upper centre distance + pinion pitch radius) turn the upper pinion with the lever: thetaUpper = +(Rin/r) thetaB.',
       externalMesh: 'External involute teeth on the arm (pitch radius = left centre distance - pinion pitch radius) turn the left pinion against the lever: thetaLeft = -(Rout/r) thetaB.',
     },
-    reconstructionNote: 'Anchor A, lever B and B\'s single curved arm are one flat plate. Each pallet blade lies along a tooth\'s front face with its nose in the root at the end of its swing; the wheel follows the drawn outlines by contact (recoil anchor). The lever swing is a prescribed sinusoid; balance springs, train torque and inertia are not modelled. The arm is concentric with B, as the gearing requires, where Brown draws a freer curve.',
+    reconstructionNote: 'Anchor A, lever B and B\'s single curved arm are one flat plate. Each pallet blade lies along a tooth\'s front face with its nose in the root at the end of its swing; the wheel follows the drawn outlines by contact (recoil anchor). The lever swing is a prescribed sinusoid; balance springs, train torque and inertia are not modelled. The arm is two runs, each concentric with B as the gearing requires and stepped at the bar, where Brown draws one freer curve; each run carries thirteen fine teeth, all of which mesh over the 10 degree swing, and the pinions have twenty teeth.',
     sourceReference: {
       officialPage: movement.sourceUrl,
       brownPlate402: { imageWidth: 525, imageHeight: 525, scale: SOURCE_SCALE, ...Object.fromEntries(Object.entries(source).map(([k, v]) => [`${k}Pixels`, v])) },

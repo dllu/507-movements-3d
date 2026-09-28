@@ -24,34 +24,33 @@ function rotateXY([x, y], angle) {
 // Signed distance from a point to a polygon-clipping multipolygon: positive
 // outside, negative inside (even-odd over every ring).
 function signedDistance(point, multipolygon) {
+  const px = point[0];
+  const py = point[1];
   let best = Infinity;
   let inside = false;
   for (const polygon of multipolygon) {
     for (const ring of polygon) {
       for (let i = 0, j = ring.length - 1; i < ring.length; j = i, i += 1) {
-        const [ax, ay] = ring[j];
-        const [bx, by] = ring[i];
-        if ((by > point[1]) !== (ay > point[1])
-          && point[0] < (ax - bx) * (point[1] - by) / (ay - by) + bx) {
+        const ax = ring[j][0];
+        const ay = ring[j][1];
+        const bx = ring[i][0];
+        const by = ring[i][1];
+        if ((by > py) !== (ay > py) && px < (ax - bx) * (py - by) / (ay - by) + bx) {
           inside = !inside;
         }
         const dx = bx - ax;
         const dy = by - ay;
         const lengthSquared = dx * dx + dy * dy;
-        const t = lengthSquared > 0
-          ? THREE.MathUtils.clamp(
-            ((point[0] - ax) * dx + (point[1] - ay) * dy) / lengthSquared,
-            0,
-            1,
-          )
-          : 0;
-        best = Math.min(best, Math.hypot(
-          point[0] - ax - t * dx,
-          point[1] - ay - t * dy,
-        ));
+        let t = lengthSquared > 0 ? ((px - ax) * dx + (py - ay) * dy) / lengthSquared : 0;
+        if (t < 0) t = 0; else if (t > 1) t = 1;
+        const ex = px - ax - t * dx;
+        const ey = py - ay - t * dy;
+        const squared = ex * ex + ey * ey;
+        if (squared < best) best = squared;
       }
     }
   }
+  best = Math.sqrt(best);
   return inside ? -best : best;
 }
 
@@ -173,7 +172,11 @@ function brownDetachedEscapement(movement) {
     .map((ring) => ring.map((point) => rotateXY(point, -advance))));
 
   // ---- Pallet I and its impulse nib. ----
-  const nibTop = px(-52);
+  // p94: the nib's top is 2.5 px lower (it was -52 px). The locked tooth
+  // creeps about 6 degrees after Q's deeper hook as it lifts (the lock has
+  // no draw), and at -52 px that brought the lowest tip into the nib's band
+  // before the wheel was released.
+  const nibTop = px(-54.5);
   const nibWidth = px(7);
   // tip angle while the tip is on the nib face lies between these values.
   const contactStartTip = -Math.PI / 2 + Math.acos(-nibTop / tipRadius);
@@ -189,17 +192,36 @@ function brownDetachedEscapement(movement) {
   const pivotBore = px(3.3);
   const pivotStud = px(3);
   const pinRadius = px(3.5);
-  const pinCenterRadius = tipRadius - px(2);
+  // p94: the hook's rounded end sits 12 px inside the tip circle, against
+  // the locked tooth's leading face about a third of the way down it (it
+  // was 2 px, on the tip). Deeper is forced out: the hook's lift is almost
+  // radial (84 px of radial travel per radian of Q) and C can lift Q only
+  // about 11.4 degrees, so a lock at Brown's sketched r = 32 px would need
+  // about 19 degrees; his drawn hook, on the line from the wheel centre to
+  // Q's pivot, would move tangentially and need about 42 degrees.
+  const pinCenterRadius = tipRadius - px(12);
   const clearance = 0.002;
 
-  // Place the hook's rounded end just ahead of the tooth tip locked at 120 degrees.
+  // Place the hook's rounded end just ahead of the tooth locked at 120
+  // degrees, with the whole hook bar (not only its end) held clear.
   const lockedWheel = wheelOutlineAt(0);
   let pinAngleLow = 95 * DEG;
   let pinAngleHigh = lockTipAngle(3) - 1 * DEG;
-  const pinGap = (angle) => signedDistance(
-    [pinCenterRadius * Math.cos(angle), pinCenterRadius * Math.sin(angle)],
-    lockedWheel,
-  ) - pinRadius;
+  // The hook's corner is set left so its bar leans along the locked
+  // tooth's leading face (the valley's angle) instead of standing vertical.
+  const hookCornerWorld = fromRaster([210, 146]);
+  const pinGap = (angle) => {
+    const end = [pinCenterRadius * Math.cos(angle), pinCenterRadius * Math.sin(angle)];
+    let best = Infinity;
+    for (let k = 0; k <= 24; k += 1) {
+      const t = k / 24;
+      best = Math.min(best, signedDistance(
+        [end[0] + (hookCornerWorld[0] - end[0]) * t, end[1] + (hookCornerWorld[1] - end[1]) * t],
+        lockedWheel,
+      ) - (pinRadius + (px(5) - pinRadius) * t));
+    }
+    return best;
+  };
   for (let iteration = 0; iteration < 60; iteration += 1) {
     const middle = (pinAngleLow + pinAngleHigh) / 2;
     if (pinGap(middle) > clearance) pinAngleLow = middle;
@@ -220,7 +242,7 @@ function brownDetachedEscapement(movement) {
   const qArmRootHalfWidth = px(6);
   const qHeadHalfWidth = px(5.5);
   const qHookRootHalfWidth = px(5);
-  const qHookCorner = qLocal(fromRaster([220, 146]));
+  const qHookCorner = qLocal(hookCornerWorld);
   // Convex hull of two discs: tangent quad plus both discs.
   const taperedBar = (a, ra, b, rb, segments = 48) => {
     const dx = b[0] - a[0], dy = b[1] - a[1], d = Math.hypot(dx, dy);
@@ -271,7 +293,7 @@ function brownDetachedEscapement(movement) {
   };
   const pinClearAngle = (() => {
     let low = 0;
-    let high = 15 * DEG;
+    let high = 25 * DEG;
     const clear = (q) => qHookDiscs.every(({ centre, radius }) => {
       const [x, y] = qPoint(centre, q);
       return Math.hypot(x, y) - radius >= tipRadius + clearance;
@@ -287,8 +309,27 @@ function brownDetachedEscapement(movement) {
   // ---- Click C on the pendulum (local to its pivot at rest). ----
   const cPivotRest = fromRaster(raster.cPivot);
   const cRoundRadius = px(5);
-  // At u = 0 the click round touches Q's boss horizontally from the right.
-  const cRoundRest = [qBoss[0] + qBossRadius + cRoundRadius, qBoss[1]];
+  // At u = 0 the click round just meets Q (running clearance).
+  // p94: the round meets Q's boss on its upper right (55 degrees above the
+  // horizontal, as Brown's curl of C rises beside Q's end), so the boss has
+  // to climb over it: C lifts Q 11.4 degrees instead of 6.7, enough to free
+  // the deeper hook.
+  const cRoundContact = 55 * DEG;
+  // At that height the round sits beside the lower end of Q's arm, so it is
+  // moved right until it clears Q's whole outline by the running clearance
+  // at the drawn instant (C just meets Q there).
+  const cRoundHeight = qBoss[1] + (qBossRadius + cRoundRadius) * Math.sin(cRoundContact);
+  const qOutlineWorld = qOutlineLocal.map((polygon) => polygon.map(
+    (ring) => ring.map(([x, y]) => [x + qPivot[0], y + qPivot[1]]),
+  ));
+  let roundLow = qBoss[0];
+  let roundHigh = qBoss[0] + px(40);
+  for (let iteration = 0; iteration < 60; iteration += 1) {
+    const middle = (roundLow + roundHigh) / 2;
+    if (signedDistance([middle, cRoundHeight], qOutlineWorld) - cRoundRadius > clearance) roundHigh = middle;
+    else roundLow = middle;
+  }
+  const cRoundRest = [roundHigh, cRoundHeight];
   const cRoundLocal = [
     cRoundRest[0] - cPivotRest[0],
     cRoundRest[1] - cPivotRest[1],
@@ -327,8 +368,9 @@ function brownDetachedEscapement(movement) {
     // Sample the long arm's centre line away from the boss as well.
     let best = Infinity;
     // Above half its length the arm stays well clear of the click.
-    for (let k = 0; k <= 10; k += 1) {
-      const t = 0.5 + 0.5 * k / 10;
+    // Sampled densely (every 2 px): C's round now bears on the arm itself.
+    for (let k = 0; k <= 48; k += 1) {
+      const t = 0.5 + 0.5 * k / 48;
       const point = [qBossLocal[0] * t, qBossLocal[1] * t];
       const halfWidth = qArmRootHalfWidth + (qArmHalfWidth - qArmRootHalfWidth) * t;
       best = Math.min(best, signedDistance(
@@ -350,7 +392,7 @@ function brownDetachedEscapement(movement) {
 
   // Least Q lift on the upper branch while C drives it leftward (used only
   // to place pallet I's nib relative to the release point).
-  const qMaximum = 16 * DEG;
+  const qMaximum = 26 * DEG;
   const cMaximum = 40 * DEG;
   const tolerance = clearance - 1e-9;
   const resolveUp = (candidate, clearanceAt, maximum) => {
@@ -395,10 +437,19 @@ function brownDetachedEscapement(movement) {
   const nibFaceAtContact = contactHalfChord + travelAtRelease + dropMargin;
   const nibBottom = fromRaster([0, raster.palletI[2] + 4])[1];
   const pendulumPeriod = 4;
-  const swingCentre = -nibFaceAtContact;
-  const swingAmplitude = nibFaceAtContact + contactHalfChord + px(14);
-  const offsetMaximum = swingCentre + swingAmplitude;
+  // The right extreme leaves C 14 px clear of Q's boss once the tooth that
+  // drove the nib has left it. p94: the swing keeps its former 78 px
+  // amplitude instead of being centred on the nib: the deeper hook needs C
+  // to carry Q 36 px (it was 12), and a swing centred on the impulse would
+  // then run P's right upright into the cock and Q's stud at its left
+  // extreme. The impulse now falls a little left of the swing's centre.
+  const offsetMaximum = contactHalfChord + px(14);
+  const swingAmplitude = px(78);
+  const swingCentre = offsetMaximum - swingAmplitude;
   const offsetMinimum = swingCentre - swingAmplitude;
+  if (offsetMinimum > -(nibFaceAtContact + contactHalfChord + px(14))) {
+    throw new Error('308: the swing ends before the impulse is complete');
+  }
 
   // Only tooth points beyond the nib top radius can reach the nib.
   const wheelVertices = wheelOutline.flat(2)
@@ -437,7 +488,9 @@ function brownDetachedEscapement(movement) {
   // Kinematic projection: each step every part tends toward its driven or
   // spring-returned target and is held back by finite outline clearance.
   const wheelFreeRate = 3 * DEG / S;
-  const leverFallRate = 0.6 * DEG / S;
+  // p94: the deeper hook must fall about 11 degrees between C letting Q go
+  // and the next tooth arriving, so Q falls 2.5 times faster than before.
+  const leverFallRate = 1.5 * DEG / S;
   const clickReturnRate = 1.5 * DEG / S;
   const stepCount = Math.ceil((offsetMaximum - offsetMinimum) / travelStep);
   const leftTable = [];
@@ -806,7 +859,7 @@ function brownDetachedEscapement(movement) {
   root.userData.clickLocalToWorld = cLocalToWorld;
   root.userData.mechanism = 'Brown’s detached pendulum escapement: bell-crank Q locks a tooth of the six-toothed hooked escape wheel under its cock; click C on the broad pendulum P, P lifts Q on the leftward swing, the released wheel drops onto the single pallet I and drives it leftward, and Q relocks the next tooth; on the return C pivots aside under Q, leaving the pendulum detached.';
   root.userData.presentation = 'front elevation matching Brown’s plate: pendulum pieces P, P and web, cock with screw, hooked wheel, lever Q, click C with its stop pins, and pallet I';
-  root.userData.reconstructionNote = 'Geometry is traced from Brown’s plate at 0.018 model units per raster pixel. Q lift and C yield are solved from finite outline clearance against the moving pendulum; wheel drop, contact with pallet I’s nib and relock are kinematic. Inferred, not drawn: the nib standing up from pallet I into the wheel plane, that Q’s hooked head lies in the wheel plane on a hub behind its arm, with the hook’s rounded end locking a tooth tip ahead of the deeper position Brown sketches, the click’s round tip, the pivot studs, and that the pendulum translates (its suspension is outside the plate). Q’s gravity rest banking and C’s return spring are not drawn and are prescribed; passive impulse energy and impacts are not simulated.';
+  root.userData.reconstructionNote = 'Geometry is traced from Brown’s plate at 0.018 model units per raster pixel. Q lift and C yield are solved from finite outline clearance against the moving pendulum; wheel drop, contact with pallet I’s nib and relock are kinematic. Inferred, not drawn: the nib standing up from pallet I into the wheel plane, that Q’s hooked head lies in the wheel plane on a hub behind its arm, with the hook’s rounded end seated against the locked tooth’s leading face a third of the way down it (Brown sketches it deeper, which the lift C can give Q cannot free), the round of C meeting Q’s boss on its upper side, the click’s round tip, the pivot studs, and that the pendulum translates (its suspension is outside the plate). Q’s gravity rest banking and C’s return spring are not drawn and are prescribed; passive impulse energy and impacts are not simulated.';
   root.userData.sourceAnimation = {
     available: false,
     independentlyReconstructed: true,

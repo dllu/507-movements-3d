@@ -1,0 +1,316 @@
+# Pass 94, lane p: pawl and click seating (76, 79, 86, 225, 236, 308, 360, 491)
+
+- **Reviewer:** Claude Opus 5.5, lane p94-p. The primary coordinated the lane and integrated the results. One fork per mechanism did the work: 076, 079, 086, 225/236 (one fork), 308, 360 and 491. Date: 2026-09-28.
+- **Scratch and captures:** `/dev/shm/p94/p/<id>/` (outside Git). Each fork's "before" and "after" sheets are there.
+- **Claims** (`/dev/shm/p94/claims`, owner p94-p):
+  - jointed-tappet.js, jointed-tappet-contact.js, jointed-tappet-profile.js, jointed-tappet-motion.js (not edited)
+  - opposed-arm.js, opposed-arm-geometry.js, opposed-arm-profile.js
+  - pump-catch.js, pump-catch-profile.js
+  - carrier-pawl-225-working-parts.js, alternating-pawl-236-working-parts.js
+  - authored-intermittent-core.js: p93-g's claim in `/dev/shm/p92/claims` is a stale hand-over from the finished pass 93. Only the 225 and 236 functions were edited, and the other 19 IDs routed to this file hash identically before and after.
+  - authored-detached-escapements.js (serves only 308)
+  - authored-oscillating-drum-ratchets.js, oscillating-drum-pawl-data.js, one-way-clutch-working-parts.js (only `correctOscillatingDrum` was edited; the 361 and 415 solids test passes)
+  - authored-capstans.js, capstan-pawl-contact.js, capstan-pawl-profile.js, capstan-finite-parts.js (used only by 491)
+- **Process incident:** the 225/236 fork briefly ran `git stash` / `git stash pop` on the shared tree to compare a screen against HEAD. The pop was clean, and the stash list still holds only its two older entries. Had another lane edited a stashed file during that window, the pop would have failed. No lost edits were found.
+- **Tests (integrated run):** the targeted suites for all eight IDs pass (103/103). `authored-loader` passes 3/3.
+
+## 076: B's point now reaches the tooth root (was mid-face)
+- **Verified.** With Brown's pivots, B's rigid swing about C comes no nearer the axis than 0.9175, while the root seat (the nose centre touching both face and back) is at 0.8874. B's point therefore first met the face 0.034 above the seat and slid out from there. Brown's own corner is at the tip radius: he draws B bearing near the tooth tip.
+- **Approaches rejected, with numbers:**
+  - A pure set-in of the tappet (0.030 along C→axis) makes B's rigid path strike the tip of the tooth behind (at q 0.10). The click is flung, or the solver jams.
+  - At rests of 0.30–0.44 rad, the folded B stays hung on a tooth back on the return, and the next strike loses the count.
+  - At rest 0.45 with the old 0.30 kink, the stud strikes 3.4× harder (tappet speed −6.7 vs −1.95 rad/s), flings B 0.5 rad about its joint and breaks bake convergence.
+- **Fix** (`jointed-tappet.js`, `jointed-tappet-contact.js`; new `tappetShift` and `clickTurn` profile options, both default 0):
+  1. **Set-in.** The whole tappet (C, B's joint and B; shapes unchanged) is set in 0.029 (11 plate px) along the line from C to the axis. The closest point of B's swing is now 0.001 outside the root seat (`ROOT_REACH_CLEARANCE`).
+  2. **Re-phase.** The count wheel and click H are turned together 0.06 rad (3.4°; H's pivot moves 27 plate px along its circle). B's point then passes over the tip of the tooth behind, first meets the face 0.017 above the root, and slides down into the root as it pushes: it comes within 0.0011 of the seat, touching the face with the back 0.001–0.002 away. It then rides out along the face. The window of working turns is −0.055…−0.07.
+  3. **Rest.** `restQ` goes from 0.30 to 0.48, so B's folded point is drawn past the tooth tip on the return and B drops onto its heel stop clear of the wheel.
+  4. **Strike.** `strikeKink` goes from 0.30 to 0.48, so the struck arm rests exactly where it did and the strike is unchanged (peak −1.95 rad/s; B does not flap).
+  5. **Robustness.** A two-cycle scan finds counting, root reach and unfolding robust for rests 0.45–0.50, overlaps 0.045–0.055 and turns −0.055…−0.07. At rest 0.44 it hangs.
+- **Outline trims** (flank contact is still carried only by B's nose circle):
+  - B's lower-left lobe points (`DOG_BEAK.lowerLeft/lowerPixel`) move about 8 px inwards. The lobe now clears the swept tooth tips by 0.0077; they had entered it by 0.011 during the fold.
+  - B's straight top edge (upper flank) is lowered 7.4° and blends smoothly into the head (`headPixels`). The driven face meets it at 16.7° at first contact, and the old 22.9° edge was cut by the tooth corner (overlap 3.4e-4).
+- **First frame.** The first cycle starts with the tappet 0.02 rad from Brown's pose, just clear of the tooth (`scripts/lib/jointed-tappet-076-dynamics.mjs`). The overtravel is 1.16 teeth, and the ratchet settles back 0.16 tooth onto the click.
+- **Rebake:** `node scripts/bake-jointed-tappet-motion.mjs` rewrote `src/data/jointed-tappet-profile.js`.
+  - 9865 first knots and 8585 steady knots.
+  - Three-step convergence: finest angle errors ≤ 8.4e-4 (limit 1.5e-3).
+  - Endpoints exact (1 tooth, q 0.48, α 0). Interpolated minimum gap −5e-8.
+  - The bake script now reads `p.restQ` instead of a literal 0.3.
+  - The profile's geometry matches the factory's. `artifacts/review/076-rebake-report.json` (gitignored) was rewritten.
+- **Captures** (`/dev/shm/p94/p/076/`):
+  - `b-sheet.png`: before.
+  - `after/plate-before-after.png`
+  - `after/sheet.png`: plate, default, rest, seat, approach, drive, rotated and back views.
+  - `after/zsheet.png`: zooms at first contact, at the seat, riding out, and the seat rotated.
+- **Tests:** `tests/jointed-tappet.test.mjs`, 13/13.
+  - Updated: C/B positions include the set-in; H is turned about the axis; the rest is `p.restQ`; the swing is under 1.1 rad; the hold is sampled after the settle; the drive window is 0.69–0.89.
+  - New: B's point comes within 0.0015 of the root seat in cycles 0, 1 and 5.
+  - The camera-catalog check for 76 passes.
+- **Screens.**
+  - Coincident faces: 0.
+  - Intersections: worst 0.0000.
+  - Loop seams: score 0.
+  - Disconnected: detached 1 floating, the fixed-stub tappet group, as at HEAD. Near-misses: 6 (7 at HEAD).
+- **Residuals:**
+  - B's point is a narrower wedge than the valley: the lower flank runs about 36° off the tooth back at the seat, so a sliver of valley stays open below the point. A valley-angle point (a facet at −50…−54°) cuts into the tooth backs while B folds on the return, because the solver carries only B's nose circle. Solving B's flanks against the teeth jammed on the approach (the lower flank grazes the tip behind to about 1e-4).
+  - The struck arm's kink is now 27.5° (was 17°); Brown draws the tappet straight.
+  - The tappet rests 0.48 rad down (was 0.30).
+  - The wheel and click are turned 3.4° about the axis, and the tappet is set in 11 px.
+
+## 079: the pawl's tip edge now lies flat on the driving face in the root
+- **Finding (confirmed).** At a push, the flat blade (tilt 0.457 rad) touched the vertical face only at its upper tip corner. The lower corner stood 0.0095 back from the face, resting on the ramp 0.003 above the root. In a radial side view this left a visible grey wedge (`before-urad.png`).
+- **Why the tip couldn't just be reshaped in plan.** The blade's tip edge is its extrusion direction, which is square to the tilted blade. No plan outline changes that angle.
+- **Change** (`opposed-arm-geometry.js`). The blade is still the same two-arc plan outline, but it is now extruded along the line that is vertical at the seated tilt: a sheared prism, with `y += z·tan β₀`.
+  - β₀ = 0.46027 rad solves `pivotZ − L sin β − h / cos β = valley`. At that tilt the lower tip corner sits on the valley floor, and the whole tip edge is vertical, flush with the vertical driving face.
+  - The top face is offset 0.0055 from the bottom face. From the default view the outline is unchanged, and both pawls stay byte-identical.
+  - No pins or protrusions were added.
+- **Playback** (`scripts/generate-opposed-arm-kinematics.mjs` → `src/data/opposed-arm-profile.js`, regenerated).
+  - The contact points include the shear.
+  - `seat()` now finds the deepest tilt reachable by turning down from the current tilt. The old bisection over [0, 1.2] let the sheared blade swing through a crest corner to a deeper valid pose beyond it: up to 0.0026 of penetration at each drop.
+  - The same run also requires the whole tip edge to pass a crest before the next face is engaged.
+  - **Result:** 3 teeth per cycle, standing still 1.7% of the cycle (was 2%). Repeat error 2.7e-11. The startup advance is 2.228 teeth (was 2.257). 7564 + 5875 rows.
+- **Measured at the push.** Upper corner gap 2.3e-5 and lower corner gap 2.0e-5, so the wedge is 3e-6, down from 0.0095. The lower corner is at z −0.01997 (root −0.02). The lower pawl gives the same figures. A 2400-pose sweep (0–12 s, both pawls against the rendered wheel solid) finds 0 penetrating points.
+- **Text** (`opposed-arm.js`). The qualification and constraints text describe the sheared blade and the reachable seat.
+- **Captures** (`/dev/shm/p94/p/079/`), each shown before and after:
+  - `cmp-urad.png` and `cmp-lrad.png`: radial side views of the upper and lower push. The wedge is gone and the tip fills the root corner.
+  - `cmp-udrop-rad.png`: the idle pawl riding a crest.
+  - `cmp-def.png`: the default view, unchanged.
+  - `cmp-rot.png`: a rotated view.
+- **Tests.** `tests/opposed-arm.test.mjs` passes 9/9.
+  - New test: over a 4 s cycle, at every pushing pose (more than 50 per pawl), the tip edge's two corners are within 5e-5 of each other on the face, and the lower corner is not below the root. The test also checks that β₀ solves the seat equation.
+  - The startup constant is updated.
+  - The "deepest tilt" test skips poses where a pawl is mid-fall off a crest. It is dropping there, not resting; the 0.1 s grid now lands on one.
+  - `authored-loader` passes 3/3.
+- **Screens.**
+  - Body intersections: worst 0.
+  - Coincident faces: 0 flagged.
+  - Loop seams: 0.
+  - Disconnected: 0 detached. There are 43 near-misses, as before; only the pawl pin-cap and journal gaps shifted by under 0.004 with the sheared root.
+- **Residual.** The idle pawl's fall rate (150 rad/s²) and the wheel's coasting friction are still prescribed. While a pawl rides a crest (tilt about 0.2), its sheared tip edge leans visibly off vertical.
+
+## 086: the catch swings free after the trip and rests on cam C (no hidden heel hold)
+- **Finding (verified).** Before, from the trip to the bottom of the return the catch held exactly −0.120 rad relative to the wheel (`b-sheet.png`, `b-z60.png`: the head hangs in mid-air). The hold came from the heel lug and wheel stop that the p86 display prune removed but the baked trajectory still used.
+- **Why a plain free catch can't work.** Brown's outline alone is tail-heavy: its centroid lies (−0.060, −0.099) from the pin, so gravity would open the hook and the head would leave C's reach (the old study reached the same result: "gravity initially opens the hook"). Nothing drawn lies in the catch's plane on the opening side. The study's hidden 0.1 head backing, which biases the head toward C, stays as a weight assumption only. It is not displayed.
+- **Change.** A new generator, `scripts/generate-pump-catch-cam-rest.mjs` (`--check` verifies the profile is current), re-solves the complete loaded cycle with the qualified study's own solver:
+  - **Solver:** `pump-catch-impact-dynamics`, with finite cam/shaft/stop contacts and a rope that only pulls.
+  - **Parameters:** the same as the study (load 1, hub drag 1.5, pin damping 0.2, pump drag 12, lower pump stop 0, head backing 0.1, 8 s input period).
+  - **Removed:** the heel lug and wheel stop.
+  - **Run:** a 0.25 ms step over 16.75 s (67,001 states, no subdivisions).
+  - **Repeat:** the revolutions repeat within 1.0e-12 in coordinates and 3.8e-13 in velocity. Both lift the pump 2.5954 (the heel run lifted 2.5894).
+  - **Compression:** 0–8.5 s is compressed to 1,561 linear spans (0.002 engraving px), each certified clear by the continuous prism bounds for catch/cam, shaft and stop, as the original export was.
+  - **Output:** `src/data/pump-catch-profile.js` is rewritten. Its provenance now hashes the generator and its solver and geometry libraries, which are all in Git; the old provenance listed untracked `artifacts/review` reports that no longer exist. `motionBounds` is resampled from the swept production parts.
+- **Motion now** (display seconds, 4 s cycle):
+  - **Lift (0.07–1.25):** C drags the hook; the trip is at the stop, unchanged.
+  - **Return (1.35–3.35):** the catch swings on its pin, from +0.20 to −0.38 rad relative to the wheel, damped by pin friction. It changes by more than 1e-3 rad every 0.1 s and is never pinned.
+  - **Bottom (3.39–3.72):** the catch lands on C, and C's back lifts it.
+  - **Pick-up (3.72–4.03):** the catch settles back toward C (gap at most 0.019) until C's point enters the hook at 4.03.
+  - C carries the catch for 3.08 of the 8 physical seconds.
+- **Unchanged:** the geometry and the part list. `pump-catch.js` changes only its comments, `displayOmitsIntegratedCatchDetails` (now `heelStop:false`) and the constraint text.
+- **Captures** (`/dev/shm/p94/p/086/`):
+  - `b-sheet.png`: before.
+  - `a-sheet.png`: phases 0, 0.45, 0.70 and 0.875; zooms at 0.875 (resting on C) and 0.97 (C's point entering the hook); a rotated view; a return zoom at 0.60; and the plate.
+- **Tests.** `tests/pump-catch.test.mjs` passes 8/8. A new test checks:
+  - `heelStop:false`;
+  - the catch angle keeps moving through the return;
+  - the catch touches C for more than 0.25 s at the bottom.
+
+  `camera-catalog` also passes. The generator's `--check` passes, and the output is deterministic.
+- **Screens.**
+  - Disconnected: 0 detached, 9 near-misses (unchanged).
+  - Coincident faces: 0.
+  - Intersections: worst solid 2.4e-7, the trip-stop working contact at 1.25 s, as in p86. At the default spacing the screen runs out of memory on the live rope, as in p93, so it ran at spacing 0.03 with 33 samples.
+  - Loop seams: 0.
+- **Reports.** None fingerprint `pump-catch.js` or the profile.
+- **Residual.**
+  - For about 0.3 display seconds before pick-up, the catch hangs up to 0.019 clear of C while it settles. It is moving throughout.
+  - The head weighting that keeps the hook toward C is not visible, since Brown's outline alone is tail-heavy.
+
+## 225: re-phased carrier, shallow arch, tracked return (fixed)
+- **Plate.** Brown's pawl is a gently curved bar: its lower edge stands about 10 px (0.11) off the pivot–nose chord. Its end sits in a root, with the bar grazing the tooth behind. The model's bar had a sagitta of 0.5, about 4.5 times Brown's.
+- **Why the arch was forced.** Over the drive, the pawl's angle to the wheel tangent at the nose ran from 17° down to 1.3°. At the end of the stroke the tooth behind the seated nose therefore rose across the pivot–nose chord.
+- **Change** (`vibratingCarrierSinglePawlRatchet`, `carrier-pawl-225-working-parts.js`):
+  - **Re-phasing.** The pawl is 2.3 long (Brown's measures 2.6; the model had 2.64). The carrier now swings about a mid-line 2° right of plumb, so it passes Brown's upright near the end of the stroke. The nose meets the wheel a few degrees further round and stands steeper to the tooth behind.
+  - **Bar.** The sagitta is now 0.12, Brown's shallow arch. The end cut stands 14° back from the face (was 9°).
+  - **Return.** The prescribed lift-and-drop return is gone. It is replaced by a tracked table baked into the new `baked/carrier-pawl-225-return.js` by the new `scripts/generate-carrier-pawl-225-return.mjs` (`--check` passes; 3001 samples).
+    - From the seated end of the drive, the pawl swings in at each step to its first resting pose. It is tested with signed nose clearance, plus the wheel-side edge just behind the toe.
+    - It falls under a constant prescribed bias off each crest, over several frames, and never jumps across a tooth.
+  - **Backlash.** On the return the carrier runs 1.5° past the drive start (total swing 6.8°), so the nose passes the next tip. The drive stroke then opens with the wheel standing while the nose slides down the back into its root (17% of the cycle). Only then does it meet the face.
+  - **State.** `driving` now means the pawl is on the face. `drivingStroke` and `engagePhase` are new, and the stage `pawl-sliding-into-root` is added.
+  - **Key.** The bake carries a parameter key. A stale bake is recomputed live (slowly), and a test asserts that the bake is current.
+- **Result.**
+  - Whole-outline bar clearance over the full cycle (512 poses) is at least +0.0007; before the change, a 0.15 arch cut the tooth by 0.092.
+  - The nose stays at least 0.0002 clear. The largest nose step is 0.002 per 1/4096 cycle, and the engagement is continuous to 2.7e-9.
+  - Load time is 23 ms.
+- **Captures** (`/dev/shm/p94/p/225-236/`): `b225-sheet.png` (before) and `a225-sheet.png` (plate, default at phases 0/0.25/0.5, rotated, and nose zooms seated at the drive start and mid-drive, riding the back, and at the crest).
+- **Tests.** `movement-225` and `carrier-pawl-225-contact`: 13/13 pass. Adapted:
+  - pre-engagement slide;
+  - speed join at the return start within 5e-3 rad/s (table slope);
+  - ride clearance below 0.1 (mid-drop);
+  - new: current bake, and sagitta ≤ 0.13.
+- **Screens.**
+  - Disconnected: 0 detached, 1 near-miss (existing).
+  - Coincident faces: 0.
+  - Seams: 0.
+  - Intersections: worst 0.
+- **Residuals.**
+  - The pawl is 2.3 long, against Brown's 2.6.
+  - The carrier leans up to 4.6° right of plumb.
+  - The wheel also stands through the first third of each drive stroke while the nose reseats.
+  - The return bias is prescribed, not dynamic.
+
+## 236: seated wedge pawls, re-phased lever, tracked backlash (fixed, with a kinematic compromise)
+- **Why the noses were on the corners.** It is geometric.
+  - With Brown's lever, pivots and a one-pitch stroke, b's angle to the wheel tangent at its nose ran from 23° down to −4.5°. At the end of every stroke, a nose seated in a root put b's straight hinge–nose line through the tooth behind.
+  - Any straight seated b needs its whole stroke well off the tangent. That means a shorter b whose stroke ends near Brown's drawn nose position, rather than passing through it.
+  - The p93 handoff jump came from the swing-in rest solve. Lifting a pawl that leans on the backs carries its toe forward, so the seat was unreachable from above.
+- **Change** (`alternatingTwoPawlContinuousRatchet`, `alternating-pawl-236-working-parts.js`):
+  - **Teeth.** Brown's teeth are 15 px deep on a 95 px tip radius (about 0.26), with sharp tips. The root radius is now 1.36 (was 1.23) and the tip land 0.04 pitch (was 0.12).
+  - **Seat.** Each rounded toe seats on the bisector of the root's V, touching both the face and the previous back. It drives along the face normal.
+  - **Re-phasing.** Brown's drawn pose is now the handoff: the lever at the top of its swing (2° above the drawn angle), b just seated at the end of its stroke, and c three teeth back.
+    - The lever swings 38° below that pose.
+    - b's end seat is at 148° (Brown's nose is at 159°), and b stays at least 20° off the tangent.
+    - Pawl lengths: b 2.53 (Brown 2.86, was 2.71) and c 1.39 (Brown 2.07, was 1.51).
+  - **Backlash.** The idle-pawl solve is replaced by a contact tracker, computed at load (336 ms, about the same as before).
+    - The returning plate rides the actual outline under a prescribed inward bias. It slides up the backs and drops off each crest over about 9 frames at the 6 s display cycle.
+    - It overshoots its root, then slides back into it after the reversal while the wheel stands.
+    - The tracker's start is kept from lifting into a face. The last sample is the seated pose, and the engagement is continuous to 1e-8.
+  - **Pawls.** Each is a straight bar of one breadth (0.19), centred on its hinge eye.
+    - The end is a wedge with the rounded toe at its wheel-side corner. Each flank is set 2.5° outside the extreme angle its valley wall reaches over the stroke.
+    - The included angle is 51° (b) and 41° (c), against the 68.6° valley: the valley less the stroke's turn.
+    - Upper edges are also checked against the swept teeth.
+  - **Framing.** The camera bounds include the lever's whole swing.
+- **Result.**
+  - Full-cycle nose clearance is at least −6e-8 (float32 edges).
+  - Selected solids are at least −3.5e-8.
+  - The seated moment is at least 1.38 (was 0.28 at the corner).
+- **Kinematic compromise (forced).** The seated backlash makes the wheel stand for 42% of each lever cycle, after each reversal while the new pawl slides into its root. Brown calls the motion "nearly continuous"; it still turns on both strokes.
+  - For c, the dwell cannot be removed with this layout. Riding high on the backs carries c's toe forward by roughly tan α × the tooth depth, so it must run on about a third of a pitch past its root.
+  - I scanned 100+ amplitude/bias/seat designs: every seated design stands for 0.37 to 0.44 of the cycle.
+- **Captures** (`/dev/shm/p94/p/225-236/`):
+  - `b236-sheet.png` (before);
+  - `a236-sheet.png` (plate, default, phases 0.2/0.4/0.6, rotated);
+  - `z236-sheet.png` (toe zooms: b seated at the handoff; c past its root; riding).
+- **Tests.** `movement-236` and `alternating-pawl-236-contact`: 14/14 pass. Rewritten or updated:
+  - seated in the root, touching face and back;
+  - the wheel stands until engagement;
+  - standing fraction below 0.45;
+  - wedge fitted to the valley, bar of one breadth centred on the eye;
+  - tracked-speed tolerance 1e-4 rad/s.
+- **Screens.**
+  - Disconnected: 0.
+  - Coincident faces: 3 pre-existing pairs (baseline also 3).
+  - Seams: 0.
+  - Intersections: worst 0.
+- **Residuals.**
+  - The wheel stands 42% of the cycle.
+  - The pawls are shorter than Brown's.
+  - The lever swings 38° downward from the drawn pose instead of about it.
+  - The fall bias is prescribed.
+
+## Other intermittent-core IDs
+63, 71, 73, 82, 83, 121, 155, 206, 211–215, 232, 233, 235, 237, 240 and 241 hash byte-identical (geometry, matrices and visibility at five phases) before and after. `/dev/shm/p94/p/225-236/hash.{before,after}.json`.
+
+## 308: Q's hook now seats a third of the way down the locked tooth (medium; deeper is forced)
+- **Verified.** At the lock, the rounded end of Q's hook sat 2 px inside the tip circle and touched the tooth's point (`308/b-ztip.png`). Brown draws the hook deeper, to about r = 32 px at 44° (tip radius 58 px).
+- **Why Brown's depth is forced out.** To unlock, the hook has to leave the tip circle, and only C lifts Q.
+  - **Brown's hook position.** It lies almost exactly on the line from the wheel centre to Q's pivot (42.5° and 45.4°), so lifting Q moves it tangentially. Leaving the tip circle from there needs about 42° of lift.
+  - **Best hook position.** At the current angle (116°–117°), the hook's lift is almost radial: 84 px of radial travel per radian of Q. Even there, Brown's depth needs about 19°.
+  - **What C can give.** With the drawn level contact, C lifts Q only 6.7°. Hook depths of 6 px or more then fail to release or to relock.
+- **Fix** (`brownDetachedEscapement`, `authored-detached-escapements.js`; used only by 308):
+  - **Click C.** C's round meets Q 55° above the horizontal, beside the lower end of Q's arm, so Q has to climb over it. C now lifts Q 11.35° (was 6.69°). The round's x position is solved so it meets Q's whole outline with the running clearance at the drawn instant (t = 0).
+  - **Hook.** The hook's end sits 12 px inside the tip circle (was 2 px), at 117.0°. It lies against the locked tooth's leading face, and its lowest point is 15.5 px down, about a third of the tooth. The hook corner is moved from x 220 to 210 px, so the bar leans along the tooth's face at the valley's angle instead of standing vertical. The lock is now solved against the whole hook bar, not only its end. Q clears the teeth at 10.64° of its 11.35° lift.
+  - **Swing.** Unlocking now takes 35.7 px of pendulum travel (was 11.5). The swing keeps its former 78 px amplitude with the same right extreme, instead of being centred on the impulse. A centred swing reached −155 px, which ran P's right upright into the cock and Q's stud (0.08 overlap in `screen-body-intersections`). The swing now reaches −120.8 px, against a collision limit of about −131 px. The impulse falls a little left of the swing's centre.
+  - **Nib.** The nib's top is 2.5 px lower (−54.5 px, was −52). The locked tooth creeps after the hook as Q lifts, and at −52 px its lowest tip entered the nib's band before release.
+  - **Fall rate.** Q falls 2.5 times faster (1.5°/px, was 0.6°/px), so the deeper hook is down before the next tooth arrives. It lands 0.03° of wheel travel before the tooth.
+  - **Arm clearance.** Q's arm clearance against C is sampled every 2 px (was every 8.5 px), because the round now bears on the arm itself.
+  - **Speed.** `signedDistance` is rewritten with squared distances and no `Math.hypot`. The results are the same, and the model now builds in 0.65 s (was 1.65 s).
+- **Residuals.**
+  - The hook seats about a third of the way down the tooth, not at Brown's depth.
+  - The lock has no draw. The wheel creeps about 6° after the hook as Q lifts (was 3.5°), the last part as the hook slides over the tip.
+  - The pendulum's impulse is no longer centred on its swing.
+  - Between table rows at 16,000 samples, the nib gap can dip to −0.0008 at the impact (the original dips to −0.0006). At the test's 1,600 samples the minimum is +0.0017.
+- **Captures** (`/dev/shm/p94/p/308/`):
+  - `after-sheet.png` (4 × 4):
+    - Row 1: the plate; default, rotated right and rotated left.
+    - Row 2: the lock before and after in the same frame; lifted (ph 0.1); drop (ph 0.18).
+    - Row 3: relocked (ph 0.3); oblique lock; C meeting Q (ph 0) and lifting it (ph 0.1).
+    - Row 4: the nib impulse; C yielding (ph 0.7); the left extreme (ph 0.27); the default view before.
+  - Before: `b-sheet.png` and `b-ztip.png`.
+- **Tests.** `movement-308` passes 5/5. A new assertion checks the hook depth: the hook's end is 12 px inside the tip circle, and its lowest point is below 0.8 of the tip radius. `detached-chronometer-working` passes 3/3. Minimum gaps: hook 0.00198, nib 0.00168, click 0.00117, impulse contact 0.00168.
+- **Screens.**
+  - Body intersections: worst solid 0.0000, the same as before.
+  - Disconnected parts: 1 floating and 6 near-misses, the same list as before. The floating one is the cock and pendulum split, which is pre-existing.
+  - Coincident faces: 0. Loop seams: 0.
+- **Reports and bakes.** Nothing fingerprints `authored-detached-escapements.js`, so none were regenerated. The file serves only 308, so no other geometry changed.
+
+## 360: the pawl now falls from each tip over several frames (fork 360)
+- **Finding confirmed.** The playback read the pawl's lift from the least-clearance table against relative tooth phase. At the table's wrap the lift jumped 0.2 rad to 0 in one step (0.20 rad in one 60 fps frame).
+- **Why the old table could not simply be eased.** I mapped the clear region in (phase, lift). Lifting the pawl moves its nose outward and forward, with the tooth. So at the wrap the nose still rests on the back of the same tooth, just ahead of its tip. The lifts between 0.02 and 0.20 run into that tooth, and the lower lifts that become clear lie beyond the tip. The table's drop teleported the nose through the tooth. p93's comment that the snap was physical was wrong. Delaying the drop only exposed the jump.
+- **Change: a time-domain contact solve** (`scripts/generate-oscillating-drum-pawl.mjs`, new `pawlFall`, baked into `drumPawl.fall` in `src/simulation/oscillating-drum-pawl-data.js`).
+  - **Span.** One beam oscillation from capture, at dt 0.002 (3001 samples).
+  - **Contact.** Clearance is tested against the same finite outlines as before (pawl outline and five teeth plus the root disc). A tooth that meets the pawl pushes it up to the least clear lift, plus the 0.0005 margin, carrying that velocity.
+  - **Return.** Otherwise the pawl falls under an assumed constant return acceleration (60 rad/s², for gravity plus a light spring). It lands without rebound, keeping the margin.
+  - **Interpolation guard.** A final pass tests seven interior instants per interval and raises both samples wherever a tooth corner would cut the linear interpolation (40 intervals raised).
+  - **Unchanged.** The pawl outline, the least-clearance table, and the capture and coast law are byte-identical. `one-way-clutch-working-parts.js` changes only inside `correctOscillatingDrum`: `state()` interpolates the fall table, the pawl mode can read "falling from a passed tip onto the next tooth", and `dynamics.pawlReturnAcceleration` and `pawlMaximumLift` come from the solve. The stale comment in `authored-oscillating-drum-ratchets.js` that the snap was physical is replaced.
+- **Resulting motion.**
+  - **Riding each tip.** In overrun the nose rides each back up and stays on the tip while the tip passes under it, reaching up to 0.328 rad.
+  - **Seven falls per oscillation.** Each falls from about 0.31 onto the next back at 0.08–0.13, taking 0.066–0.072 s. That is at least four frames at 60 fps of physical time.
+  - **Per-frame change.** The largest change in lift per 1/60 s is 0.076 rad (it was 0.20).
+  - **Seating.** As the drum catches up, the pawl slides down the last back and is seated in the root 0.040 s before capture. Lift is 0 throughout the drive.
+- **Clearance.** Rendered pawl against rendered ratchet: 2048 poses over 12 s, none below −2e-6. `one-way-clutch-working-solids` sweeps 256 poses.
+- **Captures** (`/dev/shm/p94/p/360/`):
+  - `tile-360.png`: plate, default, yaw 50, yaw −40 / pitch 25, and seated just before capture.
+  - `fall-crop.png`: the nose zoomed at t 3.10–3.26, one tip passing and the fall onto the next back.
+  - `draw.png`: the 2D clear-region study showing why the table's drop was a teleport.
+- **Screens.**
+  - Disconnected: 0 detached; 6 near-misses, all the unchanged frame, hub and bearing gaps.
+  - Coincident faces: 0.
+  - Body intersections: worst solid 0.0000.
+  - Loop seams: 0.
+- **Tests.** `movement-360` has a new pass-94 test: the table is periodic and seated at both captures; no 1/60 s step exceeds 0.1 rad; there are seven tip falls, each lasting at least 0.06 s. It passes with `one-way-clutch-working-solids` (360, 361, 415): 20/20.
+- **Other IDs.** 361 and 415 go through other functions in `one-way-clutch-working-parts.js`, and their solids tests pass unchanged. No saved report fingerprints the changed files.
+- **Residual (not a visible flaw).** The return acceleration is assumed, not derived from a drawn spring or a mass. At full overrun speed the pawl hops from tip to back and reaches the root only as the drum catches up before capture. That is correct for this pawl's geometry at this speed.
+
+## 491: the pawl pivots on Brown's axis and its tip seats in the root at the valley angle
+
+- **Plate.** Brown's boss is at the centre of the collar (hole centre about 5 px, or 4°, right of it on a 73 px radius). His dog is hooked: a straight back from the boss, a concave belly, and a narrow point down in a root with its front edge on the tooth face.
+- **Before.** p93 had turned the pivot 15° round (0.30 left of the collar's centre) so that the round-nosed pawl's seated nose met its face nearly edge-on. The nose was a 0.05 round, which cannot reach a 60° root corner. Its centre sat about 0.1 from the corner.
+- **Why the parallax exists.** The pawl lies on the collar (plane radius 1.165), so it works on the inner third of the 1.15–1.45 tooth ring. With the pivot on the line of sight, Brown's nose offset (about 0.40 tangentially) puts the seated tip about 19° round from the camera. The radial face then shows as a strip about 0.06 wide beyond the pawl, and the outer part of the same tooth space lies in front of the toe. This cannot be removed without moving the pawl off the collar or shrinking the ring below Brown's silhouette. Skewing every tooth face 19° off radial was rejected as a view-only trick.
+- **Change.**
+  - **Pivot** (`capstanPawlDimensions.pivotAzimuth` in `capstan-pawl-contact.js`): now π/2 − 2° (88°), on the presentation line of sight (88.9°). It sits 0.04 right of the collar's centre on screen; Brown has 0.08.
+  - **Pawl outline** (`capstanPawlOutline` in `capstan-finite-parts.js`): one flat extrusion, designed in the seated pose (`seatTip` (0.40, −0.487) from the pivot) and turned into pawl axes. It has:
+    - a round boss (r 0.15, bore 0.06);
+    - a straight back tangent to the boss, down to a 0.035-round shoulder just below the crest;
+    - a straight vertical front edge that stands on the tooth face;
+    - a 0.008-round point;
+    - a 0.07 toe along the ramp (29.8°), so the point's included angle is the valley's (vertical face against the ramp, about 60°);
+    - one cubic belly from under the boss, concave like Brown's hook, easing onto the toe.
+  - **Densified outline.** Straight runs are subdivided every 0.01, so the contact generator and the tests sample the whole edge.
+  - **Contact table.** `src/simulation/capstan-pawl-profile.js` was regenerated by `scripts/generate-capstan-pawl-contact.mjs`, the least-clearance solve against the actual crown triangles. The script's in-plane search window now uses the outline's extents instead of the old nose/boss radii.
+    - Seat phase: −0.333 of a tooth from the crest release (was about −0.28).
+    - Recoil: 9.9° (0.49 of a tooth, was 7.9°).
+    - Crest release 0.0041 below the crest at the sharp construction point, within the point's round. Landing is 0.41 of a tooth up the next ramp.
+- **Seat.**
+  - Held at t = 0, the pawl is 0.0005 clear of the ratchet; backing the capstan 0.004 rad drives it into the face.
+  - The front edge's inner corner bears on the face and the toe's outer corner on the ramp. The sharp point is 0.015 above the root line, because the flat plate meets the radial teeth at 21°. For the same reason the outer corner of the front edge stands 0.034 off the face.
+  - Reverse-load hinge moment: −0.365 (was −0.0094), so the load seats the pawl much more firmly. Drive moment: −1.22.
+- **Captures** (`/dev/shm/p94/p/491/`):
+  - before: `b-sheet.png`;
+  - after: `after-sheet.png` (plate; default; seat zoom from the default direction; seat from 20° above; rotated 40°; riding at phase 0.9), `a-sheet2.png` (rotated and top views) and `a-sheet3.png`;
+  - design plots: `v34.png` (outline against the inner, mid and outer ramp traces).
+- **Tests.** `capstan-491-finite` and `movement-491`: 18/18 pass. The changed assertions are:
+  - the pivot is at the front centre (|x| < 0.06), and the seated tip lies within 0.02 of the root. These replace the p93 nose-azimuth test.
+  - the working-gap bound is now 0.005, because late on each ramp a crest edge bears on the straight toe between sampled mesh vertices. Minimum clearance is 0.00046; the maximum vertex gap is 0.0043.
+  - the crest-release height is referenced to the sharp point, with its 0.01 round allowed.
+  - recoil must be under half a tooth.
+  - the qualification text now reads "pointed tip … seats in the root against the tooth face, its toe along the ramp … about half a tooth (10 degrees)".
+- **Screens.** These are identical to the pre-change baseline, which I ran with the original files swapped back in:
+  - disconnected: 0 detached, 24 near-misses, 0 slivers/lips;
+  - coincident faces: 0;
+  - body intersections: worst solid 0.0000;
+  - loop seams: 0.
+- **Other movements.** `authored-capstans.js` builds only 491 (`createAuthoredCapstanMovement` returns null for any other ID), and the capstan pawl files are 491-only. No saved validation report fingerprints these files.
+- **Residual.**
+  - From the default view the outer part of the tooth space, in front of the pawl, hides the toe.
+  - The seated face shows as a strip about 0.06 wide beyond the pawl's front edge. This is the parallax that comes from a collar-mounted pawl working on the inner third of Brown's tooth ring.
+  - The drop and recoil stay prescribed.
+

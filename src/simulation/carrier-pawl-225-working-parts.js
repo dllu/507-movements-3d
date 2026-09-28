@@ -4,15 +4,16 @@ import { circle, plate, ring } from './finite-plate-geometry.js';
 import { boredPlanarLinkGeometry } from './bored-planar-link.js';
 import { nearest390Outline } from './dual-band-pawl-contact.js';
 import { matte, PALETTE } from './primitives.js';
+import { carrierPawl225Return } from './baked/carrier-pawl-225-return.js';
 
 // The rising edge is the positive-torque face. The long trailing edge used
 // by clockwise mechanisms (such as 284) would drive the opposite direction.
 // With `backClearance` the nose is seated in the root instead: as far down
 // the flank as it goes while staying that far clear of the previous tooth's
 // long back, which comes down into the root from `backTipPhase` pitches.
-export function carrierPawlFlank225({ outerRadius, rootRadius, pitch, noseRadius, flankFraction = 0.58, backClearance = null, backTipPhase = -0.75 }) {
+export function carrierPawlFlank225({ outerRadius, rootRadius, pitch, noseRadius, flankFraction = 0.58, backClearance = null, backTipPhase = -0.75, faceTipPhase = 0.16 }) {
   const root = new THREE.Vector2(rootRadius, 0);
-  const tip = new THREE.Vector2(outerRadius * Math.cos(0.16 * pitch), outerRadius * Math.sin(0.16 * pitch));
+  const tip = new THREE.Vector2(outerRadius * Math.cos(faceTipPhase * pitch), outerRadius * Math.sin(faceTipPhase * pitch));
   const edge = tip.clone().sub(root), normal = new THREE.Vector2(edge.y, -edge.x).normalize();
   const clearance = 0.0002;
   const centerAt = (fraction) => root.clone().lerp(tip, fraction).addScaledVector(normal, noseRadius + clearance);
@@ -34,6 +35,14 @@ export function carrierPawlFlank225({ outerRadius, rootRadius, pitch, noseRadius
   const point = root.clone().lerp(tip, flankFraction);
   const center = centerAt(flankFraction);
   return { root, tip, point, normal, center, radius: center.length(), angle: Math.atan2(center.y, center.x), clearance, flankFraction };
+}
+// The tracked return table baked by scripts/generate-carrier-pawl-225-return.mjs,
+// or null if it was baked for other geometry.
+export function bakedReturnTable225(key) {
+  return carrierPawl225Return.key === key ? Float64Array.from(carrierPawl225Return.angles) : null;
+}
+export function carrierPawlOutlineDistance225(point, outline) {
+  return nearest390Outline(point, outline).distance;
 }
 export function carrierPawlClearance225(center, wheelAngle, outline, noseRadius) {
   const c = Math.cos(wheelAngle), s = Math.sin(wheelAngle);
@@ -89,8 +98,8 @@ export function carrierPawlBarLiftLimit225(pivot, baseAngle, wheelAngle, edge, w
   return limit;
 }
 
-export const PAWL_SAGITTA_225 = 0.5;
-export const PAWL_END_RELIEF_225 = THREE.MathUtils.degToRad(9);
+export const PAWL_SAGITTA_225 = 0.12;
+export const PAWL_END_RELIEF_225 = THREE.MathUtils.degToRad(14);
 export const PAWL_END_HALF_WIDTH_225 = 0.1;
 
 export function installCarrierPawl225(root) {
@@ -98,8 +107,8 @@ export function installCarrierPawl225(root) {
   const replace = (mesh, geometry) => { mesh.geometry.dispose(); mesh.geometry = geometry; };
   const material = b.pawlBody.material, dark = matte(PALETTE.ink, { metalness: 0.22, roughness: 0.48 });
   // Brown's pawl is a plain, slightly curved bar tapering from a broad hinge
-  // end to its nose. Its centre line is one circular arc (sagitta 0.17 over
-  // the length), with no hook turned down into the tooth space. The end is a
+  // end to its nose. Its centre line is one circular arc (sagitta 0.12 over
+  // the length, as drawn), with no hook turned down into the tooth space. The end is a
   // straight cut lying along the driven tooth's steep face, as drawn, with
   // the working nose radius only at its wheel-side corner; the cut stands a
   // few degrees back from the face (PAWL_END_RELIEF) so the pawl's turn
@@ -237,6 +246,6 @@ export function installCarrierPawl225(root) {
   root.userData.updateWorkingParts225 = state => hinge.position.set(state.pawlPivot.x, state.pawlPivot.y, 0.34);
   root.userData.minimumDisplayCycleSeconds = g.cyclePeriod;
   root.userData.hideGround = true;
-  root.userData.reconstructionNote = 'The separately hinged pawl drives a finite rising tooth flank with positive wheel torque, then follows a prescribed lifted return and drop. The wheel is held during return; gravity or spring bias, holding friction, impact and load capacity are not dynamically solved. No animation is registered on the official page.';
+  root.userData.reconstructionNote = 'The separately hinged pawl, a shallow arched bar as drawn, drives from its nose seated in the root. The carrier swings about 2 degrees right of plumb and the pawl is 2.3 long (Brown draws 2.6), so the bar clears the tooth behind the nose. On the return the pawl is tracked on the wheel outline (baked table): it slides up the tooth back, falls under a prescribed bias off the crest, and the carrier runs 1.5 degrees past the drive start so the nose passes the next tip; the drive stroke then begins with the wheel standing while the nose slides down into its root. The wheel is held during return; gravity or spring bias, holding friction, impact and load capacity are not dynamically solved. No animation is registered on the official page.';
   root.traverse(o => { for (const material of [].concat(o.material ?? [])) material.fog = false; });
 }

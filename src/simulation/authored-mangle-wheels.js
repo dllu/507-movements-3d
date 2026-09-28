@@ -1,6 +1,8 @@
 import {finishMangle371} from './reversing-transmission-working-parts.js';
 import {circle,plate,poly,polygonClipping,sector} from './finite-plate-geometry.js';
 import * as THREE from 'three';
+import {toCreasedNormals} from 'three/addons/utils/BufferGeometryUtils.js';
+import reversingProfiles from './baked/reversing-transmission-profiles.js';
 import {
   PALETTE,
   makeGear,
@@ -12,6 +14,65 @@ import {
 const FULL_TURN = Math.PI * 2;
 const X_AXIS = new THREE.Vector3(1, 0, 0);
 const Z_AXIS = new THREE.Vector3(0, 0, 1);
+
+// One uniform section per tooth bar. The offline cutter envelope of the
+// spur pinion varies along the radius (a spur pinion on a face wheel only
+// rolls exactly at one radius), so the bar's section is taken as the common
+// part of every cut station between the rims: it clears the pinion wherever
+// the envelope does, and the bar reads as one plain radial bar as Brown
+// draws it. With `similar`, the tangential width grows in proportion to the
+// radius (radial side lines), the axial height stays constant.
+const TOOTH_SECTION = {low: 1.45, high: 2.0, reference: 1.72, similar: true};
+function uniformToothSection(profile) {
+  const {low, high, reference, similar} = TOOTH_SECTION, n = profile.angularSamples;
+  let region = null;
+  profile.radii.forEach((r, i) => {
+    if (r < low - 1e-9 || r > high + 1e-9) return;
+    const s = similar ? reference / r : 1;
+    const ring = profile.heights[i].map((h, j) => {
+      const a = 2 * Math.PI * j / n;
+      return [h * Math.cos(a) * s, h * Math.sin(a)];
+    });
+    ring.push([...ring[0]]);
+    region = region ? polygonClipping.intersection(region, [[ring]]) : [[ring]];
+  });
+  const area = (ring) => ring.reduce((sum, p, i) => sum + (i ? ring[i - 1][0] * p[1] - p[0] * ring[i - 1][1] : 0), 0);
+  return region.map((polygon) => polygon[0]).sort((a, b) => Math.abs(area(b)) - Math.abs(area(a)))[0];
+}
+// The bar is a straight loft between its two end stations: every section is
+// the same outline, its tangential coordinate scaled by r / reference, so
+// each side line runs straight toward the wheel's axis. `side` keeps the
+// half on the front (+1) or rear (-1) of the median plane.
+function uniformHalfBar(profile, side, inner, outer) {
+  const {reference, similar} = TOOTH_SECTION, ring = uniformToothSection(profile);
+  const cut = polygonClipping.intersection([[ring]], [[[[-1, 0], [1, 0], [1, side], [-1, side], [-1, 0]]]]);
+  let outline = cut.map((polygon) => polygon[0]).sort((a, b) => b.length - a.length)[0].slice(0, -1);
+  const signedArea = outline.reduce((sum, p, i) => { const q = outline[(i + 1) % outline.length]; return sum + p[0] * q[1] - q[0] * p[1]; }, 0);
+  if (signedArea < 0) outline = outline.reverse();
+  const n = outline.length, positions = [];
+  const at = (r, [y, z]) => [r, y * (similar ? r / reference : 1), z];
+  const push = (...points) => { for (const p of points) positions.push(...p); };
+  // Twelve stations along the bar keep its faces finely sampled.
+  const stations = Array.from({length: 13}, (_, k) => inner + (outer - inner) * k / 12);
+  for (let k = 0; k + 1 < stations.length; k += 1) for (let i = 0; i < n; i += 1) {
+    const p = outline[i], q = outline[(i + 1) % n];
+    const a = at(stations[k], p), b = at(stations[k], q), c = at(stations[k + 1], q), d = at(stations[k + 1], p);
+    // Outward faces for a counter-clockwise (y, z) outline lofted along +x.
+    push(a, b, c, a, c, d);
+  }
+  const caps = THREE.ShapeUtils.triangulateShape(outline.map(([y, z]) => new THREE.Vector2(y, z)), []);
+  for (const [i, j, k] of caps) {
+    push(at(inner, outline[i]), at(inner, outline[k]), at(inner, outline[j]));
+    push(at(outer, outline[i]), at(outer, outline[j]), at(outer, outline[k]));
+  }
+  const loft = new THREE.BufferGeometry();
+  loft.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  const geometry = toCreasedNormals(loft, Math.PI / 5);
+  loft.dispose();
+  geometry.computeBoundingBox(); geometry.computeBoundingSphere();
+  geometry.userData = {profileType: 'uniform-section-radial-bar', side, section: ring, outline};
+  return geometry;
+}
 
 function positiveModulo(value, modulus) {
   return ((value % modulus) + modulus) % modulus;
@@ -823,17 +884,25 @@ function dualFaceGapTransferMangleWheel(movement) {
   {
     const g = root.userData.geometry;
     wheelBody.geometry.dispose();
+    // Each rim is one plain annular sector, carried a little past each
+    // terminal tooth where the crossing pinion never comes (r < 1.45 and
+    // r > 2.0, checked over the whole rollover): no step at the terminals.
     wheelBody.geometry = plate(polygonClipping.union(
-      sector(1.29, 1.495, g.firstTerminalAngle, g.secondTerminalAngle, 288),
-      sector(1.97, 2.11, g.firstTerminalAngle, g.secondTerminalAngle, 288),
-      // Past each terminal tooth only where the crossing pinion never comes
-      // (r < 1.45 and r > 2.0, checked over the whole rollover), so the
-      // terminal teeth's outer halves are carried by the rims too.
-      sector(1.29, 1.45, g.firstTerminalAngle - 0.07, g.firstTerminalAngle, 16),
-      sector(1.29, 1.45, g.secondTerminalAngle, g.secondTerminalAngle + 0.07, 16),
-      sector(2.0, 2.11, g.firstTerminalAngle - 0.07, g.firstTerminalAngle, 16),
-      sector(2.0, 2.11, g.secondTerminalAngle, g.secondTerminalAngle + 0.07, 16)), -0.136, 0.136);
-    root.userData.geometry.rimRadii = {inner: [1.29, 1.495], outer: [1.97, 2.11], halfDepth: 0.136};
+      sector(1.29, 1.45, g.firstTerminalAngle - 0.07, g.secondTerminalAngle + 0.07, 288),
+      sector(2.0, 2.11, g.firstTerminalAngle - 0.07, g.secondTerminalAngle + 0.07, 288)), -0.136, 0.136);
+    // The bars run between the rims with one uniform section, entering each
+    // rim by 0.015 so their ends are buried.
+    const data = reversingProfiles[371], cache = new Map();
+    for (const [teeth, side] of [[frontFaceTeeth, 1], [rearFaceTeeth, -1]]) {
+      teeth.forEach((tooth, i) => {
+        const which = i === 0 ? 0 : i === teeth.length - 1 ? 2 : 1, key = `${which}/${side}`;
+        if (!cache.has(key)) cache.set(key, uniformHalfBar(data.profiles[which], side, 1.435, 2.015).translate(-g.toothCenterRadius, 0, -side * g.faceToothOffset));
+        tooth.geometry.dispose();
+        tooth.geometry = cache.get(key);
+      });
+    }
+    root.userData.geometry.rimRadii = {inner: [1.29, 1.45], outer: [2.0, 2.11], halfDepth: 0.136};
+    root.userData.geometry.uniformToothSection = {...TOOTH_SECTION, bar: [1.435, 2.015]};
   }
   // Each tooth bar is one part serving both faces: one colour, so no seam
   // shows along its median plane.

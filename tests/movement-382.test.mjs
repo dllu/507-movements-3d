@@ -184,7 +184,7 @@ test('movement 382 preserves every adjustment, both locks, camera-stand use, mea
   assert.match(evidence.engravingEvidence, /side socket screw/);
   assert.match(evidence.engravingEvidence, /horizontal hinge barrel/);
   assert.match(evidence.reconstructionDisclosure, /32-degree yaw/);
-  assert.match(evidence.reconstructionDisclosure, /22-degree tilt/);
+  assert.match(evidence.reconstructionDisclosure, /18-degree tilt/);
   assert.match(evidence.reconstructionDisclosure, /no canvas animation/);
   disposeModel(model.root);
 });
@@ -469,5 +469,19 @@ test('movement 382 set screw enters the tapped pillar neck and the mirror back i
   frame.geometry.computeBoundingBox();
   assert.ok(frame.geometry.boundingBox.max.z > 0.13, 'moulded bead stands proud of the back board');
   assert.ok(Math.abs(frame.geometry.boundingBox.max.x + frame.geometry.boundingBox.min.x) < 1e-6);
+  disposeModel(model.root);
+});
+
+test('movement 382 hinges the mirror just below its middle, high on a long stem, as Brown draws it', () => {
+  const movement = catalog.movements[381];
+  const model = createMovementModel(movement);
+  const { geometry } = model.root.userData;
+  // Brown's hinge is about 11 px (0.13) below the frame's centre.
+  near(geometry.mirrorCenterLocal.y, 0.15, 1e-12, 'frame centre above hinge');
+  assert.ok(geometry.mirrorCenterLocal.y < geometry.mirrorOuterHeight / 10,
+    'hinge within a tenth of the frame height of its middle');
+  // The hinge stands about 1.65 above the socket top at the plate pose.
+  near(geometry.stemExtensionMean + geometry.stemTopLocalY - geometry.socketTopY,
+    1.53, 1e-12, 'visible stem at the plate pose');
   disposeModel(model.root);
 });

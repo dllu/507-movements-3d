@@ -33,7 +33,18 @@ test('396 the anchor and pallet j are single plates in the wheel plane; webs and
  // The anchor is bored for staff c and the staff passes through it.
  assert.ok(x.both(b.palletG,b.lever.userData.pivotHub)>-1e-6);
  for(const web of p.webs){assert.ok(x.both(web,b.escapeWheel.userData.toothedRim)<1e-6);assert.ok(x.both(web,b.escapeWheel.userData.hub)<1e-6);}
- for(const spoke of b.balance.children.filter(o=>o.userData.role==='balance-wheel-B-spoke'))assert.ok(x.both(spoke,b.balance.userData.rim)<1e-6);
+ // Balance B is Brown's plain rim: no arms or spokes. An opaque beaded rim
+ // and hub, joined by a thin see-through web sunk into both.
+ assert.equal(b.balance.children.filter(o=>/arm-to-staff|spoke/.test(o.userData.role??'')).length,0);
+ const {rim:bRim,rimHub,rimWeb}=b.balance.userData;
+ assert.equal(rimWeb.userData.seeThrough,true);assert.equal(rimWeb.castShadow,false);
+ assert.ok(!bRim.userData.seeThrough&&!rimHub.userData.seeThrough&&bRim.castShadow&&rimHub.castShadow);
+ const webProfile=rimWeb.geometry.userData.outerProfile,rimProfile=bRim.geometry.userData.outerProfile;
+ const rimBore=bRim.geometry.userData.boreRadius,webOuter=webProfile[0].radial,webAxial=webProfile.map(q=>q.axial);
+ assert.ok(webOuter>rimBore+.02&&rimWeb.geometry.userData.boreRadius<.30-.01,'web sunk into rim and hub');
+ const rimAxial=rimProfile.map(q=>q.axial);assert.ok(Math.min(...webAxial)>Math.min(...rimAxial)+1e-3&&Math.max(...webAxial)<Math.max(...rimAxial),'web faces off the rim faces');
+ // Rim, hub and web clear staff b's rear bearing and standard (both left off by presentation).
+ for(const part of [bRim,rimHub,rimWeb]){assert.ok(x.both(part,p.bearingParts[1].boss)>.02);assert.ok(x.both(part,p.bearingParts[1].post)>.02);}
  for(const {boss,post}of p.bearingParts)assert.ok(x.both(boss,post)<1e-6);
 });
 test('396 roller pin i stays in the slot of fork e and never cuts it',()=>{
@@ -47,7 +58,7 @@ test('396 roller pin i stays in the slot of fork e and never cuts it',()=>{
 test('396 one-tooth indexing, finite contact metadata and retained buffers survive repeated cycles',()=>{
  const m=make({id:396}),d=m.root.userData,objects=[];m.root.traverse(o=>{if(o.isMesh)objects.push([o,o.geometry.attributes.position.array])});
  for(let i=0;i<129;i++){const t=8*i/128+.017,s=d.stateAtTime(t),next=d.stateAtTime(t+4);assert.ok(Math.abs(next.wheelAngle-s.wheelAngle+Math.PI/6)<1e-12);m.update(t);assert.equal(d.blocks.escapeWheel.rotation.z,s.wheelAngle);assert.equal(d.contacts.wheelLock.active,s.stableLock);assert.equal(d.contacts.leverImpulseG.active,s.leverImpulseActive);assert.equal(d.contacts.directChronometerImpulseJ.active,s.directImpulseActive);}
- for(const [o,array]of objects){assert.equal(o.geometry.attributes.position.array,array);assert.equal(o.castShadow,true);for(const mat of [].concat(o.material))assert.equal(mat.fog,false);}
+ for(const [o,array]of objects){assert.equal(o.geometry.attributes.position.array,array);assert.equal(o.castShadow,!o.userData.seeThrough);for(const mat of [].concat(o.material))assert.equal(mat.fog,false);}
  assert.equal(d.hideGround,true);assert.equal(d.minimumDisplayCycleSeconds,6);assert.ok(m.cameraDirection.z>15);assert.equal(d.workingParts396.webs.length,0);
  for(const t of [0,4,8]){const l=d.stateAtTime(t-1e-9),r=d.stateAtTime(t+1e-9);assert.ok(Math.abs(l.wheelAngle-r.wheelAngle)<1e-10);}
 });

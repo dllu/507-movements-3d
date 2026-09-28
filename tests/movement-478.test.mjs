@@ -489,3 +489,22 @@ test('movement 478 condensate runs as one sheet from the gap at valve a, down C 
   assert.ok(checked > 1000);
   disposeModel(model.root);
 });
+
+test('movement 478 support B and A’s anchored end stand at Brown’s distance from C', () => {
+  const { model } = movementModel();
+  const { blocks, geometry } = model.root.userData;
+  model.root.updateMatrixWorld(true);
+  // Plate: C's centre at plate x 272, B's upright x 37-64, A's end x 30,
+  // at 51 plate px per scene unit.
+  const post = blocks.fixedSupportB.children.find((c) => c.userData.role === 'fixed-upright-of-support-B');
+  const box = new THREE.Box3().setFromObject(post);
+  const plateX = (px) => geometry.sphereCenter.x + (px - 272) / 51;
+  assert.ok(Math.abs(box.min.x - plateX(37)) < 0.06, `B's left face ${box.min.x}`);
+  assert.ok(Math.abs(box.max.x - plateX(64)) < 0.06, `B's right face ${box.max.x}`);
+  assert.ok(Math.abs(geometry.fixedPipeAnchorX - plateX(30)) < 0.06, 'A’s anchored end');
+  // B stands on the base and just under A; its clamp grips A without cutting it.
+  assert.ok(box.max.y < geometry.pipeAxisY - 0.2 && box.max.y > geometry.pipeAxisY - 0.21);
+  const pipeLeft = geometry.fixedPipeAnchorX;
+  assert.ok(pipeLeft < box.min.x && pipeLeft > box.min.x - 0.2, 'A overhangs B a little, as drawn');
+  disposeModel(model.root);
+});

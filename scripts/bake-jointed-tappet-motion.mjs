@@ -23,7 +23,7 @@ for(const dt of steps){
     if(i%stride===0)samples.push([...state.x]);rows.push([state.time,...state.x]);
   }
   const final={q:state.x[0],alpha:state.x[1],teeth:(state.x[2]-p.wheelStart)/p.pitch,holding:state.x[3]};
-  if(Math.abs(final.teeth-1)>1e-6||Math.abs(final.q-.3)>1e-6||Math.abs(final.alpha)>1e-6||minimumGap< -2e-9)throw new Error('Endpoint or clearance failure '+JSON.stringify({dt,final,minimumGap}));
+  if(Math.abs(final.teeth-1)>1e-6||Math.abs(final.q-p.restQ)>1e-6||Math.abs(final.alpha)>1e-6||minimumGap< -2e-9)throw new Error('Endpoint or clearance failure '+JSON.stringify({dt,final,minimumGap}));
   runs.push({dt,samples,minimumGap,qMin,maxTeeth,final});dense=rows;
   console.log({dt,minimumGap,qMin,maxTeeth,final});
 }
@@ -44,16 +44,16 @@ while(index<dense.length){
   for(let k=0;k<4;k++){lo[k]=Math.max(lo[k],slope[k]-epsilon/span);hi[k]=Math.min(hi[k],slope[k]+epsilon/span);}index++;
 }
 if(selected.at(-1)!==dense.length-1)selected.push(dense.length-1);
-const first=selected.map(i=>dense[i]),settled=dense.find(r=>r[0]>.1&&Math.abs(r[1]-.3)<1e-10&&Math.abs(r[2])<1e-8&&Math.abs(r[3]-p.wheelStart)<1e-6);
+const first=selected.map(i=>dense[i]),settled=dense.find(r=>r[0]>.1&&Math.abs(r[1]-p.restQ)<1e-10&&Math.abs(r[2])<1e-8&&Math.abs(r[3]-p.wheelStart)<1e-6);
 if(!settled)throw new Error('No initial settled interval');
 if(Math.abs(first.at(-1)[0]-strikePeriod)>1e-9)throw new Error('The baked cycle must end at the next stud');
 // Once the count has settled (within 1e-6 rad of the exact rest), blend to the
 // exact rest over 0.25 s and hold it until the next stud, so every strike
 // cycle starts and ends on the same exact state.
-const rest=[.3,0,p.wheelStart+p.pitch,0],restIndex=first.findIndex(r=>r[0]>1&&first.slice(first.indexOf(r)).every(x=>x.slice(1).every((v,k)=>Math.abs(v-rest[k])<1e-6)));
+const rest=[p.restQ,0,p.wheelStart+p.pitch,0],restIndex=first.findIndex(r=>r[0]>1&&first.slice(first.indexOf(r)).every(x=>x.slice(1).every((v,k)=>Math.abs(v-rest[k])<1e-6)));
 if(restIndex<0||first[restIndex][0]+.25>=strikePeriod)throw new Error('The count does not settle before the next stud');
 const restTime=first[restIndex][0]+.25;first.splice(restIndex+1);first.push([restTime,...rest],[strikePeriod,...rest]);
-const steady=[[0,.3,0,p.wheelStart,0],[settled[0],.3,0,p.wheelStart,0],...first.filter(r=>r[0]>settled[0])];
+const steady=[[0,p.restQ,0,p.wheelStart,0],[settled[0],p.restQ,0,p.wheelStart,0],...first.filter(r=>r[0]>settled[0])];
 const sample=(table,t)=>{let a=0,b=table.length-1;while(b-a>1){const m=(a+b)>>1;if(table[m][0]<=t)a=m;else b=m;}const A=table[a],B=table[b],f=Math.max(0,Math.min(1,(t-A[0])/(B[0]-A[0])));return A.slice(1).map((v,k)=>v+f*(B[k+1]-v));};
 let minimumGap=Infinity,worst=null;
 for(const [label,table] of [['first',first],['steady',steady]])for(let i=0;i<table.length-1;i++)for(const f of [0,.25,.5,.75,1]){

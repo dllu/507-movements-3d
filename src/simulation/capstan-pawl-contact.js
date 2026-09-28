@@ -114,12 +114,15 @@ export function makeCrownRatchetGeometry({
 // upward-facing crown teeth. Rotor-local frame: pivot at azimuth +Z, the pawl
 // extends along +X (the recoil direction there) and turns about +Z.
 export const capstanPawlDimensions = Object.freeze({
-  // The pivot sits 15° round from the front so that, seated, the nose meets
-  // its tooth face within 4° of Brown's line of sight: the radial face then
-  // shows nearly edge-on and the nose reads as down in the root (with the
-  // pivot dead in front the face's outer edge showed 0.09 beyond the nose).
-  pivotAzimuth: Math.PI / 2 + Math.PI / 12, planeRadius: 1.165, thickness: 0.09, pivotHeight: -1.0,
-  length: 0.56, noseRadius: 0.05, bossRadius: 0.12, boreRadius: 0.06, pinRadius: 0.055,
+  // Brown's pivot: at the centre of the collar as he draws it, on the line
+  // of sight of the presentation camera (azimuth 88.9°).
+  pivotAzimuth: Math.PI / 2 - Math.PI / 90, planeRadius: 1.165, thickness: 0.09, pivotHeight: -1.0,
+  // The seated pawl, pivot-relative in its own plane (x toward recoil, y up):
+  // the tip sits in the root, the front edge stands on the tooth face and the
+  // shoulder turns just below the crest; the toe lies along the ramp.
+  seatTip: Object.freeze([0.40, -0.487]), shoulderHeight: -0.31, toeLength: 0.07, toeAngle: Math.PI - 0.52,
+  bellyStart: 1.48 * Math.PI, bellyLead: 0.25, shoulderRadius: 0.035, tipRadius: 0.008,
+  length: Math.hypot(0.40, 0.487), noseRadius: 0.008, bossRadius: 0.15, boreRadius: 0.06, pinRadius: 0.055,
   innerRadius: 1.15, outerRadius: 1.45, lowHeight: -1.50,
   highHeight: -1.27, bottomHeight: -1.61, toothCount: 18, releaseFraction: 0.125, clearance: 0.0005,
 });

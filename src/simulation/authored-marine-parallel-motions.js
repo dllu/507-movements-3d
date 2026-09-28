@@ -1650,10 +1650,11 @@ function sideLeverMarineParallelMotion(movement) {
   housingShape.lineTo(0.50 * s, 0.75 * s);
   housingShape.absarc(0, 0.75 * s, 0.375 * s, 0, Math.PI, false);
   housingShape.closePath();
-  // Brown's capped block E stands in the link plane, only as deep as a
-  // link. The piston rod is behind the right link (on the vessel's axis),
-  // so a slim transverse arm, not a loaf, carries the block back to it.
-  const crossheadLow = 0.0;
+  // Brown draws the side-lever engine's crosshead E end-on: the capped
+  // block is the end of a transverse crosshead that runs back from the link
+  // plane to the piston rod on the vessel's axis (the rod lies behind the
+  // right link in the plate). It is one extrusion of that drawn end outline.
+  const crossheadLow = vesselAxisZ - 0.5 * s;
   const crossheadHigh = 0.29;
   const housingGeometry = new THREE.ExtrudeGeometry(housingShape, {
     bevelEnabled: false,
@@ -1661,17 +1662,9 @@ function sideLeverMarineParallelMotion(movement) {
     depth: crossheadHigh - crossheadLow,
   });
   housingGeometry.translate(0, 0, crossheadLow);
-  const crossheadArmLow = vesselAxisZ - 0.5 * s;
-  const crossheadArm = new THREE.BoxGeometry(0.5 * s, 0.5 * s, crossheadLow + 0.02 - crossheadArmLow);
-  crossheadArm.translate(0, -0.35 * s, (crossheadLow + 0.02 + crossheadArmLow) / 2);
-  const crossheadHousing = new THREE.Mesh(
-    mergeGeometries([housingGeometry, crossheadArm.toNonIndexed()].map((geometry) => {
-      geometry.deleteAttribute('uv');
-      return geometry;
-    })),
-    outputMaterial,
-  );
-  crossheadHousing.userData.role = 'source-crosshead-E-with-rounded-cap';
+  housingGeometry.deleteAttribute('uv');
+  const crossheadHousing = new THREE.Mesh(housingGeometry, outputMaterial);
+  crossheadHousing.userData.role = 'source-transverse-crosshead-E-with-rounded-cap';
   const pistonRodTop = -0.55 * s;
   const pistonRodBottom = -6.45 * s;
   const pistonRod = new THREE.Mesh(new THREE.CylinderGeometry(pistonRodRadius,

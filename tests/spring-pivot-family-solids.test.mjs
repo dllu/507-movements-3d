@@ -77,7 +77,7 @@ test('420 actual striker/lip and underside spring shoe remain close without cros
   assert.equal(wall.inside(new THREE.Vector3(.40,.02,0)),false);
 });
 test('378/416/420 state queries and playback preserve meshes, geometry and readable timing',()=>{
-  for(const[m,period]of models.map((m,i)=>[m,[14.4,6,4][i]])){
+  for(const[m,period]of models.map((m,i)=>[m,[2.4,6,4][i]])){
     const before=[];m.root.traverse(o=>before.push([o,o.geometry]));
     for(let i=0;i<64;i++){m.root.userData.stateAtTime(i*.21);m.update(i*.21);}
     const after=[];m.root.traverse(o=>after.push([o,o.geometry]));assert.deepEqual(after,before);

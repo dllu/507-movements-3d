@@ -13,9 +13,18 @@ const pose=(model,time)=>{model.update(time);model.root.updateMatrixWorld(true);
 test('076 locates C, the hinged end B, the holding pawl and D on a complete coaxial driver',()=>{
   const model=makeJointedTappetCounter(),u=model.root.userData,p=u.geometry;
   const source=point=>[(point[0]-430.6218296914268)/386.44619718290693,(591.201567806139-point[1])/386.44619718290693];
-  for(const [block,pixel] of [['tappet',[1125,637]],['dog',[994,671]],['holding',[271,168]]]){
-    const expected=source(pixel);near(u.blocks[block].position.x,expected[0]);near(u.blocks[block].position.y,expected[1]);
+  // p94: the tappet (C and B's joint) is set in rigidly along the line from
+  // C to the axis, and the wheel and click are turned together about the
+  // axis; both are small (about 11 and 21 plate pixels).
+  const shift=p.tappetShift,drawnC=source([1125,637]);
+  near(shift[0]*drawnC[1]-shift[1]*drawnC[0],0,1e-12);assert.ok(shift[0]*drawnC[0]+shift[1]*drawnC[1]<0,'set in towards the axis');
+  assert.ok(Math.hypot(...shift)*p.scale<12,`tappet set in ${Math.hypot(...shift)*p.scale} px`);
+  for(const [block,pixel] of [['tappet',[1125,637]],['dog',[994,671]]]){
+    const expected=source(pixel);near(u.blocks[block].position.x,expected[0]+shift[0]);near(u.blocks[block].position.y,expected[1]+shift[1]);
   }
+  const H=source([271,168]),turned=[H[0]*Math.cos(p.clickTurn)-H[1]*Math.sin(p.clickTurn),H[0]*Math.sin(p.clickTurn)+H[1]*Math.cos(p.clickTurn)];
+  near(u.blocks.holding.position.x,turned[0]);near(u.blocks.holding.position.y,turned[1]);
+  assert.ok(Math.abs(p.clickTurn)*Math.hypot(...H)*p.scale<30,'click turned only slightly about the axis');
   // D keeps its drawn direction; its orbit sits just inside the resting
   // struck arm's reach so the stud releases after one tooth, on the rim.
   const D=source([1187,358]),stud=u.parts.driverStud.position;
@@ -79,19 +88,20 @@ test('076 all four bearings have real bores with supporting material around them
 
 test('076 settles one counterclockwise tooth per stud, four per clockwise driver turn, and resets its joint',()=>{
   const model=makeJointedTappetCounter(),u=model.root.userData,p=u.geometry;
-  near(pose(model,0).q,0);near(pose(model,.3).q,.3);
+  assert.ok(pose(model,0).q>=0&&pose(model,0).q<.03,'first frame near the plate pose');near(pose(model,.4).q,p.restQ);
   assert.ok(pose(model,1).theta>p.wheelStart+1.1*p.pitch,'The wheel must pass one tooth for the holding pawl to drop in');
   let fold=0;for(let t=1;t<2.2;t+=.01)fold=Math.min(fold,pose(model,t).alpha);
   assert.ok(fold<-.8,'The joint must fold to pass the return tooth');
   // The stud tips the tappet only far enough to index one tooth: it
-  // releases B within 60° of rest and the wheel overtravels under 1.25 teeth.
+  // releases B within 63° of rest (the rest is 0.48 rad since p94, so that B
+  // unfolds clear of the wheel) and the wheel overtravels under 1.25 teeth.
   let qMin=Infinity,thetaMax=-Infinity;
   for(let t=0;t<3;t+=.001){const s=sampleJointedTappetMotion(t);qMin=Math.min(qMin,s.q);thetaMax=Math.max(thetaMax,s.theta);}
-  assert.ok(p.restQ-qMin<Math.PI/3&&qMin<-.6,`tappet swing ${p.restQ-qMin}`);
+  assert.ok(p.restQ-qMin<1.1&&qMin<-.5,`tappet swing ${p.restQ-qMin}`);
   assert.ok(thetaMax<p.wheelStart+1.25*p.pitch,`wheel overtravel ${(thetaMax-p.wheelStart)/p.pitch}`);
   for(const cycle of [0,1,2,9,19,20,63]){
-    const held=pose(model,cycle*3+2.5);near(held.theta,p.wheelStart+(cycle+1)*p.pitch);near(held.q,.3);near(held.alpha,0);near(held.holdingAngle,0);
-    const next=pose(model,(cycle+1)*3);near(next.theta,held.theta);near(next.driverAngle,-2*Math.PI*(cycle+1)/4);near(next.q,.3);
+    const held=pose(model,cycle*3+2.6);near(held.theta,p.wheelStart+(cycle+1)*p.pitch);near(held.q,p.restQ);near(held.alpha,0);near(held.holdingAngle,0);
+    const next=pose(model,(cycle+1)*3);near(next.theta,held.theta);near(next.driverAngle,-2*Math.PI*(cycle+1)/4);near(next.q,p.restQ);
   }
   for(const time of [3.07,3.53,4.1,5.2]){
     const a=pose(model,time),b=pose(model,time+3);near(b.theta-a.theta,p.pitch);near(b.q,a.q);near(b.alpha,a.alpha);near(b.holdingAngle,a.holdingAngle);
@@ -223,8 +233,19 @@ test('076 the click drops fully into the root after the overtravel and holds the
     assert.equal(touching.length,2,`click tip seated on both flanks of the root at ${time}`);
   }
   // During the lift B's tip is on the face of the tooth it drives.
-  let driving=0;for(let t=.62;t<.8;t+=.01){const s=pose(model,t);if(Math.abs(c.gap(s.q,s.theta,s.alpha))<1e-5)driving++;}
-  assert.ok(driving>12,`B drives the tooth face through the lift (${driving})`);
+  let driving=0;for(let t=.69;t<.89;t+=.01){const s=pose(model,t);if(Math.abs(c.gap(s.q,s.theta,s.alpha))<1e-5)driving++;}
+  assert.ok(driving>18,`B drives the tooth face through the lift (${driving})`);
+  // p94: B's point reaches the root. It first meets the face just above the
+  // root, slides down it as it pushes and comes within 0.0015 of the seat
+  // (the nose position touching both the face and the back), then rides out
+  // along the face; every cycle does the same.
+  const seatRadius=Math.hypot(...p.seat);
+  for(const cycle of [0,1,5]){let deepest=Infinity;
+    for(let t=cycle*3+.6;t<cycle*3+1;t+=.0005){const s=sampleJointedTappetMotion(t);if(Math.abs(c.gap(s.q,s.theta,s.alpha))>1e-5)continue;
+      const local=rot(c.noseAt(s.q,s.alpha),-s.theta),k=Math.round(Math.atan2(local[1],local[0])/p.pitch),tooth=rot(local,-k*p.pitch);
+      if(Math.abs(Math.atan2(tooth[1],tooth[0]))<.05)deepest=Math.min(deepest,Math.hypot(tooth[0]-p.seat[0],tooth[1]-p.seat[1]));}
+    assert.ok(deepest<.0015,`B's point reaches the root in cycle ${cycle} (${deepest})`);}
+  assert.ok(Math.hypot(...p.seat)>p.rootRadius&&seatRadius<p.rootRadius+.02);
   dispose(model);
 });
 

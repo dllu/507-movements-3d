@@ -29,13 +29,25 @@ test('402 has exactly the drawn parts: one lever/anchor plate, one wheel plate, 
   assert.deepEqual(roles.sort(), [
     'escape-wheel-collet', 'escape-wheel-fixed-arbor', 'escape-wheel-single-plate-twelve-saw-teeth',
     'fixed-bridge-carrying-lever-and-escape-wheel-arbors',
-    'left-balance-collar-to-pinion', 'left-balance-fixed-arbor', 'left-balance-involute-pinion', 'left-balance-rear-bearing', 'left-balance-wheel',
+    'left-balance-collar-to-pinion', 'left-balance-fixed-arbor', 'left-balance-involute-pinion', 'left-balance-rear-bearing', 'left-balance-see-through-web', 'left-balance-wheel',
     'lever-B-anchor-A-and-single-toothed-arm-one-plate', 'lever-B-fixed-arbor',
-    'upper-balance-collar-to-pinion', 'upper-balance-fixed-arbor', 'upper-balance-involute-pinion', 'upper-balance-rear-bearing', 'upper-balance-wheel',
+    'upper-balance-collar-to-pinion', 'upper-balance-fixed-arbor', 'upper-balance-involute-pinion', 'upper-balance-rear-bearing', 'upper-balance-see-through-web', 'upper-balance-wheel',
   ].sort());
   // The lever, anchor, bar and toothed arm are one simply connected outline.
   assert.equal(lever.holes.length, 1);
   assert.equal(b.leverPlate.geometry.userData.outline.holes.length, 1);
+  // Brown draws each balance as a plain rim: no bar; the rim and hub are
+  // joined by a thin see-through web, sunk into both and off their faces.
+  for (const side of [b.upper, b.left]) {
+    assert.equal(side.web.userData.seeThrough, true);
+    assert.equal(side.web.castShadow, false);
+    side.wheel.geometry.computeBoundingBox(); side.web.geometry.computeBoundingBox();
+    const w = side.wheel.geometry.boundingBox, v = side.web.geometry.boundingBox;
+    assert.ok(v.min.z > w.min.z + 0.01 && v.max.z < w.max.z - 0.01, 'web faces off the rim faces');
+    const p = side.wheel.geometry.attributes.position; let barPoints = 0;
+    for (let i = 0; i < p.count; i += 1) { const r = Math.hypot(p.getX(i), p.getY(i)); if (r > 0.2 && r < 1.3) barPoints += 1; }
+    assert.equal(barPoints, 0, 'no bar between hub and rim');
+  }
 });
 
 test('402 the single arm carries internal teeth for the upper pinion and external teeth for the left one, as Brown draws', () => {
@@ -50,6 +62,20 @@ test('402 the single arm carries internal teeth for the upper pinion and externa
   const racks = rackLayout();
   assert.ok(Math.max(...racks.internal) < lever.barAngle && Math.min(...racks.external) > lever.barAngle);
   assert.ok(racks.internal.length >= 7 && racks.external.length >= 7);
+  // Brown draws long runs of fine teeth and 18-20-tooth pinions: thirteen
+  // teeth per run, every one of which passes its pitch point over the swing.
+  assert.equal(DESIGN.pinionTeeth, 20);
+  assert.equal(racks.internal.length, 13);
+  assert.equal(racks.external.length, 13);
+  for (const [list, R, center] of [[racks.internal, g.internalRadius, g.upperAngle], [racks.external, g.externalRadius, g.leftAngle]]) {
+    const beta = Math.PI * g.m / R;
+    for (const a of list) assert.ok(Math.abs(a - center) <= DESIGN.leverAmplitude + 1.5 * beta + 1e-12, 'every rack tooth comes into mesh');
+  }
+  // The two runs are each concentric with B, stepped at the bar: the lower
+  // run's plain back lies inside its external teeth, the upper's outside its
+  // internal teeth.
+  assert.ok(Math.abs(g.upperBand[0] - g.bandInner) < 1e-12 && Math.abs(g.lowerBand[1] - g.bandOuter) < 1e-12);
+  assert.ok(g.upperBand[1] - g.upperBand[0] >= 0.15 && g.lowerBand[1] - g.lowerBand[0] >= 0.15);
   // Counter-oscillation: upper turns with the lever, left against it.
   assert.ok(g.upperRatio > 0 && g.leftRatio < 0);
   const s1 = d.stateAtTime(0.1), s0 = d.stateAtTime(0);

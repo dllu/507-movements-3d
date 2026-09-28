@@ -482,13 +482,21 @@ function horizontalOvershotWaterWheel(movement) {
   const edgeLocal = new THREE.Vector3(0, Math.cos(0.62), -Math.sin(0.62));
   const runOff = 0.45, spillDrop = 0.25, spillAge = 0.62, spillSamples = 22;
   // Wet sector, measured from the strike in the direction of rotation.
-  const wetStart = 0.08, wetPeak = 0.35, wetEnd = 1.45;
-  const wetness = (bladeWorldAngle) => {
-    const past = THREE.MathUtils.euclideanModulo(spin * (bladeWorldAngle - impactAngle), FULL_TURN);
-    if (past <= wetStart || past >= wetEnd) return 0;
-    return past < wetPeak ? smoothStep5((past - wetStart) / (wetPeak - wetStart))
-      : 1 - smoothStep5((past - wetPeak) / (wetEnd - wetPeak));
+  // Pass 94: the water reaches the end of a board only after running out
+  // along it from the strike (the film below), so the sheet a board sheds
+  // is its feed delayed by that run: `feed` is the water a board takes from
+  // the jet, `wetness` the water leaving its end.
+  const filmStartRadius = Math.hypot(strike.x, strike.z);
+  const filmRunSpeed = 3.0;
+  const filmRunAngle = inputAngularSpeed * (bladeOuterRadius - filmStartRadius) / filmRunSpeed;
+  const feedStart = 0, feedPeak = 0.27, feedEnd = 1.45 - filmRunAngle;
+  const pastStrike = (bladeWorldAngle) => THREE.MathUtils.euclideanModulo(spin * (bladeWorldAngle - impactAngle), FULL_TURN);
+  const feedAtPast = (past) => {
+    if (past <= feedStart || past >= feedEnd) return 0;
+    return past < feedPeak ? smoothStep5((past - feedStart) / (feedPeak - feedStart))
+      : 1 - smoothStep5((past - feedPeak) / (feedEnd - feedPeak));
   };
+  const wetness = (bladeWorldAngle) => feedAtPast(pastStrike(bladeWorldAngle) - filmRunAngle);
   const spillPath = (bladeIndex, time) => {
     const points = [], speeds = [], times = [], flows = [], axes = [];
     for (let i = 0; i <= spillSamples; i += 1) {
@@ -539,6 +547,77 @@ function horizontalOvershotWaterWheel(movement) {
     return stream;
   });
   const spill = spills[0];
+  // Pass 94: the film on each board. The struck board carries the jet's
+  // water from the strike out along its upper (up-and-forward) face to its
+  // outer end, where the board's spill sheet takes it. The film rides with
+  // its board (a child of the board group); its first sample reaches up to
+  // the jet's end while that board takes the jet (the same quintic share as
+  // the drive), so jet, film and sheet read as one body of water. Each
+  // radius carries the feed the board took (r - r0) / v earlier. It floats
+  // 0.004 clear of the face, so no water face lies on the board.
+  const faceNormal = new THREE.Vector3(0, Math.sin(0.62), Math.cos(0.62));
+  const filmHalfThickness = 0.012, filmLift = 0.04 + filmHalfThickness + 0.004;
+  const filmSamples = 16, filmHalfWidth = 0.15, filmAcross = 0.02, filmWetFlow = 0.06;
+  const filmFacePoint = (radius) => new THREE.Vector3(radius, 0.16, 0)
+    .addScaledVector(faceNormal, filmLift).addScaledVector(edgeLocal, filmAcross);
+  // Sample 0 reaches for the jet, 1..n-2 lie on the face, and the last
+  // rolls over the end edge into the start of the board's spill sheet.
+  const filmRadii = Array.from({length: filmSamples}, (_, i) => i === 0 ? filmStartRadius
+    : i === filmSamples - 1 ? bladeOuterRadius + 0.03
+      : filmStartRadius + (bladeOuterRadius - filmStartRadius) * (i - 1) / (filmSamples - 3));
+  const filmPath = (bladeIndex, time) => {
+    const angle = sourcePoseBladeOffset + bladeIndex * bladePitch + spin * inputAngularSpeed * time;
+    // Twice the share, capped: through a hand-off both boards reach the jet.
+    const take = Math.min(1, 2 * jetSharesAtWheelAngle(spin * inputAngularSpeed * time).shares[bladeIndex]);
+    const strikeLocal = strike.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), -angle);
+    const points = [], speeds = [], times = [], flows = [];
+    for (let i = 0; i < filmSamples; i += 1) {
+      const radius = filmRadii[i];
+      const delay = (radius - filmStartRadius) / filmRunSpeed;
+      const face = i === filmSamples - 1
+        ? cornerLocal.clone().setX(radius).addScaledVector(faceNormal, 0.02) : filmFacePoint(radius);
+      points.push(i === 0 ? face.lerp(strikeLocal, take) : face);
+      speeds.push(filmRunSpeed);
+      times.push(i === 0 ? -0.08 : delay);
+      const fed = feedAtPast(pastStrike(angle) - inputAngularSpeed * delay);
+      flows.push(i <= 1 ? Math.max(take, fed) : fed);
+    }
+    // Dry stretches fold onto the nearest wet sample (as the sheets do), so
+    // the film ends in its own cap instead of thinning into a flat hair.
+    const wet = flows.map((flow) => flow > filmWetFlow), first = wet.indexOf(true), last = wet.lastIndexOf(true);
+    if (first >= 0) for (let i = 0; i < filmSamples; i += 1) {
+      const k = i < first ? first : i > last ? last : i;
+      if (k !== i) { points[i] = points[k].clone(); flows[i] = flows[k]; }
+    }
+    return {points, speeds, times, flows};
+  };
+  const films = Array.from({length: bladeCount}, (_, bladeIndex) => {
+    const initial = filmPath(bladeIndex, 0);
+    let flows = initial.flows;
+    const film = new WaterStream(initial, {
+      width: filmHalfWidth, thickness: filmHalfThickness, widthAxis: edgeLocal, widthExponent: 1,
+      cyclePeriod: cycleDuration, streakRate: 1.5, streakAcross: 4, opacity: 0.58, color: 0x9fdcea,
+      section: (i) => {
+        // A dry sample shrinks to a hair, not a point, so its normals stay
+        // defined (a zero ring shades black).
+        const wet = Math.max(0, flows[i] - 0.02) / 0.98;
+        if (wet <= 0) return [1e-4, 1e-4];
+        // A thin trickle shrinks whole (not flattening into two faces).
+        const width = i === 0 ? 0.10 : filmHalfWidth, scale = Math.min(1, wet / 0.15);
+        return [width * (0.35 + 0.65 * wet) * scale, filmHalfThickness * scale];
+      },
+    });
+    film.userData.role = `water-film-running-out-along-board-${bladeIndex + 1}`;
+    film.userData.setTime = (time) => {
+      const path = filmPath(bladeIndex, time);
+      flows = path.flows;
+      film.visible = flows.some((flow) => flow > filmWetFlow);
+      if (film.visible) film.setPath(path);
+    };
+    film.userData.setTime(0);
+    bladeGroups[bladeIndex].add(film);
+    return film;
+  });
   root.add(jet);
   const impactSpray = new WaterSpray({
     origin: strike.clone().setY(0.56),
@@ -603,6 +682,7 @@ function horizontalOvershotWaterWheel(movement) {
     rotor.rotation.y = state.wheelAngle;
     updateWater(time);
     for (const sheet of spills) sheet.userData.setTime(time);
+    for (const film of films) film.userData.setTime(time);
     const jetPhase = THREE.MathUtils.euclideanModulo(time / 0.82, 1);
     for (let markerIndex = 0; markerIndex < jetMarkers.length;
       markerIndex += 1) {
@@ -646,6 +726,7 @@ function horizontalOvershotWaterWheel(movement) {
       bladeGroups,
       contactMarker,
       dischargeMarkers,
+      films,
       flume,
       flumeWater,
       foundation,

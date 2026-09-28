@@ -617,3 +617,24 @@ test('movement 321 lays spring S-S-prime on the larger ratchet on short studs, c
   // The arbor ends inside a winding square just proud of B's face.
   assert.ok(box(blocks.barrelHub).max.z < box(blocks.barrelBody).max.z + 0.06);
 });
+
+test('movement 321 p94: the wire turns in a round U, never a tight bend, at every phase', () => {
+  const model = createMovementModel(catalog.movements[320]);
+  const { geometry, stateAtTime } = model.root.userData;
+  let tightest = Infinity;
+  for (let sample = 0; sample <= 64; sample += 1) {
+    const spring = stateAtTime(geometry.demonstrationPeriod * sample / 64).springGeometry;
+    const step = 1 / 400;
+    for (let f = 2 * step; f <= 1 - 2 * step; f += step) {
+      const a = spring.pointAtMaterialFraction(f - 2 * step);
+      const b = spring.pointAtMaterialFraction(f);
+      const c = spring.pointAtMaterialFraction(f + 2 * step);
+      // Circumradius of three points along the wire.
+      const ab = a.distanceTo(b); const bc = b.distanceTo(c); const ca = c.distanceTo(a);
+      const area = new THREE.Vector3().subVectors(b, a).cross(new THREE.Vector3().subVectors(c, a)).length() / 2;
+      if (area > 1e-12) tightest = Math.min(tightest, ab * bc * ca / (4 * area));
+    }
+  }
+  assert.ok(tightest > 0.15, `tightest wire bend radius ${tightest}`);
+  disposeModel(model.root);
+});

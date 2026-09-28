@@ -6,7 +6,7 @@
     },
     {
       "file": "src/simulation/authored-entwistle-gearing.js",
-      "sha256": "577442e029ed26c77b904c75d0a0aeb2d1e24f0adb52566121db78558d6e31a2"
+      "sha256": "ae4833948f0898409912dc0516235d3a73609149c15bf902728dc6f3c8b258d2"
     },
     {
       "file": "src/simulation/capstan-entwistle-corrections.js",
@@ -74,20 +74,20 @@
     {
       "id": 495,
       "poses": 33,
-      "queries": 271270,
+      "queries": 2513596,
       "penetrations": 0,
       "maxDepth": 0,
       "worst": null,
       "pairs": [
         {
           "pair": "fixed-equal-bevel-gear-A-carried-equal-bevel-planet-B",
-          "maximumSampledGap": 0.004861688631930773,
-          "minimumSampledGap": 0.004805337375537995
+          "maximumSampledGap": 0.004861687821201903,
+          "minimumSampledGap": 0.004805336831255745
         },
         {
           "pair": "loose-equal-bevel-output-gear-C-carried-equal-bevel-planet-B",
-          "maximumSampledGap": 0.00486168863193072,
-          "minimumSampledGap": 0.004805337375538093
+          "maximumSampledGap": 0.004861687821201849,
+          "minimumSampledGap": 0.004805336831255722
         }
       ]
     }

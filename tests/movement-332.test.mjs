@@ -477,7 +477,7 @@ test('movement 332 renderer binds every named pin and spatial link', () => {
   assert.equal(model331.root.userData.fidelity, 'authored');
   assert.notEqual(model331.root.userData.archetype,
     model.root.userData.archetype);
-  assert.equal(model331.root.userData.blocks.flywheelSpokes.length, 4);
+  assert.equal(model331.root.userData.blocks.flywheelSpokes.length, 2);
   assert.equal(blocks.framePosts, undefined,
     'the plate shows no frame posts or bedplate');
   const undrawn = [];

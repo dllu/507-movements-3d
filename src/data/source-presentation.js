@@ -321,7 +321,7 @@ export default {
     note: 'The pantograph arms, the round fixed point C, tracer B and pencil A over a blank ground; no drawing board or traced figures are drawn.',
   },
   247: {
-    note: 'Front section through the rod, the weight and the catch, with the probe foot below; the camera looks up from the sea bottom\'s level, so the undrawn bottom is seen edge-on as the lower frame edge (the caption has the weight detach on striking bottom). The loaded rod is lowered onto the bottom, the probe trips the catch and the weight drops; the rod is hauled up out of view on its line and, far above, re-armed with the second of two alternating weights, and as it returns into Brown\'s pose the vessel moves on to the next station, the bottom and the spent weight moving off sideways together. The loop is two soundings long; no reload gear or hand is shown.',
+    note: 'Front section through the rod, the weight and the catch, with the probe foot below; the camera looks up from the sea bottom\'s level, so the undrawn bottom is seen edge-on as the lower frame edge (the caption has the weight detach on striking bottom). The loaded rod is lowered onto the bottom, the probe trips the catch and the weight drops; the rod is lifted on its line just clear of the spent weight, and the second of two alternating weights, let go on the line far above, runs down the line and the rod onto the catch; as the rod returns into Brown\'s pose the vessel moves on to the next station, the bottom and the spent weight moving off sideways together. The loop is two soundings long; no reload gear is shown.',
   },
   248: {
     remove: ['raised-grip-rib-on-nut-B', 'white-rotation-index-on-nut-B'],
@@ -708,7 +708,7 @@ export default {
   },
   402: {
     remove: [],
-    note: 'Face view of the two open balance rims (each with one slim bar, as in a watch balance) crossing so the toothed arm shows, their pinions meshing the internal teeth (upper) and external teeth (left) of lever B\'s single curved arm, anchor A one plate with B, and the twelve-tooth escape wheel in the same plane; the bar Brown draws in front of the wheel from B\'s pivot to the wheel\'s centre is the fixed bridge carrying both arbors, see-through where it covers the teeth he dots.',
+    note: 'Face view of the two open balance rims (plain rims joined to their hubs by see-through webs) crossing so the toothed arm shows, their pinions meshing the internal teeth (upper) and external teeth (left) of lever B\'s single curved arm, anchor A one plate with B, and the twelve-tooth escape wheel in the same plane; the bar Brown draws in front of the wheel from B\'s pivot to the wheel\'s centre is the fixed bridge carrying both arbors, see-through where it covers the teeth he dots.',
   },
   403: {
     remove: ['(?:left|right)-sloping-rule-guided-by-(?:left|right)-chord-pin-end-index-[12]', '(?:left|right)-sloping-rule-guided-by-(?:left|right)-chord-pin-pin-contact-working-edge', 'laid-out-(?:chord-line|versed-sine)', '(?:left|right)-fixed-chord-end-guide-pin-white-cap'],

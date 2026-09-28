@@ -642,3 +642,17 @@ test('movement 342 closes exactly and leaves movement 507 as the next draft', ()
   disposeModel(model507.root);
   disposeModel(model.root);
 });
+
+test('movement 342 (pass 94): front chain plates stand proud of the head face; the slot panel is a darker emboss', () => {
+  const model = createMovementModel(catalog.movements[341]);
+  const { blocks, geometry } = model.root.userData;
+  const head = new THREE.Box3().setFromObject(blocks.chainShoe);
+  assert.ok(geometry.chainOuterHigh > head.max.z + 0.02,
+    'front side plates stay visible past the head face in rotated views');
+  assert.ok(geometry.chainOuterLow > head.min.z, 'rear side plates still ride the rim');
+  const panelColor = blocks.slotPanel.material.color;
+  const headColor = blocks.chainShoe.material.color;
+  assert.ok(panelColor.r + panelColor.g + panelColor.b < 0.7 * (headColor.r + headColor.g + headColor.b),
+    'slot panel reads darker than the head');
+  disposeModel(model.root);
+});

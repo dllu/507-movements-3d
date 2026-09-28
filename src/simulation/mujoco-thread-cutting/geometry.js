@@ -21,12 +21,13 @@ export function makeThreadCuttingGeometry(options={}) {
  let lastCut=f.contactAngle-toolHalfAngle;
  add('workpiece',alongY(workpiece.geometry(lastCut)),'work',PALETTE.driven);
  const setCutAngle=angle=>{if(angle===lastCut)return;lastCut=angle;const g=alongY(workpiece.geometry(angle)),m=parts.workpiece;m.geometry.dispose();m.geometry=g;};
- // The groove exists only where the tool has passed on the current descent
- // (Brown: cut above the tool, plain blank below). Live and baked playback
- // both call this with the drive time and the work spindle angle.
- const strokes=new Map(),syncCut=(time,workAngle,period=24)=>{
+ // On the first descent after playback starts (drive time `since`) the
+ // groove exists only where the tool has passed (Brown: cut above the tool,
+ // plain blank below); afterwards the tool chases the finished thread. Live
+ // and baked playback both call this with the drive time and work angle.
+ const strokes=new Map(),syncCut=(time,workAngle,period=24,since=0)=>{
   if(!strokes.has(period))strokes.set(period,makeThreadCuttingStroke(f,period));
-  setCutAngle(f.contactAngle-toolHalfAngle-strokes.get(period).cutWorkAngle(time,workAngle));};
+  setCutAngle(f.contactAngle-toolHalfAngle-strokes.get(period).cutWorkAngle(time,workAngle,since));};
  for(const [i,name]of ['lead','work'].entries()) {
   const r=f.shaftRadii[i],thread=name==='lead'?f.external:f.workThread,color=name==='lead'?PALETTE.driver:PALETTE.driven;
   add(name+'LowerShaft',alongY(disk(r,f.y(f.source.shaftEnds[1]),thread.low,128)),name,color);

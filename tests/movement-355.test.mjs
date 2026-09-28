@@ -423,3 +423,16 @@ test('movement 355 ring A is Brown\'s broad flat band clear of disk C (p93)', ()
   assert.ok(inner > model.root.userData.geometry.diskRadius + 0.02, 'inner edge clears the rim of disk C');
   disposeModel(model.root);
 });
+
+test('movement 355 (pass 94): the opening view frames Brown\'s phase-0 pose, not the whole sweep', () => {
+  const model = createMovementModel(catalog.movements[354]);
+  model.update(0, 0);
+  model.root.updateMatrixWorld(true);
+  const pose = new THREE.Box3();
+  model.root.traverseVisible((o) => { if (o.isMesh) pose.expandByObject(o); });
+  const fit = model.root.userData.cameraFitBounds;
+  const poseCenter = pose.getCenter(new THREE.Vector3());
+  const fitCenter = fit.getCenter(new THREE.Vector3());
+  assert.ok(Math.abs(poseCenter.x - fitCenter.x) < 0.1, 'phase-0 pose centred across the view');
+  assert.ok(fit.max.x - fit.min.x < 6, 'box spans the pose, not the 9.5-wide sweep');
+});

@@ -40,11 +40,13 @@ export function finishReed396Parts(model) {
   const bearingParts = [];
   const shafts = [b.escapeWheel.userData.hub, staff, b.lever.userData.pivotHub];
   for (let i = 0; i < 3; i++) {
+    // Staff b's rear bearing stands behind the balance's hub (z -0.62).
     const boss = b.bearingBosses[i], shaft = shafts[i], radius = [.20, .18, .17][i], front = [.217, .10, .12][i];
-    replace(shaft, new THREE.CylinderGeometry(radius, radius, front + .72, 64));
-    shaft.position.z = (front - .72) / 2;
-    replace(boss, ring(radius + .003, .26, -.08, .08, 128));
-    boss.rotation.set(0, 0, 0); boss.position.z = -.60;
+    const back = i === 1 ? .80 : .72, bossZ = i === 1 ? -.715 : -.60;
+    replace(shaft, new THREE.CylinderGeometry(radius, radius, front + back, 64));
+    shaft.position.z = (front - back) / 2;
+    replace(boss, ring(radius + .003, .26, -.08, i === 1 ? .055 : .08, 128));
+    boss.rotation.set(0, 0, 0); boss.position.z = bossZ;
     const post = new THREE.Mesh(new THREE.BoxGeometry(.18, 2.83, .16), boss.material);
     post.position.set(boss.position.x, -1.565, -.73);
     post.userData.role = 'rear-watch-plate-bearing-standard';
@@ -57,7 +59,6 @@ export function finishReed396Parts(model) {
   replace(balanceIndex, new THREE.BoxGeometry(.045, .18, .008));
   balanceIndex.position.set(g.balanceRadius, 0, -.173);
 
-  for(const spoke of b.balance.children.filter(o=>o.userData.role==='balance-wheel-B-spoke'))replace(spoke,new THREE.BoxGeometry(g.balanceRadius*1.94,.10,.12));
   const profiles = reed396Profiles();
   replace(b.escapeWheel.userData.toothedRim, plate(clip.union(clip.difference(poly(profiles.wheel), poly(circle([0, 0], g.wheelInnerRadius, 256))), crossing), -.14, .14));
   b.escapeWheel.userData.toothedRim.userData.role = 'twelve-tooth-escape-wheel-rim-and-three-armed-crossing';

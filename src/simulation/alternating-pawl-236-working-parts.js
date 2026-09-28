@@ -1,9 +1,6 @@
 import * as THREE from 'three';
 import { circle, poly, plate, ring, polygonClipping } from './finite-plate-geometry.js';
 
-// Half-angle of each pawl's rounded toe, which covers every contact direction.
-const TOE_SPAN = THREE.MathUtils.degToRad(105);
-
 // The pawl plates share the wheel's plane and their integral round toes bear
 // on its teeth. No beveled surface extends into the analytical contact.
 export function installAlternatingPawl236(root) {
@@ -13,11 +10,11 @@ export function installAlternatingPawl236(root) {
   for (const [pawl, plane] of [[b.longPawl, g.longPawlPlaneZ], [b.shortPawl, g.shortPawlPlaneZ]]) {
     const { body, pivotHub, length } = pawl.userData;
     // Brown's straight pawls b and c lie in the wheel's plane; each ends in
-    // its own rounded toe of the working nose radius, which bears on the
-    // tooth corner directly. No cranked foot or cross-pin reaches back.
-    const r = g.pawlNoseRadius, toe = [];
+    // a wedge whose rounded toe, of the working nose radius, seats in the
+    // tooth root. No cranked foot or cross-pin reaches back.
+    const r = g.pawlNoseRadius, toe = [], [toeFrom, toeTo] = g.pawlToeArc(length);
     for (let i = 0; i <= 24; i++) {
-      const angle = -TOE_SPAN + 2 * TOE_SPAN * i / 24;
+      const angle = toeFrom + (toeTo - toeFrom) * i / 24;
       toe.push([length + r * Math.cos(angle), r * Math.sin(angle)]);
     }
     // The same flanks bound the idle pawl's riding solve in the kinematics.
@@ -59,16 +56,22 @@ export function installAlternatingPawl236(root) {
   const index = b.ratchet.userData.indicator;
   replace(index, new THREE.BoxGeometry(0.045, 0.55, 0.012));
   index.position.set(0, 0.8, g.ratchetDepth / 2 + 0.006);
-  root.userData.cameraFitBounds.set(new THREE.Vector3(-4.02, -2.42, -0.65), new THREE.Vector3(2.43, 4.94, 1.2));
+  // Frame the lever's whole swing: its handle rises 2A above the drawn pose.
+  const bounds = new THREE.Box3(new THREE.Vector3(-4.02, -2.42, -0.65), new THREE.Vector3(2.43, 4.94, 1.2));
+  for (const angle of [g.leverBias - g.leverAmplitude, g.leverBias, g.leverBias + g.leverAmplitude]) {
+    const handle = g.sourceHandlePoint.clone().sub(g.fulcrum).rotateAround(new THREE.Vector2(), angle).add(g.fulcrum);
+    bounds.expandByPoint(new THREE.Vector3(handle.x, handle.y + 0.15, 0));
+  }
+  root.userData.cameraFitBounds.copy(bounds);
   b.activeContactMarker.visible = false;
   root.userData.workingParts236 = { pins };
   root.userData.minimumDisplayCycleSeconds = 6;
   root.userData.hideGround = true;
-  root.userData.reconstructionNote = 'Two flat pawls in the wheel plane contact real tooth corners with their own rounded toes and advance the wheel on alternate strokes. The idle pawl rides back over the teeth: it is swung in about its hinge until its toe or flank touches the outline, and its drop off each tooth corner uses a prescribed angular acceleration; hinge bias, contact forces and load capacity are not dynamically solved. The wheel slows to zero at each lever reversal.';
+  root.userData.reconstructionNote = 'Two straight flat pawls in the wheel plane seat their rounded toes in the tooth roots and advance the wheel on alternate strokes. The drive is re-phased so that Brown\'s drawn pose is the handoff (b seated at the end of its stroke, c about to engage). A returning pawl is tracked as a rigid plate resting on the moving teeth under a prescribed inward angular acceleration: it slides up the tooth backs, drops off each crest over several frames and runs on past its root; after each lever reversal the wheel stands while it slides back down into the root (its backlash) and meets the face. Contact forces, hinge bias and load capacity are not dynamically solved.';
   root.userData.contactQualification236 = {
-    contact: 'outer corner of steep rising flank, with outward normal 10 degrees clockwise from radial',
+    contact: 'rounded toe seated in the root, touching the steep face and the previous tooth back; drive normal is the face normal',
     normalConvention: 'wheel-to-pawl; its negative gives the force on the wheel',
-    return: 'idle pawl rests on the tooth outline (geometric solve) with prescribed-acceleration drops off tooth corners; no passive spring simulation',
+    return: 'idle pawl tracked continuously on the tooth outline with prescribed-acceleration drops; the wheel stands until the returning toe reaches its root',
     source: 'Official page checked: no inline animation registration.',
   };
   root.traverse(o => {

@@ -158,3 +158,14 @@ test('086 pump rope uses the shared hemp-brown rope colour (pass 93)',async()=>{
  const model=makePumpCatchDrive(),u=model.root.userData;
  assert.equal(u.parts.pumpRope.material.color.getHex(),PALETTE.rope);assert.equal(u.parts.inputDriveRope.material.color.getHex(),PALETTE.rope);
 });
+test('086 has no hidden heel hold: the catch swings free after the trip and comes to rest on cam C (pass 94)',()=>{
+ const model=makePumpCatchDrive(),u=model.root.userData,contact=makePumpCatchHeelContact(model);
+ assert.equal(profile.parameters.heelStop,false);assert.equal(u.displayOmitsIntegratedCatchDetails.heelStop,false);
+ // Return (display 1.4-3.3 s): the catch angle keeps changing, never pinned.
+ const rel=[];for(let t=1.4;t<=3.3;t+=.1)rel.push(u.stateAtTime(t).catchAngle);
+ for(let i=1;i<rel.length;i++)assert.ok(Math.abs(rel[i]-rel[i-1])>1e-3,'catch must not hold a fixed angle during the return');
+ // At the bottom the catch lands on C and rides it until C's point picks it up.
+ let camTime=0;for(let t=3.3;t<=4.05;t+=.01){const s=u.stateAtTime(t);if(contact.query(s.q,s.camAngle,{margin:1e-4}).some(c=>c.kind==='cam'))camTime+=.01;}
+ assert.ok(camTime>.25,'catch rests on cam C at the bottom: '+camTime);
+ dispose(model);
+});

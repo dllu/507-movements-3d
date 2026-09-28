@@ -397,25 +397,20 @@ function harrisonGoingBarrel(movement) {
   const springOuterBaseAngle = Math.atan2(0.50, -2.55);
   const springInnerBaseAngle = Math.atan2(1.65, -1.10);
   // Brown draws S-S' as one curved wire, not a coil: from S' on G it runs
-  // in toward the arbor with a gentle S-bend, turns in a hairpin over the
-  // lower left of B and comes back out to S on the larger ratchet. The
-  // angular position along the wire is monotone (so it can never cross
-  // itself) and eases in at both anchors; the hairpin's depth is solved each
-  // frame so the wire keeps one material length. When T holds the larger
-  // ratchet and G runs ahead, the hairpin opens and shallows; it closes
-  // again as R re-engages.
+  // in toward the arbor with a gentle S-bend, turns in a round U over the
+  // lower left of B and comes back out to S on the larger ratchet (see
+  // springSourceCentreLine). The wire keeps one material length: when T
+  // holds the larger ratchet and G runs ahead, the U opens toward the chord
+  // between the anchors just enough; it closes again as R re-engages.
   const springSegmentCount = 240;
   const springWireRadius = 0.035;
   const springPreload = 2.20;
   const springStiffness = 0.60;
-  const springHairpinExponent = 3;
   // B's small ratchet and click R lie directly in front of the larger
   // ratchet, with B's plain face on them, and the wire lies just in front of
   // that face (0.02 running clearance), so it crosses over B as Brown draws
   // it, on short studs rather than long posts.
   const springPlaneZ = 0.375;
-  const springReferenceDepth = 1.62;
-  const springBendAmplitude = 0.08;
   const goingLoadTorque = 0.30;
   const largeRatchetLagMaximum = FULL_TURN
     * (windingEndPhase - windingStartPhase);
@@ -432,22 +427,90 @@ function harrisonGoingBarrel(movement) {
   const springSweep = (greatWheelAngle, largeRatchetAngle) =>
     springInnerBaseAngle + largeRatchetAngle
     - springOuterBaseAngle - greatWheelAngle;
-  // u runs from S' (0) to S (1). The angular fraction is nearly flat along
-  // each leg, so the legs leave their anchors almost radially as Brown
-  // draws, and turns quickly at the bottom; with the flat-bottomed dip this
-  // gives the rounded U of the plate rather than a sharp V. A small angular
-  // wave puts Brown's S-bend in the leg from S'.
-  const springAngleSteepness = 6;
-  const springAngleFraction = (u) => 0.5
-    + 0.5 * Math.tanh(springAngleSteepness * (u - 0.5))
-      / Math.tanh(springAngleSteepness / 2);
-  const springBendAt = (u) => (u < 0.5
-    ? springBendAmplitude * Math.sin(FULL_TURN * u / 0.5)
-    : 0);
-  const springRadiusAt = (u) => springOuterAnchorRadius
-    + (springInnerAnchorRadius - springOuterAnchorRadius) * u
-    - springReferenceDepth
-      * (1 - Math.abs(2 * u - 1) ** springHairpinExponent);
+  // u runs from S' (0) to S (1), in material-length fractions. Brown's
+  // wire is traced as a smooth centripetal Catmull-Rom curve through points
+  // on his centre line (raster pixels): from S' it rises a little, dips in
+  // an S-bend under B's lower left, turns in a round U (radius about 0.21)
+  // over B's rim and climbs back to S. The curve is kept in polar form about
+  // the arbor; as G runs ahead of the larger ratchet its angles spread in
+  // proportion to the anchors' sweep.
+  const springSourceCentreLine = [
+    [73, 203], [97, 202], [123, 207], [147, 217], [170, 225], [187, 227],
+    [200, 223], [208, 213], [210, 203], [205, 190], [193, 177], [180, 165],
+    [168, 152],
+  ];
+  const springReferenceSamples = 2048;
+  const springReference = (() => {
+    const anchorPoint = (angle, radius) => new THREE.Vector2(Math.cos(angle), Math.sin(angle))
+      .multiplyScalar(radius);
+    const points = [
+      anchorPoint(springOuterBaseAngle, springOuterAnchorRadius),
+      ...springSourceCentreLine.map(([x, y]) => new THREE.Vector2(
+        (x - sourceRasterCenter.x) * sourceScale,
+        -(y - sourceRasterCenter.y) * sourceScale,
+      )),
+      anchorPoint(springInnerBaseAngle, springInnerAnchorRadius),
+    ];
+    const padded = [
+      points[0].clone().multiplyScalar(2).sub(points[1]),
+      ...points,
+      points.at(-1).clone().multiplyScalar(2).sub(points.at(-2)),
+    ];
+    const dense = [];
+    const perSpan = 256;
+    for (let i = 1; i < padded.length - 2; i += 1) {
+      const [p0, p1, p2, p3] = [padded[i - 1], padded[i], padded[i + 1], padded[i + 2]];
+      const t0 = 0;
+      const t1 = t0 + Math.sqrt(p1.distanceTo(p0));
+      const t2 = t1 + Math.sqrt(p2.distanceTo(p1));
+      const t3 = t2 + Math.sqrt(p3.distanceTo(p2));
+      const mix = (a, b, ta, tb, t) => a.clone().multiplyScalar((tb - t) / (tb - ta))
+        .add(b.clone().multiplyScalar((t - ta) / (tb - ta)));
+      for (let k = 0; k < perSpan; k += 1) {
+        const t = t1 + (t2 - t1) * k / perSpan;
+        const a1 = mix(p0, p1, t0, t1, t);
+        const a2 = mix(p1, p2, t1, t2, t);
+        const a3 = mix(p2, p3, t2, t3, t);
+        dense.push(mix(mix(a1, a2, t0, t2, t), mix(a2, a3, t1, t3, t), t1, t2, t));
+      }
+    }
+    dense.push(points.at(-1).clone());
+    const distance = [0];
+    for (let i = 1; i < dense.length; i += 1) {
+      distance.push(distance[i - 1] + dense[i].distanceTo(dense[i - 1]));
+    }
+    const total = distance.at(-1);
+    const angle = new Float64Array(springReferenceSamples + 1);
+    const radius = new Float64Array(springReferenceSamples + 1);
+    let j = 0;
+    let previousAngle = springOuterBaseAngle;
+    for (let i = 0; i <= springReferenceSamples; i += 1) {
+      const target = total * i / springReferenceSamples;
+      while (j < dense.length - 2 && distance[j + 1] < target) j += 1;
+      const span = distance[j + 1] - distance[j];
+      const point = dense[j].clone().lerp(dense[j + 1], span > 0 ? (target - distance[j]) / span : 0);
+      let theta = Math.atan2(point.y, point.x);
+      theta += FULL_TURN * Math.round((previousAngle - theta) / FULL_TURN);
+      angle[i] = theta;
+      radius[i] = point.length();
+      previousAngle = theta;
+    }
+    angle[0] = springOuterBaseAngle;
+    radius[0] = springOuterAnchorRadius;
+    angle[springReferenceSamples] = springInnerBaseAngle;
+    radius[springReferenceSamples] = springInnerAnchorRadius;
+    return { angle, radius };
+  })();
+  const springReferencePolarAt = (u) => {
+    const x = THREE.MathUtils.clamp(u, 0, 1) * springReferenceSamples;
+    const i = Math.min(springReferenceSamples - 1, Math.floor(x));
+    const f = x - i;
+    return [
+      springReference.angle[i] + (springReference.angle[i + 1] - springReference.angle[i]) * f,
+      springReference.radius[i] + (springReference.radius[i + 1] - springReference.radius[i]) * f,
+    ];
+  };
+  const springSourceSweep = springInnerBaseAngle - springOuterBaseAngle;
   const springAnchorsAt = (greatWheelAngle, sweep) => {
     const outerAngle = springOuterBaseAngle + greatWheelAngle;
     const innerAngle = outerAngle + sweep;
@@ -465,9 +528,9 @@ function harrisonGoingBarrel(movement) {
       const anchor = springAnchorsAt(greatWheelAngle, sweep)[u <= 0 ? 0 : 1];
       return new THREE.Vector3(anchor.x, anchor.y, springPlaneZ);
     }
+    const [referenceAngle, radius] = springReferencePolarAt(u);
     const angle = springOuterBaseAngle + greatWheelAngle
-      + sweep * springAngleFraction(u) + springBendAt(u);
-    const radius = springRadiusAt(u);
+      + (referenceAngle - springOuterBaseAngle) * sweep / springSourceSweep;
     const [outer, inner] = springAnchorsAt(greatWheelAngle, sweep);
     const chord = outer.lerp(inner, u);
     return new THREE.Vector3(
@@ -1154,9 +1217,7 @@ function harrisonGoingBarrel(movement) {
     largeRatchetPitchRadius,
     largeRatchetToothCount,
     largeRatchetToothPitch,
-    springBendAmplitude,
-    springHairpinExponent,
-    springReferenceDepth,
+    springSourceCentreLine,
     springWireRadius,
     springPlaneZ,
     referenceWeightY,

@@ -38,10 +38,13 @@ export function makeThreadCuttingStroke(f,period) {
  const input=time=>{const b=cycle(time),t=Math.min(b,period-b);let s,v;
   if(t<d){const e=end(t);s=e.distance;v=e.speed;}else if(t>half-d){const e=end(half-t);s=stroke-e.distance;v=e.speed;}else{s=speed*(t-d/2);v=speed;}
   return {angle:(f.upper-s)/(-f.lead),velocity:(b>half?v:-v)/(-f.lead),carriage:f.upper-s};};
- // The work angle the tool has reached on the current cutting descent. On the
- // return the tool runs back up its own finished groove; at the top reversal
- // the finished screw is exchanged for a fresh blank and the cut restarts.
+ // The work angle the tool has cut to. Playback starting at time `since`
+ // finds the job part-cut on its first descent (Brown's state: threaded above
+ // the tool, the plain blank below). That descent finishes the thread; the
+ // tool then returns up its own groove and every later pass re-cuts (chases)
+ // the finished thread, so the loop never exchanges the work and never jumps.
  const bottomWorkAngle=f.ratio*f.lower/(-f.lead);
- const cutWorkAngle=(time,workAngle)=>cycle(time)<half?workAngle:Math.max(workAngle,bottomWorkAngle);
- return {period,phase,input,cycle,descending:time=>cycle(time)<half,bottomWorkAngle,cutWorkAngle};
+ const firstCutEnd=since=>since-cycle(since)+half;
+ const cutWorkAngle=(time,workAngle,since=0)=>time<firstCutEnd(since)?workAngle:Math.max(workAngle,bottomWorkAngle);
+ return {period,phase,input,cycle,descending:time=>cycle(time)<half,bottomWorkAngle,firstCutEnd,cutWorkAngle};
 }

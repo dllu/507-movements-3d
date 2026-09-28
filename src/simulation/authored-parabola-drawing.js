@@ -1,6 +1,7 @@
 import {correctDrawingTemplateParts} from './drawing-template-parts.js';
 import * as THREE from 'three';
 import {addDrawingBoard} from './drawing-board-parts.js';
+import {plate, polygonClipping} from './finite-plate-geometry.js';
 import {
   PALETTE,
   markShadows,
@@ -93,9 +94,9 @@ function parabolaDrawingInstrument(movement) {
   const bladeLength = 3.55;
   const threadLength = bladeLength;
   // Pass 90: the square slides until the pencil comes down to the blade
-  // end, where it meets the thread's anchor block (block top 0.09 above
-  // the foot, pencil barrel radius 0.085, 0.02 clearance), so Brown's curve
-  // runs down nearly to the blade foot on both sides.
+  // end, just above the toe that carries the thread's anchor (pass 94: toe
+  // top 0.07 above the anchor, pencil barrel radius 0.085, 0.04 clearance),
+  // so Brown's curve runs down nearly to the blade foot on both sides.
   const lowestPencilY = directrixY - bladeLength + 0.09 + 0.085 + 0.02;
   const maximumSquareOffset = Math.sqrt(-4 * focalLength * lowestPencilY);
   const targetHalfWidth = maximumSquareOffset;
@@ -663,7 +664,7 @@ function parabolaDrawingInstrument(movement) {
   {
     const boardTop = -0.26;
     addDrawingBoard(root, {
-      min: [-2.95, -3.35], max: [2.95, 0.95], top: boardTop,
+      min: [-3.25, -3.35], max: [3.25, 0.95], top: boardTop,
       holes: [[focusPin.position.x, focusPin.position.y, 0.0705]], holeDepth: 0.115,
     });
     // The traced line is a thin drawn stroke lying on the board, so the
@@ -671,7 +672,7 @@ function parabolaDrawingInstrument(movement) {
     targetParabola.scale.z = 0.3;
     targetParabola.position.z = boardTop + 0.0075 + 0.145 * 0.3;
     straightedge.geometry.dispose();
-    straightedge.geometry = new THREE.BoxGeometry(5.9, straightedgeHeight, 0.15 - boardTop);
+    straightedge.geometry = new THREE.BoxGeometry(6.5, straightedgeHeight, 0.15 - boardTop);
     straightedge.position.z = (0.15 + boardTop) / 2;
     directrixHighlight.visible = false;
     const stockTop = square.position.z + stock.position.z + stock.geometry.parameters.depth / 2;
@@ -679,6 +680,57 @@ function parabolaDrawingInstrument(movement) {
     stock.geometry.dispose();
     stock.geometry = new THREE.BoxGeometry(stockGeometry.width, stockGeometry.height, stockTop - boardTop - 0.001);
     stock.position.z = (stockTop + boardTop + 0.001) / 2 - square.position.z;
+    // Pass 94: Brown's square is one-sided. Its stock runs left of the blade
+    // only (about 2.4 stock heights) and ends in a concave cove; the blade
+    // hangs from the stock's underside and ends in a curved foot whose toe
+    // carries the thread's anchor, with no separate end block. Stock and
+    // blade tops are flush (0.765).
+    {
+      const b = root.userData.blocks;
+      const bladeLeft = b.blade.position.x - bladeWidth / 2;
+      const bladeRight = b.blade.position.x + bladeWidth / 2;
+      const stockLeft = bladeLeft - 0.48;
+      const coveRadius = stockHeight - 0.03;
+      const arc = (cx, cy, r, a0, a1, n = 24) => Array.from({ length: n + 1 },
+        (_, i) => { const a = a0 + (a1 - a0) * i / n; return [cx + r * Math.cos(a), cy + r * Math.sin(a)]; });
+      const ccw = (ring) => {
+        let area = 0;
+        for (let i = 0; i < ring.length; i += 1) {
+          const [x0, y0] = ring[i], [x1, y1] = ring[(i + 1) % ring.length];
+          area += x0 * y1 - x1 * y0;
+        }
+        return area > 0 ? ring : ring.slice().reverse();
+      };
+      const halfHeight = stockHeight / 2;
+      const stockRing = ccw([
+        [bladeRight, halfHeight], [stockLeft, halfHeight], [stockLeft, halfHeight - 0.03],
+        ...arc(stockLeft, -halfHeight, coveRadius, Math.PI / 2, 0).slice(1),
+        [bladeRight, -halfHeight],
+      ]);
+      const stockLow = boardTop + 0.001;
+      const stockHigh = square.position.z + 0.08;
+      stock.geometry.dispose();
+      stock.geometry = plate([[stockRing]], stockLow, stockHigh);
+      stock.position.set(0, directrixY - stockHeight / 2, -square.position.z);
+      stock.userData.oneSided = { stockLeft, bladeRight, coveRadius };
+      // Blade: square coordinates, then shifted into the blade's frame.
+      const top = directrixY - stockHeight;
+      const footY = directrixY - bladeLength;
+      const anchorX = b.threadAnchor.position.x;
+      const toeRadius = 0.07, filletRadius = 0.04, heelRadius = 0.20;
+      const bladeRing = ccw([
+        [bladeRight, top],
+        ...arc(bladeRight + filletRadius, footY + toeRadius + filletRadius, filletRadius, Math.PI, 1.5 * Math.PI, 8),
+        ...arc(anchorX, footY, toeRadius, Math.PI / 2, -Math.PI / 2),
+        ...arc(bladeLeft + heelRadius, footY - toeRadius + heelRadius, heelRadius, -Math.PI / 2, -Math.PI),
+        [bladeLeft, top],
+      ]).map(([x, y]) => [x - b.blade.position.x, y - b.blade.position.y]);
+      b.blade.geometry.dispose();
+      b.blade.geometry = plate([[bladeRing]], -0.08, 0.08);
+      b.blade.userData.curvedFoot = { toeRadius, filletRadius, heelRadius, anchorX, footY };
+      b.bladeEnd.removeFromParent();
+      b.bladeEnd.geometry.dispose();
+    }
     focusAxle.geometry.dispose();
     // The pin stops just above its thread loop (top 0.255), below the
     // blade-side thread run (z 0.27 and up) that passes over it at the vertex.

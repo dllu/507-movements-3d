@@ -231,21 +231,22 @@ function adjustableMirrorStand(movement) {
   const stemExtensionMean = 0.42;
   const stemExtensionAmplitude = 0.25;
   const stemBottomLocalY = -0.50;
-  const stemTopLocalY = 1.47;
+  // Brown's hinge stands about 1.65 above the socket top at the plate pose.
+  const stemTopLocalY = 1.86;
   const socketBottomY = -0.75;
   const socketTopY = 0.75;
   const yawAmplitude = THREE.MathUtils.degToRad(32);
-  const tiltAmplitude = THREE.MathUtils.degToRad(22);
+  const tiltAmplitude = THREE.MathUtils.degToRad(18);
   const yawPhaseOffset = Math.PI / 2;
   const tiltFrequencyRatio = 2;
   // The cycle starts at full back tilt with the stem fully yawed, the pose
   // Brown engraves: the frame leans with its top edge rising to the right.
   const tiltPhaseOffset = -Math.PI / 2;
   // The frame stands far enough behind the hinge that its lower edge clears
-  // the socket collar and set screw at full inclination.
-  // Brown's frame is about 1.2 base diameters wide and 1.35 high; it grows
-  // upward from the old lower edge, which keeps the tested collar clearance.
-  const mirrorCenterLocal = new THREE.Vector3(0, 0.99, -0.90);
+  // the pillar, collar and set screw over the whole inclination range.
+  // Brown's frame is about 1.2 base diameters wide and 1.35 high, and his
+  // hinge is at about the middle of its back.
+  const mirrorCenterLocal = new THREE.Vector3(0, 0.15, -1.10);
   const mirrorOuterWidth = 3.20;
   const mirrorOuterHeight = 3.60;
   // The glass fills the broad frame's rounded opening (0.30 border, let
@@ -779,7 +780,7 @@ function adjustableMirrorStand(movement) {
         engravingEvidence:
           'the plate shows a broad stepped base, hollow-shaped pillar, vertical inner stem, side socket screw, horizontal hinge barrel and screw, and a rounded rectangular framed glass',
         reconstructionDisclosure:
-          'frame depth, glass material, 0.25-unit elevation range, 32-degree yaw, 22-degree tilt, phase relationship, colors, and six-second cycle are engineered because Brown gives no dimensions or timing and the official page has no canvas animation',
+          'frame depth, glass material, 0.25-unit elevation range, 32-degree yaw, 18-degree tilt, phase relationship, colors, and six-second cycle are engineered because Brown gives no dimensions or timing and the official page has no canvas animation',
       },
       officialPage: 'https://507movements.com/mm_382.html',
       primaryScan: {

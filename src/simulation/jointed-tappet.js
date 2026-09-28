@@ -7,13 +7,37 @@ import{add,sub,rotate,poly,circle,capsule,sector,spline,plate,disk,ring,polygonC
 
 // Tip wedges (flank directions in each pawl's own frame, radians).
 // B's lower flank is cut from his corner past the envelope of the tooth tips
-// that sweep by it during the lift (Brown pixels).
-export const DOG_BEAK={lowerLeft:[[874,790],[860,761],[850,731]],lowerPixel:[833,701]};
+// that sweep by it during the lift and fold (Brown pixels; p94 moved these
+// points about 8 px into the lobe, clearing the tips by 0.008 now that the
+// tappet is set in towards the wheel). B's straight top edge (the upper flank
+// of its point) runs from the point to headPixels[0]; p94 lowers it by 7.4°
+// (Brown's line ended at [944,645]) so the driven face, which meets it at
+// 16.7° when B first touches, never cuts into it.
+export const DOG_BEAK={lowerLeft:[[880,784],[866,755],[856,725]],lowerPixel:[836,698],headPixels:[[921.3,666.2],[942.4,663.7],[968,645]]};
+// B's reach (p94). With Brown's pivots, B's point swings no nearer the
+// axis than 0.030 above its root seat, so it could only push the lower middle
+// of the face. The whole tappet (C, B's joint and B, shapes unchanged) is set
+// in along the line from C to the axis until the closest point of B's swing
+// lies ROOT_REACH_CLEARANCE outside the seat: B's point then slides down the
+// face into the root as it lifts (about 11 plate pixels at 1425 px).
+export const ROOT_REACH_CLEARANCE=.001;
+// The count wheel and its click are turned together 0.06 rad (3.4°)
+// clockwise about the axis (the click's pivot moves about 27 plate pixels
+// along its circle), so B's point passes over the tip of the tooth behind
+// and first meets the face 0.017 above the root; at Brown's phase it strikes
+// that tip, and from 0.04 it lands on that tooth's back.
+export const CLICK_TURN=-.06;
 export const CLICK_WEDGE={upper:2.70,lower:1.50,upperLength:.05,lowerLength:.05};
 
-export function makeJointedTappetCounter({strikeKink=.3,studOverlap=.05,dogBeak=DOG_BEAK,clickWedge=CLICK_WEDGE}={}){
-  const contact=makeJointedTappetContactProfile({rootRadius:.87,faceAngle:.045,nosePixels:[792,712],holdingNosePixels:[185,352],seatHolding:true}),p=contact.parameters,
+export function makeJointedTappetCounter({strikeKink=.48,studOverlap=.05,restQ=.48,dogBeak=DOG_BEAK,clickWedge=CLICK_WEDGE,rootReachClearance=ROOT_REACH_CLEARANCE,clickTurn=CLICK_TURN}={}){
+  const profileOptions={rootRadius:.87,faceAngle:.045,nosePixels:[792,712],holdingNosePixels:[185,352],seatHolding:true,clickTurn},
+    drawn=makeJointedTappetContactProfile(profileOptions).parameters,drawnC=Math.hypot(...drawn.C),
+    setIn=drawnC-Math.hypot(drawn.B[0]+drawn.V[0],drawn.B[1]+drawn.V[1])-Math.hypot(...drawn.seat)-rootReachClearance,
+    tappetShift=drawn.C.map(v=>-v*setIn/drawnC),
+    contact=makeJointedTappetContactProfile({...profileOptions,tappetShift}),p=contact.parameters,
     source=point=>[(point[0]-p.center[0])/p.scale,(p.center[1]-point[1])/p.scale],
+    // Points on the tappet and on B move with the tappet's rigid shift.
+    tappetSource=point=>add(source(point),tappetShift),
     root=new THREE.Group(),blocks={},parts={},families={};
   for(const name of ['driver','wheel','tappet','dog','holding','fixed']){blocks[name]=new THREE.Group();root.add(blocks[name]);}
   blocks.tappet.position.set(...p.C,0);blocks.holding.position.set(...p.PH,0);
@@ -25,13 +49,19 @@ export function makeJointedTappetCounter({strikeKink=.3,studOverlap=.05,dogBeak=
   // and a stud on a concentric orbit can only pass once the struck end has
   // swung to the mirror of its rest angle about that radius. Drawn straight,
   // with D at its drawn mid-rim radius (0.27 overlap), the stud flung B
-  // round past vertical. The struck arm beyond C is therefore bent down
-  // 0.3 rad (17°) so it rests close to the radius, and D keeps its drawn
-  // direction but sits 0.05 inside that arm's resting reach (the rim band is
-  // centred on that orbit below). The stud then releases the tappet once B has lifted the
-  // ratchet about 1.2 teeth, enough for the holding pawl to drop in; 0.4 rad
-  // with a 0.03 overlap releases before a full tooth and loses the count.
-  const end=rotate(sub(source([1282,589]),p.C),-strikeKink),barRadius=41/p.scale,restQ=.30,
+  // round past vertical. The struck arm beyond C is therefore bent down by
+  // strikeKink so that at rest it lies close to the radius, and D keeps its
+  // drawn direction but sits 0.05 inside that arm's resting reach (the rim
+  // band is centred on that orbit below). Since p94 the tappet rests at 0.48
+  // rad (0.30 before): on the return B's folded point is then drawn past the
+  // tip of the tooth it rides and B drops back onto its heel stop clear of
+  // the wheel (from 0.30 to 0.44 it stays hung on a tooth back and the next
+  // strike loses the count). The kink grows with it (0.30 to 0.48 rad), so
+  // the struck arm rests exactly where it did and the strike is unchanged; a
+  // smaller kink strikes harder and flings B about its joint. The stud
+  // releases the tappet once B has lifted the ratchet about 1.16 teeth, and
+  // the ratchet settles back 0.16 tooth onto the click.
+  const end=rotate(sub(tappetSource([1282,589]),p.C),-strikeKink),barRadius=41/p.scale,
     restEnd=add(p.C,rotate(end,restQ)),studRadius=24/p.scale,studDirection=source([1187,358]),
     studOrbit=Math.hypot(...restEnd)+barRadius+studRadius-studOverlap;
   // Brown's broad spoke runs radially about 4.6° below D, so D stands on the
@@ -75,16 +105,16 @@ export function makeJointedTappetCounter({strikeKink=.3,studOverlap=.05,dogBeak=
   // working tip. It is cut as a wedge to the ratchet's valley: its upper
   // flank lies along the tooth face at first contact and its lower flank
   // clears the back of the tooth below, with a small round point.
-  const dogNose=p.V,dogLocal=point=>sub(source(point),p.PB),brownCorner=dogLocal([805,680]),
+  const dogNose=p.V,dogLocal=point=>sub(tappetSource(point),p.PB),brownCorner=dogLocal([805,680]),
     lobeTurn=Math.atan2(dogNose[1],dogNose[0])-Math.atan2(brownCorner[1],brownCorner[0]),
     lobeScale=Math.hypot(...dogNose)/Math.hypot(...brownCorner),lobe=point=>rotate(dogLocal(point).map(v=>v*lobeScale),lobeTurn),
     wedge=(center,radius,upper,lower,upperLength,lowerLength)=>{
       const start=upper+Math.PI/2,stop=lower-Math.PI/2+2*Math.PI,arc=Array.from({length:25},(_,i)=>add(center,rotate([radius,0],start+(stop-start)*i/24)));
       return{arc,upperEnd:add(arc[0],rotate([upperLength,0],upper)),lowerEnd:add(arc.at(-1),rotate([lowerLength,0],lower))};
     },
-    headStart=lobe([944,645]),lowerStart=lobe(dogBeak.lowerPixel),
+    headStart=lobe(dogBeak.headPixels[0]),lowerStart=lobe(dogBeak.lowerPixel),
     dogTip=wedge(dogNose,p.noseRadius,Math.atan2(...sub(headStart,dogNose).reverse()),Math.atan2(...sub(lowerStart,dogNose).reverse()),0,0),
-    dogHead=spline([[944,645],[955,642],[993,629],[1035,665],[1009,708],[966,713]].map(lobe)),
+    dogHead=spline([...dogBeak.headPixels,[993,629],[1035,665],[1009,708],[966,713]].map(lobe)),
     dogWeight=spline([[966,713],[974,742],[970,771],[953,794],[925,803],[890,799],...dogBeak.lowerLeft,dogBeak.lowerPixel].map(lobe)),
     dogOutline=[...[...dogTip.arc].reverse(),...dogHead,...dogWeight.slice(1)],
     // B's heel: a short sector behind the joint along the bar, between the
@@ -119,10 +149,10 @@ export function makeJointedTappetCounter({strikeKink=.3,studOverlap=.05,dogBeak=
   attach('dogBody',plate(dogShape,...Z.dog),'dog',PALETTE.brass);
   // The holding click: Brown's hook from its pivot boss, ending in a wedge
   // cut to the valley it drops into, seated in the root at rest.
-  const H0=contact.closeH(p.wheelStart),holdingNose=sub(H0.center,p.PH),Hlocal=point=>sub(source(point),p.PH),
-    clickTip=wedge(holdingNose,p.noseRadius,clickWedge.upper,clickWedge.lower,clickWedge.upperLength,clickWedge.lowerLength),
-    outer=spline([clickTip.upperEnd,...[[177,269],[196,219]].map(Hlocal),rotate([.1,0],3.2)]),
-    inner=spline([clickTip.lowerEnd,...[[200,281],[228,244]].map(Hlocal),rotate([.1,0],4.62)]),
+  const H0=contact.closeH(p.wheelStart),holdingNose=sub(H0.center,p.PH),Hlocal=point=>rotate(sub(source(point),source([271,168])),clickTurn),
+    clickTip=wedge(holdingNose,p.noseRadius,clickWedge.upper+clickTurn,clickWedge.lower+clickTurn,clickWedge.upperLength,clickWedge.lowerLength),
+    outer=spline([clickTip.upperEnd,...[[177,269],[196,219]].map(Hlocal),rotate([.1,0],3.2+clickTurn)]),
+    inner=spline([clickTip.lowerEnd,...[[200,281],[228,244]].map(Hlocal),rotate([.1,0],4.62+clickTurn)]),
     holdingSolid=clip.union(poly([...[...outer].reverse(),...clickTip.arc,...inner]),poly(circle([0,0],.106))),
     holdingShape=clip.difference(holdingSolid,poly(circle([0,0],.039)));
   attach('holdingBody',plate(holdingShape,...Z.holding),'holding',PALETTE.brass);
@@ -155,7 +185,7 @@ export function makeJointedTappetCounter({strikeKink=.3,studOverlap=.05,dogBeak=
   // Every non-driver part (A, the pawls, the tappet and its dog) over one
   // displayed period, measured offline from their vertices at 769 poses (A
   // sweeps its tip circle); the 076 tests recompute it.
-  const sweptWorkingParts=new THREE.Box3(new THREE.Vector3(-1.001,-1.001,-.46),new THREE.Vector3(2.328,1.202,.09));
+  const sweptWorkingParts=new THREE.Box3(new THREE.Vector3(-1.001,-1.001,-.46),new THREE.Vector3(2.3,1.225,.09));
   const sectionFitBounds=sweptWorkingParts.clone().union(segmentAtPlatePose);
   sectionFitBounds.min.z=-.46;sectionFitBounds.max.z=.09;
   root.userData={parts,families,blocks,contact,masses,setState,segmentAtPlatePose,sweptWorkingParts,cameraFitBounds:sectionFitBounds.clone(),

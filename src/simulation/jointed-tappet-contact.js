@@ -62,10 +62,12 @@ export function polygonContact(points){
 }
 
 export function makeJointedTappetContactProfile({rootRadius=.87,faceAngle=-.025,backBulge=.03,backSegments=24,
-  noseRadius=.012,nosePixels=[805,699],phaseOffset=0,seatHolding=false,holdingNosePixels=[173,352]}={}){
+  noseRadius=.012,nosePixels=[805,699],phaseOffset=0,seatHolding=false,holdingNosePixels=[173,352],tappetShift=[0,0],clickTurn=0}={}){
   const center=[430.6218296914268,591.201567806139],scale=386.44619718290693,
     source=p=>[(p[0]-center[0])/scale,(center[1]-p[1])/scale],
-    C=source([1125,637]),PB=source([994,671]),PH=source([271,168]),nose=source(nosePixels),
+    // tappetShift translates the whole tappet (C, B's joint and B) rigidly;
+    // the wheel, driver and holding click keep their source positions.
+    C=vadd(source([1125,637]),tappetShift),PB=vadd(source([994,671]),tappetShift),PH=vrotate(source([271,168]),clickTurn),nose=vadd(source(nosePixels),tappetShift),
     B=vsub(PB,C),V=vsub(nose,PB),tipPhase=1.4220984742353362,
     teeth=20,pitch=2*Math.PI/teeth,nominalWheelStart=tipPhase-faceAngle,points=[];
   for(let i=0;i<teeth;i++){
@@ -79,7 +81,7 @@ export function makeJointedTappetContactProfile({rootRadius=.87,faceAngle=-.025,
   const wheel=polygonContact(points),short=wheel.edges[0],centerAt=t=>vadd(vadd(short.a,vmul(short.normal,noseRadius)),vmul(short.d,t/short.length)),
     backDistance=point=>Math.min(...wheel.features(point).slice(-backSegments).map(f=>f.distance));
   let low=0,high=.12;for(let i=0;i<50;i++){const mid=(low+high)/2;if(backDistance(centerAt(mid))<noseRadius)low=mid;else high=mid;}
-  const seat=centerAt(high),seatRadius=Math.hypot(...seat),nominalH=source(holdingNosePixels),VH=vsub(nominalH,PH),lengthH=Math.hypot(...VH),
+  const seat=centerAt(high),seatRadius=Math.hypot(...seat),nominalH=vrotate(source(holdingNosePixels),clickTurn),VH=vsub(nominalH,PH),lengthH=Math.hypot(...VH),
     d=Math.hypot(...PH),along=(seatRadius*seatRadius-lengthH*lengthH+d*d)/(2*d),height=Math.sqrt(seatRadius*seatRadius-along*along),
     seats=[-1,1].map(sign=>[(along*PH[0]+sign*height*PH[1])/d,(along*PH[1]-sign*height*PH[0])/d]);
   seats.sort((a,b)=>Math.hypot(...vsub(a,nominalH))-Math.hypot(...vsub(b,nominalH)));
@@ -108,7 +110,7 @@ export function makeJointedTappetContactProfile({rootRadius=.87,faceAngle=-.025,
     }
     return{rows,failures,contacts,maximumAdvance,maximumTeeth:maximumAdvance/pitch,largestJump};
   };
-  return{parameters:{center,scale,C,PB,PH,B,V,VH,nosePixels,noseRadius,teeth,pitch,wheelStart,rootRadius,faceAngle,backBulge,backSegments,phaseOffset,
+  return{parameters:{center,scale,tappetShift,clickTurn,C,PB,PH,B,V,VH,nosePixels,noseRadius,teeth,pitch,wheelStart,rootRadius,faceAngle,backBulge,backSegments,phaseOffset,
     seatHolding,seat,holdingSeat,holdingWheelStart,holdingNosePixels,holdingNoseSourceError:Math.hypot(...vsub(holdingSeat,nominalH))*scale},
     wheel,noseAt,gap,traceDrive,closeB,closeH};
 }

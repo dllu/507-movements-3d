@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { makeBoredPlanarLink } from './bored-planar-link.js';
-import { boreBoxAtLocalPoint, boreZCylinder, addZJournal, finishSpringFamily, finiteSawSheave } from './spring-pivot-family-parts.js';
+import { boreZCylinder, addZJournal, finishSpringFamily, finiteSawSheave } from './spring-pivot-family-parts.js';
 import {
   CircularArcCurve3,
   PALETTE,
@@ -10,6 +10,7 @@ import {
   setSpin,
 } from './primitives.js';
 import { makeLaidRopeMesh } from './laid-rope.js';
+import { makeSeeThrough } from './see-through-part.js';
 import { circle, plate, poly, polygonClipping } from './finite-plate-geometry.js';
 
 const FULL_TURN = Math.PI * 2;
@@ -88,9 +89,18 @@ function counterweightRopePath({
 function pendulumTreeSaw(movement) {
   const root = new THREE.Group();
 
-  const pendulumPivot = new THREE.Vector3(-3.25, 2.18, 0.34);
-  const pendulumLength = 3.26;
-  const rodAttachmentRadius = 2.02;
+  // Brown's A-frame stands well above the saw frame: its pivot (plate y 146)
+  // is 76 px (1.1 units) over the top beam (plate y 222), and the spade's top
+  // is level with the saw blade.
+  const pendulumPivot = new THREE.Vector3(-3.25, 3.10, 0.34);
+  const pendulumLength = 4.08;
+  // Brown draws three adjustment holes in the rod (plate y 317, 349, 375:
+  // 2.48, 2.94 and 3.32 units below the pivot); the rod is pinned in the
+  // middle one, level with the carriage guide.
+  const rodAdjustmentHoleRadii = [2.48, 2.94, 3.32];
+  const rodAttachmentRadius = rodAdjustmentHoleRadii[1];
+  const pinRadius = 0.052;
+  const pinBoreRadius = 0.055;
   const officialHalfSwingVector = new THREE.Vector2(
     1.001871,
     7.937018,
@@ -102,12 +112,9 @@ function pendulumTreeSaw(movement) {
   const pendulumPeriod = 2.4;
   const pendulumAngularFrequency = FULL_TURN / pendulumPeriod;
   const connectingRodLength = 3.64;
-  const feedMeanY = 0.23;
-  const feedAmplitude = 0.47;
-  const pendulumCyclesPerDemonstration = 6;
+  const pendulumCyclesPerDemonstration = 1;
   const demonstrationPeriod = pendulumPeriod
     * pendulumCyclesPerDemonstration;
-  const feedAngularFrequency = FULL_TURN / demonstrationPeriod;
   const sawPinZ = pendulumPivot.z;
   const pulleyRadius = 0.30;
   const pulleyY = 1.79;
@@ -116,17 +123,28 @@ function pendulumTreeSaw(movement) {
     new THREE.Vector3(3.40, pulleyY, 0.34),
   ];
   const carriageAnchorLocalY = 0.64;
-  const counterweightMeanY = 0.18;
+  // Brown hangs the weights at mid height on the posts (plate y 368..396).
+  const counterweightMeanY = -0.30;
   const counterweightRopeTopOffset = 0.25;
   const pulleyStartAngles = [0.19, -0.27];
-  // Centred under the mean blade span (0.34..3.08 over the stroke), as
-  // Brown draws the log beneath the middle of the saw.
   // The log lies end-on to the viewer, centred on the saw's plane
-  // (z = 0.34), so the saw works in a kerf across the middle of the log
-  // between the two frame posts.
-  const logCenter = new THREE.Vector3(1.71, -1.24, 0.34);
+  // (z = 0.34) and under the middle of the saw's mean stroke, as Brown draws
+  // it; the saw works in a kerf across the middle of the log between the two
+  // frame posts.
+  // Brown draws the teeth over the log's end grain: the saw is taking a
+  // slice off the near end, so the log's front end face stands only 0.12
+  // in front of the kerf.
+  const logCenter = new THREE.Vector3(1.27, -1.24, -0.44);
   const logRadius = 0.67;
   const logLength = 2.0;
+  // Kerf floor height above the log axis; the teeth ride 0.004 above it.
+  const kerfFloorY = 0.28;
+  const toothTipLocalY = -0.705;
+  // The feed is quasi-static: real sawing deepens the kerf far too slowly to
+  // see over a few strokes, so the counterweighted carriage holds the saw at
+  // the depth of its cut and the blade stays in the kerf all cycle.
+  const sawGuideY = logCenter.y + kerfFloorY - toothTipLocalY + 0.004;
+  const feedMeanY = sawGuideY;
 
   const stateAtTime = (time) => {
     const pendulumPhase = pendulumAngularFrequency * time;
@@ -148,12 +166,8 @@ function pendulumTreeSaw(movement) {
         * pendulumAngularSpeed,
       0,
     );
-    const feedPhase = feedAngularFrequency * time;
-    const guideY = feedMeanY + feedAmplitude * Math.cos(feedPhase);
-    const guideVelocity = -feedAmplitude * feedAngularFrequency
-      * Math.sin(feedPhase);
-    const guideAcceleration = -feedAmplitude * feedAngularFrequency ** 2
-      * Math.cos(feedPhase);
+    const guideY = sawGuideY;
+    const guideVelocity = 0;
     const verticalSeparation = guideY - rodJoint.y;
     const horizontalRodProjection = Math.sqrt(
       connectingRodLength ** 2 - verticalSeparation ** 2,
@@ -172,21 +186,10 @@ function pendulumTreeSaw(movement) {
       guideVelocity,
       0,
     );
-    const counterweightY = counterweightMeanY
-      - (guideY - feedMeanY);
-    const counterweightVelocity = -guideVelocity;
-    const feedDisplacementFromStart = guideY
-      - (feedMeanY + feedAmplitude);
-    const pulleyAngles = [
-      pulleyStartAngles[0]
-        + feedDisplacementFromStart / pulleyRadius,
-      pulleyStartAngles[1]
-        - feedDisplacementFromStart / pulleyRadius,
-    ];
-    const pulleyAngularSpeeds = [
-      guideVelocity / pulleyRadius,
-      -guideVelocity / pulleyRadius,
-    ];
+    const counterweightY = counterweightMeanY;
+    const counterweightVelocity = 0;
+    const pulleyAngles = [...pulleyStartAngles];
+    const pulleyAngularSpeeds = [0, 0];
     const anchorY = guideY + carriageAnchorLocalY;
     const counterweightRopeTopY = counterweightY
       + counterweightRopeTopOffset;
@@ -201,8 +204,6 @@ function pendulumTreeSaw(movement) {
       counterweightRopeTopY,
       counterweightVelocity,
       counterweightY,
-      feedPhase,
-      guideAcceleration,
       guideVelocity,
       guideY,
       horizontalRodProjection,
@@ -340,12 +341,24 @@ function pendulumTreeSaw(movement) {
   pendulum.userData.role =
     'prescribed-small-angle-pendulum-driving-lower-rod-joint';
   root.add(pendulum);
+  // The rod is one flat bar from the pivot hub to the spade, with a bored
+  // round eye at each of Brown's three adjustment holes; the connecting-rod
+  // pin sits in the middle one.
+  const rodHalfWidth = 0.0525;
+  const rodEyeRadius = 0.10;
   const pendulumRod = new THREE.Mesh(
-    new THREE.BoxGeometry(0.105, pendulumLength, 0.13),
+    plate(polygonClipping.difference(
+      polygonClipping.union(
+        poly([[-rodHalfWidth, -pendulumLength], [rodHalfWidth, -pendulumLength], [rodHalfWidth, 0], [-rodHalfWidth, 0]]),
+        ...rodAdjustmentHoleRadii.map((r) => poly(circle([0, -r], rodEyeRadius, 64))),
+        poly(circle([0, 0], rodEyeRadius, 64)),
+      ),
+      poly(circle([0, 0], 0.063, 64)),
+      ...rodAdjustmentHoleRadii.map((r) => poly(circle([0, -r], pinBoreRadius, 64))),
+    ), -0.065, 0.065),
     pendulumMaterial,
   );
-  pendulumRod.position.y = -pendulumLength / 2;
-  boreBoxAtLocalPoint(pendulumRod, [0,pendulumLength/2], .063);
+  pendulumRod.userData.adjustmentHoles = rodAdjustmentHoleRadii.map((r) => ({ y: -r, boreRadius: pinBoreRadius }));
   const pendulumHub=addZJournal(pendulum,.14,.063,.15,pendulumMaterial,new THREE.Vector3(),'bored-pendulum-pivot-hub');
   const pendulumShaft=cylinderAlongZ(.06,.72,darkMaterial);
   pendulumShaft.position.copy(pendulumPivot).setZ(.16);root.add(pendulumShaft);
@@ -380,7 +393,7 @@ function pendulumTreeSaw(movement) {
   pendulumBob.position.y = -pendulumLength;
   pendulumBob.userData.role = 'spade-shaped-source-style-pendulum-bob';
   pendulum.add(pendulumBob);
-  const rodJointPin = cylinderAlongZ(0.11, 0.64, darkMaterial, 24);
+  const rodJointPin = cylinderAlongZ(pinRadius, 0.64, darkMaterial, 24);
   rodJointPin.position.y = -rodAttachmentRadius;
   rodJointPin.userData.role = 'pendulum-lower-driving-pin';
   pendulum.add(rodJointPin);
@@ -433,11 +446,11 @@ function pendulumTreeSaw(movement) {
     carriage.add(anchor);
   }
 
-  const connectingRod = makeBoredPlanarLink({length:connectingRodLength,width:.085,eyeRadius:.16,boreRadius:.123,depth:.10},ropeMaterial);
+  const connectingRod = makeBoredPlanarLink({length:connectingRodLength,width:.085,eyeRadius:.12,boreRadius:pinBoreRadius,depth:.10},ropeMaterial);
   connectingRod.userData.role =
     'constant-length-rod-from-pendulum-pin-to-horizontal-saw-slider';
   root.add(connectingRod);
-  const sawPinMarker = cylinderAlongZ(0.12, 0.66, darkMaterial, 24);
+  const sawPinMarker = cylinderAlongZ(pinRadius, 0.66, darkMaterial, 24);
   sawPinMarker.geometry.translate(0,-.08,0);
   sawPinMarker.userData.role = 'horizontal-saw-slider-pin';
   root.add(sawPinMarker);
@@ -446,16 +459,19 @@ function pendulumTreeSaw(movement) {
   saw.userData.role =
     'bow-saw-translating-horizontally-with-fed-guide';
   root.add(saw);
-  // Brown's bow saw is one symmetric frame: two waisted end standards whose
-  // tops scroll outward, a stretcher across the middle (on the slider pin's
-  // line) and the toothed blade strained across the bottom. The frame is one
-  // extrusion; the blade and its 27 crosscut teeth are another.
-  // Narrow enough that the outward scrolls clear the counterweights.
-  const sawSpan = 2.58;
+  // Brown's bow saw is one symmetric frame about as tall as it is wide: two
+  // waisted end standards whose tops scroll outward, a stretcher across the
+  // top under the scrolls, a twisted cord across the middle and the toothed
+  // blade strained across the bottom. The left standard carries the slider
+  // pin at about mid height (plate: pin y 375, scroll tops 320, teeth 425,
+  // span 124 px at 69 px per unit). The frame is one extrusion; the blade
+  // and its crosscut teeth are another.
+  const sawSpan = 1.80;
   const sawMid = sawSpan / 2;
   const standardBottomY = -0.60;
-  // Low enough that the scrolls pass under the carriage's rope anchors.
-  const standardTopY = 0.36;
+  const standardTopY = 0.68;
+  const stretcherY = 0.56;
+  const cordY = 0.20;
   const standardWaist = 0.12;
   const standardHalfWidth = 0.065;
   const standardRing = (side) => {
@@ -500,27 +516,42 @@ function pendulumTreeSaw(movement) {
       poly(circle([cx + radius * Math.cos(endAngle), standardTopY + radius * Math.sin(endAngle)], standardHalfWidth, 48)),
     );
   };
-  const sawPinBore = 0.123;
+  const sawPinBore = pinBoreRadius;
+  // Centreline x of a standard at height y (the same arc standardRing uses).
+  const standardCenterX = (side, y) => {
+    const chord = standardTopY - standardBottomY;
+    const radius = (chord * chord / 4 + standardWaist * standardWaist) / (2 * standardWaist);
+    const midY = (standardTopY + standardBottomY) / 2;
+    const baseX = side < 0 ? 0 : sawSpan;
+    const inward = side < 0 ? 1 : -1;
+    const centerX = baseX + inward * (standardWaist - radius);
+    return centerX + inward * Math.sqrt(radius * radius - (y - midY) ** 2);
+  };
   const frameRegion = polygonClipping.difference(
     polygonClipping.union(
       standardRing(-1),
       standardRing(1),
-      poly([[0.05, -0.045], [sawSpan - 0.05, -0.045], [sawSpan - 0.05, 0.045], [0.05, 0.045]]),
+      poly([
+        [standardCenterX(-1, stretcherY - 0.045), stretcherY - 0.045],
+        [standardCenterX(1, stretcherY - 0.045), stretcherY - 0.045],
+        [standardCenterX(1, stretcherY + 0.045), stretcherY + 0.045],
+        [standardCenterX(-1, stretcherY + 0.045), stretcherY + 0.045],
+      ]),
       scroll(-1),
       scroll(1),
-      poly(circle([0, 0], 0.18, 96)),
+      poly(circle([0, 0], 0.12, 96)),
     ),
     poly(circle([0, 0], sawPinBore, 96)),
   );
   const sawFrame = new THREE.Mesh(plate(frameRegion, -0.05, 0.05), sawMaterial);
   sawFrame.userData.role = 'symmetric-bow-saw-frame-with-scrolled-standards-and-stretcher';
   saw.add(sawFrame);
-  const sawTeethCount = 27;
-  const toothPitch = 0.0925;
+  const sawTeethCount = 19;
+  const toothPitch = (sawSpan - 0.18) / (sawTeethCount - 1);
   const firstToothX = 0.09 - toothPitch / 2;
   const bladeTop = -0.49;
   const bladeBottom = -0.59;
-  const toothTip = -0.705;
+  const toothTip = toothTipLocalY;
   const bladeOutline = [[-0.01, bladeTop], [sawSpan + 0.01, bladeTop], [sawSpan + 0.01, bladeBottom]];
   for (let index = sawTeethCount - 1; index >= 0; index -= 1) {
     const x0 = firstToothX + index * toothPitch;
@@ -531,6 +562,18 @@ function pendulumTreeSaw(movement) {
   sawBlade.userData.role = 'horizontal-crosscut-saw-blade';
   sawBlade.userData.teeth = sawTeethCount;
   saw.add(sawBlade);
+  // Brown's twisted cord across the middle of the frame, its ends buried in
+  // the standards.
+  const sawCord = makeLaidRopeMesh(
+    new THREE.LineCurve3(
+      new THREE.Vector3(standardCenterX(-1, cordY), cordY, 0),
+      new THREE.Vector3(standardCenterX(1, cordY), cordY, 0),
+    ),
+    ropeMaterial,
+    { radius: 0.024, tubularSegments: 48 },
+  );
+  sawCord.userData.role = 'bow-saw-twisted-straining-cord';
+  saw.add(sawCord);
 
   const pulleyRoots = [];
   const ropes = [];
@@ -600,10 +643,8 @@ function pendulumTreeSaw(movement) {
     // log-local z of the saw plane (world z = 0.34).
     const kerfCenterZ = 0.34 - logCenter.z;
     const kerfHalfWidth = 0.10;
-    const kerfFloorY = 0.28;
     const ends = [
       [-logLength / 2, kerfCenterZ - kerfHalfWidth],
-      [kerfCenterZ + kerfHalfWidth, logLength / 2],
     ].map(([from, to]) => new THREE.CylinderGeometry(logRadius, logRadius, to - from, 48)
       .applyMatrix4(new THREE.Matrix4().makeRotationX(Math.PI / 2))
       .translate(0, 0, (from + to) / 2));
@@ -624,6 +665,20 @@ function pendulumTreeSaw(movement) {
     bark.geometry = merged;
     bark.rotation.set(0, 0, 0);
     bark.userData.kerf = { centerZ: kerfCenterZ, halfWidth: kerfHalfWidth, floorY: kerfFloorY };
+    // The slice in front of the kerf is the part that covers the working
+    // teeth, so it takes the shared see-through style, as Brown draws the
+    // teeth over the end grain. Its front cap is the end grain.
+    const sliceFrom = kerfCenterZ + kerfHalfWidth;
+    const slice = new THREE.Mesh(
+      new THREE.CylinderGeometry(logRadius, logRadius, logLength / 2 - sliceFrom, 48)
+        .applyMatrix4(new THREE.Matrix4().makeRotationX(Math.PI / 2))
+        .translate(0, 0, (sliceFrom + logLength / 2) / 2),
+      [woodMaterial, cutWoodMaterial, cutWoodMaterial],
+    );
+    slice.userData.role = 'see-through-slice-in-front-of-kerf';
+    makeSeeThrough(slice);
+    log.add(slice);
+    log.userData.frontSlice = slice;
   }
   bark.userData.role = 'lying-tree-bark-cylinder';
   log.add(bark);
@@ -631,15 +686,12 @@ function pendulumTreeSaw(movement) {
     new THREE.CircleGeometry(logRadius * 0.94, 48),
     cutWoodMaterial,
   );
-  cutFace.position.z = logLength / 2 + 0.006;
-  cutFace.userData.role = 'visible-tree-end-grain';
+  // The near end grain is the see-through slice's front cap; the far end is
+  // sawn too: the same plain end grain.
+  cutFace.position.z = -logLength / 2 - 0.006;
+  cutFace.rotation.y = Math.PI;
+  cutFace.userData.role = 'far-tree-end-grain';
   log.add(cutFace);
-  // The far end is sawn too: the same plain end grain.
-  const farCutFace = cutFace.clone();
-  farCutFace.position.z = -logLength / 2 - 0.006;
-  farCutFace.rotation.y = Math.PI;
-  farCutFace.userData.role = 'far-tree-end-grain';
-  log.add(farCutFace);
   // The log lies on two plain sleepers bedded on a ground plank, so it is
   // carried rather than hanging below the frame's feet.
   const logSupports = [];
@@ -751,18 +803,18 @@ function pendulumTreeSaw(movement) {
       ropes,
       saw,
       sawBlade,
+      sawCord,
       sawFrame,
       sawPinMarker,
       topBeam,
     },
     degreesOfFreedom: {
-      independentPrescribedInputs: 2,
+      independentPrescribedInputs: 1,
       inputs: [
         'small-angle pendulum oscillation driving the horizontal saw stroke',
-        'slow reversible vertical carriage feed for the closed demonstration',
       ],
       note:
-        'the pendulum angle and slow feed phase are prescribed; the rigid connecting rod determines saw position, and each constant-length rope determines its counterweight and pulley rotation',
+        'the pendulum angle is prescribed; the rigid connecting rod determines saw position; the counterweighted carriage holds the saw at the depth of its kerf (quasi-static feed), so the constant-length ropes, counterweights and pulleys are at rest over the demonstration',
       storedEnergyStates: 0,
     },
     dynamics: {
@@ -771,7 +823,7 @@ function pendulumTreeSaw(movement) {
         'rigid massless pendulum-to-saw connecting rod',
         'frictionless horizontal saw slider carried by a slowly fed U-frame',
         'inextensible ropes without slip on two equal fixed pulleys',
-        'periodic down-and-up feed used to close the exhibition loop',
+        'quasi-static feed: the kerf deepens imperceptibly over the demonstrated strokes, so the carriage is held at cutting depth and the blade never leaves its cut',
       ],
       sourceSpecifiesPendulumPeriodRodLengthFeedRateOrMasses: false,
       treatment:
@@ -783,9 +835,8 @@ function pendulumTreeSaw(movement) {
       connectingRodLength,
       counterweightMeanY,
       counterweightRopeTopOffset,
-      feedAmplitude,
-      feedAngularFrequency,
       feedMeanY,
+      kerfFloorY,
       logCenter,
       logLength,
       logRadius,
@@ -796,15 +847,21 @@ function pendulumTreeSaw(movement) {
       pendulumLength,
       pendulumPeriod,
       pendulumPivot,
+      pinRadius,
       pulleyCenters,
       pulleyRadius,
       pulleyStartAngles,
       pulleyY,
+      rodAdjustmentHoleRadii,
       rodAttachmentRadius,
+      sawGuideY,
       sawPinZ,
+      sawSpan,
+      standardBottomY,
+      standardTopY,
     },
     mechanism:
-      'one-swinging-pendulum-lower-pin-drives-one-constant-length-connecting-rod-to-a-horizontal-bow-saw-slider-while-one-counterweighted-u-carriage-feeds-the-saw-through-a-lying-tree',
+      'one-swinging-pendulum-lower-pin-drives-one-constant-length-connecting-rod-to-a-horizontal-bow-saw-slider-while-one-counterweighted-u-carriage-holds-the-saw-in-its-kerf-in-a-lying-tree',
     officialDescription: movement.description,
     sourceAnimation: {
       available: true,
@@ -834,7 +891,7 @@ function pendulumTreeSaw(movement) {
         officialAnimationEvidence:
           'the animation distinguishes a red pendulum and bow saw, a constant-length green link from the pendulum lower pin to the saw left pin, a blue U-shaped vertical-feed carriage, and two green ropes passing over fixed side pulleys to blue counterweights',
         reconstructionDisclosure:
-          'the 7.19-degree half swing follows the official animation endpoint vectors; all physical scale, 2.4-second pendulum period, rigid-rod length, six-stroke smooth closed feed cycle, colors, and masses are independently engineered because Brown gives no dimensions or timing',
+          'the 7.19-degree half swing follows the official animation endpoint vectors; all physical scale, 2.4-second pendulum period, rigid-rod length, quasi-static feed, colors, and masses are independently engineered because Brown gives no dimensions or timing',
       },
       officialPage: 'https://507movements.com/mm_378.html',
       primaryScan: {
@@ -846,12 +903,12 @@ function pendulumTreeSaw(movement) {
     timeline: {
       demonstrationPeriod,
       note:
-        'six pendulum and saw cycles occur during one smooth feed-down/feed-return loop; three cutting strokes occur during the downward half, matching the official animation count without retaining its end reset',
+        'one pendulum and saw cycle per loop; the saw stays in its kerf at constant depth (the official animation instead feeds down and resets, which would lift the saw out of its cut)',
     },
     transmission: {
       constantRopeLength: initialState.ropeLengths[0],
       feedCounterweightLaw:
-        'each counterweight rises by exactly the distance its carriage anchor descends, preserving the two straight lengths plus the fixed semicircular wrap',
+        'the feed is quasi-static: each counterweight would rise by exactly the distance its carriage anchor descends, preserving the two straight lengths plus the fixed semicircular wrap; over the demonstration both are at rest',
       pendulumSliderLaw:
         'the saw pin is the right-hand intersection of the horizontal carriage guide and a circle whose center is the pendulum lower pin and whose radius is the rigid connecting-rod length',
       pulleyNoSlipLaw:
@@ -864,10 +921,10 @@ function pendulumTreeSaw(movement) {
   update(0);
   root.userData.cameraFitBounds = new THREE.Box3(
     new THREE.Vector3(-4.70, -2.04, -2.10),
-    new THREE.Vector3(4.10, 2.55, 1.65),
+    new THREE.Vector3(4.10, 3.30, 1.65),
   );
   root.userData.groundFloorY = -2.00;
-  finishSpringFamily(root, 14.4);
+  finishSpringFamily(root, demonstrationPeriod);
   markShadows(root);
   return {
     cameraDirection: new THREE.Vector3(3.8, 2.8, 10.2),

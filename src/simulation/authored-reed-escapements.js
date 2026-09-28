@@ -9,6 +9,7 @@ const circlePoints = (radius, count, cx = 0, from = 0, to = FULL_TURN) => Array.
   (_, i) => [cx + radius * Math.cos(from + (to - from) * i / count), radius * Math.sin(from + (to - from) * i / count)]);
 import * as THREE from 'three';
 import { boredLatheGeometry } from './bored-lathe-geometry.js';
+import { makeSeeThrough } from './see-through-part.js';
 import {
   PALETTE,
   markShadows,
@@ -172,27 +173,43 @@ function makeBalance({
     'oscillating-balance-B-with-roller-h-pin-i-and-direct-pallet-j';
   // Brown draws balance B as a plain broad rim, two concentric circles,
   // whose edge passes just short of escape-wheel staff a (his rim radius is
-  // 0.82 of the centre distance).  He draws no arms; one plain arm (below)
-  // carries the rim on its staff.
+  // 0.82 of the centre distance), with paper inside it.  He draws no arms,
+  // so the rim is carried as a plain disc balance: an opaque rim with a
+  // half-round front bead (its edges are Brown's two circles), an opaque hub
+  // on staff b, and between them a thin web in the shared see-through style,
+  // so the lever, roller and staff read through it.  The web's edges are sunk
+  // into the rim and hub, and none of its faces lies on theirs.
   const rimOuterRadius = balanceRadius * 0.87;
+  const rimInnerRadius = rimOuterRadius - 0.22;
   const rim = new THREE.Mesh(boredLatheGeometry([
     { axial: -0.08, radial: rimOuterRadius },
-    { axial: 0.08, radial: rimOuterRadius },
-  ], rimOuterRadius - 0.22, 160), material);
+    // The bead's last chord closes onto the rim's bore.
+    ...Array.from({ length: 24 }, (_, i) => ({
+      axial: -0.03 + 0.11 * Math.sin(Math.PI * i / 24),
+      radial: (rimOuterRadius + rimInnerRadius) / 2 + 0.11 * Math.cos(Math.PI * i / 24),
+    })),
+  ], rimInnerRadius, 192), material);
   rim.rotation.x = Math.PI / 2;
   rim.position.z = -0.54;
-  rim.userData.role = 'balance-wheel-B-rim';
+  rim.userData.role = 'balance-wheel-B-plain-beaded-rim';
   balance.add(rim);
-  // The rim is carried on its staff by one plain diametral arm lying in the
-  // rim's own plane, behind the escape wheel (the wheel staff stands outside
-  // the rim, so nothing crosses the arm's sweep).
-  const rimArm = new THREE.Mesh(
-    new THREE.BoxGeometry(2 * (rimOuterRadius - 0.11), 0.14, 0.10),
-    material,
-  );
-  rimArm.position.z = -0.54;
-  rimArm.userData.role = 'balance-wheel-B-arm-to-staff';
-  balance.add(rimArm);
+  const rimHub = new THREE.Mesh(boredLatheGeometry([
+    { axial: -0.08, radial: 0.30 },
+    { axial: 0.14, radial: 0.30 },
+  ], 0.183, 64), material);
+  rimHub.rotation.x = Math.PI / 2;
+  rimHub.position.z = -0.54;
+  rimHub.userData.role = 'balance-wheel-B-hub-on-staff-b';
+  balance.add(rimHub);
+  const rimWeb = new THREE.Mesh(boredLatheGeometry([
+    { axial: -0.075, radial: rimInnerRadius + 0.04 },
+    { axial: -0.035, radial: rimInnerRadius + 0.04 },
+  ], 0.28, 192), material.clone());
+  rimWeb.rotation.x = Math.PI / 2;
+  rimWeb.position.z = -0.54;
+  rimWeb.userData.role = 'balance-wheel-B-see-through-disc-web';
+  makeSeeThrough(rimWeb);
+  balance.add(rimWeb);
   const hub = cylinderAlongZ(0.18, 0.72, darkMaterial, 32);
   hub.position.z = 0.03;
   hub.userData.role = 'balance-staff-b';
@@ -242,6 +259,8 @@ function makeBalance({
   balance.userData.directPallet = directPallet;
   balance.userData.hub = hub;
   balance.userData.rim = rim;
+  balance.userData.rimHub = rimHub;
+  balance.userData.rimWeb = rimWeb;
   balance.userData.roller = roller;
   balance.userData.rollerPin = rollerPin;
   return markShadows(balance);

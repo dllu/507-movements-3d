@@ -213,7 +213,12 @@ function atmosphericChainBeamPumpingEngine(movement) {
   // head's rim, as in 334: the 0.40-deep head's face spans the whole chain.
   // Its eyes (0.47 x width) sit 0.032 source unit clear of the 11.7 rim when
   // the pins lie on the 12-unit pitch circle.
-  const chainLineZ = 0.30;
+  // Pass 94: the chain line sits 0.13 forward of the head's mid-plane, so
+  // the front side plates stand 0.025 proud of the head's 0.50 face and the
+  // wrapped chain stays in sight from strongly rotated front views (in the
+  // mid-plane the face hid it); the back plates still ride the rim, and the
+  // piston, crosshead and cylinder follow the same line.
+  const chainLineZ = 0.43;
   const chainWidth = 0.57 * sourceScale;
   const plateChain = {
     chainInnerHalfDepth: 0.045,
@@ -874,12 +879,16 @@ function atmosphericChainBeamPumpingEngine(movement) {
   // Brown's slot in the segment head shows nothing through it, so it is a
   // shallow raised panel on the head's face (sunk 0.01 into the face so no
   // face lies coplanar with it), not an opening with bolts.
-  const slotPanelDepth = 0.03;
+  // Pass 94: the panel stands 0.025 proud (was 0.02; the stay eye at 157.5° sits at 0.53) in a darker tone of the
+  // beam's blue, so Brown's slot reads in the near-frontal default view.
+  const slotPanelDepth = 0.035;
+  const slotPanelMaterial = matte(new THREE.Color(PALETTE.driven)
+    .multiplyScalar(0.45).getHex(), { metalness: 0.1, roughness: 0.6 });
   const slotPanel = new THREE.Mesh(extrudeCentered(new THREE.Shape(
     segmentSlotOutline(11.05, 0.24, THREE.MathUtils.degToRad(158),
       THREE.MathUtils.degToRad(202))
       .map(point => point.multiplyScalar(sourceScale)),
-  ), slotPanelDepth), beamMaterial);
+  ), slotPanelDepth), slotPanelMaterial);
   slotPanel.position.z = 0.50 - 0.01 + slotPanelDepth / 2;
   slotPanel.userData.role = 'raised-panel-where-brown-draws-the-segment-slot';
   beam.add(slotPanel);

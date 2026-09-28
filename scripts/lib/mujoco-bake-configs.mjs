@@ -18,6 +18,7 @@
 //                   (or, for 109, from the recorded qpos)
 //   seamExclude     derived meshes whose vertex count changes, left out of
 //                   the seam continuity check
+//   roundTripLoops  baked loop index the live round trip is compared with
 //   qpos            false omits the recorded joint coordinates
 //   minLoopSeconds  shortest loop considered (a long gear-ratio repeat)
 export const bakeConfigs = {
@@ -133,7 +134,11 @@ export const bakeConfigs = {
     // Its vertex count changes as the cut advances, so it is left out of the
     // seam vertex-continuity check; it is a function of the periodic qpos and time.
     seamExclude: ['parts.workpiece'],
-    note: 'The lathe drive reverses each period: the tool carriage descends along the stock cutting the thread, leaving the plain blank below it, and returns up its finished groove; a fresh blank replaces the screw at the top reversal. The route sync rebuilds the cut from the recorded work angle and loop time; one 24 s period closes the loop.',
+    // Baked playback opens on a part-cut first descent while the live model
+    // compared at the loop's start time has long finished its thread, so the
+    // round trip is checked against the second baked loop.
+    roundTripLoops: 1,
+    note: 'The lathe drive reverses each period: the tool carriage descends along the stock and returns up its groove. Playback opens part-way down the first cut (threaded above the tool, plain blank below); that descent finishes the thread and every later pass chases it, so the loop never exchanges the work. The route sync rebuilds the cut from the recorded work angle and playback time; one 24 s period closes the loop.',
   },
   110: {
     directory: 'src/simulation/mujoco-half-nut',

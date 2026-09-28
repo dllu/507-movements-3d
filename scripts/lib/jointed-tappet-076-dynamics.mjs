@@ -82,6 +82,12 @@ export function makeJointedTappet076Dynamics(candidate,{period=12,load=3,damping
         +mass.holding.mass*rotate(mass.holding.c,beta)[1]);
     return{kinetic,potential,total:kinetic+potential};
   };
-  return{parameters:{period,load,damping,omega,density,mass},matrices,constraints,energy,initial:{x:[0,0,p.wheelStart,0],v:[0,0,0,0],time:0}};
+  // The first cycle starts from the plate pose (q = 0). Where B's point
+  // would stand inside the tooth there (the tappet is set in toward the
+  // wheel so B can reach the root), the tappet starts turned back towards
+  // its rest just far enough for B's point to clear the tooth.
+  let q0=0;const clearAt=q=>constraints([q,0,p.wheelStart,0],0,0).gaps.B;
+  if(clearAt(0)<1e-5){let lo=0,hi=p.restQ;for(let i=0;i<60;i++){const m=(lo+hi)/2;if(clearAt(m)>=1e-5)hi=m;else lo=m;}q0=hi;}
+  return{parameters:{period,load,damping,omega,density,mass},matrices,constraints,energy,initial:{x:[q0,0,p.wheelStart,0],v:[0,0,0,0],time:0}};
 }
 

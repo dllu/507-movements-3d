@@ -87,11 +87,11 @@ test('491 the pawl turns about the radial pin Brown draws, flat against the lowe
   model.update(0); root.updateMatrixWorld(true);
   const pivot = b.pawlPivotAssembly.getWorldPosition(new THREE.Vector3());
   const tip = b.pawlTip.getWorldPosition(new THREE.Vector3());
-  // Pass 93: the pivot sits 15° round from the front so the seated nose meets
-  // its radial tooth face nearly edge-on to Brown's line of sight.
-  assert.ok(pivot.z > 1.05 && pivot.x < -0.25 && pivot.x > -0.35, 'pivot on the front of the lower capstan, just left of centre');
-  const nose = Math.atan2(tip.z, tip.x) * 180 / Math.PI;
-  assert.ok(nose > 84 && nose < 90, `seated nose near the line of sight (azimuth ${nose})`);
+  // Pass 94: the pivot is back on Brown's axis, the collar's centre on the
+  // presentation line of sight (azimuth 88.9°), and the seated tip is down in
+  // the root: level with the tooth bottoms.
+  assert.ok(pivot.z > 1.1 && Math.abs(pivot.x) < 0.06, `pivot at the front centre of the lower capstan (${pivot.x})`);
+  assert.ok(tip.y - g.ratchetLowHeight < 0.02 && tip.y > g.ratchetLowHeight, `seated tip in the root (${tip.y})`);
   assert.ok(tip.x > pivot.x + 0.3, 'nose hangs down to the right, toward recoil, as drawn');
 });
 
@@ -110,7 +110,10 @@ test('491 finite pawl clears every tooth pose and its nose stays engaged over th
   }
   console.log('491 finite pawl clearance', {minimum, maximumWorkingGap});
   assert.ok(minimum > 0, `pawl into ratchet ${minimum}`);
-  assert.ok(maximumWorkingGap < 0.002, 'working nose must remain in close engagement');
+  // The table holds 0.0005 against the exact crest edges; late on each ramp
+  // a crest edge bears on the pawl's straight belly/toe between the mesh
+  // vertices sampled here, so the vertex gap reads up to about 0.004.
+  assert.ok(maximumWorkingGap < 0.005, 'working nose must remain in close engagement');
 });
 
 test('491 the moving pawl clears the lower capstan, its pin and pin head throughout the tooth cycle', () => {

@@ -13,7 +13,7 @@ for(const[id,create]of[[406,parabola],[407,arch]]) {
    const barrel=b.workingPencil.barrel;
    const bight=b.pencil.children.find(o=>o.userData.role==='white-thread-bight-around-pencil');
    if(id===406){
-    for(const o of[b.blade,b.bladeEnd])for(const f of[barrel,...b.focusPin.children])pairs.push([o,f]);
+    for(const o of[b.blade,b.stock,b.anchorStud])for(const f of[barrel,...b.focusPin.children])pairs.push([o,f]);
     pairs.push([b.focusCord,b.bladeCord],[b.focusCord,bight],[b.bladeCord,bight]);
     for(const o of[b.focusCord,b.bladeCord,bight])for(const f of[barrel,b.blade,...b.focusPin.children])pairs.push([o,f]);
    }else{

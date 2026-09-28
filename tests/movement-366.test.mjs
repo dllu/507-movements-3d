@@ -494,3 +494,33 @@ test('movement 366 (pass 92): both lever ends are round eyes about their link pi
     disposeModel(model.root);
   }
 });
+
+test('movement 366 (pass 94): short crank shaft beside the frame and a flat spear-point bit', () => {
+  const model = createMovementModel(catalog.movements[365]);
+  try {
+    model.update(0, 0);
+    model.root.updateMatrixWorld(true);
+    const find = (role) => {
+      let found = null;
+      model.root.traverse((o) => { if (!found && o.isMesh && o.userData.role === role) found = o; });
+      return found;
+    };
+    const box = (role) => new THREE.Box3().setFromObject(find(role));
+    const shaft = box('horizontal-hand-crank-input-shaft');
+    const gear = model.root.userData.blocks.driverGear;
+    const gearBox = new THREE.Box3().setFromObject(gear);
+    // Brown's crank sits just outside the frame's bearing: the shaft reaches
+    // no more than 0.7 past the large bevel's back.
+    assert.ok(shaft.max.x - gearBox.max.x < 0.7, `shaft overhang ${shaft.max.x - gearBox.max.x}`);
+    const handle = box('free-hand-grip-on-input-crank');
+    assert.ok(handle.max.x < 1.8, 'handle ends near plate x 400 (1.77 units right of the drill)');
+    const bit = find('rotating-pointed-drill-bit');
+    assert.notEqual(bit.geometry.type, 'ConeGeometry');
+    const local = new THREE.Box3().setFromBufferAttribute(bit.geometry.attributes.position);
+    assert.ok(local.max.z - local.min.z < 0.08, 'flat blade');
+    assert.ok(local.max.x - local.min.x > 0.17, 'diamond head wider than the blade waist');
+    near(local.min.y, -0.71, 1e-6, 'tip height unchanged');
+  } finally {
+    disposeModel(model.root);
+  }
+});

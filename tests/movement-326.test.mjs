@@ -538,18 +538,33 @@ test('movement 326 hides the connecting rod inside the capped hollow standard', 
   assert.ok(skin.max.y < 0);
   const pin = box(blocks.crankPinShaft);
   assert.ok(skin.min.z > pin.max.z);
-  // A recessed cap closes the top behind a narrow slot for the rod, below
-  // the crank's sweep.
+  // A cap flush with the top edge closes the top behind a narrow slot for
+  // the rod; the crank dips into a pit whose floor is an arc concentric
+  // with the shaft, just outside the crank's sweep.
   const cap = box(blocks.standardCap);
   near(cap.min.z, geometry.frameFrontZ, 1e-6, 'cap meets the back plate');
   const slot = skin.min.z - cap.max.z;
   assert.ok(slot > geometry.connectingRodDepth && slot < 0.3, `rod slot ${slot}`);
-  assert.ok(cap.max.y < skin.max.y && cap.max.y > skin.max.y - 0.7);
+  near(cap.max.y, skin.max.y, 1e-6, 'cap is flush with the top edge');
+  const radialExtent = (mesh, reduce) => {
+    mesh.updateMatrixWorld(true);
+    const position = mesh.geometry.attributes.position;
+    const point = new THREE.Vector3();
+    let value = reduce === Math.min ? Infinity : -Infinity;
+    for (let index = 0; index < position.count; index += 1) {
+      point.fromBufferAttribute(position, index).applyMatrix4(mesh.matrixWorld);
+      value = reduce(value, Math.hypot(point.x, point.y));
+    }
+    return value;
+  };
+  const pitRadius = radialExtent(blocks.standardCap, Math.min);
+  assert.ok(pitRadius > 0.9 && pitRadius < 1.1, `pit radius ${pitRadius}`);
   for (let step = 0; step < 64; step += 1) {
     model.update(4 * step / 64);
     model.root.updateMatrixWorld(true);
     for (const part of [blocks.crankArm, blocks.crankPinShaft]) {
-      assert.ok(box(part).min.y > cap.max.y + 0.03, `crank clears the cap at ${step}`);
+      assert.ok(radialExtent(part, Math.max) < pitRadius - 0.05,
+        `crank clears the pit at ${step}`);
     }
   }
   // The piston rod runs inside the hollow standard, into the foot's bore.
