@@ -134,6 +134,10 @@ export function makeRatchetBevel() {
     root.userData.ratchetState = state; root.userData.kinematics = state;
   };
   root.userData = { fidelity: 'authored', mechanism: 'equal-miter-gears-with-gravity-seated-opposed-pawls', motion,
+    // Real time is the intended pace (one input swing per 7.9 s). Each idle
+    // pawl drops off a crest within one sample, which the display-speed cap
+    // otherwise reads as a 1700 rad/s spin and slows playback about 90-fold.
+    authoredPlaybackTimeScale: 1,
     cameraFov: 17, hideGround: true, fullCameraDirection: new THREE.Vector3(4.8, 3.2, 8),
     blocks: { rightGear, leftGear, outputGear, rightCarrier, leftCarrier, shaft, shaftBody, feathers,
       outputShaft, outputShaftBody, bearings },
