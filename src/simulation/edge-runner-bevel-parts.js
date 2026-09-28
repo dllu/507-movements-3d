@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { bevelToothGeometry, bevelBodyGeometry } from './bevel-geometry.js';
 
-// Keep the source's common apex and 36:12 pitch constraint, replacing the old
+// Keep the source's common apex and 36:18 pitch constraint, replacing the old
 // eight-corner teeth with the shared back-cone involute approximation.
 export function correctEdgeRunnerBevels(root) {
   const d = root.userData, b = d.blocks, g = d.geometry;
@@ -17,7 +17,7 @@ export function correctEdgeRunnerBevels(root) {
     const tooth = bevelToothGeometry({
       teeth: u.teeth, innerDistance: u.innerDistance, outerDistance: u.outerDistance,
       pitchConeAngle: u.pitchConeAngle, toothHeight: u.toothHeight,
-      toothThicknessFactor: .96, flankSegments: 20, tipSegments: 8,
+      toothThicknessFactor: .98, flankSegments: 20, tipSegments: 8,
     });
     u.body.geometry.dispose(); u.body.geometry = bevelBodyGeometry(tooth, u.boreRadius);
     for (const [index, mesh] of u.toothMeshes.entries()) {
@@ -30,5 +30,5 @@ export function correctEdgeRunnerBevels(root) {
     u.faceIndex.position.z = tooth.userData.root.z + .034;
     u.toothProfile = tooth.userData.profile; u.toothPhase = phase;
   }
-  d.workingPartsReview.qualification = 'Runner centerline rolling and the 36:12 bevel ratio are analytical. Teeth use the shared back-cone involute approximation with conical ends and surface normals. Finite-width runners scrub across the annular track; tooth loading and grinding forces remain unqualified.';
+  d.workingPartsReview.qualification = 'Runner centerline rolling and the 36:18 bevel ratio are analytical. Teeth use the shared back-cone involute approximation with conical ends and surface normals. Finite-width runners scrub across the annular track; tooth loading and grinding forces remain unqualified.';
 }

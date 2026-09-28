@@ -127,7 +127,8 @@ function pairedEdgeRunnerMill(movement) {
   const verticalShaftZ = 0;
 
   const largeGearTeeth = 36;
-  const inputPinionTeeth = 12;
+  // Brown's upright pinion is about half the crown wheel's diameter (p95).
+  const inputPinionTeeth = 18;
   const bevelRatio = largeGearTeeth / inputPinionTeeth;
   const bevelModule = 0.075;
   const largeGearPitchRadius = largeGearTeeth * bevelModule / 2;
@@ -141,10 +142,12 @@ function pairedEdgeRunnerMill(movement) {
   const pinionOuterAxialDistance = inputPinionPitchRadius
     / Math.tan(pinionPitchConeAngle);
   const largeInnerAxialDistance = largeOuterAxialDistance * 0.28;
-  const pinionInnerAxialDistance = pinionOuterAxialDistance * 0.28;
+  // Brown draws the upright pinion as a thin toothed disc: a short face.
+  const pinionInnerAxialDistance = pinionOuterAxialDistance * 0.65;
   const largeGearToothHeight = bevelModule * 1.75;
   const pinionToothHeight = bevelModule * 1.75;
-  const bevelApex = new THREE.Vector3(0, 2.16, 0);
+  // The crown's back face stays at 1.71, just above the crossbar's boss.
+  const bevelApex = new THREE.Vector3(0, 1.71 + largeOuterAxialDistance, 0);
   const bevelContactPoint = bevelApex.clone().add(
     new THREE.Vector3(
       pinionOuterAxialDistance,
@@ -377,8 +380,10 @@ function pairedEdgeRunnerMill(movement) {
   inputPinion.userData.role =
     'small-horizontal-input-pinion-driving-vertical-shaft-at-right-angle';
   root.add(inputPinion);
-  const inputShaft = cylinderAlongX(0.080, 1.66, darkMaterial, 26);
-  inputShaft.position.set(1.96, 0, 0);
+  // The shaft runs from the pinion's inner face out through the standard.
+  const inputShaftEnd = 2.79;
+  const inputShaft = cylinderAlongX(0.080, inputShaftEnd - pinionInnerAxialDistance, darkMaterial, 26);
+  inputShaft.position.set((inputShaftEnd + pinionInnerAxialDistance) / 2, 0, 0);
   inputShaft.userData.role = 'horizontal-input-shaft-for-upper-bevel-pinion';
   const inputShaftIndex = new THREE.Mesh(
     new THREE.BoxGeometry(1.12, 0.035, 0.045),
@@ -386,7 +391,7 @@ function pairedEdgeRunnerMill(movement) {
   );
   inputShaftIndex.position.set(1.96, 0.095, 0);
   inputShaftIndex.userData.role =
-    'white-index-showing-three-to-one-input-pinion-speed';
+    'white-index-showing-two-to-one-input-pinion-speed';
   const inputShaftRotor = new THREE.Group();
   inputShaftRotor.position.set(0, bevelApex.y, 0);
   inputShaftRotor.userData.axis = X_AXIS.clone();
@@ -477,7 +482,7 @@ function pairedEdgeRunnerMill(movement) {
       input:
         'uniform rotation of the upper horizontal bevel pinion',
       note:
-        'the vertical shaft and axle carrier follow the 3:1 bevel reduction, while both opposed stones receive equal outward-axis spin from their no-slip rolling constraints on the fixed annular track',
+        'the vertical shaft and axle carrier follow the 2:1 bevel reduction, while both opposed stones receive equal outward-axis spin from their no-slip rolling constraints on the fixed annular track',
       storedEnergyStates: 0,
     },
     dynamics: {
@@ -556,7 +561,7 @@ function pairedEdgeRunnerMill(movement) {
         engravingEvidence:
           'the plate shows two opposed upright cylindrical runners, one central horizontal cross-axle and hub on a vertical shaft, an annular trough beneath both stones, and a source-visible right-angle gear drive above the frame',
         reconstructionDisclosure:
-          'the upper 36:12 complementary bevel pair, exact 2:1 track-to-stone ratio, colors, depth, supports, speed, and display period are engineered because Brown supplies no values and the official page has no canvas animation',
+          'the upper 36:18 complementary bevel pair, exact 2:1 track-to-stone ratio, colors, depth, supports, speed, and display period are engineered because Brown supplies no values and the official page has no canvas animation',
       },
       officialPage: 'https://507movements.com/mm_375.html',
       primaryScan: {
@@ -568,12 +573,12 @@ function pairedEdgeRunnerMill(movement) {
     timeline: {
       demonstrationPeriod: carrierPeriod,
       note:
-        'one input cycle contains three pinion turns, one vertical-carrier revolution, and two counter-turns of each indexed runner, so every visible rotational index closes exactly',
+        'one input cycle contains two pinion turns, one vertical-carrier revolution, and two counter-turns of each indexed runner, so every visible rotational index closes exactly',
     },
     transmission: {
       bevelRatio: 1 / bevelRatio,
       bevelVelocityLaw:
-        'the 12-tooth horizontal pinion turns three times for one turn of the 36-tooth vertical-shaft bevel gear',
+        'the 18-tooth horizontal pinion turns twice for one turn of the 36-tooth vertical-shaft bevel gear',
       runnerSpinLaw:
         'each runner spins about its own outward radial axis at -trackRadius/runnerRadius times carrier speed',
       runnerSpinRatio: -runnerRadiusRatio,
@@ -617,6 +622,24 @@ function carryShaftInOverheadFrame(root) {
   top.position.z = 0;
   for (const post of b.framePosts) post.position.z = 0;
   if (b.inputBearingSupport) b.inputBearingSupport.position.z = 0;
+  // p95: the 36:18 pair raises the pinion axis to the apex; the standard's
+  // riser climbs from the crossbar into the input bearing's wall (0.06 into
+  // it, as before, and 0.02 clear of the shaft), and the
+  // vertical shaft runs from its lower bearing to just above the crown hub.
+  const apex = root.userData.geometry.bevelApex;
+  if (b.inputBearingSupport) {
+    const s = b.inputBearingSupport, bottom = 1.42, riserTop = apex.y - 0.10;
+    s.geometry.dispose();
+    s.geometry = new THREE.BoxGeometry(0.25, riserTop - bottom, 0.50);
+    s.position.y = (bottom + riserTop) / 2;
+  }
+  {
+    const shaft = b.verticalShaft, bottom = -1.70;
+    const top = apex.y - b.largeBevelGear.userData.innerDistance + 0.06;
+    shaft.geometry.dispose();
+    shaft.geometry = new THREE.CylinderGeometry(shaftRadius, shaftRadius, top - bottom, 32);
+    shaft.position.y = (top + bottom) / 2;
+  }
   const boss = new THREE.Mesh(
     boredLatheGeometry([
       // Stands 0.03 proud of the crossbar top, clear of the bevel's body.

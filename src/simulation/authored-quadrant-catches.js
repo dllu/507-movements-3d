@@ -181,7 +181,7 @@ function sourceHandGear(movementId) {
     return {
       phase, tappetTop, upperAngle, lowerAngle,
       upperLatchedByLowerQuadrant: upperAngle < 1,
-      lowerLatchedByUpperQuadrant: lowerAngle > 60 && upperAngle > 3,
+      lowerLatchedByUpperQuadrant: lowerAngle > 45 && upperAngle > 3,
     };
   };
   const update = (time) => {
@@ -207,7 +207,7 @@ function sourceHandGear(movementId) {
     : 'ascending-piston-tappet-trips-lower-quadrant-handle-releases-upper-backweighted-quadrant-handle-and-reverses-four-valves';
   root.userData.fidelity = 'authored';
   root.userData.variant = is184 ? 'source-184-reflected-top-of-cylinder-initial-pose' : 'source-183-ascending-stroke-initial-pose';
-  root.userData.reconstructionNote = 'The quadrants latch through their drawn concentric rims only: the wing\'s toe rests on the lower band\'s rim, and after the transfer the band\'s end rests against the dropped wing. Tappet contacts are solved from the outlines; the weighted drops, the valve stops and the two throws of the handles (the caption\'s "throws the catches and handles") are timed kinematic laws, and forces are not simulated. 184 is the 183 gear reflected top to bottom; its back-weight rods hang from Brown\'s mid-height pins on plain arms behind the piston rod and the wing.';
+  root.userData.reconstructionNote = 'The quadrants latch through their drawn concentric rims only: the wing\'s toe rests on the lower band\'s rim, and after the transfer the band\'s end rests against the dropped wing. Tappet contacts are solved from the outlines; the weighted drops, the valve stops and the two throws of the handles (the caption\'s "throws the catches and handles") are timed kinematic laws, and forces are not simulated. Deliberate departure: the lower quadrant is cast 14° clockwise of Brown\'s relative to his ball lever, so the handle is held at 59.9° with the ball clear of the upper boss (with Brown\'s castings the hold is 73.9°, the lever pointing straight at the upper shaft). 184 is the 183 gear reflected top to bottom; its back-weight rods hang from Brown\'s mid-height pins on plain arms behind the piston rod and the wing.';
   root.userData.hideGround = true;
   root.userData.minimumDisplayCycleSeconds = 12;
   root.userData.cameraDirection = new THREE.Vector3(0, 0, 18);

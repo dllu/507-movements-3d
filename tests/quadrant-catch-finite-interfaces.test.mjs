@@ -6,7 +6,7 @@ import * as THREE from 'three';
 import { createAuthoredQuadrantCatchMovement as create } from '../src/simulation/authored-quadrant-catches.js';
 import { quadrantCatchMotion as motion } from '../src/simulation/baked/quadrant-catch-motion.js';
 import {
-  handleOverlap, quadrantCatchParts, tappetSource, transformPolygon, deg, upperFreeStop,
+  handleOverlap, hubRadius, quadrantCatchParts, tappetSource, transformPolygon, deg, upperFreeStop,
 } from '../src/simulation/quadrant-catch-finite-parts.js';
 import { solidSurface, surfacePoints } from './helpers/solid-surface.mjs';
 
@@ -52,13 +52,20 @@ test('183/184: the tappet lifts the lower handle, the quadrants hold and release
   // band's end has passed its toe; then the upper drops onto its stop.
   const drop = rows.findIndex(([, u]) => u > 1e-3);
   assert.ok(drop > 0 && drop < n / 2);
-  assert.ok(rows[drop][2] > 74, `upper released at lower ${rows[drop][2]}`);
+  assert.ok(rows[drop][2] > 60, `upper released at lower ${rows[drop][2]}`);
   assert.ok(rows.slice(0, drop).every(([, u]) => u === 0), 'upper held until release');
   // At the top the lower handle is held raised against the wing, clear of
   // the tappet's path, and the upper rests on its stop.
   const top = rows[n / 2];
   assert.equal(top[1], upperFreeStop);
-  assert.ok(top[2] > 70, `lower held at ${top[2]}`);
+  assert.ok(top[2] > 58 && top[2] < 62, `lower held at ${top[2]}`);
+  // p95: the quadrant is cast 14 deg clockwise of Brown's relative to the
+  // ball lever, so the held ball lever stands clear of the upper boss (with
+  // Brown's castings it pointed straight at the upper shaft, ball on the boss).
+  const { upper: up, lower: lo } = quadrantCatchParts();
+  const lever = transformPolygon(lo.parts.lever.poly, lo.pivot, top[2] * deg)[0][0];
+  const gap = Math.min(...lever.map(([x, y]) => Math.hypot(x - up.pivot[0], y - up.pivot[1]))) - hubRadius.upper;
+  assert.ok(gap > 10, `held ball lever ${gap.toFixed(1)} px from the upper boss`);
   // Down stroke: the tappet strikes the upper C-arm and turns it back; only
   // then does the lower handle fall.
   const struck = rows.findIndex(([, u], i) => i > n / 2 && u < upperFreeStop - 0.5);

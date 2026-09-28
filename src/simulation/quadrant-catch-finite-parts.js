@@ -25,6 +25,9 @@
 //   handle back and throws it clear; the lower handle falls onto the tappet,
 //   rides it down, and the band slides back under the wing's toe.
 // The rods, weights, valve stops and throw heights are inferred (undrawn).
+// Departure: the lower quadrant is turned 14 deg clockwise on its hub relative
+// to Brown's ball lever (see lowerCastingTurn), so the held lever clears the
+// upper boss.
 import polygonClipping from 'polygon-clipping';
 
 export const deg = Math.PI / 180;
@@ -190,14 +193,26 @@ const leverLower = [[75, 313.5], [150, 313.5], [174, 314], [186, 321], [196, 334
 const leverOutline = () => union(P([...smooth(leverUpper), ...smooth(leverLower).reverse()]), circlePoly(knob.center, knob.radius, 64),
   circlePoly(PL, hubRadius.lower - 2, 96));
 
+const turnAbout = (mp, c, a) => (a ? transformPolygon(mp, c, a * deg) : mp);
+// Deliberate departure (pass 95): with Brown's castings the held lower handle
+// stands at 73.9 deg, where the band's left end rests on the wing's rim (an
+// arc about the upper shaft, so the hold does not depend on the wing's drop);
+// the ball lever then points straight at the upper shaft and its ball lies
+// across the upper boss for 45% of the cycle. The quadrant (band, web and
+// window) is therefore cast 14 deg clockwise of Brown's on the lower hub,
+// relative to his ball lever: the band's end passes the wing 14 deg sooner,
+// the hold is 59.9 deg, and the ball stands 15 px clear of the boss, over
+// the C-arm. The ball lever keeps Brown's pose; the latch is unchanged.
+export const lowerCastingTurn = Object.freeze({ quadrant: 14, lever: 0 });
+
 export function quadrantCatchParts() {
   const upper = { pivot: PU, dir: +1, limits: [-30, upperFreeStop], parts: {} };
   const lower = { pivot: PL, dir: -1, limits: [0, 80], parts: {} };
   upper.parts.hub = { planes: 'BAF', poly: circlePoly(PU, hubRadius.upper) };
   lower.parts.hub = { planes: 'WRBAFH', poly: circlePoly(PL, hubRadius.lower) };
   // The band's rims are true arcs about the lower shaft.
-  lower.parts.quadrant = { planes: 'F', poly: polygonClipping.intersection(lowerQuadrantOutline(), circlePoly(PL, bandRadius, 512)) };
-  lower.parts.lever = { planes: 'H', poly: leverOutline() };
+  lower.parts.quadrant = { planes: 'F', poly: turnAbout(polygonClipping.intersection(lowerQuadrantOutline(), circlePoly(PL, bandRadius, 512)), PL, lowerCastingTurn.quadrant) };
+  lower.parts.lever = { planes: 'H', poly: turnAbout(leverOutline(), PL, lowerCastingTurn.lever) };
   lower.parts.weightArm = { planes: 'W', poly: tangentLever(PL, 24, eyes.lower, eyeRadius) };
   // The wing's outer rim is a true arc about the upper shaft; its toe is cut
   // to the band's rim, on which it rests in the plate pose.
@@ -266,7 +281,7 @@ const smoothStep = (x) => { const v = Math.min(1, Math.max(0, x)); return v * v 
 // Inferred: how far the blow throws the lower handle, the upper valve stop,
 // how far the return blow throws the upper handle, and their durations
 // (samples of a 720-sample cycle at samples = 720).
-export const cycleSettings = Object.freeze({ lowerThrow: 76, throwFraction: 8 / 360, dropFraction: 16 / 360,
+export const cycleSettings = Object.freeze({ lowerThrow: 76 - lowerCastingTurn.quadrant, throwFraction: 8 / 360, dropFraction: 16 / 360,
   backFraction: 10 / 360, upperBack: -1.5 });
 
 // The lower handle falls from `from` against the wing at `u` (no tappet).

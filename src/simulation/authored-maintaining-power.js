@@ -429,6 +429,15 @@ const CLICK_FACE_UNDERCUT = THREE.MathUtils.degToRad(10);
 // into the root and rides a little up the next back), then the chain load
 // turns it back onto the click at the start of going.
 const RATCHET_OVERSHOOT = 0.05;
+// The overshoot and settle as a function of the demonstration phase: p runs
+// past the seat through winding and settles back onto the click at the start
+// of going. The chain kinematics carry it (see rawStateAtTime), so the cord
+// over p and both weights move with the settle.
+function ratchetSlipAt(phase) {
+  return phase < 0.5
+    ? RATCHET_OVERSHOOT * (1 - smoothstep(Math.min(1, phase / 0.05)))
+    : RATCHET_OVERSHOOT * smoothstep((phase - 0.5) / 0.5);
+}
 const RATCHET_ROOT_RATIO = 0.74;
 // The click's eye clears the tooth tips it overhangs.
 const CLICK_EYE_RADIUS = 0.1;
@@ -627,18 +636,16 @@ function seatClickAndRatchet(root) {
     update(angle) { old.group.rotation.z = playbackAngleAt(angle); },
   };
   b.finiteClicks = [follower];
-  // The overshoot and settle, as a wheel angle added to the chain's p.
-  const slipAt = (phase) => (phase < 0.5
-    ? RATCHET_OVERSHOOT * (1 - smoothstep(Math.min(1, phase / 0.05)))
-    : RATCHET_OVERSHOOT * smoothstep((phase - 0.5) / 0.5));
-  root.userData.ratchetSlipAt = slipAt;
+  // The overshoot and settle are already in the chain's p (rawStateAtTime
+  // carries them through the cord and both weights).
+  root.userData.ratchetSlipAt = ratchetSlipAt;
   root.userData.updateClockInterfaces = (state) => {
-    const angle = state.pulleys.A.angle + slipAt(state.phase);
+    const angle = state.pulleys.A.angle;
     setRotorAngle(b.ratchetPulley, angle);
     follower.update(angle);
     state.renderedRatchetAngle = angle;
   };
-  root.userData.reconstructionNote = 'The endless chain preserves its length and no-slip travel through the prescribed winding cycle. Grooves and moving journals have finite clearances. The click rests on the ratchet by its own weight (exact outline contact, baked offline); each winding carries p 0.05 rad past the seat so the click drops fully into the root, and p then settles back onto the click at the start of going. That settle is applied to p alone: the chain\'s matching take-up at w is not shown. Weight forces, friction and impact are not dynamically validated.';
+  root.userData.reconstructionNote = 'The endless chain preserves its length and no-slip travel through the prescribed winding cycle. Grooves and moving journals have finite clearances. The click rests on the ratchet by its own weight (exact outline contact, baked offline); each winding carries p 0.05 rad past the seat so the click drops fully into the root, and p then settles back onto the click at the start of going. The overshoot and settle are part of the chain\'s kinematics: with P held to its going law, the cord runs over p with it and the main weight W and the tension weight w move oppositely by the matching amount (W drops as its load turns p back; w takes up). Weight forces, friction and impact are not dynamically validated.';
   Object.assign(root.userData.geometry, {
     clickNoseRadius: CLICK_NOSE_RADIUS,
     clickFaceUndercut: CLICK_FACE_UNDERCUT,
@@ -811,7 +818,7 @@ function endlessChainMaintainingPower(movement) {
       }
       distance += arcLength;
     }
-    if (!includeCurve) return { totalLength: distance };
+    if (!includeCurve) return { centers, contacts, totalLength: distance };
     const curve = new ConstantSpeedChainCurve(segmentRecords);
     const intersection = planarSegmentIntersection(
       edges[1].start,
@@ -873,7 +880,7 @@ function endlessChainMaintainingPower(movement) {
     referenceLargeY,
   );
 
-  const solveSmallPulleyY = (largeY) => {
+  const solveSmallPulleyY = (largeY, lowest = referenceSmallY) => {
     if (Math.abs(largeY - referenceLargeY) < 1e-14) {
       return referenceSmallY;
     }
@@ -883,7 +890,7 @@ function endlessChainMaintainingPower(movement) {
       largeY,
       false,
     ).totalLength;
-    let low = referenceSmallY;
+    let low = lowest;
     let high = 0.70;
     let lowValue = lengthAt(low) - targetChainLength;
     let highValue = lengthAt(high) - targetChainLength;
@@ -945,7 +952,7 @@ function endlessChainMaintainingPower(movement) {
     throw new RangeError('Cycle advance must keep the going wheel moving.');
   }
 
-  const rawStateAtTime = (time) => {
+  const baseStateAtTime = (time) => {
     const cycleIndex = Math.floor(time / demonstrationPeriod);
     const localTime = time - cycleIndex * demonstrationPeriod;
     const phase = localTime / demonstrationPeriod;
@@ -1033,6 +1040,76 @@ function endlessChainMaintainingPower(movement) {
       smallPulleyY: smallY,
       toothProgress,
       windingProgress: isWinding ? smoothstep(2 * phase - 1) : 0,
+    };
+  };
+
+  // p's overshoot and settle, carried by the chain: P keeps its going law,
+  // p turns by the slip, and the weights take the difference (the main
+  // weight's pulley is moved and the tension pulley follows from the chain's
+  // length). Secant steps from a fixed-rate guess; exact at zero slip.
+  // The tension pulley's height for a slightly moved main pulley, by secant
+  // steps on the chain length from the unslipped state (a few path builds
+  // instead of a full bisection).
+  const smallPulleyYNear = (largeY, startY) => {
+    const excess = (smallY) => buildPath(topY, smallY, largeY, false).totalLength - targetChainLength;
+    let y0 = startY, f0 = excess(y0);
+    let y1 = startY + (largeY > referenceLargeY ? -1 : 1) * 1e-3, f1 = excess(y1);
+    for (let iteration = 0; iteration < 12 && Math.abs(f1) > 1e-13 && f1 !== f0; iteration += 1) {
+      const y2 = y1 - f1 * (y1 - y0) / (f1 - f0);
+      y0 = y1; f0 = f1; y1 = y2; f1 = excess(y1);
+    }
+    if (!(Math.abs(f1) <= 1e-11)) return solveSmallPulleyY(largeY, referenceSmallY - 0.3);
+    return y1;
+  };
+  const slipPathFor = (base, largeY, includeCurve = true) => {
+    const path = buildPath(topY, smallPulleyYNear(largeY, base.smallPulleyY), largeY, includeCurve);
+    const chainTravel = chainTravelForPulleyAngle(path, 'B', base.pulleys.B.angle);
+    return { path, chainTravel, turn: pulleyAngleForPath(path, 'A', chainTravel) - base.pulleys.A.angle };
+  };
+  const slipLiftRate = (() => {
+    const base = baseStateAtTime(0.3 * demonstrationPeriod);
+    const step = 1e-3;
+    return step / slipPathFor(base, base.largePulleyY + step, false).turn;
+  })();
+  const rawStateAtTime = (time) => {
+    const base = baseStateAtTime(time);
+    const slip = ratchetSlipAt(base.phase);
+    if (slip === 0) return { ...base, ratchetSlip: 0 };
+    // Secant steps on the main pulley's shift until p has turned by the slip.
+    let x0 = 0, f0 = -slip;
+    let x1 = slipLiftRate * slip, f1 = slipPathFor(base, base.largePulleyY + x1, false).turn - slip;
+    for (let iteration = 0; iteration < 6 && Math.abs(f1) > 1e-14 && f1 !== f0; iteration += 1) {
+      const x2 = x1 - f1 * (x1 - x0) / (f1 - f0);
+      x0 = x1; f0 = f1; x1 = x2;
+      f1 = slipPathFor(base, base.largePulleyY + x1, false).turn - slip;
+    }
+    const { path, chainTravel } = slipPathFor(base, base.largePulleyY + x1);
+    const pulleys = {};
+    for (const key of ['A', 'B', 'S', 'L']) {
+      const current = path.contacts[key];
+      const reference = referencePath.contacts[key];
+      const angle = pulleyAngleForPath(path, key, chainTravel);
+      const entryAngleDelta = contactAngleDelta(path, key);
+      const exitAngleDelta = entryAngleDelta + current.sweep - reference.sweep;
+      pulleys[key] = {
+        angle,
+        center: path.centers[key].clone(),
+        contact: current,
+        entrySlipError: (current.entryDistance - reference.entryDistance - chainTravel)
+          - radii[key] * current.sweepSign * (entryAngleDelta - angle),
+        exitSlipError: (current.exitDistance - reference.exitDistance - chainTravel)
+          - radii[key] * current.sweepSign * (exitAngleDelta - angle),
+        radius: radii[key],
+      };
+    }
+    return {
+      ...base,
+      chainTravel,
+      largePulleyY: path.centers.L.y,
+      path,
+      pulleys,
+      ratchetSlip: slip,
+      smallPulleyY: path.centers.S.y,
     };
   };
 

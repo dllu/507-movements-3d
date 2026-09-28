@@ -166,3 +166,18 @@ test('movement 483 renders every joint on its pin and loops seamlessly', () => {
   near(b.cumulativeMeasuredVolume, geometry.volumePerRevolution, 1e-12, 'four space volumes per turn');
   disposeModel(model.root);
 });
+
+test('movement 483 hides A’s undrawn flag rod: inside A’s outer end board below, straight behind the outlet column above the shelf (pass 95)', () => {
+  const { model } = movementModel();
+  const { geometry } = model.root.userData;
+  const L = geometry.layout;
+  const [rodX, rodZ] = geometry.linkages.left.rod;
+  const rodRadius = 0.055;
+  // Within the outer end board of A (x from the wall to the end-board face).
+  assert.ok(rodX - rodRadius > -L.wallInnerX && rodX + rodRadius < -L.endBoardFaceX, 'rod inside the end board');
+  assert.ok(rodZ > L.backZ && rodZ < L.bellowsHalfDepth, 'rod within the board depth');
+  // Behind the outlet column (outer radius 0.20) in the front view.
+  assert.ok(Math.abs(rodX - L.columnCenter[0]) + rodRadius < 0.20 - 0.02, 'column covers the rod');
+  assert.ok(rodZ < L.columnCenter[1] - 0.20, 'rod behind the column');
+  disposeModel(model.root);
+});

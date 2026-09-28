@@ -19,7 +19,7 @@ test('375 actual runner/track solids and independent journals clear over the com
 test('375 finite trough supports the rolling contact and bearings connect to the frame',()=>{
  const m=models[0],b=m.root.userData.blocks;m.update(0);m.root.updateMatrixWorld(true);
  const floor=new T.Vector3(1.44,-1.42,0);assert.ok(inside(b.pan,floor));assert.ok(!inside(b.pan,new T.Vector3(1.44,-1.38,0)));assert.ok(!inside(b.pan,new T.Vector3(0,-1.5,0)));
- joined(b.lowerBearing,b.lowerBase,new T.Vector3(.15,-1.755,0));joined(b.pan,b.lowerBase,new T.Vector3(1.44,-1.755,0));joined(b.inputBearing,b.inputBearingSupport,new T.Vector3(2.45,2.03,0));joined(b.inputBearingSupport,b.frameTop,new T.Vector3(2.45,1.5,-.2));
+ joined(b.lowerBearing,b.lowerBase,new T.Vector3(.15,-1.755,0));joined(b.pan,b.lowerBase,new T.Vector3(1.44,-1.755,0));joined(b.inputBearing,b.inputBearingSupport,new T.Vector3(2.45,new T.Box3().setFromObject(b.inputBearing).min.y+.03,0));joined(b.inputBearingSupport,b.frameTop,new T.Vector3(2.45,1.5,-.2));
 });
 test('376 bored journal arms and horse body clear the axle at every wheel pose',()=>{
  const m=models[1],b=m.root.userData.blocks;for(let i=0;i<=64;i++){m.update(i/16);m.root.updateMatrixWorld(true);for(const part of[...b.fixedBearings,...b.bearingArms,b.torso,b.neck,b.head].filter(Boolean))assert.ok(clearance(part,b.axle)>-2e-6,part.userData.role);}

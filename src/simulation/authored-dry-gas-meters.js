@@ -34,7 +34,7 @@ import {PALETTE, markShadows, matte} from './primitives.js';
 // ports under the cup exhaust (to the outlet column through a passage cored
 // in the shelf), the ports outside it admit the gas that fills the case.
 // The right flag rod stands in front of the bellows as Brown draws it; the
-// left one stands behind the left chamber, where the plate's pins point.
+// left one stands in A's outer end board, behind the outlet column.
 
 const FULL_TURN = Math.PI * 2;
 const px = (value) => (value - 262) / 50;
@@ -90,10 +90,16 @@ const FLAG_LINKAGES = Object.freeze({
     crankOffset: 0, branch: 0,
     flagOffset: THREE.MathUtils.degToRad(-16), flagArm: 1.035, flagLink: 0.67, pinSide: -1,
   },
+  // Pass 95: A's flag rod stands at the left wall, in a bore through A's
+  // outer end board and straight behind the outlet column, so from the front
+  // the board hides it beside the leather and the column hides it above the
+  // shelf. (It stood behind chamber A at x -1.90, where it showed above the
+  // shelf, between the bellows and the shelf and through the V notches.)
+  // Its flag reaches forward and right to a short link on the plate's pin.
   left: {
-    rod: [-1.90, -1.35], armLength: 1.0,
-    crankOffset: THREE.MathUtils.degToRad(85), branch: 0,
-    flagOffset: THREE.MathUtils.degToRad(-10.8), flagArm: 1.04, flagLink: 0.66, pinSide: 1,
+    rod: [-2.62, -0.35], armLength: 1.2,
+    crankOffset: THREE.MathUtils.degToRad(280), branch: 1,
+    flagOffset: THREE.MathUtils.degToRad(108), flagArm: 1.07, flagLink: 0.72, pinSide: 1,
   },
 });
 
@@ -455,7 +461,8 @@ function dryGasMeter(movement) {
   spaces.forEach((space, k) => {
     const [x0, x1] = boardSpans[space.key];
     const {boardY, face} = boardPassages[space.key];
-    const outline = planRect(x0, x1, L.backZ, L.bellowsHalfDepth);
+    // A's outer end board is bored for A's flag rod.
+    const outline = clip.difference(planRect(x0, x1, L.backZ, L.bellowsHalfDepth), planCircle(left.rod, 0.075, 48));
     const passage = clip.union(
       planCapsule([space.board, L.backZ - 0.1], [space.board, boardPassageZ], bore),
       planCapsule([space.board, boardPassageZ], [face + Math.sign(face - space.board) * 0.1, boardPassageZ], bore));
@@ -663,7 +670,7 @@ function dryGasMeter(movement) {
       'Two bellows chambers A and A′ stand either side of a central partition. Each is closed at both ends by fixed boards and divided by its moving plate into an outer and an inner measuring space, so the plate is driven one way by gas admitted on one side while the other side is emptied. Each plate works a flag on a vertical flag rod; an arm on top of each flag rod drives, through a link, a crank pin on the spindle of valve B, the two pins a quarter turn apart, so the plates keep a quarter stroke apart and the spindle turns continuously. B is a D-shaped cup turning on a seat in the shelf with one port for each measuring space round a central exhaust port: the ports under the cup are open to the exhaust, which runs through a passage in the shelf to the tall outlet column; the ports outside it admit the gas that fills the case. Each revolution of the spindle passes the four space volumes; the dial-work in the box at the upper right counts revolutions.',
     motion: {spindleTurnsPerCycle: 1, valveBRotation: 'continuous, with the crank spindle'},
     reconstruction:
-      'Brown’s plate shows one elevation. The flag and crank linkage, the left flag rod behind chamber A, the four port ducts, their passages cored in the thick back wall and in the fixed boards (which run back to that wall), the cored exhaust passage, the inlet through the back of the case and the rounded-rectangle bellows section are inferred; the crank radius, arm and link lengths are chosen so both rocking flag rods can turn one crank, and the port angles are derived from the plate motion so each space exhausts while it closes.',
+      'Brown’s plate shows one elevation. The flag and crank linkage, the left flag rod in A’s outer end board behind the outlet column, the four port ducts, their passages cored in the thick back wall and in the fixed boards (which run back to that wall), the cored exhaust passage, the inlet through the back of the case and the rounded-rectangle bellows section are inferred; the crank radius, arm and link lengths are chosen so both rocking flag rods can turn one crank, and the port angles are derived from the plate motion so each space exhausts while it closes.',
     sourceAnimation: {
       available: false,
       officialPageMarksAnimationUnavailable: true,

@@ -185,3 +185,23 @@ test('movement 63 draws every part whole and solid, with no dashed outline or un
   assert.ok(dropBody.geometry.boundingBox.min.y < (-tip[1] - hy) * k + 1e-6, 'the leg tip is solid for the pins');
   assert.ok(dropBody.geometry.boundingBox.max.x > (878 - hx) * k - 1e-6);
 });
+
+test('movement 63 carries the stop pin and the spring clamp on one fixed bracket behind the drop', () => {
+  const model = build();
+  const { geometry } = model.root.userData;
+  const byRole = (role) => model.root.children.find((child) => child.userData.role === role);
+  const bracket = byRole('fixed-bracket-carrying-stop-pin-and-spring-clamp');
+  const pin = byRole('fixed-drop-stop-pin');
+  const clamp = byRole('fixed-clamp-block-holding-leaf-spring-end');
+  assert.ok(bracket && pin && clamp, 'bracket, stop pin and clamp exist');
+  const [bracketBack, bracketFront] = zRange(bracket);
+  const [pinBack] = zRange(pin);
+  const [clampBack] = zRange(clamp);
+  assert.ok(bracketFront < geometry.z.dropBack - 0.02, 'the bracket lies behind the drop\'s plane');
+  assert.ok(pinBack < bracketFront && pinBack > bracketBack, 'the stop pin is set into the bracket');
+  assert.ok(clampBack < bracketFront && clampBack > bracketBack, 'the clamp is set into the bracket');
+  // The pin stands at the bracket's round end, concentric with it.
+  const box = new THREE.Box3().setFromObject(bracket);
+  assert.ok(box.containsPoint(new THREE.Vector3(pin.position.x, pin.position.y, (bracketBack + bracketFront) / 2)));
+  assert.ok(box.containsPoint(new THREE.Vector3(clamp.position.x, clamp.position.y, (bracketBack + bracketFront) / 2)));
+});

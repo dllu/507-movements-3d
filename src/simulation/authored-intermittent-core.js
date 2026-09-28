@@ -2010,25 +2010,43 @@ function snapActionStarCounter() {
   springLeaf.userData.role = 'flat-leaf-spring-carrying-drop';
 
   // Brown's fixed stop pin under the tail. Brown draws it and the striker as
-  // open circles; the model shows plain dark-steel pins. Brown draws no
-  // strap or bracket: the stop pin is a plain fixed stud spanning the drop's
-  // depth, and the one straight flat leaf spring ends in a small clamp block
-  // in its own plane (Brown breaks the spring off at the plate edge; the
-  // clamp gives it a real, held end without a second parallel bar).
+  // open circles; the model shows plain dark-steel pins. The one straight
+  // flat leaf spring ends in a small clamp block in its own plane (Brown
+  // breaks the spring off at the plate edge; the clamp gives it a real, held
+  // end without a second parallel bar). Brown draws no support for the stop
+  // pin; p95: one plain flat bracket behind the drop's plane carries both
+  // fixed points, so the pin reads as a stud on the spring's fixed mounting
+  // instead of standing free. Its ends are round, concentric with the pin
+  // and the clamp; the drop never reaches its plane.
   const steelPinMaterial = matte(PALETTE.frame, { metalness: 0.25, roughness: 0.5 });
   const frameMaterial = matte(PALETTE.frame, { metalness: 0.1, roughness: 0.7 });
-  const stopPin = cylinder(L.stopPinRadius * k, z.dropBack - 0.03, z.dropFront + 0.03, steelPinMaterial, 28);
+  const bracketFront = z.dropBack - 0.05, bracketBack = bracketFront - 0.08;
+  const stopPin = cylinder(L.stopPinRadius * k, bracketFront - 0.01, z.dropFront + 0.03, steelPinMaterial, 28);
   const stopPoint = toWorld(mechanism.stopPin), clampPoint = toWorld(L.springClamp);
   stopPin.position.x = stopPoint.x;
   stopPin.position.y = stopPoint.y;
   stopPin.userData.fixed = true;
   stopPin.userData.role = 'fixed-drop-stop-pin';
-  const clampBlock = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 0.1), frameMaterial);
-  clampBlock.position.set(clampPoint.x, clampPoint.y, springPlaneZ);
+  const clampFront = springPlaneZ + 0.05;
+  const clampBlock = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, clampFront - (bracketFront - 0.01)), frameMaterial);
+  clampBlock.position.set(clampPoint.x, clampPoint.y, (clampFront + bracketFront - 0.01) / 2);
   clampBlock.userData.fixed = true;
   clampBlock.userData.role = 'fixed-clamp-block-holding-leaf-spring-end';
+  const bracketHalfWidth = L.stopPinRadius * k + 0.035;
+  const bracketAxis = new THREE.Vector2().subVectors(clampPoint, stopPoint);
+  const bracketLength = bracketAxis.length();
+  const bracketShape = new THREE.Shape();
+  bracketShape.absarc(0, 0, bracketHalfWidth, Math.PI / 2, Math.PI * 3 / 2, false);
+  bracketShape.absarc(bracketLength, 0, bracketHalfWidth, -Math.PI / 2, Math.PI / 2, false);
+  bracketShape.closePath();
+  const stopBracket = slab(bracketShape, bracketBack, bracketFront, frameMaterial);
+  stopBracket.position.x = stopPoint.x;
+  stopBracket.position.y = stopPoint.y;
+  stopBracket.rotation.z = Math.atan2(bracketAxis.y, bracketAxis.x);
+  stopBracket.userData.fixed = true;
+  stopBracket.userData.role = 'fixed-bracket-carrying-stop-pin-and-spring-clamp';
 
-  root.add(clampBlock, stopPin, star, driver, drop, springLeaf);
+  root.add(stopBracket, clampBlock, stopPin, star, driver, drop, springLeaf);
 
   // The steady contact solution for one pin event, baked offline.
   const fingerprint = snapCounterMotionFingerprint();
@@ -2097,6 +2115,7 @@ function snapActionStarCounter() {
     star,
     starShaft,
     stopPin,
+    stopBracket,
     striker,
   };
   root.userData.geometry = {
@@ -2109,7 +2128,7 @@ function snapActionStarCounter() {
   };
   root.userData.snapCounter = { fingerprint, mechanism, motion, toWorld };
   root.userData.stateAtTime = stateAtTime;
-  root.userData.reconstructionNote = 'Follows Brown\'s plate and Sam Gallagher\'s reconstruction: the spring carries the drop, which swings about the spring\'s virtual hinge; the broad hooked pawl hangs on the drop\'s screw and the striker stops it rising. The pins strike only the drop\'s broad pointed leg (Brown\'s dashed wedge) and lift the whole drop; the pawl rides with it, its nose sliding out of its space and over the next point into the next space; when the pin escapes past the leg\'s tip the spring throws the drop down and the pawl turns the star one point. The motion is a baked quasi-static planar contact solution with finite fall speeds; the pawl works flush with the star, in front of the pins\' ends.';
+  root.userData.reconstructionNote = 'Follows Brown\'s plate and Sam Gallagher\'s reconstruction: the spring carries the drop, which swings about the spring\'s virtual hinge; the broad hooked pawl hangs on the drop\'s screw and the striker stops it rising. The pins strike only the drop\'s broad pointed leg (Brown\'s dashed wedge) and lift the whole drop; the pawl rides with it, its nose sliding out of its space and over the next point into the next space; when the pin escapes past the leg\'s tip the spring throws the drop down and the pawl turns the star one point. The motion is a baked quasi-static planar contact solution with finite fall speeds; the pawl works flush with the star, in front of the pins\' ends. The stop pin and the spring\'s clamp stand on one plain fixed bracket behind the drop\'s plane (undrawn; added so the pin is not a free-standing stud).';
 
   const update = (time) => {
     const state = stateAtTime(time);

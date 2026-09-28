@@ -433,7 +433,7 @@ test('movement 333 renderer binds every named pin and spatial link', () => {
       ), 2e-15, `long link at W at ${time}`);
     vector3Near(blocks.leftRadiusEndAnchor.getWorldPosition(
       new THREE.Vector3()), new THREE.Vector3(
-        state.pointM.x, state.pointM.y, 0.36,
+        state.pointM.x, state.pointM.y, -0.22,
       ), 8e-16, `left radius at M at ${time}`);
     vector3Near(blocks.rightUpperRockerEndAnchor.getWorldPosition(
       new THREE.Vector3()), new THREE.Vector3(
@@ -457,7 +457,7 @@ test('movement 333 renderer binds every named pin and spatial link', () => {
       ), 1.1e-15, `lower radius at Q at ${time}`);
     vector3Near(blocks.leftPistonPointAnchor.getWorldPosition(
       new THREE.Vector3()), new THREE.Vector3(
-        state.pointP.x, state.pointP.y, -0.10,
+        state.pointP.x, state.pointP.y, 0.30,
       ), 0, `left piston at P at ${time}`);
     vector3Near(contacts.longLinkAtM.point,
       new THREE.Vector3(state.pointM.x, state.pointM.y,
@@ -542,21 +542,30 @@ function p89Box(model, role) {
   return found.map((mesh) => new THREE.Box3().setFromObject(mesh));
 }
 
-test('333 pin P ends 0.01 inside the rod eye, not flush in its back face', () => {
+test('333 pin P ends 0.01 inside the beam eye and stands 0.02 proud of the rod (p95)', () => {
   const model = createMovementModel(catalog.movements[332]);
   model.update(0); model.root.updateMatrixWorld(true);
   const [rod] = p89Box(model, 'left-P-rod-running-on-straight-past-the-plate');
   const [pin] = p89Box(model, 'common-working-pin-P');
-  assert.ok(Math.abs(pin.min.z - (rod.min.z + 0.01)) < 1e-6, `${pin.min.z} ${rod.min.z}`);
+  const beam = p89Box(model, 'broad-beam-P-M-W-with-large-boss-at-M')[0];
+  assert.ok(Math.abs(pin.min.z - (beam.min.z + 0.01)) < 1e-6, `${pin.min.z} ${beam.min.z}`);
+  assert.ok(Math.abs(pin.max.z - (rod.max.z + 0.02)) < 1e-6, `${pin.max.z} ${rod.max.z}`);
 });
 
-test('333 P runs behind pedestal O: pin P comes down past O, so it must stay clear of O in depth', () => {
+test('333 P rod runs in front of pedestal O (p95): O, its radius bar and pin P never share depth', () => {
   const model = createMovementModel(catalog.movements[332]);
   model.update(0); model.root.updateMatrixWorld(true);
   const [pin] = p89Box(model, 'common-working-pin-P');
+  const [rod] = p89Box(model, 'left-P-rod-running-on-straight-past-the-plate');
+  const beam = p89Box(model, 'broad-beam-P-M-W-with-large-boss-at-M')[0];
   for (const role of ['left-pivot-O-fixed-bearing-pin', 'left-pivot-O-fixed-bearing-bracket', 'left-pivot-O-frame-block-under-lug']) {
     const [box] = p89Box(model, role);
-    assert.ok(pin.max.z < box.min.z, `pin P stays behind ${role}`);
+    assert.ok(box.max.z < pin.min.z, `${role} lies behind pin P`);
+    assert.ok(box.max.z < beam.min.z, `${role} lies behind the beam`);
+    assert.ok(box.max.z < rod.min.z, `${role} lies behind the rod`);
   }
+  const radiusBar = new THREE.Box3().setFromObject(model.root.userData.blocks.leftRadiusBar);
+  assert.ok(radiusBar.max.z < beam.min.z, 'O-M radius bar behind the beam');
+  assert.ok(beam.max.z < rod.min.z, 'rod in front of the beam');
 });
 

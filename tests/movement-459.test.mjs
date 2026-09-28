@@ -541,3 +541,30 @@ test('movement 459 pass 92: the tappet pivot stands centred in the round head of
   assert.ok(box.max.z > zMax + 0.02, 'pin end stands proud of the post head');
   disposeModel(model.root);
 });
+
+test('movement 459 star-wheel axles are carried by one flat rear standard behind the pulleys (pass 95)', () => {
+  const model = createMovementModel(catalog.movements[458]);
+  model.update(0, 0);
+  model.root.updateMatrixWorld(true);
+  const standards = [];
+  model.root.traverse((object) => {
+    if (object.userData.role === 'fixed-rear-standard-carrying-both-star-wheel-axles') standards.push(object);
+  });
+  assert.equal(standards.length, 1);
+  const standard = standards[0];
+  assert.ok(standard.visible);
+  const box = new THREE.Box3().setFromObject(standard);
+  const { axle: leftAxle } = model.root.userData.blocks.leftAssembly;
+  const { axle: rightAxle } = model.root.userData.blocks.rightAssembly;
+  for (const axle of [leftAxle, rightAxle]) {
+    const axleBox = new THREE.Box3().setFromObject(axle);
+    // The axle's rear end lies inside the standard's bored boss, clear of
+    // its back face, and the pulleys stay in front of the standard.
+    assert.ok(axleBox.min.z > box.min.z && axleBox.min.z < box.max.z, 'axle ends inside the boss');
+    const center = axle.getWorldPosition(new THREE.Vector3());
+    assert.ok(Math.abs(center.x) < box.max.x && center.y < box.max.y && center.y > box.min.y);
+  }
+  const pulleyBox = new THREE.Box3().setFromObject(model.root.userData.blocks.leftAssembly.pulley);
+  assert.ok(pulleyBox.min.z > box.max.z + 0.05, 'standard stands clear behind the pulleys');
+  disposeModel(model.root);
+});

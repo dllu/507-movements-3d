@@ -333,11 +333,12 @@ test('movement 320 locks p during going and lets it advance only while winding',
     );
     assert.ok(state.pulleys.B.angle <= previousGoingAngle + 2e-13,
       `going wheel never reverses at sample ${sample}`);
-    assert.ok(state.pulleys.A.angle >= previousRatchetAngle - 2e-13,
-      `ratchet pulley never runs backward at sample ${sample}`);
+    // p runs back only by the settle of its overshoot onto the click.
+    assert.ok(state.pulleys.A.angle - state.ratchetSlip >= previousRatchetAngle - 2e-13,
+      `ratchet pulley never runs backward beyond the settle at sample ${sample}`);
     if (sample <= 256 || sample === 512) {
-      near(state.pulleys.A.angle, state.ratchetLockedAngle, 3e-14,
-        `click holds p at sample ${sample}`);
+      near(state.pulleys.A.angle, state.ratchetLockedAngle + state.ratchetSlip, 1e-12,
+        `click holds p (after the settle) at sample ${sample}`);
       assert.equal(state.isWinding, false);
       if (sample !== 512) {
         assert.ok(state.largePulleyY <= previousLargeY + 2e-13,
@@ -351,7 +352,7 @@ test('movement 320 locks p during going and lets it advance only while winding',
         `main weight rises during winding at sample ${sample}`);
     }
     previousGoingAngle = state.pulleys.B.angle;
-    previousRatchetAngle = state.pulleys.A.angle;
+    previousRatchetAngle = state.pulleys.A.angle - state.ratchetSlip;
     previousLargeY = state.largePulleyY;
   }
   const midpoint = rawStateAtTime(geometry.demonstrationPeriod / 2);
@@ -360,7 +361,8 @@ test('movement 320 locks p during going and lets it advance only while winding',
   assert.match(rawStateAtTime(geometry.demonstrationPeriod * 0.75).mode,
     /part-b-down-ratchet-freewheeling/);
   assert.ok(closure.pulleys.B.angle < midpoint.pulleys.B.angle);
-  near(closure.chainTravel, geometry.cycleAdvance, 2e-14,
+  // Both ends carry the same overshoot, so the chain advances one cycle.
+  near(closure.chainTravel - rawStateAtTime(0).chainTravel, geometry.cycleAdvance, 1e-12,
     'one-cycle chain advance');
   disposeModel(model.root);
 });
@@ -429,9 +431,11 @@ test('movement 320 exposes finite smooth rates at all phase boundaries', () => {
   }
   const start = stateAtTime(0);
   const midpoint = stateAtTime(geometry.demonstrationPeriod / 2);
-  near(start.largePulleyVelocity, 0, 2e-7,
+  // The held overshoot's weight offset varies slightly with the moving
+  // geometry, so the weights start at a few millionths of a unit per second.
+  near(start.largePulleyVelocity, 0, 5e-6,
     'large weight starts smoothly');
-  near(start.smallPulleyVelocity, 0, 2e-7,
+  near(start.smallPulleyVelocity, 0, 5e-6,
     'small weight starts smoothly');
   near(midpoint.largePulleyVelocity, 0, 2e-7,
     'large weight reverses smoothly');
@@ -479,8 +483,35 @@ test('movement 320 click is seated in a root against a tooth face whenever it ho
   // the root before the load turns p back onto it.
   model.update(geometry.demonstrationPeriod * 0.9999);
   const end = model.root.userData.renderState;
-  near(end.renderedRatchetAngle - end.pulleys.A.angle, geometry.ratchetOvershoot, 1e-4, 'overshoot before the settle');
+  near(end.ratchetSlip, geometry.ratchetOvershoot, 1e-4, 'overshoot before the settle');
+  near(end.renderedRatchetAngle, end.pulleys.A.angle, 0, 'the rendered p is the chain\'s p');
   const nose = noseWorld();
   assert.ok(Math.hypot(nose.x - center.x, nose.y - center.y) < geometry.ratchetRootRadius + 0.02, 'click has dropped into the root');
+  disposeModel(model.root);
+});
+
+test('movement 320 carries p\'s settle through the chain: W drops and w takes up', () => {
+  const model = createMovementModel(catalog.movements[319]);
+  const { geometry, rawStateAtTime } = model.root.userData;
+  const period = geometry.demonstrationPeriod;
+  const radiusP = 1;
+  for (const phase of [0, 0.01, 0.025, 0.04, 0.6, 0.8, 0.95, 0.9999]) {
+    const state = rawStateAtTime(period * phase);
+    assert.ok(state.ratchetSlip > 0, `slip present at ${phase}`);
+    near(state.path.totalLength, rawStateAtTime(period * 0.3).path.totalLength, 1e-10, `chain length kept at ${phase}`);
+    for (const [key, pulley] of Object.entries(state.pulleys)) {
+      near(pulley.entrySlipError, 0, 1e-10, `${key} entry no-slip at ${phase}`);
+      near(pulley.exitSlipError, 0, 1e-10, `${key} exit no-slip at ${phase}`);
+    }
+  }
+  // Over the settle (phase 0 to 0.05) P keeps its going law while p turns
+  // back 0.05; the main weight drops, and the tension weight rises, by about
+  // half the cord that p returns, beyond their going motion.
+  const [start, seated] = [rawStateAtTime(0), rawStateAtTime(period * 0.05)];
+  const baseDrop = geometry.mainWeightExcursion * (1 - Math.cos(Math.PI * 2 * 0.05)) / 2;
+  const extraDrop = (start.largePulleyY - seated.largePulleyY) - baseDrop;
+  near(start.pulleys.A.angle - seated.pulleys.A.angle, geometry.ratchetOvershoot, 1e-10, 'p settles back by the overshoot');
+  near(extraDrop, radiusP * geometry.ratchetOvershoot / 2, 0.004, 'W drops by half the returned cord');
+  assert.ok(seated.smallPulleyY - start.smallPulleyY > radiusP * geometry.ratchetOvershoot / 2, 'w rises, taking up');
   disposeModel(model.root);
 });

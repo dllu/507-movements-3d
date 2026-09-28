@@ -70,7 +70,7 @@ test('movement 375 is a vertical-shaft carrier with one cross-axle, two opposed 
   assert.equal(degreesOfFreedom.independentPrescribedInputs, 1);
   assert.equal(degreesOfFreedom.storedEnergyStates, 0);
   assert.match(degreesOfFreedom.input, /horizontal bevel pinion/);
-  assert.match(degreesOfFreedom.note, /3:1 bevel reduction/);
+  assert.match(degreesOfFreedom.note, /2:1 bevel reduction/);
   assert.match(degreesOfFreedom.note, /no-slip rolling constraints/);
 
   for (const component of [
@@ -167,7 +167,7 @@ test('movement 375 preserves Brown\'s three-part description and measured engrav
   assert.equal(evidence.explicitInBrownDescription.length, 3);
   assert.match(evidence.engravingEvidence, /two opposed upright/);
   assert.match(evidence.engravingEvidence, /right-angle gear drive/);
-  assert.match(evidence.reconstructionDisclosure, /36:12/);
+  assert.match(evidence.reconstructionDisclosure, /36:18/);
   assert.match(evidence.reconstructionDisclosure, /no canvas animation/);
   disposeModel(model.root);
 });
@@ -257,7 +257,7 @@ test('movement 375 both outward-axis runner spins cancel carrier translation exa
   disposeModel(model.root);
 });
 
-test('movement 375 upper 36:12 bevel pair uses complementary true pitch cones with one module and one common apex', () => {
+test('movement 375 upper 36:18 bevel pair uses complementary true pitch cones with one module and one common apex', () => {
   const model = createMovementModel(catalog.movements[374]);
   const data = model.root.userData;
   const { blocks, geometry } = data;
@@ -265,7 +265,7 @@ test('movement 375 upper 36:12 bevel pair uses complementary true pitch cones wi
   const pinion = blocks.inputPinion;
 
   assert.equal(geometry.largeGearTeeth, 36);
-  assert.equal(geometry.inputPinionTeeth, 12);
+  assert.equal(geometry.inputPinionTeeth, 18);
   near(geometry.largePitchConeAngle + geometry.pinionPitchConeAngle,
     Math.PI / 2, 0, 'complementary pitch-cone angles');
   near(2 * geometry.largeGearPitchRadius / geometry.largeGearTeeth,
@@ -303,16 +303,16 @@ test('movement 375 upper 36:12 bevel pair uses complementary true pitch cones wi
   disposeModel(model.root);
 });
 
-test('movement 375 right-angle pinion speed is exactly three times carrier speed and has zero pitch slip', () => {
+test('movement 375 right-angle pinion speed is exactly twice carrier speed and has zero pitch slip', () => {
   const model = createMovementModel(catalog.movements[374]);
   const data = model.root.userData;
   const { geometry, stateAtTime, transmission } = data;
 
-  assert.equal(transmission.bevelRatio, 1 / 3);
+  assert.equal(transmission.bevelRatio, 1 / 2);
   near(geometry.inputAngularSpeed,
-    3 * geometry.carrierAngularSpeed, 0,
-    'three-to-one pinion speed');
-  assert.match(transmission.bevelVelocityLaw, /12-tooth/);
+    2 * geometry.carrierAngularSpeed, 0,
+    'two-to-one pinion speed');
+  assert.match(transmission.bevelVelocityLaw, /18-tooth/);
   assert.match(transmission.bevelVelocityLaw, /36-tooth/);
   for (let sample = -900; sample <= 1800; sample += 1) {
     const time = geometry.carrierPeriod * sample / 900;
@@ -379,7 +379,7 @@ test('movement 375 renderer binds the bevel input, vertical carrier, opposed rad
   disposeModel(model.root);
 });
 
-test('movement 375 closes three pinion turns, one carrier revolution, and one runner counter-turn before movement 507 remains authored', () => {
+test('movement 375 closes two pinion turns, one carrier revolution, and one runner counter-turn before movement 507 remains authored', () => {
   const movement = catalog.movements[374];
   const model = createMovementModel(movement);
   const data = model.root.userData;
@@ -388,7 +388,7 @@ test('movement 375 closes three pinion turns, one carrier revolution, and one ru
   const closure = stateAtTime(geometry.carrierPeriod);
 
   near(closure.inputAngle - start.inputAngle,
-    3 * FULL_TURN, 0, 'three unwrapped pinion turns');
+    2 * FULL_TURN, 0, 'two unwrapped pinion turns');
   near(closure.carrierAngle - start.carrierAngle,
     FULL_TURN, 0, 'one unwrapped carrier turn');
   near(closure.runnerSpinAngle - start.runnerSpinAngle,

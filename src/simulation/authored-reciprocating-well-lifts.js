@@ -662,6 +662,30 @@ function reciprocatingWellLift(movement) {
   );
   tappetStand.userData.role = 'fixed-central-post-with-round-head-at-tappet-pivot';
   support.add(tappetStand);
+  // Pass 95: the star-wheel axles are carried. Brown draws no frame, and the
+  // axles had joined the rest only through the worm's running clearance. A
+  // slim rear standard (one flat T extrusion, the central post's width) rises
+  // from the well floor behind the pulleys, in a plane of its own clear of
+  // the rope and buckets, to a bar at axle height ending in two bored bosses
+  // that take the axles' rear ends. From the front it lies behind the central
+  // post, the worm and the pulleys; only its stem between the tappet head
+  // and the worm step shows, where Brown's post continues up to the block.
+  const rearStandardLow = -0.80, rearStandardHigh = -0.68;
+  const axleRadius = 0.10, axleBoreRadius = 0.103, axleBossRadius = 0.17;
+  const rearStandard = new THREE.Mesh(
+    plate(polygonClipping.difference(polygonClipping.union(
+      poly([[-0.09, wellFloorY], [0.09, wellFloorY], [0.09, wheelCenterY], [-0.09, wheelCenterY]]),
+      poly([[-wheelCenterX, wheelCenterY - 0.09], [wheelCenterX, wheelCenterY - 0.09],
+        [wheelCenterX, wheelCenterY + 0.09], [-wheelCenterX, wheelCenterY + 0.09]]),
+      poly(circle([-wheelCenterX, wheelCenterY], axleBossRadius, 96)),
+      poly(circle([wheelCenterX, wheelCenterY], axleBossRadius, 96)),
+    ), poly(circle([-wheelCenterX, wheelCenterY], axleBoreRadius, 64)),
+    poly(circle([wheelCenterX, wheelCenterY], axleBoreRadius, 64))),
+    rearStandardLow, rearStandardHigh),
+    frameMaterial,
+  );
+  rearStandard.userData.role = 'fixed-rear-standard-carrying-both-star-wheel-axles';
+  support.add(rearStandard);
 
   const windRotor = addRole(new THREE.Group(),
     'horizontal-wind-wheel-continuously-coupled-to-spiral-shaft');
@@ -860,12 +884,15 @@ function reciprocatingWellLift(movement) {
     }), `${side}-rope-pulley-rigidly-coaxial-with-worm-wheel`);
     pulley.position.copy(pulleyCenters[side]);
     root.add(pulley);
+    // The fixed axle runs from 0.405 in front back into the rear standard's
+    // bored boss, ending 0.01 short of its back face.
+    const axleFront = 0.405, axleBack = rearStandardLow + 0.01;
     const axle = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.10, 0.10, 1.05, 24),
+      new THREE.CylinderGeometry(axleRadius, axleRadius, axleFront - axleBack, 48),
       darkMaterial,
     );
     axle.rotation.x = Math.PI / 2;
-    axle.position.set(center.x, center.y, -0.12);
+    axle.position.set(center.x, center.y, (axleFront + axleBack) / 2);
     root.add(axle);
     return { axle, gear, pulley };
   };

@@ -2325,11 +2325,13 @@ function doubleParallelMotion(movement) {
     group.userData.foot = foot;
     return group;
   };
-  // O sits in front of its radius bar because P's rod sweeps past O behind.
-  // Its ground line shares the lug's plane, in front of the radius bar that
-  // dips below O at the plate stroke's lower end.
+  // p95: P's straight line runs through O itself (Scott Russell: OM = MP),
+  // so the rod hanging from P must pass O in depth. The planes run, from
+  // the back: O's lug and ground block, the O-M radius bar, the beam, then
+  // P's rod, so the rod passes in front of O instead of seeming to pierce
+  // its pedestal (pin O ends behind the beam, which sweeps over it).
   const leftPedestalO = makePedestal(leftPivotO, 'left-pivot-O',
-    0.47, 0.62, 0.26, 0.62, true);
+    -0.62, -0.47, -0.62, -0.12, true);
   const rightPedestalR = makePedestal(rightPivotR, 'right-pivot-R',
     0.18, 0.48, 0.18, 1.08);
   fixedFrame.add(leftPedestalO, rightPedestalR);
@@ -2382,7 +2384,7 @@ function doubleParallelMotion(movement) {
     depth: 0.16,
     eyeMaterial: darkMaterial,
     length: leftRadiusLength,
-    planeZ: 0.36,
+    planeZ: -0.22,
     role: 'left-eight-unit-radius-bar-O-M',
     startBoreRadius: pinRadius.fixed + pinClearance,
     width: linkWidth,
@@ -2438,10 +2440,10 @@ function doubleParallelMotion(movement) {
   leftPiston.userData.role = 'cut-off-rod-guided-by-point-P';
   leftPiston.userData.rotationDegreesOfFreedom = 0;
   // P's straight line runs right through O's position (Brown breaks the rod
-  // off above O), and pin P itself comes down past O, so the rod and pin P
-  // must stay behind O's pin, lug and pedestal (p90: a rod in front made
-  // pin P cross them).
-  const leftPistonPlaneZ = -0.10;
+  // off above O), and pin P itself comes down past O. p95: the rod runs in
+  // front of the beam; O's pin, lug, block and radius bar all lie behind
+  // the beam, so pin P (beam to rod) never meets them.
+  const leftPistonPlaneZ = 0.30;
   // Brown cuts this rod off below P. It runs on straight and ends cleanly
   // below the plate's crop even at the top of P's stroke (1.2 below the
   // framed bottom); the p57 closed cylinder far below, which Brown does not
@@ -2473,12 +2475,14 @@ function doubleParallelMotion(movement) {
   };
   const beamBack = beamPlaneZ - beamHalfDepth;
   const jointPins = {
-    M: pinOn(longLink, 'M', longLinkMidpointDistance, beamBack, 0.87),
+    M: pinOn(longLink, 'M', longLinkMidpointDistance, -0.32, 0.87),
     N: pinOn(centerLinkParts.rod, 'N', centerLinkMidpointDistance, 0.67, 0.89),
     // p89: pin P's back end stops 0.01 inside the rod eye instead of lying
     // flush in its back face (the coplanar discs z-fought).
-    P: pinOn(leftPiston, 'P', 0, leftPistonPlaneZ - 0.04,
-      beamPlaneZ + beamHalfDepth + 0.02),
+    // p95: pin P ends 0.01 inside the beam's back face and stands 0.02
+    // proud of the rod's front face.
+    P: pinOn(leftPiston, 'P', 0, beamBack + 0.01,
+      leftPistonPlaneZ + 0.07),
     Q: pinOn(centerLinkParts.rod, 'Q', centerLinkLength, 0.67, 1.08),
     W: pinOn(longLink, 'W', longLinkLength, beamBack, 0.68),
   };
@@ -2487,7 +2491,7 @@ function doubleParallelMotion(movement) {
     leftRadiusPivotO: {
       fixedMember: leftPedestalO,
       movingMember: leftRadiusParts.rod,
-      point: new THREE.Vector3(leftPivotO.x, leftPivotO.y, 0.36),
+      point: new THREE.Vector3(leftPivotO.x, leftPivotO.y, -0.22),
       type: 'fixed-revolute-pair-O',
     },
     longLinkAtM: {
@@ -2791,8 +2795,8 @@ function addPlainSupports(result, id) {
       const pedestal = foot.parent;
       const footBox = new THREE.Box3().setFromObject(foot);
       const bearingBox = new THREE.Box3().setFromObject(bearing);
-      // O's block keeps the lug's plane, in front of the O-M radius bar
-      // that dips below O; R's stands behind the R-W rocker.
+      // O's block keeps the lug's plane, behind the O-M radius bar that
+      // dips below O (p95); R's stands behind the R-W rocker.
       const low = name === 'left-pivot-O' ? bearingBox.min.z : 0.12;
       const high = bearingBox.max.z;
       const block = box([footBox.min.x, footBox.max.x, footBox.min.y, footBox.max.y, low, high],
