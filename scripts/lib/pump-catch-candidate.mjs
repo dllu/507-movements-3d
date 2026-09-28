@@ -19,7 +19,20 @@ export function makePumpCatchCandidate(){
   profiles.wheel=clip.difference(clip.union(rim,poly(circle([0,0],px(94),128)),...Array.from({length:4},(_,i)=>upper.map(rings=>rings.map(r=>r.map(p=>rotate(p,i*Math.PI/2)))))),poly(circle([0,0],clearBore,128)));
   attach('spokedLooseWheelA',conformingPlateMesh(plate(profiles.wheel,-.28,-.13)),'wheel',PALETTE.driven);
   attach('looseWheelHub',ring(clearBore,px(80),-.47,-.28,128),'wheel',PALETTE.driven);
-  profiles.catch=clip.difference(trace(source.catch),poly(circle(pivot,pinRadius+.001,96)));
+  // B's pivot eye is a true circle concentric with its pin (radius 36 source
+  // px, the lower bar's far edge distance). The traced eye bulge and the
+  // outer bend corner are replaced: each bar edge runs straight to its foot
+  // on the pin's perpendicular, inside the eye, and the eye is unioned on.
+  const [cx,cy]=source.catchPivot,foot=(a,b)=>{const d=[b[0]-a[0],b[1]-a[1]],t=((cx-a[0])*d[0]+(cy-a[1])*d[1])/(d[0]**2+d[1]**2);return[a[0]+t*d[0],a[1]+t*d[1]];};
+  const catchCommands=source.catch.flatMap(([c,...v])=>{
+    const key=c+':'+v.join(',');
+    if(key==='lineTo:315,611')return[['lineTo',...foot([145,818],[315,611])],['lineTo',...foot([337,565],[494,394])]];
+    if(key==='quadraticCurveTo:306,589,320,578'||key==='lineTo:337,565'||key==='lineTo:373,620')return[];
+    if(key==='lineTo:387,578')return[['lineTo',...foot([500,435],[387,578])],['lineTo',...foot([373,620],[169,847])]];
+    return[[c,...v]];
+  });
+  if(catchCommands.length!==source.catch.length-1)throw Error('Pump catch eye trace changed');
+  profiles.catch=clip.difference(clip.union(trace(catchCommands),poly(circle(pivot,px(36),192))),poly(circle(pivot,pinRadius+.001,96)));
   const catchGeometry=conformingPlateMesh(plate(profiles.catch,0,.13));catchGeometry.translate(-pivot[0],-pivot[1],0);
   attach('hookedCatchB',catchGeometry,'catch',PALETTE.brass);
   attach('catchPivotPin',disk(pinRadius,-.13,.145,96),'wheel',PALETTE.muted,[...pivot,0]);

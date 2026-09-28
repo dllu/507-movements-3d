@@ -15,7 +15,7 @@ test('133 bored rod eyes stay on their pins with axial clearance and retention',
     const pb=box(pin),cb=box(cap);assert(pb.min.z<rb.min.z&&pb.max.z>rb.max.z);assert(cb.min.z-rb.max.z>.009,'head must clear eye face');
     assert(cap.geometry.parameters.radiusTop>q.bores[index],'head must retain the eye');
    }
-   if(box(b.crankGripTip).max.z >= rb.min.z){
+   if(box(b.crankGrip).max.z >= rb.min.z){
    const grip = b.crankGrip.getWorldPosition(new THREE.Vector3());
    r.worldToLocal(grip);
    const nearestX = Math.max(0, Math.min(q.length, grip.x));

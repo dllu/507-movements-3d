@@ -287,13 +287,9 @@ function doubleLanternBellowsPump(movement) {
   );
   beamBody.position.x = 0.32;
   beam.add(beamBody);
-  const handleGrip = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.15, 0.15, 0.88, 24),
-    darkMaterial,
-  );
-  handleGrip.rotation.z = Math.PI / 2;
-  handleGrip.position.x = 3.58;
-  beam.add(handleGrip);
+  // Pass 98: Brown draws no grip on the beam's broken-off right end; the old
+  // plain cylinder (r 0.15) was undrawn and the beam's 0.38-deep end ran
+  // through it with its faces standing out of it, so it is not built.
 
   const pivotAxle = addRole(new THREE.Mesh(
     new THREE.CylinderGeometry(0.22, 0.22, 0.74, 32),

@@ -2159,9 +2159,31 @@ function screwThrustLeverClamp() {
     ...smoothSourceSpan([...holderTracedLocalPoints.slice(17), ...holderTracedLocalPoints.slice(0, 11)], 0, 17),
     ...holderTracedLocalPoints.slice(10, 17),
   ];
+  // p98: the shoe end is a true arc concentric with the shoe pin. Where the
+  // traced end comes within reach of it the outline lies on the arc; over
+  // ten points either side it blends back into the traced edges.
+  const shoeEndRadius = 0.44;
+  const shoeEndRadii = holderFilledLocalPoints.map(point => point.distanceTo(shoePinLocal));
+  // The end is the run of traced points within 0.5 of the pin; the arc spans
+  // it from the first to the last point that comes within reach of R.
+  const shoeEndFirst = shoeEndRadii.findIndex(radius => radius <= shoeEndRadius + 0.005);
+  let shoeEndLast = shoeEndFirst;
+  for (let index = shoeEndFirst; shoeEndRadii[index] < 0.5; index += 1) {
+    if (shoeEndRadii[index] <= shoeEndRadius + 0.005) shoeEndLast = index;
+  }
+  const shoeEndBlend = 10;
+  const holderEndLocalPoints = holderFilledLocalPoints.map((point, index) => {
+    const distance = index < shoeEndFirst ? shoeEndFirst - index
+      : index > shoeEndLast ? index - shoeEndLast : 0;
+    if (distance >= shoeEndBlend) return point;
+    const weight = THREE.MathUtils.smootherstep(1 - distance / shoeEndBlend, 0, 1);
+    const offset = point.clone().sub(shoePinLocal);
+    const radius = THREE.MathUtils.lerp(offset.length(), shoeEndRadius, weight);
+    return shoePinLocal.clone().add(offset.setLength(radius));
+  });
   const holderBossRadius = 0.28;
   const holderCheekRegion = polygonClipping.union(
-    poly(holderFilledLocalPoints.map(point => point.toArray())),
+    poly(holderEndLocalPoints.map(point => point.toArray())),
     poly(circle([0, 0], holderBossRadius, 128)));
   const upright = plate(polygonClipping.difference(poly(frameModelPoints.map(p => p.toArray())),
     rectangle(armLeft, armLow - 0.01, armRight + 0.01, armHigh + 0.000001),

@@ -169,7 +169,7 @@ test('movement 251 closes seamlessly in ten seconds with readable timing', () =>
   disposeModel(model.root);
 });
 
-test('p96: movement 251 casting has smooth broad bands, ears round the jaw pivots and an eye lug for the rope eye', () => {
+test('p96: movement 251 casting has ears round the jaw pivots and an eye lug for the rope eye', () => {
   const model = createMovementModel(movement);
   const { casting, pins, ring } = model.root.userData.blocks;
   const find = (role) => { let hit = null; model.root.traverse((o) => { if (o.userData.role === role) hit = o; }); return hit; };
@@ -193,5 +193,80 @@ test('p96: movement 251 casting has smooth broad bands, ears round the jaw pivot
   const lugBox = new THREE.Box3().setFromObject(lug), ringBox = new THREE.Box3().setFromObject(ring);
   assert.ok(ringBox.min.y < lugBox.max.y && ringBox.min.y > lugBox.min.y, 'ring bow inside the lug height');
   assert.ok(lugBox.max.x - lugBox.min.x < 0.2, 'lug is thin across the ring plane');
+  disposeModel(model.root);
+});
+
+test('p98: movement 251 curved members are one bowed leaf spring pushing the jaw arms outward and flexing as slot B presses them in', () => {
+  const model = createMovementModel(movement);
+  const d = model.root.userData;
+  const { spring, stemWeb, casting, jaws } = d.blocks;
+  const { pixelScale: S, springDeflectionAt, openAngle, springHalfThickness } = d.geometry;
+  assert.equal(spring.userData.role, 'bowed-leaf-spring-pushing-jaw-arms-outward');
+  assert.match(d.dynamics.closingLaw, /leaf spring/);
+  // No rigid cast bands remain in the casting outline between the stem and
+  // the jaw arms: nothing of the casting lies at x 45..66 px, y 55..90 px.
+  const cp = casting.geometry.attributes.position;
+  for (let i = 0; i < cp.count; i += 1) {
+    const x = Math.abs(cp.getX(i)) / S, y = cp.getY(i) / S;
+    assert.ok(!(x > 45 && x < 66 && y > 55 && y < 90), `casting band vertex at ${x}, ${y}`);
+  }
+  // The web behind the slot stays behind the leaf (no shared faces).
+  stemWeb.geometry.computeBoundingBox();
+  spring.geometry.computeBoundingBox();
+  assert.ok(stemWeb.geometry.boundingBox.max.z < spring.geometry.boundingBox.min.z - 0.01);
+  // The leaf overlaps the jaws' depth (it bears on them) and the casting's.
+  assert.ok(spring.geometry.boundingBox.max.z > -0.2 && spring.geometry.boundingBox.min.z < -0.25);
+
+  const tip = () => {
+    const p = spring.geometry.attributes.position;
+    let x = -Infinity;
+    for (let i = 0; i < p.count; i += 1) x = Math.max(x, p.getX(i));
+    return x / S;
+  };
+  const jawOutline = (phi) => d.planar.jawAt(phi);
+  const inside = (q, polygon) => {
+    let hit = false;
+    for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i, i += 1) {
+      const [xi, yi] = polygon[i], [xj, yj] = polygon[j];
+      if ((yi > q[1]) !== (yj > q[1]) && q[0] < (xj - xi) * (q[1] - yi) / (yj - yi) + xi) hit = !hit;
+    }
+    return hit;
+  };
+  const edgeDistance = (q, polygon) => {
+    let best = Infinity;
+    for (let i = 0; i < polygon.length; i += 1) {
+      const a = polygon[i], b = polygon[(i + 1) % polygon.length];
+      const ex = b[0] - a[0], ey = b[1] - a[1];
+      const t = Math.min(1, Math.max(0, ((q[0] - a[0]) * ex + (q[1] - a[1]) * ey) / (ex * ex + ey * ey)));
+      best = Math.min(best, Math.hypot(q[0] - a[0] - t * ex, q[1] - a[1] - t * ey));
+    }
+    return best;
+  };
+  let closedTip = null, openTip = Infinity, maxPhi = 0;
+  for (let i = 0; i <= 80; i += 1) {
+    const time = d.timeline.cycleDuration * i / 80;
+    model.update(time - d.displayTimeOffset);
+    const phi = d.kinematics.jawOpeningAngle;
+    near(jaws[1].rotation.z, phi, 0, 'right jaw angle');
+    maxPhi = Math.max(maxPhi, phi);
+    const p = spring.geometry.attributes.position;
+    const jaw = jawOutline(phi);
+    const mirrored = jaw.map(([x, y]) => [-x, y]);
+    let gap = Infinity;
+    for (let k = 0; k < p.count; k += 1) {
+      const q = [p.getX(k) / S, p.getY(k) / S];
+      assert.ok(!inside(q, jaw) && !inside(q, mirrored), `leaf inside a jaw at ${time}`);
+      if (q[0] > 0) gap = Math.min(gap, edgeDistance(q, jaw));
+    }
+    // Always bearing on the jaw arm (running clearance under half a pixel).
+    assert.ok(gap < 0.5, `leaf off the jaw at ${time}: ${gap}`);
+    if (phi === 0) closedTip = tip();
+    else openTip = Math.min(openTip, tip());
+  }
+  // Slot B pressing the horns in visibly flexes the leaf.
+  assert.ok(closedTip - openTip > 8, `tip travel ${closedTip - openTip}`);
+  assert.ok(maxPhi <= openAngle + 1e-9);
+  assert.ok(springDeflectionAt(0) - springDeflectionAt(openAngle) > 8);
+  assert.ok(springHalfThickness >= 1.5);
   disposeModel(model.root);
 });

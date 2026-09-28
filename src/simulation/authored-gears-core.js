@@ -14709,38 +14709,59 @@ function handCrankPinionSectorRodPress() {
   );
   pinionRotationIndex.userData.role = 'white-index-showing-pinion-spin-rate';
 
-  const crankArm = makeBeam(
-    new THREE.Vector3(0, 0, crankPlaneZ),
-    new THREE.Vector3(crankRadius, 0, crankPlaneZ),
-    {
-      color: PALETTE.ink,
-      depth: 0.105,
-      thickness: crankArmThickness,
-    },
+  // p98: one straight turned grip. Its cylinder starts flush with the crank
+  // arm's back face and ends in a hemisphere of the same radius (the old
+  // grip began inside the arm and carried an oversized ball, which read as a
+  // kink). The flat arm is cut round the grip so no faces coincide.
+  const crankArmDepth = 0.105;
+  const crankArmBackZ = crankPlaneZ - crankArmDepth / 2;
+  const crankGripFrontZ = crankPlaneZ + crankGripLength - 0.02;
+  const crankArm = new THREE.Mesh(
+    finiteSlotPlate(
+      slotClipping.difference(
+        slotPolygon([
+          [0, -crankArmThickness / 2],
+          [crankRadius, -crankArmThickness / 2],
+          [crankRadius, crankArmThickness / 2],
+          [0, crankArmThickness / 2],
+        ]),
+        slotPolygon(slotCircle([crankRadius, 0], crankGripRadius, 96)),
+      ),
+      crankArmBackZ,
+      crankArmBackZ + crankArmDepth,
+    ),
+    darkMaterial,
   );
   crankArm.userData.role = 'hand-crank-rigidly-fixed-to-pinion-shaft';
-  const crankGrip = zCylinder(
-    crankGripRadius,
-    crankGripLength,
+  // One closed turned solid: flat back face, straight cylinder, and a
+  // hemispherical end of the grip's own radius.
+  const crankGripProfile = [
+    new THREE.Vector2(0, 0),
+    new THREE.Vector2(crankGripRadius, 0),
+    new THREE.Vector2(crankGripRadius, crankGripFrontZ - crankArmBackZ),
+  ];
+  for (let i = 1; i <= 16; i += 1) {
+    const angle = Math.PI / 2 * i / 16;
+    crankGripProfile.push(new THREE.Vector2(
+      i === 16 ? 0 : crankGripRadius * Math.cos(angle),
+      crankGripFrontZ - crankArmBackZ + crankGripRadius * Math.sin(angle),
+    ));
+  }
+  const crankGrip = new THREE.Mesh(
+    creaseLatheNormals(new THREE.LatheGeometry(crankGripProfile, 96)),
     darkMaterial,
-    28,
   );
-  crankGrip.position.set(
-    crankRadius,
-    0,
-    crankPlaneZ + crankGripLength / 2 - 0.02,
-  );
+  crankGrip.rotation.x = Math.PI / 2;
+  crankGrip.position.set(crankRadius, 0, crankArmBackZ);
   crankGrip.userData.role = 'forward-projecting-hand-crank-grip';
-  const crankGripTip = new THREE.Mesh(
-    new THREE.SphereGeometry(crankGripRadius * 1.08, 20, 14),
-    indexMaterial,
-  );
+  // Marker at the centre of the grip's rounded end (the traced crank path).
+  const crankGripTip = new THREE.Object3D();
   crankGripTip.position.set(
     crankRadius,
     0,
-    crankPlaneZ + crankGripLength - 0.02,
+    crankGripFrontZ,
   );
-  crankGripTip.userData.role = 'white-tip-tracing-hand-crank-path';
+  crankGripTip.userData.role = 'hand-crank-grip-end-centre-marker';
   const inputShaft = zCylinder(
     shaftRadius,
     shaftLength + .26,
@@ -15558,7 +15579,6 @@ function handCrankPinionSectorRodPress() {
   model.reset = () => update(0);
   cameraEnvelope.castShadow = false;
   cameraEnvelope.receiveShadow = false;
-  crankGripTip.castShadow = false;
   pitchContactMarker.castShadow = false;
   pitchContactMarker.receiveShadow = false;
   root.traverse((object) => {
@@ -24425,6 +24445,84 @@ function rollingContactEllipsesWithToothedContinuation() {
   fork.add(forkMouthAnchor);
   driven.userData.rotor.add(fork);
 
+  // p98: the forked catch works. A round pin stands on the front face of the
+  // driver's second tooth, at its pitch point. Relative to the driven wheel a
+  // pitch point traces a cusp: it comes in, touches the driven pitch curve in
+  // a tooth space and goes out again. The fork's V is cut round that path, so
+  // the pin runs in along the lower tine, bottoms in the crotch as the teeth
+  // take up, and leaves along the upper tine: the fork steers the entering
+  // tooth into its space at the dead point where rolling contact fails.
+  const forkPinRadius = 0.045;
+  const forkSlotClearance = 0.012;
+  const forkSlotRadius = forkPinRadius + forkSlotClearance;
+  const guidedDriverTooth = driver.userData.toothData[sourceGuidedDriverToothIndex];
+  const forkPinLocal = guidedDriverTooth.pitchPoint.clone();
+  const forkPinInDrivenAt = (time) => {
+    const driverAngle = sourceDriverAngle + inputAngularSpeed * time;
+    const drivenAngle = -integratedRatioAt(driverAngle);
+    const world = rotateVector2(forkPinLocal, driverAngle)
+      .add(new THREE.Vector2(driverCenter.x, driverCenter.y));
+    return rotateVector2(
+      world.sub(new THREE.Vector2(drivenCenter.x, drivenCenter.y)),
+      -drivenAngle,
+    );
+  };
+  // The V spans the pin path while it lies within forkReach of the driven
+  // axis; it bottoms where the tooth's pitch point meets the driven pitch
+  // curve.
+  const forkReach = 0.98;
+  const forkPathStep = inputPeriod / 4096;
+  let forkBottomTime = 0;
+  for (let time = -2; time <= 3; time += forkPathStep) {
+    if (forkPinInDrivenAt(time).length() < forkPinInDrivenAt(forkBottomTime).length()) {
+      forkBottomTime = time;
+    }
+  }
+  const forkWindowEdge = (direction) => {
+    let time = forkBottomTime;
+    while (forkPinInDrivenAt(time + direction * forkPathStep).length() < forkReach) {
+      time += direction * forkPathStep;
+    }
+    return time;
+  };
+  const forkWindow = [forkWindowEdge(-1), forkWindowEdge(1)];
+  const forkWindowPath = [];
+  for (let i = 0; i <= 160; i += 1) {
+    const time = THREE.MathUtils.lerp(forkWindow[0], forkWindow[1], i / 160);
+    forkWindowPath.push({ time, point: forkPinInDrivenAt(time) });
+  }
+  const forkBottomPoint = forkPinInDrivenAt(forkBottomTime);
+  // Everywhere the pin passes near the fork over a whole cycle.
+  const forkSweep = [];
+  for (let i = 0; i <= 4096; i += 1) {
+    const point = forkPinInDrivenAt(forkBottomTime - inputPeriod / 2 + inputPeriod * i / 4096);
+    if (point.length() < forkReach + 0.4) forkSweep.push(point);
+  }
+  fork.userData.functionalFork = {
+    bottomPoint: forkBottomPoint,
+    bottomTime: forkBottomTime,
+    clearance: forkSlotClearance,
+    pinRadius: forkPinRadius,
+    reach: forkReach,
+    slotRadius: forkSlotRadius,
+    sweep: forkSweep,
+    window: forkWindow,
+    windowPath: forkWindowPath,
+  };
+  const forkPin = new THREE.Mesh(
+    new THREE.CylinderGeometry(forkPinRadius, forkPinRadius, 0.23, 32),
+    inkMaterial,
+  );
+  forkPin.rotation.x = Math.PI / 2;
+  // From 0.015 inside the tooth's front face to just past the fork's face.
+  forkPin.position.set(
+    forkPinLocal.x,
+    forkPinLocal.y,
+    wheelDepth * 0.46 - 0.015 + 0.115,
+  );
+  forkPin.userData.role = 'fork-pin-on-entering-driver-tooth';
+  driver.userData.rotor.add(forkPin);
+
   const contactMarker = new THREE.Mesh(
     new THREE.SphereGeometry(0.045, 18, 12),
     brassMaterial,
@@ -24650,6 +24748,15 @@ function rollingContactEllipsesWithToothedContinuation() {
         minimumGuideDistance = distance;
       }
     });
+    const forkPinTime = THREE.MathUtils.euclideanModulo(
+      (driverAngle - sourceDriverAngle) / inputAngularSpeed
+        - forkWindow[0] + inputPeriod / 2,
+      inputPeriod,
+    ) + forkWindow[0] - inputPeriod / 2;
+    const forkPinEngaged = forkPinTime >= forkWindow[0]
+      && forkPinTime <= forkWindow[1];
+    const forkPinPoint = rotateVector2(forkPinLocal, driverAngle)
+      .add(new THREE.Vector2(driverCenter.x, driverCenter.y));
     return {
       activeContactModeCount: Number(toothedContactActive)
         + Number(smoothContactActive),
@@ -24681,6 +24788,8 @@ function rollingContactEllipsesWithToothedContinuation() {
       driverTravel,
       forkGuide: {
         active: entryHandoff,
+        pinEngaged: forkPinEngaged,
+        pinPoint: forkPinPoint,
         guidedDriverToothIndex,
         guidedDriverToothPitchPoint,
         mouthClearance: forkTipClearance,
@@ -24779,6 +24888,7 @@ function rollingContactEllipsesWithToothedContinuation() {
     fork,
     forkCollar,
     forkMouthAnchor,
+    forkPin,
     forkStem,
     forkTines,
   };
@@ -28894,31 +29004,105 @@ function fixedPinionLiftedMangleRack() {
       [140, 341], [124, 347], [112, 356], [106, 364], [97, 368], [85, 366],
       [76, 358], [72, 345], [69, 320], [66, 290], [65, 255],
     ];
-    const sourceEyes = [
-      [new THREE.Vector2(436, 203), sourceState.carrierTopPivotWorld],
-      [new THREE.Vector2(92, 352), sourceState.carrierBottomPivotWorld],
-    ].map(([drawn, modelled]) => ({
-      drawn,
-      shift: modelPointToSourceRaster(modelled.clone()).sub(drawn),
-    }));
+    // p98: the outline is rebuilt from straight edges and circular arcs in
+    // source pixels (the carrier is unrotated in the source pose). The lobe
+    // and the foot are arcs concentric with the modelled rod pivots, joined
+    // to the top and bottom edges by concave fillets; the other two corners
+    // are plain fillets. The traced outline, warped towards the pivots,
+    // left both eyes off-centre in their lobes.
+    const topPivotPixel = modelPointToSourceRaster(
+      sourceState.carrierTopPivotWorld.clone(),
+    );
+    const bottomPivotPixel = modelPointToSourceRaster(
+      sourceState.carrierBottomPivotWorld.clone(),
+    );
+    const lobeRadius = 20;
+    const footRadius = 16;
+    const lineThrough = (a, b) => {
+      const d = new THREE.Vector2(b[0] - a[0], b[1] - a[1]).normalize();
+      return { point: new THREE.Vector2(...a), direction: d };
+    };
+    const topEdge = lineThrough([140, 201], [380, 196]);
+    const bottomEdge = lineThrough([410, 334], [190, 336]);
+    const rightEdge = {
+      point: new THREE.Vector2(topPivotPixel.x + lobeRadius, 0),
+      direction: new THREE.Vector2(0, 1),
+    };
+    const leftEdge = {
+      point: new THREE.Vector2(bottomPivotPixel.x - footRadius, 400),
+      direction: new THREE.Vector2(0, -1),
+    };
+    // With the outline run clockwise on screen (y down), the plate lies to
+    // the right of each edge's direction.
+    const inward = ({ direction }) =>
+      new THREE.Vector2(-direction.y, direction.x);
+    const offsetLine = (line, distance) => ({
+      point: line.point.clone().addScaledVector(inward(line), distance),
+      direction: line.direction,
+    });
+    const intersect = (a, b) => {
+      const cross = a.direction.x * b.direction.y - a.direction.y * b.direction.x;
+      const d = b.point.clone().sub(a.point);
+      const t = (d.x * b.direction.y - d.y * b.direction.x) / cross;
+      return a.point.clone().addScaledVector(a.direction, t);
+    };
+    const project = (line, point) => line.point.clone().addScaledVector(
+      line.direction,
+      point.clone().sub(line.point).dot(line.direction),
+    );
+    const angleOf = (center, point) =>
+      Math.atan2(point.y - center.y, point.x - center.x);
+    const arcPoints = (center, radius, from, to, convex, step = 1.5) => {
+      let sweep = to - from;
+      if (convex) while (sweep <= 0) sweep += Math.PI * 2;
+      else while (sweep >= 0) sweep -= Math.PI * 2;
+      const count = Math.max(8, Math.ceil(Math.abs(sweep) * radius / step));
+      return Array.from({ length: count + 1 }, (_, i) => {
+        const angle = from + sweep * i / count;
+        return [center.x + radius * Math.cos(angle), center.y + radius * Math.sin(angle)];
+      });
+    };
+    const convexCorner = (first, second, radius) => {
+      const center = intersect(offsetLine(first, radius), offsetLine(second, radius));
+      return arcPoints(center, radius, angleOf(center, project(first, center)),
+        angleOf(center, project(second, center)), true);
+    };
+    // Concave fillet from a line into a pivot circle (or back), outside the
+    // plate: its centre is on the far side of the edge.
+    const filletCentre = (line, pivot, radius, fillet, beforePivot) => {
+      const offset = offsetLine(line, -fillet);
+      const foot = project(offset, pivot);
+      const reach = Math.sqrt((radius + fillet) ** 2 - foot.distanceToSquared(pivot));
+      return foot.addScaledVector(line.direction, beforePivot ? -reach : reach);
+    };
+    const topFillet = 8, footFillet = 40;
+    const lobeFilletCentre = filletCentre(topEdge, topPivotPixel, lobeRadius, topFillet, true);
+    const footFilletCentre = filletCentre(bottomEdge, bottomPivotPixel, footRadius, footFillet, true);
+    const lobeStart = angleOf(topPivotPixel, lobeFilletCentre);
+    const footEnd = angleOf(bottomPivotPixel, footFilletCentre);
+    const sourcePixelOutline = [
+      ...convexCorner(leftEdge, topEdge, 38),
+      ...arcPoints(lobeFilletCentre, topFillet,
+        angleOf(lobeFilletCentre, project(topEdge, lobeFilletCentre)),
+        lobeStart + Math.PI, false),
+      ...arcPoints(topPivotPixel, lobeRadius, lobeStart, 0, true),
+      ...convexCorner(rightEdge, bottomEdge, 40),
+      ...arcPoints(footFilletCentre, footFillet,
+        angleOf(footFilletCentre, project(bottomEdge, footFilletCentre)),
+        footEnd + Math.PI, false),
+      ...arcPoints(bottomPivotPixel, footRadius, footEnd, Math.PI, true),
+    ];
     const toCarrierLocal = ([x, y]) => {
-      const pixel = new THREE.Vector2(x, y);
-      for (const { drawn, shift } of sourceEyes) {
-        const weight = Math.exp(-(pixel.distanceToSquared(drawn)) / (45 * 45));
-        pixel.addScaledVector(shift, weight);
-      }
-      const world = sourcePointToModel(pixel);
+      const world = sourcePointToModel(new THREE.Vector2(x, y));
       return rotate2(
         new THREE.Vector2(world.x, world.y).sub(sourceState.carrierOrigin),
         -sourceState.carrierAngle,
       );
     };
-    const smoothOutline = new THREE.CatmullRomCurve3(
-      sourceCarrierOutline.map(toCarrierLocal)
-        .map((point) => new THREE.Vector3(point.x, point.y, 0)),
-      true,
-      'centripetal',
-    ).getSpacedPoints(360).slice(0, -1).map((point) => [point.x, point.y]);
+    const smoothOutline = sourcePixelOutline.map(toCarrierLocal)
+      .filter((point, i, all) => i === 0
+        || point.distanceTo(all[i - 1]) > 1e-6)
+      .map((point) => [point.x, point.y]);
     const pinRadius = 0.135;
     let carrierPolygon = slotClipping.difference(
       slotPolygon(smoothOutline),

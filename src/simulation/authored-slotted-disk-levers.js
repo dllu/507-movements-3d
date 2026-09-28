@@ -614,8 +614,11 @@ function slottedDiskLeverRackAndWeight(movement) {
     poly(circle([0, 0], .143, 48))), -.21, -.15), driverMaterial);
   rearCrankArm.userData.role = 'rear-hand-crank-arm-keyed-on-disk-axle';
   diskRotor.add(rearCrankArm);
-  const rearCrankHandle = cylinderAlongZ(.06, .18, darkMaterial, 32);
-  rearCrankHandle.position.set(rearCrankTip.x, rearCrankTip.y, -.30);
+  // Pass 98: the handle runs on through the arm's round end and stops 0.005
+  // inside its front face (z -0.15), so it is flush with the arm's front
+  // rather than butting on its back face; its rear end is unchanged (z -0.39).
+  const rearCrankHandle = cylinderAlongZ(.06, .235, darkMaterial, 32);
+  rearCrankHandle.position.set(rearCrankTip.x, rearCrankTip.y, -.2725);
   rearCrankHandle.userData.role = 'rear-hand-crank-handle';
   diskRotor.add(rearCrankHandle);
   // The bearing and its stays sit behind the posts, clear of the handle.

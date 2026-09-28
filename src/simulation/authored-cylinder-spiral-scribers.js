@@ -1,6 +1,6 @@
 import {correctScriberDynamometer} from './scriber-dynamometer-gears.js';
 import * as THREE from 'three';
-import { crankArmOutline, turnedHandleGeometry, HANDLE_FOOT_EMBED } from './turned-handle.js';
+import { crankArmOutline, turnedHandleGeometry, handleShank, HANDLE_FOOT_EMBED } from './turned-handle.js';
 import { makeSeeThrough } from './see-through-part.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { circle, plate, poly, polygonClipping } from './finite-plate-geometry.js';
@@ -746,7 +746,7 @@ function spiralCylinderScriber(movement) {
   const crankHandle = new THREE.Mesh(
     turnedHandleGeometry({ height: 0.32 + HANDLE_FOOT_EMBED, side: [
       [0.055, 0], [0.045, 0.12], [0.045, 0.3], [0.09, 0.5], [0.12, 0.7],
-    ] }),
+    ], shank: handleShank(2 * crankArmHalfThickness) }), // pass 98: flush with the arm's back face
     darkMaterial,
   );
   crankHandle.rotation.z = -Math.PI / 2;

@@ -1323,8 +1323,11 @@ function longStoppingToothEscapement(movement) {
     const head = cylinderAlongZ(0.18, 0.04, darkMaterial);
     head.position.set(palletPivot.x, palletPivot.y, palletDepth / 2 + 0.03);
     head.userData.role = 'suspension-pin-retaining-head';
-    const cock = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.9, 0.15), frameMaterial);
-    cock.position.set(palletPivot.x, palletPivot.y + 0.15, -palletDepth / 2 - 0.02 - 0.075);
+    // One flat plate: its lower end is a half-round (r 0.35) concentric
+    // with the pin, its straight sides rise 0.6 to the unseen mounting.
+    const cock = new THREE.Mesh(platePrism(clip.union(poly(circle([0, 0], 0.35, 96)),
+      poly([[-0.35, 0], [0.35, 0], [0.35, 0.6], [-0.35, 0.6]])), -0.075, 0.075), frameMaterial);
+    cock.position.set(palletPivot.x, palletPivot.y, -palletDepth / 2 - 0.02 - 0.075);
     cock.userData.role = 'fixed-suspension-cock-behind-pendulum';
     fixedFrame.add(pin, head, cock);
   }

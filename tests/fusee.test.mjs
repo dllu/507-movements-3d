@@ -259,12 +259,41 @@ test('046 chain surfaces clear the actual fusee triangles on the tiers and their
   console.log('046 chain / actual fusee triangles', { poses: 129, rays: checked, minimum, minimumBarrel });
 });
 
-test('046 p96: the chain is seated on the stepped tiers, backed by a riser or lobe, and never hovers', () => {
+test('046 p98: seen from above the tier risers form one smooth Archimedean spiral, steps on one radius', () => {
+  const p = fuseeParameters, body = steppedFuseeGeometry(p).userData;
+  const turn = 2 * Math.PI, slope = p.radialPitch / turn;
+  // Tier k spans the spiral turn from its step at stepAngle + 2 pi (k - 1).
+  let previousEnd;
+  for (let k = 0; k < p.tierCount; k += 1) {
+    const start = p.stepAngle + turn * (k - 1);
+    for (let i = 0; i <= 720; i += 1) {
+      const theta = start + turn * (i === 720 ? 719.999 : i) / 720;
+      const expected = p.chainRadiusStart + slope * theta - p.riserGap;
+      assert.ok(Math.abs(body.outlineRadiusAt(k, theta) - expected) < 1e-12, 'riser radius is linear in angle');
+    }
+    const startRadius = body.outlineRadiusAt(k, p.stepAngle + 1e-9);
+    if (previousEnd !== undefined) assert.ok(Math.abs(startRadius - previousEnd) < 1e-8,
+      'each tier starts where the tier above ends: one continuous spiral');
+    previousEnd = body.outlineRadiusAt(k, p.stepAngle - 1e-9);
+    assert.ok(Math.abs(previousEnd - startRadius - p.radialPitch) < 1e-8, 'one radial step per tier');
+  }
+  // The chain centre line is the same spiral, riserGap outside it.
+  const path = makeFuseeMotion().tierPath;
+  for (let i = 0; i <= 400; i += 1) {
+    const theta = path.wrapAngle * i / 400, point = path.at(theta);
+    assert.ok(Math.abs(point.radius - p.chainRadiusStart - slope * theta) < 1e-12);
+    assert.equal(point.dRadius, slope);
+  }
+  assert.equal(body.archimedeanRisers, true);
+});
+
+test('046 p96/p98: the chain is seated on the stepped tiers, backed by the spiral riser, and never hovers', () => {
   const p = fuseeParameters, motion = makeFuseeMotion();
   const body = steppedFuseeGeometry(p).userData;
-  let seated = 0, riser = 0, total = 0;
+  let seated = 0, riser = 0, total = 0, maximumStepLift = 0;
   for (let sample = 0; sample <= 96; sample += 1) {
     const state = motion.stateAtProgress(sample / 96);
+    maximumStepLift = Math.max(maximumStepLift, state.stepLift);
     const onFusee = state.barrelLength + state.spanLength;
     state.pins.forEach((pin, index) => {
       if (state.stations[index] <= onFusee + 1e-9) return;
@@ -275,27 +304,29 @@ test('046 p96: the chain is seated on the stepped tiers, backed by a riser or lo
       const tier = p.tierChainHeights.findIndex((height) => Math.abs(pin.y - height) < 1e-9);
       if (easing) {
         // Leaving the fusee: eased off its path towards the span, clear of it.
-        const band = body.tops.findIndex((top, k) => pin.y - 0.037 <= top && pin.y - 0.037 >= body.bottoms[k]);
-        if (band >= 0) assert.ok(radius - 0.017 > body.outlineRadiusAt(band, phi) - 1e-9, 'the easing chain clears the body');
+        for (const [band, top] of body.tops.entries()) {
+          if (pin.y + 0.037 >= body.bottoms[band] && pin.y - 0.037 <= top) {
+            assert.ok(radius - 0.017 > body.outlineRadiusAt(band, phi) - 1e-9, 'the easing chain clears the body');
+          }
+        }
       } else if (tier >= 0) {
         // Level on its shelf: pin ends 0.002 above the shelf of the tier below.
         seated += 1;
         assert.ok(Math.abs(pin.y - 0.037 - p.tierShelves[tier] - 0.002) < 1e-9, 'the chain sits on its shelf');
-        const backing = body.outlineRadiusAt(tier, phi);
-        assert.ok(Math.abs(radius - p.riserGap - backing) < 1e-6 || Math.abs(radius - p.lobeGap - backing) < 2e-3,
-          'a seated pin is backed by its riser, or by the climbing lobe at a constant gap');
+        assert.ok(Math.abs(radius - p.riserGap - body.outlineRadiusAt(tier, phi)) < 1e-6,
+          'a seated pin is backed by the spiral riser above it');
       } else {
-        // Running down (or easing off) a riser: on a tier's chain radius.
+        // Running down the next riser after a step, still on the spiral.
         riser += 1;
-        assert.ok(p.tierChainRadii.some((r) => Math.abs(radius - r) < 1e-9), 'a descending pin runs on a riser');
-        const band = body.tops.findIndex((top, k) => pin.y <= top && pin.y >= body.bottoms[k]);
-        const backing = body.outlineRadiusAt(band, phi);
-        assert.ok(radius - 0.017 > backing, 'the descending chain clears the tier beside it');
+        const band = [...Array(p.tierCount).keys()].find((k) => Math.abs(radius - p.riserGap - body.outlineRadiusAt(k, phi)) < 1e-6);
+        assert.ok(band !== undefined, 'a descending pin runs on the spiral riser');
+        assert.ok(pin.y - 0.037 < body.tops[band] + 0.002 + 1e-9 && pin.y + 0.037 > body.bottoms[band], 'beside that riser, which backs it (or just leaving the step edge)');
       }
     });
   }
-  assert.ok(seated > 0.75 * total, `most of the wound chain lies level on the tiers (${seated}/${total})`);
-  console.log('046 tier seating', { poses: 97, pins: total, seated, onRisers: riser });
+  assert.ok(seated > 0.65 * total, `most of the wound chain lies level on the tiers (${seated}/${total})`);
+  assert.ok(maximumStepLift > 0.05 && maximumStepLift < 0.3, 'the span rides over a step edge when it must');
+  console.log('046 tier seating', { poses: 97, pins: total, seated, onRisers: riser, maximumStepLift });
 });
 
 // Closest distance between nondegenerate finite segments, including

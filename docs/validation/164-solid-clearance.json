@@ -27,7 +27,7 @@
   "poses": 129,
   "meshes": 10,
   "pairs": 35,
-  "queries": 2397984,
+  "queries": 2406744,
   "intersections": {},
   "unexpected": {},
   "method": "Bidirectional visible vertices, edge midpoints and triangle centers over the four-second analytic cycle. Same rigid-family joins excluded. No cross-family overlap above 1e-6 world units is permitted.",
@@ -38,7 +38,7 @@
     },
     {
       "file": "src/simulation/knee-press.js",
-      "sha256": "f6f00d99a80df1be7bb4613708719481b613e7d7852c34f75dc9e330f938512a"
+      "sha256": "e7cdeb92c3b2367b9e2fbadf2a5f8454764d35335a45e80c606a7e874b161938"
     },
     {
       "file": "src/simulation/knee-press-motion.js",
@@ -50,11 +50,11 @@
     },
     {
       "file": "src/simulation/clutch-section-geometry.js",
-      "sha256": "32e252c6798963e9f1c361432be76aa9c9a464b926cb62a276758a020ba1a5ef"
+      "sha256": "e1278ea943497a8a63668838508c0f18f660d0d6da7c92416b3c53b09436b6ca"
     },
     {
       "file": "src/simulation/primitives.js",
-      "sha256": "315bd86af67a6d451ef4de426b67db3140f5d3bee28e91a1c5171afc4196b5fb"
+      "sha256": "e28fda6a3c9e228a8af6601dbe7728e8fd7812ff947073ee5562a3fe0478bb93"
     },
     {
       "file": "tests/helpers/solid-surface.mjs",

@@ -78,7 +78,7 @@
     },
     {
       "file": "src/simulation/authored-clamps.js",
-      "sha256": "84b59b7763d6384e16dff27e1d3fd4b6d4c1f3b900ec36fb96ccbf4d119533aa"
+      "sha256": "475c10c0dc42708d1daa848e499e9349965c4f1db1a4be0535014515621cb9f3"
     },
     {
       "file": "tests/helpers/solid-surface.mjs",

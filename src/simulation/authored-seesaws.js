@@ -214,10 +214,12 @@ function seesawMovement(movement) {
     frame.add(web);
     return web;
   });
+  // p98: the cheek's round top is a true semicircle concentric with the
+  // fulcrum axle (it was a taller half-ellipse, which left the axle low).
   const cheekOutline = [[-.25, .09], [.25, .09], [.25, pivot.y]];
-  for (let i = 1; i <= 48; i++) {
-    const angle = Math.PI * i / 48;
-    cheekOutline.push([.25 * Math.cos(angle), pivot.y + .305 * Math.sin(angle)]);
+  for (let i = 1; i <= 96; i++) {
+    const angle = Math.PI * i / 96;
+    cheekOutline.push([.25 * Math.cos(angle), pivot.y + .25 * Math.sin(angle)]);
   }
   const cheekProfile = polygonClipping.difference(poly(cheekOutline), poly(circle([0, pivot.y], .108, 96)));
   const apexCaps = [-0.43, 0.43].map((z) => {

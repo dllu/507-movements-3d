@@ -99,6 +99,9 @@ export default {
   // 272: the wavy face is not a solid of revolution; the shaft axis is
   // the cam's geometry X axis through its origin.
   272: [{ pattern: 'solid-disk-with-bevelled-rim-and-wavy-trough-face', axis: 'x' }],
+  // 280 (pass 98): the plain windlass wheel, its clamped rim, the coaxial
+  // barrel and hub turn as one rotor; the backstop ratchet has teeth.
+  280: ['solid-windlass-driving-wheel', 'friction-clamped-wheel-rim', 'coaxial-windlass-barrel', 'windlass-wheel-shaft-hub'],
   281: ['solid-driver-disk', 'fixed-center-disk-shaft-hub'],
   282: ['cord-running-sheave', 'pulley-retaining-flange', 'pulley-hub', 'solid-driving-disk', 'fixed-disk-axis-hub'],
   296: ['balance-roller-disk-D'],

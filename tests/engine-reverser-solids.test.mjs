@@ -31,9 +31,15 @@ test('179 lifting grip follows the engraved side, gab opens downward, and link p
  const m=createAuthoredEngineReverserMovement({id:179}),u=m.root.userData,b=u.blocks;
  try{
   m.update(0);m.root.updateMatrixWorld(true);
+  // Pass 98: the grip is a turned knob whose foot is sunk in the handle's
+  // end face (raster 94-95, 197-203) and which points out to the left, past
+  // the engraved grip centre (raster 84, 198).
   const grip=b.liftingHandleGrip.getWorldPosition(new THREE.Vector3());
   const raster=u.modelPointToSourceRaster(new THREE.Vector2(grip.x,grip.y));
-  assert.ok(raster.distanceTo(new THREE.Vector2(84,198))<1e-10);
+  assert.ok(raster.distanceTo(new THREE.Vector2(94.5,200))<1.5,`foot at the handle's end: ${raster.toArray()}`);
+  const tip=b.liftingHandleGrip.localToWorld(new THREE.Vector3(0,.46,0));
+  const tipRaster=u.modelPointToSourceRaster(new THREE.Vector2(tip.x,tip.y));
+  assert.ok(tipRaster.x<84&&Math.abs(tipRaster.y-199)<3,`knob reaches past the engraved grip: ${tipRaster.toArray()}`);
   const gab=solidSurface(b.gabBridge.geometry),length=u.geometry.eccentricRodLength;
   assert.equal(gab.inside(new THREE.Vector3(length,.10,0)),false,'open mouth');
   assert.equal(gab.inside(new THREE.Vector3(length,-.30,0)),true,'solid rounded crown');

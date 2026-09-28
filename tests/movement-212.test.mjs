@@ -186,32 +186,41 @@ test('movement 212 reproduces the official five-position construction, four pock
     'driver locking rim radius');
   near(geometry.stopSectorRadius, geometry.driverLockingRadius, 0,
     'matching stop and lock radii');
-  near(geometry.driverFingerRadius, 4.5 * geometry.constructionScale, 0,
-    'winding finger outer radius');
+  // p98: the source finger (radius 4.5, cusped ends where the reliefs
+  // graze it) stands out to 4.7 with rounded corners: fillets of radius 0.2
+  // tangent to the finger arc and to each relief circle.
+  near(geometry.driverFingerRadius, 4.7 * geometry.constructionScale, 0,
+    'lengthened winding finger outer radius');
+  near(geometry.driverFingerFilletRadius, 0.2 * geometry.constructionScale, 0,
+    'rounded finger corners');
+  for (const [center, relief] of [
+    [geometry.driverLeadingFilletCenterRaw, geometry.driverLeftReliefCenterRaw],
+    [geometry.driverTrailingFilletCenterRaw, geometry.driverRightReliefCenterRaw],
+  ]) {
+    near(center.length() + 0.2, 4.7, 1e-12, 'fillet tangent to the finger arc');
+    near(center.distanceTo(relief), 0.7 + 0.2, 1e-12,
+      'fillet tangent to its relief circle');
+  }
   near(transmission.normalIndexRatio, -24 / 17, 3e-16,
     'official 72-over-51 active ratio');
 
-  assert.equal(geometry.driverOutlineRaw.length, 1307);
+  assert.equal(geometry.driverOutlineRaw.length, 3682);
   assert.equal(geometry.stopWheelOutlineRaw.length, 1297);
-  assert.equal(geometry.driverFingerArcRaw.length, 129);
+  assert.equal(geometry.driverFingerArcRaw.length, 97);
   assert.equal(geometry.convexStopArcRaw.length, 257);
-  vector2Near(
-    geometry.driverOutlineRaw[0],
-    new THREE.Vector2(2.783027155941134, 3.5362069862062944),
-    1e-15,
-    'official driver finger arc start',
-  );
-  vector2Near(
-    geometry.driverOutlineRaw.at(-1),
-    new THREE.Vector2(2.7830276905849964, 3.53620624852058),
-    1e-15,
-    'official driver finger arc closure',
-  );
+  // Every step of the finger outline is short and turns smoothly: no cusp.
+  const outline = geometry.driverOutlineRaw;
+  const fingerIndices = outline.map((p, i) => [p, i]).filter(([p]) => p.length() > 4.05).map(([, i]) => i);
+  for (const i of fingerIndices) {
+    const a = outline[(i - 1 + outline.length) % outline.length], b = outline[i], c = outline[(i + 1) % outline.length];
+    const turn = Math.abs(b.clone().sub(a).angle() - c.clone().sub(b).angle());
+    assert.ok(Math.min(turn, 2 * Math.PI - turn) < 0.03, 'finger outline turns smoothly at ' + i);
+  }
   assert.ok(
     geometry.driverOutlineRaw[0].distanceTo(
       geometry.driverOutlineRaw.at(-1),
-    ) < 1e-6,
-    'driver profile closes within source rounding',
+    ) < 0.003,
+    'driver profile closes (duplicate closing point removed)',
   );
   vector2Near(
     geometry.stopWheelOutlineRaw[0],
@@ -241,34 +250,31 @@ test('movement 212 reproduces the official five-position construction, four pock
       `official lock-pocket center ${index}`);
   });
 
+  // The rounded leading corner meets the shoulder at the final pose.
   const terminalRaw = geometry.terminalContactPoint.clone()
     .sub(geometry.driverCenter)
     .divideScalar(geometry.constructionScale);
-  vector2Near(
-    terminalRaw,
-    new THREE.Vector2(-1.5774316870080167, 4.214464292507773),
-    2e-15,
-    'terminal tooth/stop contact reconstructed from the source profiles',
-  );
+  assert.equal(geometry.terminalContactStage, 'fillet-flank-drive');
+  const finalDriver = geometry.forwardInputLimit;
   near(
-    geometry.terminalContactPoint.distanceTo(geometry.driverCenter),
-    geometry.driverFingerRadius,
-    2e-16,
-    'terminal contact lies on the winding-finger arc',
+    terminalRaw.distanceTo(geometry.driverLeadingFilletCenterRaw.clone()
+      .rotateAround(new THREE.Vector2(), finalDriver)),
+    0.2,
+    1e-9,
+    'terminal contact lies on the rounded leading corner',
   );
+  const finalStop = model.root.userData.stateAtInputAngle(finalDriver).stopWheelAngle;
+  const shoulder = geometry.slotPolylines[0].slice(0, 2).map((point) => point.clone()
+    .rotateAround(new THREE.Vector2(), finalStop).add(geometry.stopWheelCenter));
   near(
-    pointToSegmentDistance(
-      geometry.terminalContactPoint,
-      geometry.terminalStopShoulder[0],
-      geometry.terminalStopShoulder[1],
-    ),
+    pointToSegmentDistance(geometry.terminalContactPoint, shoulder[0], shoulder[1]),
     0,
-    6e-17,
-    'terminal contact lies on the solid-sector shoulder',
+    1e-6,
+    'terminal contact lies on the solid-sector shoulder at the final pose',
   );
   near(geometry.terminalStopNormal.length(), 1, 2e-16,
     'terminal contact normal is normalized');
-  assert.ok(geometry.blockedForwardClosingRate > 1.62,
+  assert.ok(geometry.blockedForwardClosingRate > 1.6,
     'a further positive driver turn closes into the stop shoulder');
 
   near(

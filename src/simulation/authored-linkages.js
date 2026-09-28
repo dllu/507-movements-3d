@@ -1928,59 +1928,63 @@ function rockingBeamTieRodFlywheelMotion() {
   slidingStandard.userData.role =
     'right-small-standard-with-horizontal-reciprocating-motion';
   slidingStandard.userData.translationAxis = X_AXIS.clone();
+  // p98: Brown's small standard is one cast piece: a bell-shaped body whose
+  // concave sides flare from the wrist eye down to a plain plinth, with a
+  // narrow rib down its face (his two vertical lines). There are no braces.
+  // Proportions are the plate's (14 px per source unit), with the eye, like
+  // the other pin bosses here, about 1.6 times Brown's radius so it holds the
+  // shared pin ring. The eye is a circle concentric with the wrist pin, the
+  // sides are symmetric smooth curves tangent to it, and the body, rib and
+  // plinth overlap slightly so they read as one solid on the ground.
+  const standardEyeRadius = 0.25;
+  const plinthTopY = floorY + 0.17;
+  const standardBackZ = sliderStandardCenterZ - sliderStandardDepth / 2;
+  const standardFrontZ = sliderStandardCenterZ + sliderStandardDepth / 2;
+  const neckAngle = -THREE.MathUtils.degToRad(40);
+  const neck = new THREE.Vector2(
+    standardEyeRadius * Math.cos(neckAngle),
+    standardEyeRadius * Math.sin(neckAngle),
+  );
+  // Leave the eye along its tangent, then flare out to the plinth.
+  const neckTangent = new THREE.Vector2(-Math.sin(neckAngle), Math.cos(neckAngle)).negate();
+  const flank = new THREE.CubicBezierCurve(
+    neck,
+    neck.clone().addScaledVector(neckTangent, 0.10),
+    new THREE.Vector2(0.20, plinthTopY + 0.12),
+    new THREE.Vector2(0.39, plinthTopY - 0.01),
+  ).getPoints(48);
+  const bodyOutline = [
+    ...flank.map((v) => [v.x, v.y]),
+    ...flank.slice().reverse().map((v) => [-v.x, v.y]),
+  ];
   const standardUpright = new THREE.Mesh(
-    new THREE.BoxGeometry(
-      0.44,
-      sliderPostDepth,
-      sliderStandardDepth,
-    ),
+    smoothPlate(clip.union(
+      poly(bodyOutline),
+      poly(circle([0, 0], standardEyeRadius, 96)),
+    ), standardBackZ, standardFrontZ),
     frameMaterial,
   );
-  standardUpright.position.set(
-    0,
-    -sliderPostDepth / 2,
-    sliderStandardCenterZ,
-  );
-  standardUpright.userData.role = 'moving-upright-of-small-standard';
-  // The upright runs down into its foot's channel and stands on the channel
-  // floor (floorY + 0.04) instead of hovering over the open slot.
-  const uprightBottomY = floorY + 0.04 - sourceSliderWrist.y * sourceScale;
-  standardUpright.geometry.dispose();
-  standardUpright.geometry = new THREE.BoxGeometry(0.44, -uprightBottomY, sliderStandardDepth);
-  standardUpright.position.y = uprightBottomY / 2;
+  standardUpright.userData.role = 'moving-bell-body-of-small-standard';
   const standardFoot = new THREE.Mesh(
-    new THREE.BoxGeometry(0.92, 0.14, 0.72),
+    plate(poly([[-0.41, floorY + 0.02], [0.41, floorY + 0.02], [0.41, plinthTopY], [-0.41, plinthTopY]]),
+      standardBackZ - 0.06, standardFrontZ + 0.07),
     frameMaterial,
   );
-  standardFoot.position.set(0, floorY + 0.09, sliderStandardCenterZ);
-  standardFoot.userData.role = 'moving-foot-sliding-on-horizontal-rail';
-  // Extrude a YZ sleeve along X. Local horizontal coordinate is -world Z.
-  standardFoot.geometry.dispose();
-  standardFoot.geometry = plate(clip.difference(
-    poly([[.07,floorY+.02],[.79,floorY+.02],[.79,floorY+.16],[.07,floorY+.16]]),
-    poly([[.165,floorY+.04],[.695,floorY+.04],[.695,floorY+.17],[.165,floorY+.17]])),
-    -.46,.46).rotateY(Math.PI/2);
-  standardFoot.position.set(0,0,0);
+  standardFoot.userData.role = 'moving-plinth-of-small-standard-on-ground';
   const standardBearingRing = new THREE.Mesh(
     new THREE.TorusGeometry(0.24, 0.065, 10, 36),
     accentMaterial,
   );
   standardBearingRing.position.z = 0.20;
   standardBearingRing.userData.role = 'bearing-ring-at-moving-standard-wrist';
-  const standardLeftBrace = makeBeam(
-    new THREE.Vector3(-0.39, floorY + 0.17, sliderStandardCenterZ),
-    new THREE.Vector3(-0.16, -0.23, sliderStandardCenterZ),
-    { color: PALETTE.frame, depth: 0.22, thickness: 0.13 },
+  // The rib runs from the eye down onto the plinth, standing proud of the
+  // body's face and sunk into the body behind it.
+  const standardRib = new THREE.Mesh(
+    plate(poly([[-0.045, plinthTopY - 0.01], [0.045, plinthTopY - 0.01], [0.045, -standardEyeRadius + 0.02], [-0.045, -standardEyeRadius + 0.02]]),
+      standardFrontZ - 0.06, standardFrontZ + 0.06),
+    frameMaterial,
   );
-  standardLeftBrace.userData.role = 'left-gusset-of-moving-standard';
-  const standardRightBrace = makeBeam(
-    new THREE.Vector3(0.39, floorY + 0.17, sliderStandardCenterZ),
-    new THREE.Vector3(0.16, -0.23, sliderStandardCenterZ),
-    { color: PALETTE.frame, depth: 0.22, thickness: 0.13 },
-  );
-  standardRightBrace.userData.role = 'right-gusset-of-moving-standard';
-  standardLeftBrace.position.y = .04;
-  standardRightBrace.position.y = .04;
+  standardRib.userData.role = 'moving-front-rib-of-small-standard';
   const sliderWristPin = makePinAssembly({
     centerZ: -0.02,
     length: 1.02,
@@ -1996,16 +2000,14 @@ function rockingBeamTieRodFlywheelMotion() {
     sliderWristPin,
     standardBearingRing,
     standardFoot,
-    standardLeftBrace,
-    standardRightBrace,
+    standardRib,
     standardUpright,
   );
   slidingStandard.userData.blocks = {
     sliderWristPin,
     standardBearingRing,
     standardFoot,
-    standardLeftBrace,
-    standardRightBrace,
+    standardRib,
     standardUpright,
   };
 

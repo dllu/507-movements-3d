@@ -1225,7 +1225,8 @@ function invertedPendulumEngine(movement) {
       [0.55 * sourceScale, -0.35 * sourceScale],
       [-0.55 * sourceScale, -0.35 * sourceScale],
     ]),
-    poly(circle([crankCenter.x, crankCenter.y - 0.2 * sourceScale], 0.8 * sourceScale, 96)),
+    // The bearing's round top is concentric with the crankshaft O.
+    poly(circle([crankCenter.x, crankCenter.y], 0.8 * sourceScale, 96)),
   );
   const crankRailLow = -0.62;
   const trunnionRailLow = -1.22;

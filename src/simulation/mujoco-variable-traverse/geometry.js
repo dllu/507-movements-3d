@@ -46,8 +46,13 @@ export function makeVariableTraverseGeometry({upperTeeth=29,lowerTeeth=23,crankS
  const shape=clip.difference(capsule(...pins.map(n=>floatingLocal(source.circles[n].center)),linkRadius,64),...pins.map(n=>poly(circle(floatingLocal(source.circles[n].center),source.circles[n].radius/100+.0015,96))));
  add('floatingLink',plate(shape,.44,.6),'floating',PALETTE.brass);
  for(const n of pins){const p=floatingLocal(source.circles[n].center);f[n]=p;add(n,translated(disk(source.circles[n].radius/100,.26,.67,96),p),'floating',PALETTE.ink);const eye=source.circles[n==='topPin'?'topEye':'bottomEye'].radius/100;add(n+'Eye',translated(ring(source.circles[n].radius/100+.0015,eye,.6,.64,128),p),'floating',PALETTE.brass);}
- const bar=new THREE.Shape();bar.moveTo(350,174);bar.bezierCurveTo(330,177,333,214,351,219);bar.lineTo(407,209);bar.lineTo(416,195);bar.lineTo(495,180);bar.bezierCurveTo(507,182,510,157,499,156);bar.lineTo(416,174);bar.lineTo(410,176);bar.lineTo(404,169);bar.closePath();
- add('outputBar',plate(clip.difference(poly(bar.getPoints(24).map(p=>floatingLocal(p.toArray()))),poly(circle([0,0],source.circles.centerPin.radius/100+.0015,128))),.66,.8),'slider',PALETTE.driven);
+ // p98: the output bar's eye is a true arc of radius outputEye (source px)
+ // concentric with the centre pin, met by straight tangents from the neck
+ // corners; the traced end bulged off-centre.
+ const outputEye=25,pinC=source.circles.centerPin.center,tangentAt=(p,side)=>{const d=sub(p,pinC),q=Math.atan2(d[1],d[0])+side*Math.acos(outputEye/Math.hypot(...d));return q;};
+ const eyeFrom=tangentAt([404,169],-1),eyeTo=tangentAt([407,209],1)-2*Math.PI;
+ const bar=new THREE.Shape();bar.moveTo(pinC[0]+outputEye*Math.cos(eyeFrom),pinC[1]+outputEye*Math.sin(eyeFrom));bar.absarc(pinC[0],pinC[1],outputEye,eyeFrom,eyeTo,true);bar.lineTo(407,209);bar.lineTo(416,195);bar.lineTo(495,180);bar.bezierCurveTo(507,182,510,157,499,156);bar.lineTo(416,174);bar.lineTo(410,176);bar.lineTo(404,169);bar.closePath();
+ add('outputBar',plate(clip.difference(poly(bar.getPoints(64).map(p=>floatingLocal(p.toArray()))),poly(circle([0,0],source.circles.centerPin.radius/100+.0015,128))),.66,.8),'slider',PALETTE.driven);
  add('centerPin',disk(source.circles.centerPin.radius/100,.6,.85,128),'floating',PALETTE.ink);
  // Brown breaks the output bar off at the plate edge; it ends there on its
  // own rounded end (no added guide or stand: p60 support policy).

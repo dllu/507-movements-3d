@@ -274,7 +274,8 @@ function snyderDoubleStrokeSlotDrive(movement) {
   const sourcePivotSpacing = sourceGuideToPrimaryPivot
     - sourceGuideToSecondaryPivot;
   const sourceRodHalfWidth = 1;
-  const sourceRodBottomY = -(sourceGuideToPrimaryPivot + 1.5);
+  // The rounded lower end is a half-circle of the rod half-width centred on C1.
+  const sourceRodBottomY = -(sourceGuideToPrimaryPivot + sourceRodHalfWidth);
   const sourceCyclesPerMinute = 15;
   const cyclePeriod = 60 / sourceCyclesPerMinute;
   const inputAngularSpeed = FULL_TURN / cyclePeriod;

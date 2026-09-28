@@ -1,7 +1,7 @@
 import {correctCordTraverseParts} from './cord-traverse-working-parts.js';
 import { LAID_ROPE, replaceWithLaidRope } from './laid-rope.js';
 import * as THREE from 'three';
-import { crankArmGeometry, turnedHandleGeometry, HANDLE_FOOT_EMBED } from './turned-handle.js';
+import { crankArmGeometry, turnedHandleGeometry, handleShank, HANDLE_FOOT_EMBED } from './turned-handle.js';
 import {
   PALETTE,
   makeBeam,
@@ -537,7 +537,7 @@ function fuseeCarriageTraverse(movement) {
   const crankHandle = new THREE.Mesh(
     turnedHandleGeometry({ height: 0.41 + HANDLE_FOOT_EMBED, side: [
       [0.05, 0], [0.038, 0.12], [0.036, 0.42], [0.06, 0.62], [0.082, 0.8],
-    ] }),
+    ], shank: handleShank(0.10) }), // pass 98: flush with the arm's back face
     darkMaterial,
   );
   crankHandle.position.set(-crankRadius, crankArmTopY - HANDLE_FOOT_EMBED, 0);

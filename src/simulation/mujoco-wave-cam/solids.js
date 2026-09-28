@@ -51,9 +51,13 @@ export function makeWaveCamSolids(){
  }
  add('fulcrumPin',disk(.144,2.78,3.01,96),'fixed',PALETTE.ink,[g.pivot[0],g.pivot[1],0]);
  add('fulcrumPinHead',disk(.16,3.005,3.055,96),'fixed',PALETTE.ink,[g.pivot[0],g.pivot[1],0]);
- // The caption requires rectilinear output. Its small transverse pin travel is
- // hidden inside the round eye; the unpictured vertical guide remains ideal.
- const output=clip.difference(clip.union(poly(circle([0,0],eyeRadius,96)),capsule([0,-.20],[0,-2.304],.126,32)),capsule([-.12,0],[.015,0],bore,64));
+ // The caption requires rectilinear output. Its small transverse pin travel
+ // (x -0.068 to -0.001 about the output line in the bake; the slot keeps its
+ // wider -0.12 to 0.015 allowance) is hidden inside the round eye; eye and bar
+ // are centred on the middle of that travel so the eye stays within 0.034 of
+ // concentric with the pin. The unpictured vertical guide remains ideal.
+ const eyeX=-.0345;
+ const output=clip.difference(clip.union(poly(circle([eyeX,0],eyeRadius,96)),capsule([eyeX,-.20],[eyeX,-2.304],.126,32)),capsule([-.12,0],[.015,0],bore,64));
  add('uprightBar',plate(output,2.68,2.80),'output',PALETTE.driven);
  const sync=makeWaveCamUpdater(root,{...g,left});
  const initial={cam:0,rocker:theta,rollerAngle:0,rollerCenter:[g.rollerX,g.rollerY,g.rollerZ],outputY:left[1]};sync(initial);markShadows(root);

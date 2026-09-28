@@ -34,7 +34,10 @@ export function makeAlternatingPegPawlDrive(){
  }
  attach('wheelAxle',disk(.137,-.32,.10),'fixed',PALETTE.muted);
  attach('wheelAxleCap',disk(.15,.10,.12),'fixed',PALETTE.muted);
- const local=point=>sub(motion.source(point),p.A),top=local([1180.5,452]),leverOutline=[local([1148,1080])];
+ // The rounded top end is a true arc concentric with the upper pawl pin, as
+ // Brown draws the pin centred in the end (the traced end centre sat 0.054
+ // above the pin, leaving an off-centre eye).
+ const local=point=>sub(motion.source(point),p.A),top=p.arms.upper,leverOutline=[local([1148,1080])];
  for(let i=0;i<=128;i++)leverOutline.push(add(top,rotate([35/p.scale,0],Math.PI-Math.PI*i/128)));
  leverOutline.push(local([1218,1109]));
  const leverShape=clip.difference(poly(leverOutline),poly(circle([0,0],.044)),...['upper','lower'].map(key=>poly(circle(p.arms[key],.037))));

@@ -6,7 +6,7 @@ import {
 } from './primitives.js';
 
 import {fitPistonGuide} from './piston-guide-parts.js';
-import {helicalThread,threadAngles} from './mujoco-screw/thread-geometry.js';
+import {threadAngles,threadStations} from './mujoco-screw/thread-geometry.js';
 
 const FULL_TURN = Math.PI * 2;
 const Y_AXIS = new THREE.Vector3(0, 1, 0);
@@ -167,6 +167,115 @@ function makeThread({
   return { curve, mesh };
 }
 
+// Brown's half-section as a closed solid: the square thread over the kept
+// half (thread angles 0..pi, which the -pi/2 X rotation places behind the
+// section plane z=0), with a flat radial section face at each cut. Nothing
+// is clipped at render time, so no open thread interiors show. Written
+// straight into typed arrays (and into an existing geometry when given), so
+// the turning nut's thread can be rebuilt every frame.
+function halfSectionThread(p, segments, target = null) {
+  const angles = threadAngles(p, segments, [Math.PI]);
+  const stations = threadStations(p, angles);
+  const quadCount = 4 * stations.length + 16;
+  const capacity = target ? target.userData.threadCapacity : Math.ceil(quadCount * 1.25) * 6;
+  const geometry = target ?? new THREE.BufferGeometry();
+  let positions = geometry.getAttribute('position')?.array;
+  let normals = geometry.getAttribute('normal')?.array;
+  if (!positions || positions.length < capacity * 3) {
+    positions = new Float32Array(capacity * 3);
+    normals = new Float32Array(capacity * 3);
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geometry.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
+    geometry.userData.threadCapacity = capacity;
+  }
+  let count = 0;
+  // Thread frame (x, y, z) goes to the part as (x, z, -y) (rotateX(-pi/2)).
+  const put = (x, y, z, nx, ny, nz) => {
+    const i = 3 * count;
+    positions[i] = x; positions[i + 1] = z; positions[i + 2] = -y;
+    normals[i] = nx; normals[i + 1] = nz; normals[i + 2] = -ny;
+    count += 1;
+  };
+  const triangle = (a, b, c, na, nb, nc) => {
+    const ux = b[0] - a[0], uy = b[1] - a[1], uz = b[2] - a[2];
+    const vx = c[0] - a[0], vy = c[1] - a[1], vz = c[2] - a[2];
+    const cx = uy * vz - uz * vy, cy = uz * vx - ux * vz, cz = ux * vy - uy * vx;
+    if (cx * cx + cy * cy + cz * cz < 1e-22 || count + 3 > capacity) return;
+    if (cx * (na[0] + nb[0] + nc[0]) + cy * (na[1] + nb[1] + nc[1]) + cz * (na[2] + nb[2] + nc[2]) < 0) {
+      [b, c] = [c, b]; [nb, nc] = [nc, nb];
+    }
+    put(...a, ...na); put(...b, ...nb); put(...c, ...nc);
+  };
+  const quad = (q, n) => { triangle(q[0], q[1], q[2], n[0], n[1], n[2]); triangle(q[0], q[2], q[3], n[0], n[2], n[3]); };
+  const at = (r, t, z) => [r * Math.cos(t), r * Math.sin(t), z];
+  // Runs of stations lying in one kept half-turn [2k pi, 2k pi + pi].
+  const runs = [];
+  let run = null, runTurn = null;
+  for (const station of stations) {
+    const turn = Math.floor((station.angle + 1e-9) / FULL_TURN);
+    let local = station.angle - turn * FULL_TURN;
+    if (local < 1e-9) local = 0;
+    const kept = local <= Math.PI + 1e-9;
+    if (kept && run && runTurn === turn) run.push(station);
+    else if (kept) { run = [station]; runTurn = turn; runs.push(run); }
+    else run = null;
+  }
+  const flank = (side, clipped, r, t) => {
+    const k = clipped ? 0 : p.lead;
+    const x = side * k * Math.sin(t), y = -side * k * Math.cos(t), z = side * r, l = Math.hypot(x, y, z);
+    return [x / l, y / l, z / l];
+  };
+  for (const inRun of runs) {
+    if (inRun.length < 2) continue;
+    for (let i = 0; i + 1 < inRun.length; i += 1) {
+      const a = inRun[i], b = inRun[i + 1];
+      const center = p.phase + p.lead * (a.angle + b.angle) / 2;
+      for (const [side, r] of [[-1, p.inner], [1, p.outer]]) {
+        const na = [side * Math.cos(a.angle), side * Math.sin(a.angle), 0];
+        const nb = [side * Math.cos(b.angle), side * Math.sin(b.angle), 0];
+        quad([at(r, a.angle, a.low), at(r, b.angle, b.low), at(r, b.angle, b.high), at(r, a.angle, a.high)], [na, nb, nb, na]);
+      }
+      for (const side of [-1, 1]) {
+        const key = side < 0 ? 'low' : 'high';
+        const clipped = side < 0 ? center - p.width / 2 < p.low : center + p.width / 2 > p.high;
+        quad([at(p.inner, a.angle, a[key]), at(p.outer, a.angle, a[key]), at(p.outer, b.angle, b[key]), at(p.inner, b.angle, b[key])],
+          [flank(side, clipped, p.inner, a.angle), flank(side, clipped, p.outer, a.angle),
+            flank(side, clipped, p.outer, b.angle), flank(side, clipped, p.inner, b.angle)]);
+      }
+    }
+  }
+  // Group 0 is the turned thread, group 1 its flat section faces, drawn in
+  // the part's section material like the body's cut faces beside them.
+  const surfaceCount = count;
+  for (const inRun of runs) {
+    if (inRun.length < 2) continue;
+    for (const [station, sign] of [[inRun[0], -1], [inRun.at(-1), 1]]) {
+      const n = [-sign * Math.sin(station.angle), sign * Math.cos(station.angle), 0];
+      quad([at(p.inner, station.angle, station.low), at(p.outer, station.angle, station.low),
+        at(p.outer, station.angle, station.high), at(p.inner, station.angle, station.high)], [n, n, n, n]);
+    }
+  }
+  // Clear what a longer previous build left beyond the new end.
+  const previous = geometry.userData.threadVertexCount ?? 0;
+  if (previous > count) { positions.fill(0, 3 * count, 3 * previous); normals.fill(0, 3 * count, 3 * previous); }
+  geometry.clearGroups();
+  geometry.addGroup(0, surfaceCount, 0);
+  geometry.addGroup(surfaceCount, count - surfaceCount, 1);
+  geometry.setDrawRange(0, count);
+  geometry.attributes.position.needsUpdate = true;
+  geometry.attributes.normal.needsUpdate = true;
+  geometry.userData.thread = { ...p, halfSection: true };
+  geometry.userData.threadVertexCount = count;
+  // Bounds over the drawn vertices only.
+  const box = geometry.boundingBox ?? new THREE.Box3();
+  box.makeEmpty();
+  const v = new THREE.Vector3();
+  for (let i = 0; i < count; i += 1) box.expandByPoint(v.fromArray(positions, 3 * i));
+  geometry.boundingBox = box;
+  geometry.boundingSphere = box.getBoundingSphere(geometry.boundingSphere ?? new THREE.Sphere());
+  return geometry;
+}
+
 function unionPipeCoupling(movement) {
   const root = new THREE.Group();
 
@@ -215,7 +324,7 @@ function unionPipeCoupling(movement) {
   // removed on the axial plane z=0, so the camera looks square onto the
   // hatched section while pipe A stays whole (its bore dashed = hidden).
   const cutawayHalfAngle = Math.PI / 2;
-  const sectionClipPlanes = [new THREE.Plane(new THREE.Vector3(0, 0, -1), 0)];
+  const threadSegments = 192;
   const pipeBoreRadius = 0.54;
   const pipeAOuterRadius = 0.84;
   const pipeAMinimumY = 1.3;
@@ -467,14 +576,33 @@ function unionPipeCoupling(movement) {
   });
   // Closed complementary square-thread solids, in the same screw convention
   // as the retained exact nut law y=tightY-lead*angle/(2*pi).
-  const externalProfile={inner:threadedBossCoreRadius,outer:externalThreadRadius+externalThreadTubeRadius,low:externalThreadMinimumY,high:externalThreadMaximumY,width:threadPitch/2-.004,lead:-threadLeadPerRadian,phase:externalThreadMinimumY};
-  const internalProfile={inner:threadedBossCoreRadius+threadRadialClearance,outer:nutCavityRadius,low:internalThreadMinimumY,high:internalThreadMaximumY,width:threadPitch/2-.008,lead:-threadLeadPerRadian,phase:externalThreadMinimumY-tightNutY+threadPitch/2};
+  // Each thread's root face sits 0.002 inside the core or nut wall it is cut
+  // from, so the two solids overlap instead of sharing a coincident face.
+  const externalProfile={inner:threadedBossCoreRadius-.002,outer:externalThreadRadius+externalThreadTubeRadius,low:externalThreadMinimumY,high:externalThreadMaximumY,width:threadPitch/2-.004,lead:-threadLeadPerRadian,phase:externalThreadMinimumY};
+  const internalProfile={inner:threadedBossCoreRadius+threadRadialClearance,outer:nutCavityRadius+.002,low:internalThreadMinimumY,high:internalThreadMaximumY,width:threadPitch/2-.008,lead:-threadLeadPerRadian,phase:externalThreadMinimumY-tightNutY+threadPitch/2};
   for(const [mesh,profile]of [[externalThreadParts.mesh,externalProfile],[internalThreadParts.mesh,internalProfile]]){
-    mesh.geometry.dispose();mesh.geometry=helicalThread(profile,threadAngles(profile,96)).rotateX(-Math.PI/2);
+    mesh.geometry.dispose();mesh.geometry=halfSectionThread(profile,threadSegments);
     mesh.userData.threadProfile=profile;
-    mesh.material.side=THREE.DoubleSide;mesh.material.clippingPlanes=sectionClipPlanes;
+    mesh.material=[mesh.material,mesh===externalThreadParts.mesh?pipeCSectionMaterial:nutSectionMaterial];
   }
-  nutB.add(internalThreadParts.mesh);
+  // B's thread turns with B, but the section plane is fixed. It is held in
+  // a counter-rotated frame like B's body; there the nut's rotation by theta
+  // is the same helix with its phase moved by -lead*theta (the axial end
+  // planes are unchanged), so the closed half-section is rebuilt only when
+  // the nut angle changes.
+  const internalThreadHolder = new THREE.Group();
+  internalThreadHolder.userData.role = 'world-fixed-half-section-holder-of-thread-B';
+  internalThreadHolder.add(internalThreadParts.mesh);
+  nutB.add(internalThreadHolder);
+  let internalThreadAngle = 0;
+  const setInternalThreadAngle = (angle) => {
+    if (angle === internalThreadAngle) return;
+    internalThreadAngle = angle;
+    halfSectionThread({
+      ...internalProfile,
+      phase: internalProfile.phase - internalProfile.lead * angle,
+    }, threadSegments, internalThreadParts.mesh.geometry);
+  };
 
   const gripRibs = Array.from({ length: 10 }, (_, index) => {
     const fraction = (index + 0.5) / 10;
@@ -912,6 +1040,8 @@ function unionPipeCoupling(movement) {
     nutB.position.set(0, state.nutY, 0);
     nutB.rotation.set(0, state.nutAngle, 0);
     nutSectionHolder.rotation.set(0, -state.nutAngle, 0);
+    internalThreadHolder.rotation.set(0, -state.nutAngle, 0);
+    setInternalThreadAngle(state.nutAngle);
     pipeA.userData.velocity = new THREE.Vector3(
       0,
       state.pipeAVelocity,

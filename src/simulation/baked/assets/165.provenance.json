@@ -81,7 +81,7 @@
     },
     {
       "file": "src/simulation/mujoco-wave-cam/solids.js",
-      "sha256": "d93e058a0f2ef25c2e20cec215f8564068d998f422dd6d495693cabce41484e7"
+      "sha256": "09460b762f2fad6a1f884f7d4b8e848c74539e5df8d0e7339f181292e7dee48f"
     },
     {
       "file": "src/simulation/mujoco-wave-cam/adaptive-profile.js",
@@ -105,10 +105,10 @@
     },
     {
       "file": "src/simulation/primitives.js",
-      "sha256": "166b5cad3d2d590379a57cf81d4376771f1059102dfd8e5d0d25e74b9e785e18"
+      "sha256": "e28fda6a3c9e228a8af6601dbe7728e8fd7812ff947073ee5562a3fe0478bb93"
     }
   ],
   "samples": 2259,
-  "bytes": 313844,
-  "sha256": "2c892b586f548c375964e8bb1fefbbb62f472bf925c413b2be2ef57d56d4d1f4"
+  "bytes": 318566,
+  "sha256": "4b392c9ea1d68c0d14c78ae2417fcc31c5139a521f8b7a4aba7e016a659b0eee"
 }

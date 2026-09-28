@@ -12,14 +12,15 @@ export function finishSounding247Parts(model){
  const upper=b.catchAssembly.children.find(o=>o.userData.role==='probe-driven-upper-bell-crank-arm');
  const lower=b.catchAssembly.children.find(o=>o.userData.role==='lower-weight-releasing-catch-arm');
  const upperPlate=replaceGroup(upper,plate(clip.difference(clip.union(capsule([0,0],g.upperContactLocal.toArray(),.065,32),poly(circle([0,0],.19,64))),poly(circle([0,0],.154,64)),poly(circle(g.upperContactLocal.toArray(),.022,64))),-.07,.07));
- const lowerPlate=replaceGroup(lower,arm([0,0],[.35,-.78],.13,.19,.154,.14));
+ const tuck=g.catchTuck??0,lowerEnd=[.35*Math.cos(tuck)+.78*Math.sin(tuck),.35*Math.sin(tuck)-.78*Math.cos(tuck)];
+ const lowerPlate=replaceGroup(lower,arm([0,0],lowerEnd,.13,.19,.154,.14));
  b.catchAssembly.position.z=0;b.probeAssembly.position.z=-.25;b.pivotPin.position.z=0;b.detentSpring.position.z=-.25;
  // Widen only the contact pad in X to retain the moving rounded arm end.
  replace(b.probePusher,new THREE.BoxGeometry(.59,.12,.12));b.probePusher.position.x=-.155;b.probePusher.position.y-=.065;b.probePusher.position.z+=.14;
  const roller=new THREE.Mesh(ring(.022,.065,.10,.18,128),b.catchNose.material);roller.position.set(g.upperContactLocal.x,g.upperContactLocal.y,0);b.catchAssembly.add(roller);
  const axle=new THREE.Mesh(new THREE.CylinderGeometry(.018,.018,.27,24),b.pivotPin.material);axle.rotation.x=Math.PI/2;axle.position.set(g.upperContactLocal.x,g.upperContactLocal.y,.055);b.catchAssembly.add(axle);
  const bridge=new THREE.Mesh(new THREE.BoxGeometry(.10,.07,.18),b.probePusher.material);bridge.position.set(b.probeShaft.position.x,b.probePusher.position.y-.02,.30);b.probeAssembly.add(bridge);
- replace(b.catchNose,plate(capsule([.30,-.84],g.catchSupportLocal.toArray(),.025,64),-.05,.05));
+ replace(b.catchNose,plate(capsule(g.catchSeatStartLocal??[.30,-.84],g.catchSupportLocal.toArray(),.025,64),-.05,.05));
  const bore=[b.probeShaft.position.x,b.probeShaft.position.z+b.probeAssembly.position.z-b.lowerGuideBlock.position.z];
  const guide=plate(clip.difference(clip.union(rectangle(-.34,-.34,.34,.34),poly(circle(bore,.092,64))),poly(circle(bore,.060,64))),-.21,.21);guide.rotateX(Math.PI/2);replace(b.lowerGuideBlock,guide);
  b.catchIndex.visible=false;
@@ -62,7 +63,7 @@ export function finishOtis278Parts(model){
 function finishSounding247Seat(model){
  const d=model.root.userData,g=d.geometry,b=d.blocks,source=d.stateAtTime,old=model.update,r=.025,zMax=.05,bore=g.boreRadius*Math.cos(b.weightShell.geometry.parameters.phiLength/(2*b.weightShell.geometry.parameters.segments))-.000005;
  const center=a=>new THREE.Vector2(g.catchSupportLocal.x*Math.cos(a)-g.catchSupportLocal.y*Math.sin(a)+g.pivot.x,g.catchSupportLocal.x*Math.sin(a)+g.catchSupportLocal.y*Math.cos(a)+g.pivot.y);
- const support=(a,details=false)=>{const end=center(a),start=new THREE.Vector2(.30*Math.cos(a)+.84*Math.sin(a)+g.pivot.x,.30*Math.sin(a)-.84*Math.cos(a)+g.pivot.y),slope=(end.y-start.y)/(end.x-start.x);
+ const support=(a,details=false)=>{const end=center(a),[sx,sy]=g.catchSeatStartLocal??[.30,-.84],start=new THREE.Vector2(sx*Math.cos(a)-sy*Math.sin(a)+g.pivot.x,sx*Math.sin(a)+sy*Math.cos(a)+g.pivot.y),slope=(end.y-start.y)/(end.x-start.x);
   const xs=[start.x,end.x];for(const z of[0,zMax]){const R=Math.sqrt(g.weightOuterRadius**2-z*z),inner=Math.sqrt(bore**2-z*z),factor=slope/Math.sqrt(1+slope*slope);xs.push(THREE.MathUtils.clamp((R+r)*factor,start.x,end.x),THREE.MathUtils.clamp(inner+r*factor,start.x,end.x));}
   let height=-Infinity,point;for(const cx of xs){const cy=start.y+slope*(cx-start.x);for(const z of[0,zMax,Math.min(zMax,Math.sqrt(Math.max(0,bore**2-cx**2)))]){const R=Math.sqrt(g.weightOuterRadius**2-z*z),inner=Math.sqrt(bore**2-z*z),x=Math.max(inner,cx*R/(R+r));if(x<=cx+r+1e-12){const y=cy+Math.sqrt(Math.max(0,r*r-(x-cx)**2)),h=y+Math.sqrt(g.weightOuterRadius**2-x*x-z*z);if(h>height){height=h;point=new THREE.Vector3(x,y,z);}}}}return details?{height,point}:height;};
 
@@ -76,16 +77,16 @@ function finishSounding247Seat(model){
  lo=d.timeline.seabedContact;hi=lo;
  while(hi<geometricWithdrawal-dh&&acceleration(hi)>=-gravity){lo=hi;hi+=.001;}
  for(let i=0;i<32;i++){const mid=(lo+hi)/2;if(acceleration(mid)>=-gravity)lo=mid;else hi=mid;}
- const nominalSeat=g.pivot.y+g.catchSupportLocal.y+g.weightOpeningHalfHeight,seatOffset=support(0)-nominalSeat,dropStart=d.timeline.rodRecovered,dropSpan=d.timeline.weightSeated-dropStart,release=(lo+hi)/2,releaseHeight=envelope(release),releaseVelocity=(envelope(release+dh)-envelope(release-dh))/(2*dh),ground=g.weightOpeningHalfHeight;
+ const nominalSeat=g.pivot.y+g.catchSupportLocal.y+g.weightOpeningHalfHeight,seatOffset=support(0)-(g.seatRestRelativeY??nominalSeat),release=(lo+hi)/2,releaseHeight=envelope(release),releaseVelocity=(envelope(release+dh)-envelope(release-dh))/(2*dh),ground=g.weightOpeningHalfHeight;
  const impact=release+(releaseVelocity+Math.sqrt(releaseVelocity**2+2*gravity*(releaseHeight-ground)))/gravity;
  function centerY(time){const s=source(time),t=s.cycleTime;
   if(t<release)return s.bodyPositionY+support(s.catchAngle);
   if(t<impact-1e-12)return Math.max(ground,releaseHeight+releaseVelocity*(t-release)-.5*gravity*(t-release)**2);
-  if(t<d.timeline.rodRecovered)return ground;
-  // The fresh weight runs down the line onto the reset catch; its run is
-  // shifted progressively so that it ends on the finite seat.
-  if(t<dropStart)return s.weightCenterY;
-  if(t<d.timeline.weightSeated)return s.weightCenterY+seatOffset*(t-dropStart)/dropSpan;
+  if(t<d.timeline.weightLiftBegins)return ground;
+  // p98: the same weight is lifted off the bottom and held for the rod to
+  // re-engage; its lift is raised progressively by the finite seat's offset
+  // so that the seat meets it exactly.
+  if(t<d.timeline.weightSeated)return s.weightCenterY+seatOffset*s.weightLiftProgress;
   return envelope(time);
  }
  d.nominalKinematics247={stateAtTime:source,stateAtCyclePhase:d.stateAtCyclePhase,timeline:{...d.timeline},geometry:{...g}};
@@ -93,11 +94,10 @@ function finishSounding247Seat(model){
  d.stateAtTime=time=>{const s=source(time),t=s.cycleTime,y=centerY(time);let v,acc;
   if(t<release){v=(envelope(time+dh)-envelope(time-dh))/(2*dh);acc=acceleration(time);}
   else if(t<impact){v=releaseVelocity-gravity*(t-release);acc=-gravity;}
-  else if(t<d.timeline.rodRecovered){v=0;acc=0;}
-  else if(t<dropStart){v=s.weightVelocity;acc=s.weightAcceleration;}
-  else if(t<d.timeline.weightSeated){v=s.weightVelocity+seatOffset/dropSpan;acc=s.weightAcceleration;}
+  else if(t<d.timeline.weightLiftBegins){v=0;acc=0;}
+  else if(t<d.timeline.weightSeated){v=(centerY(time+dh)-centerY(time-dh))/(2*dh);acc=(centerY(time+dh)-2*y+centerY(time-dh))/(dh*dh);}
   else{v=s.bodyVelocity;acc=s.bodyAcceleration;}
-  const active=t<release||t>=d.timeline.weightSeated,p=center(s.catchAngle),overlap=Math.hypot(p.x+r,zMax)-bore;return{...s,supportOverlap:overlap,supportRadialClearance:-overlap,supportRadialReach:bore+overlap,weightOnSeabed:t>=impact&&t<d.timeline.rodRecovered,weightCenterY:y,weightLowerOpeningY:y-g.weightOpeningHalfHeight,weightUpperOpeningY:y+g.weightOpeningHalfHeight,weightVelocity:v,weightAcceleration:acc,catchSupportPosition:s.catchSupportPosition.clone().setZ(0),catchToWeightContactActive:active,finiteSeatActive:active,finiteSeatReleaseTime:release,stage:t>=release&&t<impact?'weight-free-fall':t>=d.nominalKinematics247.timeline.supportRelease&&t<release?'finite-nose-withdrawing-before-release':s.stage};};
+  const active=t<release||t>=d.timeline.weightSeated,p=center(s.catchAngle),overlap=Math.hypot(p.x+r,zMax)-bore;return{...s,supportOverlap:overlap,supportRadialClearance:-overlap,supportRadialReach:bore+overlap,weightOnSeabed:t>=impact&&t<d.timeline.weightLiftBegins,weightCenterY:y,weightLowerOpeningY:y-g.weightOpeningHalfHeight,weightUpperOpeningY:y+g.weightOpeningHalfHeight,weightVelocity:v,weightAcceleration:acc,catchSupportPosition:s.catchSupportPosition.clone().setZ(0),catchToWeightContactActive:active,finiteSeatActive:active,finiteSeatReleaseTime:release,stage:t>=release&&t<impact?'weight-free-fall':t>=d.nominalKinematics247.timeline.supportRelease&&t<release?'finite-nose-withdrawing-before-release':s.stage};};
 
  d.stateAtCyclePhase=q=>d.stateAtTime(q*d.timeline.cycleClosure);
  model.update=time=>{old(time);const s=d.stateAtTime(time);b.weightAssembly.position.y=s.weightCenterY;d.kinematics=s;const seat=s.finiteSeatActive?support(s.catchAngle,true):null;d.contacts.catchToWeight={active:s.finiteSeatActive,nominalPointSuperseded:true,supportEnvelopeHeight:s.weightCenterY,supportPoint:seat?.point.clone().add(new THREE.Vector3(0,s.bodyPositionY,0))??null};d.contacts.weightToSeabed={active:s.weightOnSeabed,gap:s.weightLowerOpeningY,impactSpeed:gravity*(impact-release)-releaseVelocity};};

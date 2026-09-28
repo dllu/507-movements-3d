@@ -3545,8 +3545,13 @@ test('movement 46 winds an articulated chain between a fusee and a fixed-arbor s
   {
     const state = model.root.userData.fuseeState;
     const wrapLeft = 2 * Math.PI * g.grooveTurns * (1 - state.progress);
-    assert.ok(Math.abs(wrapLeft - 5.0) < 1e-9 && state.fuseeRadius === g.fuseeBottomRadius,
+    const contact = model.root.userData.motion.tierPath.at(2 * Math.PI * g.grooveTurns - wrapLeft);
+    assert.ok(Math.abs(wrapLeft - 5.0) < 1e-9 && contact.phase === 'level' && contact.tier === 2,
       'the source pose leaves about one wrap on the lowest tier, as the plate draws');
+    // p98: the risers form one Archimedean spiral, so the contact radius
+    // grows steadily with the wrapped angle.
+    assert.ok(Math.abs(state.fuseeRadius - contact.radius) < 1e-12);
+    assert.ok(Math.abs(state.fuseeRadius - g.chainRadiusStart - g.radialPitch * (2 * Math.PI * g.grooveTurns - wrapLeft) / (2 * Math.PI)) < 1e-12);
   }
   assertReadableTiming(model.root.userData.animationTiming);
   for (const progress of [0, 0.1, 0.25, 0.5, 0.75, 0.9, 1]) {
@@ -37134,8 +37139,7 @@ test('movement 145 closes one tied rod and rocking beam around a continuously ro
     sliderWristPin,
     standardBearingRing,
     standardFoot,
-    standardLeftBrace,
-    standardRightBrace,
+    standardRib,
     standardUpright,
   } = slidingStandard.userData.blocks;
 
@@ -37205,10 +37209,27 @@ test('movement 145 closes one tied rod and rocking beam around a continuously ro
   for (const standardPart of [
     sliderWristPin,
     standardFoot,
-    standardLeftBrace,
-    standardRightBrace,
+    standardRib,
     standardUpright,
   ]) assert.equal(standardPart.parent, slidingStandard);
+  {
+    // p98: Brown's standard is one bell-shaped body with a front rib on a
+    // plinth, and no braces. Its eye is a circle concentric with the wrist
+    // pin, and body, rib and plinth join solidly.
+    assert.equal(slidingStandard.children.filter((child) => /brace|gusset/.test(child.userData.role ?? '')).length, 0);
+    const bodyBox = new THREE.Box3().setFromObject(standardUpright);
+    const plinthBox = new THREE.Box3().setFromObject(standardFoot);
+    const ribBox = new THREE.Box3().setFromObject(standardRib);
+    assert.ok(bodyBox.min.y < plinthBox.max.y && bodyBox.min.y > plinthBox.max.y - 0.02, 'body sits into its plinth');
+    assert.ok(ribBox.min.y < plinthBox.max.y, 'rib reaches the plinth');
+    assert.ok(ribBox.min.z < bodyBox.max.z && ribBox.max.z > bodyBox.max.z, 'rib stands proud of the body face');
+    assert.ok(Math.abs(bodyBox.max.y - 0.25 - slidingStandard.position.y) < 1e-3, 'eye top is the eye circle about the wrist');
+    const position = standardUpright.geometry.getAttribute('position');
+    for (let i = 0; i < position.count; i++) {
+      const x = position.getX(i), y = position.getY(i);
+      if (y > 0) assert.ok(Math.abs(Math.hypot(x, y) - 0.25) < 1e-3, 'eye above the pin is a concentric circle');
+    }
+  }
   assert.equal(fixedFrame.userData.fixed, true);
   assert.equal(beamPivotPin.userData.fixed, true);
   assert.ok(flywheelAssembly.userData.axis.distanceTo(Z_AXIS) < 1e-15);

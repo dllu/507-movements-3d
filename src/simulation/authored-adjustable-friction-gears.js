@@ -1,5 +1,6 @@
 import { correctFriction413, finishFrictionFamily } from './friction-family-working-parts.js';
 import * as THREE from 'three';
+import { standardTurnedHandleGeometry, handleShank, HANDLE_FOOT_EMBED } from './turned-handle.js';
 import {
   PALETTE,
   markShadows,
@@ -440,18 +441,20 @@ function adjustableFrictionGear(movement) {
   lowerHubNut.userData.role = 'lower-wheel-hub-nut';
   lowerRotor.add(lowerHubNut);
   const handleRadius = lowerGrooveLipRadius - 0.26;
-  // The stem reaches the rendered flank's end face (x -0.247; see
-  // correctFriction413), which stops just short of the rubber's end plane.
-  const handleStem = cylinderAlongX(0.055, 0.423, darkMaterial, 20);
-  handleStem.position.set(-0.4585, -handleRadius, 0);
-  handleStem.userData.role = 'lower-wheel-crank-handle-stem';
-  lowerRotor.add(handleStem);
+  // Pass 98: the handle is the shared turned handle, one piece as Brown
+  // draws it (a collar at the wheel, a slim neck swelling to a long bulb,
+  // about 0.40 long against the flank's 0.247: 195 px against 120 px), in
+  // place of a rod and a separate ellipsoid 0.82 long. Its foot is sunk in
+  // the left flank's outer face (x -0.247; see correctFriction413) and its
+  // shank runs on through the flank, ending just inside its back at x 0.
+  const flankOuterX = -0.247;
   const handleGrip = new THREE.Mesh(
-    new THREE.SphereGeometry(0.12, 24, 16),
+    standardTurnedHandleGeometry({ height: 0.40 + HANDLE_FOOT_EMBED, bulbRadius: 0.09,
+      shank: handleShank(-flankOuterX) }),
     accentMaterial,
   );
-  handleGrip.scale.set(1.9, 1, 1);
-  handleGrip.position.set(-0.84, -handleRadius, 0);
+  handleGrip.rotation.z = Math.PI / 2; // lathe +y points out along -x
+  handleGrip.position.set(flankOuterX + HANDLE_FOOT_EMBED, -handleRadius, 0);
   handleGrip.userData.role = 'lower-wheel-crank-handle-grip';
   lowerRotor.add(handleGrip);
 

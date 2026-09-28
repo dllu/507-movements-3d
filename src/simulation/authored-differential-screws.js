@@ -1,5 +1,6 @@
 import { correctDifferentialThreads } from './differential-thread-solids.js';
 import * as THREE from 'three';
+import { standardTurnedHandleGeometry, handleShank, HANDLE_FOOT_EMBED } from './turned-handle.js';
 import {
   PALETTE,
   makeBeam,
@@ -713,17 +714,24 @@ function twoPitchDifferentialScrew(movement) {
   handleBar.geometry = new THREE.CylinderGeometry(0.06, 0.06, 0.62, 24)
     .translate(0, 0.31, 0);
   handleBar.userData.role = 'single-crank-arm-rigid-with-screw-shaft';
+  // Pass 98: Brown draws a turned handle (a slim neck swelling to a bulb)
+  // pointing outboard from a round eye at the arm's head. The grip is the
+  // shared turned handle: its foot is sunk in the eye's outboard face and its
+  // shank runs on through the eye, flush with the eye's inboard face, so the
+  // grip is one turned piece seated through the eye (it was a tapered plain
+  // cylinder starting at the eye's mid-plane).
+  const handleEyeDepth = 0.16, handleEyeZ = -2.72;
+  const handleEyeOuterZ = handleEyeZ - handleEyeDepth / 2;
   const handleGrip = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.075, 0.095, 0.4, 24)
-      .rotateX(Math.PI / 2),
+    standardTurnedHandleGeometry({ height: 0.32 + HANDLE_FOOT_EMBED, bulbRadius: 0.095,
+      shank: handleShank(handleEyeDepth) }),
     shaftMaterial,
   );
-  // The grip's inner end runs fully into a round eye at the arm's head, so
-  // arm and grip share a solid, generous joint rather than touching edge-on.
-  handleGrip.position.set(0, 0.62, -2.72 - 0.2);
+  handleGrip.rotation.x = -Math.PI / 2; // lathe +y points outboard (-z)
+  handleGrip.position.set(0, 0.62, handleEyeOuterZ + HANDLE_FOOT_EMBED);
   handleGrip.userData.role = 'crank-grip-pointing-outboard';
-  const handleEye = cylinderAlongLocalZ(0.12, 0.16, shaftMaterial, 28);
-  handleEye.position.set(0, 0.62, -2.72);
+  const handleEye = cylinderAlongLocalZ(0.12, handleEyeDepth, shaftMaterial, 28);
+  handleEye.position.set(0, 0.62, handleEyeZ);
   handleEye.userData.role = 'crank-arm-eye-carrying-grip';
   shaftRotor.add(handleGrip, handleEye);
   Object.assign(root.userData.blocks, {

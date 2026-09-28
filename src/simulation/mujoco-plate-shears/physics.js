@@ -9,7 +9,7 @@ export function makePlateShearsPhysics(mujoco,visual,{timestep=.0005,period=4}={
  const xml=`<mujoco model="130 gravity-opened shears"><compiler angle="radian" inertiafromgeom="false"/>
  <option timestep="${timestep}" gravity="0 -9.81 0" integrator="implicitfast" iterations="80" tolerance="1e-10"><flag multiccd="disable"/></option>
  <default><geom condim="1" solref=".002 1" solimp=".99 .999 .001"/></default><asset>${assets}</asset>
- <worldbody><body name="cam" pos="-2.47 -.66 0"><joint name="cam" type="hinge" axis="0 0 1"/>${inertia('cam')}<geom type="sphere" pos="0 -.23 .08" size=".52" contype="2" conaffinity="1"/></body>
+ <worldbody><body name="cam" pos="-2.47 -.66 0"><joint name="cam" type="hinge" axis="0 0 1"/>${inertia('cam')}<geom type="sphere" pos="0 ${-u.profile.eccentricity} .08" size="${u.profile.camRadius}" contype="2" conaffinity="1"/></body>
  <body name="jaw"><joint name="jaw" type="hinge" axis="0 0 1" damping=".002"/>${inertia('jaw')}${geoms}</body></worldbody>
  <actuator><position joint="cam" kp="10000" kv="200"/></actuator></mujoco>`;
  const omega=-2*Math.PI/period,input=t=>({angle:omega*(t-.25*(1-Math.exp(-t/.25))),velocity:omega*(1-Math.exp(-t/.25))});

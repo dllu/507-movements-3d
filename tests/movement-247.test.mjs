@@ -74,7 +74,8 @@ test('movement 247 is one seabed probe, one detained catch, and one detachable s
   assert.equal(transmission.catchDetainedAfterTrip, false);
   assert.equal(transmission.catchSpringLoadedIntoEngagement, true);
   assert.equal(transmission.catchSelfSetsOnReload, true);
-  assert.match(transmission.loopReset, /rod-lifted-clear-in-view.*fresh-weight-run-down-the-line-onto-the-catch.*vessel-moves-to-next-station.*bottom-and-spent-weight-off-sideways/);
+  assert.match(transmission.loopReset, /same-weight-lifted-slightly-off-bottom.*rod-lowered-into-it.*catch-cammed-in-by-top-rim-springs-out-under-it/);
+  assert.equal(blocks.spareWeightAssembly, undefined, 'p98: one weight, reused');
   assert.equal(blocks.resetSling, undefined, 'no reload sling');
   assert.equal(
     blocks.probeAssembly.userData.role,
@@ -88,12 +89,11 @@ test('movement 247 is one seabed probe, one detained catch, and one detachable s
     blocks.weightAssembly.userData.role,
     'detachable-bored-spherical-sounding-weight-with-front-section-cutaway',
   );
-  // The sea bottom is a plain block whose top is the contact plane, long
-  // enough that its ends stay far beyond any view at both stations.
+  // The sea bottom is a plain fixed block whose top is the contact plane.
   const bed = new THREE.Box3().setFromObject(blocks.seabedSlab);
-  const { stationDrift } = model.root.userData.geometry;
   near(bed.max.y, model.root.userData.geometry.seabedY, 1e-6, 'bed top is the contact plane');
-  assert.ok(stationDrift >= 40 && bed.min.x < -60 && bed.max.x > 60);
+  assert.ok(bed.min.x < -10 && bed.max.x > 10);
+  for (const material of [].concat(blocks.seabedSlab.material)) assert.equal(material.map ?? null, null, 'no travelling bands');
   disposeModel(model.root);
 });
 
@@ -317,155 +317,80 @@ test('movement 247 spring holds the catch against the spent weight\'s bore, then
   assert.equal(stateAtTime(timeline.rodRecovered - 1e-9).catchAngle, 0);
 
   const recovered = stateAtTime(timeline.rodRecovered + 1e-9);
-  // Clear of the spent weight lying on the bottom.
-  const spentTop = geometry.groundedWeightCenterY + geometry.weightOpeningHalfHeight;
-  assert.ok(recovered.probeFootContactY > spentTop);
-  assert.ok(recovered.catchSupportPosition.y > spentTop);
-  assert.equal(recovered.stage, 'fresh-weight-runs-down-line-and-rod-onto-catch');
+  // Clear above where the same weight will be held once lifted.
+  const liftedTop = geometry.liftedWeightCenterY + geometry.weightOuterRadius;
+  assert.ok(recovered.probeFootContactY > liftedTop + 0.1);
+  assert.equal(recovered.stage, 'same-weight-lifted-slightly-off-bottom');
   disposeModel(model.root);
 });
 
-test('p94: movement 247 re-arms with the rod in view: the fresh weight runs down the line onto the catch; no weight pops or passes into the bottom in any view', () => {
+test('p98: movement 247 re-arms the same weight: it is lifted slightly, the rod enters from above, the top rim cams the catch in and it springs out under the weight', () => {
   const model = createMovementModel(catalog.movements[246]);
-  const { geometry, stateAtTime, timeline, transmission, displayFrame247, blocks } =
-    model.root.userData;
-  assert.equal(transmission.automaticReset, false);
-  // The rod is lifted only until its foot clears the spent weight, and the
-  // catch has sprung fully out before the fresh weight reaches the rod.
-  assert.ok(timeline.freshWeightReleased < timeline.rodRecovered);
-  assert.ok(timeline.rodRecovered < timeline.weightSeated);
-  assert.ok(timeline.weightSeated < timeline.reloadedDescentBegins);
-  const lifted = stateAtTime(timeline.rodRecovered);
-  near(lifted.bodyPositionY, geometry.clearBodyY, 1e-9, 'rod lifted clear');
-  assert.ok(lifted.probeFootContactY > geometry.groundedWeightCenterY + geometry.weightOuterRadius + 0.2);
-  assert.equal(lifted.catchAngle, 0);
-  // The fresh weight's lower opening is still above the rod's top when the
-  // rod comes to rest.
-  const rodTop = new THREE.Box3().setFromObject(blocks.housingTop).max.y
-    - blocks.bodyAssembly.position.y + geometry.clearBodyY;
-  assert.ok(lifted.weightLowerOpeningY > rodTop + 0.3, `${lifted.weightLowerOpeningY} over ${rodTop}`);
-  // It runs down freely and lands on the finite seat, which carries it on.
+  const { geometry, stateAtTime, timeline, blocks, catchWeightLimit } = model.root.userData;
+  assert.ok(timeline.rodRecovered <= timeline.weightLiftBegins);
+  assert.ok(timeline.weightLifted < timeline.reloadedDescentBegins);
+  assert.ok(timeline.catchSprungUnderWeight < timeline.weightSeated);
+  // Only a slight lift: less than the weight's radius, and just enough that
+  // the probe foot stays clear of the bottom while the catch passes under.
+  assert.ok(geometry.weightLiftHeight > 0.5 && geometry.weightLiftHeight < geometry.weightOuterRadius,
+    `lift ${geometry.weightLiftHeight}`);
+  let camIn = null, deepIn = null, snapOut = null, maxStep = 0, previous = null;
+  let minFoot = Infinity;
+  for (let sample = 0; sample <= 20000; sample += 1) {
+    const time = timeline.reloadedDescentBegins
+      + (timeline.cycleClosure - timeline.reloadedDescentBegins) * sample / 20000;
+    const state = stateAtTime(time);
+    minFoot = Math.min(minFoot, state.probeFootContactY);
+    // The catch never cuts the held weight (source contact model, with the
+    // source's nominal weight height).
+    const nominal = model.root.userData.nominalKinematics247.stateAtTime(time);
+    const rel = nominal.weightCenterY - nominal.bodyPositionY;
+    if (time < timeline.catchSprungUnderWeight) {
+      assert.ok(!catchWeightLimit.catchHitsWeight(state.catchAngle, rel), `catch in weight at ${time}`);
+      near(state.weightCenterY - geometry.liftedWeightCenterY, 0, 0.01, `weight held at ${time}`);
+    }
+    if (camIn === null && state.catchAngle < -1e-3) camIn = time;
+    if (camIn !== null && deepIn === null && state.catchAngle < geometry.rimWindows.deepest + 1e-3) deepIn = time;
+    if (deepIn !== null && snapOut === null && state.catchAngle > -1e-3) snapOut = time;
+    if (previous !== null) maxStep = Math.max(maxStep, Math.abs(state.catchAngle - previous));
+    previous = state.catchAngle;
+    if (time >= timeline.catchSprungUnderWeight) assert.equal(state.catchAngle, 0);
+  }
+  assert.ok(camIn !== null && deepIn !== null && snapOut !== null, 'cams in and springs out');
+  // Slow enough through each rim to read (the rod creeps there).
+  assert.ok(deepIn - camIn > 0.2, `cam-in lasts ${deepIn - camIn}`);
+  assert.ok(maxStep < 0.01, `largest catch step ${maxStep}`);
+  assert.ok(minFoot > geometry.seabedY + 0.1, 'probe never touches the bottom on reload');
+  // Seated on the finite seat, then carried continuously into Brown's pose.
   const landing = stateAtTime(timeline.weightSeated - 1e-6);
   const seated = stateAtTime(timeline.weightSeated + 1e-6);
-  near(landing.weightCenterY, seated.weightCenterY, 1e-4, 'lands on the seat');
+  near(landing.weightCenterY, seated.weightCenterY, 1e-5, 'seat meets the held weight');
+  near(seated.weightVelocity, 0, 1e-3, 'picked up at rest');
   assert.equal(seated.catchToWeightContactActive, true);
-  for (let sample = 0; sample <= 2000; sample += 1) {
-    const time = timeline.rodRecovered
-      + (timeline.cycleClosure - timeline.rodRecovered) * sample / 2000;
-    const state = stateAtTime(time);
-    assert.equal(state.catchAngle, 0, `catch out at ${time}`);
-    assert.ok(state.weightLowerOpeningY >= state.bodyPositionY + geometry.pivot.y
-      + geometry.catchSupportLocal.y - 0.05, `fresh weight above its seat at ${time}`);
-  }
+  near(stateAtTime(timeline.cycleClosure - 1e-9).weightCenterY, stateAtTime(0).weightCenterY, 1e-6, 'loop closes');
 
-  // The default view (the fit) holds Brown's rod pose and not the bottom:
-  // its crop floor stands above the bottom (the camera looks up from the
-  // bottom's level, so the bottom is edge-on at the frame edge). "Any
-  // view" is taken as the fit zoomed out three times.
+  // One weight: continuous everywhere, never in the bottom, and the rod
+  // never leaves the view.
   const fit = model.root.userData.cameraFitBounds;
   assert.ok(fit.min.y > geometry.seabedY + 0.3);
   assert.ok(model.cameraDirection.y < 0, 'camera looks up from the bottom level');
-  const fitHeight = fit.max.y - geometry.seabedY;
-  const center = (fit.max.y + geometry.seabedY) / 2;
-  // Three times the fit height at a 16:9 aspect.
-  const wide = { minY: center - 1.5 * fitHeight, maxY: center + 1.5 * fitHeight,
-    halfWidth: 1.5 * fitHeight * 16 / 9 };
-  const view = { halfWidth: fitHeight / 2 * 16 / 9 };
   const bedTop = new THREE.Box3().setFromObject(blocks.seabedSlab).max.y;
-  const weights = [blocks.weightAssembly, blocks.spareWeightAssembly];
-  const previous = weights.map(() => null);
-  let previousBedX = null;
   const period = model.root.userData.animationTiming.authoredCyclePeriod;
-  near(period, 2 * timeline.cycleClosure, 0, 'two soundings per loop');
+  near(period, timeline.cycleClosure, 0, 'one sounding per loop');
+  let last = null;
   for (let sample = 0; sample <= 4000; sample += 1) {
     const time = period * sample / 4000;
     model.update(time);
     model.root.updateMatrixWorld(true);
-    assert.equal(displayFrame247.position.y, 0);
-    const bedBox = new THREE.Box3().setFromObject(blocks.seabedSlab);
-    // The bottom only ever moves sideways, as one body, with its ends far
-    // beyond any view.
-    near(bedBox.max.y, bedTop, 0, 'bottom level fixed');
-    assert.ok(bedBox.min.x < -wide.halfWidth - 20 && bedBox.max.x > wide.halfWidth + 20, `bottom ends in view at ${time}`);
-    // p96: the slab stays put; its bands travel by the station offset.
-    assert.equal(blocks.seabed.position.x, 0);
-    const bedX = model.root.userData.kinematics.worldOffsetX;
-    near(blocks.seabedSlab.userData.bandTexture.offset.x, -bedX / 5, 1e-12, 'bands follow the station offset');
-    // p96: the vessel always moves on the same way; at the sounding's end
-    // the bottom wraps back by one station (40, a whole number of its 5-wide
-    // tone periods), so its look is continuous and it never reverses.
-    if (previousBedX !== null) {
-      const step = bedX - previousBedX, wrapped = step > 20 ? step - 40 : step;
-      if (step > 20) near(step, 40, 1e-3, `bottom wraps by one station at ${time}`);
-      assert.ok(Math.abs(wrapped) < 0.5, `bottom continuous at ${time}`);
-      assert.ok(wrapped <= 1e-12, `bottom always drifts the same way at ${time}`);
-    }
-    const state = model.root.userData.kinematics;
-    const t = state.cycleTime;
+    const box = new THREE.Box3().setFromObject(blocks.weightAssembly);
+    assert.ok(box.min.y >= bedTop - 0.02, `weight in the bottom at ${time}`);
+    near(blocks.weightAssembly.position.x, 0, 0, 'weight stays on the line');
+    if (last) assert.ok(Math.abs(box.min.y - last) < 0.05, `weight continuous at ${time}`);
+    last = box.min.y;
     const rod = new THREE.Box3().setFromObject(blocks.housingTop)
       .union(new THREE.Box3().setFromObject(blocks.probeFoot));
-    let shown = rod.max.y > fit.min.y && rod.min.y < fit.max.y;
-    // p94: the rod never leaves the default view.
     assert.ok(rod.min.y < fit.max.y - 1.5, `rod out of the view at ${time}`);
-    weights.forEach((weight, index) => {
-      assert.equal(weight.visible, true);
-      const box = new THREE.Box3().setFromObject(weight);
-      // No weight ever passes into the bottom.
-      assert.ok(box.min.y >= bedTop - 0.02, `weight ${index} in the bottom at ${time}`);
-      // Every weight moves continuously (no pops, even out of view).
-      if (previous[index]) {
-        assert.ok(box.min.distanceTo(previous[index].box.min) < 1, `weight ${index} continuous at ${time}`);
-      }
-      const lying = box.min.y < bedTop + 0.2;
-      // A weight lying on the bottom moves only with the bottom.
-      if (previous[index]?.lying && lying) {
-        const moved = box.getCenter(new THREE.Vector3()).x - previous[index].x;
-        // (at the station wrap the bottom's look repeats, so the weight
-        // keeps its place relative to the new station's frame)
-        const bedStep = bedX - previousBedX > 20 ? bedX - previousBedX - 40 : bedX - previousBedX;
-        near(moved, bedStep, 1e-3, `weight ${index} slides over the bottom at ${time}`);
-      }
-      previous[index] = { box, lying, x: box.getCenter(new THREE.Vector3()).x };
-      if (box.max.y > fit.min.y && box.min.y < fit.max.y
-        && box.max.x > -view.halfWidth && box.min.x < view.halfWidth) shown = true;
-      if (box.max.y < wide.minY || box.min.y > wide.maxY || box.min.x > wide.halfWidth
-        || box.max.x < -wide.halfWidth) return;
-      // A weight in view is always seated on the rod, falling, or lying
-      // on the bottom: never lifted or carried by nothing.
-      const onRod = Math.abs(box.getCenter(new THREE.Vector3()).y - state.weightCenterY) < 1e-9
-        && weight === model.root.userData.activeWeightAssembly
-        && (t < timeline.supportRelease + 1 || t >= timeline.weightSeated);
-      const falling = (t >= timeline.supportRelease && t < timeline.weightImpact)
-        || (t >= timeline.freshWeightReleased && t < timeline.weightSeated
-          && Math.abs(box.getCenter(new THREE.Vector3()).x) < 1e-9);
-      assert.ok(onRod || lying || falling, `weight ${index} in view unsupported at ${time}`);
-    });
-    previousBedX = bedX;
-    assert.ok(shown, `view empty at ${time}`);
   }
-  disposeModel(model.root);
-});
-
-test('movement 247 moves on to the next station slowly while the spent weight is in view', () => {
-  const model = createMovementModel(catalog.movements[246]);
-  const { blocks, cameraFitBounds, geometry, animationTiming } = model.root.userData;
-  const halfWidth = (cameraFitBounds.max.y - geometry.seabedY) / 2 * 16 / 9 + geometry.weightOuterRadius;
-  const weights = [blocks.weightAssembly, blocks.spareWeightAssembly];
-  const previous = [null, null];
-  let fastest = 0;
-  const step = 0.005;
-  for (let time = 0; time <= animationTiming.authoredCyclePeriod; time += step) {
-    model.update(time);
-    weights.forEach((weight, index) => {
-      const { x, y } = weight.position;
-      if (previous[index] && Math.abs(x) < halfWidth && y < geometry.groundedWeightCenterY + 1e-9
-        && Math.abs(previous[index].y - y) < 1e-12) {
-        fastest = Math.max(fastest, Math.abs(x - previous[index].x) / step);
-      }
-      previous[index] = { x, y };
-    });
-  }
-  assert.ok(fastest > 0 && fastest < 7, `in-view station move ${fastest}`);
   disposeModel(model.root);
 });
 
@@ -505,8 +430,6 @@ test('movement 247 renderer exposes the cutaway, rigid catch, moving weight, and
     const active = model.root.userData.activeWeightAssembly;
     near(active.position.y, state.weightCenterY, 0,
       `rendered weight position at ${time}`);
-    near(active.position.x, state.weightCenterX, 0,
-      `rendered weight sideways position at ${time}`);
     vectorNear(
       localSupport.clone().applyMatrix4(blocks.catchAssembly.matrixWorld),
       state.catchSupportPosition.clone()
@@ -522,10 +445,9 @@ test('movement 247 renderer exposes the cutaway, rigid catch, moving weight, and
       0,
       `bore clearance at ${time}`,
     );
-    assert.equal(contacts.freshWeightReload.automatic, false);
   }
-  model.update((timeline.rodRecovered + timeline.weightSeated) / 2);
-  assert.equal(model.root.userData.contacts.freshWeightReload.active, true);
+  model.update((timeline.weightLiftBegins + timeline.weightSeated) / 2);
+  assert.equal(model.root.userData.contacts.weightReload.active, true);
   disposeModel(model.root);
 });
 
@@ -596,8 +518,8 @@ test('movement 247 reported rates close away from edge release and leave movemen
   ]) {
     near(end[key], start[key], 0, `closed ${key}`);
   }
-  // Two soundings per display loop: the two weights swap roles.
-  near(animationTiming.authoredCyclePeriod, 2 * timeline.cycleClosure, 0,
+  // One sounding per display loop, with the same weight.
+  near(animationTiming.authoredCyclePeriod, timeline.cycleClosure, 0,
     'authored cycle duration');
   near(animationTiming.targetCycleDuration, 2, 0,
     'display cycle duration');
@@ -656,19 +578,5 @@ test('movement 247 curled leaf spring bears on the upper arm and loads the catch
   // The retracted tip stays above the lower guide block.
   const retracted = new THREE.Vector2(...lowest).rotateAround(new THREE.Vector2(), geometry.heldRetractedAngle);
   assert.ok(pivot.y + retracted.y - 0.03 > -0.89);
-  disposeModel(model.root);
-});
-
-test('p93/p96: the sea bottom carries alternating tone bands that travel with the station', () => {
-  const model = createMovementModel(catalog.movements[246]);
-  const slab = model.root.userData.blocks.seabedSlab;
-  const { bandTexture, bandPeriod } = slab.userData;
-  assert.equal(bandPeriod, 5);
-  assert.deepEqual([...bandTexture.image.data], [255, 255, 255, 255, 230, 230, 230, 255]);
-  assert.equal(bandTexture.wrapS, THREE.RepeatWrapping);
-  for (const material of slab.material) assert.equal(material.map, bandTexture);
-  // One station (40) is a whole number of band periods, so the loop's wrap
-  // of the offset is invisible.
-  assert.equal(40 % bandPeriod, 0);
   disposeModel(model.root);
 });

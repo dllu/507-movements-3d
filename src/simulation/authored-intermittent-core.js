@@ -10198,7 +10198,6 @@ function fiveSlotGenevaWindingStop() {
   const driverBoreRadius = constructionScale;
   const stopWheelBoreRadius = constructionScale;
   const driverLockingRadius = 4 * constructionScale;
-  const driverFingerRadius = 4.5 * constructionScale;
   const stopSectorRadius = 4 * constructionScale;
   const nominalSlotCount = 5;
   const stopStepAngle = fullTurn / nominalSlotCount;
@@ -10268,30 +10267,71 @@ function fiveSlotGenevaWindingStop() {
     }
   };
 
-  // Exact path construction embedded in the official Movement 212 page.
-  // The lower member is a four-unit locking rim with one broad winding finger
-  // rising to radius 4.5. Two circular reliefs let that finger enter and leave
-  // each radial Geneva slot without the body colliding with the stop wheel.
+  // Path construction from the official Movement 212 page: a four-unit
+  // locking rim with one broad winding finger between two circular reliefs
+  // (radius 0.7) that let the finger enter and leave each radial Geneva
+  // slot. The source finger is a radius-4.5 arc whose ends are cusps (the
+  // reliefs just graze it). Here the finger stands out further, to radius
+  // 4.8, and each end is rounded by a fillet tangent to both the finger arc
+  // and its relief circle, so the tooth has blunt, rounded corners.
+  const driverReliefRadiusRaw = 0.7;
+  const driverFingerRadiusRaw = 4.7;
+  const driverFingerFilletRadiusRaw = 0.2;
+  const driverLeftReliefCenterRaw = new THREE.Vector2(0.796323, 3.7172);
+  const driverRightReliefCenterRaw = new THREE.Vector2(2.384433, 2.960774);
+  const filletCenterBeside = (reliefCenter, towardFinger) => {
+    const centerRadius = driverFingerRadiusRaw - driverFingerFilletRadiusRaw;
+    const separation = driverReliefRadiusRaw + driverFingerFilletRadiusRaw;
+    const reliefDistance = reliefCenter.length();
+    const spread = Math.acos((centerRadius ** 2 + reliefDistance ** 2
+      - separation ** 2) / (2 * centerRadius * reliefDistance));
+    const angle = reliefCenter.angle() + towardFinger * spread;
+    return new THREE.Vector2(Math.cos(angle), Math.sin(angle))
+      .multiplyScalar(centerRadius);
+  };
+  const driverLeadingFilletCenterRaw = filletCenterBeside(
+    driverLeftReliefCenterRaw,
+    -1,
+  );
+  const driverTrailingFilletCenterRaw = filletCenterBeside(
+    driverRightReliefCenterRaw,
+    1,
+  );
+  const directionAngle = (from, to) => to.clone().sub(from).angle();
   const driverFingerArcRaw = sampleRawArc({
     center: new THREE.Vector2(0, 0),
-    end: 1.34854,
-    radius: 4.5,
-    segments: 128,
-    start: 0.904027,
+    end: driverLeadingFilletCenterRaw.angle(),
+    radius: driverFingerRadiusRaw,
+    segments: 96,
+    start: driverTrailingFilletCenterRaw.angle(),
+  });
+  const driverLeadingFilletRaw = sampleRawArc({
+    center: driverLeadingFilletCenterRaw,
+    end: directionAngle(driverLeadingFilletCenterRaw, driverLeftReliefCenterRaw),
+    radius: driverFingerFilletRadiusRaw,
+    segments: 256,
+    start: driverLeadingFilletCenterRaw.angle(),
+  });
+  const driverTrailingFilletRaw = sampleRawArc({
+    center: driverTrailingFilletCenterRaw,
+    end: driverTrailingFilletCenterRaw.angle(),
+    radius: driverFingerFilletRadiusRaw,
+    segments: 256,
+    start: directionAngle(driverTrailingFilletCenterRaw, driverRightReliefCenterRaw),
   });
   const driverLeftReliefRaw = sampleRawArc({
-    center: new THREE.Vector2(0.796323, 3.7172),
-    end: 1.287571,
-    radius: 0.7,
-    segments: 76,
+    center: driverLeftReliefCenterRaw,
+    end: directionAngle(driverLeftReliefCenterRaw, driverLeadingFilletCenterRaw),
+    radius: driverReliefRadiusRaw,
+    segments: 1024,
     start: 3.769911,
   });
   const driverRightReliefRaw = sampleRawArc({
-    center: new THREE.Vector2(2.384433, 2.960774),
+    center: driverRightReliefCenterRaw,
     clockwise: true,
-    end: 0.964995,
-    radius: 0.7,
-    segments: 76,
+    end: directionAngle(driverRightReliefCenterRaw, driverTrailingFilletCenterRaw),
+    radius: driverReliefRadiusRaw,
+    segments: 1024,
     start: 4.765841,
   });
   const driverLockingArcRaw = sampleRawArc({
@@ -10303,6 +10343,7 @@ function fiveSlotGenevaWindingStop() {
   });
   const driverOutlineRaw = [];
   appendDistinct(driverOutlineRaw, driverFingerArcRaw);
+  appendDistinct(driverOutlineRaw, driverLeadingFilletRaw);
   appendDistinct(driverOutlineRaw, driverLeftReliefRaw, { reverse: true });
   appendDistinct(driverOutlineRaw, [
     new THREE.Vector2(0.230011, 3.30575),
@@ -10314,6 +10355,10 @@ function fiveSlotGenevaWindingStop() {
     new THREE.Vector2(2.421831, 2.261774),
   ]);
   appendDistinct(driverOutlineRaw, driverRightReliefRaw);
+  appendDistinct(driverOutlineRaw, driverTrailingFilletRaw);
+  if (driverOutlineRaw[0].distanceTo(driverOutlineRaw.at(-1)) < 0.00001) {
+    driverOutlineRaw.pop();
+  }
 
   const convexStopArcRaw = sampleRawArc({
     center: new THREE.Vector2(0, 0),
@@ -10408,6 +10453,16 @@ function fiveSlotGenevaWindingStop() {
   const driverOutline = scaleRawPoints(driverOutlineRaw);
   const stopWheelOutline = scaleRawPoints(stopWheelOutlineRaw);
   const driverFingerArc = scaleRawPoints(driverFingerArcRaw);
+  const driverFingerRadius = driverFingerRadiusRaw * constructionScale;
+  const driverFingerFilletRadius = driverFingerFilletRadiusRaw
+    * constructionScale;
+  const driverLeadingFilletCenter = driverLeadingFilletCenterRaw.clone()
+    .multiplyScalar(constructionScale);
+  const driverTrailingFilletCenter = driverTrailingFilletCenterRaw.clone()
+    .multiplyScalar(constructionScale);
+  const driverReliefRadius = driverReliefRadiusRaw * constructionScale;
+  const driverLeftReliefCenter = driverLeftReliefCenterRaw.clone()
+    .multiplyScalar(constructionScale);
   const convexStopArc = scaleRawPoints(convexStopArcRaw);
   const lockPocketCenters = scaleRawPoints(lockPocketCentersRaw);
   const lockPocketArcs = lockPocketArcsRaw.map(scaleRawPoints);
@@ -10746,41 +10801,18 @@ function fiveSlotGenevaWindingStop() {
   const terminalStopShoulder = terminalStopShoulderRaw.map((point) => (
     transformRawPoint(point, terminalStopAngle, stopWheelCenter)
   ));
-  const circleSegmentIntersections = (
-    center,
-    radius,
-    start,
-    end,
-  ) => {
-    const offset = start.clone().sub(center);
-    const direction = end.clone().sub(start);
-    const a = direction.lengthSq();
-    const b = 2 * offset.dot(direction);
-    const c = offset.lengthSq() - radius * radius;
-    const discriminant = Math.max(0, b * b - 4 * a * c);
-    const rootDiscriminant = Math.sqrt(discriminant);
-    return [
-      (-b - rootDiscriminant) / (2 * a),
-      (-b + rootDiscriminant) / (2 * a),
-    ].filter((fraction) => fraction >= 0 && fraction <= 1)
-      .map((fraction) => start.clone().addScaledVector(
-        direction,
-        fraction,
-      ));
-  };
-  const terminalContactCandidates = circleSegmentIntersections(
-    driverCenter,
-    driverFingerRadius,
-    terminalStopShoulder[0],
-    terminalStopShoulder[1],
+  // The finger's rounded leading corner bears on the shoulder: the contact
+  // is the foot of the fillet centre on the shoulder line (the contact law
+  // in geneva-212-contact.js places the fillet exactly tangent there).
+  const terminalFilletCenter = driverLeadingFilletCenter.clone()
+    .rotateAround(new THREE.Vector2(), terminalDriverAngle).add(driverCenter);
+  const terminalShoulderAxis = terminalStopShoulder[1].clone()
+    .sub(terminalStopShoulder[0]).normalize();
+  const terminalContactPoint = terminalStopShoulder[0].clone().addScaledVector(
+    terminalShoulderAxis,
+    terminalFilletCenter.clone().sub(terminalStopShoulder[0])
+      .dot(terminalShoulderAxis),
   );
-  const terminalFingerArcStart = 0.904027 + terminalDriverAngle;
-  const terminalFingerArcEnd = 1.34854 + terminalDriverAngle;
-  const terminalContactPoint = terminalContactCandidates.find((point) => {
-    const angle = point.clone().sub(driverCenter).angle();
-    return angle >= terminalFingerArcStart - 1e-8
-      && angle <= terminalFingerArcEnd + 1e-8;
-  }) ?? terminalContactCandidates[0];
   const terminalShoulderDirection = terminalStopShoulder[1].clone()
     .sub(terminalStopShoulder[0]).normalize();
   const terminalStopNormal = new THREE.Vector2(
@@ -11244,6 +11276,20 @@ function fiveSlotGenevaWindingStop() {
     driverDepth,
     driverFingerArc,
     driverFingerArcRaw,
+    driverFingerFilletRadius,
+    driverFingerFilletRadiusRaw,
+    driverFingerRadiusRaw,
+    driverLeftReliefCenter,
+    driverLeftReliefCenterRaw,
+    driverReliefRadius,
+    driverReliefRadiusRaw,
+    driverRightReliefCenterRaw,
+    driverLeadingFilletCenter,
+    driverLeadingFilletCenterRaw,
+    driverLeadingFilletRaw,
+    driverTrailingFilletCenter,
+    driverTrailingFilletCenterRaw,
+    driverTrailingFilletRaw,
     driverFingerMidAngle,
     driverFingerRadius,
     driverLeftReliefRaw,

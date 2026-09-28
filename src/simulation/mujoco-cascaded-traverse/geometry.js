@@ -37,12 +37,26 @@ export function makeCascadedTraverseGeometry({middleShift=.5,addendum=.8,dedendu
   const shape=clip.difference(clip.union(poly(quad.map(toLocal)),poly(circle([0,0],eye,128)),poly(circle(far,endRadius,128))),poly(circle([0,0],source.circles[from].radius/100+.0015,96)),poly(circle(far,source.circles[to].radius/100+.0015,96)));
   add(n,plate(shape,z,z+.10),n,rodColor);add(n+'Eye',ring(source.circles[from].radius/100+.0015,eye,z+.10,z+.14,128),n,rodColor);f.rodEnds[n]=far;
  }
- const paths={lower:new THREE.Shape(),upper:new THREE.Shape()},lo=paths.lower,hi=paths.upper;
- lo.moveTo(205,201);lo.bezierCurveTo(203,194,208,189,216,188);lo.bezierCurveTo(251,180,306,186,338,192);lo.bezierCurveTo(356,192,356,214,338,216);lo.bezierCurveTo(299,220,248,219,216,214);lo.bezierCurveTo(208,214,204,210,205,201);
- hi.moveTo(95,96);hi.bezierCurveTo(94,87,100,84,108,83);hi.bezierCurveTo(148,78,205,77,270,92);hi.bezierCurveTo(284,94,289,111,275,114);hi.bezierCurveTo(235,118.688208,156,111.112932,109,110);hi.bezierCurveTo(99,109,96,104,95,96);
+ // p98: each floating bar is two end arcs concentric with its end pins
+ // (radius linkEnd) joined by symmetric cubic bows, G1 with the arcs; the
+ // bows' sags (source px) follow Brown's slightly lens-shaped bars and keep
+ // the raised centre pin inside. The traced outlines put the pins inboard of
+ // the rounded ends.
+ const linkEnd={lower:12.5,upper:13},linkSag={lower:[3,6],upper:[7,8]};
+ const linkOutline=(n)=>{
+  const L=source.circles[n+'LeftPin'].center,R=source.circles[n+'RightPin'].center,re=linkEnd[n],d=sub(R,L),D=Math.hypot(...d),u=[d[0]/D,d[1]/D],down=[-u[1],u[0]],k=D/3;
+  const at=(c,m,a,b,r)=>[c[0]+r*(m[0]*a+u[0]*b),c[1]+r*(m[1]*a+u[1]*b)];
+  const bow=(m,sag)=>{let lo=0,hi=1.2;for(let i=0;i<60;i++){const x=(lo+hi)/2;(re*(Math.cos(x)-1)+.75*k*Math.sin(x)<sag?lo=x:hi=x);}const x=(lo+hi)/2,c=Math.cos(x),s=Math.sin(x);
+   const p0=at(L,m,c,-s,re),p3=at(R,m,c,s,re),c1=[p0[0]+k*(u[0]*c+m[0]*s),p0[1]+k*(u[1]*c+m[1]*s)],c2=[p3[0]-k*(u[0]*c-m[0]*s),p3[1]-k*(u[1]*c-m[1]*s)];
+   return{x,points:Array.from({length:49},(_,i)=>{const t=i/48,a=(1-t)**3,b=3*(1-t)**2*t,e=3*(1-t)*t*t,g=t**3;return[a*p0[0]+b*c1[0]+e*c2[0]+g*p3[0],a*p0[1]+b*c1[1]+e*c2[1]+g*p3[1]];})};};
+  const up=[-down[0],-down[1]],top=bow(up,linkSag[n][0]),bottom=bow(down,linkSag[n][1]),base=Math.atan2(u[1],u[0]);
+  const arc=(c,from,to)=>Array.from({length:47},(_,i)=>{const a=from+(to-from)*(i+1)/48;return[c[0]+re*Math.cos(a),c[1]+re*Math.sin(a)];});
+  // Source y points down, so 'down' is base+pi/2 and 'up' is base-pi/2.
+  return[...top.points,...arc(R,base-Math.PI/2+top.x,base+Math.PI/2-bottom.x),...[...bottom.points].reverse(),...arc(L,base+Math.PI/2+bottom.x,base+3*Math.PI/2-top.x)];
+ };
  for(const n of ['lower','upper']){
   const toLocal=p=>sub(local(p),position[n]),z=n==='lower'?.24:.64,pins=['LeftPin','RightPin','CenterPin'];
-  const shape=clip.difference(poly(paths[n].getPoints(32).map(p=>toLocal(p.toArray()))),...pins.map(p=>poly(circle(toLocal(source.circles[n+p].center),source.circles[n+p].radius/100,96))));
+  const shape=clip.difference(poly(linkOutline(n).map(toLocal)),...pins.map(p=>poly(circle(toLocal(source.circles[n+p].center),source.circles[n+p].radius/100,96))));
   add(n+'Link',plate(shape,z,z+.10),n,PALETTE.brass);
   for(const p of pins){const name=n+p,point=toLocal(source.circles[name].center),center=p==='CenterPin';f.linkPins[name]=point;add(name,translated(disk(source.circles[name].radius/100,center?z:n==='lower'?.08:.44,center?z+.36:z+.16,96),point),n,PALETTE.ink);}
  }

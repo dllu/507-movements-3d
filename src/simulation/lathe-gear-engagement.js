@@ -15,12 +15,13 @@ export function makeLatheGearEngagement(options = {}) {
     const wy = ((667 - y) / 190 - up.z * (z - 0.66) - up.x * wx) / up.y;
     return new THREE.Vector2(wx, wy);
   };
-  const path = (commands, z, offset = new THREE.Vector2()) => {
-    const shape = new THREE.Shape();
+  const path = (commands, z, offset = new THREE.Vector2(), close = true) => {
+    const shape = new THREE.Shape(), local = (x, y) => sourcePoint(x, y, z).sub(offset);
     for (const [method, ...coordinates] of commands) {
-      const values = []; for (let i = 0; i < coordinates.length; i += 2) { const v = sourcePoint(coordinates[i], coordinates[i + 1], z).sub(offset); values.push(v.x, v.y); }
+      const values = []; for (let i = 0; i < coordinates.length; i += 2) { const v = local(coordinates[i], coordinates[i + 1]); values.push(v.x, v.y); }
       shape[method](...values);
     }
+    if (!close) return { shape, local };
     shape.closePath(); return shape;
   };
   const hole = (shape, x, y, radius) => { const h = new THREE.Path(); h.absarc(x, y, radius, 0, 2 * Math.PI, true); shape.holes.push(h); };
@@ -95,16 +96,6 @@ export function makeLatheGearEngagement(options = {}) {
   hole(rearShape, p.pinionX, p.pinionHeight, 0.081);
   const rearSupport = extrude(rearShape, -2.02, -1.80, PALETTE.frame); fixed.add(rearSupport);
 
-  const leverShape = path([
-    ['moveTo', 230, 577], ['lineTo', 233, 155], ['bezierCurveTo', 233, 143, 217, 126, 222, 85],
-    ['bezierCurveTo', 223, 62, 231, 42, 244, 39], ['bezierCurveTo', 256, 42, 269, 66, 269, 87],
-    ['bezierCurveTo', 273, 119, 251, 147, 251, 159], ['lineTo', 254, 577],
-    ['bezierCurveTo', 258, 623, 290, 654, 322, 660], ['bezierCurveTo', 352, 666, 376, 641, 399, 619],
-    ['bezierCurveTo', 430, 589, 470, 606, 479, 640], ['bezierCurveTo', 495, 683, 453, 750, 401, 780],
-    ['bezierCurveTo', 351, 812, 293, 828, 248, 809], ['bezierCurveTo', 202, 796, 184, 761, 183, 715],
-    ['bezierCurveTo', 180, 676, 188, 640, 208, 618], ['bezierCurveTo', 224, 602, 229, 590, 230, 577],
-  ], 0.60, new THREE.Vector2(-p.leverRadius, 0));
-  hole(leverShape, 0, 0, 0.071);
   const camCenter = new THREE.Vector2(p.camEccentricX, p.camEccentricY), clearance = 0.00004, pinRadius = 0.12;
   const workingStart = new THREE.Vector2(p.leverRadius, 0), workingEnd = new THREE.Vector2(motion.follower(p.leverAngle) * Math.cos(p.leverAngle), -motion.follower(p.leverAngle) * Math.sin(p.leverAngle));
   // Slight overrun keeps the working follower on the circular side wall
@@ -112,6 +103,33 @@ export function makeLatheGearEngagement(options = {}) {
   const camOverrunAngle = 0.02;
   const highAngle = workingStart.clone().sub(camCenter).angle() + camOverrunAngle, lowAngle = workingEnd.clone().sub(camCenter).angle() - camOverrunAngle;
   const startPoint = camCenter.clone().add(new THREE.Vector2(Math.cos(highAngle), Math.sin(highAngle)).multiplyScalar(p.camRadius));
+  // The lever's rounded end is a true arc concentric with the slot's end,
+  // where the shaft rests (radius 0.273, Brown's wall over the slot end),
+  // running tangentially into an outer edge concentric with the slot's arc
+  // (radius camRadius + 0.273, which meets Brown's traced lower edge). The
+  // traced lobe was centred 0.11 beyond the shaft.
+  const leverPath = path([
+    ['moveTo', 230, 577], ['lineTo', 233, 155], ['bezierCurveTo', 233, 143, 217, 126, 222, 85],
+    ['bezierCurveTo', 223, 62, 231, 42, 244, 39], ['bezierCurveTo', 256, 42, 269, 66, 269, 87],
+    ['bezierCurveTo', 273, 119, 251, 147, 251, 159], ['lineTo', 254, 577],
+    ['bezierCurveTo', 258, 623, 290, 654, 322, 660],
+  ], 0.60, new THREE.Vector2(-p.leverRadius, 0), false), leverShape = leverPath.shape;
+  const endRadius = 0.273, outerRadius = p.camRadius + endRadius, endStart = 140 * Math.PI / 180,
+    endPoint0 = startPoint.clone().add(new THREE.Vector2(Math.cos(endStart), Math.sin(endStart)).multiplyScalar(endRadius)),
+    lowerEnd = leverPath.local(248, 809), outerEnd = lowerEnd.clone().sub(camCenter).angle() - 2 * Math.PI,
+    outerPoint = camCenter.clone().add(new THREE.Vector2(Math.cos(outerEnd), Math.sin(outerEnd)).multiplyScalar(outerRadius)),
+    c1 = leverPath.local(352, 666), c2 = endPoint0.clone().sub(new THREE.Vector2(Math.cos(endStart - Math.PI / 2), Math.sin(endStart - Math.PI / 2)).multiplyScalar(0.1)),
+    c3 = outerPoint.clone().add(new THREE.Vector2(Math.cos(outerEnd - Math.PI / 2), Math.sin(outerEnd - Math.PI / 2)).multiplyScalar(0.12)), c4 = leverPath.local(184, 761), toe = leverPath.local(183, 715);
+  leverShape.bezierCurveTo(c1.x, c1.y, c2.x, c2.y, endPoint0.x, endPoint0.y);
+  leverShape.absarc(startPoint.x, startPoint.y, endRadius, endStart, highAngle, true);
+  leverShape.absarc(camCenter.x, camCenter.y, outerRadius, highAngle, outerEnd, true);
+  leverShape.bezierCurveTo(c3.x, c3.y, c4.x, c4.y, toe.x, toe.y);
+  for (const [method, ...coordinates] of [['bezierCurveTo', 180, 676, 188, 640, 208, 618], ['bezierCurveTo', 224, 602, 229, 590, 230, 577]]) {
+    const values = []; for (let i = 0; i < coordinates.length; i += 2) { const v = leverPath.local(coordinates[i], coordinates[i + 1]); values.push(v.x, v.y); }
+    leverShape[method](...values);
+  }
+  leverShape.closePath();
+  hole(leverShape, 0, 0, 0.071);
   const endPoint = camCenter.clone().add(new THREE.Vector2(Math.cos(lowAngle), Math.sin(lowAngle)).multiplyScalar(p.camRadius));
   const radius = pinRadius + clearance, camHole = new THREE.Path();
   const points = [];

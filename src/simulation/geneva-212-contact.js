@@ -4,42 +4,110 @@ const tau=2*Math.PI,rot=(p,a)=>new T.Vector2(p.x*Math.cos(a)-p.y*Math.sin(a),p.x
 const unwrap=(a,t)=>{while(a-t>Math.PI)a-=tau;while(a-t< -Math.PI)a+=tau;return a;};
 const solve=(f,lo,hi)=>{for(let i=0;i<48;i++){const mid=(lo+hi)/2;if(f(mid)>0)lo=mid;else hi=mid;}return(lo+hi)/2;};
 
+// A's winding finger (see fiveSlotGenevaWindingStop) is a radius-R arc
+// between two rounded corners (fillets tangent to the arc and to the left
+// and right circular reliefs). B turns only when pushed, so its angle is the
+// most advanced of the contact constraints that are geometrically valid:
+//  - B's slot-mouth corner riding in A's left relief (concave circle),
+//  - A's leading fillet bearing on the slot flank (circle against line),
+//  - the mouth corner on that fillet, then on the concentric finger arc
+//    (the hold: the arc is concentric with A, so B dwells),
+//  - A's rim corner driving B's locking pocket home (the tail),
+// after which B is locked concentric on A's rim.
+const within=(angle,from,to)=>{const span=T.MathUtils.euclideanModulo(to-from,tau);return T.MathUtils.euclideanModulo(angle-from,tau)<=span+1e-9;};
 export function makeGeneva212ContactLaw(g){
- const finger=g.driverFingerArc.at(-1),rawMouth=g.slotPolylines[2][0];
+ const rawMouth=g.slotPolylines[2][0];
  const mouth=g.stopWheelOutline.reduce((a,b)=>a.distanceTo(rawMouth)<b.distanceTo(rawMouth)?a:b);
- const inner=g.slotPolylines[2][1],edge=inner.clone().sub(mouth),normal=new T.Vector2(edge.y,-edge.x).normalize(),h=normal.dot(mouth);
+ const inner=g.slotPolylines[2][1],edge=inner.clone().sub(mouth),length=edge.length(),axis=edge.clone().divideScalar(length),normal=new T.Vector2(edge.y,-edge.x).normalize(),h=normal.dot(mouth);
+ const slotInside=g.slotPolylines[2].reduce((sum,p)=>sum.add(p),new T.Vector2()).divideScalar(4),side=Math.sign(normal.dot(slotInside)-h);
  const tip=g.driverLockingArcRaw.at(-1).clone().multiplyScalar(g.constructionScale),theta0=tip.angle(),r=g.driverLockingRadius,D=g.centerDistance;
- function entry(a){
-  const v=rot(finger,a),q=g.driverCenter.clone().add(v).sub(g.stopWheelCenter),arg=q.angle()-normal.angle(),sep=Math.acos(h/q.length()),expected=-g.stopStepAngle*a/g.normalIndexInputAngle;
-  const angle=[arg-sep,arg+sep].map(x=>unwrap(x,expected)).sort((a,b)=>Math.abs(a-expected)-Math.abs(b-expected))[0],n=rot(normal,angle),pn=perp(n),velocity=perp(v),den=pn.dot(q),speed=-n.dot(velocity)/den;
-  const acceleration=-(n.dot(v.clone().negate())+2*speed*pn.dot(velocity)-speed*speed*n.dot(q))/den;
-  return{angle,speed,acceleration};
- }
- const split=Math.acos((g.driverFingerRadius**2-D*D-mouth.lengthSq())/(2*D*mouth.length()));
- const plateau=[Math.PI/2-split-mouth.angle(),Math.PI/2+split-mouth.angle()].map(a=>unwrap(a,-.92)).sort((a,b)=>Math.abs(a+.92)-Math.abs(b+.92))[0];
+ const fillet=g.driverLeadingFilletCenter,rho=g.driverFingerFilletRadius,relief=g.driverLeftReliefCenter,reliefRadius=g.driverReliefRadius,R=g.driverFingerRadius;
+ const fingerSpan=[g.driverTrailingFilletCenter.angle(),fillet.angle()];
+ const filletSpan=[fillet.angle(),relief.clone().sub(fillet).angle()];
+ const reliefSpan=[3.769911,fillet.clone().sub(relief).angle()];
+ const base=g.driverCenter.clone().sub(g.stopWheelCenter);
+ const expected=a=>-g.stopStepAngle*a/g.normalIndexInputAngle;
+ const pick=(roots,a)=>roots.map(x=>unwrap(x,expected(a))).sort((x,y)=>Math.abs(x-expected(a))-Math.abs(y-expected(a)))[0];
+ // B's mouth corner on a circle of A (centre k in A's frame, radius rc).
+ const mouthOnCircle=(k,rc,span,a)=>{
+  const w=base.clone().add(rot(k,a)),K=(mouth.lengthSq()+w.lengthSq()-rc*rc)/(2*mouth.length()*w.length());
+  if(Math.abs(K)>1)return null;
+  const spread=Math.acos(K),roots=[w.angle()-mouth.angle()-spread,w.angle()-mouth.angle()+spread];
+  let best=null;
+  for(const root of roots){const angle=unwrap(root,expected(a)),m=rot(mouth,angle).sub(w),local=m.angle()-a;
+   if(within(local,span[0],span[1])&&(!best||Math.abs(angle-expected(a))<Math.abs(best-expected(a))))best=angle;}
+  return best;
+ };
+ // A's leading fillet bearing on the flank line (offset by its radius).
+ const filletOnFlank=a=>{
+  const v=rot(fillet,a),q=base.clone().add(v),offset=h+side*rho;
+  if(Math.abs(offset)>q.length())return null;
+  const arg=q.angle()-normal.angle(),sep=Math.acos(offset/q.length()),angle=pick([arg-sep,arg+sep],a);
+  // The contact lies on the drawn flank and on the fillet's arc.
+  const local=rot(q,-angle),t=local.clone().sub(mouth).dot(axis);
+  if(t<-1e-9||t>length+1e-9)return null;
+  if(!within(rot(normal.clone().multiplyScalar(-side),angle-a).angle(),filletSpan[0],filletSpan[1]))return null;
+  return angle;
+ };
+ const plateauRoots=(()=>{const c=(R*R-D*D-mouth.lengthSq())/(2*D*mouth.length()),split=Math.acos(c);return[Math.PI/2-split-mouth.angle(),Math.PI/2+split-mouth.angle()];})();
+ const plateau=plateauRoots.map(x=>unwrap(x,-.95)).sort((x,y)=>Math.abs(x+.95)-Math.abs(y+.95))[0];
+ const onArc=a=>{const m=rot(mouth,plateau).sub(base);return within(m.angle()-a,fingerSpan[0],fingerSpan[1])?plateau:null;};
  function tail(a){
   const theta=a+theta0,A=r*Math.cos(theta),B=D-r*Math.sin(theta),den=A*A+B*B,N=2*r*(r-D*Math.sin(theta)),derivative=-2*r*D*Math.cos(theta);
   return{angle:2*Math.atan2(A,B)-g.stopStepAngle,speed:N/den,acceleration:derivative/den-N*derivative/den**2};
  }
- const entryEnd=solve(a=>entry(a).angle-plateau,.65,.75),tailStart=solve(a=>tail(a).angle-plateau,.78,.84),tailEnd=Math.PI/2-theta0,startError=entry(0).angle;
+ const tailEnd=Math.PI/2-theta0;
+ const constraints=[
+  ['relief-mouth-drive',a=>mouthOnCircle(relief,reliefRadius,reliefSpan,a)],
+  ['fillet-flank-drive',filletOnFlank],
+  ['fillet-mouth-drive',a=>mouthOnCircle(fillet,rho,filletSpan,a)],
+  ['rounded-finger-mouth-hold',onArc],
+  ['rim-corner-pocket-drive',a=>a>.6?tail(a).angle:null],
+ ];
+ const angleAt=a=>{let angle=0,stage='pocket-release';for(const[name,f]of constraints){const value=f(a);if(value!==null&&value<angle){angle=value;stage=name;}}return{angle,stage};};
+ // Rates: the tail is closed-form; elsewhere, central differences on the
+ // exact closed-form angle of the active constraint.
+ const rates=(a,stage)=>{
+  if(stage==='rim-corner-pocket-drive'){const t=tail(a);return{speed:t.speed,acceleration:t.acceleration};}
+  if(stage==='rounded-finger-mouth-hold'||stage==='pocket-release')return{speed:0,acceleration:0};
+  const f=constraints.find(([name])=>name===stage)[1],value=x=>f(x)??angleAt(x).angle,h1=1e-6,h2=1e-4;
+  return{speed:(value(a+h1)-value(a-h1))/(2*h1),acceleration:(value(a+h2)-2*value(a)+value(a-h2))/(h2*h2)};
+ };
+ // Regime boundaries, located on a fine scan and refined by bisection.
+ const boundaries=[];let previous=angleAt(0).stage;
+ for(let i=1;i<=4000;i++){const a=tailEnd*i/4000,stage=angleAt(a).stage;if(stage!==previous){let lo=tailEnd*(i-1)/4000,hi=a;for(let k=0;k<60;k++){const mid=(lo+hi)/2;if(angleAt(mid).stage===previous)lo=mid;else hi=mid;}boundaries.push({from:previous,to:stage,at:hi});previous=stage;}}
+ const boundary=(to)=>boundaries.find(b=>b.to===to)?.at;
+ const entryEnd=boundaries.find(b=>b.from==='fillet-flank-drive')?.at??boundary('rounded-finger-mouth-hold');
+ const tailStart=boundary('rim-corner-pocket-drive');
  function local(a){
-  if(a<entryEnd){const q=entry(a),u=1-a/entryEnd;return{angle:q.angle-startError*u*u,speed:q.speed+2*startError*u/entryEnd,acceleration:q.acceleration-2*startError/entryEnd**2,stage:'finger-corner-slot-drive'};}
-  if(a<tailStart)return{angle:plateau,speed:0,acceleration:0,stage:'rounded-finger-mouth-hold'};
-  if(a<tailEnd)return{...tail(a),stage:'rim-corner-pocket-drive'};
-  return{angle:-g.stopStepAngle,speed:0,acceleration:0,stage:'concentric-pocket-lock'};
+  if(a>=tailEnd)return{angle:-g.stopStepAngle,speed:0,acceleration:0,stage:'concentric-pocket-lock'};
+  const q=angleAt(a);return{angle:q.angle,...rates(a,q.stage),stage:q.stage};
+ }
+ // The world contact point of the active constraint (for inspection).
+ function contactAt(a,angle,stage){
+    if(stage==='fillet-flank-drive'){const c=rot(fillet,a).add(g.driverCenter),n=rot(normal,angle);return c.addScaledVector(n,-side*rho);}
+  if(stage==='rim-corner-pocket-drive')return rot(tip,a).add(g.driverCenter);
+  return rot(mouth,angle).add(g.stopWheelCenter);
  }
  function law(input){const clamped=T.MathUtils.clamp(input,0,g.forwardInputLimit),turn=Math.min(3,Math.floor((clamped+1e-12)/tau)),phase=clamped-turn*tau,q=local(Math.max(0,phase));return{...q,angle:q.angle-turn*g.stopStepAngle,turn,phase};}
- return{law,local,entryEnd,tailStart,tailEnd,plateau,mouth,finger,tip,normal};
+ return{law,local,contactAt,boundaries,entryEnd,tailStart,tailEnd,plateau,mouth,tip,normal,side,fillet,rho,relief,reliefRadius};
 }
 
 export function finishGeneva212Contact(model){
  const d=model.root.userData,b=d.blocks,g=d.geometry,branch=makeGeneva212ContactLaw(g),source={stateAtInputAngle:d.stateAtInputAngle,stateAtTime:d.stateAtTime,stopWheelAngleAtInputAngle:d.stopWheelAngleAtInputAngle,canonicalStates:d.canonicalStates,canonicalTimes:d.canonicalTimes},oldUpdate=model.update;
  d.sourceKinematics=source;
- d.contactBranch212={entryEnd:branch.entryEnd,tailStart:branch.tailStart,tailEnd:branch.tailEnd,plateau:branch.plateau,profileTolerance:3e-6,forceSolved:false,selectedOutputTorqueSign:-1};
+ // Terminal: A's rounded leading corner bears on the shoulder beside the
+ // convex a-b sector; the contact point is taken from the actual final pose.
+ {const final=branch.law(g.forwardInputLimit),local=branch.local(final.phase),point=branch.contactAt(final.phase,local.angle,local.stage);
+  g.terminalContactPoint=point;g.terminalStopNormal=rot(branch.normal,local.angle).multiplyScalar(-branch.side);
+  g.terminalContactStage=local.stage;
+  if(b.terminalContactMarker)b.terminalContactMarker.position.set(point.x,point.y,b.terminalContactMarker.position.z);
+  const radius=point.clone().sub(g.driverCenter);g.blockedForwardClosingRate=Math.abs(new T.Vector2(-radius.y,radius.x).dot(g.terminalStopNormal));}
+ d.contactBranch212={boundaries:branch.boundaries,entryEnd:branch.entryEnd,tailStart:branch.tailStart,tailEnd:branch.tailEnd,plateau:branch.plateau,profileTolerance:3e-6,forceSolved:false,selectedOutputTorqueSign:-1};
  d.stopWheelAngleAtInputAngle=input=>branch.law(input).angle;
  d.stateAtInputAngle=(input,v=0,a=0)=>{
   const s=source.stateAtInputAngle(input,v,a),q=branch.law(s.driverAngle),active=q.stage!=='concentric-pocket-lock',lockActive=!active&&q.turn<3,pocketIndex=lockActive?q.turn+1:null,pocketCenter=lockActive?rot(g.lockPocketCenters[pocketIndex],q.angle).add(g.stopWheelCenter):null;
-  return{...s,stage:s.atTerminalStop?s.stage:q.stage,contactMode:s.atTerminalStop?s.stage:q.stage,stopWheelAngle:q.angle,stopWheelAngularSpeed:q.speed*s.driverAngularSpeed,stopWheelAngularAcceleration:q.speed*s.driverAngularAcceleration+q.acceleration*s.driverAngularSpeed**2,outputSteps:-q.angle/g.stopStepAngle,limit:{...s.limit,convexArcEndpoints:[g.convexStopArc[0],g.convexStopArc.at(-1)].map(p=>rot(p,q.angle).add(g.stopWheelCenter))},
+  return{...s,stage:s.atTerminalStop?s.stage:q.stage,contactMode:s.atTerminalStop?s.stage:q.stage,stopWheelAngle:q.angle,stopWheelAngularSpeed:q.speed*s.driverAngularSpeed,stopWheelAngularAcceleration:q.speed*s.driverAngularAcceleration+q.acceleration*s.driverAngularSpeed**2,outputSteps:-q.angle/g.stopStepAngle,limit:{...s.limit,contactPoint:g.terminalContactPoint.clone(),stopNormal:g.terminalStopNormal.clone(),blockedForwardClosingRate:g.blockedForwardClosingRate,convexArcEndpoints:[g.convexStopArc[0],g.convexStopArc.at(-1)].map(p=>rot(p,q.angle).add(g.stopWheelCenter))},
    engagement:{...s.engagement,active:active&&!s.atTerminalStop,activeSlotIndex:active?q.turn+1:null,instantaneousRatio:q.speed,ratioDerivative:q.acceleration,officialPhaseError:Math.abs(q.angle-s.stopWheelAngle),workingContactStage:q.stage},
    lock:{...s.lock,active:lockActive,pocketIndex,pocketCenter,concentricityError:pocketCenter? pocketCenter.distanceTo(g.driverCenter):null,radialClearance:0}};
  };
@@ -61,7 +129,7 @@ export function finishGeneva212Contact(model){
   const angle=index.rotation.z;index.geometry.dispose();index.geometry=new T.BoxGeometry(.35,.052,.026);
   index.position.set(.32*Math.cos(angle),.32*Math.sin(angle),hub.position.z+.113);
  }
- d.reconstructionNote='The existing finger, mouth and rim now form a contacting index branch, capturing the lock at 54.78° rather than the source animation’s linear 51° schedule. Handoff impacts and input motion are prescribed; reverse playback requires an assisting output bias. Friction, inertia and loaded force balance are not simulated.';
+ d.reconstructionNote='A\u2019s finger stands out to radius 4.7 (source 4.5) with rounded corners; its relief, rounded leading corner and rim form a contacting index branch with B\u2019s slot mouth, flank and pocket, capturing the lock at 54.78° rather than the source animation’s linear 51° schedule. Handoff impacts and input motion are prescribed; reverse playback requires an assisting output bias. Friction, inertia and loaded force balance are not simulated.';
  d.sourceAnimation.runtimeReconstructsFiniteContact=true;
  // Brown draws B two indexes into its run: the convex stop face a-b stands
  // beside the top slot and A's finger is at the mouth of the third slot.

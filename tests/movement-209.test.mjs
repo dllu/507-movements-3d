@@ -628,3 +628,54 @@ test('movement 209 renders rigid indices while 210–213 are distinct and author
   disposeModel(movement213.root);
   disposeModel(model.root);
 });
+
+test('movement 209 fork catches a pin on the entering driver tooth through the dead point', () => {
+  const model = createMovementModel(catalog.movements[208]);
+  const { blocks, transmission } = model.root.userData;
+  try {
+    const { forkPin, forkHorn, fork, driver } = blocks;
+    assert.equal(forkPin.parent, driver.userData.rotor);
+    const functional = fork.userData.functionalFork;
+    assert.ok(functional.window[0] < 0 && functional.window[1] > 0,
+      'the pin is in the fork at the source (dead-point) pose');
+    const polygons = forkHorn.geometry.userData.plate.polygons;
+    assert.equal(polygons.length, 1, 'one fork piece carried by the boss');
+    const segments = [];
+    for (const polygon of polygons) for (const ring of polygon) {
+      for (let i = 0; i + 1 < ring.length; i += 1) segments.push([ring[i], ring[i + 1]]);
+    }
+    const inside = (x, y) => {
+      let result = false;
+      for (const polygon of polygons) for (const ring of polygon) {
+        for (let i = 0, j = ring.length - 1; i < ring.length; j = i, i += 1) {
+          const [xi, yi] = ring[i];
+          const [xj, yj] = ring[j];
+          if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) result = !result;
+        }
+      }
+      return result;
+    };
+    const distance = (x, y) => Math.min(...segments.map(([[x1, y1], [x2, y2]]) => {
+      const dx = x2 - x1;
+      const dy = y2 - y1;
+      const t = Math.max(0, Math.min(1, ((x - x1) * dx + (y - y1) * dy) / (dx * dx + dy * dy)));
+      return Math.hypot(x - x1 - t * dx, y - y1 - t * dy);
+    }));
+    let engaged = 0;
+    for (let i = 0; i <= 2048; i += 1) {
+      model.update(transmission.inputPeriod * i / 2048);
+      model.root.updateMatrixWorld(true);
+      const local = forkHorn.worldToLocal(forkPin.getWorldPosition(new THREE.Vector3()));
+      assert.ok(!inside(local.x, local.y), 'pin axis never inside the fork');
+      const gap = distance(local.x, local.y) - functional.pinRadius;
+      assert.ok(gap > 0.011, `pin clears the fork (${gap})`);
+      if (model.root.userData.kinematics.forkGuide.pinEngaged) {
+        engaged += 1;
+        assert.ok(gap < 0.0125, `engaged pin bears on a horn (${gap})`);
+      }
+    }
+    assert.ok(engaged > 150, 'the pin runs through the fork for a real interval');
+  } finally {
+    disposeModel(model.root);
+  }
+});

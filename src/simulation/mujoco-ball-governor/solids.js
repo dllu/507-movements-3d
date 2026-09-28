@@ -26,7 +26,13 @@ export function makeBallGovernorSolids() {
   const axialY = geometry => geometry.rotateX(-Math.PI / 2);
   const pixel = ([x, y]) => [(x - 279) * .018, g.topY + (145 - y) * .018];
   const imagePoly = points => poly(points.map(pixel));
-  const headShape = imagePoly([[248,148],[251,140],[261,137],[267,132],[291,132],[295,139],[305,140],[311,147],[310,154],[302,159],[294,160],[289,170],[268,170],[264,160],[255,158],[249,154]]);
+  // Brown's head: rounded ears concentric with the two top pins (a stadium
+  // between them), a raised top over the spindle and a tapered lower tab.
+  const headEarRadius = .165;
+  const headShape = clip.union(
+    capsule([-g.pivotRadius, g.topY], [g.pivotRadius, g.topY], headEarRadius, 64),
+    imagePoly([[262,140],[267,132],[291,132],[296,140]]),
+    imagePoly([[264,152],[294,152],[294,160],[289,170],[268,170],[264,160]]));
   const headHoles = [-1, 1].map(sign => poly(circle([sign * g.pivotRadius, g.topY], .069, 64)));
   for (const [name, low, high] of [['headRear', -.24, -.12], ['headFront', .12, .24]]) {
     add(name, plate(clip.difference(headShape, ...headHoles), low, high), 'rotor', PALETTE.driven);

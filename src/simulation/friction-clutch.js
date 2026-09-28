@@ -106,10 +106,14 @@ export function makeFrictionClutch() {
   // The handle ends in a turned grip for the hand. Brown draws the lever's
   // fixed pivot as a plain circle with no frame, so the pivot is a short
   // fixed pin stub, as on 48 and 52.
-  const grip = new THREE.Mesh(new THREE.CylinderGeometry(0.036, 0.042, 0.24, 24),
+  // Pass 98: the grip is sleeved over the handle's round end (it started
+  // 0.004 beyond it, floating); the bar's end corners (0.033 from its axis)
+  // lie inside the grip's 0.036 mouth, and the grip's outer end is unchanged.
+  const gripStart = handleLength - 0.03, gripEnd = handleLength + 0.022 + 0.004 + 0.24;
+  const grip = new THREE.Mesh(new THREE.CylinderGeometry(0.036, 0.042, gripEnd - gripStart, 32),
     matte(PALETTE.brass, { metalness: 0.1, roughness: 0.66 }));
   grip.rotation.z = Math.PI / 2;
-  grip.position.set(handleLength + 0.022 + 0.004 + 0.12, 0, leverBackZ + leverDepth / 2);
+  grip.position.set((gripStart + gripEnd) / 2, 0, leverBackZ + leverDepth / 2);
   grip.userData.role = 'lever-handle-grip';
   lever.add(leverBody, grip);
   Object.assign(lever.userData, { body: leverBody, pivotBore, followerBore, handleLength, leverLength: p.leverLength,

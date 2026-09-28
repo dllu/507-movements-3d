@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import {circle, plate, poly, polygonClipping} from './finite-plate-geometry.js';
 import {LaidRopeGeometry, replaceWithLaidRope} from './laid-rope.js';
 import {correctSteeringSolids} from './steering-spatial-parts.js';
+import {standardTurnedHandleGeometry, HANDLE_BACK_RECESS, HANDLE_FOOT_EMBED} from './turned-handle.js';
 import {
   PALETTE,
   markShadows,
@@ -19,12 +20,19 @@ function addHandwheelHandles(root) {
   const rim = blocks.handwheelRim;
   const rimRadius = rim.geometry.parameters.radius;
   const tube = rim.geometry.parameters.tube;
-  const profile = [
-    [0.050, 0], [0.050, 0.08], [0.085, 0.20], [0.070, 0.34],
-    [0.055, 0.42], [0.075, 0.50], [0.060, 0.56], [0.001, 0.58],
-  ].map(([r, y]) => new THREE.Vector2(r, y));
-  const geometry = new THREE.LatheGeometry(profile, 24)
-    .translate(0, rimRadius + tube * 0.5, 0);
+  // Pass 98: each handle is the shared turned handle Brown draws (a flared
+  // foot at the rim, a slim neck and a long bulb), one smooth profile in
+  // place of a faceted polyline with two swellings. Its foot is sunk 0.012
+  // into the rim's outer surface and its shank runs on through the rim tube,
+  // ending 0.005 inside its inner surface; the tip is unchanged (0.58 beyond
+  // the tube's mid-radius).
+  const bulbRadius = 0.085, footRadius = 0.57 * bulbRadius;
+  const surfaceOffset = Math.sqrt(tube * tube - footRadius * footRadius);
+  const footY = rimRadius + surfaceOffset - HANDLE_FOOT_EMBED;
+  const tipY = rimRadius + tube * 0.5 + 0.58;
+  const geometry = standardTurnedHandleGeometry({ height: tipY - footY, bulbRadius, segments: 24,
+    shank: footY - (rimRadius - surfaceOffset) - HANDLE_BACK_RECESS })
+    .translate(0, footY, 0);
   blocks.handwheelHandles = blocks.handwheelSpokes.map((spoke, index) => {
     const handle = new THREE.Mesh(index ? geometry.clone() : geometry, rim.material);
     handle.userData.role = `turned-handwheel-handle-${index + 1}`;

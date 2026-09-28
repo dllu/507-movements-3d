@@ -23,10 +23,34 @@ test('245 finite pin, head and plug pass through the real L-slot for a complete 
 });
 test('248 closed male/female threads stay complementary through three unscrewing turns and reassembly',()=>{
  const m=createMovementModel(catalog[247]),b=m.root.userData.blocks;
- const male=solidSurface(b.externalThread.geometry),female=solidSurface(b.internalThread.geometry),mp=surfacePoints(b.externalThread.geometry).filter((_,i)=>i%10===0),fp=surfacePoints(b.internalThread.geometry).filter((_,i)=>i%10===0);
- let queries=0;
- for(let i=0;i<=64;i++){m.update(12*i/64);m.root.updateMatrixWorld(true);queries+=clear(b.externalThread,mp,b.internalThread,female).count;queries+=clear(b.internalThread,fp,b.externalThread,male).count;}
+ // B's half-section thread is rebuilt in place (with a shifted helix phase)
+ // as B turns under the fixed section plane, so its surface is taken per pose.
+ const male=solidSurface(b.externalThread.geometry),mp=surfacePoints(b.externalThread.geometry).filter((_,i)=>i%10===0);
+ let queries=0,female,fp,seen;
+ for(let i=0;i<=64;i++){m.update(12*i/64);m.root.updateMatrixWorld(true);
+  const phase=b.internalThread.geometry.userData.thread.phase;if(seen!==phase){seen=phase;const g=b.internalThread.geometry;female=solidSurface(g);fp=surfacePoints(g).filter((_,i)=>i%10===0);}
+  queries+=clear(b.externalThread,mp,b.internalThread,female).count;queries+=clear(b.internalThread,fp,b.externalThread,male).count;}
  assert.ok(queries>1000);assert.equal(b.externalThread.geometry.type,'BufferGeometry');assert.equal(b.internalThread.geometry.type,'BufferGeometry');
+});
+function assertWatertightHalf(geometry,label){
+ const p=geometry.attributes.position,n=geometry.attributes.normal,edges=new Map();let volume=0;
+ const v=i=>new THREE.Vector3().fromBufferAttribute(p,i),key=x=>x.toArray().map(c=>Math.round(c*1e5)).join(',');
+ for(let i=0;i<p.count;i+=3){const[a,b,c]=[v(i),v(i+1),v(i+2)],cross=b.clone().sub(a).cross(c.clone().sub(a));if(cross.lengthSq()<1e-18)continue;
+  assert.ok(cross.dot(new THREE.Vector3().fromBufferAttribute(n,i))>-1e-9,label+': winding agrees with shading');
+  volume+=a.dot(b.clone().cross(c))/6;
+  for(const[x,y]of[[a,b],[b,c],[c,a]]){const k1=key(x),k2=key(y);if(k1===k2)continue;const k=k1<k2?k1+':'+k2:k2+':'+k1;edges.set(k,(edges.get(k)??0)+1);}}
+ const open=[...edges.values()].filter(c=>c!==2).length;
+ assert.equal(open,0,label+': every thread edge bounds two faces (no missing faces between turns or at the section)');
+ assert.ok(volume>0,label+': closed and outward');
+ geometry.computeBoundingBox();assert.ok(geometry.boundingBox.max.z<1e-6,label+': the thread lies wholly behind the section plane');
+ assert.equal(geometry.groups.length,2,label+': turned surface and section faces');
+}
+test('248 p98: both threads are closed half-section solids at every nut angle, with no render-time clipping',()=>{
+ const m=createMovementModel(catalog[247]),b=m.root.userData.blocks;
+ for(const mesh of [b.externalThread,b.internalThread])for(const mat of [].concat(mesh.material))assert.ok(!mat.clippingPlanes?.length,'no open clipped thread');
+ assertWatertightHalf(b.externalThread.geometry,'C thread');
+ for(let i=0;i<=24;i++){m.update(12*i/24);m.root.updateMatrixWorld(true);
+  const world=b.internalThread.geometry.clone().applyMatrix4(b.internalThread.matrixWorld);assertWatertightHalf(world,'B thread at '+i);}
 });
 test('248 actual flange, shoulder, flat seat and locating spigot remain clear through capture and withdrawal',()=>{
  const m=createMovementModel(catalog[247]),b=m.root.userData.blocks;

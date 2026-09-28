@@ -25,9 +25,9 @@
     },
     {
       "file": "src/simulation/baked/assets/180.json.gz",
-      "sha256": "24babef29f6dc3bf329bacffb26947d634b8b3fd4553a55cd7b2f5e82b5f6d5b"
+      "sha256": "1ca39ed513236b228b249c1b4369b119995aa80476f6c463462214392e5c3008"
     }
   ],
   "recheckedOn": "2026-09-28",
-  "recheckNote": "p93-fc: packaged desktop/mobile spec rerun after the return-spring rebake (both pass); 174 spec waits 1.5 s for the first settled frame (0.3 s captured an unsettled first render; restart equality then failed identically with the HEAD bake). p93-f: packaged desktop/mobile spec rerun (passes) after the 180 rebake for the authored-clamps.js source hash (190 standard smoothing); the rebake differs from the previous one only in object UUIDs and that hash."
+  "recheckNote": "p93-fc: packaged desktop/mobile spec rerun after the return-spring rebake (both pass); 174 spec waits 1.5 s for the first settled frame (0.3 s captured an unsettled first render; restart equality then failed identically with the HEAD bake). p93-f: packaged desktop/mobile spec rerun (passes) after the 180 rebake for the authored-clamps.js source hash (190 standard smoothing); the rebake differs from the previous one only in object UUIDs and that hash. p98-c: packaged desktop/mobile spec rerun (passes) after the 180 rebake for the authored-clamps.js source hash (190 shoe-end arc); the rebake differs only in object UUIDs and that hash."
 }

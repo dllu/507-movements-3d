@@ -1,5 +1,6 @@
 import {ring} from './finite-plate-geometry.js';
 import {groundBlock} from './ground-block.js';
+import {turnedHandleGeometry} from './turned-handle.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -1033,11 +1034,17 @@ function sourceScaledSingleEngineReverser() {
   const manualLever = new THREE.Group();
   manualLever.position.set(leverBasePivot.x, leverBasePivot.y, -0.22);
   manualLever.userData.role = 'upright-hand-lever-for-reversing-valve';
+  // Pass 98: Brown ends the lever in a turned knob (a collar, a slim neck and
+  // a bulb) centred on the plate's handle point. The bar stops inside the
+  // knob's collar, which encloses its corners, instead of running on through
+  // a plain cylinder whose radius its corners overhung.
+  const leverKnobHalfLength = 0.31;
+  const leverBarLength = manualLeverLength - leverKnobHalfLength + 0.004;
   const manualLeverBar = new THREE.Mesh(
-    new THREE.BoxGeometry(manualLeverLength, 0.18, 0.32),
+    new THREE.BoxGeometry(leverBarLength, 0.18, 0.32),
     brassMaterial,
   );
-  manualLeverBar.position.x = manualLeverLength / 2;
+  manualLeverBar.position.x = leverBarLength / 2;
   manualLeverBar.userData.role = 'long-upright-reversing-lever';
   const leverBaseHub = cylinderAlongZ(0.25, .94, darkMaterial, 30);
   leverBaseHub.position.z = .04;
@@ -1045,8 +1052,14 @@ function sourceScaledSingleEngineReverser() {
   const leverLinkHub = cylinderAlongZ(0.22, 0.66, darkMaterial, 30);
   leverLinkHub.position.set(leverJointRadius, 0, 0.16);
   leverLinkHub.userData.role = 'reversing-link-pin-on-upright-lever';
-  const leverHandle = cylinderAlongX(0.17, 0.62, darkMaterial, 24);
-  leverHandle.position.x = manualLeverLength;
+  const leverHandle = new THREE.Mesh(
+    turnedHandleGeometry({ height: 2 * leverKnobHalfLength, shank: 0.08, side: [
+      [0.195, 0], [0.125, 0.13], [0.09, 0.36], [0.15, 0.6], [0.18, 0.78],
+    ] }),
+    darkMaterial,
+  );
+  leverHandle.rotation.z = -Math.PI / 2; // lathe +y out along the lever
+  leverHandle.position.x = manualLeverLength - leverKnobHalfLength;
   leverHandle.userData.role = 'hand-grip-of-upright-reversing-lever';
   const leverJointAnchor = new THREE.Group();
   leverJointAnchor.position.x = leverJointRadius;
@@ -1471,8 +1484,20 @@ function sourceScaledSingleEngineReverser() {
   curve([135,219],[119,201],[95,197]);line(94,203);
   curve([118,208],[126,227],[131,254]);curve([135,280],[142,292],[165,291]);handle.closePath();
   liftingHandle.geometry.dispose();liftingHandle.geometry=centeredExtrusion(handle,.22,0);
-  liftingHandleGrip.geometry.dispose();liftingHandleGrip.geometry=new THREE.CylinderGeometry(.095,.095,.48,32);
-  const grip=rodPoint(84,198);liftingHandleGrip.position.set(grip.x,grip.y,.09);liftingHandle.position.z=.09;
+  // Pass 98: Brown ends the lifting handle in a turned knob (a collar, a slim
+  // neck and a bulb) standing straight out of the handle's end face. The
+  // collar (r 0.14) encloses the end's corners (half-diagonal 0.128), with
+  // 0.06 of it over the end, and the knob reaches the old grip's tip.
+  const handleEndA=rodPoint(95,197), handleEndB=rodPoint(94,203);
+  const handleEnd=handleEndA.clone().add(handleEndB).multiplyScalar(.5);
+  const handleOut=new THREE.Vector2(handleEndB.y-handleEndA.y,handleEndA.x-handleEndB.x).normalize();
+  if(handleOut.dot(handleEnd.clone().sub(rodPoint(119,201)))<0)handleOut.negate();
+  liftingHandleGrip.geometry.dispose();
+  liftingHandleGrip.geometry=turnedHandleGeometry({height:.46,shank:.06,side:[
+    [.14,0],[.09,.12],[.065,.32],[.1,.6],[.12,.78]]});
+  liftingHandleGrip.rotation.set(0,0,0);
+  liftingHandleGrip.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),new THREE.Vector3(handleOut.x,handleOut.y,0));
+  liftingHandleGrip.position.set(handleEnd.x-.012*handleOut.x,handleEnd.y-.012*handleOut.y,.09);liftingHandle.position.z=.09;
   for (const [parent,x,z,radius,name] of [[manualLever,leverJointRadius,.51,.28,'lever-link-pin-head'],
     [valveSpindle,-spindleLinkOffset,.67,.21,'spindle-link-pin-head']]) {
     const head=cylinderAlongZ(radius,.04,darkMaterial,64);head.position.set(x,0,z);

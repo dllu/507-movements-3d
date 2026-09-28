@@ -54,11 +54,14 @@ export function makeTappetStudStop({computeStopOutline=false,...options}={}) {
     const mesh=attach('stud'+i,drum(p.pinRadius,0,.085,.48,2048),PALETTE.ink,output,'output');
     mesh.position.set(...polar(p.R,p.betaStart+i*p.pitch),0);
   }
-  const upper=[.14,.15],v=sub(upper,p.tipCenter);
-  const tangentAngle=Math.atan2(v[1],v[0])-Math.acos(p.tipRadius/norm(v));
-  const tappet=new THREE.Shape();tappet.moveTo(.11,-p.h);tappet.lineTo(p.tipCenter[0],-p.h);
+  // Tappet A is a tapered bar between two true arcs: its rounded tip and a
+  // root end concentric with C's shaft (radius h, so the flat underside is
+  // tangent to both). The root lies inside C's hub.
+  const rootRadius=p.h,tipDistance=norm(p.tipCenter),
+    tangentAngle=Math.atan2(p.tipCenter[1],p.tipCenter[0])+Math.acos((rootRadius-p.tipRadius)/tipDistance);
+  const tappet=new THREE.Shape();tappet.moveTo(0,-p.h);tappet.lineTo(p.tipCenter[0],-p.h);
   tappet.absarc(...p.tipCenter,p.tipRadius,-Math.PI/2,tangentAngle,false);
-  tappet.lineTo(...upper);tappet.quadraticCurveTo(-.11,.12,-.10,-.06);tappet.quadraticCurveTo(-.08,-.22,.11,-p.h);tappet.closePath();
+  tappet.absarc(0,0,rootRadius,tangentAngle,1.5*Math.PI,false);tappet.closePath();
   paths.tappet=tappet.getPoints(512).map(q=>q.toArray());
   // Tappet A lies on C's (deepened) front face, in front of the stop and
   // clear of the end of the stop's fixed pin.
@@ -67,7 +70,9 @@ export function makeTappetStudStop({computeStopOutline=false,...options}={}) {
   const outline=new THREE.Shape();outline.moveTo(...p.toeCenter);
   const quadratic=(cx,cy,x,y)=>outline.quadraticCurveTo(...localPixel(cx,cy),...localPixel(x,y));
   const line=(x,y)=>outline.lineTo(...localPixel(x,y));
-  quadratic(512,782,615,736);quadratic(638,648,705,676);quadratic(735,686,745,706);
+  // The boss hump over the pin is the circle unioned in trimStop.
+  const pivotBossRadius=.26;p.pivotBossRadius=pivotBossRadius;
+  quadratic(512,782,615,736);line(745,706);
   quadratic(805,735,844,725);outline.lineTo(...p.tooth[0]);outline.lineTo(...p.tooth[1]);outline.lineTo(...p.tooth[2]);
   quadratic(1000,713,948,746);quadratic(832,793,763,814);quadratic(710,820,671,817);
   quadratic(550,857,440,835);line(390,822);outline.closePath();
@@ -80,7 +85,10 @@ export function makeTappetStudStop({computeStopOutline=false,...options}={}) {
   // scripts/generate-tappet-stud-stop-outline.mjs; the 065 tests recompute it.
   const trimStop=(poses=480)=>{
     const ring=points=>{const r=points.map(q=>[q[0],q[1]]);r.push(r[0]);return r;};
-    const drawn=clip.union([ring(outline.getPoints(96).map(q=>q.toArray()))],[ring(paths.toe)]);
+    // The pivot end is a true circle concentric with the fixed pin (the
+    // traced hump centred 0.035 up-left of it).
+    const drawn=clip.union([ring(outline.getPoints(96).map(q=>q.toArray()))],[ring(paths.toe)],
+      [ring(Array.from({length:512},(_,i)=>polar(pivotBossRadius,TAU*i/512)))]);
     const toStop=(q,gamma,theta)=>rotate(sub(rotate(q,gamma),p.pivot),-theta);
     const near=q=>norm(sub(q,p.toeCenter))<.45;
     const stopRelief=.006,toePocket=[ring(Array.from({length:48},(_,i)=>add(p.toeCenter,polar(.03,TAU*i/48))))];

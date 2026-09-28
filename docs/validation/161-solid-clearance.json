@@ -4,7 +4,7 @@
   "poses": 65,
   "meshes": 99,
   "pairs": 2495,
-  "queries": 12730288,
+  "queries": 13063600,
   "failures": {},
   "method": "Bidirectional mesh vertices, edge midpoints and triangle centers. Spread sweeps 0.3598–0.6084 radians while spindle turns twice. Same rigid-family joins excluded; bevel-to-bevel pairs have their separate report. Finite sampling, not continuous collision proof.",
   "sources": [
@@ -14,7 +14,7 @@
     },
     {
       "file": "src/simulation/mujoco-ball-governor/solids.js",
-      "sha256": "b0a6e0a0c38d4a127be386bdae2478f6fe59f699c0b751b8a77cacc714e85bba"
+      "sha256": "0e1cd67591e40cbba4b0b7623d55fcc41fcd47a01369a203186136537ece07a6"
     },
     {
       "file": "src/simulation/mujoco-ball-governor/update-solids.js",
@@ -26,7 +26,7 @@
     },
     {
       "file": "tests/helpers/solid-surface.mjs",
-      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+      "sha256": "8f39335894306bfe77f2d3562e6c2e7ac867dead2e078f2d1da4da7151998b99"
     }
   ]
 }

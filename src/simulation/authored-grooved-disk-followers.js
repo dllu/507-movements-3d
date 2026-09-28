@@ -422,8 +422,11 @@ function groovedDiskFollower(movement) {
   rearArm.userData.role = 'rear-hand-crank-arm-keyed-on-disk-shaft';
   diskRotor.add(rearArm);
   // A plain round handle on the arm's end, clear in front of the frame.
-  const crankHandle = cylinderAlongZ(0.075, 0.36, darkMaterial, 32);
-  crankHandle.position.set(rearArmTip.x, rearArmTip.y, -0.47);
+  // Pass 98: it runs on through the arm's round end and stops 0.005 inside
+  // its front face (z -0.20), flush with the arm's front rather than ending
+  // midway in the arm; its rear end is unchanged (z -0.65).
+  const crankHandle = cylinderAlongZ(0.075, 0.445, darkMaterial, 32);
+  crankHandle.position.set(rearArmTip.x, rearArmTip.y, -0.4275);
   crankHandle.userData.role = 'rear-hand-crank-handle';
   diskRotor.add(crankHandle);
 

@@ -7,6 +7,7 @@ import {
 
 import {boredCylinderGeometry, fitPistonGuide} from './piston-guide-parts.js';
 import {boredLatheGeometry} from './bored-lathe-geometry.js';
+import {crankArmAcrossXGeometry, standardTurnedHandleGeometry, handleShank, HANDLE_FOOT_EMBED} from './turned-handle.js';
 
 const FULL_TURN = Math.PI * 2;
 const Y_AXIS = new THREE.Vector3(0, 1, 0);
@@ -274,19 +275,28 @@ function bentShaftSlide(movement) {
   // Brown's crank handle on the outer end of A (in place of an input wheel).
   const crankArmLength = .78;
   const crankX = shaftRight - .06;
-  const inputWheel = new THREE.Mesh(new THREE.BoxGeometry(.12, crankArmLength + .22, .20), driverMaterial);
-  inputWheel.position.set(crankX + .12, crankArmLength / 2, 0);
+  // Pass 98: the arm is one flat extrusion (0.12 thick along A) whose ends
+  // are arcs concentric with A and the handle, and the handle is the shared
+  // turned handle Brown draws (a slim neck swelling to a bulb) in place of a
+  // rod and a separate ball: its foot is sunk in the arm's outer face and its
+  // shank runs on through the arm, flush with the arm's inner face.
+  const crankInnerX = crankX + .06, crankOuterX = crankX + .18;
+  const inputWheel = new THREE.Mesh(
+    crankArmAcrossXGeometry({ handleY: crankArmLength, handleEndRadius: .10,
+      hubEndRadius: .17, x0: crankInnerX, x1: crankOuterX }),
+    driverMaterial,
+  );
   inputWheel.userData.role = 'input-crank-arm-fast-on-shaft-A';
   shaftRotor.add(inputWheel);
-  const crankHandle = cylinderAlongX(.055, .42, darkMaterial, 20);
-  crankHandle.position.set(crankX + .39, crankArmLength, 0);
+  const crankHandle = new THREE.Mesh(
+    standardTurnedHandleGeometry({ height: .56 + HANDLE_FOOT_EMBED, bulbRadius: .10,
+      shank: handleShank(crankOuterX - crankInnerX) }),
+    darkMaterial,
+  );
+  crankHandle.rotation.z = -Math.PI / 2;
+  crankHandle.position.set(crankOuterX - HANDLE_FOOT_EMBED, crankArmLength, 0);
   crankHandle.userData.role = 'input-crank-handle-on-arm';
   shaftRotor.add(crankHandle);
-  const crankKnob = new THREE.Mesh(new THREE.SphereGeometry(.10, 20, 14), darkMaterial);
-  crankKnob.scale.set(1.5, 1, 1);
-  crankKnob.position.set(crankX + .62, crankArmLength, 0);
-  crankKnob.userData.role = 'input-crank-handle-knob';
-  shaftRotor.add(crankKnob);
   // The bend: a knuckle at the end of the straight shaft, a collar just
   // inboard of it (Brown's collar at A), and the inclined bent end.
   const bentWeb = new THREE.Mesh(new THREE.SphereGeometry(0.13, 32, 20), driverMaterial);
@@ -431,7 +441,7 @@ function bentShaftSlide(movement) {
     archetype:
       'horizontal-bent-shaft-transverse-crank-journal-double-ball-socket-oblique-rod-to-single-axis-slide',
     blocks: {
-      bearingD, bearingBore, bearingPost, base, slideBody, slideFront, slideBridge, crankHandle, crankKnob,
+      bearingD, bearingBore, bearingPost, base, slideBody, slideFront, slideBridge, crankHandle,
       bentEndWasher,
       bentJournal,
       bentWeb,

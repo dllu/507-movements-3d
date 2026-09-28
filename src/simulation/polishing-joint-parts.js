@@ -3,7 +3,7 @@ import { boredLatheGeometry } from './bored-lathe-geometry.js';
 import { boredPlanarLinkGeometry } from './bored-planar-link.js';
 import { ratchet, makeFollower } from './maintaining-clock-parts.js';
 import { plate, poly, circle, polygonClipping as clip } from './finite-plate-geometry.js';
-import { crankArmOutline, turnedHandleGeometry, HANDLE_FOOT_EMBED } from './turned-handle.js';
+import { crankArmOutline, turnedHandleGeometry, handleShank, HANDLE_FOOT_EMBED } from './turned-handle.js';
 const TAU=2*Math.PI;
 const tube=(r,h,bore)=>boredLatheGeometry([{radial:r,axial:-h/2},{radial:r,axial:h/2}],bore,64);
 const rectangle=(w,h,cx=0,cy=0)=>poly([[cx-w/2,cy-h/2],[cx+w/2,cy-h/2],[cx+w/2,cy+h/2],[cx-w/2,cy+h/2]]);
@@ -33,7 +33,7 @@ export function correctMirrorPolisher(root){
   // the arm's front face with a margin all round.
   replace(b.handleArm,plate(poly(crankArmOutline({handleX:-g.handleRadius,handleEndRadius:.12,hubEndRadius:.19})),-.07,.07));b.handleArm.position.set(0,0,1.07);
   replace(b.crankPinBoss,new THREE.CylinderGeometry(.12,.12,.35,32));b.crankPinBoss.position.z=.175;
-  replace(b.handle,turnedHandleGeometry({height:.44+HANDLE_FOOT_EMBED,side:[[.065,0],[.048,.15],[.045,.4],[.068,.6],[.08,.78]]}));
+  replace(b.handle,turnedHandleGeometry({height:.44+HANDLE_FOOT_EMBED,side:[[.065,0],[.048,.15],[.045,.4],[.068,.6],[.08,.78]],shank:handleShank(.14)})); // pass 98: flush with the arm's back face
   b.handle.rotation.set(Math.PI/2,0,0);b.handle.position.set(-g.handleRadius,0,1.14-HANDLE_FOOT_EMBED);
   // The turned handle's bulb replaces the separate ball knob.
   b.handleKnob.visible=false;

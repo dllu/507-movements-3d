@@ -583,16 +583,27 @@ function robertsonJack(movement) {
   );
   const leverBar = mesh(pumpLever, plate(leverShape, leverZ - 0.05,
     leverZ + 0.05), leverMaterial, 'straight-hand-lever-with-two-eyes');
-  const leverBand = mesh(pumpLever, new THREE.CylinderGeometry(0.11, 0.11,
+  // Pass 98: the ferrule (r 0.115) encloses the socket's end corners, which
+  // lie 0.112 from the lever's axis (they stood 0.002 out of an r 0.11 band).
+  const leverBand = mesh(pumpLever, new THREE.CylinderGeometry(0.115, 0.115,
     0.07, 48).rotateZ(Math.PI / 2).translate(leverBandDistance, 0, leverZ),
   darkMaterial, 'lever-ferrule-band');
   // Brown's turned grip: a spindle swelling from the ferrule and rounding
   // off at the end.
   const gripLength = leverHandleLength - leverBandDistance + 0.02;
-  const handle = mesh(pumpLever, new THREE.LatheGeometry([
-    [0, 0], [0.10, 0], [0.125, 0.10], [0.15, 0.35], [0.155, 0.60],
-    [0.14, 0.85], [0.11, 1.02], [0.06, gripLength - 0.03], [0, gripLength],
-  ].map(([r, y]) => new THREE.Vector2(r, y)), 40)
+  // Pass 98: one smooth turned profile (a centripetal spline through the old
+  // stations, closed by a quarter-ellipse dome), not a polyline ending in a
+  // blunt cone.
+  const gripSpline = new THREE.CatmullRomCurve3([[0.10, 0], [0.125, 0.10], [0.15, 0.35], [0.155, 0.60],
+    [0.14, 0.85], [0.11, 1.02], [0.085, gripLength - 0.09]].map(([r, y]) => new THREE.Vector3(r, y, 0)),
+  false, 'centripetal');
+  const gripDome = Array.from({ length: 10 }, (_, i) => {
+    const t = (i + 1) * Math.PI / 20;
+    return new THREE.Vector2(0.085 * Math.cos(t), gripLength - 0.09 + 0.09 * Math.sin(t));
+  });
+  gripDome[gripDome.length - 1].x = 0;
+  const handle = mesh(pumpLever, new THREE.LatheGeometry([new THREE.Vector2(0, 0),
+    ...gripSpline.getSpacedPoints(40).map(({ x, y }) => new THREE.Vector2(x, y)), ...gripDome], 40)
     .rotateZ(-Math.PI / 2)
     .translate(leverBandDistance + 0.035, 0, leverZ),
   darkMaterial, 'long-hand-grip-on-pump-lever');

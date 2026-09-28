@@ -79,8 +79,8 @@ export function makePinClutch() {
   // width, just past the edge, into a turned round grip for the hand.
   const handleEnd = p.handleLength + 0.62, handleHalfWidth = 0.03, gripLength = 0.3;
   const gripStart = handleEnd - gripLength;
-  outline.lineTo(p.handleLength, handleHalfWidth); outline.lineTo(gripStart, handleHalfWidth);
-  outline.lineTo(gripStart, -handleHalfWidth);
+  outline.lineTo(p.handleLength, handleHalfWidth); outline.lineTo(gripStart + 0.01, handleHalfWidth);
+  outline.lineTo(gripStart + 0.01, -handleHalfWidth);
   outline.lineTo(p.handleLength, -handleHalfWidth); outline.lineTo(0.12, -0.09); outline.quadraticCurveTo(0.05, -0.13, 0, -0.13);
   outline.quadraticCurveTo(-0.13, -0.13, -0.13, 0); outline.closePath();
   outline.holes.push(polygon(0, 0, p.pivotBore, 128), polygon(0, p.leverLength, p.followerRadius, 128));
@@ -89,8 +89,19 @@ export function makePinClutch() {
   const followerCap = turned([[0.030, 0], [0.030, 0.043], [0.055, 0.043], [0.055, 0]], PALETTE.brass);
   const followerBackCap = turned([[-0.155, 0], [-0.155, 0.043], [-0.135, 0.043], [-0.135, 0]], PALETTE.brass);
   followerPin.position.y = p.leverLength; followerCap.position.y = p.leverLength; followerBackCap.position.y = p.leverLength;
-  const grip = turned([[0, 0], [0, 0.042], [0.06, 0.056], [gripLength - 0.07, 0.058], [gripLength - 0.02, 0.048],
-    [gripLength, 0.03], [gripLength, 0]], PALETTE.brass);
+  // Pass 98: one smooth turned profile (a centripetal spline through the old
+  // stations, closed by a quarter-ellipse dome) in place of a six-segment
+  // polyline whose flat-shaded bands showed as kinks. The bar runs 0.01 on
+  // into the grip's foot (its corners, 0.039 from the axis, lie inside the
+  // 0.042 foot) rather than ending on the grip's base plane.
+  const gripSpline = new THREE.CatmullRomCurve3([[0, 0.042], [0.06, 0.056], [gripLength - 0.07, 0.058],
+    [gripLength - 0.03, 0.05]].map(([x, r]) => new THREE.Vector3(x, r, 0)), false, 'centripetal');
+  const gripDome = Array.from({ length: 10 }, (_, i) => {
+    const t = (i + 1) * Math.PI / 20;
+    return [gripLength - 0.03 + 0.03 * Math.sin(t), 0.05 * Math.cos(t)];
+  });
+  const grip = turned([[0, 0], ...gripSpline.getSpacedPoints(24).map(({ x, y }) => [x, y]), ...gripDome.slice(0, -1),
+    [gripLength, 0]], PALETTE.brass);
   grip.rotation.y = Math.PI / 2; grip.position.x = gripStart; grip.userData.role = 'lever-handle-grip';
   lever.add(leverBody, grip, followerPin, followerCap, followerBackCap); lever.position.set(p.leverPivotX, p.leverPivotY, p.leverZ);
   const shoeWidth = p.grooveRight - p.grooveLeft - 2 * p.shoeClearance;

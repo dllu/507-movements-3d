@@ -7,6 +7,7 @@ import {
   markShadows,
   matte,
 } from './primitives.js';
+import { crankArmAcrossXGeometry, standardTurnedHandleGeometry, handleShank, HANDLE_FOOT_EMBED } from './turned-handle.js';
 
 const FULL_TURN = Math.PI * 2;
 const X_AXIS = new THREE.Vector3(1, 0, 0);
@@ -600,15 +601,28 @@ function axialPinPulleyClutch(movement) {
   handwheelRim.userData.role = 'left-handwheel-fast-on-upper-shaft';
   driverRotor.add(handwheelRim);
   const handwheelSpokes = [];
-  const crankArm = makeBeam(
-    new THREE.Vector3(1.78, 0, 0),
-    new THREE.Vector3(1.78, 0.44, 0),
-    { color: PALETTE.driver, depth: 0.11, thickness: 0.10 },
+  // Pass 98: Brown's crank hangs below the shaft, about 0.95 long (230 px
+  // against the 435 px hand wheel of radius 0.9), with a turned handle (a
+  // slim neck swelling to a bulb) pointing out to the right. The arm is one
+  // flat extrusion (x 1.73-1.83) whose ends are arcs concentric with the
+  // shaft and the handle; the handle is the shared turned handle, its foot
+  // sunk in the arm's outer face and its shank running on through the arm,
+  // flush with the arm's inner face.
+  const crankThrow = 0.95, crankInnerX = 1.73, crankOuterX = 1.83;
+  const crankArm = new THREE.Mesh(
+    crankArmAcrossXGeometry({ handleY: -crankThrow, handleEndRadius: 0.085,
+      hubEndRadius: 0.12, x0: crankInnerX, x1: crankOuterX }),
+    driverMaterial,
   );
   crankArm.userData.role = 'right-hand-crank-fast-on-upper-shaft';
   driverRotor.add(crankArm);
-  const crankHandle = cylinderAlongX(0.075, 0.34, darkMaterial, 28);
-  crankHandle.position.set(1.94, 0.44, 0);
+  const crankHandle = new THREE.Mesh(
+    standardTurnedHandleGeometry({ height: 0.30 + HANDLE_FOOT_EMBED, bulbRadius: 0.08,
+      shank: handleShank(crankOuterX - crankInnerX) }),
+    darkMaterial,
+  );
+  crankHandle.rotation.z = -Math.PI / 2;
+  crankHandle.position.set(crankOuterX - HANDLE_FOOT_EMBED, -crankThrow, 0);
   crankHandle.userData.role = 'upper-shaft-crank-handle';
   driverRotor.add(crankHandle);
   root.add(driverRotor);

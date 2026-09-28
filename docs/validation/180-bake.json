@@ -63,7 +63,7 @@
     },
     {
       "file": "src/simulation/authored-clamps.js",
-      "sha256": "84b59b7763d6384e16dff27e1d3fd4b6d4c1f3b900ec36fb96ccbf4d119533aa"
+      "sha256": "475c10c0dc42708d1daa848e499e9349965c4f1db1a4be0535014515621cb9f3"
     },
     {
       "file": "src/simulation/mujoco-bench-clamp/profile.js",
@@ -74,5 +74,5 @@
   "assumptions": "Passive jaw hinge and free board X against a fixed side; orientation held and Y push/withdrawal supplied by a force-limited drive. Inferred masses, resistance, planar guidance and bearing depths. Unillustrated bench supports are sectioned away.",
   "samples": 746,
   "bytes": 291824,
-  "sha256": "24babef29f6dc3bf329bacffb26947d634b8b3fd4553a55cd7b2f5e82b5f6d5b"
+  "sha256": "1ca39ed513236b228b249c1b4369b119995aa80476f6c463462214392e5c3008"
 }

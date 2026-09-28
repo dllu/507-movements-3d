@@ -18,19 +18,33 @@ test('212 complete finite branch, dwell and terminal poses retain both unrelieve
  assert.equal(b.driverBody.geometry.parameters.options.bevelEnabled,false);assert.equal(b.stopWheelBody.geometry.parameters.options.bevelEnabled,false);
 });
 
-test('212 actual slot, circular hold and pocket faces provide clockwise reactions',()=>{
+test('212 p98: the lengthened, rounded finger clears both bodies and every slot bottom through a dense sweep',()=>{
+ let minimum=Infinity,bottom=Infinity;const finger=g.driverOutline.filter(p=>p.length()>4.3*g.constructionScale);
+ for(let i=0;i<=120;i++){const a=branch.tailEnd*i/120+(i%3)*1e-4,s=pose(a);minimum=Math.min(minimum,gap());
+  for(const slot of g.slotPolylines){const P=rot(slot[1],s.stopWheelAngle).add(g.stopWheelCenter),Q=rot(slot[2],s.stopWheelAngle).add(g.stopWheelCenter),e=Q.clone().sub(P);
+   for(const f of finger){const w=rot(f,s.driverAngle).add(g.driverCenter),t=T.MathUtils.clamp(w.clone().sub(P).dot(e)/e.lengthSq(),0,1);bottom=Math.min(bottom,w.distanceTo(P.clone().addScaledVector(e,t)));}}}
+ assert.ok(minimum>-3.1e-6,`profile clearance ${minimum}`);assert.ok(bottom>.03,`the finger clears the slot bottoms: ${bottom}`);
+ console.log({poses:121,minimumProfileClearance:minimum,slotBottomClearance:bottom});
+});
+
+test('212 actual relief, rounded finger corner, slot and pocket faces provide clockwise reactions',()=>{
+ // p98: the lengthened finger's rounded leading corner. Sample every regime
+ // between the located boundaries, plus the tail.
+ const edges=[0,...branch.boundaries.map(x=>x.at),branch.tailEnd],stages=new Set();
  let worstGap=0,minimumDrive=Infinity;
- for(const a of [.06,.2,.445,.6,branch.entryEnd-.01,(branch.entryEnd+branch.tailStart)/2,.83,.88,.93]){
-  const s=pose(a),stage=s.engagement.workingContactStage;let p,normal;
-  if(stage==='finger-corner-slot-drive')p=rot(branch.finger,a).add(g.driverCenter);
-  else if(stage==='rounded-finger-mouth-hold')p=rot(branch.mouth,s.stopWheelAngle).add(g.stopWheelCenter);
-  else p=rot(branch.tip,a).add(g.driverCenter);
+ for(let i=1;i+1<edges.length;i++)for(const f of [.2,.5,.8]){
+  const a=edges[i]+(edges[i+1]-edges[i])*f,s=pose(a),stage=s.engagement.workingContactStage;stages.add(stage);
+  const p=branch.contactAt(a,s.stopWheelAngle,stage);
   const world=new T.Vector3(p.x,p.y,0),wheel=face(b.stopWheelBody,world),driver=face(b.driverBody,world);
-  worstGap=Math.max(worstGap,wheel.distance,driver.distance);assert.ok(Math.max(wheel.distance,driver.distance)<3.1e-6);
-  normal=stage==='rounded-finger-mouth-hold'?driver.normal:wheel.normal.clone().negate();
-  const moment=cross(p.clone().sub(g.stopWheelCenter),normal);assert.ok(moment<-.06,`${stage}: actual moment ${moment}`);minimumDrive=Math.min(minimumDrive,-moment);
+  worstGap=Math.max(worstGap,wheel.distance,driver.distance);assert.ok(Math.max(wheel.distance,driver.distance)<3.1e-6,`${stage} at ${a}: ${wheel.distance} ${driver.distance}`);
+  // B's corner on A's curved face takes A's face normal; A's corner (or
+  // rounded corner) on B's flat face takes the reverse of B's.
+  const normal=/mouth/.test(stage)?driver.normal:wheel.normal.clone().negate();
+  const moment=cross(p.clone().sub(g.stopWheelCenter),normal);
+  if(stage!=='rounded-finger-mouth-hold'){assert.ok(moment<-.06,`${stage}: actual moment ${moment}`);minimumDrive=Math.min(minimumDrive,-moment);}
  }
- console.log({maximumActualContactGap:worstGap,minimumTestedClockwiseMoment:minimumDrive});
+ for(const stage of ['relief-mouth-drive','fillet-flank-drive','fillet-mouth-drive','rim-corner-pocket-drive'])assert.ok(stages.has(stage),stage);
+ console.log({maximumActualContactGap:worstGap,minimumTestedClockwiseMoment:minimumDrive,stages:[...stages]});
 });
 
 test('212 contact branch is position-continuous, monotone and has exact analytical rates away from impacts',()=>{

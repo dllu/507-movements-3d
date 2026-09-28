@@ -10,7 +10,7 @@ import {
 import { rackPinionGeometry, rackToothGeometry } from './rack-pinion-parts.js';
 import { boredCylinderGeometry, boredJournal, fitPistonGuide } from './piston-guide-parts.js';
 import { circle, poly, plate, polygonClipping as clip } from './finite-plate-geometry.js';
-import { standardTurnedHandleGeometry, HANDLE_FOOT_EMBED } from './turned-handle.js';
+import { standardTurnedHandleGeometry, handleShank, HANDLE_FOOT_EMBED } from './turned-handle.js';
 import { smoothShadeExtrusion } from './smooth-extrusion.js';
 
 const FULL_TURN = Math.PI * 2;
@@ -453,7 +453,8 @@ function handRockedPinionAndPumpRacks(movement) {
   handleEye.userData.role = 'manual-handle-round-end-eye';
   pinionRotor.add(handleEye);
   const handleGrip = new THREE.Mesh(
-    standardTurnedHandleGeometry({ height: 0.4, bulbRadius: 0.16 }).rotateX(Math.PI / 2),
+    // Pass 98: the grip runs on through the eye, flush with its back face.
+    standardTurnedHandleGeometry({ height: 0.4, bulbRadius: 0.16, shank: handleShank(handleEyeDepth) }).rotateX(Math.PI / 2),
     darkMaterial,
   );
   handleGrip.position.set(sourceHandleGrip.x, sourceHandleGrip.y,

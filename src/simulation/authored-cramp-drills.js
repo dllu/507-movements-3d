@@ -8,7 +8,7 @@ import {
 import {fitPistonGuide} from './piston-guide-parts.js';
 import {boreBoxY,replaceYJournal} from './drill-feed-parts.js';
 import {plate,poly} from './finite-plate-geometry.js';
-import {crankArmGeometry, turnedHandleGeometry, HANDLE_FOOT_EMBED} from './turned-handle.js';
+import {crankArmGeometry, turnedHandleGeometry, handleShank, HANDLE_FOOT_EMBED} from './turned-handle.js';
 
 // The C-shaped cramp frame is one flat extrusion of Brown's outline: the back
 // and both arms share one section thickness. Each arm ends buried inside its
@@ -382,7 +382,7 @@ function opposingFeedScrewCrampDrill(movement) {
   const drillCrankKnob = new THREE.Mesh(
     turnedHandleGeometry({ height: 0.47, side: [
       [0.10, 0], [0.075, 0.185], [0.085, 0.37], [0.15, 0.574], [0.175, 0.74],
-    ] }),
+    ], shank: handleShank(0.11) }), // pass 98: flush with the bar's underside
     drillMaterial,
   );
   drillCrankKnob.position.set(drillCrankHandleX, 0.615 - HANDLE_FOOT_EMBED, 0);
@@ -916,7 +916,7 @@ function throughFeedScrewCrampDrill(movement) {
   const drillCrankKnob = new THREE.Mesh(
     turnedHandleGeometry({ height: 0.43 + HANDLE_FOOT_EMBED, side: [
       [0.116, 0], [0.088, 0.12], [0.062, 0.43], [0.085, 0.6], [0.112, 0.76],
-    ] }),
+    ], shank: handleShank(0.11) }), // pass 98: flush with the bar's underside
     drillMaterial,
   );
   drillCrankKnob.position.set(drillCrankHandleX, 1.555 - HANDLE_FOOT_EMBED, 0);

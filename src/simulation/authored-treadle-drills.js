@@ -11,6 +11,7 @@ import {boredCylinderGeometry,boredJournal,fitPistonGuide} from './piston-guide-
 import {makeBoredLinkRod} from './bored-link-rod.js';
 import {circle,plate,poly,polygonClipping as clip} from './finite-plate-geometry.js';
 import {bevelToothGeometry} from './bevel-geometry.js';
+import {crankArmAcrossXGeometry, standardTurnedHandleGeometry, handleShank, HANDLE_FOOT_EMBED} from './turned-handle.js';
 import { creaseIndexedNormals } from './crease-normals.js';
 
 const FULL_TURN = Math.PI * 2;
@@ -428,15 +429,26 @@ function treadleBevelDrillingMachine(movement) {
   inputShaft.position.x = (crankX+.05+.14)/2; // ends buried 0.02 inside the arm
   inputShaft.userData.role = 'horizontal-hand-crank-input-shaft';
   inputRotor.add(inputShaft);
-  const crankArm = makeBeam(
-    new THREE.Vector3(crankX, 0, 0),
-    new THREE.Vector3(crankX, crankRadius, 0),
-    { color: PALETTE.driver, depth: 0.13, thickness: 0.14 },
+  // Pass 98: the arm is one flat extrusion (x 1.05-1.19) whose ends are arcs
+  // concentric with the shaft and the handle, and the handle is the shared
+  // turned handle Brown draws (a slim neck swelling to a bulb), its foot sunk
+  // in the arm's outer face and its shank running on through the arm, flush
+  // with the arm's inner face. Its tip stays at x 1.66.
+  const crankInnerX = crankX - 0.07, crankOuterX = crankX + 0.07;
+  const crankArm = new THREE.Mesh(
+    crankArmAcrossXGeometry({ handleY: crankRadius, handleEndRadius: 0.10,
+      hubEndRadius: 0.13, x0: crankInnerX, x1: crankOuterX }),
+    matte(PALETTE.driver, { metalness: 0.12, roughness: 0.55 }),
   );
   crankArm.userData.role = 'radial-hand-crank-arm';
   inputRotor.add(crankArm);
-  const crankHandle = cylinderAlongX(0.105, 0.58, darkMaterial, 28);
-  crankHandle.position.set(crankX+.25, crankRadius, 0);
+  const crankHandle = new THREE.Mesh(
+    standardTurnedHandleGeometry({ height: 1.66 - crankOuterX + HANDLE_FOOT_EMBED, bulbRadius: 0.12,
+      shank: handleShank(crankOuterX - crankInnerX) }),
+    darkMaterial,
+  );
+  crankHandle.rotation.z = -Math.PI / 2;
+  crankHandle.position.set(crankOuterX - HANDLE_FOOT_EMBED, crankRadius, 0);
   crankHandle.userData.role = 'free-hand-grip-on-input-crank';
   inputRotor.add(crankHandle);
   const crankIndex = new THREE.Mesh(

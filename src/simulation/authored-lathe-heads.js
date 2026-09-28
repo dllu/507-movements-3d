@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import {applyCutawayFor} from './cutaway-presentations.js';
 import { plate, poly, circle, polygonClipping, ring } from './finite-plate-geometry.js';
 import { helicalThread, threadAngles } from './mujoco-screw/thread-geometry.js';
+import { standardTurnedHandleGeometry, handleShank, HANDLE_FOOT_EMBED } from './turned-handle.js';
 import {
   PALETTE,
   makeBeam,
@@ -469,15 +470,16 @@ function latheTailstockScrewFeed(movement) {
   gripCarrier.position.set(0, sourceHandwheelGrip.y - handwheelCenter.y, 0);
   gripCarrier.userData.role = 't-crank-handle-carrier';
   handwheel.add(gripCarrier);
-  const gripProfile = [
-    [0, 0.0], [0.07, 0.0], [0.07, 0.1], [0.06, 0.16], [0.1, 0.28],
-    [0.14, 0.42], [0.13, 0.52], [0.08, 0.58], [0, 0.6],
-  ].map(([radius, height]) => new THREE.Vector2(radius, height));
+  // Pass 98: the grip is the shared turned handle (one smooth profile: a
+  // slim neck swelling to a bulb, 0.6 long with a 0.14 bulb, as the old
+  // faceted polyline), its foot sunk in the bar's outer face and its shank
+  // running on through the bar, flush with the bar's inner face.
   const handwheelGrip = new THREE.Mesh(
-    new THREE.LatheGeometry(gripProfile, 28).rotateZ(-Math.PI / 2),
+    standardTurnedHandleGeometry({ height: 0.6, bulbRadius: 0.14,
+      shank: handleShank(crankBarThickness) }).rotateZ(-Math.PI / 2),
     darkMaterial,
   );
-  handwheelGrip.position.x = crankBarThickness / 2 - 0.001;
+  handwheelGrip.position.x = crankBarThickness / 2 - HANDLE_FOOT_EMBED;
   handwheelGrip.userData.role = 'tailstock-t-crank-turning-grip';
   gripCarrier.add(handwheelGrip);
   const wheelIndex = new THREE.Mesh(

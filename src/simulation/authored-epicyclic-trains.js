@@ -4,7 +4,7 @@ import { correctEpicyclicFamily } from './epicyclic-family-corrections.js';
 import * as THREE from 'three';
 import { bevelBodyGeometry } from './bevel-geometry.js';
 import { boredLatheGeometry } from './bored-lathe-geometry.js';
-import { crankArmOutline, HANDLE_FOOT_EMBED, standardTurnedHandleGeometry } from './turned-handle.js';
+import { crankArmOutline, HANDLE_FOOT_EMBED, handleShank, standardTurnedHandleGeometry } from './turned-handle.js';
 import {
   circle,
   plate,
@@ -2483,7 +2483,8 @@ function dualEndDrivenCompoundBevelDifferential(movement) {
   ), 'hand-crank-rigid-with-driver-A');
   crankArm.position.x = CRANK_X;
   const crankGrip = addRole(new THREE.Mesh(
-    standardTurnedHandleGeometry({ height: 0.46, bulbRadius: 0.12, footRadius: 0.10 }),
+    // Pass 98: the grip runs on through the crank, flush with its inner face.
+    standardTurnedHandleGeometry({ height: 0.46, bulbRadius: 0.12, footRadius: 0.10, shank: handleShank(2 * CRANK_HALF_THICKNESS) }),
     darkMaterial,
   ), 'driver-A-hand-grip');
   // The lathe axis (+y) turned to point out along -x, away from the machine.

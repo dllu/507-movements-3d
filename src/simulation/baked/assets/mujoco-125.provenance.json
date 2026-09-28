@@ -4,8 +4,8 @@
   "format": "mujoco-loop",
   "version": 1,
   "asset": "src/simulation/baked/assets/mujoco-125.json.gz",
-  "bytes": 1058234,
-  "assetSha256": "370a3a1b731a8deb8ab23dfe0272d8c4453091da72da42c15ce0c6e22b3ee7f8",
+  "bytes": 1058244,
+  "assetSha256": "72186c89eb752e25e129247dd73c9194a172a99c734c530ce5d165bd510bc5af",
   "motionSources": {
     "src/simulation/mujoco-cascaded-traverse/physics.js": "7514ab075060f51cfdca65578eb4a657104472ad228993184bf7c95c48a2ddbb",
     "src/simulation/mujoco-cascaded-traverse/source.js": "b88da6774db5f062f906343d7c938741e0f6a4d7e930f158bb53cf5ffea6971d",
@@ -13,13 +13,13 @@
     "src/simulation/mujoco/simulation.js": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
   },
   "visualSourcesAtBake": {
-    "src/simulation/mujoco-cascaded-traverse/geometry.js": "a06e95329ab7711799523333e38699fcc8229d65145dc2f353ad38e8227cd26c"
+    "src/simulation/mujoco-cascaded-traverse/geometry.js": "1f217b48c2ee9497432be0bad32a2b1833dde05dcf1c5f6e394eb7e06f1be45d"
   },
   "physicsXmlSha256": {
     "default": "43ec05edb902731d5a94fa5f59324287dfe11132e67c64bf43f9c6408c58aead"
   },
   "fullXmlSha256": {
-    "default": "c27d97903a3e83d2555a59b859a51041ae0ddf1d0dbc9c5df7396d7563771cb0"
+    "default": "74620331b2b0854415269dc6f6b5cd90bec431606402de5185bfe238779822a4"
   },
   "config": {
     "sampleRate": 20,
@@ -57,37 +57,37 @@
         "drivePeriod": 4
       },
       "closure": {
-        "rawSeamPixels": 0.003699071380634332,
-        "maximumCorrectionPixels": 0.0011842305900005496,
-        "maximumRotationCorrection": 0.00004228375093840215,
+        "rawSeamPixels": 0.000007910565457317169,
+        "maximumCorrectionPixels": 0.000002738452214161618,
+        "maximumRotationCorrection": 7.300048299977715e-8,
         "wraps": [
           {
             "key": "blocks.left",
             "angle": 4190.884599888784,
-            "rawAngle": 4190.8845576050235
+            "rawAngle": 4190.884599816009
           },
           {
             "key": "blocks.middle",
             "angle": 3462.035104255952,
-            "rawAngle": 3462.035106259413
+            "rawAngle": 3462.035104186938
           },
           {
             "key": "blocks.right",
             "angle": 2745.751979237479,
-            "rawAngle": 2745.75198001059
+            "rawAngle": 2745.7519791826467
           }
         ]
       },
-      "roundTripPixels": 0.0070775247141582195,
+      "roundTripPixels": 0.006796897229879879,
       "seam": {
-        "seamStepPixels": 8.03100946988069,
-        "interiorStepPixels": 8.3227361776607,
-        "seamSecondPixels": 0.9288988762707192,
-        "interiorSecondPixels": 1.4134820832777548
+        "seamStepPixels": 8.030262737884156,
+        "interiorStepPixels": 8.250108448783488,
+        "seamSecondPixels": 0.928435597106349,
+        "interiorSecondPixels": 1.3611967884853466
       }
     }
   },
   "extras": [],
   "removed": [],
-  "bakeSeconds": 1293.9811143112183
+  "bakeSeconds": 1214.4449499139787
 }

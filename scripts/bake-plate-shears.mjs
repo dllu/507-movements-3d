@@ -8,7 +8,7 @@ const v=makePlateShearsGeometry();try{
  assert(best&&best.error<.01);const motion=rows.slice(0,best.end+1).map(row=>[Number(row[0].toFixed(6)),...row.slice(1)]);
  for(const[n,b]of Object.entries(v.root.userData.blocks))b.name='body:'+n;
  v.root.traverse(o=>{o.userData={};if(o.geometry){const g=new BufferGeometry().copy(o.geometry);g.userData={};o.geometry.dispose();o.geometry=g;}});v.root.updateMatrixWorld(true);
- const metadata={version:1,names:['cam','jaw'],period,loopStart:Number(rows[best.start][0].toFixed(6)),loopEnd:Number(rows[best.end][0].toFixed(6)),turns,bounds:{min:[-3.45,-1.65,-.3],max:[2,1.5,.3]},focus:[-.65,-.3,0],cameraDirection:[.2,.15,10],source:{reportSha256:hash(file),simulationSources:r.sources,options:r.options,mass:r.mass,maximumLoopSeamPixels:best.error,maximumPenetrationPixels:r.penetration*100}};
+ const metadata={version:1,names:['cam','jaw'],period,loopStart:Number(rows[best.start][0].toFixed(6)),loopEnd:Number(rows[best.end][0].toFixed(6)),turns,bounds:{min:[-3.5,-1.7,-.3],max:[2,1.5,.3]},focus:[-.65,-.3,0],cameraDirection:[.2,.15,10],source:{reportSha256:hash(file),simulationSources:r.sources,options:r.options,mass:r.mass,maximumLoopSeamPixels:best.error,maximumPenetrationPixels:r.penetration*100}};
  const output='src/simulation/baked/assets/130.json.gz';fs.writeFileSync(output,gzipSync(JSON.stringify({...metadata,motion,object:v.root.toJSON()}),{level:9}));
  const result={...metadata,samples:motion.length,bytes:fs.statSync(output).size,assetSha256:hash(output)};fs.writeFileSync('src/simulation/baked/assets/130.provenance.json',JSON.stringify(result,null,2)+'\n');console.log({output,samples:motion.length,bytes:result.bytes,seamPixels:best.error});
 }finally{disposeObject3D(v.root);}

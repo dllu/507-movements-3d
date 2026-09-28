@@ -61,7 +61,7 @@
     },
     {
       "file": "src/simulation/mujoco-ball-governor/solids.js",
-      "sha256": "b0a6e0a0c38d4a127be386bdae2478f6fe59f699c0b751b8a77cacc714e85bba"
+      "sha256": "0e1cd67591e40cbba4b0b7623d55fcc41fcd47a01369a203186136537ece07a6"
     },
     {
       "file": "src/simulation/mujoco-ball-governor/update-solids.js",
@@ -103,6 +103,6 @@
   "closure": 5.3691802739952443e-11,
   "velocityClosure": 4.84890886123801e-10,
   "samples": 2001,
-  "bytes": 453518,
-  "sha256": "ba13649f6e945200c1f416abd47e84b4f9ce2e9bc86ddb2aa1403a67b27ed6f0"
+  "bytes": 484148,
+  "sha256": "ee974ce83eaf89b53df2de75f3c35b0fce81547aa408550f3ef5724f5ac43c6a"
 }

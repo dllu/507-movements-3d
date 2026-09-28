@@ -1,6 +1,6 @@
 import { correctFriction280, finishFrictionFamily } from './friction-family-working-parts.js';
 import * as THREE from 'three';
-import { crankArmOutline } from './turned-handle.js';
+import { crankArmOutline, turnedHandleGeometry } from './turned-handle.js';
 import { plate, poly, circle, polygonClipping as clip } from './finite-plate-geometry.js';
 import {
   PALETTE,
@@ -659,22 +659,24 @@ function frictionWindlass(movement) {
   handleKnee.userData.role = 'solid-knee-at-hand-lever-bend';
   // Brown draws a turned wooden handle: a collar at the lever end, a slim
   // neck, then a pear-shaped swell closing in a rounded end.
+  // Pass 98: one smooth turned profile (the shared turned handle), and the
+  // collar is a ferrule sleeved 0.09 up over the lever's end: its radius
+  // (0.17) encloses the bar's end corners (0.165 from its axis), as Brown's
+  // collar is wider than the lever it caps. The old polyline collar (r 0.105)
+  // butted on the 0.23 x 0.24 bar's end face, which overhung it all round.
   const gripLength = localGripTop.distanceTo(localGripBottom);
-  const gripProfile = [
-    [0, 0], [0.085, 0], [0.105, 0.02], [0.105, 0.09], [0.075, 0.12],
-    [0.072, 0.30], [0.10, 0.46], [0.15, 0.62], [0.182, 0.76],
-    [0.176, 0.86], [0.14, 0.94], [0.08, 0.985], [0, 1],
-  ].map(([radius, along]) => new THREE.Vector2(radius, -along * gripLength))
-    // Lathe profiles must climb in y for outward normals.
-    .reverse();
   const handGrip = new THREE.Mesh(
-    new THREE.LatheGeometry(gripProfile, 40),
+    turnedHandleGeometry({ height: gripLength, shank: 0.09, side: [
+      [0.17, 0], [0.105, 0.09], [0.078, 0.28], [0.13, 0.56], [0.182, 0.76],
+    ] }),
     matte(PALETTE.ink, { metalness: 0.12, roughness: 0.62 }),
   );
+  // The grip is coaxial with the lever's lower segment (Brown's grip leans
+  // about 4 degrees off it, which set the old collar askew on the bar's end).
   handGrip.position.copy(localGripTop);
   handGrip.quaternion.setFromUnitVectors(
-    new THREE.Vector3(0, -1, 0),
-    localGripBottom.clone().sub(localGripTop).normalize(),
+    new THREE.Vector3(0, 1, 0),
+    localGripTop.clone().sub(localHandleElbow).normalize(),
   );
   handGrip.userData.role = 'free-end-turned-hand-grip';
   handLever.add(upperHandleSegment, lowerHandleSegment, handleKnee, handGrip);

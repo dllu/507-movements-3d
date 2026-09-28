@@ -842,10 +842,13 @@ function singleActingBeamRackParallelMotion(movement) {
   pivotShaft.userData.fixed = true;
   pivotShaft.userData.role = 'fixed-shaft-through-beam-pivot-F';
   const seatRadius = 1.6 * sourceScale;
+  // p98: the seat's round is concentric with the shaft it carries (it was a
+  // half disc centred on the bed line, leaving F high in its top). It is the
+  // disc about F cut off by the bed's top face.
   const pivotBearing = new THREE.Mesh(plate(clip.intersection(
-    poly(circle([0, bedTop], seatRadius, 96)),
+    poly(circle([0, 0], seatRadius, 192)),
     poly([[-seatRadius, bedTop], [seatRadius, bedTop],
-      [seatRadius, bedTop + seatRadius], [-seatRadius, bedTop + seatRadius]]),
+      [seatRadius, seatRadius], [-seatRadius, seatRadius]]),
   ), -0.45, -0.17), frameMaterial);
   pivotBearing.userData.fixed = true;
   pivotBearing.userData.role = 'fixed-half-round-seat-and-bearing-F';

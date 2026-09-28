@@ -8,7 +8,7 @@
     },
     {
       "file": "src/simulation/framed-yoke.js",
-      "sha256": "6c2f3bf20f9b4f97ff7b835b565d91849f1d1f4ac663f0bf2a6a88eaf09a6781"
+      "sha256": "a178f05dd3d30c2fc4ae9f0e02596540765bddf30b112ae2c428695e4fb62b47"
     },
     {
       "file": "src/simulation/finite-plate-geometry.js",
@@ -22,8 +22,8 @@
   "summary": {
     "poses": 65,
     "parts": 5,
-    "pairs": 7,
-    "checks": 651430,
+    "pairs": 4,
+    "checks": 637520,
     "failingPairs": 0
   },
   "failures": {}

@@ -1664,11 +1664,11 @@
       "id": 46,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-96 lane, integrated by primary agent",
-        "reviewPass": 96,
+        "reviewer": "Claude Opus 5.5 — pass-98 lane, integrated by primary agent",
+        "reviewPass": 98,
         "reviewedOn": "2026-09-28",
-        "evidence": "docs/p96-g-review.md",
-        "note": "Pass 96: Each climb shows as a small spiral bulge ending in a step on the tier outline, where Brown draws plain discs; at some phases the span to the barrel rises up to about 7°, where Brown draws it level."
+        "evidence": "docs/p98-f-review.md",
+        "note": "Pass 98: The chain run to the barrel slopes up to about 6.4° (Brown draws it level); for a moment after each step the chain rides over the step edge and drops back onto its descent."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -1683,7 +1683,8 @@
         "docs/visual-assessment-pass52.md",
         "docs/p64-audit-review.md",
         "docs/p93-fa-review.md",
-        "docs/p96-g-review.md"
+        "docs/p96-g-review.md",
+        "docs/p98-f-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -1691,19 +1692,19 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-28",
-      "visibleFlaws": "Each climb shows as a small spiral bulge ending in a step on the tier outline, where Brown draws plain discs; at some phases the span to the barrel rises up to about 7°, where Brown draws it level.",
-      "limits": "Fusee/chain geometry and spring properties are inferred; physical chain articulation and material response remain model assumptions. p93: dark steel fusee chain. Pass 96: Brown's stepped fusee, three flat tiers over a base flange. The chain wraps each tier level on the shelf below against its riser, climbs once per tier on a short spiral lobe (ending in a radial step) and runs down the next riser; barrel coil pitch 0.24.",
+      "visibleFlaws": "The chain run to the barrel slopes up to about 6.4° (Brown draws it level); for a moment after each step the chain rides over the step edge and drops back onto its descent.",
+      "limits": "Fusee/chain geometry and spring properties are inferred; physical chain articulation and material response remain model assumptions. p93: dark steel fusee chain. p98: Brown's stepped fusee: the tier walls follow one Archimedean spiral (r = 0.56 + 0.23·θ/2π), one flat tier per turn, all steps on one radius, so from above the outline is one smooth spiral. The chain sits level on each shelf and runs down the next wall after each step; while it leaves the fusee just past a step it rides over the step edge (kinematic approximation); barrel coil pitch 0.24.",
       "assessment": "minor"
     },
     {
       "id": 47,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-90 lane, integrated by primary agent",
-        "reviewPass": 90,
-        "reviewedOn": "2026-09-27",
-        "evidence": "docs/p90-fa-review.md",
-        "note": "Pass 90: flaw fixed; checked in default, rotated and phase captures beside the plate."
+        "reviewer": "Claude Opus 5.5 — pass-98 lane, integrated by primary agent",
+        "reviewPass": 98,
+        "reviewedOn": "2026-09-28",
+        "evidence": "docs/p98-e-review.md",
+        "note": "Pass 98: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -1722,16 +1723,17 @@
         "docs/p57-a-review.md",
         "docs/p59-fixes-review.md",
         "docs/p62-audit-review.md",
-        "docs/p90-fa-review.md"
+        "docs/p90-fa-review.md",
+        "docs/p98-e-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/friction-clutch.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-27",
+      "updatedOn": "2026-09-28",
       "visibleFlaws": "",
-      "limits": "Quarter cutaway of the clutch with plain cut faces; turned views stay round. p90: low audit finding fixed (see review).",
+      "limits": "Quarter cutaway of the clutch with plain cut faces; turned views stay round. p90: low audit finding fixed (see review). Pass 98: the grip sleeves the bar end with a smooth turned profile and no longer floats past it.",
       "assessment": "reasonable"
     },
     {
@@ -1884,11 +1886,11 @@
       "id": 52,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-96 lane, integrated by primary agent",
-        "reviewPass": 96,
+        "reviewer": "Claude Opus 5.5 — pass-98 lane, integrated by primary agent",
+        "reviewPass": 98,
         "reviewedOn": "2026-09-28",
-        "evidence": "docs/p96-fa-review.md",
-        "note": "Pass 96: flaw fixed; checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p98-e-review.md",
+        "note": "Pass 98: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -1907,7 +1909,8 @@
         "docs/p60-supports-review.md",
         "docs/p62-supports-a-review.md",
         "docs/p63-audit-review.md",
-        "docs/p96-fa-review.md"
+        "docs/p96-fa-review.md",
+        "docs/p98-e-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -1916,7 +1919,7 @@
       },
       "updatedOn": "2026-09-28",
       "visibleFlaws": "",
-      "limits": "The handle runs on past Brown's break to a round grip. Undrawn supports and extensions removed (pass 60); rods end straight and cleanly. The fixed fulcrum pin ends as a plain stub; Brown draws no bracket. p96: only the disk and its hub slide, on a feather key; the shaft and end barrel stay put.",
+      "limits": "The handle runs on past Brown's break to a round grip. Undrawn supports and extensions removed (pass 60); rods end straight and cleanly. The fixed fulcrum pin ends as a plain stub; Brown draws no bracket. p96: only the disk and its hub slide, on a feather key; the shaft and end barrel stay put. Pass 98: the grip sleeves the bar end with a smooth turned profile.",
       "assessment": "reasonable"
     },
     {
@@ -2040,11 +2043,11 @@
       "id": 56,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-62 read-only audit lane",
-        "reviewPass": 62,
-        "reviewedOn": "2026-09-26",
-        "evidence": "docs/p62-audit-review.md",
-        "note": "Pass-62 audit: clean in default, ±60°, back, top and phase captures beside the plate."
+        "reviewer": "Claude Opus 5.5 — pass-98 lane, integrated by primary agent",
+        "reviewPass": 98,
+        "reviewedOn": "2026-09-28",
+        "evidence": "docs/p98-b-review.md",
+        "note": "Pass 98: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -2059,16 +2062,17 @@
         "docs/visual-assessment-pass52.md",
         "docs/pass53-user-review.md",
         "docs/p59-fixes-review.md",
-        "docs/p62-audit-review.md"
+        "docs/p62-audit-review.md",
+        "docs/p98-b-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/lathe-gear-engagement.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-26",
+      "updatedOn": "2026-09-28",
       "visibleFlaws": "",
-      "limits": "38/12 tooth counts and stop-before-shift sequence are reconstructed; source residuals remain.",
+      "limits": "38/12 tooth counts and stop-before-shift sequence are reconstructed; source residuals remain. p98: the lever's rounded end is concentric with the shaft's rest at the slot end.",
       "assessment": "reasonable"
     },
     {
@@ -2380,11 +2384,11 @@
       "id": 65,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-86 lane, integrated by primary agent",
-        "reviewPass": 86,
-        "reviewedOn": "2026-09-27",
-        "evidence": "docs/p86-4a-review.md",
-        "note": "Pass 86: flaw fixed; checked in default, rotated and phase captures beside the plate."
+        "reviewer": "Claude Opus 5.5 — pass-98 lane, integrated by primary agent",
+        "reviewPass": 98,
+        "reviewedOn": "2026-09-28",
+        "evidence": "docs/p98-b-review.md",
+        "note": "Pass 98: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -2399,16 +2403,17 @@
         "docs/lane2-intermittent-review.md",
         "docs/visual-assessment-pass52.md",
         "docs/p64-audit-review.md",
-        "docs/p86-4a-review.md"
+        "docs/p86-4a-review.md",
+        "docs/p98-b-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/tappet-stud-stop.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-27",
+      "updatedOn": "2026-09-28",
       "visibleFlaws": "",
-      "limits": "Irregular studs regularized; strike impulses, loaded inertia and bearings remain idealized. The stop is one plate; its toe corner rides C's rim, which is deepened to the stop's plane.",
+      "limits": "Irregular studs regularized; strike impulses, loaded inertia and bearings remain idealized. The stop is one plate; its toe corner rides C's rim, which is deepened to the stop's plane. p98: the stop's boss is concentric with its fixed pin; tappet A's root is an arc about C's shaft.",
       "assessment": "reasonable"
     },
     {
@@ -2842,11 +2847,11 @@
       "id": 77,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-93 lane, integrated by primary agent",
-        "reviewPass": 93,
-        "reviewedOn": "2026-09-27",
-        "evidence": "docs/p93-fa-review.md",
-        "note": "Pass 93: flaw fixed; checked in default, rotated and phase captures beside the plate."
+        "reviewer": "Claude Opus 5.5 — pass-98 lane, integrated by primary agent",
+        "reviewPass": 98,
+        "reviewedOn": "2026-09-28",
+        "evidence": "docs/p98-b-review.md",
+        "note": "Pass 98: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -2867,27 +2872,28 @@
         "docs/p86-2-review.md",
         "docs/p90-fa-review.md",
         "docs/p91-w-review.md",
-        "docs/p93-fa-review.md"
+        "docs/p93-fa-review.md",
+        "docs/p98-b-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/alternating-peg-pawl.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-27",
+      "updatedOn": "2026-09-28",
       "visibleFlaws": "",
-      "limits": "Small rollback and startup take-up remain; hook dimensions and material/load parameters are reconstructed. Undrawn supports and extensions removed (pass 60); rods end straight and cleanly. Spoked web built by the shared filleted spoked-wheel builder. Both hook heads are one C of circular arcs: a round socket seating the peg at its back, a constant-thickness rim and round lips; the lower jaw stops short of the next peg. The recorded motion predates the new heads (same seat and contact, all sampled poses clear). p90: the black peg rims are removed; the hook heads cannot be thicker than 0.09 without entering peg 23 in the recorded motion. p91: white or near-white parts recoloured by role (pins steel, washers brass, panels stone); no geometry change. p93: flat hook shanks 0.6 of a peg diameter; darker steel pegs.",
+      "limits": "Small rollback and startup take-up remain; hook dimensions and material/load parameters are reconstructed. Undrawn supports and extensions removed (pass 60); rods end straight and cleanly. Spoked web built by the shared filleted spoked-wheel builder. Both hook heads are one C of circular arcs: a round socket seating the peg at its back, a constant-thickness rim and round lips; the lower jaw stops short of the next peg. The recorded motion predates the new heads (same seat and contact, all sampled poses clear). p90: the black peg rims are removed; the hook heads cannot be thicker than 0.09 without entering peg 23 in the recorded motion. p91: white or near-white parts recoloured by role (pins steel, washers brass, panels stone); no geometry change. p93: flat hook shanks 0.6 of a peg diameter; darker steel pegs. p98: the lever's rounded top is concentric with the upper pawl pin.",
       "assessment": "reasonable"
     },
     {
       "id": 78,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-62 read-only audit lane",
-        "reviewPass": 62,
-        "reviewedOn": "2026-09-26",
-        "evidence": "docs/p62-audit-review.md",
-        "note": "Pass-62 audit: clean in default, ±60°, back, top and phase captures beside the plate."
+        "reviewer": "Claude Opus 5.5 — pass-98 lane, integrated by primary agent",
+        "reviewPass": 98,
+        "reviewedOn": "2026-09-28",
+        "evidence": "docs/p98-b-review.md",
+        "note": "Pass 98: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -2904,16 +2910,17 @@
         "docs/pass53-user-review.md",
         "docs/p55-ends-review.md",
         "docs/p60-supports-review.md",
-        "docs/p62-audit-review.md"
+        "docs/p62-audit-review.md",
+        "docs/p98-b-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/pull-pawl.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-26",
+      "updatedOn": "2026-09-28",
       "visibleFlaws": "",
-      "limits": "Finite ratchet/contact law uses reconstructed source geometry and idealized force/impact assumptions. Undrawn supports and extensions removed (pass 60); rods end straight and cleanly.",
+      "limits": "Finite ratchet/contact law uses reconstructed source geometry and idealized force/impact assumptions. Undrawn supports and extensions removed (pass 60); rods end straight and cleanly. p98: frame apex, rocker ends and pawl eyes are true arcs concentric with their pins; the recorded motion predates this (pawl mass +8.5%/+4.4%, contact surfaces unchanged).",
       "assessment": "reasonable"
     },
     {
@@ -3190,11 +3197,11 @@
       "id": 86,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-95 lane, integrated by primary agent",
-        "reviewPass": 95,
-        "reviewedOn": "2026-09-27",
-        "evidence": "docs/p95-review.md",
-        "note": "Pass 95: flaw fixed; checked in default, rotated and phase captures beside the plate."
+        "reviewer": "Claude Opus 5.5 — pass-98 lane, integrated by primary agent",
+        "reviewPass": 98,
+        "reviewedOn": "2026-09-28",
+        "evidence": "docs/p98-b-review.md",
+        "note": "Pass 98: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -3224,16 +3231,17 @@
         "docs/p92-r-review.md",
         "docs/p93-fb-review.md",
         "docs/p94-p-review.md",
-        "docs/p95-review.md"
+        "docs/p95-review.md",
+        "docs/p98-b-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/pump-catch.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-27",
+      "updatedOn": "2026-09-28",
       "visibleFlaws": "",
-      "limits": "Hangers from the guide crossbar carry the lower bed and pump barrel. The band ends past the crop and the pump rod hangs unguided below the plinth (Brown draws neither). From level views the plinth's edge hides the rope's passage through its hole. The band runs continue straight off-screen in every orbit (open lengths standing in for the omitted remote sheave). The catch is one plain extrusion (the slab behind its head and the heel lug and stop are removed from the display); the motion still comes from the provenance-locked contact study with them. Pass 92: rope/belt recoloured to the shared hemp brown so it contrasts with the pulleys. p93: pump rope in the shared hemp brown. p94: the motion is re-solved without the undisplayed heel lug and stop: after the trip the catch swings free, lands on cam C and is lifted and picked up by it; a hidden head weight remains an assumption. p95: imperceptible at 1280×800 (see docs/p95-review.md): For about 0.3 s before pick-up the catch hovers up to 0.019 clear of cam C.",
+      "limits": "Hangers from the guide crossbar carry the lower bed and pump barrel. The band ends past the crop and the pump rod hangs unguided below the plinth (Brown draws neither). From level views the plinth's edge hides the rope's passage through its hole. The band runs continue straight off-screen in every orbit (open lengths standing in for the omitted remote sheave). The catch is one plain extrusion (the slab behind its head and the heel lug and stop are removed from the display); the motion still comes from the provenance-locked contact study with them. Pass 92: rope/belt recoloured to the shared hemp brown so it contrasts with the pulleys. p93: pump rope in the shared hemp brown. p94: the motion is re-solved without the undisplayed heel lug and stop: after the trip the catch swings free, lands on cam C and is lifted and picked up by it; a hidden head weight remains an assumption. p95: imperceptible at 1280×800 (see docs/p95-review.md): For about 0.3 s before pick-up the catch hovers up to 0.019 clear of cam C. p98: catch B's pivot eye is concentric with its pin; motion re-solved.",
       "assessment": "reasonable"
     },
     {
@@ -4685,11 +4693,11 @@
       "id": 122,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-96 lane, integrated by primary agent",
-        "reviewPass": 96,
+        "reviewer": "Claude Opus 5.5 — pass-98 lane, integrated by primary agent",
+        "reviewPass": 98,
         "reviewedOn": "2026-09-28",
-        "evidence": "docs/p96-fb-review.md",
-        "note": "Pass 96: flaw fixed; checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p98-a-review.md",
+        "note": "Pass 98: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "known",
@@ -4708,7 +4716,8 @@
         "docs/p60-supports-review.md",
         "docs/p62-audit-review.md",
         "docs/p90-fa-review.md",
-        "docs/p96-fb-review.md"
+        "docs/p96-fb-review.md",
+        "docs/p98-a-review.md"
       ],
       "mujoco": {
         "mode": "baked",
@@ -4720,7 +4729,7 @@
       },
       "updatedOn": "2026-09-28",
       "visibleFlaws": "",
-      "limits": "Crank radii reduced 15% (up to 10.04555 pixels) to avoid toggle; source/depth and ideal-joint assumptions remain. Production plays a baked, seamlessly looping MuJoCo recording; the live simulation remains available with ?live. Undrawn supports and extensions removed (pass 60); rods end straight and cleanly. p90: low audit finding fixed (rebaked). p96: low audit findings fixed (see review).",
+      "limits": "Crank radii reduced 15% (up to 10.04555 pixels) to avoid toggle; source/depth and ideal-joint assumptions remain. Production plays a baked, seamlessly looping MuJoCo recording; the live simulation remains available with ?live. Undrawn supports and extensions removed (pass 60); rods end straight and cleanly. p90: low audit finding fixed (rebaked). p96: low audit findings fixed (see review). p98: output-bar eye is a true arc about the centre pin (rebaked).",
       "assessment": "reasonable"
     },
     {
@@ -4808,11 +4817,11 @@
       "id": 125,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-96 lane, integrated by primary agent",
-        "reviewPass": 96,
+        "reviewer": "Claude Opus 5.5 — pass-98 lane, integrated by primary agent",
+        "reviewPass": 98,
         "reviewedOn": "2026-09-28",
-        "evidence": "docs/p96-fb-review.md",
-        "note": "Pass 96: flaw fixed; checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p98-a-review.md",
+        "note": "Pass 98: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -4828,7 +4837,8 @@
         "docs/visual-assessment-pass52.md",
         "docs/p60-bake-b-review.md",
         "docs/p62-audit-review.md",
-        "docs/p96-fb-review.md"
+        "docs/p96-fb-review.md",
+        "docs/p98-a-review.md"
       ],
       "mujoco": {
         "mode": "baked",
@@ -4840,7 +4850,7 @@
       },
       "updatedOn": "2026-09-28",
       "visibleFlaws": "",
-      "limits": "Full-pattern linkage uses lumped/ideal guides and finite collision approximation; force convergence not established. Production plays a baked, seamlessly looping MuJoCo recording; the live simulation remains available with ?live. p96: low audit findings fixed (see review).",
+      "limits": "Full-pattern linkage uses lumped/ideal guides and finite collision approximation; force convergence not established. Production plays a baked, seamlessly looping MuJoCo recording; the live simulation remains available with ?live. p96: low audit findings fixed (see review). p98: floating bars have end arcs concentric with their pins and symmetric bowed edges (rebaked).",
       "assessment": "reasonable"
     },
     {
@@ -4999,11 +5009,11 @@
       "id": 130,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
-        "reviewPass": 81,
-        "reviewedOn": "2026-09-27",
-        "evidence": "docs/p81-audit-review.md",
-        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
+        "reviewer": "Claude Opus 5.5 — pass-98 lane, integrated by primary agent",
+        "reviewPass": 98,
+        "reviewedOn": "2026-09-28",
+        "evidence": "docs/p98-d-review.md",
+        "note": "Pass 98: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -5020,16 +5030,17 @@
         "docs/p64-fix-a1-review.md",
         "docs/p66-audit-review.md",
         "docs/p78-a-review.md",
-        "docs/p81-audit-review.md"
+        "docs/p81-audit-review.md",
+        "docs/p98-d-review.md"
       ],
       "mujoco": {
         "mode": "baked",
         "evidence": "src/simulation/baked/plate-shears.js",
         "note": "Production model-loader loads recorded offline MuJoCo motion; no live browser solve."
       },
-      "updatedOn": "2026-09-27",
+      "updatedOn": "2026-09-28",
       "visibleFlaws": "",
-      "limits": "Blade/frame traces and passive gravity jaw use ideal guide/hinge and physical-scale assumptions; material cutting not simulated. Pivot and cam-shaft pins are 0.003 running fits.",
+      "limits": "Blade/frame traces and passive gravity jaw use ideal guide/hinge and physical-scale assumptions; material cutting not simulated. Pivot and cam-shaft pins are 0.003 running fits. p98: bores wound correctly (no see-through pivot); pivot pin proud of both faces; cam enlarged to r .64 / throw .35 (about 1.3x Brown's diameter) so the blades close fully (17° swing); rebaked.",
       "assessment": "reasonable"
     },
     {
@@ -5112,11 +5123,11 @@
       "id": 133,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-97 lane, integrated by primary agent",
-        "reviewPass": 97,
+        "reviewer": "Claude Opus 5.5 — pass-98 lane, integrated by primary agent",
+        "reviewPass": 98,
         "reviewedOn": "2026-09-28",
-        "evidence": "docs/p97-a-review.md",
-        "note": "Pass 97: flaw fixed; checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p98-a-review.md",
+        "note": "Pass 98: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -5134,7 +5145,8 @@
         "docs/p66-audit-review.md",
         "docs/p90-fa-review.md",
         "docs/p93-g-review.md",
-        "docs/p97-a-review.md"
+        "docs/p97-a-review.md",
+        "docs/p98-a-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -5143,7 +5155,7 @@
       },
       "updatedOn": "2026-09-28",
       "visibleFlaws": "",
-      "limits": "Platen guidance by the columns is implicit; hidden axial retention and press-load support are approximated. p90: 12 square-proportioned pinion teeth and 72 on the sector. p93: guide ears wrap the columns; the anvil, spacers and header are one block flush with the platen face. p97: the platen hangs from one V-shaped lug, a boss concentric with the wrist pin joined to the platen by tangent lines (was two cuboid beams); the pin no longer stubs out behind it; the pinion bracket no longer z-fights the column.",
+      "limits": "Platen guidance by the columns is implicit; hidden axial retention and press-load support are approximated. p90: 12 square-proportioned pinion teeth and 72 on the sector. p93: guide ears wrap the columns; the anvil, spacers and header are one block flush with the platen face. p97: the platen hangs from one V-shaped lug, a boss concentric with the wrist pin joined to the platen by tangent lines (was two cuboid beams); the pin no longer stubs out behind it; the pinion bracket no longer z-fights the column. p98: one straight turned grip, back face flush with the arm, hemispherical end; arm cut round the grip.",
       "assessment": "reasonable"
     },
     {
@@ -5576,11 +5588,11 @@
       "id": 145,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-96 lane, integrated by primary agent",
-        "reviewPass": 96,
+        "reviewer": "Claude Opus 5.5 — pass-98 lane, integrated by primary agent",
+        "reviewPass": 98,
         "reviewedOn": "2026-09-28",
-        "evidence": "docs/p96-fb-review.md",
-        "note": "Pass 96: flaw fixed; checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p98-d-review.md",
+        "note": "Pass 98: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -5605,7 +5617,8 @@
         "docs/p81-audit-review.md",
         "docs/p91-w-review.md",
         "docs/p93-fb-review.md",
-        "docs/p96-fb-review.md"
+        "docs/p96-fb-review.md",
+        "docs/p98-d-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -5614,18 +5627,18 @@
       },
       "updatedOn": "2026-09-28",
       "visibleFlaws": "",
-      "limits": "The beam pivot sits ≈1.8 plate units from the drawn position. Beam/rod motion prescribed through ideal pins. p91: white or near-white parts recoloured by role (pins steel, washers brass, panels stone); no geometry change. p93: the beam's left end is a semicircle round the pin; the rod top is hidden in the eye; beam and pins are about 1.6× Brown's width to hold the shared pin rings. p96: low audit findings fixed (see review).",
+      "limits": "The beam pivot sits ≈1.8 plate units from the drawn position. Beam/rod motion prescribed through ideal pins. p91: white or near-white parts recoloured by role (pins steel, washers brass, panels stone); no geometry change. p93: the beam's left end is a semicircle round the pin; the rod top is hidden in the eye; beam and pins are about 1.6× Brown's width to hold the shared pin rings. p96: low audit findings fixed (see review). p98: the standard is Brown's one-piece bell body with a front rib on a plinth; the floating braces are removed.",
       "assessment": "reasonable"
     },
     {
       "id": 146,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-63 read-only audit lane",
-        "reviewPass": 63,
-        "reviewedOn": "2026-09-26",
-        "evidence": "docs/p63-audit-review.md",
-        "note": "Pass-63 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
+        "reviewer": "Claude Opus 5.5 — pass-98 lane, integrated by primary agent",
+        "reviewPass": 98,
+        "reviewedOn": "2026-09-28",
+        "evidence": "docs/p98-d-review.md",
+        "note": "Pass 98: The loop and frame are narrower than drawn: the wrist can only reach 93 px either side, against Brown's 110-125 px loop ends, so the frame is 270 px wide against his 327."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -5644,17 +5657,18 @@
         "docs/p56-b-review.md",
         "docs/p60-supports-review.md",
         "docs/p62-supports-a-review.md",
-        "docs/p63-audit-review.md"
+        "docs/p63-audit-review.md",
+        "docs/p98-d-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/framed-yoke.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-26",
-      "visibleFlaws": "",
-      "limits": "Hidden groove inferred; the disk shaft ends as a stub in front of its hub.",
-      "assessment": "reasonable"
+      "updatedOn": "2026-09-28",
+      "visibleFlaws": "The loop and frame are narrower than drawn: the wrist can only reach 93 px either side, against Brown's 110-125 px loop ends, so the frame is 270 px wide against his 327.",
+      "limits": "The closed loop groove is an ideal stadium whose ends reach the crank radius; the yoke is a slotted yoke on the straight runs and the wrist crosses between them round the ends; it gets no push at the end apex and rides through on inertia (the motion is prescribed). The disk is see-through; the shaft ends as a stub in front of the hub.",
+      "assessment": "minor"
     },
     {
       "id": 147,
@@ -6227,11 +6241,11 @@
       "id": 161,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 read-only audit lane",
-        "reviewPass": 64,
-        "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-audit-review.md",
-        "note": "Pass-64 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
+        "reviewer": "Claude Opus 5.5 — pass-98 lane, integrated by primary agent",
+        "reviewPass": 98,
+        "reviewedOn": "2026-09-28",
+        "evidence": "docs/p98-c-review.md",
+        "note": "Pass 98: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -6246,16 +6260,17 @@
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
         "docs/visual-assessment-pass52.md",
-        "docs/p64-audit-review.md"
+        "docs/p64-audit-review.md",
+        "docs/p98-c-review.md"
       ],
       "mujoco": {
         "mode": "baked",
         "evidence": "src/simulation/baked/ball-governor.js",
         "note": "Production model-loader loads recorded offline MuJoCo motion; no live browser solve."
       },
-      "updatedOn": "2026-09-26",
+      "updatedOn": "2026-09-28",
       "visibleFlaws": "",
-      "limits": "Masses/depths and unloaded remote valve connection inferred; final bake is a selected operating cycle.",
+      "limits": "Masses/depths and unloaded remote valve connection inferred; final bake is a selected operating cycle. p98: head ears are arcs (r 0.165) concentric with the top pins.",
       "assessment": "reasonable"
     },
     {
@@ -6344,11 +6359,11 @@
       "id": 164,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-91/92 lane, integrated by primary agent",
-        "reviewPass": 92,
-        "reviewedOn": "2026-09-27",
-        "evidence": "docs/p91-w-review.md",
-        "note": "Pass 91–92: flaw fixed; checked in default, rotated and phase captures beside the plate."
+        "reviewer": "Claude Opus 5.5 — pass-98 lane, integrated by primary agent",
+        "reviewPass": 98,
+        "reviewedOn": "2026-09-28",
+        "evidence": "docs/p98-c-review.md",
+        "note": "Pass 98: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -6367,27 +6382,28 @@
         "docs/p53-fix-b-review.md",
         "docs/p54-hatch-review.md",
         "docs/p64-audit-review.md",
-        "docs/p91-w-review.md"
+        "docs/p91-w-review.md",
+        "docs/p98-c-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/knee-press.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-27",
+      "updatedOn": "2026-09-28",
       "visibleFlaws": "",
-      "limits": "Ideal pinned linkage and seated foot; reaction frame/workpiece omitted and loads not simulated. p91: white or near-white parts recoloured by role (pins steel, washers brass, panels stone); no geometry change.",
+      "limits": "Ideal pinned linkage and seated foot; reaction frame/workpiece omitted and loads not simulated. p91: white or near-white parts recoloured by role (pins steel, washers brass, panels stone); no geometry change. p98: the knee lobe, the lever top and the cheek bottoms are arcs concentric with their pins.",
       "assessment": "reasonable"
     },
     {
       "id": 165,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-62 read-only audit lane",
-        "reviewPass": 62,
-        "reviewedOn": "2026-09-26",
-        "evidence": "docs/p62-audit-review.md",
-        "note": "Pass-62 audit: clean in default, ±60°, back, top and phase captures beside the plate."
+        "reviewer": "Claude Opus 5.5 — pass-98 lane, integrated by primary agent",
+        "reviewPass": 98,
+        "reviewedOn": "2026-09-28",
+        "evidence": "docs/p98-c-review.md",
+        "note": "Pass 98: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -6407,7 +6423,8 @@
         "docs/pass53-user-review.md",
         "docs/p55-geo-a-review.md",
         "docs/p60-supports-review.md",
-        "docs/p62-audit-review.md"
+        "docs/p62-audit-review.md",
+        "docs/p98-c-review.md"
       ],
       "mujoco": {
         "mode": "validation-only",
@@ -6417,9 +6434,9 @@
         ],
         "note": "Historical MuJoCo trials; installed bake is quasistatic geometric contact, not MuJoCo."
       },
-      "updatedOn": "2026-09-26",
+      "updatedOn": "2026-09-28",
       "visibleFlaws": "",
-      "limits": "Equal sinusoidal lobes replace hand-drawn uneven outline; quasi-static loading, rolling and guide assumptions remain. Undrawn supports and extensions removed (pass 60); rods end straight and cleanly.",
+      "limits": "Equal sinusoidal lobes replace hand-drawn uneven outline; quasi-static loading, rolling and guide assumptions remain. Undrawn supports and extensions removed (pass 60); rods end straight and cleanly. p98: the upright's eye is centred on the pin's transverse travel, within 0.034 (0.10R) of concentric; the residual stays hidden behind the rod eye.",
       "assessment": "reasonable"
     },
     {
@@ -6952,11 +6969,11 @@
       "id": 179,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-91/92 lane, integrated by primary agent",
-        "reviewPass": 92,
-        "reviewedOn": "2026-09-27",
-        "evidence": "docs/p91-w-review.md",
-        "note": "Pass 91–92: flaw fixed; checked in default, rotated and phase captures beside the plate."
+        "reviewer": "Claude Opus 5.5 — pass-98 lane, integrated by primary agent",
+        "reviewPass": 98,
+        "reviewedOn": "2026-09-28",
+        "evidence": "docs/p98-e-review.md",
+        "note": "Pass 98: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -6975,7 +6992,8 @@
         "docs/p53-fix-b-review.md",
         "docs/p54-hatch-review.md",
         "docs/p64-audit-review.md",
-        "docs/p91-w-review.md"
+        "docs/p91-w-review.md",
+        "docs/p98-e-review.md"
       ],
       "mujoco": {
         "mode": "validation-only",
@@ -6985,9 +7003,9 @@
         ],
         "note": "Offline shaft/stop MuJoCo check; production remains prescribed."
       },
-      "updatedOn": "2026-09-27",
+      "updatedOn": "2026-09-28",
       "visibleFlaws": "",
-      "limits": "Engine/manual valve response not simulated; bearing resistance and depths inferred despite isolated stop-contact study. p91: white or near-white parts recoloured by role (pins steel, washers brass, panels stone); no geometry change.",
+      "limits": "Engine/manual valve response not simulated; bearing resistance and depths inferred despite isolated stop-contact study. p91: white or near-white parts recoloured by role (pins steel, washers brass, panels stone); no geometry change. Pass 98: both grips are turned knobs with collars enclosing the bar corners, as drawn.",
       "assessment": "reasonable"
     },
     {
@@ -7454,11 +7472,11 @@
       "id": 190,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-93 lane, integrated by primary agent",
-        "reviewPass": 93,
-        "reviewedOn": "2026-09-27",
-        "evidence": "docs/p93-f-review.md",
-        "note": "Pass 93: flaw fixed; checked in default, rotated and phase captures beside the plate."
+        "reviewer": "Claude Opus 5.5 — pass-98 lane, integrated by primary agent",
+        "reviewPass": 98,
+        "reviewedOn": "2026-09-28",
+        "evidence": "docs/p98-c-review.md",
+        "note": "Pass 98: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -7479,16 +7497,17 @@
         "docs/p81-audit-review.md",
         "docs/p88-y-review.md",
         "docs/p92-h-review.md",
-        "docs/p93-f-review.md"
+        "docs/p93-f-review.md",
+        "docs/p98-c-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-clamps.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-27",
+      "updatedOn": "2026-09-28",
       "visibleFlaws": "",
-      "limits": "The plank has no grain; the post through the plank is not drawn. Screw motion prescribed. The shank's square section and the foot's thickness are reconstructed (Brown draws the shank as a single line). The forked standard and the holder boss behind the standard's head are inferred (Brown shows only the elevation); pins are 0.0015–0.003 fits; the shoe runs 0.01 clear of each cheek. p88: the screw core stops inside the handle hub, and the buried nut no longer shares the arm's bore (coincident faces). Pass 92: the crank handle is the shared turned handle on a crank end rounded about its axis. p93: the standard head, flank and fillet, the lever back and the shoe dome are smooth curves through the traced points.",
+      "limits": "The plank has no grain; the post through the plank is not drawn. Screw motion prescribed. The shank's square section and the foot's thickness are reconstructed (Brown draws the shank as a single line). The forked standard and the holder boss behind the standard's head are inferred (Brown shows only the elevation); pins are 0.0015–0.003 fits; the shoe runs 0.01 clear of each cheek. p88: the screw core stops inside the handle hub, and the buried nut no longer shares the arm's bore (coincident faces). Pass 92: the crank handle is the shared turned handle on a crank end rounded about its axis. p93: the standard head, flank and fillet, the lever back and the shoe dome are smooth curves through the traced points. p98: the holder cheek's shoe end is an arc (r 0.44) concentric with the shoe pin.",
       "assessment": "reasonable"
     },
     {
@@ -7785,11 +7804,11 @@
       "id": 198,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-93 lane, integrated by primary agent",
-        "reviewPass": 93,
-        "reviewedOn": "2026-09-27",
-        "evidence": "docs/p93-fc-review.md",
-        "note": "Pass 93: The pinion has six square-topped teeth where Brown draws about eight."
+        "reviewer": "Claude Opus 5.5 — pass-98 lane, integrated by primary agent",
+        "reviewPass": 98,
+        "reviewedOn": "2026-09-28",
+        "evidence": "docs/p98-a-review.md",
+        "note": "Pass 98: The pinion has six square-topped teeth where Brown draws about eight."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -7810,16 +7829,17 @@
         "docs/p61-faces-review.md",
         "docs/p62-supports-a-review.md",
         "docs/p63-audit-review.md",
-        "docs/p93-fc-review.md"
+        "docs/p93-fc-review.md",
+        "docs/p98-a-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-gears-core.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-27",
+      "updatedOn": "2026-09-28",
       "visibleFlaws": "The pinion has six square-topped teeth where Brown draws about eight.",
-      "limits": "The lower-right rod pin sits at the frame edge; rigid links assumed. The inside-out pinion hub sleeve is hidden. The frame's shaft slot shows through the carrier opening, as Brown draws it. p93: square-topped pinion teeth on a full hub; the rack recut to match.",
+      "limits": "The lower-right rod pin sits at the frame edge; rigid links assumed. The inside-out pinion hub sleeve is hidden. The frame's shaft slot shows through the carrier opening, as Brown draws it. p93: square-topped pinion teeth on a full hub; the rack recut to match. p98: carrier plate built from lines and arcs; lobe and foot concentric with the modelled pivots; foot tighter than drawn because the pivot is offset from Brown's eye.",
       "assessment": "minor",
       "userReported": "2026-09-24"
     },
@@ -8222,11 +8242,11 @@
       "id": 209,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-91/92 lane, integrated by primary agent",
-        "reviewPass": 92,
-        "reviewedOn": "2026-09-27",
-        "evidence": "docs/p92-g-review.md",
-        "note": "Pass 91–92: flaw fixed; checked in default, rotated and phase captures beside the plate."
+        "reviewer": "Claude Opus 5.5 — pass-98 lane, integrated by primary agent",
+        "reviewPass": 98,
+        "reviewedOn": "2026-09-28",
+        "evidence": "docs/p98-a-review.md",
+        "note": "Pass 98: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -8242,16 +8262,17 @@
         "docs/pass53-user-review.md",
         "docs/p59-audit-bd-review.md",
         "docs/p62-audit-review.md",
-        "docs/p92-g-review.md"
+        "docs/p92-g-review.md",
+        "docs/p98-a-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-gears-core.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-27",
+      "updatedOn": "2026-09-28",
       "visibleFlaws": "",
-      "limits": "Generated teeth follow prescribed eccentric rolling; load-induced motion, friction, compliance and backlash take-up unsolved. Pass 92: the baked gear outlines are smoothed (micro-steps removed, material only); contact audits still show no overlap.",
+      "limits": "Generated teeth follow prescribed eccentric rolling; load-induced motion, friction, compliance and backlash take-up unsolved. Pass 92: the baked gear outlines are smoothed (micro-steps removed, material only); contact audits still show no overlap. p98: the forked catch works: a pin on the driver's second tooth runs through a V cut round its path (0.012 clearance) across the dead point. Motion prescribed; pin load not simulated.",
       "assessment": "reasonable"
     },
     {
@@ -8337,11 +8358,11 @@
       "id": 212,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-90 lane, integrated by primary agent",
-        "reviewPass": 90,
-        "reviewedOn": "2026-09-27",
-        "evidence": "docs/p90-fc-review.md",
-        "note": "Pass 90: flaw fixed; checked in default, rotated and phase captures beside the plate."
+        "reviewer": "Claude Opus 5.5 — pass-98 lane, integrated by primary agent",
+        "reviewPass": 98,
+        "reviewedOn": "2026-09-28",
+        "evidence": "docs/p98-f-review.md",
+        "note": "Pass 98: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -8358,16 +8379,17 @@
         "docs/p79-disconnected-triage.md",
         "docs/p80-1-review.md",
         "docs/p81-audit-review.md",
-        "docs/p90-fc-review.md"
+        "docs/p90-fc-review.md",
+        "docs/p98-f-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-intermittent-core.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-27",
+      "updatedOn": "2026-09-28",
       "visibleFlaws": "",
-      "limits": "Finite branch corrected; capture torque tends to zero, velocity-changing handoffs and reverse assisting bias remain prescribed/unvalidated. No frame or bearings: plain shaft stubs. p90: the display opens two indexes in, so the convex stop face a–b sits beside the top slot as drawn.",
+      "limits": "Finite branch corrected; capture torque tends to zero, velocity-changing handoffs and reverse assisting bias remain prescribed/unvalidated. No frame or bearings: plain shaft stubs. p90: the display opens two indexes in, so the convex stop face a–b sits beside the top slot as drawn. p98: the finger stands out to r 4.7 with 0.2 rounded corners, and the contact law was rebuilt for the new shape. The terminal partial advance is 40.5° (source 46°).",
       "assessment": "reasonable"
     },
     {
@@ -9700,11 +9722,11 @@
       "id": 247,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-96 lane, integrated by primary agent",
-        "reviewPass": 96,
+        "reviewer": "Claude Opus 5.5 — pass-98 lane, integrated by primary agent",
+        "reviewPass": 98,
         "reviewedOn": "2026-09-28",
-        "evidence": "docs/p96-fc-review.md",
-        "note": "Pass 96: flaw fixed; checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p98-g-review.md",
+        "note": "Pass 98: Between soundings the weight is lifted 1.37 off the bottom and hangs for about 2.8 s with nothing visible holding it (an undrawn reset lift)."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -9737,7 +9759,8 @@
         "docs/p91-w-review.md",
         "docs/p93-fc-review.md",
         "docs/p94-a-review.md",
-        "docs/p96-fc-review.md"
+        "docs/p96-fc-review.md",
+        "docs/p98-g-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -9745,19 +9768,19 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-28",
-      "visibleFlaws": "",
-      "limits": "The camera looks up 5° from the bottom's level, so the bottom is edge-on at the lower frame edge (it would show below the foot only at aspects narrower than about 0.5, where the width governs the fit). Between soundings the vessel moves on 40 to the next station, always the same way: the spent weight and the bottom's tone bands move off to the left together (the bottom slab itself stays; its bands scroll, and wrap by whole periods at the loop) while the rod returns (a reconstruction device to close the loop, not from the caption). The weight left at the previous station is lifted and carried back by unmodelled gear far to the side and above; that route could be seen by panning far to the side. The catch is Brown's sloped barb, loaded outward by a curled leaf spring set in the rod and bearing on the upper arm (anchored top right, since the arm's tip sweeps Brown's top left); the probe cams it in; after the trip it rubs the spent weight's bore and snaps out over the rim; on reload the rising weight cams it aside until it springs out under the weight. Spring force, friction and snap timing are prescribed, not solved. p91: white or near-white parts recoloured by role (pins steel, washers brass, panels stone); no geometry change. p93: the sea bottom has tone bands so its move to the next station visibly carries the spent weight. p94: the rod lifts only to 4.75 and stays in view; a fresh weight comes down the line from above and lands on the catch; the undrawn leadsman's hand is removed.",
-      "assessment": "reasonable"
+      "visibleFlaws": "Between soundings the weight is lifted 1.37 off the bottom and hangs for about 2.8 s with nothing visible holding it (an undrawn reset lift).",
+      "limits": "The camera looks up 5° from the bottom's level, so the bottom is edge-on at the lower frame edge. The catch is Brown's sloped barb, loaded outward by a curled leaf spring set in the rod and bearing on the upper arm; the probe cams it in at the trip. p98: the loop reuses one weight: after sounding the rod rises out (the hook rubs up the bore and springs out over the top rim), the same weight is lifted slightly by an undrawn reset, and the rod goes back in from above: the top rim pushes the hook in and it springs out under the weight, then the rod carries it back to Brown's pose. The rod creeps through each rim. The hook's reach is tucked in 0.08 rad. The vessel no longer moves on and the bottom is a plain block. Spring force, friction and snap timing are prescribed, not solved.",
+      "assessment": "minor"
     },
     {
       "id": 248,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 read-only audit lane",
-        "reviewPass": 64,
-        "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-audit-review.md",
-        "note": "Pass-64 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
+        "reviewer": "Claude Opus 5.5 — pass-98 lane, integrated by primary agent",
+        "reviewPass": 98,
+        "reviewedOn": "2026-09-28",
+        "evidence": "docs/p98-f-review.md",
+        "note": "Pass 98: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -9775,16 +9798,17 @@
         "docs/m4-203-321-review.md",
         "docs/pass53-user-review.md",
         "docs/p54-hatch-review.md",
-        "docs/p64-audit-review.md"
+        "docs/p64-audit-review.md",
+        "docs/p98-f-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-pipe-couplings.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-26",
+      "updatedOn": "2026-09-28",
       "visibleFlaws": "",
-      "limits": "Thread sections unhatched.",
+      "limits": "Thread sections unhatched. p98: the threads are closed half-section solids with flat cut faces; the nut thread is rebuilt as the nut turns.",
       "assessment": "reasonable"
     },
     {
@@ -9861,11 +9885,11 @@
       "id": 251,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-96 lane, integrated by primary agent",
-        "reviewPass": 96,
+        "reviewer": "Claude Opus 5.5 — pass-98 lane, integrated by primary agent",
+        "reviewPass": 98,
         "reviewedOn": "2026-09-28",
-        "evidence": "docs/p96-fc-review.md",
-        "note": "Pass 96: flaw fixed; checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p98-g-review.md",
+        "note": "Pass 98: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -9887,7 +9911,8 @@
         "docs/p60-251-review.md",
         "docs/p62-auditfix-a-review.md",
         "docs/p63-audit-review.md",
-        "docs/p96-fc-review.md"
+        "docs/p96-fc-review.md",
+        "docs/p98-g-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -9896,7 +9921,7 @@
       },
       "updatedOn": "2026-09-28",
       "visibleFlaws": "",
-      "limits": "Hoist motion, contact forces and jaw swing-shut timing are prescribed; jaw angles solved geometrically. Barbed feet and an undercut T replace Brown's flat feet so the load holds the jaws shut; T overhang 5 px; slot mouth widened to 50 px; the casting is set behind the jaw plane. The rope end is seized on the eye top, not spliced; the winch beyond the crop is not modelled. p96: the casting's stirrup bands are smooth strips (a little broader than traced) with Brown's open space inside; round ears concentric with the jaw pivots; the rope eye passes through a lug on the crossbar.",
+      "limits": "Hoist motion, contact forces and jaw swing-shut timing are prescribed; jaw angles solved geometrically. Barbed feet and an undercut T replace Brown's flat feet so the load holds the jaws shut; T overhang 5 px; slot mouth widened to 50 px; the casting is set behind the jaw plane. The rope end is seized on the eye top, not spliced; the winch beyond the crop is not modelled. Round ears concentric with the jaw pivots; the rope eye passes through a lug on the crossbar. p98: Brown's curved members are one bowed leaf spring seated in the pivot block's V. Its free ends rest on the jaw arms and push them outward, bending by about 11.5 px at each tip when slot B presses the horns in. The bend is geometric; spring force and preload are not solved. A narrow web set back behind the spring (inferred; Brown shows an open slot) joins the crossbar stem to the pivot block.",
       "assessment": "reasonable"
     },
     {
@@ -10411,11 +10436,11 @@
       "id": 266,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-86 lane, integrated by primary agent",
-        "reviewPass": 86,
-        "reviewedOn": "2026-09-27",
-        "evidence": "docs/p86-3-review.md",
-        "note": "Pass 86: flaw fixed; checked in default, rotated and phase captures beside the plate."
+        "reviewer": "Claude Opus 5.5 — pass-98 lane, integrated by primary agent",
+        "reviewPass": 98,
+        "reviewedOn": "2026-09-28",
+        "evidence": "docs/p98-e-review.md",
+        "note": "Pass 98: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -10432,27 +10457,28 @@
         "docs/pass53-user-review.md",
         "docs/p55-geo-a-review.md",
         "docs/p64-audit-review.md",
-        "docs/p86-3-review.md"
+        "docs/p86-3-review.md",
+        "docs/p98-e-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-differential-screws.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-27",
+      "updatedOn": "2026-09-28",
       "visibleFlaws": "",
-      "limits": "Ideal gear/screw constraints omit friction, compliance, load-dependent backlash and self-locking. The crank arm ends in a round eye that carries the grip (pass 86).",
+      "limits": "Ideal gear/screw constraints omit friction, compliance, load-dependent backlash and self-locking. The crank arm ends in a round eye that carries the grip (pass 86). Pass 98: the shared turned handle, seated through the arm/eye/bar to 0.005 inside the far face.",
       "assessment": "reasonable"
     },
     {
       "id": 267,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-90 lane, integrated by primary agent",
-        "reviewPass": 90,
-        "reviewedOn": "2026-09-27",
-        "evidence": "docs/p90-fd-review.md",
-        "note": "Pass 90: flaw fixed; checked in default, rotated and phase captures beside the plate."
+        "reviewer": "Claude Opus 5.5 — pass-98 lane, integrated by primary agent",
+        "reviewPass": 98,
+        "reviewedOn": "2026-09-28",
+        "evidence": "docs/p98-e-review.md",
+        "note": "Pass 98: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -10470,16 +10496,17 @@
         "docs/p79-disconnected-triage.md",
         "docs/p80-1-review.md",
         "docs/p81-audit-review.md",
-        "docs/p90-fd-review.md"
+        "docs/p90-fd-review.md",
+        "docs/p98-e-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-friction-clutches.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-27",
+      "updatedOn": "2026-09-28",
       "visibleFlaws": "",
-      "limits": "Clutch engagement/retraction prescribed; eccentric force direction alone does not validate frictional capacity, preload or reverse slip. The loose-hub bore is the shaft + 0.003. p90: each arm spring is a flat leaf on a seat on the carrier, staying in contact as the arm retracts.",
+      "limits": "Clutch engagement/retraction prescribed; eccentric force direction alone does not validate frictional capacity, preload or reverse slip. The loose-hub bore is the shaft + 0.003. p90: each arm spring is a flat leaf on a seat on the carrier, staying in contact as the arm retracts. Pass 98: each arm runs into a 0.17-deep shoe whose face is concentric with the rim over 28°; release clears it by 0.092 to 0.18.",
       "assessment": "reasonable"
     },
     {
@@ -10967,11 +10994,11 @@
       "id": 280,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-96 lane, integrated by primary agent",
-        "reviewPass": 96,
+        "reviewer": "Claude Opus 5.5 — pass-98 lane, integrated by primary agent",
+        "reviewPass": 98,
         "reviewedOn": "2026-09-28",
-        "evidence": "docs/p96-fd-review.md",
-        "note": "Pass 96: The rear backstop ratchet still shows from behind, above and below."
+        "evidence": "docs/p98-e-review.md",
+        "note": "Pass 98: The rear backstop ratchet still shows from behind, above and below."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -10996,7 +11023,8 @@
         "docs/p81-audit-review.md",
         "docs/p86-4b-review.md",
         "docs/p92-e-review.md",
-        "docs/p96-fd-review.md"
+        "docs/p96-fd-review.md",
+        "docs/p98-e-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -11005,18 +11033,18 @@
       },
       "updatedOn": "2026-09-28",
       "visibleFlaws": "The rear backstop ratchet still shows from behind, above and below.",
-      "limits": "Rear backstop ratchet is inferred and hidden; the pawls are straight bored links from Brown's two eyes with chisel noses in the root. Lift is a baked least-clearance table; each drop snaps as a crest passes. The 0.0055 rad backlash is prescribed; drive, drop dynamics and load are unvalidated. The upper coupler pin fits its eye (0.171 in 0.174). p92: the short arm ends in a round eye about the coupler pin; the jaw cheeks have round ends about the jaw pivot. p96: the backstop is shrunk to 0.80 of the wheel so it is hidden in the front and ±50° views (Brown's upper pawl link passes 0.56R from the axis).",
+      "limits": "Rear backstop ratchet is inferred and hidden; the pawls are straight bored links from Brown's two eyes with chisel noses in the root. Lift is a baked least-clearance table; each drop snaps as a crest passes. The 0.0055 rad backlash is prescribed; drive, drop dynamics and load are unvalidated. The upper coupler pin fits its eye (0.171 in 0.174). p92: the short arm ends in a round eye about the coupler pin; the jaw cheeks have round ends about the jaw pivot. p96: the backstop is shrunk to 0.80 of the wheel so it is hidden in the front and ±50° views (Brown's upper pawl link passes 0.56R from the axis). Pass 98: the grip lines up with the lever, one turned profile with a ferrule over the bar end; the wheel, rim, barrel and hub take the quadrant cue.",
       "assessment": "minor"
     },
     {
       "id": 281,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-96 lane, integrated by primary agent",
-        "reviewPass": 96,
+        "reviewer": "Claude Opus 5.5 — pass-98 lane, integrated by primary agent",
+        "reviewPass": 98,
         "reviewedOn": "2026-09-28",
-        "evidence": "docs/p96-fd-review.md",
-        "note": "Pass 96: flaw fixed; checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p98-e-review.md",
+        "note": "Pass 98: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -11037,7 +11065,8 @@
         "docs/p61-b-review.md",
         "docs/p62-audit-review.md",
         "docs/p92-h-review.md",
-        "docs/p96-fd-review.md"
+        "docs/p96-fd-review.md",
+        "docs/p98-e-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -11046,18 +11075,18 @@
       },
       "updatedOn": "2026-09-28",
       "visibleFlaws": "",
-      "limits": "Brown's dotted rear arm is modelled as a plain hand crank. Pass 92: pins no longer sit on part edges; each carrying part has a round eye or end centred on its pin. p96: low audit findings fixed (see review).",
+      "limits": "Brown's dotted rear arm is modelled as a plain hand crank. Pass 92: pins no longer sit on part edges; each carrying part has a round eye or end centred on its pin. p96: low audit findings fixed (see review). Pass 98: the rear crank handle runs through the arm's round end to 0.005 inside its front face.",
       "assessment": "reasonable"
     },
     {
       "id": 282,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-96 lane, integrated by primary agent",
-        "reviewPass": 96,
+        "reviewer": "Claude Opus 5.5 — pass-98 lane, integrated by primary agent",
+        "reviewPass": 98,
         "reviewedOn": "2026-09-28",
-        "evidence": "docs/p96-fd-review.md",
-        "note": "Pass 96: flaw fixed; checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p98-e-review.md",
+        "note": "Pass 98: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -11076,7 +11105,8 @@
         "docs/p62-audit-review.md",
         "docs/p90-fd-review.md",
         "docs/p92-r-review.md",
-        "docs/p96-fd-review.md"
+        "docs/p96-fd-review.md",
+        "docs/p98-e-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -11085,18 +11115,18 @@
       },
       "updatedOn": "2026-09-28",
       "visibleFlaws": "",
-      "limits": "The rack is cut to the seven reachable teeth; a short rear hand crank is modelled. p90: one C-section rack guide each, carried by the frame posts; sector and rack share one 20° stub-tooth profile; the sheave is bored clear of the hub. Pass 92: rope/belt recoloured to the shared hemp brown so it contrasts with the pulleys. p96: low audit findings fixed (see review).",
+      "limits": "The rack is cut to the seven reachable teeth; a short rear hand crank is modelled. p90: one C-section rack guide each, carried by the frame posts; sector and rack share one 20° stub-tooth profile; the sheave is bored clear of the hub. Pass 92: rope/belt recoloured to the shared hemp brown so it contrasts with the pulleys. p96: low audit findings fixed (see review). Pass 98: the rear crank handle runs through the arm's round end to 0.005 inside its front face.",
       "assessment": "reasonable"
     },
     {
       "id": 283,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-93 lane, integrated by primary agent",
-        "reviewPass": 93,
-        "reviewedOn": "2026-09-27",
-        "evidence": "docs/p93-fd-review.md",
-        "note": "Pass 93: flaw fixed; checked in default, rotated and phase captures beside the plate."
+        "reviewer": "Claude Opus 5.5 — pass-98 lane, integrated by primary agent",
+        "reviewPass": 98,
+        "reviewedOn": "2026-09-28",
+        "evidence": "docs/p98-e-review.md",
+        "note": "Pass 98: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -11115,16 +11145,17 @@
         "docs/p81-audit-review.md",
         "docs/p92-h-review.md",
         "docs/p92-e-review.md",
-        "docs/p93-fd-review.md"
+        "docs/p93-fd-review.md",
+        "docs/p98-e-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-rack-pumps.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-27",
+      "updatedOn": "2026-09-28",
       "visibleFlaws": "",
-      "limits": "Exact rack/output laws imposed; friction, backlash take-up, tooth loading and passive operating forces unvalidated. Pass 92: the crank handle is the shared turned handle on a crank end rounded about its axis. p92: each rack bar is one extrusion ending in a semicircular top, as Brown draws it. p93: a 16-tooth pinion and 13 flat-topped teeth per rack; feet under the slab ends.",
+      "limits": "Exact rack/output laws imposed; friction, backlash take-up, tooth loading and passive operating forces unvalidated. Pass 92: the crank handle is the shared turned handle on a crank end rounded about its axis. p92: each rack bar is one extrusion ending in a semicircular top, as Brown draws it. p93: a 16-tooth pinion and 13 flat-topped teeth per rack; feet under the slab ends. Pass 98: the turned handle runs through the arm as one turned piece, ending 0.005 inside the far face.",
       "assessment": "reasonable"
     },
     {
@@ -11173,11 +11204,11 @@
       "id": 285,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-96 lane, integrated by primary agent",
-        "reviewPass": 96,
+        "reviewer": "Claude Opus 5.5 — pass-98 lane, integrated by primary agent",
+        "reviewPass": 98,
         "reviewedOn": "2026-09-28",
-        "evidence": "docs/p96-fd-review.md",
-        "note": "Pass 96: flaw fixed; checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p98-e-review.md",
+        "note": "Pass 98: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -11199,7 +11230,8 @@
         "docs/p80-2-review.md",
         "docs/p81-audit-review.md",
         "docs/p90-fd-review.md",
-        "docs/p96-fd-review.md"
+        "docs/p96-fd-review.md",
+        "docs/p98-e-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -11208,7 +11240,7 @@
       },
       "updatedOn": "2026-09-28",
       "visibleFlaws": "",
-      "limits": "One clean cutaway on the camera plane with plain cut faces; internal parts whole; no translucency, tints or colour signals. p90: visible coincident faces removed. p96: low audit findings fixed (see review).",
+      "limits": "One clean cutaway on the camera plane with plain cut faces; internal parts whole; no translucency, tints or colour signals. p90: visible coincident faces removed. p96: low audit findings fixed (see review). Pass 98: the shared turned handle, seated through the arm/eye/bar to 0.005 inside the far face.",
       "assessment": "reasonable"
     },
     {
@@ -12045,11 +12077,11 @@
       "id": 307,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-96 lane, integrated by primary agent",
-        "reviewPass": 96,
+        "reviewer": "Claude Opus 5.5 — pass-98 lane, integrated by primary agent",
+        "reviewPass": 98,
         "reviewedOn": "2026-09-28",
-        "evidence": "docs/p96-fd-review.md",
-        "note": "Pass 96: flaw fixed; checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p98-c-review.md",
+        "note": "Pass 98: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "known",
@@ -12069,7 +12101,8 @@
         "docs/p89-review.md",
         "docs/p91-w-review.md",
         "docs/p93-fd-review.md",
-        "docs/p96-fd-review.md"
+        "docs/p96-fd-review.md",
+        "docs/p98-c-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -12078,7 +12111,7 @@
       },
       "updatedOn": "2026-09-28",
       "visibleFlaws": "",
-      "limits": "Legs at exactly 120°; impulse pins hidden. p89: the plate is pocketed 0.003 inside hardened pallets A and B, which alone carry the step faces. p91: white or near-white parts recoloured by role (pins steel, washers brass, panels stone); no geometry change. p93: the impulse pins are half-moons inside each leg's outline, Brown's crescents seen end-on. p96: each leg is a straight taper with a round tip (a bend under 0.005 on the last of the leading edge clears stop D).",
+      "limits": "Legs at exactly 120°; impulse pins hidden. p89: the plate is pocketed 0.003 inside hardened pallets A and B, which alone carry the step faces. p91: white or near-white parts recoloured by role (pins steel, washers brass, panels stone); no geometry change. p93: the impulse pins are half-moons inside each leg's outline, Brown's crescents seen end-on. p96: each leg is a straight taper with a round tip (a bend under 0.005 on the last of the leading edge clears stop D). p98: the suspension cock has a half-round end concentric with the pin.",
       "assessment": "reasonable"
     },
     {
@@ -13136,11 +13169,11 @@
       "id": 334,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-96 lane, integrated by primary agent",
-        "reviewPass": 96,
+        "reviewer": "Claude Opus 5.5 — pass-98 lane, integrated by primary agent",
+        "reviewPass": 98,
         "reviewedOn": "2026-09-28",
-        "evidence": "docs/p96-fd-review.md",
-        "note": "Pass 96: flaw fixed; checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p98-a-review.md",
+        "note": "Pass 98: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -13162,7 +13195,8 @@
         "docs/p62-audit-review.md",
         "docs/p87-c-review.md",
         "docs/p87-e-review.md",
-        "docs/p96-fd-review.md"
+        "docs/p96-fd-review.md",
+        "docs/p98-a-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -13171,7 +13205,7 @@
       },
       "updatedOn": "2026-09-28",
       "visibleFlaws": "",
-      "limits": "Plate proportions differ from the official animation. Articulated chain prescribed without tension/contact solve; broader legacy joints unqualified. The toothed segment is one plate; the stray cylinder is removed. Pass 87: the chain uses the shared plate-chain builder with headed pins proud of the outer plates (no flush pin ends). Pass 87: each diagonal brace is one flat plate buried in the beam and the sector's rim band (0.18 deep inside the 0.25 beam, so they read slightly recessed); Brown's gudgeon bracket at F is one plate flaring out of the beam to a bored boss, with the strap seated in the beam. p96: a small pillow block rises to roller A's axle, hidden behind the roller.",
+      "limits": "Plate proportions differ from the official animation. Articulated chain prescribed without tension/contact solve; broader legacy joints unqualified. The toothed segment is one plate; the stray cylinder is removed. Pass 87: the chain uses the shared plate-chain builder with headed pins proud of the outer plates (no flush pin ends). Pass 87: each diagonal brace is one flat plate buried in the beam and the sector's rim band (0.18 deep inside the 0.25 beam, so they read slightly recessed); Brown's gudgeon bracket at F is one plate flaring out of the beam to a bored boss, with the strap seated in the beam. p96: a small pillow block rises to roller A's axle, hidden behind the roller. p98: seat is a disc about F cut by the bed top.",
       "assessment": "reasonable"
     },
     {
@@ -13597,11 +13631,11 @@
       "id": 345,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-93 lane, integrated by primary agent",
-        "reviewPass": 93,
-        "reviewedOn": "2026-09-27",
-        "evidence": "docs/p93-fe-review.md",
-        "note": "Pass 93: flaw fixed; checked in default, rotated and phase captures beside the plate."
+        "reviewer": "Claude Opus 5.5 — pass-98 lane, integrated by primary agent",
+        "reviewPass": 98,
+        "reviewedOn": "2026-09-28",
+        "evidence": "docs/p98-c-review.md",
+        "note": "Pass 98: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -13620,16 +13654,17 @@
         "docs/m8-framing-ropes-review.md",
         "docs/p55-geo-a-review.md",
         "docs/p64-audit-review.md",
-        "docs/p93-fe-review.md"
+        "docs/p93-fe-review.md",
+        "docs/p98-c-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-oscillating-engines.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-27",
+      "updatedOn": "2026-09-28",
       "visibleFlaws": "",
-      "limits": "Bearing pedestal shape inferred (Brown's block top is at the crank centre; the base is lowered below the crank's sweep so the whole turn stays in view); closed cylinder hides the piston. p93: one crank plate; the rod eye rides a plain pin in front of it.",
+      "limits": "Bearing pedestal shape inferred (Brown's block top is at the crank centre; the base is lowered below the crank's sweep so the whole turn stays in view); closed cylinder hides the piston. p93: one crank plate; the rod eye rides a plain pin in front of it. p98: the bearing top is concentric with O.",
       "assessment": "reasonable"
     },
     {
@@ -13723,11 +13758,11 @@
       "id": 348,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-96 lane, integrated by primary agent",
-        "reviewPass": 96,
+        "reviewer": "Claude Opus 5.5 — pass-98 lane, integrated by primary agent",
+        "reviewPass": 98,
         "reviewedOn": "2026-09-28",
-        "evidence": "docs/p96-fe-review.md",
-        "note": "Pass 96: flaw fixed; checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p98-c-review.md",
+        "note": "Pass 98: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -13749,7 +13784,8 @@
         "docs/p55-geo-a-review.md",
         "docs/p59-fixes-review.md",
         "docs/p62-audit-review.md",
-        "docs/p96-fe-review.md"
+        "docs/p96-fe-review.md",
+        "docs/p98-c-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -13758,7 +13794,7 @@
       },
       "updatedOn": "2026-09-28",
       "visibleFlaws": "",
-      "limits": "Rod B runs out of the view as Brown breaks it off. p96: the disk is one closed solid with a cross-shaped square-ended groove and a plain back.",
+      "limits": "Rod B runs out of the view as Brown breaks it off. p96: the disk is one closed solid with a cross-shaped square-ended groove and a plain back. p98: rod B's rounded lower end is a half-circle concentric with pin C1.",
       "assessment": "reasonable"
     },
     {
@@ -14126,11 +14162,11 @@
       "id": 358,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-96 lane, integrated by primary agent",
-        "reviewPass": 96,
+        "reviewer": "Claude Opus 5.5 — pass-98 lane, integrated by primary agent",
+        "reviewPass": 98,
         "reviewedOn": "2026-09-28",
-        "evidence": "docs/p96-fe-review.md",
-        "note": "Pass 96: The band is about 2/3 of the plate's thickness (two cords share one groove station); Brown's lower bar passes under the fusee's large end, the model's sits symmetric to clear the crank's sweep."
+        "evidence": "docs/p98-e-review.md",
+        "note": "Pass 98: The band is about 2/3 of the plate's thickness (two cords share one groove station); Brown's lower bar passes under the fusee's large end, the model's sits symmetric to clear the crank's sweep."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -14158,7 +14194,8 @@
         "docs/p84-f-review.md",
         "docs/p92-h-review.md",
         "docs/p95-review.md",
-        "docs/p96-fe-review.md"
+        "docs/p96-fe-review.md",
+        "docs/p98-e-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -14167,7 +14204,7 @@
       },
       "updatedOn": "2026-09-28",
       "visibleFlaws": "The band is about 2/3 of the plate's thickness (two cords share one groove station); Brown's lower bar passes under the fusee's large end, the model's sits symmetric to clear the crank's sweep.",
-      "limits": "The camera follows the carriage because the traverse is ≈8 carriage lengths. The band ends are ideal fixed points off-view. The long carriage side bars end cleanly off the view. p84: two cords sharing one groove turn cap the cord radius at about 0.036 (the fusee's 10 turns follow the official animation); Brown's lower bar at 0.71 from the shaft would sit below the 0.85 rail top to clear the crank. Pass 92: the crank handle is the shared turned handle on a crank end rounded about its axis. p95: further alternatives tried and recorded in docs/p95-review.md. p96: the shaft reaches the crank through two bored blocks on a bracket plate (the bracket stops 0.2 short of the crank plane).",
+      "limits": "The camera follows the carriage because the traverse is ≈8 carriage lengths. The band ends are ideal fixed points off-view. The long carriage side bars end cleanly off the view. p84: two cords sharing one groove turn cap the cord radius at about 0.036 (the fusee's 10 turns follow the official animation); Brown's lower bar at 0.71 from the shaft would sit below the 0.85 rail top to clear the crank. Pass 92: the crank handle is the shared turned handle on a crank end rounded about its axis. p95: further alternatives tried and recorded in docs/p95-review.md. p96: the shaft reaches the crank through two bored blocks on a bracket plate (the bracket stops 0.2 short of the crank plane). Pass 98: the turned handle runs through the arm as one turned piece, ending 0.005 inside the far face.",
       "assessment": "minor"
     },
     {
@@ -14251,11 +14288,11 @@
       "id": 361,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-96 lane, integrated by primary agent",
-        "reviewPass": 96,
+        "reviewer": "Claude Opus 5.5 — pass-98 lane, integrated by primary agent",
+        "reviewPass": 98,
         "reviewedOn": "2026-09-28",
-        "evidence": "docs/p96-fe-review.md",
-        "note": "Pass 96: flaw fixed; checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p98-e-review.md",
+        "note": "Pass 98: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -14277,7 +14314,8 @@
         "docs/p67-mech-review.md",
         "docs/p73-audit-review.md",
         "docs/p86-7-review.md",
-        "docs/p96-fe-review.md"
+        "docs/p96-fe-review.md",
+        "docs/p98-e-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -14286,7 +14324,7 @@
       },
       "updatedOn": "2026-09-28",
       "visibleFlaws": "",
-      "limits": "Shifting occurs stopped by prescription; tooth/pin impact not validated. Both pulleys carry flanges as Brown draws, like 255. p86: the radial pin is set into the shaft down to its axis. p96: the pivot stud is centred on the upright as one turned flanged piece.",
+      "limits": "Shifting occurs stopped by prescription; tooth/pin impact not validated. Both pulleys carry flanges as Brown draws, like 255. p86: the radial pin is set into the shaft down to its axis. p96: the pivot stud is centred on the upright as one turned flanged piece. Pass 98: round-ended flat crank arm hanging down 0.95 as drawn, with the shared turned handle seated through it (was a 0.44 box arm pointing up, with a plain cylinder grip on its edge).",
       "assessment": "reasonable"
     },
     {
@@ -14335,11 +14373,11 @@
       "id": 363,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-90 lane, integrated by primary agent",
-        "reviewPass": 90,
-        "reviewedOn": "2026-09-27",
-        "evidence": "docs/p90-fe-review.md",
-        "note": "Pass 90: flaw fixed; checked in default, rotated and phase captures beside the plate."
+        "reviewer": "Claude Opus 5.5 — pass-98 lane, integrated by primary agent",
+        "reviewPass": 98,
+        "reviewedOn": "2026-09-28",
+        "evidence": "docs/p98-a-review.md",
+        "note": "Pass 98: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -14354,16 +14392,17 @@
         "docs/visual-assessment-pass52.md",
         "docs/p64-audit-review.md",
         "docs/p87-l-review.md",
-        "docs/p90-fe-review.md"
+        "docs/p90-fe-review.md",
+        "docs/p98-a-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-seesaws.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-27",
+      "updatedOn": "2026-09-28",
       "visibleFlaws": "",
-      "limits": "Shoe end boards are square, not splayed. Seesaw motion prescribed. Pass 87: each diagonal brace is one flat bar seated 0.01 into the base and the fulcrum cheek. p90: low-severity audit finding fixed (see review).",
+      "limits": "Shoe end boards are square, not splayed. Seesaw motion prescribed. Pass 87: each diagonal brace is one flat bar seated 0.01 into the base and the fulcrum cheek. p90: low-severity audit finding fixed (see review). p98: cheek top is a semicircle concentric with the axle.",
       "assessment": "reasonable"
     },
     {
@@ -14444,11 +14483,11 @@
       "id": 366,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-94 lane, integrated by primary agent",
-        "reviewPass": 94,
-        "reviewedOn": "2026-09-27",
-        "evidence": "docs/p94-a-review.md",
-        "note": "Pass 94: flaw fixed; checked in default, rotated and phase captures beside the plate."
+        "reviewer": "Claude Opus 5.5 — pass-98 lane, integrated by primary agent",
+        "reviewPass": 98,
+        "reviewedOn": "2026-09-28",
+        "evidence": "docs/p98-e-review.md",
+        "note": "Pass 98: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -14470,16 +14509,17 @@
         "docs/p64-audit-review.md",
         "docs/p90-fe-review.md",
         "docs/p92-h-review.md",
-        "docs/p94-a-review.md"
+        "docs/p94-a-review.md",
+        "docs/p98-e-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-treadle-drills.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-27",
+      "updatedOn": "2026-09-28",
       "visibleFlaws": "",
-      "limits": "Feed schedules and screw dimensions inferred; cutting forces unvalidated. p90: levers, link and treadle in the shaft plane; yoke and extra link removed; slotted lever end on the collar pin. Pass 92: pins no longer sit on part edges; each carrying part has a round eye or end centred on its pin. p94: the frame column and crank stand where Brown draws them (crank radius 0.85); the bit is a flat spear-point blade.",
+      "limits": "Feed schedules and screw dimensions inferred; cutting forces unvalidated. p90: levers, link and treadle in the shaft plane; yoke and extra link removed; slotted lever end on the collar pin. Pass 92: pins no longer sit on part edges; each carrying part has a round eye or end centred on its pin. p94: the frame column and crank stand where Brown draws them (crank radius 0.85); the bit is a flat spear-point blade. Pass 98: the shared turned handle, seated through the arm/eye/bar to 0.005 inside the far face. The arm is round-ended.",
       "assessment": "reasonable"
     },
     {
@@ -14528,11 +14568,11 @@
       "id": 368,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-91/92 lane, integrated by primary agent",
-        "reviewPass": 92,
-        "reviewedOn": "2026-09-27",
-        "evidence": "docs/p92-e-review.md",
-        "note": "Pass 91–92: flaw fixed; checked in default, rotated and phase captures beside the plate."
+        "reviewer": "Claude Opus 5.5 — pass-98 lane, integrated by primary agent",
+        "reviewPass": 98,
+        "reviewedOn": "2026-09-28",
+        "evidence": "docs/p98-e-review.md",
+        "note": "Pass 98: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -14559,16 +14599,17 @@
         "docs/p81-audit-review.md",
         "docs/p90-fe-review.md",
         "docs/p92-h-review.md",
-        "docs/p92-e-review.md"
+        "docs/p92-e-review.md",
+        "docs/p98-e-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-cylinder-spiral-scribers.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-27",
+      "updatedOn": "2026-09-28",
       "visibleFlaws": "",
-      "limits": "The rack runs off the top of the frame, as in the plate. Bevels use approximate back-cone flanks. At the user's suggestion the rack is see-through in front of its pinion so both sets of teeth show, where Brown draws it behind (moving it behind reverses his spiral line). p90: low-severity audit finding fixed (see review). Pass 92: the crank handle is the shared turned handle on a crank end rounded about its axis. Pass 92: the crank throw hangs below the shaft at the default pose, as Brown draws it.",
+      "limits": "The rack runs off the top of the frame, as in the plate. Bevels use approximate back-cone flanks. At the user's suggestion the rack is see-through in front of its pinion so both sets of teeth show, where Brown draws it behind (moving it behind reverses his spiral line). p90: low-severity audit finding fixed (see review). Pass 92: the crank handle is the shared turned handle on a crank end rounded about its axis. Pass 92: the crank throw hangs below the shaft at the default pose, as Brown draws it. Pass 98: the turned handle runs through the arm as one turned piece, ending 0.005 inside the far face.",
       "assessment": "reasonable"
     },
     {
@@ -14613,11 +14654,11 @@
       "id": 370,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-95 lane, integrated by primary agent",
-        "reviewPass": 95,
-        "reviewedOn": "2026-09-27",
-        "evidence": "docs/p95-review.md",
-        "note": "Pass 95: Relative to the rails the mirror still sits somewhat higher than Brown's (0.59 of the way down the bar against 0.73)."
+        "reviewer": "Claude Opus 5.5 — pass-98 lane, integrated by primary agent",
+        "reviewPass": 98,
+        "reviewedOn": "2026-09-28",
+        "evidence": "docs/p98-e-review.md",
+        "note": "Pass 98: Relative to the rails the mirror still sits somewhat higher than Brown's (0.59 of the way down the bar against 0.73)."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -14639,16 +14680,17 @@
         "docs/p86-4b-review.md",
         "docs/p90-u1-review.md",
         "docs/p92-h-review.md",
-        "docs/p95-review.md"
+        "docs/p95-review.md",
+        "docs/p98-e-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-mirror-polishers.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-27",
+      "updatedOn": "2026-09-28",
       "visibleFlaws": "Relative to the rails the mirror still sits somewhat higher than Brown's (0.59 of the way down the bar against 0.73).",
-      "limits": "Mirror and ratchet behind the bar as drawn; indexing and the carrier stroke are prescribed; the telescoping follower is illustrative; no polishing load. The mirror axle crosses the rail's depth, which bounds the mirror's position. At Brown's proportions the axle would pass 0.9 into the lower rail at the bottom of the 1.44 stroke. p86: the hidden click is a bored J-hook seated in the root of a 12-tooth saw ratchet with 0.12 pitch of carrier backlash; its eye sits at the model's carrier pivot, so it is shorter than Brown's. p90: the click pushes the 12-tooth ratchet anticlockwise as Brown draws; one bored plate with an arc blade, seated in the root while driving, resting on the passed tip then dropping at a finite rate on return; 0.2 pitch of carrier backlash. Pass 92: the crank handle is the shared turned handle on a crank end rounded about its axis. p95: further alternatives tried and recorded in docs/p95-review.md.",
+      "limits": "Mirror and ratchet behind the bar as drawn; indexing and the carrier stroke are prescribed; the telescoping follower is illustrative; no polishing load. The mirror axle crosses the rail's depth, which bounds the mirror's position. At Brown's proportions the axle would pass 0.9 into the lower rail at the bottom of the 1.44 stroke. p86: the hidden click is a bored J-hook seated in the root of a 12-tooth saw ratchet with 0.12 pitch of carrier backlash; its eye sits at the model's carrier pivot, so it is shorter than Brown's. p90: the click pushes the 12-tooth ratchet anticlockwise as Brown draws; one bored plate with an arc blade, seated in the root while driving, resting on the passed tip then dropping at a finite rate on return; 0.2 pitch of carrier backlash. Pass 92: the crank handle is the shared turned handle on a crank end rounded about its axis. p95: further alternatives tried and recorded in docs/p95-review.md. Pass 98: the turned handle runs through the arm as one turned piece, ending 0.005 inside the far face.",
       "assessment": "minor"
     },
     {
@@ -14995,11 +15037,11 @@
       "id": 379,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-96 lane, integrated by primary agent",
-        "reviewPass": 96,
+        "reviewer": "Claude Opus 5.5 — pass-98 lane, integrated by primary agent",
+        "reviewPass": 98,
         "reviewedOn": "2026-09-28",
-        "evidence": "docs/p96-fe-review.md",
-        "note": "Pass 96: flaw fixed; checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p98-e-review.md",
+        "note": "Pass 98: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -15015,7 +15057,8 @@
         "docs/p64-audit-review.md",
         "docs/p87-l-review.md",
         "docs/p90-u2-review.md",
-        "docs/p96-fe-review.md"
+        "docs/p96-fe-review.md",
+        "docs/p98-e-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -15024,18 +15067,18 @@
       },
       "updatedOn": "2026-09-28",
       "visibleFlaws": "",
-      "limits": "Feed schedules, screw dimensions and thrust capture inferred; cutting forces, workpiece removal and full fastener/support load paths unvalidated. Pass 87: the C-frame is one extrusion of constant section, its arm ends buried in the journals; the feed nut is enlarged to 0.34 to bury the arm end. p90: the crank bar end is an arc about the turned handle, whose foot is sunk into it (no lip). p96: the feed screw is one solid right-hand V-thread in one colour in a threaded nut; the bit is a flat spear drill.",
+      "limits": "Feed schedules, screw dimensions and thrust capture inferred; cutting forces, workpiece removal and full fastener/support load paths unvalidated. Pass 87: the C-frame is one extrusion of constant section, its arm ends buried in the journals; the feed nut is enlarged to 0.34 to bury the arm end. p90: the crank bar end is an arc about the turned handle, whose foot is sunk into it (no lip). p96: the feed screw is one solid right-hand V-thread in one colour in a threaded nut; the bit is a flat spear drill. Pass 98: the turned handle runs through the arm as one turned piece, ending 0.005 inside the far face.",
       "assessment": "reasonable"
     },
     {
       "id": 380,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-96 lane, integrated by primary agent",
-        "reviewPass": 96,
+        "reviewer": "Claude Opus 5.5 — pass-98 lane, integrated by primary agent",
+        "reviewPass": 98,
         "reviewedOn": "2026-09-28",
-        "evidence": "docs/p96-fe-review.md",
-        "note": "Pass 96: flaw fixed; checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p98-e-review.md",
+        "note": "Pass 98: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -15051,7 +15094,8 @@
         "docs/p64-audit-review.md",
         "docs/p87-l-review.md",
         "docs/p90-u2-review.md",
-        "docs/p96-fe-review.md"
+        "docs/p96-fe-review.md",
+        "docs/p98-e-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -15060,7 +15104,7 @@
       },
       "updatedOn": "2026-09-28",
       "visibleFlaws": "",
-      "limits": "Feed schedules, screw dimensions and thrust capture inferred; cutting forces, workpiece removal and full fastener/support load paths unvalidated. Pass 87: the C-clamp is one extrusion with the lower arm chamfered up to the flush work rest; the upper nut is enlarged to 0.44; the tall nut and stacked collars are simpler in Brown's plate. p90: 379's turned handle, with plate-380 proportions; no lip; end rings clear of the thread faces. The bar ends at the hub, without Brown's raised boss or his extension past the axis. p96: the feed screw is one solid right-hand V-thread in one colour, slimmed to the nut; a flat spear drill in a short chuck (thrust collar and chuck still two blocks where Brown draws one).",
+      "limits": "Feed schedules, screw dimensions and thrust capture inferred; cutting forces, workpiece removal and full fastener/support load paths unvalidated. Pass 87: the C-clamp is one extrusion with the lower arm chamfered up to the flush work rest; the upper nut is enlarged to 0.44; the tall nut and stacked collars are simpler in Brown's plate. p90: 379's turned handle, with plate-380 proportions; no lip; end rings clear of the thread faces. The bar ends at the hub, without Brown's raised boss or his extension past the axis. p96: the feed screw is one solid right-hand V-thread in one colour, slimmed to the nut; a flat spear drill in a short chuck (thrust collar and chuck still two blocks where Brown draws one). Pass 98: the turned handle runs through the arm as one turned piece, ending 0.005 inside the far face.",
       "assessment": "reasonable"
     },
     {
@@ -16390,11 +16434,11 @@
       "id": 413,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-88 lane, integrated by primary agent",
-        "reviewPass": 88,
-        "reviewedOn": "2026-09-27",
-        "evidence": "docs/p88-y-review.md",
-        "note": "Pass 88: flaw fixed; checked in default, rotated and phase captures beside the plate."
+        "reviewer": "Claude Opus 5.5 — pass-98 lane, integrated by primary agent",
+        "reviewPass": 98,
+        "reviewedOn": "2026-09-28",
+        "evidence": "docs/p98-e-review.md",
+        "note": "Pass 98: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -16411,16 +16455,17 @@
         "docs/pass53-user-review.md",
         "docs/p59-audit-bd-review.md",
         "docs/p62-audit-review.md",
-        "docs/p88-y-review.md"
+        "docs/p88-y-review.md",
+        "docs/p98-e-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-adjustable-friction-gears.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-27",
+      "updatedOn": "2026-09-28",
       "visibleFlaws": "",
-      "limits": "Friction contact/adjustment imposed; split-wheel compliance, clamping pressure, slip capacity and nut preload unsolved. p88: the rendered rigid V flanks stand 0.005 inside the unloaded rubber cone and stop 0.003 short of its end planes; the collar buried in nut B is not drawn.",
+      "limits": "Friction contact/adjustment imposed; split-wheel compliance, clamping pressure, slip capacity and nut preload unsolved. p88: the rendered rigid V flanks stand 0.005 inside the unloaded rubber cone and stop 0.003 short of its end planes; the collar buried in nut B is not drawn. Pass 98: one turned handle 0.40 long as drawn (was a 0.82 rod plus ellipsoid), seated through the flank.",
       "assessment": "reasonable"
     },
     {
@@ -16548,11 +16593,11 @@
       "id": 417,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-91/92 lane, integrated by primary agent",
-        "reviewPass": 92,
-        "reviewedOn": "2026-09-27",
-        "evidence": "docs/p91-w-review.md",
-        "note": "Pass 91–92: flaw fixed; checked in default, rotated and phase captures beside the plate."
+        "reviewer": "Claude Opus 5.5 — pass-98 lane, integrated by primary agent",
+        "reviewPass": 98,
+        "reviewedOn": "2026-09-28",
+        "evidence": "docs/p98-e-review.md",
+        "note": "Pass 98: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -16571,16 +16616,17 @@
         "docs/m6-402-507-review.md",
         "docs/p64-audit-review.md",
         "docs/p90-fe-review.md",
-        "docs/p91-w-review.md"
+        "docs/p91-w-review.md",
+        "docs/p98-e-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-bent-shaft-slides.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-27",
+      "updatedOn": "2026-09-28",
       "visibleFlaws": "",
-      "limits": "The bent end (14°) and the swivel ball in C are reconstructed; rod B leans the same way as the plate's bold and dotted poses. p90: low-severity audit finding fixed (see review). p91: white or near-white parts recoloured by role (pins steel, washers brass, panels stone); no geometry change.",
+      "limits": "The bent end (14°) and the swivel ball in C are reconstructed; rod B leans the same way as the plate's bold and dotted poses. p90: low-severity audit finding fixed (see review). p91: white or near-white parts recoloured by role (pins steel, washers brass, panels stone); no geometry change. Pass 98: the shared turned handle, seated through the arm/eye/bar to 0.005 inside the far face. The arm is round-ended; the rod plus ball is gone.",
       "assessment": "reasonable"
     },
     {
@@ -18084,11 +18130,11 @@
       "id": 453,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-88 lane, integrated by primary agent",
-        "reviewPass": 88,
-        "reviewedOn": "2026-09-27",
-        "evidence": "docs/p88-p-review.md",
-        "note": "Pass 88: flaw fixed; checked in default, rotated and phase captures beside the plate."
+        "reviewer": "Claude Opus 5.5 — pass-98 lane, integrated by primary agent",
+        "reviewPass": 98,
+        "reviewedOn": "2026-09-28",
+        "evidence": "docs/p98-e-review.md",
+        "note": "Pass 98: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -18107,16 +18153,17 @@
         "docs/p69-w2-review.md",
         "docs/p70-a-review.md",
         "docs/p73-audit-review.md",
-        "docs/p88-p-review.md"
+        "docs/p88-p-review.md",
+        "docs/p98-e-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-lantern-bellows-pumps.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-27",
+      "updatedOn": "2026-09-28",
       "visibleFlaws": "",
-      "limits": "Bellows water and flap timing are prescribed; the riser's run behind the post, beyond Brown's break, is reconstructed; the bellows skins are clamped 0.05 into the chest top and top plates. Pass 88: the water is one continuous body (suction, chest, bellows columns and riser meeting without internal sheets), 0.008 off every wall, partition and flap; the suction water is drawn as see-through water, not an opaque section; the hinge pins end inside their journals.",
+      "limits": "Bellows water and flap timing are prescribed; the riser's run behind the post, beyond Brown's break, is reconstructed; the bellows skins are clamped 0.05 into the chest top and top plates. Pass 88: the water is one continuous body (suction, chest, bellows columns and riser meeting without internal sheets), 0.008 off every wall, partition and flap; the suction water is drawn as see-through water, not an opaque section; the hinge pins end inside their journals. Pass 98: the undrawn beam grip is removed; the beam ends plain as drawn.",
       "assessment": "reasonable"
     },
     {
@@ -18691,11 +18738,11 @@
       "id": 467,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-96 lane, integrated by primary agent",
-        "reviewPass": 96,
+        "reviewer": "Claude Opus 5.5 — pass-98 lane, integrated by primary agent",
+        "reviewPass": 98,
         "reviewedOn": "2026-09-28",
-        "evidence": "docs/p96-ff-review.md",
-        "note": "Pass 96: flaw fixed; checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p98-e-review.md",
+        "note": "Pass 98: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -18719,7 +18766,8 @@
         "docs/p69-w3-review.md",
         "docs/p73-audit-review.md",
         "docs/p88-p-review.md",
-        "docs/p96-ff-review.md"
+        "docs/p96-ff-review.md",
+        "docs/p98-e-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -18728,7 +18776,7 @@
       },
       "updatedOn": "2026-09-28",
       "visibleFlaws": "",
-      "limits": "The return passage stands full. Pass 88: the pressure water stands 0.005 off the ram top and cap; the swing-link pin and the pipe water's foot are recessed. p96: the handle widens into a socket with a turned grip.",
+      "limits": "The return passage stands full. Pass 88: the pressure water stands 0.005 off the ram top and cap; the swing-link pin and the pipe water's foot are recessed. p96: the handle widens into a socket with a turned grip. Pass 98: the grip sleeves the bar end with a smooth turned profile; its ferrule (r 0.115) encloses the bar corners.",
       "assessment": "reasonable"
     },
     {
@@ -19660,11 +19708,11 @@
       "id": 490,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-96 lane, integrated by primary agent",
-        "reviewPass": 96,
+        "reviewer": "Claude Opus 5.5 — pass-98 lane, integrated by primary agent",
+        "reviewPass": 98,
         "reviewedOn": "2026-09-28",
-        "evidence": "docs/p96-ff-review.md",
-        "note": "Pass 96: flaw fixed; checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p98-e-review.md",
+        "note": "Pass 98: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -19688,7 +19736,8 @@
         "docs/p63-audit-review.md",
         "docs/p74-a-review.md",
         "docs/p81-audit-review.md",
-        "docs/p96-ff-review.md"
+        "docs/p96-ff-review.md",
+        "docs/p98-e-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -19697,7 +19746,7 @@
       },
       "updatedOn": "2026-09-28",
       "visibleFlaws": "",
-      "limits": "Every free rope span is straight and taut; an ordinary tiller lengthens the taut rope by up to 0.189 (1.4%) at full helm, treated as rope stretch; tension, friction and axial creep on the barrel are not solved. p96: each guide bracket ends in a small foot flange.",
+      "limits": "Every free rope span is straight and taut; an ordinary tiller lengthens the taut rope by up to 0.189 (1.4%) at full helm, treated as rope stretch; tension, friction and axial creep on the barrel are not solved. p96: each guide bracket ends in a small foot flange. Pass 98: smooth shared turned handles seated through the rim tube (were faceted with two swellings).",
       "assessment": "reasonable"
     },
     {
@@ -20317,11 +20366,11 @@
       "id": 506,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-91/92 lane, integrated by primary agent",
-        "reviewPass": 92,
-        "reviewedOn": "2026-09-27",
-        "evidence": "docs/p92-h-review.md",
-        "note": "Pass 91–92: flaw fixed; checked in default, rotated and phase captures beside the plate."
+        "reviewer": "Claude Opus 5.5 — pass-98 lane, integrated by primary agent",
+        "reviewPass": 98,
+        "reviewedOn": "2026-09-28",
+        "evidence": "docs/p98-e-review.md",
+        "note": "Pass 98: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -20339,16 +20388,17 @@
         "docs/pass53-user-review.md",
         "docs/p54-marks-review.md",
         "docs/p64-audit-review.md",
-        "docs/p92-h-review.md"
+        "docs/p92-h-review.md",
+        "docs/p98-e-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-epicyclic-trains.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-27",
+      "updatedOn": "2026-09-28",
       "visibleFlaws": "",
-      "limits": "Tooth counts, exact proportions and support depths inferred. Approximate bevel flanks; loaded backlash/friction unvalidated. Pass 92: the crank handle is the shared turned handle on a crank end rounded about its axis.",
+      "limits": "Tooth counts, exact proportions and support depths inferred. Approximate bevel flanks; loaded backlash/friction unvalidated. Pass 92: the crank handle is the shared turned handle on a crank end rounded about its axis. Pass 98: the turned handle runs through the arm as one turned piece, ending 0.005 inside the far face.",
       "assessment": "reasonable"
     },
     {

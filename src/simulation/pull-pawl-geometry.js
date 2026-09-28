@@ -15,11 +15,31 @@ export function sourceContour(commands,transform=p=>p,divisions=18){
  return shape.getPoints(divisions).map(v=>v.toArray());
 }
 
+// A round end that is a true arc concentric with its pin: straight edges run
+// from the given far points tangent to a circle of radius r (pixels) about the
+// pin, joined by the arc on the side away from the far points. Returned as
+// source-pixel 'L' commands from the first tangent point to the second.
+export function concentricEnd(far1,far2,c,r,n=96){
+ const tangent=(P,other)=>{
+  const d=Math.hypot(P[0]-c[0],P[1]-c[1]),base=Math.atan2(P[1]-c[1],P[0]-c[0]),alpha=Math.acos(r/d),
+   options=[base+alpha,base-alpha];
+  // The tangent point on the far side from the other edge.
+  return options.map(a=>[a,Math.hypot(c[0]+r*Math.cos(a)-other[0],c[1]+r*Math.sin(a)-other[1])]).sort((x,y)=>y[1]-x[1])[0][0];
+ };
+ const a1=tangent(far1,far2),a2=tangent(far2,far1),mid=[(far1[0]+far2[0])/2,(far1[1]+far2[1])/2],
+  sweep=d=>{let b=a2;while((b-a1)*d<0)b+=2*Math.PI*d;return b;},
+  arcs=[1,-1].map(d=>{const b=sweep(d),m=(a1+b)/2;return[b,Math.hypot(c[0]+r*Math.cos(m)-mid[0],c[1]+r*Math.sin(m)-mid[1])];}),
+  b=arcs[0][1]>arcs[1][1]?arcs[0][0]:arcs[1][0],out=[];
+ for(let i=0;i<=n;i++){const a=a1+(b-a1)*i/n;out.push(['L',c[0]+r*Math.cos(a),c[1]+r*Math.sin(a)]);}
+ return out;
+}
+
 export function makePullPawlGeometry({phase=1.115052755202599,rootRadius=.872,rootAngle=-.045,leftRearRelief=true,leftRearLimit=304,leftRearTop=553}={}){
  const center=[590.1847816329412,748.5887383490219],scale=379.2944180983833,
   source=p=>[(p[0]-center[0])/scale,(center[1]-p[1])/scale],
   A=source([598.0604838709677,272.83266129032256]),
-  pivots={left:source([431.5703125,259.177734375]),right:source([765.4758364312268,269.70260223048325])},
+  pivotPx={left:[431.5703125,259.177734375],right:[765.4758364312268,269.70260223048325]},
+  pivots={left:source(pivotPx.left),right:source(pivotPx.right)},
   hooks={left:source([316,553]),right:source([478,401])},
   arms=Object.fromEntries(Object.entries(pivots).map(([k,p])=>[k,sub(p,A)])),
   lengths=Object.fromEntries(Object.entries(hooks).map(([k,p])=>[k,Math.hypot(...sub(p,pivots[k]))])),
@@ -63,8 +83,11 @@ export function makePullPawlGeometry({phase=1.115052755202599,rootRadius=.872,ro
  attach('wheelAxleRearCap',disk(.049,-.20,-.18),'fixed',PALETTE.muted);
  attach('wheelAxleFrontCap',disk(.055,.355,.375),'fixed',PALETTE.muted);
 
- const frameOuter=[['M',310,1146],['Q',322,1125,327,1096],['L',554,367],['L',567,300],['Q',570,255,599,251],
-  ['Q',634,255,642,301],['L',816,1000],['Q',846,1123,861,1146],['L',880,1150],['L',884,1170],
+ // The apex is a true arc concentric with the rocker axle A (radius 36 px,
+ // the right leg's own distance from A), both legs straight tangents from
+ // their feet; the traced apex was centred 0.02 above A.
+ const Apx=[598.0604838709677,272.83266129032256],
+  frameOuter=[['M',310,1146],['Q',322,1125,327,1096],...concentricEnd([327,1096],[816,1000],Apx,36),['L',816,1000],['Q',846,1123,861,1146],['L',880,1150],['L',884,1170],
   ['L',728,1170],['L',728,1151],['Q',781,1154,765,1084],['L',705,826],['Q',699,782,650,779],
   ['L',523,780],['Q',481,782,469,821],['L',394,1105],['Q',383,1131,402,1148],['L',421,1151],
   ['L',427,1170],['L',269,1170],['L',270,1153],['L',310,1146]],
@@ -74,25 +97,30 @@ export function makePullPawlGeometry({phase=1.115052755202599,rootRadius=.872,ro
    poly(circle([0,0],.036)),poly(circle(A,.036)));
  attach('frameA',plate(frameShape,.215,.315),'fixed',PALETTE.muted);
  attach('frameWheelBoss',ring(.036,.10,.315,.35),'fixed',PALETTE.muted);
- attach('framePivotBoss',ring(.036,.115,.315,.34),'fixed',PALETTE.muted,[...A,0]);
+ attach('framePivotBoss',ring(.036,.09,.315,.34),'fixed',PALETTE.muted,[...A,0]);
  attach('rockerAxle',disk(.033,.18,.46),'fixed',PALETTE.muted,[...A,0]);
  attach('rockerAxleCap',disk(.051,.46,.48),'fixed',PALETTE.muted,[...A,0]);
 
- const leverOuter=[['M',432,223],['Q',391,226,391,257],['Q',388,290,431,295],['L',742,301],
-  ['Q',766,315,790,289],['L',817,295],['Q',842,303,867,301],['L',1213,309],
+ // The left end is a true arc concentric with the left pawl pin; the right
+ // pin's eye is a circle concentric with it (unioned below). Both replace
+ // traced lopsided bulges.
+ const leverOuter=[['M',758,233],...concentricEnd([758,233],[742,301],pivotPx.left,36),['L',742,301],
+  ['L',790,289],['L',817,295],['Q',842,303,867,301],['L',1213,309],
   // Brown's swallowtail break notch is drawing notation: finish the hand
   // lever with a whole rounded end.
-  ['Q',1247,306,1246,285],['Q',1245,263,1228,261],['L',861,252],['Q',833,243,802,255],['L',787,250],['Q',776,231,758,233],['L',432,223]],
-  leverLocal=v=>sub(source(v),A),leverShape=clip.difference(poly(sourceContour(leverOuter,leverLocal)),
+  ['Q',1247,306,1246,285],['Q',1245,263,1228,261],['L',861,252],['Q',833,243,802,255],['L',787,250],['L',758,233]],
+  leverLocal=v=>sub(source(v),A),leverShape=clip.difference(clip.union(poly(sourceContour(leverOuter,leverLocal)),poly(circle(arms.right,42/scale))),
    poly(circle([0,0],.036)),...Object.values(arms).map(v=>poly(circle(v,.037))));
  attach('rockerB',plate(leverShape,.355,.435),'lever',PALETTE.driver);
  attach('rockerPivotBoss',ring(.036,.115,.435,.455),'lever',PALETTE.driver);
  const contours={
-  left:[['M',391,282],['L',244,523],['Q',232,543,241,552],['Q',249,566,275,560],['L',322,556],
-   ['Q',326,550,313,548],['Q',290,544,278,536],['Q',272,533,280,522],['L',432,289],['Q',456,270,449,249],
-   ['Q',439,230,419,240],['Q',398,249,391,282]],
-  right:[['M',748,248],['L',456,380],['Q',430,391,439,401],['Q',450,412,478,406],['L',479,392],
-   ['L',735,309],['Q',771,306,783,279],['Q',788,249,762,245],['Q',752,245,748,248]]},
+  // Each pawl's eye is a true arc concentric with its pin (radius 24 and
+  // 28 px), the bar edges running straight and tangent into it from the
+  // traced hook; the traced eyes were egg-shaped and off the pin.
+  left:[['M',244,523],['Q',232,543,241,552],['Q',249,566,275,560],['L',322,556],
+   ['Q',326,550,313,548],['Q',290,544,278,536],['Q',272,533,280,522],...concentricEnd([280,522],[244,523],pivotPx.left,24),['L',244,523]],
+  right:[['M',456,380],['Q',430,391,439,401],['Q',450,412,478,406],['L',479,392],
+   ...concentricEnd([479,392],[456,380],pivotPx.right,28),['L',456,380]]},
   toes={left:[['M',244,523],['Q',232,543,241,552],['Q',249,566,275,560],['L',322,556],
    ['Q',326,550,313,548],['Q',290,544,278,536],['Q',272,533,280,522],['L',244,523]],
    right:[['M',456,380],['Q',430,391,439,401],['Q',450,412,478,406],['L',479,392],['L',484,390],['L',477,370],['L',456,380]]};

@@ -444,27 +444,6 @@ function pileDriverReleasingHooks(movement) {
   // ------------------------------------------------------ rope block (monkey)
   const block = new THREE.Group();
   block.userData.role = 'rope-block-carrying-pliers-jaws';
-  const stirrupRight = [[66.5, 94], [67, 84], [63.5, 73], [55, 62], [41, 52], [25, 43], [11, 33], [2, 23], [0, 20.5]];
-  // p96: each stirrup band is one smooth strip (a centripetal spline through
-  // the traced centreline, offset by its half-width) rather than a chain of
-  // capsules; it is a little broader than the traced 3.8 px so it reads as a
-  // cast band, not a wire. Brown leaves the space inside the bands open.
-  const bandHalf = 2.6;
-  const bandStrip = (points) => {
-    const curve = new THREE.CatmullRomCurve3(points.map(([x, y]) => new THREE.Vector3(x, y, 0)), false, 'centripetal');
-    const left = [], right = [];
-    for (let i = 0; i <= 96; i += 1) {
-      const p = curve.getPoint(i / 96), t = curve.getTangent(i / 96);
-      left.push([p.x - bandHalf * t.y, p.y + bandHalf * t.x]);
-      right.push([p.x + bandHalf * t.y, p.y - bandHalf * t.x]);
-    }
-    // Carry the ends on into the bar above and the block below.
-    const a = curve.getTangent(0), b = curve.getTangent(1);
-    const extend = (q, t, d) => [q[0] + d * t.x, q[1] + d * t.y];
-    left.unshift(extend(left[0], a, -4)); right.unshift(extend(right[0], a, -4));
-    left.push(extend(left.at(-1), b, 3)); right.push(extend(right.at(-1), b, 3));
-    return poly([...left, ...right.reverse()]);
-  };
   // Round ears concentric with the jaw pivots, joined to the block's sides
   // (the pivots sat on the block's edges with the old free-standing discs).
   const EAR_RADIUS = 10.5;
@@ -481,14 +460,156 @@ function pileDriverReleasingHooks(movement) {
     poly([[-35, 84], [35, 84], [35, 94], [-35, 94]]),
     poly([[-24.5, 67], [24.5, 67], [24.5, 84], [-24.5, 84]]),
     poly([[-24.5, 67], [0, 49], [24.5, 67]]),
-    bandStrip(stirrupRight),
-    bandStrip(stirrupRight.map(([x, y]) => [-x, y])),
     poly([[-STOP_HALF, BLOCK_BOTTOM], [STOP_HALF, BLOCK_BOTTOM], [STOP_HALF, 10], [26, 10], [24, 34], [0, 21], [-24, 34], [-26, 10], [-STOP_HALF, 10]]),
     ear(1),
     ear(-1),
   );
   const casting = slab(castingOutline.map((polygon) => polygon.map((ring) => scaled(ring))), ...BLOCK_Z, blockMaterial,
     'rope-block-casting-bar-web-stirrup-and-pivot-ears');
+  // p98 (the user's review): Brown's two curved members between the jaws
+  // are springs, not cast stirrups. They are one bowed steel leaf seated at
+  // its middle in the V at the top of the pivot block; each free end bears
+  // on the inside of a jaw arm below the crossbar and pushes it outward, so
+  // the feet close under the T head except at the top, where slot B presses
+  // the horns in against the leaf and the jaws open. Brown's section shows
+  // the leaf passing through an open slot between the hatched stem pieces;
+  // behind it a thin web (set back behind the leaf) joins the crossbar's
+  // stem to the pivot block, as the stem's unsectioned back.
+  const SPRING_Z = [-0.5, -0.04];
+  const stemWeb = slab(poly(scaled([[-7, 16], [7, 16], [7, 58], [-7, 58]])), -0.69, SPRING_Z[0] - 0.02,
+    blockMaterial, 'rope-block-stem-web-behind-the-spring-slot');
+  block.add(stemWeb);
+  const SPRING_HALF = 1.6;
+  const springRightArm = [[0, 22.6], [11, 31.3], [25, 42.5], [41, 52], [55, 62], [63.5, 73], [67, 84], [66.6, 90]];
+  const springRest = (() => {
+    const pts = [...springRightArm.slice(1).map(([x, y]) => [-x, y]).reverse(), ...springRightArm];
+    const curve = new THREE.CatmullRomCurve3(pts.map(([x, y]) => new THREE.Vector3(x, y, 0)), false, 'centripetal');
+    const count = 241;
+    const samples = curve.getSpacedPoints(count - 1).map((p) => [p.x, p.y]);
+    // Arc length from the seated middle, normalised per arm (0 at the seat,
+    // 1 at each free end).
+    const mid = (count - 1) / 2;
+    const length = [0];
+    for (let i = 1; i < count; i += 1) length.push(length[i - 1] + Math.hypot(samples[i][0] - samples[i - 1][0], samples[i][1] - samples[i - 1][1]));
+    const u = samples.map((_, i) => Math.abs(length[i] - length[mid]) / (length[count - 1] - length[mid]));
+    return { samples, u, count, mid };
+  })();
+  // A cantilever carrying an end load: deflection shape (3u^2 - u^3) / 2
+  // keeps the seat and its tangent fixed.
+  const springShape = (u) => (3 * u * u - u * u * u) / 2;
+  const springCenterline = (dx) => springRest.samples.map(([x, y], i) => {
+    const w = springShape(springRest.u[i]) * dx;
+    return [x + (x >= 0 ? w : -w), y];
+  });
+  const springOutline = (dx) => {
+    const c = springCenterline(dx);
+    const left = [], right = [];
+    for (let i = 0; i < c.length; i += 1) {
+      const a = c[Math.max(0, i - 1)], b = c[Math.min(c.length - 1, i + 1)];
+      const tx = b[0] - a[0], ty = b[1] - a[1], l = Math.hypot(tx, ty);
+      left.push([c[i][0] - SPRING_HALF * ty / l, c[i][1] + SPRING_HALF * tx / l]);
+      right.push([c[i][0] + SPRING_HALF * ty / l, c[i][1] - SPRING_HALF * tx / l]);
+    }
+    return { left, right };
+  };
+  // Tip deflection (right arm, + outward) at which the leaf just bears on the
+  // right jaw at opening angle phi (0.15 px running clearance).
+  const springClearance = 0.15;
+  // Only the upper part of each arm can reach the jaw (checked over the
+  // whole leaf in the tests); the jaw's inner edge runs from outline index
+  // 84 (below the arm's inner face) round to the horn tip.
+  const jawInnerEdge = JAW_OUTLINE.slice(84);
+  // Signed distance to the inner edge: negative inside the jaw (running up
+  // the inner edge, the jaw lies on the right).
+  const innerEdgeSignedDistance = (point) => {
+    let best = Infinity, sign = 1;
+    for (let i = 0; i + 1 < jawInnerEdge.length; i += 1) {
+      const a = jawInnerEdge[i], b = jawInnerEdge[i + 1];
+      const ex = b[0] - a[0], ey = b[1] - a[1];
+      const t = THREE.MathUtils.clamp(((point[0] - a[0]) * ex + (point[1] - a[1]) * ey) / (ex * ex + ey * ey), 0, 1);
+      const d = Math.hypot(point[0] - a[0] - t * ex, point[1] - a[1] - t * ey);
+      if (d < best) { best = d; sign = ex * (point[1] - a[1]) - ey * (point[0] - a[0]) > 0 ? 1 : -1; }
+    }
+    return sign * best;
+  };
+  const touchStart = springRest.mid + Math.round(0.55 * springRest.mid);
+  const springTouches = (dx, phi) => {
+    const c = springRest.samples, n = springRest.count;
+    const cosine = Math.cos(-phi), sine = Math.sin(-phi);
+    const at = (i) => [c[i][0] + springShape(springRest.u[i]) * dx, c[i][1]];
+    for (let i = touchStart; i < n; i += 2) {
+      const p = at(i), a = at(Math.max(0, i - 1)), b = at(Math.min(n - 1, i + 1));
+      const tx = b[0] - a[0], ty = b[1] - a[1], l = Math.hypot(tx, ty);
+      for (const side of [1, -1]) {
+        const x = p[0] - side * SPRING_HALF * ty / l - PIVOT_X, y = p[1] + side * SPRING_HALF * tx / l;
+        const q = [x * cosine - y * sine, x * sine + y * cosine];
+        if (innerEdgeSignedDistance(q) < springClearance) return true;
+      }
+    }
+    return false;
+  };
+  const springDeflectionAt = (phi) => {
+    let low = -40, high = 12;
+    for (let k = 0; k < 17; k += 1) {
+      const mid = (low + high) / 2;
+      if (springTouches(mid, phi)) high = mid; else low = mid;
+    }
+    return low;
+  };
+  const springMaterial = matte(PALETTE.ink, { metalness: 0.35, roughness: 0.45 });
+  // A closed strip: each of its four long faces has its own vertices (sharp
+  // edges, smooth along the leaf), and both ends are capped.
+  const springGeometry = new THREE.BufferGeometry();
+  {
+    const n = springRest.count;
+    springGeometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array((n * 8 + 8) * 3), 3));
+    const index = [];
+    for (let i = 0; i < n - 1; i += 1) {
+      for (let c = 0; c < 4; c += 1) {
+        const a = i * 8 + 2 * c, b = a + 1;
+        index.push(a, b, a + 8, b, b + 8, a + 8);
+      }
+    }
+    const cap = n * 8;
+    index.push(cap, cap + 2, cap + 1, cap, cap + 3, cap + 2, cap + 4, cap + 5, cap + 6, cap + 4, cap + 6, cap + 7);
+    springGeometry.setIndex(index);
+  }
+  let springDeflection = null;
+  const writeSpring = (dx) => {
+    if (springDeflection === dx) return;
+    springDeflection = dx;
+    const { left, right } = springOutline(dx);
+    const position = springGeometry.attributes.position;
+    const n = springRest.count;
+    const corner = (i, c) => {
+      const [[x, y], z] = [[left[i], SPRING_Z[0]], [left[i], SPRING_Z[1]], [right[i], SPRING_Z[1]], [right[i], SPRING_Z[0]]][c % 4];
+      return [x * S, y * S, z];
+    };
+    for (let i = 0; i < n; i += 1) {
+      for (let c = 0; c < 4; c += 1) {
+        position.setXYZ(i * 8 + 2 * c, ...corner(i, c));
+        position.setXYZ(i * 8 + 2 * c + 1, ...corner(i, c + 1));
+      }
+    }
+    for (let c = 0; c < 4; c += 1) {
+      position.setXYZ(n * 8 + c, ...corner(0, c));
+      position.setXYZ(n * 8 + 4 + c, ...corner(n - 1, c));
+    }
+    position.needsUpdate = true;
+    springGeometry.computeVertexNormals();
+    springGeometry.computeBoundingBox();
+    springGeometry.computeBoundingSphere();
+  };
+  const spring = mesh(springGeometry, springMaterial, 'bowed-leaf-spring-pushing-jaw-arms-outward');
+  spring.userData.deformable = true;
+  block.add(spring);
+  // Tabulated over the jaws' whole range of opening.
+  // (slot B opens the jaws to openAngle at most; the re-catch cams them to
+  // snapAngle; the tests check the whole cycle stays inside the table.)
+  const maximumOpening = Math.max(openAngle, snapAngle) + 0.012;
+  const springTable = tabulate(0, maximumOpening + 0.008, 0.004, (phi) => springDeflectionAt(phi));
+  writeSpring(springTable.at(0));
+
   // The stop lugs reach forward into the jaw plane below the pivot bosses.
   const stopLug = slab(poly(scaled([[-STOP_HALF, BLOCK_BOTTOM], [STOP_HALF, BLOCK_BOTTOM], [STOP_HALF, -14], [-STOP_HALF, -14]])),
     BLOCK_Z[1], JAW_Z[1], blockMaterial, 'rope-block-jaw-closing-stop-lugs');
@@ -574,6 +695,7 @@ function pileDriverReleasingHooks(movement) {
     block.position.y = state.blockHeight * S;
     jaws[0].rotation.z = -state.jawOpeningAngle;
     jaws[1].rotation.z = state.jawOpeningAngle;
+    writeSpring(springTable.at(state.jawOpeningAngle));
     weight.position.y = state.weightY * S;
     // The rope's end is seized into the top of the eye (ring top 124.2), so
     // no gap shows between them.
@@ -588,7 +710,7 @@ function pileDriverReleasingHooks(movement) {
   root.userData.mechanism =
     'rope-block-carries-pliers-jaws-gripping-the-t-head-of-w-until-slot-b-squeezes-the-horns-and-opens-the-jaws-then-the-jaws-cam-over-and-regrip-the-t-head';
   root.userData.blocks = {
-    anvil, beamHalves, block, casting, frame, jaws, lugs, pile, pins, posts, ribs, ring, rope, stopLug, tee, weight, weightBody,
+    anvil, beamHalves, block, casting, frame, jaws, lugs, pile, pins, posts, ribs, ring, rope, spring, stemWeb, stopLug, tee, weight, weightBody,
     jawBodies: jaws.map((jaw) => jaw.children[0]),
   };
   root.userData.displayTimeOffset = displayTimeOffset;
@@ -605,6 +727,9 @@ function pileDriverReleasingHooks(movement) {
     engageHeight,
     freeAngle,
     gravity,
+    springHalfThickness: SPRING_HALF,
+    springRestCenterline: springRightArm.map((p) => [...p]),
+    springDeflectionAt: (phi) => springTable.at(phi),
     jawOutline: JAW_OUTLINE.map((p) => [...p]),
     loadAngle: LOAD_ANGLE,
     lowHeight,
@@ -637,11 +762,12 @@ function pileDriverReleasingHooks(movement) {
     quasiStaticJaws: true,
     validatedPassiveRelease: false,
     releaseLaw: 'slot-B lips press the horns inward; the minimal non-penetrating opening angle is solved against the jaw outline; W falls ballistically once the foot tips pass the T bar ends',
-    closingLaw: `the ${Math.round(LOAD_ANGLE * 180 / Math.PI)}-degree barbs turn the load into a closing moment and the jaws' own weight closes them when unloaded`,
+    closingLaw: `the ${Math.round(LOAD_ANGLE * 180 / Math.PI)}-degree barbs turn the load into a closing moment, and Brown's bowed leaf spring, seated in the rope block, pushes the jaw arms outward so the jaws close when unloaded`,
+    springLaw: 'each free end of the leaf follows the inside of its jaw arm (0.15 px running clearance); the leaf deflects as a cantilever under an end load, (3u^2 - u^3)/2 along each arm from its seat; spring force and preload are not solved',
     limitation: 'hoist motion, contact forces, friction and the jaws\' swing-shut timing are prescribed; impact is inelastic',
   };
   root.userData.reconstructionNote =
-    'W is one solid block with a T head. The pliers jaws A pivot on the rope block; their barbed feet hook under the undercut T bar. Rising into slot B, the horns are pressed inward by its lips, opening the jaws until the feet pass the bar ends and W falls. Descending, the feet ride the T head\'s chamfered top, cam open and fall shut under the bar. Brown\'s flat foot tops are drawn with a 35-degree barb so the load holds the jaws closed; slot B is widened at its mouth to admit the horns.';
+    'W is one solid block with a T head. The pliers jaws A pivot on the rope block; their barbed feet hook under the undercut T bar. Rising into slot B, the horns are pressed inward by its lips, opening the jaws until the feet pass the bar ends and W falls. Descending, the feet ride the T head\'s chamfered top, cam open and fall shut under the bar. Brown\'s two curved members are one bowed leaf spring seated in the V of the pivot block, bearing on the jaw arms and flexing as slot B presses them in; a set-back web behind the leaf joins the crossbar stem to the pivot block. Brown\'s flat foot tops are drawn with a 35-degree barb so the load holds the jaws closed; slot B is widened at its mouth to admit the horns.';
   root.userData.sourceAnimation = {
     available: false,
     independentlyReconstructed: true,
