@@ -3,20 +3,24 @@ import { readFile } from 'node:fs/promises';
 
 const catalog = JSON.parse(await readFile(new URL('../../src/data/movements.json', import.meta.url), 'utf8'));
 
-test('catalog is paginated, searchable, and filterable', async ({ page }) => {
+test('catalog shows the book plates and stays searchable and filterable', async ({ page }) => {
   await page.goto('/#/catalog?page=1');
-  await expect(page.getByRole('heading', { name: 'Mechanical Movements' })).toBeVisible();
-  await expect(page.locator('.movement-card')).toHaveCount(12);
-  await expect(page.locator('.result-count')).toHaveText('1–12 of 507');
+  await expect(page.getByRole('heading', { name: /Nos\. 1–10/ })).toBeVisible();
+  await expect(page.locator('.plate-link')).toHaveCount(10);
+  await page.getByRole('link', { name: 'Next plate' }).click();
+  await expect(page.getByRole('heading', { name: /Nos\. 11–22/ })).toBeVisible();
+  await expect(page.locator('.plate-link')).toHaveCount(12);
+  // 12 and 13 share one ruled cell, as in the book.
+  await expect(page.locator('.plate-cell:has(a[aria-label^="No. 12:"])')).not.toHaveClass(/rule-right/);
+  await page.keyboard.press('ArrowRight');
+  await expect(page.getByRole('heading', { name: /Nos\. 23–30/ })).toBeVisible();
 
-  await page.getByRole('link', { name: 'Page 43' }).click();
-  await expect(page.locator('.movement-card')).toHaveCount(3);
-  await expect(page.locator('.result-count')).toHaveText('505–507 of 507');
-  await expect(page.getByRole('link', { name: /Another form of epicyclic train designed/ }).first()).toBeVisible();
+  await page.goto('/#/catalog?page=57');
+  await expect(page.getByRole('link', { name: /No\. 507: Another form of epicyclic train designed/ })).toBeVisible();
 
   await page.goto('/#/catalog?page=1');
   await page.getByRole('searchbox').fill('worm-wheel');
-  await page.getByRole('button', { name: 'Apply' }).click();
+  await page.getByRole('searchbox').press('Enter');
   await expect(page.locator('.result-count')).not.toHaveText(/of 507$/);
   await expect(page.locator('.movement-card').first()).toBeVisible();
   await expect(page.locator('.movement-card').first()).toContainText(/worm/i);
@@ -24,7 +28,18 @@ test('catalog is paginated, searchable, and filterable', async ({ page }) => {
   await page.getByLabel('Filter by family').selectOption('Epicyclic trains');
   await expect(page.locator('.movement-card')).toHaveCount(0);
   await page.getByRole('button', { name: 'Clear' }).click();
-  await expect(page.locator('.movement-card')).toHaveCount(12);
+  await expect(page.locator('.plate-link')).toHaveCount(10);
+});
+
+test('every plate fits the window without scrolling', async ({ page }) => {
+  for (const [width, height] of [[1440, 1000], [390, 844], [844, 390], [320, 568]]) {
+    await page.setViewportSize({ width, height });
+    await page.goto('/#/catalog?page=13');
+    const plate = await page.locator('.plate').boundingBox();
+    expect(plate.y + plate.height).toBeLessThanOrEqual(height + 1);
+    expect(plate.x + plate.width).toBeLessThanOrEqual(width + 1);
+    expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeLessThanOrEqual(height + 1);
+  }
 });
 
 test('authored detail view renders and exposes working controls', async ({ page }) => {
@@ -102,11 +117,10 @@ test('every 3D family reaches a rendered canvas without runtime errors', async (
 test('mobile catalog and detail layouts remain usable', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/#/catalog?page=1');
-  await expect(page.locator('.movement-card')).toHaveCount(12);
-  const firstCard = page.locator('.movement-card').first();
-  const firstBox = await firstCard.boundingBox();
-  const secondBox = await page.locator('.movement-card').nth(1).boundingBox();
-  expect(secondBox.y).toBeGreaterThan(firstBox.y + firstBox.height);
+  await expect(page.locator('.plate-link')).toHaveCount(10);
+  const plate = await page.locator('.plate').boundingBox();
+  expect(plate.width).toBeLessThanOrEqual(390);
+  expect(plate.y + plate.height).toBeLessThanOrEqual(844);
 
   await page.goto('/#/movement/003');
   await expect(page.locator('.simulation-canvas')).toBeVisible();
@@ -146,9 +160,9 @@ test('production output works unchanged beneath a static-host subdirectory', asy
   expect(resources).toContain('/portable/engravings/mm_507.png');
   expect(resources.every((path) => path.startsWith('/portable/'))).toBe(true);
 
-  await page.goto('/portable/#/catalog?page=43');
-  await expect(page.locator('.movement-card')).toHaveCount(3);
-  await expect(page.locator('.result-count')).toHaveText('505–507 of 507');
+  await page.goto('/portable/#/catalog?page=57');
+  await expect(page.locator('.plate-link')).toHaveCount(6);
+  await expect(page.locator('.plate-cell img').first()).toHaveJSProperty('complete', true);
   expect(failedRequests).toEqual([]);
   expect(badResponses).toEqual([]);
 });

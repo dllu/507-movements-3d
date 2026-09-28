@@ -1,4 +1,5 @@
 import catalog from './data/movements.json';
+import bookLayout from './data/book-layout.json';
 import { MovementEngine } from './simulation/async-engine.js';
 import '@fontsource/eb-garamond/400.css';
 import '@fontsource/eb-garamond/400-italic.css';
@@ -10,6 +11,9 @@ const PAGE_SIZE = 12;
 const app = document.querySelector('#app');
 const movements = catalog.movements;
 const movementById = new Map(movements.map((movement) => [movement.id, movement]));
+// The book's plates: each page is a 3x3 grid whose cells may be split or merged.
+const plates = bookLayout.pages;
+const plateOfMovement = new Map(plates.flatMap((plate, index) => plate.cells.flatMap((cell) => cell.ids.map((id) => [id, index + 1]))));
 const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 let activeCleanup = () => {};
 
@@ -55,7 +59,7 @@ function sourceImagePath(movement) {
   return `./engravings/mm_${movement.number}.png`;
 }
 
-function appShell(content, active = 'catalog', view = 'page') {
+function appShell(content, active = 'catalog', view = 'page', catalogPage = 1) {
   document.body.dataset.view = view;
   return `
     <header class="site-header">
@@ -65,7 +69,7 @@ function appShell(content, active = 'catalog', view = 'page') {
           <span class="brand-copy">Mechanical Movements <i>in three dimensions</i></span>
         </a>
         <nav class="site-nav" aria-label="Primary navigation">
-          <a href="#/catalog?page=1" ${active === 'catalog' ? 'aria-current="page"' : ''}>Catalog</a>
+          <a href="#/catalog?page=${catalogPage}" ${active === 'catalog' ? 'aria-current="page"' : ''}>Catalog</a>
           <a href="#/about" ${active === 'about' ? 'aria-current="page"' : ''}>About</a>
         </nav>
       </div>
@@ -109,6 +113,96 @@ function pagination(currentPage, totalPages, query, category) {
 function catalogView(parameters) {
   const query = (parameters.get('q') ?? '').trim();
   const category = parameters.get('category') ?? '';
+  if (query || category) {
+    searchView(parameters, query, category);
+    return;
+  }
+  const requested = Number.parseInt(parameters.get('page') ?? '1', 10);
+  const page = Math.min(Math.max(Number.isFinite(requested) ? requested : 1, 1), plates.length);
+  const plate = plates[page - 1];
+  const ids = plate.cells.flatMap((cell) => cell.ids);
+  const first = Math.min(...ids);
+  const last = Math.max(...ids);
+  const percent = (value) => `${(value / 3 * 100).toFixed(4)}%`;
+  const cells = plate.cells.map((cell) => {
+    const members = cell.ids.map((id) => movementById.get(id));
+    const links = members.map((movement, index) => {
+      const share = 100 / members.length;
+      const place = members.length > 1 ? ` style="left:${(index * share).toFixed(3)}%;width:${share.toFixed(3)}%"` : '';
+      return `<a class="plate-link" href="#/movement/${movement.number}"${place} aria-label="No. ${movement.id}: ${escapeHtml(movement.title)}" title="${movement.id}. ${escapeHtml(movement.title)}"></a>`;
+    }).join('');
+    // Brown rules only the 3x3 grid; figures sharing a cell have no line between them.
+    const onGrid = (value) => value < 2.99 && Math.abs(value - Math.round(value)) < 0.01;
+    const rules = [onGrid(cell.x + cell.w) ? 'rule-right' : '', onGrid(cell.y + cell.h) ? 'rule-bottom' : ''].join(' ').trim();
+    return `
+      <div class="plate-cell ${rules}" role="listitem" style="left:${percent(cell.x)};top:${percent(cell.y)};width:${percent(cell.w)};height:${percent(cell.h)}">
+        <img src="${sourceImagePath(members[0])}" alt="" decoding="async" />${links}
+      </div>`;
+  }).join('');
+  const arrow = (target, label, glyph) => (target >= 1 && target <= plates.length
+    ? `<a class="plate-arrow" href="#/catalog?page=${target}" aria-label="${label} plate">${glyph}</a>`
+    : `<span class="plate-arrow is-disabled" aria-hidden="true">${glyph}</span>`);
+  const content = `
+    <section class="plate-view" aria-labelledby="plate-title">
+      <div class="plate-inner">
+        <div class="plate-bar">
+          ${arrow(page - 1, 'Previous', '←')}
+          <h1 class="plate-title" id="plate-title">
+            <span class="plate-range">Nos. ${first}–${last}</span>
+            <span class="plate-meta">Plate ${page} of ${plates.length}</span>
+          </h1>
+          ${arrow(page + 1, 'Next', '→')}
+          <form class="plate-search" id="catalog-filters" role="search">
+            <label>
+              <span class="visually-hidden">Search movements</span>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5" /><path d="m16 16 5 5" /></svg>
+              <input type="search" name="q" placeholder="Search" autocomplete="off" />
+            </label>
+          </form>
+        </div>
+        <div class="plate" role="list" aria-label="Movements ${first} to ${last}">${cells}</div>
+      </div>
+    </section>`;
+  document.title = page === 1 ? '507 Mechanical Movements — in 3D' : `Nos. ${first}–${last} — 507 Movements in 3D`;
+  app.innerHTML = appShell(content, 'catalog', 'plate', page);
+  const form = document.querySelector('#catalog-filters');
+  form?.addEventListener('submit', (event) => {
+    event.preventDefault();
+    const value = String(new FormData(form).get('q') ?? '').trim();
+    const number = Number.parseInt(value, 10);
+    if (String(number) === value && movementById.has(number)) location.hash = `/movement/${movementById.get(number).number}`;
+    else if (value) location.hash = catalogHref(1, value, '').slice(1);
+  });
+  const go = (target) => {
+    if (target >= 1 && target <= plates.length) location.hash = `/catalog?page=${target}`;
+  };
+  const onKey = (event) => {
+    if (event.target.closest?.('input, select, textarea') || event.altKey || event.ctrlKey || event.metaKey) return;
+    if (event.key === 'ArrowLeft') go(page - 1);
+    else if (event.key === 'ArrowRight') go(page + 1);
+  };
+  // Horizontal swipes turn the page on touch screens.
+  const plateElement = document.querySelector('.plate');
+  let swipe = null;
+  const onPointerDown = (event) => { if (event.pointerType !== 'mouse') swipe = { x: event.clientX, y: event.clientY }; };
+  const onPointerUp = (event) => {
+    if (!swipe) return;
+    const dx = event.clientX - swipe.x;
+    const dy = event.clientY - swipe.y;
+    swipe = null;
+    if (Math.abs(dx) > 50 && Math.abs(dx) > 1.5 * Math.abs(dy)) go(dx < 0 ? page + 1 : page - 1);
+  };
+  document.addEventListener('keydown', onKey);
+  plateElement.addEventListener('pointerdown', onPointerDown);
+  plateElement.addEventListener('pointerup', onPointerUp);
+  activeCleanup = () => document.removeEventListener('keydown', onKey);
+  for (const target of [page - 1, page + 1]) {
+    const next = plates[target - 1];
+    if (next) for (const cell of next.cells) new Image().src = sourceImagePath(movementById.get(cell.ids[0]));
+  }
+}
+
+function searchView(parameters, query, category) {
   const requestedPage = Number.parseInt(parameters.get('page') ?? '1', 10);
   const normalizedQuery = query.toLocaleLowerCase();
   const filtered = movements.filter((movement) => {
@@ -122,11 +216,9 @@ function catalogView(parameters) {
   const start = filtered.length ? (page - 1) * PAGE_SIZE + 1 : 0;
   const end = Math.min(page * PAGE_SIZE, filtered.length);
 
-  const cards = visible.map((movement) => {
-    return `
+  const cards = visible.map((movement) => `
     <article class="movement-card">
       <a class="card-visual" href="#/movement/${movement.number}" aria-label="Open movement ${movement.id}: ${escapeHtml(movement.title)}">
-        <span class="card-number">${movement.number}</span>
         <img src="${sourceImagePath(movement)}" alt="" loading="lazy" decoding="async" />
       </a>
       <div class="card-body">
@@ -134,14 +226,14 @@ function catalogView(parameters) {
         <h2><a href="#/movement/${movement.number}">${escapeHtml(movement.title)}</a></h2>
         <p>${escapeHtml(compact(cleanDescription(movement), 145))}</p>
       </div>
-    </article>`;
-  }).join('');
+    </article>`).join('');
 
   const content = `
     <section class="catalog-section" aria-labelledby="catalog-title">
       <div class="section-inner">
         <div class="catalog-heading">
-          <h1 id="catalog-title">Mechanical Movements</h1>
+          <h1 id="catalog-title" class="visually-hidden">Search results</h1>
+          <a class="back-to-plates" href="#/catalog?page=1">← The plates</a>
           <p class="result-count" aria-live="polite">${start}–${end} of ${filtered.length}</p>
         </div>
         <form class="catalog-filters" id="catalog-filters" role="search">
@@ -158,20 +250,20 @@ function catalogView(parameters) {
             </select>
           </label>
           <button type="submit">Apply</button>
-          ${(query || category) ? '<button class="clear-filters" type="button">Clear</button>' : ''}
+          <button class="clear-filters" type="button">Clear</button>
         </form>
         ${visible.length ? `<div class="movement-grid">${cards}</div>` : `
           <div class="empty-state">
             <span>0</span>
             <h2>No movements found</h2>
             <p>Try a broader term or clear the mechanism family.</p>
-            <a href="#/catalog?page=1">Reset the catalog</a>
+            <a href="#/catalog?page=1">Back to the plates</a>
           </div>`}
         ${pagination(page, totalPages, query, category)}
       </div>
     </section>`;
 
-  document.title = `${query || category ? 'Filtered catalog' : '507 Movements'} — in 3D`;
+  document.title = 'Search — 507 Movements in 3D';
   app.innerHTML = appShell(content, 'catalog');
   const form = document.querySelector('#catalog-filters');
   form?.addEventListener('submit', (event) => {
@@ -193,7 +285,7 @@ async function detailView(movement) {
       <div class="detail-inner">
         <div class="detail-heading">
           <div class="detail-title">
-            <p class="eyebrow">No. ${movement.id} <span aria-hidden="true">·</span> ${escapeHtml(movement.category)}</p>
+            <p class="eyebrow">No. ${movement.id} <span aria-hidden="true">·</span> <a class="plate-backlink" href="#/catalog?page=${plateOfMovement.get(movement.id) ?? 1}" aria-label="Back to plate ${plateOfMovement.get(movement.id) ?? 1}">Plate ${plateOfMovement.get(movement.id) ?? 1}</a> <span aria-hidden="true">·</span> ${escapeHtml(movement.category)}</p>
             <h1 title="${escapeHtml(movement.title)}">${escapeHtml(movement.title)}</h1>
           </div>
           <nav class="detail-sequence" aria-label="Movement navigation">
@@ -212,7 +304,7 @@ async function detailView(movement) {
             </div>
             <a class="source-engraving" href="${escapeHtml(movement.sourceUrl)}" target="_blank" rel="noreferrer">
               <img src="${sourceImagePath(movement)}" alt="Original engraving for Movement ${movement.number}" />
-              <span>Original engraving <i aria-hidden="true">↗</i></span>
+              <span>Original engraving</span>
             </a>
             <aside class="movement-notes" aria-label="Source description and reconstruction notes" tabindex="0">
               <p class="movement-description">${escapeHtml(cleanDescription(movement))}</p>
@@ -243,7 +335,7 @@ async function detailView(movement) {
     </section>`;
 
   document.title = `${movement.number} · ${movement.title} — 507 Movements`;
-  app.innerHTML = appShell(content, 'catalog', 'detail');
+  app.innerHTML = appShell(content, 'catalog', 'detail', plateOfMovement.get(movement.id) ?? 1);
   const onSequenceKey = (event) => {
     if (event.target.closest?.('input, select, textarea, canvas') || event.metaKey || event.ctrlKey || event.altKey) return;
     if (event.key === 'ArrowLeft' && previous) location.hash = `/movement/${previous.number}`;

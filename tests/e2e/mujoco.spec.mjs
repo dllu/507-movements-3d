@@ -7,7 +7,7 @@ for (const id of ['082', '083', '090', '091', '092', '093', '094', '095', '096',
   page.on('response', response => { if (response.status() >= 400) failedResponses.push(response.url()); });
   await page.emulateMedia({reducedMotion: 'reduce'});
   await page.goto('/portable/#/catalog');
-  await expect(page.locator('.movement-card')).toHaveCount(12);
+  await expect(page.locator('.plate-link')).toHaveCount(10);
   expect(await page.evaluate(() => performance.getEntriesByType('resource').some(r => r.name.endsWith('.wasm')))).toBe(false);
   await page.evaluate(id => { location.hash = '/movement/' + id; }, id);
   const canvas = page.locator('.simulation-canvas'), play = page.locator('.play-control');
@@ -151,7 +151,7 @@ test('an unavailable physics asset leaves navigation usable and can be retried',
   await expect(page.getByRole('alert')).toContainText('The 3D view could not start.');
   await expect(page.locator('#simulation-stage')).toHaveAttribute('aria-busy', 'false');
   await page.evaluate(() => { location.hash = '/catalog'; });
-  await expect(page.locator('.movement-card')).toHaveCount(12);
+  await expect(page.locator('.plate-link')).toHaveCount(10);
   await page.unroute('**/*.wasm');
   await page.evaluate(() => { location.hash = '/movement/082'; });
   await expect(page.getByRole('button', {name: 'Restart', exact: true})).toBeVisible();

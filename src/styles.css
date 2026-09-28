@@ -269,3 +269,79 @@ body[data-view="detail"] .header-inner { width: min(calc(100% - 2rem), var(--chr
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
 }
 .nowrap { white-space: nowrap; }
+
+/* The catalog: one plate of the book per screen, laid out as Brown's 3x3
+   grid, always fully visible (no scrolling), with the header and bar sized
+   to the plate. */
+body[data-view="plate"] {
+  --header-h: 56px;
+  --bar-h: 3.4rem;
+  --plate-gap: 1rem;
+  --plate: max(14rem, min(calc(100cqw - 2rem), calc(100dvh - var(--header-h) - var(--bar-h) - var(--plate-gap) * 2)));
+  --plate-chrome: max(var(--plate), min(calc(100cqw - 2rem), 30rem));
+  overflow: hidden;
+}
+body[data-view="plate"] .header-inner { width: var(--plate-chrome); height: var(--header-h); }
+.plate-view { height: calc(100dvh - var(--header-h)); min-height: 280px; display: flex; flex-direction: column; justify-content: center; padding-bottom: var(--plate-gap); }
+.plate-inner { width: var(--plate-chrome); margin-inline: auto; }
+.plate-bar {
+  height: var(--bar-h);
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 0.6rem;
+}
+.plate-title { margin: 0; display: flex; align-items: baseline; gap: 0.7rem; min-width: 0; white-space: nowrap; overflow: hidden; }
+.plate-range { font: 400 1.45rem/1 var(--serif); font-variant-numeric: lining-nums; }
+.plate-meta { color: var(--muted); font-size: 1rem; font-variant-caps: all-small-caps; letter-spacing: 0.06em; }
+.plate-arrow {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 2.6rem; height: 2.3rem; border: 1px solid var(--line); border-radius: 999px;
+  color: var(--ink); text-decoration: none; font-size: 1.15rem;
+}
+.plate-arrow:hover { border-color: var(--ink); }
+.plate-arrow.is-disabled { color: var(--line); }
+.plate-search label { position: relative; display: block; }
+.plate-search svg { position: absolute; left: 0.55rem; top: 50%; width: 1rem; height: 1rem; transform: translateY(-50%); fill: none; stroke: var(--muted); stroke-width: 1.6; pointer-events: none; }
+.plate-search input {
+  width: 8.5rem; height: 2.3rem; padding: 0 0.6rem 0 1.9rem;
+  border: 1px solid var(--line); border-radius: 999px; background: transparent; color: var(--ink);
+}
+.plate-search input:focus { outline: none; border-color: var(--ink); }
+.plate {
+  position: relative;
+  width: var(--plate);
+  aspect-ratio: 1;
+  margin: calc(var(--plate-gap) - 0.4rem) auto 0;
+  border: 1px solid var(--ink);
+  outline: 1px solid var(--ink);
+  outline-offset: 3px;
+  touch-action: pan-y;
+}
+.plate-cell { position: absolute; }
+.plate-cell.rule-right { border-right: 1px solid var(--ink); }
+.plate-cell.rule-bottom { border-bottom: 1px solid var(--ink); }
+.plate-cell img {
+  position: absolute; inset: 3%; width: 94%; height: 94%;
+  object-fit: contain; mix-blend-mode: multiply;
+  transition: transform 180ms ease;
+}
+.plate-link { position: absolute; inset: 0; z-index: 1; }
+.plate-link:hover, .plate-link:focus-visible { background: rgb(37 42 45 / 0.05); outline: none; }
+.plate-cell:has(.plate-link:hover) img { transform: scale(1.02); }
+.back-to-plates { color: var(--ink); font-size: 1.1rem; }
+@media (max-width: 720px) {
+  body[data-view="plate"] { --bar-h: 3rem; --plate-gap: 0.75rem; }
+  .plate-meta { display: none; }
+  .plate-range { font-size: 1.25rem; }
+  .plate-search input { width: 2.3rem; padding-right: 0; cursor: pointer; }
+  .plate-search input:focus { width: 7.5rem; padding-right: 0.6rem; cursor: text; }
+  .plate-arrow { width: 2.3rem; }
+}
+@media (max-height: 560px) and (orientation: landscape) {
+  body[data-view="plate"] { --header-h: 40px; --bar-h: 2.6rem; --plate-gap: 0.5rem; }
+  .plate-arrow, .plate-search input { height: 2rem; }
+  .plate-meta { display: none; }
+}
+.plate-backlink { color: inherit; text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 0.15em; }
+.plate-backlink:hover { color: var(--ink); text-decoration-color: currentColor; }

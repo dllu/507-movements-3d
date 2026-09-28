@@ -122,6 +122,19 @@ export function perspectiveObjectFitDistance(
     );
 }
 
+const RESOLUTION_SETTINGS = { slowFrameSeconds: 1 / 32, slowRunSeconds: 1.5, minimumScale: 0.45 };
+// Largest drawing buffer we render into (about a 4K frame).
+const MAX_DRAWING_PIXELS = 8.3e6;
+
+// Pixels per CSS pixel: the device ratio on high-DPI screens (capped at 3),
+// two on 1x screens so edges stay smooth without multisampling; scaled down
+// to fit the pixel budget and by the adaptive resolution scale, never below 1.
+export function renderPixelRatio(deviceRatio, width, height, scale = 1) {
+  const target = deviceRatio >= 1.5 ? Math.min(deviceRatio, 3) : 2;
+  const budget = Math.sqrt(MAX_DRAWING_PIXELS / Math.max(1, width * height));
+  return Math.max(1, Math.round(Math.min(target, budget) * scale * 100) / 100);
+}
+
 export class MovementEngine {
   static async create(container, movement, options = {}) {
     options.signal?.throwIfAborted();
@@ -159,8 +172,11 @@ export class MovementEngine {
       alpha: false,
       powerPreference: 'high-performance',
     });
-    // Two pixels per CSS pixel keep edges smooth with a bounded buffer size.
-    this.renderer.setPixelRatio(2);
+    // Match high-DPI screens (supersampling 1x screens by two), within a
+    // pixel budget; slow devices step the ratio down (see trackResolution).
+    this.resolutionScale = 1;
+    this.slowResolutionSeconds = 0;
+    this.applyPixelRatio();
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.08;
@@ -411,7 +427,24 @@ export class MovementEngine {
     if (this.camera.aspect !== width / height) {
       this.fitCamera(this.cameraFitDirection, { preserveView: true });
     }
+    this.applyPixelRatio(width, height);
     this.renderer.setSize(width, height, false);
+  }
+
+  applyPixelRatio(width = this.container?.clientWidth || 1, height = this.container?.clientHeight || 1) {
+    const ratio = renderPixelRatio(globalThis.devicePixelRatio || 1, width, height, this.resolutionScale);
+    if (this.renderer.getPixelRatio() !== ratio) this.renderer.setPixelRatio(ratio);
+  }
+
+  // Step the resolution down while frames stay slow (weak GPUs at 3x).
+  trackResolution(interval) {
+    if (interval > 1 || this.resolutionScale <= RESOLUTION_SETTINGS.minimumScale) return;
+    this.slowResolutionSeconds = interval > RESOLUTION_SETTINGS.slowFrameSeconds
+      ? this.slowResolutionSeconds + interval : Math.max(0, this.slowResolutionSeconds - interval);
+    if (this.slowResolutionSeconds < RESOLUTION_SETTINGS.slowRunSeconds) return;
+    this.slowResolutionSeconds = 0;
+    this.resolutionScale = Math.max(RESOLUTION_SETTINGS.minimumScale, this.resolutionScale * 0.75);
+    this.resize();
   }
 
   animate = () => {
@@ -424,6 +457,8 @@ export class MovementEngine {
     if (this.ambientOcclusion) {
       this.ambientOcclusion.render();
       this.trackFrameInterval(interval);
+    } else {
+      this.trackResolution(interval);
     }
   };
 
