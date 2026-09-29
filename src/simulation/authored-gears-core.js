@@ -21317,9 +21317,10 @@ function singleCircleEqualSpeedMangleWheel() {
   pinion.userData.module = module;
   const wheelShaft = addAxle(root, new THREE.Vector3(0, 0, 0), 1.6, Z_AXIS);
   wheelShaft.userData.role = 'fixed-axis-equal-speed-oscillating-wheel-shaft';
-  // p99: the pinion shaft runs straight out in front of the pinion to its
-  // universal joint, so the joint stands clear of the pinion's face and hub.
-  const pinionShaftLength194 = 2.8;
+  // p102: the pinion shaft runs from its collar in the groove to just proud
+  // of the pinion's front face (0.573), as Brown's shaft end in the hub. The
+  // undrawn jointed drive in front of it is left out (reversing-mangle-guides).
+  const pinionShaftLength194 = 0.6;
   const pinionShaft = makeShaft({
     length: pinionShaftLength194,
     radius: .055,
@@ -26346,7 +26347,7 @@ function fixedPinionIrregularVibratingWheelCarrier() {
     wheelRotor.add(tooth);
   }
   const wheelHub = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.235, 0.235, wheelDepth * 1.48, 36),
+    new THREE.CylinderGeometry(0.11, 0.11, wheelDepth * 1.48, 36),
     inkMaterial,
   );
   wheelHub.rotation.x = Math.PI / 2;
@@ -26819,10 +26820,11 @@ function fixedPinionIrregularVibratingWheelCarrier() {
 
   // Spans the wheel hub (z +-0.252) and the strap (0.33..0.48), just proud
   // of both ends; nothing is carried beyond them.
+  // p102: slimmed with the strap's proportioned A eye (bore 0.058).
   const wheelShaft = makeShaft({
     axis: Z_AXIS,
     length: 0.8,
-    radius: 0.073,
+    radius: 0.055,
   });
   wheelShaft.userData.role = 'shaft-of-wheel-A-carried-by-vibrating-arm';
   const pinionShaft = makeShaft({

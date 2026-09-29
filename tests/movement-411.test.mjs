@@ -82,8 +82,14 @@ test('movement 411 is a two-wheel isosceles carriage with one pendulum, one rule
   assert.equal(blocks.groundDashes.length, 16);
   assert.equal(blocks.leftWheel.spokes.length, 8);
   assert.equal(blocks.rightWheel.spokes.length, 8);
-  assert.equal(blocks.chartTrace.geometry.getAttribute('position').count,
+  assert.equal(blocks.chartTrace.userData.centerline.length / 3,
     geometry.chartTraceSamples + 2);
+  // Pass 102: the trace is a ribbon mesh (two vertices per centre-line
+  // point), not a one-pixel line.
+  assert.equal(blocks.chartTrace.isMesh, true);
+  assert.equal(blocks.chartTrace.geometry.getAttribute('position').count,
+    2 * (geometry.chartTraceSamples + 2));
+  assert.ok(blocks.chartTrace.userData.width >= 0.015);
 
   const roles = [];
   const wheelRotors = [];
@@ -377,12 +383,17 @@ test('movement 411 update binds rolling contacts, frame pitch, gravity pendulum,
     const pencilWorld = blocks.pencilTip.getWorldPosition(
       new THREE.Vector3(),
     );
-    const traceAttribute = blocks.chartTrace.geometry
-      .getAttribute('position');
-    const traceEndpointLocal = new THREE.Vector3().fromBufferAttribute(
-      traceAttribute,
-      data.traceState.endpointIndex,
+    const traceEndpointLocal = new THREE.Vector3().fromArray(
+      blocks.chartTrace.userData.centerline,
+      data.traceState.endpointIndex * 3,
     );
+    // The ribbon's two edge vertices straddle that point on the paper.
+    const ribbon = blocks.chartTrace.geometry.getAttribute('position');
+    const edgeA = new THREE.Vector3().fromBufferAttribute(ribbon, 2 * data.traceState.endpointIndex);
+    const edgeB = new THREE.Vector3().fromBufferAttribute(ribbon, 2 * data.traceState.endpointIndex + 1);
+    near(edgeA.distanceTo(edgeB), blocks.chartTrace.userData.width, 1e-6, 'ribbon width at the pencil');
+    assert.ok(edgeA.clone().add(edgeB).multiplyScalar(0.5).distanceTo(traceEndpointLocal) < 0.002);
+    assert.equal(blocks.chartTrace.geometry.drawRange.count, 6 * data.traceState.drawCount - 6);
     const traceEndpointWorld = blocks.chartTrace.localToWorld(
       traceEndpointLocal,
     );

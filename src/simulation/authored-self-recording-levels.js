@@ -314,9 +314,16 @@ function selfRecordingLevel(movement) {
     metalness: 0.02,
     roughness: 0.92,
   });
-  const traceMaterial = new THREE.LineBasicMaterial({
+  // Pass 102: the pencil trace is a thin ribbon mesh lying on the paper
+  // (WebGL draws lines one pixel wide whatever linewidth says).
+  const traceMaterial = new THREE.MeshStandardMaterial({
     color: PALETTE.driver,
-    linewidth: 2,
+    metalness: 0,
+    roughness: 0.85,
+    side: THREE.DoubleSide,
+    polygonOffset: true,
+    polygonOffsetFactor: -1,
+    polygonOffsetUnits: -1,
   });
   const materials = {
     accent: accentMaterial,
@@ -743,16 +750,50 @@ function selfRecordingLevel(movement) {
     traceTemplate[index * 3 + 1] = point.y;
     traceTemplate[index * 3 + 2] = point.z;
   }
+  // Centre line of the trace (drum frame, on the pencil's contact radius);
+  // the ribbon is built round it, traceWidth wide, lifted 0.0007 more.
   const tracePositions = new Float32Array(traceTemplate);
+  const traceWidth = 0.024;
+  const traceRibbonRadius = chartContactRadius + 0.0007;
+  const traceRibbon = new Float32Array(tracePointCount * 6);
+  const traceNormals = new Float32Array(tracePointCount * 6);
+  const traceIndices = [];
+  for (let index = 0; index + 1 < tracePointCount; index += 1) {
+    const a = index * 2;
+    traceIndices.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
+  }
   const traceGeometry = new THREE.BufferGeometry();
-  const tracePositionAttribute = new THREE.BufferAttribute(
-    tracePositions,
-    3,
-  );
+  const tracePositionAttribute = new THREE.BufferAttribute(traceRibbon, 3);
   tracePositionAttribute.setUsage(THREE.DynamicDrawUsage);
+  const traceNormalAttribute = new THREE.BufferAttribute(traceNormals, 3);
+  traceNormalAttribute.setUsage(THREE.DynamicDrawUsage);
   traceGeometry.setAttribute('position', tracePositionAttribute);
-  traceGeometry.setDrawRange(0, 1);
-  const chartTrace = new THREE.Line(traceGeometry, traceMaterial);
+  traceGeometry.setAttribute('normal', traceNormalAttribute);
+  traceGeometry.setIndex(traceIndices);
+  traceGeometry.setDrawRange(0, 0);
+  const ribbonPoint = new THREE.Vector3();
+  const ribbonNormal = new THREE.Vector3();
+  const ribbonTangent = new THREE.Vector3();
+  const ribbonSide = new THREE.Vector3();
+  const writeRibbonVertex = (index, count) => {
+    const at = (k) => new THREE.Vector3().fromArray(tracePositions, THREE.MathUtils.clamp(k, 0, count - 1) * 3);
+    ribbonPoint.fromArray(tracePositions, index * 3);
+    ribbonTangent.copy(at(index + 1)).sub(at(index - 1));
+    ribbonNormal.set(0, ribbonPoint.y, ribbonPoint.z).normalize();
+    ribbonSide.crossVectors(ribbonTangent, ribbonNormal);
+    if (ribbonSide.lengthSq() < 1e-20) ribbonSide.set(1, 0, 0);
+    ribbonSide.normalize().multiplyScalar(traceWidth / 2);
+    const lifted = new THREE.Vector3(ribbonPoint.x, ribbonNormal.y * traceRibbonRadius, ribbonNormal.z * traceRibbonRadius);
+    lifted.clone().add(ribbonSide).toArray(traceRibbon, index * 6);
+    lifted.clone().sub(ribbonSide).toArray(traceRibbon, index * 6 + 3);
+    ribbonNormal.toArray(traceNormals, index * 6);
+    ribbonNormal.toArray(traceNormals, index * 6 + 3);
+  };
+  const chartTrace = new THREE.Mesh(traceGeometry, traceMaterial);
+  chartTrace.userData.centerline = tracePositions;
+  chartTrace.userData.width = traceWidth;
+  chartTrace.userData.noShadow = true;
+  chartTrace.castShadow = false;
   chartTrace.userData.role =
     'continuous-pencil-trace-progressively-inscribed-on-paper';
   drumRotor.add(chartTrace);
@@ -864,9 +905,11 @@ function selfRecordingLevel(movement) {
     tracePositions[writeIndex * 3] = exactPoint.x;
     tracePositions[writeIndex * 3 + 1] = exactPoint.y;
     tracePositions[writeIndex * 3 + 2] = exactPoint.z;
-    tracePositionAttribute.needsUpdate = true;
     const drawCount = completedCycles > 0 ? tracePointCount : writeIndex + 1;
-    traceGeometry.setDrawRange(0, drawCount);
+    for (let index = 0; index < drawCount; index += 1) writeRibbonVertex(index, drawCount);
+    tracePositionAttribute.needsUpdate = true;
+    traceNormalAttribute.needsUpdate = true;
+    traceGeometry.setDrawRange(0, Math.max(0, drawCount - 1) * 6);
     return { drawCount, endpointIndex: writeIndex };
   };
   const update = (time) => {

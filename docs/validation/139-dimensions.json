@@ -1,28 +1,28 @@
 {
   "dimensions": {
-    "module": 0.059,
-    "teeth": 9,
-    "radius": 0.26549999999999996,
-    "endRadius": 0.472,
-    "orbit": 0.20650000000000002,
-    "span": 1.4828317324943823,
-    "halfSpan": 0.7414158662471911,
-    "length": 4.263141230921349,
-    "sourcePhase": 0.662184602572447,
-    "rotationPerCycle": 16.05702911834783
+    "module": 0.053,
+    "teeth": 10,
+    "radius": 0.265,
+    "endRadius": 0.477,
+    "orbit": 0.21199999999999997,
+    "span": 1.4985396957623314,
+    "halfSpan": 0.7492698478811657,
+    "length": 4.329114676646735,
+    "sourcePhase": 0.6615272174824459,
+    "rotationPerCycle": 16.336281798666924
   },
   "sourcePose": {
-    "x": -0.05000000000000038,
-    "y": 0.20650000000000002,
+    "x": -0.05000000000000071,
+    "y": 0.21199999999999997,
     "angle": -1.5707963267948966
   },
-  "pinionOuterRadiusPixels": 32.449999999999996,
+  "pinionOuterRadiusPixels": 31.8,
   "measuredPinionOuterRadiusPixels": 32,
   "predictedRootBounds": {
-    "left": 125.75841337528087,
-    "right": 380.24158662471905,
-    "top": 202.25,
-    "bottom": 308.45
+    "left": 125.07301521188336,
+    "right": 380.9269847881165,
+    "top": 201.8,
+    "bottom": 307.8
   },
   "measuredRootBounds": {
     "left": 127,
@@ -39,7 +39,7 @@
         177
       ],
       "rendered": [
-        92.99999999999997,
+        92.99999999999991,
         175
       ],
       "errorPixels": 2
@@ -65,10 +65,10 @@
         152
       ],
       "rendered": [
-        129.99999999999997,
+        129.99999999999994,
         151
       ],
-      "errorPixels": 2.236067977499815
+      "errorPixels": 2.2360679774998404
     },
     {
       "side": "left",
@@ -78,10 +78,10 @@
         117
       ],
       "rendered": [
-        85.49999999999994,
+        85.49999999999991,
         117
       ],
-      "errorPixels": 2.499999999999943
+      "errorPixels": 2.4999999999999147
     },
     {
       "side": "right",
@@ -117,10 +117,10 @@
         150
       ],
       "rendered": [
-        384,
+        383.99999999999994,
         151
       ],
-      "errorPixels": 2.23606797749979
+      "errorPixels": 2.2360679774997387
     },
     {
       "side": "right",
@@ -140,7 +140,7 @@
   "maximumRodLengthError": 3.3306690738754696e-16,
   "maximumCouplerLengthError": 0,
   "angleRange": [
-    -0.9797008566415204,
+    -1.0065119260244348,
     -1.1102230246251565e-16
   ],
   "caveat": "The opening is shifted upward to obtain conjugate engagement. Parallel suspension arms reconcile left/right drawing discrepancies. Physical preload/contact dynamics are not yet validated."

@@ -295,8 +295,8 @@ test('movement 278 keeps both pawls clear throughout normal hoisting and lowerin
   near(minimumRackClearance, start.lateralRackClearance, 2e-15,
     'constant normal pawl clearance');
   near(maximumRopeGap, 0, 0, 'taut rope has no break gap');
-  assert.ok(stateAtTime(2.6).platformSpeed > 0);
-  assert.ok(stateAtTime(4.0).platformSpeed < 0);
+  assert.ok(stateAtTime((timeline.recoveryEnd + timeline.hoistEnd) / 2).platformSpeed > 0);
+  assert.ok(stateAtTime((timeline.hoistEnd + timeline.normalLowerEnd) / 2).platformSpeed < 0);
   disposeModel(model.root);
 });
 
@@ -438,7 +438,7 @@ test('movement 278 update binds platform travel, mirrored levers, spring, split 
   assert.equal(animationTiming.targetCycleDuration, 2);
   assertReadableTiming(animationTiming);
 
-  for (const time of [0, 1.3, 2.6, 4.0, 5.1, timeline.catchTime, 8]) {
+  for (const time of [0, 0.3, 3.6, 5.0, 6.2, 7.4, timeline.catchTime, 8]) {
     const expected = stateAtTime(time);
     model.update(time);
     near(blocks.carriage.position.y, expected.platformY, 0,
@@ -495,8 +495,10 @@ test('movement 278 update binds platform travel, mirrored levers, spring, split 
       model.root.userData.kinematics.ropeEye));
     // Pass 101: the rope parts just above the eye; the limp lower stub lies
     // on B's head inside the frame, and the upper piece hangs from the hoist.
+    // Pass 102: the stub stays straight while it falls with the platform and
+    // collapses only after the catch.
     const kinematics = model.root.userData.kinematics;
-    if (kinematics.ropeSlack > 0) {
+    if (kinematics.ropeBreak > 0) {
       if (kinematics.ropeSlack === 1) assert.ok(cameraFitBounds.containsBox(new THREE.Box3().setFromObject(blocks.lowerRope, true)));
       assert.ok(kinematics.upperBrokenEnd.y > kinematics.ropeEye.y + 1.4);
     } else {
@@ -604,5 +606,24 @@ test('movement 278 pawls seat in the root of Brown\'s shallow hook teeth with a 
       + releaseWorkingParts.pawlPlates[0].userData.toeChamfer.toeFace;
     assert.ok(toeTop <= undercutAtToe + 1e-12, `toe under the undercut at ${time}`);
   }
+  disposeModel(model.root);
+});
+
+test('movement 278 opens on Brown\'s pose: arrested, with the parted stub standing in the eye', () => {
+  const model = createMovementModel(catalog.movements[277]);
+  const { stateAtTime, timeline } = model.root.userData;
+  const opening = stateAtTime(0);
+  assert.equal(opening.caught, true);
+  assert.equal(opening.ropeSlack, 0);
+  assert.equal(opening.ropeBreak, 1);
+  // The stub is straight up the rope line from the eye.
+  assert.ok(Math.abs(opening.lowerBrokenEnd.x - opening.ropeEye.x) < 1e-12);
+  // It falls straight with the platform and goes limp only after the catch.
+  for (let index = 0; index <= 64; index += 1) {
+    const s = stateAtTime(timeline.normalLowerEnd + (timeline.catchTime - timeline.normalLowerEnd) * index / 64);
+    assert.equal(s.ropeSlack, 0);
+  }
+  assert.equal(stateAtTime(timeline.stubCollapseEnd).ropeSlack, 1);
+  assert.equal(stateAtTime(timeline.sourceDwellEnd - 1e-6).ropeSlack, 1);
   disposeModel(model.root);
 });

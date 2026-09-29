@@ -19052,16 +19052,27 @@ function alternatingTwoPawlContinuousRatchet(movement) {
   // flywheel: it never stands. Each pawl drives it at a steady rate while the
   // hand works the lever; a little before the end of each stroke (0.05 pitch
   // short of the end seat) the lever slows to reverse, the pawl falls behind
-  // and the wheel coasts on, losing 12% of its speed, until the returning
-  // pawl, which has slid down the back into its root as the hand flicks the
-  // lever over, catches the face at the wheel's own speed and brings it back
-  // up to speed. The lever's reversals are quintic in time, continuous in
-  // angle, speed and acceleration with the driving strokes, and turn exactly
-  // at Brown's drawn top and at the bottom of the swing. Throughout, W >=
-  // max(b, c): no pawl is ever pushed through a face.
+  // and the wheel coasts on, losing up to 15% of its speed, until the
+  // returning pawl, which has slid down the back into its root as the hand
+  // brings the lever over, catches the face at the wheel's own speed and
+  // brings it back up to speed (recovering over 60% of that pawl's drive).
+  // The lever's reversals are continuous in angle, speed and acceleration
+  // with the driving strokes, and turn exactly at Brown's drawn top and at
+  // the bottom of the swing. Throughout, W >= max(b, c): no pawl is ever
+  // pushed through a face.
+  // Pass 102: the plain quintic reversals made the lever run back about 3x
+  // faster than it drives (a flick). Shaped reversals (below) spread that
+  // travel evenly; the peak is now 1.68x the median lever speed. The unloaded
+  // return still runs faster than the loaded drive: each returning pawl's
+  // backlash is about 28 of the 59 degrees of lever travel per cycle, and a
+  // pawl can only catch a flywheel that has not slowed much if the lever
+  // closes that backlash faster than it drives. flywheelMinimumDriveTeeth
+  // bounds how short c's drive may become.
   const flywheelSeparationTeeth = 0.05;
-  const flywheelSpeedDip = 0.12;
-  const flywheelRecoveryFraction = 0.5;
+  const flywheelSeparationTeethC = 0.05;
+  const flywheelMinimumDriveTeeth = 0.15;
+  const flywheelSpeedDip = 0.15;
+  const flywheelRecoveryFraction = 0.6;
   const seatPitches = (longPawl, lever) => pawlSeatWheelAngleForLever(longPawl, lever) / toothPitch;
   const seatSlope = (longPawl, lever) => (
     seatPitches(longPawl, lever + 1e-6) - seatPitches(longPawl, lever - 1e-6)) / 2e-6;
@@ -19101,25 +19112,51 @@ function alternatingTwoPawlContinuousRatchet(movement) {
     const rate = speed / slope;
     return { lever, rate, acceleration: -seatCurvature(longPawl, lever) * rate * rate / slope };
   };
-  const dipDistance = (duration) => duration * (1 - flywheelSpeedDip / 2);
+  const dipDistance = (duration, dip) => duration * (1 - dip / 2);
   const flywheelEnds = {
     bSeparation: seatPitches(true, leverTop) - flywheelSeparationTeeth,
-    cSeparation: teethPerCycle - flywheelSeparationTeeth,
+    cSeparation: teethPerCycle - flywheelSeparationTeethC,
   };
   // One reversal, in units where the driving wheel speed is one pitch per
   // unit time: from the separating pawl's state to the catching pawl's.
-  const reversalFor = (fromLong, duration) => {
+  // Pass 102: the lever's path is the quintic that matches both driving
+  // states plus a shaping term u^3 (1 - u)^3 (alpha + beta u), which keeps
+  // position, speed and acceleration at both ends; the shape is chosen to
+  // spread the lever's travel evenly through the reversal (lowest peak
+  // speed) instead of the plain quintic's late flick.
+  const reversalFor = (fromLong, duration, shape = [0, 0], dip = flywheelSpeedDip) => {
     const start = fromLong ? flywheelEnds.bSeparation : flywheelEnds.cSeparation;
-    const catchValue = start + dipDistance(duration) - (fromLong ? 0 : teethPerCycle);
+    const catchValue = start + dipDistance(duration, dip) - (fromLong ? 0 : teethPerCycle);
     const from = drivingLeverState(fromLong, start, 1);
-    const to = drivingLeverState(!fromLong, catchValue, 1 - flywheelSpeedDip);
-    const curve = quinticBetween(from.lever, from.rate, from.acceleration,
+    const to = drivingLeverState(!fromLong, catchValue, 1 - dip);
+    const base = quinticBetween(from.lever, from.rate, from.acceleration,
       to.lever, to.rate, to.acceleration, duration);
+    const [alpha, beta] = shape;
+    const swing = Math.abs(to.lever - from.lever) + 0.05;
+    const curve = {
+      value: (t) => {
+        const u = t / duration;
+        return base.value(t) + swing * u ** 3 * (1 - u) ** 3 * (alpha + beta * u);
+      },
+      rate: (t) => {
+        const u = t / duration;
+        const g = u ** 3 * (1 - u) ** 3;
+        const dg = 3 * u * u * (1 - u) ** 2 * (1 - 2 * u);
+        return base.rate(t) + swing * (dg * (alpha + beta * u) + g * beta) / duration;
+      },
+    };
     let extreme = from.lever;
     let extremeTime = 0;
+    let signChanges = 0;
+    let peakRate = 0;
+    let previousRate = curve.rate(0);
     for (let index = 1; index <= 512; index += 1) {
       const t = duration * index / 512;
       const value = curve.value(t);
+      const rate = curve.rate(t);
+      if (Math.sign(rate) !== Math.sign(previousRate) && rate !== 0) signChanges += 1;
+      previousRate = rate;
+      peakRate = Math.max(peakRate, Math.abs(rate));
       if (fromLong ? value > extreme : value < extreme) { extreme = value; extremeTime = t; }
     }
     // Refine the turning point.
@@ -19131,29 +19168,40 @@ function alternatingTwoPawlContinuousRatchet(movement) {
       else high = middle;
     }
     extremeTime = (low + high) / 2;
-    return { catchValue, curve, duration, extreme: curve.value(extremeTime), extremeTime, start };
+    return {
+      catchValue, curve, dip, duration, extreme: curve.value(extremeTime), extremeTime,
+      peakRate, shape, signChanges, start,
+    };
   };
   // Each reversal lasts just long enough for the lever to turn exactly at
   // the end of its swing.
-  const solveReversal = (fromLong) => {
+  const solveReversalShape = (fromLong, shape) => {
     const target = fromLong ? leverTop : leverBottom;
-    const miss = (duration) => (fromLong ? 1 : -1) * (reversalFor(fromLong, duration).extreme - target);
+    const miss = (duration) => (fromLong ? 1 : -1) * (reversalFor(fromLong, duration, shape).extreme - target);
     let low = 0.005;
     let high = low;
-    while (miss(high) < 0 && high < 2) high += 0.01;
+    while (miss(high) < 0 && high < 3) high += 0.01;
+    if (miss(high) < 0) return null;
     for (let iteration = 0; iteration < 60; iteration += 1) {
       const middle = (low + high) / 2;
       if (miss(middle) < 0) low = middle;
       else high = middle;
     }
-    return reversalFor(fromLong, (low + high) / 2);
+    return reversalFor(fromLong, (low + high) / 2, shape);
   };
-  const topReversal = solveReversal(true);
-  const bottomReversal = solveReversal(false);
-  const recoveryTop = flywheelRecoveryFraction * topReversal.duration;
-  const recoveryBottom = flywheelRecoveryFraction * bottomReversal.duration;
+  // The shaping coefficients were found offline (pass 102) by a grid search
+  // with local refinement for the lowest peak lever speed whose reversal
+  // turns once and leaves the catching pawl at least
+  // flywheelMinimumDriveTeeth to drive; they are fixed here because the
+  // search costs seconds at load. tests/movement-236.test.mjs rechecks them.
+  const flywheelReversalShapes = { top: [-20, 27.5], bottom: [24, -32.5] };
+  const topReversal = solveReversalShape(true, flywheelReversalShapes.top);
+  const bottomReversal = solveReversalShape(false, flywheelReversalShapes.bottom);
   const bCatchValue = bottomReversal.catchValue;
   const cCatchValue = topReversal.catchValue;
+  const recoveryFor = (drivenPitches) => flywheelRecoveryFraction * drivenPitches / (1 - flywheelSpeedDip / 2);
+  const recoveryBottom = recoveryFor(flywheelEnds.bSeparation - bCatchValue);
+  const recoveryTop = recoveryFor(flywheelEnds.cSeparation - cCatchValue);
   const bPushDuration = flywheelEnds.bSeparation - bCatchValue
     + recoveryBottom * flywheelSpeedDip / 2;
   const cPushDuration = flywheelEnds.cSeparation - cCatchValue
@@ -20065,6 +20113,13 @@ function alternatingTwoPawlContinuousRatchet(movement) {
       events: flywheelEvents,
       minimumSpeedRatio: 1 - flywheelSpeedDip,
       separationTeeth: flywheelSeparationTeeth,
+      minimumDriveTeeth: flywheelMinimumDriveTeeth,
+      reversalShapes: flywheelReversalShapes,
+      reversalPeakLeverRates: { top: topReversal.peakRate, bottom: bottomReversal.peakRate },
+      solveReversalShape,
+      drivenAfterReversal: (fromLong, reversal) => (fromLong
+        ? flywheelEnds.cSeparation
+        : flywheelEnds.bSeparation) - reversal.catchValue,
     },
   };
 

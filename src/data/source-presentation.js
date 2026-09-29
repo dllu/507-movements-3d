@@ -217,7 +217,7 @@ export default {
     note: 'Face view of the concentric mangle wheel and its pinion on its jointed shaft (Hooke joints and a telescopic slip shaft to the input shaft end in front of the wheel). Brown draws no frame, and the reconstructed input-bearing column, wheel standard and feet are not shown (p60 support policy).',
   },
   194: {
-    remove: ['white-index-showing-equal-opposite-wheel-speeds', 'single-coincident-inner-outer-pitch-arc', 'fixed-plain-frame-for-wheel-and-input-shaft'],
+    remove: ['white-index-showing-equal-opposite-wheel-speeds', 'single-coincident-inner-outer-pitch-arc'],
     note: 'Face view of the pin mangle wheel and its pinion on a plain face with its hub boss; the pins stand free with no pitch-circle line and no index mark is drawn. The caption requires the pinion shaft to be jointed: Hooke joints at the input shaft end and on the pinion shaft join a telescopic slip shaft standing end-on in front of the pinion. Brown draws no frame, and the reconstructed input-bearing column, wheel standard and feet are not shown (p60 support policy).',
   },
   197: {
@@ -864,9 +864,9 @@ export default {
     note: 'Front elevation of the Persian wheel with its light rim, curved floats, hollow shaft and hung buckets over the stream. The caption\'s stationary pin tips each bucket at the top, shown on a minimal arm and post; no base slab, trough or white current/rotation markers are drawn. Brown draws no axle support, so the hollow shaft ends plainly either side.',
   },
   442: {
-    camera: [1, 0.28, 0.30],
+    camera: [1, 0.58, 0.30],
     remove: ['fixed-eisach-wheel-base', 'fixed-river-bed-under-pot-wheel', 'rightward-river-current-marker-\\d+', 'visible-pot-wheel-rotation-index'],
-    note: 'Brown looks across the stream nearly along the wheel plane: the axle runs left to right on its trestles, the pots show between the rims and the trough runs off to the left over the ruled stream. No base slab, box bed, water box, current markers or rotation index are drawn.',
+    note: 'Brown looks across the stream nearly along the wheel plane: the axle runs left to right on its trestles, the pots show between the rims and the trough runs off to the left over the ruled stream. No base slab, box bed, water box, current markers or rotation index are drawn. Pass 102: the camera looks down about 30 degrees (it was 15), as Brown shows the trough\'s ruled top, so the water running along the trough reads.',
   },
   443: {
     camera: [-0.3, 0.5, 1],
@@ -932,8 +932,9 @@ export default {
     note: 'Elevation of the swinging lattice as Brown draws it: six horizontal pipes with square boxes at their right ends and tilted boxes under their left ends, six parallel diagonals passing behind them from each left box to the right box two rows up, the crossed braces on the axis, the two dotted posts and the pool; the pipes are cut open along their front walls to show the water and flaps. The highest diagonal joins the top pipe through a port where it passes behind it (its stub above stays open), so both serpentines pour through Brown’s one jet.',
   },
   462: {
+    camera: [0.04, 0.37, 1],
     remove: ['fixed-frame-supporting-upper-powered-chain-wheel'],
-    note: 'The chain wheels, disks, pipe and spout over the water; Brown draws no frame, so both wheel axles end as plain stubs.',
+    note: 'The chain wheels, disks, pipe and spout over the water; Brown draws no frame, so both wheel axles end as plain stubs. Pass 102: the elevation is raised about 20 degrees (it was 3) so the delivery sheet running over the bank top reads as a surface, not an edge-on band.',
   },
   463: {
     remove: ['(?:upper|lower)-leaf-transverse-reinforcement-\\d'],

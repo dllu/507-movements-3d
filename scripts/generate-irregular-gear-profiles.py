@@ -15,6 +15,8 @@ WALL_TOP=.05
 # vertices only where the true curve bends; it moves the outline at most
 # 1e-4, well inside the 0.0008 cutter clearance.
 SMOOTH_TOLERANCE=.0001
+# 196: tip-corner radius of pinion B (about a quarter module).
+PINION_TIP_ROUND=.02
 def ease(shape):
  # Each cutter pose leaves a tiny cusp between neighbouring cuts, which
  # renders as a jagged, stair-stepped flank. A morphological opening by a
@@ -165,6 +167,14 @@ for row in rows:
   continue
  def compound(parts):return unary_union([Polygon(p['outline']).buffer(p['buffer'],join_style=2) for p in parts]).buffer(0)
  blank=compound(row['blank']); cutter=compound(row['cutters'])
+ if row['id']==196:
+  # p102: round pinion B's tip corners (an opening, so material is only
+  # removed) before it cuts wheel A, so A's roots get smooth fillets instead
+  # of the trochoid hooks a sharp-cornered tip leaves.  B is rendered from
+  # this same rounded outline.
+  cutter=cutter.buffer(-PINION_TIP_ROUND,resolution=32).buffer(PINION_TIP_ROUND,resolution=32).simplify(.00002,preserve_topology=True)
+  output['196pinion']={'outline':list(cutter.exterior.coords),'holes':[],'toothProfile':'rack-cut-square-pinion-with-rounded-tips'}
+  row['cutters']=[{'outline':list(cutter.exterior.coords),'buffer':0}]
  original=blank
  if row['id']==191:
   actual=next(r for r in json.load(open('/dev/shm/irregular-contact-input.json'))['results'] if r['id']==191)

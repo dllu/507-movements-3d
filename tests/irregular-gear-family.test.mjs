@@ -65,7 +65,9 @@ test('196 strap arm is one flat tapered extrusion and the stand pivot is a plain
   assert.equal(strap.userData.role, 'flat-tapered-strap-arm-A-to-stand');
   strap.geometry.computeBoundingBox();
   const size = strap.geometry.boundingBox.getSize(new THREE.Vector3());
-  assert.ok(size.y > 0.49 && size.z < 0.151, `strap ${size.toArray()}`);
+  // p102: proportioned from Brown's small eyes (0.115 at A, 0.18 at the stand).
+  assert.ok(size.y > 0.35 && size.y < 0.37 && size.z < 0.151, `strap ${size.toArray()}`);
+  assert.deepEqual(strap.geometry.userData.eyes, [0.18, 0.115]);
   const eye = new THREE.Box3().setFromObject(b.carrierBearing);
   // p93: pedestal, stand eye and pin stand in the strap's plane, just behind it.
   assert.ok(eye.max.z - eye.min.z < 0.25 && eye.max.z < strap.position.z - 0.075 && eye.min.z > 0, 'stand eye sits just behind the strap');
@@ -74,4 +76,17 @@ test('196 strap arm is one flat tapered extrusion and the stand pivot is a plain
   const pin = b.carrierPivotPin.geometry.parameters;
   assert.ok(b.carrierPivotPin.position.z - pin.height / 2 >= eye.min.z - 1e-5, 'pin spans only the eye and strap');
   assert.ok(pin.radiusTop < 0.08 && b.carrierPivotPin.position.z + pin.height / 2 < 0.51);
+});
+
+test('p102: 196 wheel A and pinion B are the regular square-tooth conjugate pair', () => {
+  const b = createAuthoredGearMovement({id: 196}).root.userData.blocks;
+  const pinion = b.pinion.userData.rotor.children[0].geometry.userData;
+  assert.equal(pinion.toothProfile, 'rack-cut-square-pinion-with-rounded-tips');
+  // Ten teeth: count tip crossings of the outline.
+  const r = pinion.outline.map(([x, y]) => Math.hypot(x, y)), mid = (Math.max(...r) + Math.min(...r)) / 2;
+  let tips = 0; r.forEach((v, i) => { if (v > mid && r[(i + r.length - 1) % r.length] <= mid) tips++; });
+  assert.equal(tips, 10);
+  // Wheel A is the offline envelope of this pinion (contact audited in 191-196-201-contact).
+  const a = b.wheelBody.geometry.userData.outline;
+  assert.ok(a.length > 800);
 });

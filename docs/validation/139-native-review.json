@@ -2,11 +2,11 @@
   "sources": [
     {
       "file": "src/data/internal-rack-dimensions.js",
-      "sha256": "a49c39fbafbcf82b3ef478142d50ccb5e2cf1c8b86687cdeccf8b0699fc5e9dd"
+      "sha256": "c1411a25b610acb0ac1545a31ea4295011fd102f6387ca786d5fd87b8f69b9c8"
     },
     {
       "file": "src/simulation/mujoco-internal-rack/profile.js",
-      "sha256": "422ec3f98b8e7b30dce8a2ae1e1b69349e17a27ddf9a06a3865fe4e8b3c874b4"
+      "sha256": "6ab27ae26a9cf86375cf24ec9c635e9037ff21dd3f99a093480b191b96ff2773"
     },
     {
       "file": "src/simulation/mujoco-internal-rack/suspension.js",
@@ -14,7 +14,7 @@
     },
     {
       "file": "scripts/probe-internal-rack.mjs",
-      "sha256": "72c5b3cf2534c1722e094afaf906ea85da768b19f78e168c495bc78377bc75d1"
+      "sha256": "2bfb2f402d4c2c4f28f029970f479013c615fbafb2177f4a5024beb13c88dc2f"
     },
     {
       "file": "scripts/review-internal-rack-native.mjs",
@@ -36,27 +36,27 @@
       "contactTime": 0.002,
       "period": 8,
       "cells": {
-        "pinion": 352,
-        "rack": 1682
+        "pinion": 303,
+        "rack": 2400
       },
       "resets": 0,
       "duration": 12.000000000003174,
-      "maximumPenetrationPixels": 4.4386142503235835,
-      "maximumSampledRodClosureErrorPixels": 0.44756707810080265,
-      "maximumPitchPathErrorPixels": 188.42542241342124,
+      "maximumPenetrationPixels": 0.49160028419348534,
+      "maximumSampledRodClosureErrorPixels": 0.055429232161132366,
+      "maximumPitchPathErrorPixels": 189.00067209767496,
       "worst": {
-        "error": 1.8842542241342124,
-        "time": 2.259999999999922,
+        "error": 1.8900067209767497,
+        "time": 2.1899999999998987,
         "expected": [
-          0.9430730586914557,
-          0.04445927052366971
+          0.9454732417897282,
+          0.0803008606352473
         ],
         "actual": [
-          -0.941179514969619,
-          0.04695322706683194
+          -0.9445330672283306,
+          0.08154874252840927
         ]
       },
-      "recordingSha256": "c84b82fa741632d199d59c6cdc441c5286f9a285ed9300d55b01f85245c699b8"
+      "recordingSha256": "2cc680c136730b6d0e27766b5cc05a2dc7f4d3ec4577f40689a3d611fb35fb95"
     },
     {
       "counterMass": 6,
@@ -64,27 +64,27 @@
       "contactTime": 0.002,
       "period": 8,
       "cells": {
-        "pinion": 352,
-        "rack": 1682
+        "pinion": 303,
+        "rack": 2400
       },
       "resets": 0,
       "duration": 12.000000000003174,
-      "maximumPenetrationPixels": 0.7364953570941565,
-      "maximumSampledRodClosureErrorPixels": 0.4697030930028704,
-      "maximumPitchPathErrorPixels": 188.58493014106193,
+      "maximumPenetrationPixels": 2.8227244013991912,
+      "maximumSampledRodClosureErrorPixels": 1.040977131861261,
+      "maximumPitchPathErrorPixels": 181.92675684848717,
       "worst": {
-        "error": 1.8858493014106192,
-        "time": 2.2499999999999187,
+        "error": 1.8192675684848718,
+        "time": 10.27000000000106,
         "expected": [
-          0.9417782521218866,
-          0.04997163522038903
+          0.9575314024994753,
+          0.03963741752391073
         ],
         "actual": [
-          -0.9440535663487745,
-          0.04185128580918365
+          -0.8609431212475847,
+          -0.014073775199406335
         ]
       },
-      "recordingSha256": "f057d367890303e3721333184dc33f87a1807e04fb5c7c41b11cb32e2b7c2326"
+      "recordingSha256": "a8f018394e8194f03af20d5159d956480fa3a10db6e936433d25965af3a5d48b"
     },
     {
       "counterMass": 8,
@@ -92,27 +92,27 @@
       "contactTime": 0.002,
       "period": 8,
       "cells": {
-        "pinion": 352,
-        "rack": 1682
+        "pinion": 303,
+        "rack": 2400
       },
       "resets": 0,
       "duration": 12.000000000003174,
-      "maximumPenetrationPixels": 2.738348846776962,
-      "maximumSampledRodClosureErrorPixels": 0.734247766656266,
-      "maximumPitchPathErrorPixels": 22.96428103489919,
+      "maximumPenetrationPixels": 2.4546635830867993,
+      "maximumSampledRodClosureErrorPixels": 0.29013733968975525,
+      "maximumPitchPathErrorPixels": 10.587076474335024,
       "worst": {
-        "error": 0.22964281034899192,
-        "time": 3.440000000000316,
+        "error": 0.10587076474335023,
+        "time": 3.350000000000286,
         "expected": [
-          0.4808231912731104,
-          -0.20650000000000002
+          0.7377248088766885,
+          -0.21199999999999997
         ],
         "actual": [
-          0.2663388725112137,
-          -0.12444942199942682
+          0.7528591072439462,
+          -0.10721654787003515
         ]
       },
-      "recordingSha256": "72f54c5b8ebca4c9c6013b6577a656668ff71ab71f4e805f559141e9367f7d64"
+      "recordingSha256": "2b2685ab4802ced88f2fdedf0afae4eb14f3f21574e35bb3171c94c2e57cdf26"
     },
     {
       "counterMass": 8,
@@ -120,27 +120,27 @@
       "contactTime": 0.001,
       "period": 8,
       "cells": {
-        "pinion": 352,
-        "rack": 1682
+        "pinion": 303,
+        "rack": 2400
       },
       "resets": 0,
       "duration": 12.000000000011791,
-      "maximumPenetrationPixels": 0.03744663131539985,
-      "maximumSampledRodClosureErrorPixels": 0.045730773648642684,
-      "maximumPitchPathErrorPixels": 1.0889055720680259,
+      "maximumPenetrationPixels": 0.04443425865988605,
+      "maximumSampledRodClosureErrorPixels": 0.058805577722187925,
+      "maximumPitchPathErrorPixels": 0.22007256744455353,
       "worst": {
-        "error": 0.010889055720680258,
-        "time": 10.000000000002242,
+        "error": 0.002200725674445535,
+        "time": 5.409999999998729,
         "expected": [
-          0.871984216836189,
-          0.15998173590903603
+          -0.5778323493873925,
+          -0.21199999999999997
         ],
         "actual": [
-          0.8650980312032807,
-          0.15154657248932646
+          -0.5766251318546503,
+          -0.2138400595976227
         ]
       },
-      "recordingSha256": "2559f0c9bb04f6b35e0a07f1fcca991f40cc19771851aef9a36e238afe06617d"
+      "recordingSha256": "291b35b2eb556f5912f8a4e3c450e1affc8944412b7803edf3a657b561246e00"
     }
   ],
   "caveat": "Diagnostic runs, not accepted playback. The coupler mass is an inferred trial parameter; neither initial branch retention nor refined contact stability is established merely by a reset-free run."

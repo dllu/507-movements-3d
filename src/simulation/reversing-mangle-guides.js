@@ -6,7 +6,6 @@ import {boredCylinderGeometry} from './piston-guide-parts.js';
 import {addMangleUniversalDrive} from './mangle-universal-drive.js';
 import {involuteSpurOutline, smoothExtrudeGeometry} from './smooth-extrusion.js';
 
-const CAM194=[0.8,3.4,16];
 function area(points) {
   return Math.abs(points.reduce((sum,p,i)=>{const q=points[(i+1)%points.length];return sum+p[0]*q[1]-p[1]*q[0];},0));
 }
@@ -145,6 +144,16 @@ export function finishReversingMangleGuides(root,update,id) {
   // They replace the factory's ball-ended placeholder joint and its standard.
   for(const key of ['universalSlipShaft','fixedUniversalCross','rearInputShaft','movingUniversalJoint','framePost','frameFoot'])
     b[key]?.parent?.remove(b[key]);
+  // p102: 194's pinion rides deep inside the wheel face (its centre 1.6 from
+  // the axis), so any jointed drive must stand in front of it: its slip shaft
+  // swings up to the pinion's whole travel off the pinion axis and crosses
+  // the pinion face in a face-on view, whatever the joint spacing. Brown
+  // draws no drive, so 194 shows only the shaft end in the pinion's hub.
+  if(id===194){
+    d.cameraDistanceScale=1.04;d.cameraFov??=16;markShadows(root);
+    d.universalDrive=null;
+    return {root,update,cameraDirection:new THREE.Vector3(1.6,.9,16)};
+  }
   const box=(o)=>new THREE.Box3().setFromObject(o);
   root.updateMatrixWorld(true);
   const fixedPoint=b.fixedUniversalCross.position;
@@ -163,7 +172,5 @@ export function finishReversingMangleGuides(root,update,id) {
   // standing end-on in front of the wheel is not enlarged by perspective.
   d.cameraFov??=16;
   markShadows(root);
-  // 194: a little more from above, so the drive standing out in front of the
-  // pinion falls below it rather than across its face and hub.
-  return {root,update,cameraDirection:id===194?new THREE.Vector3(CAM194[0],CAM194[1],CAM194[2]):new THREE.Vector3(1.6,.9,16)};
+  return {root,update,cameraDirection:new THREE.Vector3(1.6,.9,16)};
 }

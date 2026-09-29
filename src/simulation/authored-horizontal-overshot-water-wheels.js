@@ -7,7 +7,7 @@ import {
   markShadows,
   matte,
 } from './primitives.js';
-import {STREAM_GRAVITY,WaterSpray,WaterStream,ballisticPath,collectWaterStreams,guidedPath,joinPaths} from './water-stream.js';
+import {STREAM_GRAVITY,WaterSpray,WaterStream,ballisticPath,collectWaterStreams,guidedPath,joinPaths,waterStreamMaterial} from './water-stream.js';
 
 const FULL_TURN = Math.PI * 2;
 
@@ -594,12 +594,35 @@ function horizontalOvershotWaterWheel(movement) {
     }
     return {points, speeds, times, flows, wetFirst: Math.max(0, first), wetLast: last < 0 ? filmSamples - 1 : last};
   };
+  // Pass 102: the board films lie nearly flat on the boards, so the shared
+  // stream shader's grazing-angle whitening and its glossy highlight made a
+  // pale sheen over them. Their own material is matte water: the fresnel
+  // only thickens the tint, it never whitens, and the surface is rough.
+  const filmMaterial = () => {
+    const material = waterStreamMaterial({color: 0x3fa6c8, opacity: 0.62});
+    material.roughness = 0.6;
+    material.metalness = 0;
+    material.envMapIntensity = 0;
+    material.onBeforeCompile = (shader) => {
+      shader.fragmentShader = shader.fragmentShader.replace(
+        '#include <normal_fragment_maps>',
+        `#include <normal_fragment_maps>
+        {
+          float facing = clamp(abs(dot(normal, normalize(vViewPosition))), 0.0, 1.0);
+          diffuseColor.a = min(1.0, diffuseColor.a * (0.8 + 0.6 * pow(1.0 - facing, 2.0)));
+        }`,
+      );
+    };
+    material.customProgramCacheKey = () => 'water-film-matte-v1';
+    return material;
+  };
   const films = Array.from({length: bladeCount}, (_, bladeIndex) => {
     const initial = filmPath(bladeIndex, 0);
     let flows = initial.flows, wetFirst = initial.wetFirst, wetLast = initial.wetLast;
     const film = new WaterStream(initial, {
       width: filmHalfWidth, thickness: filmHalfThickness, widthAxis: edgeLocal, widthExponent: 1,
       cyclePeriod: cycleDuration, streakRate: 1.5, streakAcross: 4, opacity: 0.3, color: 0x3fa6c8,
+      material: filmMaterial(),
       section: (i) => {
         // A dry sample shrinks to a hair, not a point, so its normals stay
         // defined (a zero ring shades black).

@@ -171,12 +171,17 @@ function otisSafetyStop(movement) {
   const springPinSlotHalfWidth = 0.06 + springWireRadius + 0.012;
   const ropeEyeOffset = sourceRopeEyeY;
 
+  // Pass 102: the loop opens at the catch instant, Brown's pose: rope a
+  // has parted far above, and its lower piece, having fallen with the
+  // platform, still stands straight in the eye (a falling body carries its
+  // rope with it). It goes limp only once the pawls arrest the platform.
   const cyclePeriod = 8;
-  const sourceDwellEnd = 0.8;
-  const recoveryEnd = 1.8;
-  const hoistEnd = 3.4;
-  const normalLowerEnd = 4.5;
-  const catchTime = 5.7;
+  const sourceDwellEnd = 3.1;
+  const recoveryEnd = 4.1;
+  const hoistEnd = 5.7;
+  const normalLowerEnd = 6.8;
+  const catchTime = 8;
+  const stubCollapseEnd = 0.55;
   const ropeTongueDepth = 0.10;
   const ropeLayerZ = 0.44 + ropeTongueDepth / 2 + 0.052 + 0.001;
   // Rope a runs on up past Brown's crop to the (unmodelled) hoist, so its
@@ -405,17 +410,30 @@ function otisSafetyStop(movement) {
     // hangs straight from the hoist and recoils a little; the short lower
     // stub goes limp, curling over and lying on B's head. Both re-join as
     // the demonstration reset re-tensions the rope.
-    const ropeSlack = failurePosition === null
-      ? springRelease
-      : smootherStep(THREE.MathUtils.clamp(failurePosition / 0.4, 0, 1));
+    // ropeBreak opens the gap (the upper piece recoils as the rope parts at
+    // the start of the drop); ropeSlack is how limp the lower stub is. The
+    // stub falls straight with the platform and collapses onto B's head
+    // just after the catch; both re-join through the demonstration reset.
+    let ropeBreak;
+    let ropeSlack;
+    if (failurePosition !== null) {
+      ropeBreak = smootherStep(THREE.MathUtils.clamp(failurePosition / 0.4, 0, 1));
+      ropeSlack = 0;
+    } else if (cycleTime < sourceDwellEnd) {
+      ropeBreak = 1;
+      ropeSlack = smootherStep(THREE.MathUtils.clamp(cycleTime / stubCollapseEnd, 0, 1));
+    } else {
+      ropeBreak = springRelease;
+      ropeSlack = springRelease;
+    }
     const headTopY = platformY + sourcePlatformHeadTopY + ropeRadius + 0.004;
     const stubPoints = limpRopeStub(ropeEye, headTopY, ropeSlack);
     const upperBrokenEnd = ropeEye.clone().add(new THREE.Vector3(
       0,
-      ropeStubLength + maximumRopeGap * ropeSlack,
+      ropeStubLength + maximumRopeGap * ropeBreak,
       0,
     ));
-    const lowerBrokenEnd = ropeSlack > 0 ? stubPoints[0].clone() : upperBrokenEnd.clone();
+    const lowerBrokenEnd = ropeBreak > 0 ? stubPoints[0].clone() : upperBrokenEnd.clone();
     const leftEyeHeight = leftPivot.y
       + (-leftPivot.x) * Math.tan(leverAngle);
     const rightEyeHeight = rightPivot.y
@@ -456,9 +474,10 @@ function otisSafetyStop(movement) {
       rightPawlGlobalVelocity,
       rightPawlTip,
       ropeEye,
+      ropeBreak,
       ropeGap: upperBrokenEnd.distanceTo(lowerBrokenEnd),
       ropeSlack,
-      ropeTension: 1 - ropeSlack,
+      ropeTension: 1 - ropeBreak,
       stubPoints,
       springContact,
       springRelease,
@@ -1217,6 +1236,7 @@ function otisSafetyStop(movement) {
     recoveryEnd,
     sourceDwellEnd,
     sourceTime: 0,
+    stubCollapseEnd,
   };
   root.userData.transmission = {
     bilateral: true,
@@ -1259,7 +1279,7 @@ function otisSafetyStop(movement) {
     // The rope material rises and falls with the platform eye, so the lay
     // travels with it (both pieces run downward from their upper ends).
     const ropeTravel = -state.ropeEye.y;
-    const broken = state.ropeSlack > 0;
+    const broken = state.ropeBreak > 0;
     const upperEnd = broken ? state.upperBrokenEnd : state.ropeEye;
     const upperPoints = Array.from({ length: 10 }, (_, index) => (
       upperRopeAnchor.clone().lerp(upperEnd, index / 9)

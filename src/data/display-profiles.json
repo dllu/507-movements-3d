@@ -3683,11 +3683,11 @@
       }
     },
     "194": {
-      "peakAngularSpeed": 3.56513243407472,
-      "peakVisibleAngularSpeed": 3.3661354969247532,
-      "sustainedVisibleAngularSpeed": 3.1929754149880583,
+      "peakAngularSpeed": 3.000000000001722,
+      "peakVisibleAngularSpeed": 3.000000000001722,
+      "sustainedVisibleAngularSpeed": 2.999999999994228,
       "floorY": -2.1127380939920246,
-      "fastestPart": "slip-shaft-yoke-at-pinion-joint-boss",
+      "fastestPart": "Mesh",
       "motionBounds": {
         "min": [
           -1.9031690355634867,
@@ -3697,7 +3697,7 @@
         "max": [
           1.9031690355634867,
           1.9031690355634867,
-          4.379999969601632
+          0.6112100048363209
         ]
       }
     },
@@ -4481,20 +4481,20 @@
       }
     },
     "236": {
-      "peakAngularSpeed": 2.738916696508138,
-      "peakVisibleAngularSpeed": 2.738916696507583,
-      "sustainedVisibleAngularSpeed": 0.4584310578394453,
-      "floorY": -1.6200000288850935,
-      "fastestPart": "short-alternating-pawl-c-hinge-pin",
+      "peakAngularSpeed": 2.7640659164978554,
+      "peakVisibleAngularSpeed": 2.7640659164978554,
+      "sustainedVisibleAngularSpeed": 0.3884569972180387,
+      "floorY": -1.6199995139293968,
+      "fastestPart": "short-alternating-pawl-c",
       "motionBounds": {
         "min": [
-          -3.8080002002127,
-          -1.6200000288850935,
+          -3.8080002025998554,
+          -1.6199995139293968,
           0.07999999880790709
         ],
         "max": [
-          1.695999939922645,
-          5.785164016607531,
+          1.695999942028958,
+          5.785306457725151,
           0.7890000005960465
         ]
       }
@@ -5279,8 +5279,8 @@
       }
     },
     "278": {
-      "peakAngularSpeed": 0.7796810468126201,
-      "peakVisibleAngularSpeed": 0.7796810468126201,
+      "peakAngularSpeed": 0.7289887093169155,
+      "peakVisibleAngularSpeed": 0.7289887093169155,
       "sustainedVisibleAngularSpeed": 0,
       "floorY": -3.0659999985694886,
       "fastestPart": "left-rigid-elbow-lever",

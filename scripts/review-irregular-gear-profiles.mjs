@@ -14,7 +14,7 @@ for(const id of ids){
  const period=u.transmission.cyclePeriod??u.transmission.inputCyclePeriod;
  let a,bb,blank,cutters;
  if(id===191){a=b.driven;bb=b.driver;blank=u.profileGenerationBlank??[shape(b.drivenBody),...b.drivenTeeth.map(shape)];cutters=[shape(b.driverBody),...b.driverTeeth.map(shape)];}
- if(id===196){a=b.wheel;bb=b.pinion;const profile=irregularCircularProfile(g.pinionPitchRadius,g.pinionTeeth,g.wheelDepth,.070);cutters=[{outline:profile.userData.outline.map(p=>{const angle=-Math.PI/(2*g.pinionTeeth);return[p.x*Math.cos(angle)-p.y*Math.sin(angle),p.x*Math.sin(angle)+p.y*Math.cos(angle)];}),buffer:0}];blank=[{outline:Array.from({length:1024},(_,i)=>{const p=u.profileAtParameter(g.sourceProfileParameter+i*2*Math.PI/1024);return xy(p.pitchPoint.clone().addScaledVector(p.outwardNormal,.85*g.module));}),buffer:0}];}
+ if(id===196){a=b.wheel;bb=b.pinion;const profile=irregularCircularProfile(g.pinionPitchRadius,g.pinionTeeth,g.wheelDepth,.070);cutters=[{outline:profile.userData.outline.map(p=>{const angle=-Math.PI/(2*g.pinionTeeth);return[p.x*Math.cos(angle)-p.y*Math.sin(angle),p.x*Math.sin(angle)+p.y*Math.cos(angle)];}),buffer:0}];blank=[{outline:Array.from({length:1024},(_,i)=>{const p=u.profileAtParameter(g.sourceProfileParameter+i*2*Math.PI/1024);return xy(p.pitchPoint.clone().addScaledVector(p.outwardNormal,.8*g.module));}),buffer:0}];}
  // 201: the actual rendered pinion rolls round the addendum blank of the
  // traced pitch curve and cuts the driver's teeth.
  if(id===201){a=b.eccentricGear;bb=b.pinion;const drive=u.transmission.irregularDrive;blank=[{outline:drive.blankOutline(4096).map(xy),buffer:0}];cutters=[{outline:drive.pinionOutline.map(xy),buffer:0}];}

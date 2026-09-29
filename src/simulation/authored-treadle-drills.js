@@ -406,11 +406,16 @@ function treadleBevelDrillingMachine(movement) {
   pinionGear.userData.body.geometry.dispose();pinionGear.userData.body.geometry=keyedBody;
   // The fixed upper bearing supports a rotating keyed hub. The feather can
   // therefore traverse it without sweeping through a stationary round bore.
-  const pinionHub=new THREE.Mesh(plate(clip.difference(poly(circle([0,0],.20,96)),keyHole),pinionOuterDistance,1.17),drivenMaterial);
+  // Pass 102: the hub starts where the keyed cone's back face is, so their
+  // bores meet end to end instead of sharing a length of wall, and it takes
+  // the cone's material so the pinion reads as one casting.
+  const pinionHub=new THREE.Mesh(plate(clip.difference(poly(circle([0,0],.20,96)),keyHole),pinionRootZ1,1.17),pinionGear.userData.body.material);
   pinionHub.userData.role='keyed-pinion-hub-turning-in-fixed-upper-bearing';
   pinionGear.userData.rotor.add(pinionHub);
   const pinionBearingCollars=[[.97,1.00],[1.14,1.17]].map(([low,high])=>{
-    const collar=new THREE.Mesh(plate(clip.difference(poly(circle([0,0],.235,96)),keyHole),low,high),drivenMaterial);
+    // Pass 102: each retainer is a ring on the hub's outside (no second
+    // keyed bore lying along the hub's own), in the pinion's material.
+    const collar=new THREE.Mesh(plate(clip.difference(poly(circle([0,0],.235,96)),poly(circle([0,0],.20,96))),low,high),pinionGear.userData.body.material);
     collar.userData.role='rotating-pinion-bearing-axial-retainer';
     pinionGear.userData.rotor.add(collar);return collar;
   });
@@ -637,8 +642,8 @@ function treadleBevelDrillingMachine(movement) {
     const ring=new THREE.Mesh(new THREE.CylinderGeometry(.14,.14,.06,48),drivenMaterial);ring.position.y=y;shaftSpinRotor.add(ring);return ring;
   });
   // Pass 101: each fulcrum pin runs from 0.02 behind its post's bored head
-  // to 0.02 proud of the lever's front face (post backs at z -0.86 and -0.80).
-  const pivotShafts=[[lowerLeverPivot,-.88],[upperLeverPivot,-.82]].map(([p,back])=>{
+  // to 0.02 proud of the lever's front face (post backs at z -0.86 and -0.82).
+  const pivotShafts=[[lowerLeverPivot,-.88],[upperLeverPivot,-.84]].map(([p,back])=>{
     const front=linkagePlaneZ+.12;
     const pin=cylinderAlongZ(.08,front-back,darkMaterial);pin.position.set(p.x,p.y,(front+back)/2);pin.userData.role='short-fixed-fulcrum-pin-through-post-head-and-lever-eye';root.add(pin);return pin;
   });
@@ -693,8 +698,11 @@ function treadleBevelDrillingMachine(movement) {
   );
   frameColumn.userData.role = 'right-upright-of-drill-c-frame';
   frame.add(frameColumn);
+  // Pass 102: the top arm runs on under the whole upper fulcrum post (to the
+  // left edge of its head), so the post stands on the arm's top face with no
+  // ledge where its head overhung the arm's end.
   const frameTop = makeBeam(
-    new THREE.Vector3(frameLeftX - 0.09, 3.25, frameRearZ),
+    new THREE.Vector3(upperLeverPivot.x - 0.16, 3.25, frameRearZ),
     new THREE.Vector3(frameColumnX, 3.25, frameRearZ),
     { color: PALETTE.frame, depth: 0.28, thickness: 0.18 },
   );
@@ -743,11 +751,13 @@ function treadleBevelDrillingMachine(movement) {
     [[lowerLeverPivot.x-.13,frameBaseY],[lowerLeverPivot.x+.13,frameBaseY]],linkagePlaneZ-.42);
   lowerLeverSupport.userData.role = 'fixed-support-for-treadle-pivot';
   frame.add(lowerLeverSupport);
-  // The upper post stands on the top arm (which ends at x -0.83), so its
-  // stem is kept over the arm below the arm's top face.
+  // The upper post stands on the top arm, its left side a vertical tangent
+  // to the head and its back face flush with the arm's back (z -0.82). It
+  // stands on the arm's top face (y 3.34), so the flush sides only meet at
+  // that edge and share no area.
   const upperLeverSupport = fulcrumPost(upperLeverPivot,
-    [[frameLeftX-.09,3.25],[frameLeftX+.16,3.25]],linkagePlaneZ-.36,
-    [[frameLeftX-.085,3.20],[4,3.20],[4,6],[-4,6],[-4,3.34],[frameLeftX-.085,3.34]]);
+    [[upperLeverPivot.x-.16,3.25],[frameLeftX+.16,3.25]],frameRearZ-.06,
+    [[-4,3.34],[4,3.34],[4,6],[-4,6]]);
   upperLeverSupport.userData.role = 'fixed-support-for-upper-lever-pivot';
   frame.add(upperLeverSupport);
   const shaftGuideBridges=[];

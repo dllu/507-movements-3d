@@ -2,7 +2,7 @@
   "sources": [
     {
       "file": "scripts/probe-internal-rack.mjs",
-      "sha256": "72c5b3cf2534c1722e094afaf906ea85da768b19f78e168c495bc78377bc75d1"
+      "sha256": "2bfb2f402d4c2c4f28f029970f479013c615fbafb2177f4a5024beb13c88dc2f"
     },
     {
       "file": "scripts/compare-internal-rack-refinement.mjs",
@@ -10,23 +10,23 @@
     },
     {
       "file": "src/simulation/mujoco-internal-rack/profile.js",
-      "sha256": "422ec3f98b8e7b30dce8a2ae1e1b69349e17a27ddf9a06a3865fe4e8b3c874b4"
+      "sha256": "6ab27ae26a9cf86375cf24ec9c635e9037ff21dd3f99a093480b191b96ff2773"
     },
     {
       "file": "src/data/internal-rack-dimensions.js",
-      "sha256": "a49c39fbafbcf82b3ef478142d50ccb5e2cf1c8b86687cdeccf8b0699fc5e9dd"
+      "sha256": "c1411a25b610acb0ac1545a31ea4295011fd102f6387ca786d5fd87b8f69b9c8"
     }
   ],
   "comparisons": {
     "timestep": {
-      "maximumRackPositionDifferencePixels": 0.2513891762062411,
-      "maximumCrankTipDifferencePixels": 0.14720828240908315,
-      "maximumRodTipAngleDifferencePixels": 0.06030900072303255
+      "maximumRackPositionDifferencePixels": 0.20713114807034264,
+      "maximumCrankTipDifferencePixels": 0.3673651150888096,
+      "maximumRodTipAngleDifferencePixels": 0.11876830507671605
     },
     "contact": {
-      "maximumRackPositionDifferencePixels": 0.2401754903641959,
-      "maximumCrankTipDifferencePixels": 0.14866517621305086,
-      "maximumRodTipAngleDifferencePixels": 0.04679931055298742
+      "maximumRackPositionDifferencePixels": 0.23916721424743367,
+      "maximumCrankTipDifferencePixels": 0.3006602481962332,
+      "maximumRodTipAngleDifferencePixels": 0.1065442078389253
     }
   },
   "runs": {
@@ -36,7 +36,7 @@
       "contactTime": 0.001,
       "seconds": 12.000000000034545,
       "resets": 0,
-      "maximumPenetrationPixels": 0.03144673717663985
+      "maximumPenetrationPixels": 0.03637538550048972
     },
     "contact": {
       "counterMass": 8,
@@ -44,7 +44,7 @@
       "contactTime": 0.0005,
       "seconds": 12.000000000011791,
       "resets": 0,
-      "maximumPenetrationPixels": 0.02119610264161776
+      "maximumPenetrationPixels": 0.022744960595951488
     },
     "long": {
       "counterMass": 8,
@@ -52,7 +52,7 @@
       "contactTime": 0.001,
       "seconds": 32.000000000107285,
       "resets": 0,
-      "maximumPenetrationPixels": 0.03744663131539985
+      "maximumPenetrationPixels": 0.04443425865988605
     }
   },
   "caveat": "Separate timestep and contact-stiffness sensitivity of the existing mass/inertia candidate. This does not yet validate the reconstructed hardware inertias."

@@ -71,7 +71,7 @@ test('movement 236 is one lever, two alternating pawls, and one fifteen-tooth ra
   // p101: the wheel is a flywheel and never stands.
   assert.equal(transmission.wheelStandsWhileEachPawlSeats, false);
   assert.equal(transmission.standingFractionOfCycle, 0);
-  near(transmission.flywheel.minimumSpeedRatio, 0.88, 1e-15, 'coasting loses at most 12% of the speed');
+  near(transmission.flywheel.minimumSpeedRatio, 0.85, 1e-15, 'coasting loses at most 15% of the speed');
   near(transmission.outputTeethPerLeverCycle, 2, 2e-14,
     'two tooth pitches per lever oscillation');
   assert.equal(blocks.ratchet.parent, model.root);
@@ -188,7 +188,9 @@ for (const [longPawl, name] of [[true, 'long pawl b'], [false, 'short pawl c']])
       near(state.wheelAngularSpeed, state.wheelAngleDerivativePerLeverAngle * state.leverAngularSpeed,
         1e-7, `driven speed at ${coordinate}`);
     }
-    assert.ok(driven / samples > 0.4, `${name} drives for ${driven / samples} of its half`);
+    // Pass 102: the unloaded lever returns briskly, so c's drive is short;
+    // it still takes up at least minimumDriveTeeth of pitch.
+    assert.ok(driven / samples > (longPawl ? 0.4 : 0.15), `${name} drives for ${driven / samples} of its half`);
     // Each pawl lets go a twentieth of a pitch short of its end seat and is
     // caught again after the wheel has coasted through the reversal.
     const released = stateAtCycleCoordinate(separateAt);
@@ -266,13 +268,13 @@ test('movement 236 flywheel turns continuously: never stands, coasts through eac
     if (!state.engaged) coasting += 1;
   }
   near(fastest, drivingSpeed, 1e-12, 'driving speed');
-  assert.ok(slowest >= 0.88 * drivingSpeed - 1e-12, `slowest ${slowest / drivingSpeed} of the driving speed`);
+  assert.ok(slowest >= 0.85 * drivingSpeed - 1e-12, `slowest ${slowest / drivingSpeed} of the driving speed`);
   near(coasting / samples, transmission.flywheel.coastFractionOfCycle, 2e-3, 'coasting fraction');
   // At both lever reversals the lever stops but the wheel runs on.
   for (const coordinate of [0, geometry.flywheelTopCoordinate, 1]) {
     const state = stateAtCycleCoordinate(coordinate);
     assert.ok(Math.abs(state.leverAngularSpeed) < 1e-9, `lever reverses at ${coordinate}`);
-    assert.ok(state.wheelAngularSpeed > 0.88 * drivingSpeed, `wheel runs on at ${coordinate}`);
+    assert.ok(state.wheelAngularSpeed > 0.85 * drivingSpeed, `wheel runs on at ${coordinate}`);
   }
   near(stateAtCycleCoordinate(1).wheelAngle - stateAtCycleCoordinate(0).wheelAngle,
     2 * geometry.toothPitch, 4e-15, 'two pitches per lever cycle');
@@ -422,6 +424,42 @@ test('movement 236 pawls b and c are straight bars of one breadth with wedge end
     const wedge = geometry.pawlWedges.find((w) => w.length === length);
     const included = THREE.MathUtils.radToDeg(wedge.lowerDirection - wedge.upperDirection);
     assert.ok(included > 40 && included < valley, `wedge ${included} valley ${valley}`);
+  }
+  disposeModel(model.root);
+});
+
+test('movement 236 lever runs at a natural pace: no flick at the reversals (pass 102)', () => {
+  const model = createMovementModel(catalog.movements[235]);
+  const { stateAtCycleCoordinate, transmission } = model.root.userData;
+  const { flywheel } = transmission;
+  const samples = 4096;
+  const speeds = [];
+  let previous = null;
+  let largestStep = 0;
+  for (let sample = 0; sample < samples; sample += 1) {
+    const state = stateAtCycleCoordinate(sample / samples);
+    speeds.push(Math.abs(state.leverAngularSpeed));
+    if (previous !== null) largestStep = Math.max(largestStep, Math.abs(state.leverAngle - previous));
+    previous = state.leverAngle;
+  }
+  const sorted = [...speeds].sort((a, b) => a - b);
+  const ratio = Math.max(...speeds) / sorted[samples >> 1];
+  // The plain quintic reversal peaked at 2.94x the median lever speed.
+  assert.ok(ratio < 1.75, `peak/median lever speed ${ratio}`);
+  assert.ok(largestStep < 0.001, `lever path continuous (${largestStep})`);
+  // The fixed shaping coefficients: each reversal turns once, leaves the
+  // catching pawl its minimum drive, and no grid neighbour is flatter.
+  for (const [fromLong, key] of [[true, 'top'], [false, 'bottom']]) {
+    const shape = flywheel.reversalShapes[key];
+    const chosen = flywheel.solveReversalShape(fromLong, shape);
+    assert.equal(chosen.signChanges, 1);
+    assert.ok(flywheel.drivenAfterReversal(fromLong, chosen) >= flywheel.minimumDriveTeeth - 1e-9);
+    for (const [da, db] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const neighbour = flywheel.solveReversalShape(fromLong, [shape[0] + da, shape[1] + db]);
+      if (!neighbour || neighbour.signChanges !== 1
+        || flywheel.drivenAfterReversal(fromLong, neighbour) < flywheel.minimumDriveTeeth) continue;
+      assert.ok(neighbour.peakRate >= chosen.peakRate - 0.02, `${key} neighbour ${da},${db} flatter`);
+    }
   }
   disposeModel(model.root);
 });

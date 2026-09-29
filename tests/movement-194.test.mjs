@@ -107,12 +107,20 @@ test('movement 194 matches Brown\'s one face-pin circle, one pinion, groove guid
   assert.equal(blocks.wheelRotor.parent, blocks.wheel);
   assert.equal(blocks.wheelBody.parent, blocks.wheelRotor);
   // Brown draws the pins standing free, so the pitch-circle line is
-  // presented away. The factory's ball-ended placeholder joint is replaced by
-  // the captioned jointed shaft (two Hooke joints and a slip shaft).
+  // presented away. p102: Brown draws no drive, and any jointed drive must
+  // stand in front of the pinion and cross its face, so none is modelled;
+  // the pinion shaft ends just proud of the pinion's front face.
   assert.equal(blocks.singlePitchArc.parent, null);
   assert.equal(blocks.fixedUniversalCross.parent, null);
-  assert.equal(blocks.universalDrive.parent, model.root);
-  assert.equal(blocks.universalSpiderFixed.userData.role, 'universal-joint-cross-at-input');
+  assert.equal(blocks.universalDrive, undefined);
+  model.root.traverse((object) => assert.ok(!/universal-yoke|universal-joint-cross|slip-shaft/.test(object.userData.role ?? ''), object.userData.role));
+  {
+    model.root.updateMatrixWorld(true);
+    const shaft = new THREE.Box3().setFromObject(blocks.pinionShaft);
+    const pinion = new THREE.Box3().setFromObject(blocks.pinion);
+    assert.ok(shaft.max.z > pinion.max.z && shaft.max.z < pinion.max.z + 0.05, `shaft end ${shaft.max.z}`);
+  }
+  assert.ok(Math.abs(model.cameraDirection.y / model.cameraDirection.z) < 0.06, 'face-on default camera');
   assert.equal(blocks.guideGrooveOuter.parent, blocks.wheelRotor);
   assert.equal(blocks.guideGrooveRecess.parent, blocks.wheelRotor);
   assert.equal(blocks.fixedUniversalCross.userData.fixed, true);
@@ -638,11 +646,11 @@ test('movement 194 is fully three-dimensional and remains distinct as the review
     ]) physicalBounds.expandByObject(object);
   }
   const size = physicalBounds.getSize(new THREE.Vector3());
-  // The wheel (3.81 across) with the pinion below it on its outer run, and
-  // the long pinion shaft standing out in front (p99).
+  // The wheel (3.81 across) with the pinion below it on its outer run.
+  // p102: the pinion shaft ends at the pinion (no drive stands in front).
   assert.ok(size.x > 3.8);
   assert.ok(size.y > 4.3);
-  assert.ok(size.z > 3.5);
+  assert.ok(new THREE.Box3().setFromObject(blocks.pinionShaft).max.z < 0.61);
   assert.ok(physicalBounds.min.z < -0.76);
   assert.ok(physicalBounds.max.z > 0.79);
   let meshCount = 0;
@@ -657,7 +665,8 @@ test('movement 194 is fully three-dimensional and remains distinct as the review
       facePinSeatCount += 1;
     }
   });
-  assert.ok(meshCount >= 63, "the undrawn index and pitch line are presented away");
+  // p102: 35 meshes once the undrawn jointed drive (28 meshes) is left out.
+  assert.ok(meshCount >= 35, "the undrawn index and pitch line are presented away");
   assert.equal(facePinCount, 20);
   assert.equal(facePinSeatCount, 2);
   assert.ok(model.cameraDirection.x > 0);

@@ -2,11 +2,11 @@
   "sources": [
     {
       "file": "src/data/internal-rack-dimensions.js",
-      "sha256": "a49c39fbafbcf82b3ef478142d50ccb5e2cf1c8b86687cdeccf8b0699fc5e9dd"
+      "sha256": "c1411a25b610acb0ac1545a31ea4295011fd102f6387ca786d5fd87b8f69b9c8"
     },
     {
       "file": "src/simulation/mujoco-internal-rack/profile.js",
-      "sha256": "422ec3f98b8e7b30dce8a2ae1e1b69349e17a27ddf9a06a3865fe4e8b3c874b4"
+      "sha256": "6ab27ae26a9cf86375cf24ec9c635e9037ff21dd3f99a093480b191b96ff2773"
     },
     {
       "file": "src/simulation/coaxial-gear-geometry.js",
@@ -29,15 +29,21 @@
     "sweepSteps": 1024,
     "clearance": 0.0008,
     "samples": 64,
-    "cutterSteps": 2048
+    "cutterSteps": 2048,
+    "tooth": {
+      "pressureAngle": 0.2530727415391778,
+      "pinionAddendum": 1,
+      "pinionDedendum": 1.25,
+      "cutterTipRadius": 0.12
+    }
   },
-  "teeth": 9,
+  "teeth": 10,
   "poses": 720,
   "phaseOffset": 0.37,
   "maximumOverlapArea": 0,
   "worstPhase": 0,
   "bodyComponents": 1,
   "openingComponents": 1,
-  "openingVertices": 8599,
+  "openingVertices": 10697,
   "caveat": "A generated tooth-clearance prototype along the ideal pitch path; this is not validation of passive motion, preload, linkage forces or source dimensions."
 }
