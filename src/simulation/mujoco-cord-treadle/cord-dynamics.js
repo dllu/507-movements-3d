@@ -1,5 +1,6 @@
 import {cordTreadleParameters,cordTreadleMetrics} from '../cord-treadle-motion.js';
 import {idealCordShape} from './ideal-cord-shape.js';
+import {cordTension,cordSagDeficit} from './elastic-cord.js';
 
 // Pass 101 (user review: "the cord sagging is fine but ... add some inertia
 // to the cord or else it looks too abrupt"). The quasi-static ideal cord
@@ -27,7 +28,14 @@ export const CORD_DYNAMICS=Object.freeze({segments:64,substep:1/4000,iterations:
 /**
  * motionAt(t) -> [disk, treadle, pulley] for loop time t >= 0 (periodic).
  */
-export function simulateCordLoop(motionAt,{period=4,geometry=cordTreadleParameters(),...options}={}){
+// Pass 103: with `elastic` (elastic-cord.js) the rope is the same elastic,
+// heavy cord that drives the native treadle, tied at geometry.cordLength. The
+// recorded pulley carries the stretched material, so the free run is given
+// the length its weight implies at the chord's static tension: the chord plus
+// the sag deficit w^2 s^3 / (24 T^2). As the tension builds during take-up the
+// sag clears progressively, instead of the chain being forced dead straight
+// the instant the chord reaches the tied length.
+export function simulateCordLoop(motionAt,{period=4,geometry=cordTreadleParameters(),elastic=null,...options}={}){
  const o={...CORD_DYNAMICS,...options},g=geometry,N=o.segments,rest=g.cordLength/N,R=g.guideRadius,floor=g.groundY+o.ropeRadius;
  const [gx,gy]=g.guide,dt=o.substep,stepsPerPeriod=Math.round(period/dt);
  if(Math.abs(stepsPerPeriod*dt-period)>1e-9)throw new RangeError('The substep must divide the period');
@@ -52,7 +60,8 @@ export function simulateCordLoop(motionAt,{period=4,geometry=cordTreadleParamete
   // slightly; share that stretch along the free links so the chain has a
   // feasible straight state instead of fighting its constraints.
   const anchor=reference.entryAngle+pulley-(free+1)*rest/R+reference.incoming/R;let span=m.entryAngle-anchor;
-  const link=Math.max(rest,(m.incoming+R*Math.max(0,span))/(free+1));
+  const straight=m.incoming+R*Math.max(0,span),sag=elastic?cordSagDeficit(cordTension(m.length-g.cordLength,m.incoming,elastic),m.incoming,elastic):0;
+  const link=Math.max(rest,(straight+sag)/(free+1));
   for(let i=1;i<=free;i++){const vx=(x[i]-px[i])*drag,vy=(y[i]-py[i])*drag;px[i]=x[i];py[i]=y[i];x[i]+=vx;y[i]+=vy+fall;}
   px[0]=x[0];py[0]=y[0];x[0]=m.pin[0];y[0]=m.pin[1];
   for(let i=free+1;i<=N;i++){px[i]=x[i];py[i]=y[i];[x[i],y[i]]=i===N?m.eye:fixedAt(i*rest,pulley,m);}
@@ -88,7 +97,7 @@ export function simulateCordLoop(motionAt,{period=4,geometry=cordTreadleParamete
  let closure=0;
  for(let d=0;d<width;d++)closure=Math.max(closure,Math.abs(points[o.frames*width+d]-points[d]));
  for(let f=0;f<=o.frames;f++){const t=f/o.frames;for(let d=0;d<width;d++)points[f*width+d]-=t*(points[o.frames*width+d]-points[d]);}
- return {segments:N,frames:o.frames,period,rest,points,closure,options:o};
+ return {segments:N,frames:o.frames,period,rest,points,closure,options:elastic?{...o,elastic}:o};
 }
 
 /** Interpolated cord centreline (z = 0.64) at a loop time. */

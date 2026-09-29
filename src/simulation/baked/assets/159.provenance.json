@@ -24,13 +24,13 @@
     ],
     "max": [
       7.15333324432373,
-      3.704444461481254,
+      3.704444457132082,
       0.9599999761581421
     ]
   },
   "focus": [
     2.7377777099609375,
-    0.06222224027737022,
+    0.062222238102784155,
     -0.125
   ],
   "cameraDirection": [
@@ -38,26 +38,38 @@
     0.02,
     15
   ],
-  "sourceTime": 11.98567640377883,
+  "sourceTime": 11.985557311333817,
   "closure": [
-    2.6645352591003757e-13,
-    1.555977569012157e-13,
-    -4.340972026284362e-13,
+    -1.9184653865522705e-13,
+    -1.3700152123874432e-13,
+    2.999822612537173e-13,
     0
   ],
   "velocityClosure": [
-    4.1105785442141496e-11,
-    2.0080492824092744e-11
+    3.976374784997461e-12,
+    2.184252778647533e-12
   ],
-  "refinements": 1344,
+  "refinements": 807,
+  "cordModel": {
+    "stiffness": 20000,
+    "exponent": 2,
+    "damping": 120,
+    "engage": 0.03,
+    "backstopStrain": 0.05,
+    "weightPerLength": 0.6864937580789712,
+    "restLength": 11.088106804531185,
+    "drawnLength": 11.18344383731753,
+    "loopStartTreadle": 0.2619557634016557,
+    "loopStartError": 2.709832663816414e-8
+  },
   "sources": [
     {
       "file": "scripts/bake-cord-treadle.mjs",
-      "sha256": "dc468ad85d229fd4691a014c833b658a787509b170ac54b95156f08267032833"
+      "sha256": "778d45cdfef544abca434380ae1e1f76899ef944e46183857a98315255e84b8a"
     },
     {
       "file": "src/simulation/mujoco-cord-treadle/physics.js",
-      "sha256": "ab95474e79b4123f0c013fb528aa5535e846afe10a1a91575ac7b48e585c2100"
+      "sha256": "ef1f793795168ace5f3176c555e5862e748f7f8d7c5fad0d68886d19fdb48730"
     },
     {
       "file": "src/simulation/mujoco-cord-treadle/inertia.js",
@@ -73,7 +85,11 @@
     },
     {
       "file": "src/simulation/mujoco-cord-treadle/cord-dynamics.js",
-      "sha256": "2d107ce1ee4a894cc25f99548fa27b202127a4012931c574ea955c526a416fee"
+      "sha256": "51cb2bfa33cade29a81d81178a9b15e3c0a8f48706d1878007e3a74f3eacd9d7"
+    },
+    {
+      "file": "src/simulation/mujoco-cord-treadle/elastic-cord.js",
+      "sha256": "eb3058c7b6e1560a37d45515535256c10e61f23e674ec6d0fb52a02211815d6b"
     },
     {
       "file": "src/simulation/baked/mujoco-bake-format.js",
@@ -92,11 +108,11 @@
       "sha256": "7984734dc15dfec9bd0f1198b9f8544dee4b9b6529a77eec92681927cd63db71"
     }
   ],
-  "assumptions": "Native ideal massless cord and passive treadle. The visible cord is a one-way-coupled chain with mass (cord-dynamics.js): the diagonal run is a limp point-mass rope under gravity with light damping, the groove and vertical run follow the recorded pulley; it does not load the treadle.",
+  "assumptions": "Native passive treadle driven through an elastic, heavy, tension-only cord (elastic-cord.js: strain-stiffening stretch in series with the sag of its own weight, plus damping; about 1% working strain; stiffness assumed), tied short by its working stretch so the loop-start pose matches the ideal inextensible cord. The visible cord is a one-way-coupled chain with mass (cord-dynamics.js): the diagonal run is a limp point-mass rope under gravity with light damping, the groove and vertical run follow the recorded pulley; it does not load the treadle.",
   "cord": {
     "segments": 64,
     "frames": 200,
-    "closure": 0.0017571438154266872,
+    "closure": 1.5663026431411708e-12,
     "options": {
       "segments": 64,
       "substep": 0.00025,
@@ -108,10 +124,18 @@
       "shortest": 0.3,
       "ropeRadius": 0.045,
       "warmupPeriods": 8,
-      "frames": 200
+      "frames": 200,
+      "elastic": {
+        "stiffness": 20000,
+        "exponent": 2,
+        "damping": 120,
+        "engage": 0.03,
+        "backstopStrain": 0.05,
+        "weightPerLength": 0.6864937580789712
+      }
     }
   },
-  "samples": 3345,
-  "bytes": 527448,
-  "sha256": "fc9a35fd3841704c379ac2cd4f395b14f65e3ba4c735b30f67a4a9dc8d53a10e"
+  "samples": 2808,
+  "bytes": 513242,
+  "sha256": "55f4c2fb5255f2ca306d7d0fc0c6ef5f3f7ca0c726ec2688f39b176bbe725335"
 }

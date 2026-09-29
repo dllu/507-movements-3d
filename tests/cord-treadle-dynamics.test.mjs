@@ -36,3 +36,16 @@ test('159 playback renders the recorded chain',()=>{
  const v=makeCordTreadleModel(bundle);
  try{v.update(.7);const l=v.root.userData.state.cordLength;assert.ok(Math.abs(l-length(sampleCordLoop(loop,.7)))<1e-9);}finally{v.dispose();}
 });
+test('159 elastic cord takes up the slack without jerking the treadle',()=>{
+ // Pass 103: with the inextensible cord the resting treadle was jerked to speed
+ // in about 1 ms (170 rad/s² over 4 ms differences); the elastic cord ramps it.
+ const h=.004;let takeup=0;
+ for(let t=1.5;t<2.5;t+=.001){const a=(sampleBakedMotion(bundle,t+h)[1]-2*sampleBakedMotion(bundle,t)[1]+sampleBakedMotion(bundle,t-h)[1])/h/h;takeup=Math.max(takeup,Math.abs(a));}
+ console.log({takeup});assert.ok(takeup<20);
+ // The visible chain carries the same cord's sag at its tension, so it no longer
+ // whips straight the instant the chord reaches its length (was 901 units/s²).
+ let chain=0;const c=t=>sampleCordLoop(loop,t).map(p=>p.slice());
+ for(let t=1.6;t<2.2;t+=.02){const p=c(t-.02),q=c(t),n=c(t+.02);q.forEach((v,i)=>{chain=Math.max(chain,Math.hypot(n[i][0]-2*v[0]+p[i][0],n[i][1]-2*v[1]+p[i][1])/.0004);});}
+ console.log({chain});assert.ok(chain<500);
+ const m=bundle.cordModel;assert.ok(m.restLength<m.drawnLength&&m.restLength>.98*m.drawnLength);assert.ok(Math.abs(m.loopStartError)<1e-6);
+});

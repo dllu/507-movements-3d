@@ -309,8 +309,10 @@ function retainLaidTraverseCord(cord, radius) {
 // Brown draws the band as a stout laid rope (about a fifteenth of the large
 // fusee diameter). The two cords lie side by side in the widened groove, each
 // off its centre line by CORD_OFFSET, so they clear where they meet.
-const CORD_RADIUS = 0.032;
-const CORD_OFFSET = 0.034;
+// p103: the cords stand at the cap (radius 0.035, 0.0025 apart where they
+// meet) that two side-by-side cords in the 0.152 groove allow.
+const CORD_RADIUS = 0.035;
+const CORD_OFFSET = 0.03625;
 
 function fuseeCarriageTraverse(movement) {
   const root = new THREE.Group();

@@ -62,8 +62,8 @@ export function correctCordTraverseParts(root,id,update){
     // the small end) so the cord clears Brown's cone;
     // the flat floor is wide enough for the two side-by-side laid cords.
     const angular=Math.atan2(Math.sin(angle-phase),Math.cos(angle-phase)),offset=Math.abs(angular*pitch/(2*Math.PI));
-    const ahead=(progress+.05/height)*g.revolutionCount,floor=profile(Math.min(ahead,g.revolutionCount))+Math.max(0,ahead-g.revolutionCount)*d.profile.radiusDerivativeAtTurns(g.revolutionCount)-.032,outer=profile(progress*g.revolutionCount)+.004;
-    const fraction=T.MathUtils.clamp((offset-.068)/.007,0,1);points.push([y,floor+(outer-floor)*fraction]);
+    const ahead=(progress+.05/height)*g.revolutionCount,floor=profile(Math.min(ahead,g.revolutionCount))+Math.max(0,ahead-g.revolutionCount)*d.profile.radiusDerivativeAtTurns(g.revolutionCount)-.035,outer=profile(progress*g.revolutionCount)+.004;
+    const fraction=T.MathUtils.clamp((offset-.0715)/.0040,0,1);points.push([y,floor+(outer-floor)*fraction]);
    }
    points.push([g.fuseeBottomY,.046],[g.fuseeTopY,.046]);return points;
   },128,'y');replace(b.fuseeBody,body);

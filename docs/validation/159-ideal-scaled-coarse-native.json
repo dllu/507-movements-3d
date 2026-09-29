@@ -60,6 +60,7 @@
       },
       "assumptions": "0.1 metre per display unit and uniform 7200 kg/m³ rigid material by default. Source gives no dimensions or materials. Rigid solids include inferred anchor studs; cord itself is modeled separately."
     },
+    "elasticCord": null,
     "movement": 159,
     "period": 4,
     "timestep": 0.0005,
@@ -199,7 +200,7 @@
     },
     {
       "file": "src/simulation/mujoco-cord-treadle/physics.js",
-      "sha256": "ab95474e79b4123f0c013fb528aa5535e846afe10a1a91575ac7b48e585c2100"
+      "sha256": "ef1f793795168ace5f3176c555e5862e748f7f8d7c5fad0d68886d19fdb48730"
     },
     {
       "file": "src/simulation/cord-treadle-motion.js",
@@ -215,7 +216,7 @@
     },
     {
       "file": "src/simulation/mujoco-cord-treadle/solids.js",
-      "sha256": "8b118b3022e125bbfa33572495113ba3fedebf079c810e646ecc6a321e32ae74"
+      "sha256": "81dcf25b0284ebf09519fa8a19e5b5153354c6b01dfd026699c998df577bcf81"
     }
   ]
 }

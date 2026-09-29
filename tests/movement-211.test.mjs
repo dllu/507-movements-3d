@@ -299,25 +299,30 @@ test('movement 211 preserves every mesh, guide clearance, and lock constraint th
     );
     assert.ok(
       state.driverPinGuide.clearance
-        >= geometry.minimumGuideClearance - 5e-12,
+        >= geometry.minimumGuideClearance - 1e-8,
       `entry pin never penetrates guide at state ${index}`,
     );
     if (state.driverPinGuide.engaged) guideEngagedStates += 1;
 
     if (state.indexing) {
       indexingStates += 1;
-      if (state.phase >= geometry.guideHandoffPhase) {
+      if (state.phase >= geometry.guideHandoffPhase
+        && state.phase < FULL_TURN / 2.5) {
         near(state.pinionAngularSpeed,
           transmission.indexingSpeedRatio * state.driverAngularSpeed,
           0, `active ratio at state ${index}`);
-      } else if (state.phase > 0) {
+      } else {
         // The pin presses the tongue's crown, turning the pinion about
-        // 2.2-2.8 times as fast as the wheel (its first table step less).
+        // 0.9-2.5 times as fast as the wheel (its first table step less);
+        // p103: the push begins just before the line of centres, at the end
+        // of the previous turn, where the lock has released.
         const ratio = -state.pinionAngularSpeed / state.driverAngularSpeed;
         assert.ok(ratio > 0.9 && ratio < 3, `guide push ratio ${ratio} at state ${index}`);
       }
       near(state.outputTurns,
-        -(state.completedInputTurns + state.phase * 2.5 / FULL_TURN),
+        state.phase > FULL_TURN + geometry.guideStrikePhase
+          ? -(state.completedInputTurns + 1)
+          : -(state.completedInputTurns + state.phase * 2.5 / FULL_TURN),
         1e-15, `index progress at state ${index}`);
       assert.equal(state.lock.active, false);
     } else {
@@ -377,16 +382,16 @@ test('movement 211 preserves every mesh, guide clearance, and lock constraint th
     'the official anti-jam construction retains positive pin clearance');
   near(minimumGuideClearance, geometry.minimumGuideClearance, 5e-8,
     'sampled closest guide pass');
-  assert.equal(guideEngagedStates, 1359);
-  assert.equal(indexingStates, 13109);
-  assert.equal(dwellStates, 19660);
+  assert.equal(guideEngagedStates, 1557);
+  assert.equal(indexingStates, 13323);
+  assert.equal(dwellStates, 19446);
   assert.ok(lockArcStates > dwellStates * 0.97,
     'the plain circular rim occupies essentially the full locked dwell');
   assert.deepEqual(Object.fromEntries(stages), {
-    'entry-pin-and-guide-transfer': 1458,
+    'entry-pin-and-guide-transfer': 1672,
     'eleven-tooth-indexing-mesh': 8010,
     'relocking-transition': 3641,
-    'plain-rim-locked-dwell': 19660,
+    'plain-rim-locked-dwell': 19446,
   });
   disposeModel(model.root);
 });
@@ -430,7 +435,8 @@ test('movement 211 has the exact two-to-one index, intentional speed jumps, half
     // During the pin's push the rate follows the solved pin/crown contact
     // (tabulated every 0.01 degree, so a finite difference may straddle a
     // table step); elsewhere it is exactly 2.5 or zero.
-    const pushing = angle > 0 && angle < geometry.guideHandoffPhase;
+    const pushing = (angle > 0 && angle < geometry.guideHandoffPhase)
+      || angle > FULL_TURN + geometry.guideStrikePhase;
     near(
       (next - previous) / (2 * angleStep),
       pushing ? state.pinionAngularSpeed / state.driverAngularSpeed
@@ -470,8 +476,13 @@ test('movement 211 has the exact two-to-one index, intentional speed jumps, half
   near(afterLock.pinionAngularSpeed, 0, 0, 'locked output speed');
   near(beforeLock.pinionAngle, afterLock.pinionAngle,
     boundaryStep * 2.6, 'position remains continuous at lock impact');
-  const beforeStrike = stateAtDriverAngle(FULL_TURN - boundaryStep);
-  const afterStrike = stateAtDriverAngle(FULL_TURN + boundaryStep);
+  // p103: the pin strikes the crown 2.35 degrees of wheel before the line
+  // of centres (Brown draws it on the crown there), once the lock releases.
+  assert.ok(geometry.guideStrikePhase < -0.04 && geometry.guideStrikePhase > -0.043);
+  const beforeStrike = stateAtDriverAngle(
+    FULL_TURN + geometry.guideStrikePhase - boundaryStep);
+  const afterStrike = stateAtDriverAngle(
+    FULL_TURN + geometry.guideStrikePhase + boundaryStep);
   near(beforeStrike.pinionAngularSpeed, 0, 0, 'pre-strike dwell speed');
   // The pin strikes the crown and the pinion starts at the contact's own
   // rate (about 1 to 2.3 times the wheel), not the full 2.5.

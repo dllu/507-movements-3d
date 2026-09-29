@@ -6197,11 +6197,11 @@
       "id": 159,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-101 lane, integrated by primary agent",
-        "reviewPass": 101,
+        "reviewer": "Claude Opus 5.5 — pass-103 lane, integrated by primary agent",
+        "reviewPass": 103,
         "reviewedOn": "2026-09-28",
-        "evidence": "docs/p101-u2-review.md",
-        "note": "Pass 101: The slack cord hangs in a loop under the crank pin for about a third of the turn (accepted by the user); the final take-up is a quick snap as the treadle is lifted."
+        "evidence": "docs/p103-a-review.md",
+        "note": "Pass 103: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -6224,7 +6224,8 @@
         "docs/p84-f-review.md",
         "docs/p86-7-review.md",
         "docs/p99-c-review.md",
-        "docs/p101-u2-review.md"
+        "docs/p101-u2-review.md",
+        "docs/p103-a-review.md"
       ],
       "mujoco": {
         "mode": "baked",
@@ -6232,9 +6233,9 @@
         "note": "Production model-loader loads recorded offline MuJoCo motion; no live browser solve."
       },
       "updatedOn": "2026-09-28",
-      "visibleFlaws": "The slack cord hangs in a loop under the crank pin for about a third of the turn (accepted by the user); the final take-up is a quick snap as the treadle is lifted.",
-      "limits": "The vertical run hangs straight and the slack is a gravity parabola in the diagonal run; laid-rope meshes on computed paths; tension not simulated. p84: a taut cord needs the treadle at 0.84 rad but the floor stops it at 0.35; a treadle short enough would be at most 141 px against Brown's 297; wrapping on the rim or shaft only lengthens the path, and retying shorter lifts the drawn treadle above its pivot. p86: the cord pin's shank runs on through the treadle (presentation layer); the lower ring hangs on the baked neck. p99: re-examined, forced: in the drawn pose the cord needs 66 px more drop than the 9 px the floor allows; a taut cord at the drawn pin angle needs a throw of at most 12.5 px (Brown draws 75), and every alternative changes two drawn features. p101: the visible cord has mass and inertia (a baked limp rope of 64 masses that forms and clears the sag smoothly, within 1.1% of its length); it doesn't load the treadle.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "The vertical run hangs straight and the slack is a gravity parabola in the diagonal run; laid-rope meshes on computed paths; tension not simulated. p84: a taut cord needs the treadle at 0.84 rad but the floor stops it at 0.35; a treadle short enough would be at most 141 px against Brown's 297; wrapping on the rim or shaft only lengthens the path, and retying shorter lifts the drawn treadle above its pivot. p86: the cord pin's shank runs on through the treadle (presentation layer); the lower ring hangs on the baked neck. p99: re-examined, forced: in the drawn pose the cord needs 66 px more drop than the 9 px the floor allows; a taut cord at the drawn pin angle needs a throw of at most 12.5 px (Brown draws 75), and every alternative changes two drawn features. p101: the visible cord has mass and inertia (a baked limp rope of 64 masses that forms and clears the sag smoothly, within 1.1% of its length); it doesn't load the treadle. p103: the cord that drives the treadle is elastic, heavy and pulls only (elastic-cord.js): strain-stiffening stretch of about 0.9% (stiffness assumed) in series with its own weight-sag, plus damping, applied through the MuJoCo tendon; take-up ramps over about 70 ms (peak 8.9 rad/s², was 482). The slack loop under the crank pin for about a third of the turn is accepted by the user.",
+      "assessment": "reasonable"
     },
     {
       "id": 160,
@@ -8383,11 +8384,11 @@
       "id": 211,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-101 lane, integrated by primary agent",
-        "reviewPass": 101,
+        "reviewer": "Claude Opus 5.5 — pass-103 lane, integrated by primary agent",
+        "reviewPass": 103,
         "reviewedOn": "2026-09-28",
-        "evidence": "docs/p101-f2-review.md",
-        "note": "Pass 101: The entry pin sits 1.6 pin radii inside the rim, as drawn, and reads close to the edge."
+        "evidence": "docs/p103-a-review.md",
+        "note": "Pass 103: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -8411,7 +8412,8 @@
         "docs/p84-e-review.md",
         "docs/p86-1-review.md",
         "docs/p93-g-review.md",
-        "docs/p101-f2-review.md"
+        "docs/p101-f2-review.md",
+        "docs/p103-a-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -8419,9 +8421,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-28",
-      "visibleFlaws": "The entry pin sits 1.6 pin radii inside the rim, as drawn, and reads close to the edge.",
-      "limits": "The tongue arches up and droops as drawn: its crown is one circular arc on a straight root from a boss round the pinion shaft (seated on the hub ring all round). The pin's push is solved from the pin/crown contact, then the teeth take over with a 2.24→2.5 speed step; the pinion's missing teeth sit below the line of centres; the relocking is prescribed. The plate's centre distance and tip radius (8.9, inside the 9.1–9.25 rim) fix the ratio at 2.5, so Brown's ≤96° cut needs a ratio of at least 3.5, putting the pitch circle outside his rim. p93: audit finding fixed (see review). p101: moving the pin in to 3 pin radii strikes the tongue 2.3° before the lock releases (guide clearance −0.0575); keeping the timing needs the tongue's hump centre at ≥5.7, longer than drawn. The stud is shortened to the tongue's front face (0.155).",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "The tongue arches up and droops as drawn: its crown is one circular arc on a straight root from a boss round the pinion shaft (seated on the hub ring all round). The pin's push is solved from the pin/crown contact, then the teeth take over with a 2.24→2.5 speed step; the pinion's missing teeth sit below the line of centres; the relocking is prescribed. The plate's centre distance and tip radius (8.9, inside the 9.1–9.25 rim) fix the ratio at 2.5, so Brown's ≤96° cut needs a ratio of at least 3.5, putting the pitch circle outside his rim. p93: audit finding fixed (see review). p101: moving the pin in to 3 pin radii strikes the tongue 2.3° before the lock releases (guide clearance −0.0575); keeping the timing needs the tongue's hump centre at ≥5.7, longer than drawn. The stud is shortened to the tongue's front face (0.155). p103: the pin stands at orbit 8.35 (0.34 clear of the wheel's edge; Brown ≈7.5) and strikes the tongue 2.35° before the line of centres, where the lock has released; the wheel's relief is swept from the actual motion; the handoff to the teeth steps from 1.88 to 2.5.",
+      "assessment": "reasonable"
     },
     {
       "id": 212,
@@ -14264,11 +14266,11 @@
       "id": 358,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-101 lane, integrated by primary agent",
-        "reviewPass": 101,
+        "reviewer": "Claude Opus 5.5 — pass-103 lane, integrated by primary agent",
+        "reviewPass": 103,
         "reviewedOn": "2026-09-28",
-        "evidence": "docs/p101-u4-review.md",
-        "note": "Pass 101: The band is about 2/3 of the plate's thickness (two cords share one groove station)."
+        "evidence": "docs/p103-a-review.md",
+        "note": "Pass 103: The band is about 0.6 of the plate's thickness (two cords share one groove station)."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -14299,7 +14301,8 @@
         "docs/p96-fe-review.md",
         "docs/p98-e-review.md",
         "docs/p99-f-review.md",
-        "docs/p101-u4-review.md"
+        "docs/p101-u4-review.md",
+        "docs/p103-a-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -14307,8 +14310,8 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-28",
-      "visibleFlaws": "The band is about 2/3 of the plate's thickness (two cords share one groove station).",
-      "limits": "The camera follows the carriage because the traverse is ≈8 carriage lengths. The band ends are ideal fixed points off-view. The long carriage side bars end cleanly off the view. p84: two cords sharing one groove turn cap the cord radius at about 0.036 (the fusee's 10 turns follow the official animation); Brown's lower bar at 0.71 from the shaft would sit below the 0.85 rail top to clear the crank. Pass 92: the crank handle is the shared turned handle on a crank end rounded about its axis. p95: further alternatives tried and recorded in docs/p95-review.md. p96: the shaft reaches the crank through two bored blocks on a bracket plate (the bracket stops 0.2 short of the crank plane). Pass 98: the turned handle runs through the arm as one turned piece, ending 0.005 inside the far face. Pass 99: the carriage frame runs 1.25 below the shaft, so Brown's lower bar lies 0.71 from the shaft, under the fusee's large end and the crank, clearing the crank sweep by 0.05; the band stays capped at radius 0.035 by the two cords sharing the 0.152 groove at the takeoff (a double-start groove or stacked crossing does not relax it). p101: Brown's straight cone. The pitch radius falls linearly from 0.86 to 0.23, so the stroke is π·10·1.09 ≈ 34.2 and the carriage slows linearly; the cut groove's floor extends along the cone at the small end.",
+      "visibleFlaws": "The band is about 0.6 of the plate's thickness (two cords share one groove station).",
+      "limits": "The camera follows the carriage because the traverse is ≈8 carriage lengths. The band ends are ideal fixed points off-view. The long carriage side bars end cleanly off the view. p84: two cords sharing one groove turn cap the cord radius at about 0.036 (the fusee's 10 turns follow the official animation); Brown's lower bar at 0.71 from the shaft would sit below the 0.85 rail top to clear the crank. Pass 92: the crank handle is the shared turned handle on a crank end rounded about its axis. p95: further alternatives tried and recorded in docs/p95-review.md. p96: the shaft reaches the crank through two bored blocks on a bracket plate (the bracket stops 0.2 short of the crank plane). Pass 98: the turned handle runs through the arm as one turned piece, ending 0.005 inside the far face. Pass 99: the carriage frame runs 1.25 below the shaft, so Brown's lower bar lies 0.71 from the shaft, under the fusee's large end and the crank, clearing the crank sweep by 0.05; the band stays capped at radius 0.035 by the two cords sharing the 0.152 groove at the takeoff (a double-start groove or stacked crossing does not relax it). p101: Brown's straight cone. The pitch radius falls linearly from 0.86 to 0.23, so the stroke is π·10·1.09 ≈ 34.2 and the carriage slows linearly; the cut groove's floor extends along the cone at the small end. p103: the cords stand at the two-cord cap (radius 0.035). A flat strap, a double-start groove with offset depths, and separated takeoff angles were each re-derived and are capped the same way or collide.",
       "assessment": "minor"
     },
     {
@@ -14763,11 +14766,11 @@
       "id": 370,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-101 lane, integrated by primary agent",
-        "reviewPass": 101,
+        "reviewer": "Claude Opus 5.5 — pass-103 lane, integrated by primary agent",
+        "reviewPass": 103,
         "reviewedOn": "2026-09-28",
-        "evidence": "docs/p101-u4-review.md",
-        "note": "Pass 101: Relative to the rails the mirror still sits somewhat higher than Brown's (0.59 of the way down the bar against 0.73)."
+        "evidence": "docs/p103-a-review.md",
+        "note": "Pass 103: Relative to the rails the mirror still sits somewhat higher than Brown's (0.59 of the way down the bar against 0.73)."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -14792,7 +14795,8 @@
         "docs/p95-review.md",
         "docs/p98-e-review.md",
         "docs/p99-e-review.md",
-        "docs/p101-u4-review.md"
+        "docs/p101-u4-review.md",
+        "docs/p103-a-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -14801,7 +14805,7 @@
       },
       "updatedOn": "2026-09-28",
       "visibleFlaws": "Relative to the rails the mirror still sits somewhat higher than Brown's (0.59 of the way down the bar against 0.73).",
-      "limits": "Mirror and ratchet behind the bar as drawn; indexing and the carrier stroke are prescribed; the telescoping follower is illustrative; no polishing load. The mirror axle crosses the rail's depth, which bounds the mirror's position. At Brown's proportions the axle would pass 0.9 into the lower rail at the bottom of the 1.44 stroke. p86: the hidden click is a bored J-hook seated in the root of a 12-tooth saw ratchet with 0.12 pitch of carrier backlash; its eye sits at the model's carrier pivot, so it is shorter than Brown's. p90: the click pushes the 12-tooth ratchet anticlockwise as Brown draws; one bored plate with an arc blade, seated in the root while driving, resting on the passed tip then dropping at a finite rate on return; 0.2 pitch of carrier backlash. Pass 92: the crank handle is the shared turned handle on a crank end rounded about its axis. p95: further alternatives tried and recorded in docs/p95-review.md. Pass 98: the turned handle runs through the arm as one turned piece, ending 0.005 inside the far face. p99: re-examined. At Brown's 0.73 the axle would reach y −2.03, below even a rail of Brown's own height (−1.86), so a hidden notch would cut the rail in two, and the click journal pin would pass through the rail at x −0.8. A mirror between the bar and the rail sweeps both guide pins, and a front rail reverses Brown's overlap. p101: Brown's S-shaped eccentric rod lies in the ratchet's plane behind the bar (no telescoping, no depth tricks). Its strap rides an eccentric keyed on the crankpin's rear end, it passes a loose keeper, and its round-tipped hook drives one tooth anticlockwise per clockwise crank turn and overruns on the return (contact solved geometrically, minimum gap 0.0015). The bar is see-through where Brown dashes the rod, keeper and ratchet behind it.",
+      "limits": "Mirror and ratchet behind the bar as drawn; indexing and the carrier stroke are prescribed; the telescoping follower is illustrative; no polishing load. The mirror axle crosses the rail's depth, which bounds the mirror's position. At Brown's proportions the axle would pass 0.9 into the lower rail at the bottom of the 1.44 stroke. p86: the hidden click is a bored J-hook seated in the root of a 12-tooth saw ratchet with 0.12 pitch of carrier backlash; its eye sits at the model's carrier pivot, so it is shorter than Brown's. p90: the click pushes the 12-tooth ratchet anticlockwise as Brown draws; one bored plate with an arc blade, seated in the root while driving, resting on the passed tip then dropping at a finite rate on return; 0.2 pitch of carrier backlash. Pass 92: the crank handle is the shared turned handle on a crank end rounded about its axis. p95: further alternatives tried and recorded in docs/p95-review.md. Pass 98: the turned handle runs through the arm as one turned piece, ending 0.005 inside the far face. p99: re-examined. At Brown's 0.73 the axle would reach y −2.03, below even a rail of Brown's own height (−1.86), so a hidden notch would cut the rail in two, and the click journal pin would pass through the rail at x −0.8. A mirror between the bar and the rail sweeps both guide pins, and a front rail reverses Brown's overlap. p101: Brown's S-shaped eccentric rod lies in the ratchet's plane behind the bar (no telescoping, no depth tricks). Its strap rides an eccentric keyed on the crankpin's rear end, it passes a loose keeper, and its round-tipped hook drives one tooth anticlockwise per clockwise crank turn and overruns on the return (contact solved geometrically, minimum gap 0.0015). The bar is see-through where Brown dashes the rod, keeper and ratchet behind it. p103: re-checked with the S-link: only the axle crosses the rail depth (0.024 margin, so at most 0.596); f ≤ 0.63 − 0.49/L at Brown's stroke ratio.",
       "assessment": "minor"
     },
     {
@@ -19593,11 +19597,11 @@
       "id": 483,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-99 lane, integrated by primary agent",
-        "reviewPass": 99,
+        "reviewer": "Claude Opus 5.5 — pass-103 lane, integrated by primary agent",
+        "reviewPass": 103,
         "reviewedOn": "2026-09-28",
-        "evidence": "docs/p99-f-review.md",
-        "note": "Pass 99: Between A's end board and the shelf, 0.86 of the undrawn left flag rod shows beside the left case wall, with its flag arm and link. The spindle's crank disc and eccentric are inferred where Brown shows only a bar and a knob."
+        "evidence": "docs/p103-a-review.md",
+        "note": "Pass 103: Between A's end board and the shelf, 0.86 of the undrawn left flag rod shows beside the left case wall, with its flag arm and link. The spindle's crank disc and eccentric are inferred where Brown shows only a bar and a knob."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -19627,7 +19631,8 @@
         "docs/p83-b-review.md",
         "docs/p91-w-review.md",
         "docs/p95-review.md",
-        "docs/p99-f-review.md"
+        "docs/p99-f-review.md",
+        "docs/p103-a-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -19636,7 +19641,7 @@
       },
       "updatedOn": "2026-09-28",
       "visibleFlaws": "Between A's end board and the shelf, 0.86 of the undrawn left flag rod shows beside the left case wall, with its flag arm and link. The spindle's crank disc and eccentric are inferred where Brown shows only a bar and a knob.",
-      "limits": "Rebuilt element by element from the plate: double bellows, a turning cup valve B over four ports and a central exhaust, the tall outlet column; the four ducts run in cored passages inside a 0.50-thick back wall, with close-fitting tube liners, and the inlet is a short stub through a bored hole; plate forces from gas pressure are not solved; the ducts, passages, cored exhaust and inlet are inferred; the bellows section is a rounded rectangle. The four ducts drop just below the shelf, run in passages cored in the back wall and enter their fixed boards (which run back to the wall) through passages cored in the boards. The left flag rod must stand within chamber A's span and rise to the spindle crank; no drawn part covers that span. p91: white or near-white parts recoloured by role (pins steel, washers brass, panels stone); no geometry change. p95: the flag rod sits inside the end board and behind the outlet column where possible. Pass 99: the rod ends 0.02 under its lower flag arm (it turns in the end-board bore and the shelf), so below the bellows only a 0.14 stub shows instead of 0.60 of rod to the floor.",
+      "limits": "Rebuilt element by element from the plate: double bellows, a turning cup valve B over four ports and a central exhaust, the tall outlet column; the four ducts run in cored passages inside a 0.50-thick back wall, with close-fitting tube liners, and the inlet is a short stub through a bored hole; plate forces from gas pressure are not solved; the ducts, passages, cored exhaust and inlet are inferred; the bellows section is a rounded rectangle. The four ducts drop just below the shelf, run in passages cored in the back wall and enter their fixed boards (which run back to the wall) through passages cored in the boards. The left flag rod must stand within chamber A's span and rise to the spindle crank; no drawn part covers that span. p91: white or near-white parts recoloured by role (pins steel, washers brass, panels stone); no geometry change. p95: the flag rod sits inside the end board and behind the outlet column where possible. Pass 99: the rod ends 0.02 under its lower flag arm (it turns in the end-board bore and the shelf), so below the bellows only a 0.14 stub shows instead of 0.60 of rod to the floor. p103: rod in the wall, sleeve and see-through re-examined; the symmetric crank-rocker puts the top arm along the wall, so an in-wall rod cannot carry it.",
       "assessment": "minor"
     },
     {

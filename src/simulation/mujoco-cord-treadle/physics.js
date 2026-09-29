@@ -1,7 +1,9 @@
-import {cordTreadleSource,cordTreadleParameters,cordTreadleState} from '../cord-treadle-motion.js';
+import {cordTreadleSource,cordTreadleParameters,cordTreadleState,cordTreadleMetrics} from '../cord-treadle-motion.js';
+import {TREADLE_CORD,cordTensionWithDamping} from './elastic-cord.js';
+export {TREADLE_CORD};
 import {createMujocoSimulation} from '../mujoco/simulation.js';
 // A dynamics diagnostic, not a qualified visible assembly or production model.
-export function makeCordTreadlePhysics(mujoco,{timestep=.0005,cord=true,period=4,floor=false,rigidProperties=null}={}){
+export function makeCordTreadlePhysics(mujoco,{timestep=.0005,cord=true,period=4,floor=false,rigidProperties=null,elasticCord=null}={}){
  const g=cordTreadleParameters({...cordTreadleSource,period}),speed=2*Math.PI/period,footLength=g.footLength,armLength=g.armLength,pivot=[...g.pivot,0],guide=[...g.guide,.64],pin=[...g.pin,.64],diskRadius=cordTreadleSource.diskRadius*cordTreadleSource.scale;
  const h=.0001,initialVelocity=(cordTreadleState(h,g).treadleAngle-cordTreadleState(period-h,g).treadleAngle)/(2*h);
  // Uniform unit-mass treadle, with its mass center halfway along the beam.
@@ -14,8 +16,19 @@ export function makeCordTreadlePhysics(mujoco,{timestep=.0005,cord=true,period=4
  <geom name="wrap" type="cylinder" pos="${guide.join(' ')}" size="${g.guideRadius} .1"/><site name="upper" pos="${guide[0]} ${guide[1]+g.guideRadius+.1} ${guide[2]}"/>
  <body name="disk"><joint name="disk" axis="0 0 1"/>${inertia('disk',`<inertial pos="0 0 0" mass="1" diaginertia="${diskRadius**2/4} ${diskRadius**2/4} ${diskRadius**2/2}"/>`)}${rigidProperties?`<geom name="crank-stud-shaft" type="cylinder" pos="${g.pin.join(' ')} .125" size=".055 .255" contype="4" conaffinity="2" friction=".5 .001 .001" solref=".002 1" solimp=".999 .9999 .0001"/>`:''}<site name="crank-eye" pos="${pin.join(' ')}"/></body>
  <body name="treadle" pos="${pivot.join(' ')}"><joint name="treadle" axis="0 0 1" damping=".02"/>${inertia('treadle',`<inertial pos="${-footLength/2} 0 ${.17}" mass="${mass}" diaginertia="${ix} ${iy} ${iz}"/>`)}${floor?`<geom name="treadle-beam" type="box" pos="${-footLength/2} 0 .17" size="${footLength/2} ${beamWidth/2} ${beamDepth/2}" contype="2" conaffinity="1" friction="${friction} ${rigidProperties?.001:.01} .001" solref=".002 1" solimp=".999 .9999 .0001"/>`:""}<site name="treadle-eye" pos="${-armLength} 0 ${.64}"/></body>
- </worldbody>${cord?`<tendon><spatial name="cord" limited="true" range="0 ${g.cordLength}" solreflimit=".002 1" solimplimit=".999 .9999 .0001"><site site="crank-eye"/><geom geom="wrap" sidesite="upper"/><site site="treadle-eye"/></spatial></tendon>`:''}
+ </worldbody>${cord?`<tendon><spatial name="cord" ${elasticCord?`limited="true" range="0 ${(elasticCord.restLength??g.cordLength)*(1+(elasticCord.backstopStrain??TREADLE_CORD.backstopStrain))}"`:`limited="true" range="0 ${g.cordLength}"`} solreflimit=".002 1" solimplimit=".999 .9999 .0001"><site site="crank-eye"/><geom geom="wrap" sidesite="upper"/><site site="treadle-eye"/></spatial></tendon>`:''}
  <actuator><position joint="disk" kp="10000" kv="100"/></actuator></mujoco>`;
- const p=createMujocoSimulation(mujoco,{xml,initialize:({data})=>{data.qpos.set([0,g.initialTreadle]);data.qvel.set([speed,initialVelocity]);},beforeStep:({data,time})=>{data.ctrl[0]=speed*(time+.01);}});
- return Object.assign(p,{description:{rigidProperties,movement:159,period,timestep,cord,floor,groundY:g.groundY,footLength,armLength,pivot,guide,pin,cordLength:g.cordLength,guideRadius:g.guideRadius,initialTreadle:g.initialTreadle,mass:rigidProperties?.bodies.treadle.mass??mass,assumptions:'Diagnostic only. Measured source-center geometry, optional mesh-derived rigid masses and physical scale (otherwise provisional unit-mass beam), driven disk, passive treadle under gravity, frictionless massless cord with unilateral length limit around a fixed cylinder. Pulley inertia/friction and cord mass/bending are omitted in this ideal-cord comparison; slack cord shape is not represented. Human foot force and remaining visible-support contact are unqualified. Scaled models include stud/beam contact. Optional floor contact uses a box matching the provisional treadle dimensions.'},state:()=>({time:p.data.time,footBottom:g.pivot[1]+Math.min(0,-footLength*Math.sin(p.data.qpos[1]))-beamWidth/2*Math.abs(Math.cos(p.data.qpos[1])),floorContacts:floor?p.data.ncon:0,qpos:Array.from(p.data.qpos),qvel:Array.from(p.data.qvel),cordLength:cord?p.data.ten_length[0]:null,passiveConstraintTorque:p.data.qfrc_constraint[1],actuatorTorque:p.data.qfrc_actuator[1]})});
+ const p=createMujocoSimulation(mujoco,{xml,initialize:({data})=>{data.qpos.set([0,g.initialTreadle]);data.qvel.set([speed,initialVelocity]);},beforeStep:({model,data,time})=>{data.ctrl[0]=speed*(time+.01);if(elasticCord)applyElasticCord(mujoco,model,data,elasticCord.restLength??g.cordLength,elasticCord,(disk,treadle)=>cordTreadleMetrics(disk,treadle,g).incoming);}});
+ return Object.assign(p,{description:{rigidProperties,elasticCord,movement:159,period,timestep,cord,floor,groundY:g.groundY,footLength,armLength,pivot,guide,pin,cordLength:g.cordLength,guideRadius:g.guideRadius,initialTreadle:g.initialTreadle,mass:rigidProperties?.bodies.treadle.mass??mass,assumptions:'Diagnostic only. Measured source-center geometry, optional mesh-derived rigid masses and physical scale (otherwise provisional unit-mass beam), driven disk, passive treadle under gravity, frictionless massless cord with unilateral length limit around a fixed cylinder. Pulley inertia/friction and cord mass/bending are omitted in this ideal-cord comparison; slack cord shape is not represented. Human foot force and remaining visible-support contact are unqualified. Scaled models include stud/beam contact. Optional floor contact uses a box matching the provisional treadle dimensions.'},state:()=>({time:p.data.time,footBottom:g.pivot[1]+Math.min(0,-footLength*Math.sin(p.data.qpos[1]))-beamWidth/2*Math.abs(Math.cos(p.data.qpos[1])),floorContacts:floor?p.data.ncon:0,qpos:Array.from(p.data.qpos),qvel:Array.from(p.data.qvel),cordLength:cord?p.data.ten_length[0]:null,passiveConstraintTorque:p.data.qfrc_constraint[1],actuatorTorque:p.data.qfrc_actuator[1]})});
+}
+
+// Pass 103: optional elastic, heavy, tension-only cord (elastic-cord.js),
+// applied through the spatial tendon's Jacobian every step; the hard tendon
+// limit remains only as a backstop at backstopStrain beyond the tied length.
+export function applyElasticCord(mujoco,model,data,restLength,options,span){
+ const o={...TREADLE_CORD,...options},nv=model.nv;mujoco.mj_fwdPosition(model,data);
+ const J=data.ten_J;let rate=0;for(let j=0;j<nv;j++)rate+=J[j]*data.qvel[j];
+ const tension=cordTensionWithDamping(data.ten_length[0]-restLength,rate,span(data.qpos[0],data.qpos[1]),o);
+ for(let j=0;j<nv;j++)data.qfrc_applied[j]=-tension*J[j];
+ return tension;
 }

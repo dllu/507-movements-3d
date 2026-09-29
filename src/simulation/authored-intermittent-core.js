@@ -9009,10 +9009,9 @@ function pinGuidedHalfToothIntermittentLockingDrive() {
   );
   const driverBoreRadius = constructionScale;
   const pinionBoreRadius = constructionScale;
-  // Brown's entry pin is a small stud (about 0.23 construction units across
-  // the plate's 9.1 rim radius); at 0.25 it stands wholly on the wheel face
-  // just inside the plain rim instead of overhanging the relief.
-  const rawPinRadius = 0.25;
+  // Brown's entry pin is a small stud (radius about 0.24 construction units,
+  // measured on the plate); it stands wholly on the wheel face.
+  const rawPinRadius = 0.24;
   const driverPinRadius = rawPinRadius * constructionScale;
 
   const degreesToRadians = THREE.MathUtils.degToRad;
@@ -9168,15 +9167,22 @@ function pinGuidedHalfToothIntermittentLockingDrive() {
   // slides up towards the crown. The pinion's angle during that push is solved
   // from the pin/arc contact; the pin's mounting angle is chosen so the push
   // ends exactly where the tooth mesh takes over (the pinion's first tooth
-  // two pitches round), at 2.1-2.2 times the wheel's speed, after which the
+  // two pitches round), at about 1.9 times the wheel's speed, after which the
   // teeth run it at 2.5 and the pin rises clear of the crown.
   const rawPinionCenter = new THREE.Vector2(-rawCenterDistance, 0);
-  const rawPinOrbitRadius = 8.7;
-  const guideHumpCenter = new THREE.Vector2(4.5, -1.75);
-  // The pin centre rides an arc of 2.887 about the hump centre (the law
-  // solved below); with the smaller pin the hump grows to keep a 0.012
-  // running clearance on the same path.
-  const guideContactRadius = 2.5 + 0.375 + 0.012;
+  // p103: the pin stands on an orbit of 8.35, well inside the wheel's edge
+  // (Brown draws it at about 7.5, on the tongue's crown before the line of
+  // centres). From that orbit the pin cannot turn the pinion the two
+  // pitches to the tooth handoff in 14.5 degrees of wheel, so, as in
+  // Brown's pose, it strikes the tongue a little before the line of
+  // centres: the lock releases guideLeadPhase early and the wheel's relief,
+  // swept from the pinion's actual motion, is cut for that early turn.
+  const rawPinOrbitRadius = 8.35;
+  const guideHumpCenter = new THREE.Vector2(4.6, -1.2);
+  const guideLeadPhase = degreesToRadians(2.5);
+  // The pin centre rides an arc of 2.5 about the hump centre (the law
+  // solved below); the hump keeps a 0.012 running clearance on that path.
+  const guideContactRadius = 2.5;
   const guideHumpRadius = guideContactRadius - rawPinRadius - 0.012;
   const guideHandoffPhase = degreesToRadians(14.5);
   const guideHandoffPinionAngle = -guideHandoffPhase * indexingRatio;
@@ -9253,20 +9259,22 @@ function pinGuidedHalfToothIntermittentLockingDrive() {
     return { angle, rate };
   };
   // Pinion angle and its rate (per radian of wheel) at a wheel phase in
-  // [0, 2 pi): rest, guide push, then the tooth mesh at 2.5 to one turn.
-  // The solved strike falls a hair before the line of centres (under
-  // 0.01 degrees of wheel); that sliver is taken out linearly over the push
-  // so the pinion leaves its lock exactly at phase 0.
-  const guideLawStartAngle = guideLawAtPhase(0).angle;
+  // [0, 2 pi): rest, the guide push (which begins at the solved strike, a
+  // little before the line of centres, so at the end of the previous turn),
+  // then the tooth mesh at 2.5 to one turn.
+  if (guideStrikePhase < -guideLeadPhase || guideStrikePhase > 0) {
+    throw new Error(`211 pin strike ${guideStrikePhase} is outside the lock-release lead`);
+  }
   const pinionMotionAtPhase = (phase) => {
-    if (phase <= Math.max(guideStrikePhase, 0)) return { angle: 0, rate: 0 };
-    if (phase < guideHandoffPhase) {
-      const law = guideLawAtPhase(phase);
-      return {
-        angle: law.angle - guideLawStartAngle * (1 - phase / guideHandoffPhase),
-        rate: law.rate + guideLawStartAngle / guideHandoffPhase,
-      };
+    if (phase < 0) {
+      const wrapped = pinionMotionAtPhase(phase + fullTurn);
+      return { angle: wrapped.angle + fullTurn, rate: wrapped.rate };
     }
+    if (phase > fullTurn + guideStrikePhase) {
+      const law = guideLawAtPhase(phase - fullTurn);
+      return { angle: law.angle - fullTurn, rate: law.rate };
+    }
+    if (phase < guideHandoffPhase) return guideLawAtPhase(phase);
     if (phase < indexArc) {
       return { angle: -phase * indexingRatio, rate: -indexingRatio };
     }
@@ -9420,7 +9428,7 @@ function pinGuidedHalfToothIntermittentLockingDrive() {
   const sweptX = new Float64Array(sweptPinion.length);
   const sweptY = new Float64Array(sweptPinion.length);
   for (let step = 0; step <= sweepSteps; step += 1) {
-    const phase = indexArc * step / sweepSteps;
+    const phase = -guideLeadPhase + (indexArc + guideLeadPhase) * step / sweepSteps;
     // Pinion point in the wheel's frame: rotate by the pinion angle about
     // its centre, then by minus the wheel angle about the wheel centre.
     const pinionAngle = pinionAngleAtPhase(phase);
@@ -9830,21 +9838,22 @@ function pinGuidedHalfToothIntermittentLockingDrive() {
   // The offset flank keeps an almost constant running clearance, so find
   // the closest pass by a dense scan before refining it.
   const guideScanEnd = guideHandoffPhase * 1.25;
+  const guideScanStart = Math.min(guideStrikePhase, 0) - degreesToRadians(2);
   const guideScanSteps = 4096;
   let closestScanIndex = 0;
   let closestScanClearance = Infinity;
   for (let index = 0; index <= guideScanSteps; index += 1) {
     const clearance = pinGuideClearanceAtPhase(
-      guideScanEnd * index / guideScanSteps,
+      guideScanStart + (guideScanEnd - guideScanStart) * index / guideScanSteps,
     );
     if (clearance < closestScanClearance) {
       closestScanClearance = clearance;
       closestScanIndex = index;
     }
   }
-  let closestGuideLow = guideScanEnd
+  let closestGuideLow = guideScanStart + (guideScanEnd - guideScanStart)
     * Math.max(closestScanIndex - 1, 0) / guideScanSteps;
-  let closestGuideHigh = guideScanEnd
+  let closestGuideHigh = guideScanStart + (guideScanEnd - guideScanStart)
     * Math.min(closestScanIndex + 1, guideScanSteps) / guideScanSteps;
   for (let iteration = 0; iteration < 96; iteration += 1) {
     const firstThird = (closestGuideLow * 2 + closestGuideHigh) / 3;
@@ -9904,7 +9913,7 @@ function pinGuidedHalfToothIntermittentLockingDrive() {
     const relativeAngle = driverAngle - sourceDriverAngle;
     const completedInputTurns = Math.floor(relativeAngle / fullTurn);
     const phase = THREE.MathUtils.euclideanModulo(relativeAngle, fullTurn);
-    const indexing = phase < indexArc;
+    const indexing = phase < indexArc || phase > fullTurn + guideStrikePhase;
     const pinionAngle = pinionAngleAtDriverAngle(driverAngle);
     const pinionAngularSpeed = pinionMotionAtPhase(phase).rate
       * driverAngularSpeed;
@@ -9918,6 +9927,7 @@ function pinGuidedHalfToothIntermittentLockingDrive() {
       stage = 'eleven-tooth-indexing-mesh';
     }
     else if (phase < indexArc) stage = 'relocking-transition';
+    else if (indexing) stage = 'entry-pin-and-guide-transfer';
     else stage = 'plain-rim-locked-dwell';
 
     const driverContactLocalAngle = Math.PI - phase;
@@ -9976,8 +9986,9 @@ function pinGuidedHalfToothIntermittentLockingDrive() {
     );
     const pinGuide = pinGuideStateAtAngles(driverAngle, pinionAngle);
     const pinGuideEngaged = pinGuide.clearance <= guideStrikeTolerance;
+    // Before the line of centres the early push only begins the next index.
     const outputTurns = -(completedInputTurns
-      + Math.min(phase / indexArc, 1));
+      + (phase > fullTurn + guideStrikePhase ? 1 : Math.min(phase / indexArc, 1)));
 
     return {
       completedInputTurns,
