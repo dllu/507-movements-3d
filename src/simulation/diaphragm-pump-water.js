@@ -49,6 +49,26 @@ function withoutTriangles(geometry, drop) {
   return out;
 }
 
+// Move the open-boundary vertices selected by `near` with `snap` (the
+// chamber wall's bore onto the branch water's saddle, so the two meet).
+function snapPortRim(geometry, near, snap) {
+  const p = geometry.attributes.position.array, key = (i) => `${p[i].toFixed(5)},${p[i + 1].toFixed(5)},${p[i + 2].toFixed(5)}`;
+  const count = new Map();
+  for (let t = 0; t < p.length; t += 9) for (let k = 0; k < 3; k += 1) {
+    const e = [key(t + 3 * k), key(t + 3 * ((k + 1) % 3))].sort().join('|');
+    count.set(e, (count.get(e) ?? 0) + 1);
+  }
+  const rim = new Set();
+  for (const [e, c] of count) if (c === 1) for (const v of e.split('|')) rim.add(v);
+  const v = new THREE.Vector3();
+  for (let i = 0; i < p.length; i += 3) {
+    v.fromArray(p, i);
+    if (!rim.has(key(i)) || !near(v)) continue;
+    snap(v);v.toArray(p, i);
+  }
+  return geometry;
+}
+
 // Streak coordinates for a non-indexed flow surface: u round the axis (each
 // triangle unwrapped so no texture seam is squeezed), v the displaced-volume
 // coordinate `vAt(position)` in tiles.
@@ -105,7 +125,7 @@ function checkBodyWater({ax, az, seatY, seatBottom, seatTop, below, above, angle
   // symmetric in z; plan (x, z).
   const ports = polygonClipping.union(
     poly([[ax - 0.19 + GAP, az - 0.16 + GAP], [ax + 0.19 - GAP, az - 0.16 + GAP], [ax + 0.19 - GAP, az + 0.16 - GAP], [ax - 0.19 + GAP, az + 0.16 - GAP]]),
-    poly([[ax - 0.33 + GAP, az - 0.30 + GAP], [ax - 0.175, az - 0.30 + GAP], [ax - 0.175, az + 0.30 - GAP], [ax - 0.33 + GAP, az + 0.30 - GAP]]));
+    poly([[ax - 0.33 + GAP, az - 0.30 + GAP], [ax - 0.175 - GAP, az - 0.30 + GAP], [ax - 0.175 - GAP, az + 0.30 - GAP], [ax - 0.33 + GAP, az + 0.30 - GAP]]));
   const faces = polygonClipping.difference(disk(ax, az, bodyRadius, angles), ports);
   const seat = stackedFluidGeometry([{region: ports, y0: seatBottom - GAP, y1: seatTop + GAP}], {
     openBottom: ports, openTop: ports,
@@ -209,7 +229,13 @@ export function buildDiaphragmPumpWater(root, {waterMaterial, membraneY, clampUn
   branchGeometry.computeVertexNormals();
   // Bore the chamber water's wall where the branch leaves it.
   const inPort = (c) => c.x > 0.8 && Math.hypot(c.y - 0.34, c.z - dz) < branchR;
-  const chamberStatic = mergePassageParts([withoutTriangles(lowerChamber, inPort), withoutTriangles(upperChamber, inPort)]);
+  const chamberStatic = snapPortRim(mergePassageParts([withoutTriangles(lowerChamber, inPort), withoutTriangles(upperChamber, inPort)]),
+    (p) => p.x > 0.8 && Math.abs(Math.hypot(p.x, p.z) - chamberR) < 1e-4 && Math.hypot(p.y - 0.34, p.z - dz) < branchR + 0.05,
+    (p) => {
+      // Onto the saddle: distance branchR from the branch axis, on the wall.
+      const a = Math.atan2(p.z - dz, p.y - 0.34);
+      p.y = 0.34 + branchR * Math.cos(a);p.z = dz + branchR * Math.sin(a);p.x = Math.sqrt(chamberR ** 2 - p.z ** 2);
+    });
 
   // ---- delivery column: check body, seat ports, lip and the riser.
   const dSeat = b.deliveryValve.userData.seat, dSeatTop = dSeat.position.y, dSeatBottom = dSeatTop - 0.065;
@@ -240,7 +266,7 @@ export function buildDiaphragmPumpWater(root, {waterMaterial, membraneY, clampUn
   const deliveryV = volumeCoordinate(dy - 0.30, riserTop, deliveryArea);
   addFlowAttributes(delivery.geometry, () => [dx, dz], (p) => (branchVolume + deliveryV(p.y)) / tileVolume);
 
-  const streak = () => waterStreamMaterial({opacity: 0.5, normalScale: 0.3});
+  const streak = () => waterStreamMaterial({opacity: 0.62, normalScale: 0.3});
   const suctionMaterial = streak(), deliveryMaterial = streak();
 
   // ---- chamber top: indexed rings (duplicated at creases), rebuilt per frame.
@@ -282,8 +308,8 @@ export function buildDiaphragmPumpWater(root, {waterMaterial, membraneY, clampUn
   const chamberTop = new THREE.Mesh(topGeometry, waterMaterial);
   chamberTop.userData.role = 'water-under-flexible-diaphragm-following-membrane';
   root.add(chamberTop);
-  swap(b.suctionPipe.water, suction.geometry, suctionMaterial, 'water-rising-through-suction-pipe-and-check-on-diaphragm-upstroke');
-  swap(b.deliveryBranch.water, branchGeometry, deliveryMaterial, 'water-forced-from-chamber-through-branch-toward-delivery-check');
+  swap(b.suctionPipe.water, suction.geometry, suctionMaterial, 'water-rising-through-suction-column-and-check-on-diaphragm-upstroke');
+  swap(b.deliveryBranch.water, branchGeometry, deliveryMaterial, 'water-forced-from-chamber-toward-delivery-check');
   swap(b.deliveryRiser.water, delivery.geometry, deliveryMaterial, 'water-expelled-through-delivery-check-and-up-riser');
   for (const m of [b.chamberWater, chamberTop, b.suctionPipe.water, b.deliveryBranch.water, b.deliveryRiser.water]) {m.castShadow = false;m.receiveShadow = false;m.userData.noShadow = true;}
   b.chamberWaterTop = chamberTop;

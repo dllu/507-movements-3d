@@ -18510,11 +18510,11 @@
       "id": 454,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-109 lane, integrated by primary agent",
-        "reviewPass": 109,
+        "reviewer": "Claude Opus 5.5 — pass-110 lane, integrated by primary agent",
+        "reviewPass": 110,
         "reviewedOn": "2026-09-28",
-        "evidence": "docs/p109-f3-review.md",
-        "note": "Pass 109: The lug foot overhangs the centre clamp to the front by about 0.1."
+        "evidence": "docs/p110-b-review.md",
+        "note": "Pass 110: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -18538,7 +18538,8 @@
         "docs/p88-p-review.md",
         "docs/p96-ff-review.md",
         "docs/p101-f6-review.md",
-        "docs/p109-f3-review.md"
+        "docs/p109-f3-review.md",
+        "docs/p110-b-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -18546,9 +18547,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-28",
-      "visibleFlaws": "The lug foot overhangs the centre clamp to the front by about 0.1.",
-      "limits": "Diaphragm shape and check timing prescribed. The delivery branch passes through its chamber port with about 0.023 clearance. Pass 86: both flap knuckles turn in two bored lugs cast on their seats (flaps 0.42 deep to clear them); the delivery branch is sealed in a round chamber port fitted to it, its end a saddle on the wall's mid-radius. Pass 88: the chamber wall stands on the bottom flange and ends under the clamping ring; the suction check body flares below the floor and passes through it in a 0.502 bore; the link clevis's foot stands 0.006 inside the centre clamp. p96: the hand lever is one smooth arc from grip to pin. p101: the lever tapers to a rounded end; the T-grip is gone. p109: pins span lever and link with small heads; the lug is in the plate colour with the pin through its full depth.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "Diaphragm shape and check timing prescribed. The delivery branch passes through its chamber port with about 0.023 clearance. Pass 86: both flap knuckles turn in two bored lugs cast on their seats (flaps 0.42 deep to clear them); the delivery branch is sealed in a round chamber port fitted to it, its end a saddle on the wall's mid-radius. Pass 88: the chamber wall stands on the bottom flange and ends under the clamping ring; the suction check body flares below the floor and passes through it in a 0.502 bore; the link clevis's foot stands 0.006 inside the centre clamp. p96: the hand lever is one smooth arc from grip to pin. p101: the lever tapers to a rounded end; the T-grip is gone. p109: pins span lever and link with small heads; the lug is in the plate colour with the pin through its full depth. p110 (user): the water is one continuous body 0.008 off every wall: suction pipe, check body and seat ports, chamber (top follows the membrane and clamp every frame; wall bored and matched to the delivery pipe's water), delivery check and delivery pipe (top left open where the plate crops it, as in 453). Streaks advance by displaced volume, suction only while the diaphragm rises and delivery only while it falls. The membrane is flat under a 0.30 clamp plate; the link eye stands 0.32 above it and the lug stands wholly on the plate (no overhang).",
+      "assessment": "reasonable"
     },
     {
       "id": 455,

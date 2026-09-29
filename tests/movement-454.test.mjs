@@ -117,7 +117,7 @@ test('movement 454 source record captures the diaphragm substitution and precedi
     false,
   );
   assert.match(dynamics.diaphragmVolumeModel,
-    /clamped membrane.*Integrating.*effective area pi\*R\^2\/3/);
+    /clamped membrane is flat under the centre clamp plate.*Integrating.*effective area pi\*a\^2\+2\*pi\*\(R-a\)/);
   assert.match(dynamics.flowModel,
     /Center rise.*lower suction check.*center descent.*right delivery check/);
   assert.match(dynamics.valveModel,
@@ -228,12 +228,22 @@ test('movement 454 lever-link closure keeps a fixed lever radius and exact const
   disposeModel(model.root);
 });
 
-test('movement 454 quartic diaphragm profile stays clamped and integrates to the modeled effective area', () => {
+test('movement 454 clamped diaphragm profile is flat under the clamp plate, clamped at the rim and integrates to the modeled effective area', () => {
   const model = createMovementModel(catalog.movements[453]);
   const { blocks, geometry, stateAtInputAngle, update } = model.root.userData;
+  const a = geometry.clampRadius, R = geometry.diaphragmRadius;
   near(geometry.diaphragmEffectiveArea,
-    Math.PI * geometry.diaphragmRadius ** 2 / 3, 0,
-  'integrated quartic effective area');
+    Math.PI * a ** 2 + 2 * Math.PI * (R - a) * (8 * a / 15 + (R - a) / 6), 1e-15,
+  'integrated clamped-quartic effective area');
+  // Numerical check of the closed form.
+  let area = 0;
+  const steps = 20000;
+  for (let i = 0; i < steps; i += 1) {
+    const r = (i + 0.5) * R / steps;
+    area += 2 * Math.PI * r * model.root.userData.membraneProfile(r) * R / steps;
+  }
+  near(area, geometry.diaphragmEffectiveArea, 1e-6, 'numerical membrane area');
+  const profile = (r) => (r <= a ? 1 : (1 - ((r - a) / (R - a)) ** 2) ** 2);
 
   for (const phase of [0, 0.25, 0.5, 0.75, 1]) {
     const state = stateAtInputAngle(FULL_TURN * phase);
@@ -246,18 +256,19 @@ test('movement 454 quartic diaphragm profile stays clamped and integrates to the
       const fraction = fractions[index];
       const expectedY = geometry.diaphragmRimY
         + (state.diaphragmCenterY - geometry.diaphragmRimY)
-          * (1 - fraction ** 2) ** 2;
+          * profile(fraction * R);
       near(positions.getY(index), expectedY, 1.2e-7,
-        `quartic membrane vertex ${index} at ${phase}`);
-      if (fraction === 1) {
+        `membrane vertex ${index} at ${phase}`);
+      if (Math.abs(fraction - 1) < 1e-12) {
         near(positions.getY(index), geometry.diaphragmRimY, 1e-7,
           `clamped rim vertex ${index} at ${phase}`);
       }
     }
     near(state.averageWaterTopY,
       geometry.diaphragmRimY
-        + (state.diaphragmCenterY - geometry.diaphragmRimY) / 3,
-    0, `volume-equivalent water height at ${phase}`);
+        + (state.diaphragmCenterY - geometry.diaphragmRimY)
+          * geometry.diaphragmEffectiveArea / geometry.chamberArea,
+    1e-15, `volume-equivalent water height at ${phase}`);
   }
   disposeModel(model.root);
 });
@@ -332,9 +343,11 @@ test('movement 454 renderer maps the lever, link, membrane, water, and flap angl
       `suction flap at ${phase}`);
     near(blocks.deliveryValve.rotation.z, state.deliveryValveAngle, 0,
       `delivery flap at ${phase}`);
-    near(blocks.chamberWater.position.y,
-      (geometry.chamberBottomY + 0.08 + state.averageWaterTopY) / 2,
-    0, `water proxy center at ${phase}`);
+    const top = blocks.chamberWaterTop.geometry.getAttribute('position');
+    let highest = -Infinity;
+    for (let i = 0; i < top.count; i += 1) highest = Math.max(highest, top.getY(i));
+    near(highest, Math.max(state.diaphragmCenterY,
+      geometry.diaphragmRimY) - 0.008, 2e-3, `water top follows membrane at ${phase}`);
     fixedBlocks.forEach((block, index) => vectorNear(
       block.position,
       fixedPositions[index],
@@ -368,4 +381,57 @@ test('movement 454 has finite render bounds and movement 507 remains the next au
   assert.notEqual(model507.root.userData.archetype, ARCHETYPE);
   disposeModel(model454.root);
   disposeModel(model507.root);
+});
+
+test('movement 454 pass 110: the link lug stands wholly on the upper clamp plate', () => {
+  const model = createMovementModel(catalog.movements[453]);
+  const { blocks, geometry } = model.root.userData;
+  let lug = null;
+  blocks.centerClamp.traverse((o) => { if (o.userData.role === 'moving-plate-link-clevis') lug = o; });
+  assert.ok(lug, 'lug present');
+  const p = lug.geometry.getAttribute('position');
+  // The lug's foot (its outline up to just over the plate's 0.103 top)
+  // lies within the plate's plan; its eye starts above the plate.
+  let worst = 0, lowest = Infinity;
+  for (let i = 0; i < p.count; i += 1) {
+    lowest = Math.min(lowest, p.getY(i));
+    if (p.getY(i) < 0.11) worst = Math.max(worst, Math.hypot(p.getX(i), p.getZ(i)));
+  }
+  assert.ok(worst < geometry.clampRadius * Math.cos(Math.PI / 64), `lug foot reaches r ${worst}`);
+  assert.ok(lowest >= 0.006 - 1e-9, `lug dips to ${lowest}`);
+  disposeModel(model.root);
+});
+
+test('movement 454 pass 110: the water is one continuous body open only at the suction mouth and riser top', () => {
+  const model = createMovementModel(catalog.movements[453]);
+  const data = model.root.userData;
+  for (const phase of [0, 0.2, 0.45, 0.7, 0.95]) {
+    data.update(data.geometry.cycleDuration * phase);
+    model.root.updateMatrixWorld(true);
+    const count = new Map();
+    const key = (v) => v.toArray().map((x) => Math.round(x * 2e3)).join(',');
+    model.root.traverse((o) => {
+      if (!o.isMesh || !/^water-/.test(o.userData.role)) return;
+      const g = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry;
+      const p = g.attributes.position;
+      for (let t = 0; t < p.count; t += 3) {
+        const vs = [0, 1, 2].map((k) => key(new THREE.Vector3().fromBufferAttribute(p, t + k).applyMatrix4(o.matrixWorld)));
+        if (new Set(vs).size < 3) continue;
+        for (let k = 0; k < 3; k += 1) {
+          const e = [vs[k], vs[(k + 1) % 3]].sort().join('|');
+          count.set(e, (count.get(e) ?? 0) + 1);
+        }
+      }
+    });
+    for (const [edge, n] of count) {
+      if (n !== 1) continue;
+      for (const v of edge.split('|')) {
+        const [x, y, z] = v.split(',').map((c) => Number(c) / 2e3);
+        const mouth = y < -2.04 || y > 3.33;
+        const port = x > 0.8 && Math.abs(Math.hypot(y - 0.34, z - 0.38) - 0.217) < 2e-3;
+        assert.ok(mouth || port, `open water edge at ${[x, y, z]} (phase ${phase})`);
+      }
+    }
+  }
+  disposeModel(model.root);
 });

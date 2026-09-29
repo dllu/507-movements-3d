@@ -8624,8 +8624,8 @@
     },
     "454": {
       "peakAngularSpeed": 0.594641983650182,
-      "peakVisibleAngularSpeed": 0.5202134811154834,
-      "sustainedVisibleAngularSpeed": 0.4427259288972023,
+      "peakVisibleAngularSpeed": 0.518805977357073,
+      "sustainedVisibleAngularSpeed": 0.4415280775698351,
       "floorY": -2.1049999997019766,
       "fastestPart": "lower-hinged-suction-check-opening-only-on-diaphragm-rise",
       "motionBounds": {
@@ -8637,7 +8637,7 @@
         "max": [
           2.52,
           3.3949999997019766,
-          1.149999976158142
+          1.2419999837875366
         ]
       }
     },

@@ -94,9 +94,13 @@ function headedPinGeometry(radius,back,front,head=.035,headLength=.025) {
 // the pin runs through the lug's full depth (flush + 0.01 behind it) and the
 // link, ending in a small head in front. The link and lug read as one clean
 // joint instead of a stack of black discs with an empty eye.
-function plateJoint(plateMesh,link,pinRadius=.13,height=.20,base=0,eyeRadius=.199) {
+function plateJoint(plateMesh,link,pinRadius=.13,height=.20,base=0,eyeRadius=.199,footHalf=.10) {
   const lugBack=.05,linkBack=.29,lugFront=linkBack-.01,linkFront=.39;
-  const outline=polygonClipping.difference(polygonClipping.union(poly([[-.10,base],[.10,base],[.10,height],[-.10,height]]),poly(circle([0,height],eyeRadius,64))),poly(circle([0,height],pinRadius+.004,64)));
+  // Pass 110: the eye is trimmed at the foot's base so it never dips
+  // through the plate it stands on (454's 0.209 eye at 0.20 reached 0.009
+  // below its foot; 453's clears its base and is unchanged).
+  const lugBody=polygonClipping.union(poly([[-footHalf,base],[footHalf,base],[footHalf,height],[-footHalf,height]]),poly(circle([0,height],eyeRadius,64)));
+  const outline=polygonClipping.difference(height-eyeRadius<base?polygonClipping.intersection(lugBody,poly([[-1,base],[1,base],[1,height+1],[-1,height+1]])):lugBody,poly(circle([0,height],pinRadius+.004,64)));
   const lugMaterial=plateMesh.material??plateMesh.children.find(o=>o.isMesh)?.material;
   const mount=new THREE.Mesh(plate(outline,lugBack,lugFront),lugMaterial);
   mount.position.set(0,0,0);mount.userData.role='moving-plate-link-clevis';plateMesh.add(mount);
@@ -168,6 +172,9 @@ export function correctFlexiblePumpParts(root,id) {
     replace(lever.children[2],headedPinGeometry(.14,-.135,.42));lever.children[2].position.z=0;
     // Pass 88: the clevis foot stands 0.006 up inside the clamp's upper
     // disk, off the plane of the disk's underside.
+    // Pass 110: the lug's plan (x ±0.10, z 0.05 to 0.28) lies wholly on the
+    // 0.30 upper clamp plate (it overhung the old 0.20 plate by about 0.1 to
+    // the front); its eye stands 0.32 up, clear of the plate.
     plateJoint(b.centerClamp,b.connectingRod,.14,g.linkEyeHeight,.006,.209);
     // Pass 56: the rim and floor stand proud of the wall as plain flanges in
     // the casing's own colour, so no coincident faces z-fight at the wall.

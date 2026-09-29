@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {applyCutawayFor} from './cutaway-presentations.js';
 import { correctFlexiblePumpParts } from './flexible-pump-working-parts.js';
+import { buildDiaphragmPumpWater } from './diaphragm-pump-water.js';
 import {
   PALETTE,
   markShadows,
@@ -33,13 +34,6 @@ function setCylinderBetween(mesh, start, end) {
   mesh.scale.set(1, delta.length(), 1);
 }
 
-function setVerticalExtent(mesh, bottom, top) {
-  const height = Math.max(0.001, top - bottom);
-  mesh.position.y = (bottom + top) / 2;
-  mesh.scale.y = height;
-  mesh.visible = top > bottom;
-}
-
 function positiveC2Lobe(value) {
   return Math.max(0, value) ** 3;
 }
@@ -54,11 +48,12 @@ function makeTube(points, radius, material, role) {
   return tube;
 }
 
-function makeDiaphragmGeometry(radius, radialSegments, angularSegments) {
+function makeDiaphragmGeometry(radius, fractions, angularSegments) {
   const positions = [0, 0, 0];
   const radialFractions = [0];
+  const radialSegments = fractions.length;
   for (let radial = 1; radial <= radialSegments; radial += 1) {
-    const fraction = radial / radialSegments;
+    const fraction = fractions[radial - 1];
     for (let angular = 0; angular < angularSegments; angular += 1) {
       const angle = FULL_TURN * angular / angularSegments;
       positions.push(
@@ -110,12 +105,27 @@ function diaphragmForcePump(movement) {
   const leverAmplitude = THREE.MathUtils.degToRad(15);
   const diaphragmCenterX = 0;
   const connectingRodLength = 1.20;
-  const linkEyeHeight = .20;
+  // Pass 110: the link's eye stands 0.32 above the membrane so its lower
+  // edge (eye radius 0.209) clears the 0.10 upper clamp plate it rises from.
+  const linkEyeHeight = .32;
   const diaphragmRadius = 1.15;
   const diaphragmRimY = 1.50;
   const chamberBottomY = -0.35;
   const chamberArea = Math.PI * diaphragmRadius ** 2;
-  const diaphragmEffectiveArea = chamberArea / 3;
+  // Pass 110: the membrane is held flat between the clamp plates out to
+  // clampRadius (the upper plate carries the link's lug), and bends as a
+  // clamped quartic from there to the rim:
+  //   p(r) = 1 (r <= a),  (1 - s^2)^2, s = (r - a)/(R - a) (a < r <= R).
+  // Its effective area is pi a^2 + 2 pi (R - a)(8a/15 + (R - a)/6).
+  const clampRadius = 0.30;
+  const membraneProfile = (r) => {
+    if (r <= clampRadius) return 1;
+    const s = Math.min(1, (r - clampRadius) / (diaphragmRadius - clampRadius));
+    return (1 - s * s) ** 2;
+  };
+  const diaphragmEffectiveArea = Math.PI * clampRadius ** 2
+    + 2 * Math.PI * (diaphragmRadius - clampRadius)
+      * (8 * clampRadius / 15 + (diaphragmRadius - clampRadius) / 6);
   const maximumValveAngle = THREE.MathUtils.degToRad(24);
   const groundY = -2.16;
   const suctionValveSeat = new THREE.Vector3(0, -0.22, 0.38);
@@ -180,7 +190,7 @@ function diaphragmForcePump(movement) {
       0,
     );
     const averageWaterTopY = diaphragmRimY
-      + (diaphragmCenterY - diaphragmRimY) / 3;
+      + (diaphragmCenterY - diaphragmRimY) * diaphragmEffectiveArea / chamberArea;
     const chamberWaterVolume = chamberArea
       * (diaphragmRimY - chamberBottomY)
       + diaphragmEffectiveArea
@@ -334,8 +344,12 @@ function diaphragmForcePump(movement) {
 
   const diaphragmGeometry = makeDiaphragmGeometry(
     diaphragmRadius,
-    14,
-    64,
+    [
+      ...[1, 2, 3, 4].map((k) => clampRadius * k / 4 / diaphragmRadius),
+      ...Array.from({ length: 16 }, (_, k) => (clampRadius
+        + (diaphragmRadius - clampRadius) * (k + 1) / 16) / diaphragmRadius),
+    ],
+    96,
   );
   const diaphragm = addRole(new THREE.Mesh(
     diaphragmGeometry,
@@ -374,17 +388,23 @@ function diaphragmForcePump(movement) {
   const centerClamp = addRole(new THREE.Group(),
     'moving-center-clamp-transmitting-link-motion-to-diaphragm');
   root.add(centerClamp);
+  // Pass 110: the upper plate is 0.30 in radius so the link's lug (x ±0.10,
+  // z 0.05 to 0.28) stands wholly on it (it overhung the old 0.20 plate by
+  // about 0.1 to the front); the link's eye clears the plate above it; the
+  // membrane is flat under it.
   const upperClamp = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.20, 0.20, 0.10, 32),
+    new THREE.CylinderGeometry(clampRadius, clampRadius, 0.10, 64),
     leverMaterial,
   );
-  upperClamp.position.y = 0.05;
+  // The plates stand 0.003 off the zero-thickness membrane they grip, so
+  // their faces never lie on it.
+  upperClamp.position.y = 0.053;
   centerClamp.add(upperClamp);
   const lowerClamp = new THREE.Mesh(
     new THREE.CylinderGeometry(0.16, 0.16, 0.12, 32),
     darkMaterial,
   );
-  lowerClamp.position.y = -0.06;
+  lowerClamp.position.y = -0.063;
   centerClamp.add(lowerClamp);
 
   const pivotStandard = addRole(new THREE.Group(),
@@ -551,8 +571,7 @@ function diaphragmForcePump(movement) {
     const positions = diaphragmGeometry.getAttribute('position');
     const { radialFractions } = diaphragmGeometry.userData;
     for (let index = 0; index < positions.count; index += 1) {
-      const radialFraction = radialFractions[index];
-      const profile = (1 - radialFraction ** 2) ** 2;
+      const profile = membraneProfile(radialFractions[index] * diaphragmRadius);
       positions.setY(
         index,
         diaphragmRimY + (centerY - diaphragmRimY) * profile,
@@ -563,13 +582,13 @@ function diaphragmForcePump(movement) {
     diaphragmGeometry.computeBoundingBox();
     diaphragmGeometry.computeBoundingSphere();
     diaphragmSeams.forEach(({ radius, seam }) => {
-      const radialFraction = radius / diaphragmRadius;
-      const profile = (1 - radialFraction ** 2) ** 2;
+      const profile = membraneProfile(radius);
       seam.position.y = diaphragmRimY
         + (centerY - diaphragmRimY) * profile;
     });
   };
 
+  let water = null;
   const update = (time) => {
     const state = stateAtTime(time);
     lever.rotation.z = state.leverAngle;
@@ -584,11 +603,7 @@ function diaphragmForcePump(movement) {
       state.leverPin,
     );
     updateDiaphragm(state.diaphragmCenterY);
-    setVerticalExtent(
-      chamberWater,
-      chamberBottomY + 0.08,
-      state.averageWaterTopY,
-    );
+    water?.update(state);
     suctionValve.rotation.z = state.suctionValveAngle;
     deliveryValve.rotation.z = state.deliveryValveAngle;
     root.userData.updateSolids?.(state);
@@ -598,6 +613,7 @@ function diaphragmForcePump(movement) {
   const geometry = {
     chamberArea,
     chamberBottomY,
+    clampRadius,
     connectingRodLength,
     linkEyeHeight,
     cycleDuration,
@@ -652,7 +668,7 @@ function diaphragmForcePump(movement) {
       fullPressureWaveValveImpactLeakageDiaphragmElasticityCavitationAndAppliedLeverForceModeled:
         false,
       diaphragmVolumeModel:
-        'The clamped membrane uses y(r)=y_rim+(y_center-y_rim)(1-(r/R)^2)^2. Integrating that axisymmetric profile gives the exact effective area pi*R^2/3 used for chamber volume and flow.',
+        'The clamped membrane is flat under the centre clamp plate (r<=a) and uses y(r)=y_rim+(y_center-y_rim)(1-s^2)^2, s=(r-a)/(R-a), out to the rim. Integrating that axisymmetric profile gives the exact effective area pi*a^2+2*pi*(R-a)*(8a/15+(R-a)/6) used for chamber volume and flow.',
       flowModel:
         'The chamber is treated as primed and incompressible. Center rise increases volume and admits through the lower suction check; center descent decreases volume and forces the same rate through the right delivery check. Pipe losses, leakage and trapped air are omitted.',
       valveModel:
@@ -730,6 +746,15 @@ function diaphragmForcePump(movement) {
   root.userData.cameraDirection = new THREE.Vector3(6.4, 4.7, 10.6);
   root.userData.groundFloorY = groundY;
   correctFlexiblePumpParts(root,454);
+  water = buildDiaphragmPumpWater(root, {
+    waterMaterial,
+    membraneY: (r, centerY) => diaphragmRimY
+      + (centerY - diaphragmRimY) * membraneProfile(r),
+    clampUnderRadius: 0.16,
+    clampUnderDepth: 0.123,
+  });
+  root.userData.membraneProfile = membraneProfile;
+  root.userData.streakMaterials = water.streakMaterials;
   markShadows(root);
   base.receiveShadow = true;
   update(0);
@@ -753,6 +778,14 @@ export function createAuthoredDiaphragmPumpMovement(movement) {
     model.root.traverse((o) => {
       if (!o.isMesh || o.userData.role !== 'single-flexible-diaphragm-clamped-at-rim-and-driven-at-center') return;
       o.material = o.material.clone();o.material.side = THREE.DoubleSide;o.material.clippingPlanes = [clip];
+    });
+    // The cutaway clones the water materials; keep the shared streak
+    // shader's fresnel on the clones of the streak material.
+    const [streak] = model.root.userData.streakMaterials ?? [];
+    if (streak) model.root.traverse((o) => {
+      if (!o.isMesh || !o.material?.userData?.waterStream) return;
+      o.material.onBeforeCompile = streak.onBeforeCompile;
+      o.material.customProgramCacheKey = streak.customProgramCacheKey;
     });
     model.root.userData.localClippingEnabled = true;
   }
