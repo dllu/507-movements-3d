@@ -241,8 +241,8 @@ test('movement 236 returned pawls ride the teeth, rigid and outside every tooth'
   // Brown draws both pawls lying on the teeth: the idle pawl rests on the
   // wheel (toe or flank) except for brief drops off a tooth corner, and never
   // swings clear of the rim.
-  // Drops now take several frames each, so the idle pawl flies more often.
-  assert.ok(restingSamples / (samples + 1) > 0.8,
+  // p106: drops take about two displayed frames; the idle pawl rests 97.7%.
+  assert.ok(restingSamples / (samples + 1) > 0.95,
     `idle pawl rests on the teeth ${restingSamples / (samples + 1)}`);
   assert.ok(maximumIdleToeClearance < 0.25,
     `idle toe clearance ${maximumIdleToeClearance}`);

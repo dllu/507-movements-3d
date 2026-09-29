@@ -6,7 +6,7 @@
     },
     {
       "file": "src/simulation/authored-gears-core.js",
-      "sha256": "5256acbf703a7d3ec3db89bd3867ab00f4a1753f0ed0ae14968e1fa4aa4104ed"
+      "sha256": "1c30ebdad9077ed4af8fd2ef20805bf97d057ca1b46a19650f45b5fac3bfb138"
     },
     {
       "file": "src/simulation/miter-gear.js",

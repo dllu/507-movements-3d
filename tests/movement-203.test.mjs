@@ -683,7 +683,12 @@ test('movement 203 runtime transforms keep the pin in the moving slot as the que
   const sweptSize = sweptBounds.getSize(new THREE.Vector3());
   assert.ok(sweptSize.x > 6.1, `full-stroke x envelope ${sweptSize.x}`);
   assert.ok(sweptSize.y > 6.1, `full-stroke y envelope ${sweptSize.y}`);
-  assert.ok(sweptSize.z > 1.2, `three-dimensional depth ${sweptSize.z}`);
+  // p106: shafts and the slot pin end 0.03 proud of their faces.
+  assert.ok(sweptSize.z > 0.9 && sweptSize.z < 1.2, `three-dimensional depth ${sweptSize.z}`);
+  for (const [shaft, low, high] of [[blocks.inputShaft, -0.2, 0.3], [blocks.outputShaft, -0.53, -0.25], [blocks.followerPin, -0.53, 0.18]]) {
+    const box = new THREE.Box3().setFromObject(shaft);
+    assert.ok(box.min.z > low && box.max.z < high, `${shaft.userData.role} trimmed ${box.min.z}..${box.max.z}`);
+  }
   assert.ok(sweptSize.x < 10);
   assert.ok(sweptSize.y < 10);
 

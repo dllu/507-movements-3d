@@ -3037,9 +3037,14 @@ function springPressedRatchetIndex() {
   ratchetIndicator.userData.ratchetRotationIndicator = true;
   ratchet.userData.rotor.add(ratchetIndicator);
   ratchet.userData.indicator = ratchetIndicator;
-  const ratchetShaft = makeShaft({ length: 1.34, radius: 0.09 });
-  ratchetShaft.position.z = ratchetPlaneZ;
-  ratchetShaft.userData.radius = 0.09;
+  // p106: A's shaft fills the bores (0.145 against A's hub bore 0.155 and
+  // D's running bore 0.15) and ends 0.025 proud of A's hub front (0.247) and
+  // of D's sleeve back (-0.485), so no bright annulus shows round it and no
+  // stub casts a spoke shadow across A.
+  const ratchetShaftFront = 0.247 + 0.025, ratchetShaftBack = -0.485 - 0.025;
+  const ratchetShaft = makeShaft({ length: ratchetShaftFront - ratchetShaftBack, radius: 0.145 });
+  ratchetShaft.position.z = (ratchetShaftFront + ratchetShaftBack) / 2;
+  ratchetShaft.userData.radius = 0.145;
   ratchetShaft.userData.role = 'intermittent-output-shaft-A';
   const profile = ratchet.userData.profilePoints;
 
@@ -14361,13 +14366,15 @@ function crescentPinSixSlotWindingStop() {
   lockingCamBody.userData.role =
     'front-raised-crescent-locking-cam-with-square-bore';
   lockingCamBody.userData.normalLockingCam = true;
-  const pinLength = 0.94;
+  // p106: the pin ends 0.03 past the star's front face (0.17) instead of
+  // standing 0.49 out at the viewer; its back stays in the carrier disk.
+  const pinBack = -0.28, pinFront = 0.17 + 0.03, pinLength = pinFront - pinBack;
   const facePin = new THREE.Mesh(
     new THREE.CylinderGeometry(pinRadius, pinRadius, pinLength, 28),
     brassMaterial,
   );
   facePin.rotation.x = Math.PI / 2;
-  facePin.position.set(pinLocal.x, pinLocal.y, 0.19);
+  facePin.position.set(pinLocal.x, pinLocal.y, (pinFront + pinBack) / 2);
   facePin.userData.role = 'single-crescent-driver-face-pin';
   facePin.userData.onlyIndexingDriver = true;
   const facePinCap = new THREE.Mesh(
@@ -14375,7 +14382,7 @@ function crescentPinSixSlotWindingStop() {
     whiteMaterial,
   );
   facePinCap.rotation.x = Math.PI / 2;
-  facePinCap.position.set(pinLocal.x, pinLocal.y, 0.665);
+  facePinCap.position.set(pinLocal.x, pinLocal.y, pinFront + 0.0225);
   facePinCap.userData.role = 'visible-face-pin-contact-cap';
   const driverIndexDirection = pinLocal.clone().normalize();
   const driverIndex = makeBeam(
@@ -14440,19 +14447,25 @@ function crescentPinSixSlotWindingStop() {
     stopWheelIndex,
   );
 
+  // p106: both shafts end 0.025 proud of what they pass through: the input
+  // shaft of the square arbor's front (0.675) and the carrier disk's back
+  // (-0.545), the stop-wheel shaft of its hub front (0.355) and the star's
+  // back face (-0.17), so no stub throws a shadow bar across the faces.
+  const driverShaftSpan = [-0.545 - 0.025, 0.675 + 0.025];
   const driverShaft = makeShaft({
     axis: Z_AXIS,
-    length: 1.68,
+    length: driverShaftSpan[1] - driverShaftSpan[0],
     radius: 0.115,
   });
-  driverShaft.position.set(driverCenter.x, driverCenter.y, -0.06);
+  driverShaft.position.set(driverCenter.x, driverCenter.y, (driverShaftSpan[0] + driverShaftSpan[1]) / 2);
   driverShaft.userData.role = 'crescent-winding-input-shaft';
+  const stopWheelShaftSpan = [-0.17 - 0.025, 0.355 + 0.025];
   const stopWheelShaft = makeShaft({
     axis: Z_AXIS,
-    length: 1.56,
+    length: stopWheelShaftSpan[1] - stopWheelShaftSpan[0],
     radius: 0.115,
   });
-  stopWheelShaft.position.set(stopWheelCenter.x, stopWheelCenter.y, -0.07);
+  stopWheelShaft.position.set(stopWheelCenter.x, stopWheelCenter.y, (stopWheelShaftSpan[0] + stopWheelShaftSpan[1]) / 2);
   stopWheelShaft.userData.role = 'six-slot-stop-wheel-shaft';
   // The arbor fills Brown's square bore: the bore's corners lie at 24.3
   // degrees plus quarter turns, so the box (corners at 45 degrees to its
@@ -15501,13 +15514,16 @@ function vibratingCarrierSinglePawlRatchet(movement) {
   const pawlPlaneZ = 0.23;
   ratchet.position.z = pawlPlaneZ;
   root.add(ratchet);
+  // p106: the shaft ends 0.02 past the hub front (0.429) and 0.025 behind
+  // the fixed journal (-0.21); the 0.24 stub threw a claw shadow on the hub.
+  const ratchetShaftSpan = [-0.21 - 0.025, 0.429 + 0.02];
   const ratchetShaft = makeShaft({
     axis: Z_AXIS,
     color: PALETTE.ink,
-    length: 0.95,
+    length: ratchetShaftSpan[1] - ratchetShaftSpan[0],
     radius: 0.105,
   });
-  ratchetShaft.position.z = pawlPlaneZ - 0.04;
+  ratchetShaft.position.z = (ratchetShaftSpan[0] + ratchetShaftSpan[1]) / 2;
   ratchetShaft.userData.role = 'fixed-axis-ratchet-output-shaft';
   root.add(ratchetShaft);
 
@@ -19431,7 +19447,12 @@ function alternatingTwoPawlContinuousRatchet(movement) {
       [upperStart, eyeTop],
     ];
   };
-  const idleFallAcceleration = 300;
+  // p106: the returning pawl's fall under its bias is much brisker than
+  // before (8000 per cycle squared, was 300), so after leaving a crest its
+  // toe lands on the next back within about 0.005 cycle (two displayed
+  // frames) instead of hanging in air for a fortieth of the cycle; elsewhere
+  // it rides the outline (toe on the backs, or its flank on a crest).
+  const idleFallAcceleration = 8000;
   const restingPawlAngleAt = (anchor, length, wheelAngle, outAngle) => {
     const local = rotateVector(anchor, -wheelAngle);
     const start = outAngle - wheelAngle;

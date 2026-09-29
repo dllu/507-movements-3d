@@ -129,7 +129,8 @@ test('movement 73 layers D, A and both springs without axial overlap', () => {
   const [blockBack] = zRange(blocks.strongSpringClamp);
 
   assert.ok(sleeveFront < ratchetBack - 0.005, 'D’s sleeve stops behind A and its hub');
-  assert.ok(geometry.driverBoreRadius > blocks.ratchetShaft.userData.radius + 0.05,
+  // p106: A's shaft fills the bores; D keeps a running clearance on it.
+  assert.ok(geometry.driverBoreRadius > blocks.ratchetShaft.userData.radius + 0.004,
     'D turns loose on A’s shaft');
   assert.ok(clampBack >= driverFront - 1e-6, 'B’s clamp stands on D’s face');
   assert.ok(catchBack >= driverFront - 1e-6, 'B lies on D’s face, not in it');

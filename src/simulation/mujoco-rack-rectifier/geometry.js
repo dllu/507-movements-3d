@@ -5,6 +5,9 @@ import {plate,poly,polygonClipping as clip,circle,disk,turned} from '../finite-p
 import {convexPlateCells} from '../mujoco/convex-plate.js';
 import {PALETTE,matte,markShadows} from '../primitives.js';
 export {THREE};
+// p106: both pawls are dark steel, apart from the muted grey rear pinion
+// they lie on and from the brass ratchets they drive.
+const PAWL_STEEL=0x474d52;
 export function makeRackRectifierGeometry({samples=96,cutterSteps=2048,ratchetSamples=64,pawlSeat=.0002,hook=35*Math.PI/180,innerMeet=.295,pawlUp=125*Math.PI/180,pawlDown=-60*Math.PI/180,heelFraction=1.15,bossRadius=.044,ratchetPhase=s.ratchet.phase}={}){
  if(!Number.isInteger(samples)||samples<32||!Number.isInteger(cutterSteps)||cutterSteps<256||!Number.isInteger(ratchetSamples)||ratchetSamples<16||!Number.isFinite(pawlSeat)||pawlSeat<=0||pawlSeat>.002||!Number.isFinite(ratchetPhase))throw new RangeError('Invalid 116 geometry options');
  const root=new THREE.Group(),parts={},families={},blocks={},cells={},m=s.pinion.module,R=s.pinion.teeth*m/2,pitch=Math.PI*m,cutterR=R+s.pinion.profileShift*m,alpha=14.5*Math.PI/180,corner=.12*m,clearance=.001,rackAddendum=1.25,rackDedendum=0.62,rootY=cutterR+rackDedendum*m,tipY=cutterR-rackAddendum*m+clearance,amplitude=R*Math.PI/2;
@@ -81,7 +84,7 @@ export function makeRackRectifierGeometry({samples=96,cutterSteps=2048,ratchetSa
  f.pawlTip=tip;f.pawlHeel=heel;f.pawlBoss={radius:bossRadius,bore:boreRadius};f.ratchetFace={a,b,normal};
  for(const [name,z]of [['upper',-f.pawlZ],['lower',f.pawlZ]]){
   add(name+'Ratchet',plate(shape,z-.045,z+.045),'output',PALETTE.brass);
-  add(name+'Pawl',plate(pawl,z-.04,z+.04),name+'Pawl',PALETTE.muted);
+  add(name+'Pawl',plate(pawl,z-.04,z+.04),name+'Pawl',PAWL_STEEL);
   blocks[name+'Pawl'].position.set(...s.pawlPivot,0);
   const pin=add(name+'PawlPin',disk(.0125,z>0?.26:z-.046,z>0?z+.046:-.26,48),name,PALETTE.ink);pin.position.set(...s.pawlPivot,0);
  }

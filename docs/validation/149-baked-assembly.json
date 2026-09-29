@@ -52,7 +52,7 @@
     },
     {
       "file": "src/simulation/baked/twin-cam.js",
-      "sha256": "8e37d0fdec042ca9f284c1e0ff9666548bc36ff03b3d4c7ff1204a31ba53b85c"
+      "sha256": "8de5d91927f6fe67f532f2679fdbd3c374583526b2523e9083a0f86a16cbfc18"
     },
     {
       "file": "src/simulation/baked/playback.js",

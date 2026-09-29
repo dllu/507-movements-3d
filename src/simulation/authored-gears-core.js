@@ -24018,6 +24018,16 @@ function threeRatioPinWheelAndSlidingSlottedPinion() {
       });
     }
   }
+  // p106: the output shaft stands about 1.3 in front of the disc face and
+  // is the only part of this family that far from a lit face; its shadow
+  // laid a dark band along the lowest pin row so those pins read as holes.
+  // It alone is exempt from casting (it still receives shadows).
+  outputShaft.traverse((part) => {
+    if (!part.isMesh) return;
+    part.userData.noShadow = true;
+    part.castShadow = false;
+    part.receiveShadow = true;
+  });
   return model;
 }
 

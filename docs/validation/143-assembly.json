@@ -13,7 +13,7 @@
     },
     {
       "file": "src/simulation/baked/sliding-worm.js",
-      "sha256": "9cb4589aaa461921fd7d282b2ce68e4e780135bf568943589d880d047b4fda0c"
+      "sha256": "1184870326326949ca04ddefa059b81eb039b4d870db2946dedc371ac868377f"
     },
     {
       "file": "src/simulation/sliding-worm-kinematics.js",

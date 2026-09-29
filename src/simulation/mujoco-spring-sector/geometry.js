@@ -127,8 +127,11 @@ export function makeSpringSectorGeometry() {
   attach('inputPin', disk(21.8 / scale, -.153, .138, 128), 'shaft', PALETTE.muted, [...pin, wheelPitchRadius]);
   // The rockshaft runs back past the rear sector into a long sleeve bearing on
   // one plain standard behind the crown wheel (see the fixed supports below).
+  // p106: the playback removes that sleeve bearing, so the visible shaft
+  // ends inside the rear hub cover exactly as its front end does in the
+  // front cover (the sleeve keeps its own back end).
   const rockshaftBack = -2.15;
-  attach('rockshaft', disk(24 / scale, rockshaftBack, wheelPitchRadius + .058, 128), 'shaft', PALETTE.muted);
+  attach('rockshaft', disk(24 / scale, -(wheelPitchRadius + .058), wheelPitchRadius + .058, 128), 'shaft', PALETTE.muted);
   const body = attach('wheelBody', ring(24 / scale, wheelOuterRadius, wheelBottom, wheelTop, 256), 'wheel', PALETTE.driven);
   body.rotation.x = -Math.PI / 2;
   const wheelPitch = 2 * Math.PI / wheelTeeth, crownPhase = Math.PI / 2;

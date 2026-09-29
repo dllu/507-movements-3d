@@ -15,24 +15,23 @@ test('081 follows the measured six-tooth wheel, seven-tooth rack and bored guide
  assert.ok(p.contactRatio>1);assert.ok(p.tipHalfAngle>0);
  assert.equal(u.fidelity,'authored');assert.equal(u.hideGround,true);
  near(u.parts.fixedAxle.position.length(),0);
- const mandrel=u.parts.fixedSlidingMandrel,seat=u.parts.movingSpringSeat,
-  guide=u.parts.lowerRackGuide,rod=u.parts.rackRod,
+ const upper=u.parts.upperSpringSeat,guide=u.parts.lowerRackGuide,rod=u.parts.rackRod,
   centerX=(p.guide.stemX[0]+p.guide.stemX[1])/2,
   x=u.source([centerX,0])[0];
- for(const mesh of [seat,guide]){
+ for(const mesh of [upper,guide]){
   mesh.geometry.computeBoundingBox();const y=mesh.geometry.boundingBox.getCenter(new THREE.Vector3()).y;
   assert.equal(solidSurface(mesh.geometry).inside(new THREE.Vector3(x,y,.1)),false,'The guide must have a real passage');
  }
- // One closed rack-rod: solid behind the old slot line, bored only above
- // its floor, which stays below the mandrel through the whole stroke; no
- // travel-stop pin or cap remains.
+ // p106: one plain closed rack-rod running up through spring C and the upper
+ // plate (Brown's rod), with no fixed mandrel, stop pin or cap. Its top stays
+ // through the upper plate at the lowest rest position.
  const rodSolid=solidSurface(rod.geometry),[sx,sy]=u.source([p.stop.sourceX,p.stop.sourceY]);
  assert.equal(rodSolid.inside(new THREE.Vector3(sx,sy,p.layers.rack[0]+.004)),true);
- assert.equal(rodSolid.inside(new THREE.Vector3(x,p.boreFloor+.05,.1)),false);
- assert.equal(rodSolid.inside(new THREE.Vector3(x,p.boreFloor-.05,.1)),true);
- mandrel.geometry.computeBoundingBox();assert.ok(p.boreFloor+u.profile.range[1]<mandrel.geometry.boundingBox.min.y);
- for(const name of ['fixedTravelStopPin','travelStopRearCap','slottedRackRearWall','rackLeftWall'])assert.equal(u.parts[name],undefined);
- assert.ok(mandrel.geometry.attributes.position.count>0);dispose(m);
+ upper.geometry.computeBoundingBox();rod.geometry.computeBoundingBox();
+ assert.equal(rodSolid.inside(new THREE.Vector3(x,upper.geometry.boundingBox.getCenter(new THREE.Vector3()).y,.1)),true);
+ assert.ok(rod.geometry.boundingBox.max.y+u.profile.range[0]>upper.geometry.boundingBox.max.y+.05);
+ for(const name of ['fixedSlidingMandrel','fixedTravelStopPin','travelStopRearCap','slottedRackRearWall','rackLeftWall'])assert.equal(u.parts[name],undefined);
+ dispose(m);
 });
 
 test('081 all source solids are closed, consistently wound and nondegenerate',()=>{
@@ -73,7 +72,7 @@ test('081 production geometry and motion match the independently reviewed candid
  const model=makeSpringRackDrive(),u=model.root.userData,candidate=makeSpringRackCandidate(u.profile.geometry),v=candidate.root.userData,
   motion=makeSpringRackPlayback(candidate,u.profile);
  for(let i=0;i<=240;i++){
-  const time=i*16/240,expected=motion.sample(time),actual=u.stateAtTime(time);
+  const time=i*16/240,expected=motion.sample(time+u.startOffset),actual=u.stateAtTime(time);
   near(actual.q,expected.q,0);near(actual.rackY,expected.rackY,0);
   if(i%12)continue;
   model.update(time);candidate.setState(expected);
@@ -120,5 +119,11 @@ test('081 the deformed spring and independent solids clear the guides, teeth and
    }
   }
  }
+ dispose(m);
+});
+
+test('p106: 081 playback starts in the settled loop, so the first cycle matches every later one',()=>{
+ const m=makeSpringRackDrive(),u=m.root.userData;
+ for(let i=0;i<=40;i++){const t=i*4/40;near(u.stateAtTime(t).rackY,u.stateAtTime(t+4).rackY,1e-10);near(u.stateAtTime(t).rackY,u.stateAtTime(t+12).rackY,1e-10);}
  dispose(m);
 });

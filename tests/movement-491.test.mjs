@@ -288,8 +288,8 @@ test('movement 491 hauls its one laid cable at barrel surface speed smoothly thr
       - stateAtTime(time - h).cableDistanceHauled) / (2 * h), 1e-6,
     `cable surface speed ${time}`);
     model.update(time);
-    near(blocks.cable.geometry.userData.travel, state.cableDistanceHauled,
-      0, `laid cable travel ${time}`);
+    near(blocks.cable.geometry.userData.travel,
+      state.cableDistanceHauled * geometry.layTravelScale, 0, `laid cable travel ${time}`);
   }
   assert.ok(cableRoute.curve instanceof THREE.Curve);
   assert.equal(blocks.cable.geometry.type, 'LaidRopeGeometry');
@@ -311,8 +311,15 @@ test('movement 491 hauls its one laid cable at barrel surface speed smoothly thr
     'free cable and first wrap share a tangent');
   assert.ok(incoming.dot(new THREE.Vector3(-1, 0, 0))
     > 0.999999999);
+  // Pass 106: the lay travels at the hauled distance scaled by under 0.2 %
+  // so one net turn per loop moves the strand pattern a whole number of
+  // repeats: no jump at the loop reset.
+  assert.ok(Math.abs(geometry.layTravelScale - 1) < 0.002);
+  const lay = blocks.cable.geometry.userData.ropeLay;
+  const repeats = 2 * Math.PI * geometry.barrelRadius * geometry.layTravelScale / (lay.lay / lay.strands);
+  near(repeats, Math.round(repeats), 1e-9, 'whole lay repeats per net turn');
   assert.match(sourceText,
-    /cable\.geometry\.setTravel\(state\.cableDistanceHauled\)/);
+    /cable\.geometry\.setTravel\(layTravel\)/);
   assert.match(dynamics.cableLayContinuity,
     /one arc-length Curve3.*share position and tangent.*barrel surface speed/s);
   disposeModel(model.root);

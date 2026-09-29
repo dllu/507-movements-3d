@@ -300,3 +300,29 @@ test('movement 263 closes with 262 and leaves movement 507 authored', () => {
   disposeModel(sideView.root);
   disposeModel(endView.root);
 });
+
+test('p106: standard E has one round boss head concentric with screw D with nut E seated in it', () => {
+  const model = createMovementModel(catalog.movements.find((entry) => entry.id === 263));
+  try {
+    let post = null;
+    let nut = null;
+    model.root.traverse((object) => {
+      if (object.userData.role === 'source-footed-standard-E-carrying-nut') post = object;
+      if (object.userData.role === 'fixed-threaded-nut-E') nut = object;
+    });
+    assert.ok(post && nut);
+    post.geometry.computeBoundingBox();
+    const box = post.geometry.boundingBox;
+    near(box.max.y, 0.42, 1e-3, 'boss crown on the screw axis');
+    // No material inside the bore (radius 0.306) near the screw axis.
+    const position = post.geometry.getAttribute('position');
+    let insideBore = 0;
+    for (let index = 0; index < position.count; index += 1) {
+      const y = position.getY(index), z = position.getZ(index);
+      if (Math.hypot(y, z) < 0.3 && Math.abs(position.getX(index)) < 0.12) insideBore += 1;
+    }
+    assert.equal(insideBore, 0);
+  } finally {
+    disposeModel(model.root);
+  }
+});

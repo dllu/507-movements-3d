@@ -28,16 +28,18 @@ const outlineDistance = (x, y) => {
   return inside ? -best : best;
 };
 // Convex ratchet edges: each crest, the inner and outer top edges of each
-// ramp and the ramp quad's diagonal (its two triangles meet in a ridge).
+// ramp.
 const crest = [];
 const polar = (r, h, a) => [r*Math.cos(a), h, r*Math.sin(a)];
 const addEdge = (p, q, n) => { for (let i = 0; i <= n; i++) crest.push(p.map((v, k) => v + (q[k]-v)*i/n)); };
 for (let k = 0; k < g.toothCount; k++) {
   const a0 = k*pitch, a1 = (k+1)*pitch;
   addEdge(polar(g.innerRadius, g.highHeight, a1), polar(g.outerRadius, g.highHeight, a1), 240);
-  addEdge(polar(g.innerRadius, g.lowHeight, a0), polar(g.innerRadius, g.highHeight, a1), 240);
-  addEdge(polar(g.outerRadius, g.lowHeight, a0), polar(g.outerRadius, g.highHeight, a1), 240);
-  addEdge(polar(g.innerRadius, g.lowHeight, a0), polar(g.outerRadius, g.highHeight, a1), 240);
+  // Pass 106: the ramp is a sliced helicoid, so its inner and outer top
+  // edges are helices (no longer chords) and it has no diagonal ridge.
+  for (const r of [g.innerRadius, g.outerRadius]) {
+    for (let i = 0; i <= 240; i++) crest.push(polar(r, g.lowHeight + (g.highHeight-g.lowHeight)*i/240, a0 + pitch*i/240));
+  }
 }
 const crestGap = (phase, beta) => {
   // Crest points into the pawl frame: undo the rotor turn, then the pivot.

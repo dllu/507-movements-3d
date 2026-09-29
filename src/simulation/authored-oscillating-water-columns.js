@@ -4,7 +4,8 @@ import {
   markShadows,
   matte,
 } from './primitives.js';
-import {WaterStream, ballisticPath} from './water-stream.js';
+import {WaterStream, ballisticPath, waterStreamMaterial} from './water-stream.js';
+import {flowingStreamSurface} from './flowing-stream-surface.js';
 import {applyCutawayFor} from './cutaway-presentations.js';
 import {latheSectionGeometry} from './cutaway-section.js';
 
@@ -710,9 +711,27 @@ function dectolOscillatingColumn(movement) {
   // its heave shows only as the crown at the surface.
   const BODY = 72, SHEET = 18, SEGMENTS = 56;
   const bodyProfile = Array.from({length: BODY + 3 + 2 * SHEET + 2}, () => new THREE.Vector2());
-  const waterBody = addRole(new THREE.Mesh(new THREE.LatheGeometry(bodyProfile, SEGMENTS), streamMaterial.clone()),
+  // Pass 106: the body wears the shared WaterStream streak look (431,
+  // 441-443) and its streaks run down the stream, over the cone and plate
+  // and down the sheet at the downward discharge, so the steady run is no
+  // longer a frozen glass sculpture. The lathe carries no vertex colours, so
+  // the tint goes on the material colour instead.
+  const bodyMaterial = waterStreamMaterial({opacity: 0.46});
+  bodyMaterial.vertexColors = false;
+  bodyMaterial.color.copy(bodyMaterial.userData.tint);
+  const waterBody = addRole(new THREE.Mesh(new THREE.LatheGeometry(bodyProfile, SEGMENTS), bodyMaterial),
     'falling-stream-cone-and-plate-sheet-as-one-water-body');
-  waterBody.material.opacity = 0.46;
+  // Streak tiles per unit length down the profile, around the axis, and per
+  // turn of the integrated downward discharge (whole, so the loop is seamless).
+  const STREAK_PER_UNIT = 1.2, STREAK_AROUND = 8, STREAK_TILES_PER_TURN = 8;
+  {
+    const uv = waterBody.geometry.attributes.uv.array;
+    let n = 0;
+    for (let i = 0; i <= SEGMENTS; i += 1) {
+      for (let j = 0; j < bodyProfile.length; j += 1) { uv[n] = i / SEGMENTS * STREAK_AROUND; n += 2; }
+    }
+  }
+  const profileV = new Float32Array(bodyProfile.length);
   // Rewritten in place each frame: keep the load-time crease pass (which
   // re-grids lathes) off this one.
   waterBody.geometry.userData.latheCreased = true;
@@ -778,21 +797,76 @@ function dectolOscillatingColumn(movement) {
     }
     bodyProfile[k++].set(plateRadius + 0.004, plateTopY - plateThickness - 0.004);
     while (k < bodyProfile.length) bodyProfile[k++].copy(bodyProfile[k - 2]);
+    // Streak coordinate: distance downstream along the profile, from the
+    // orifice down the stream and cone, over the plate and down the outer
+    // face of the sheet; the sheet's inner face takes the same value as the
+    // outer face at that height, so both faces flow downward together.
+    const outerEnd = BODY + 2 + SHEET;
+    profileV[0] = 0;
+    for (let j = 1; j <= outerEnd; j += 1) {
+      profileV[j] = profileV[j - 1] + bodyProfile[j].distanceTo(bodyProfile[j - 1]) * STREAK_PER_UNIT;
+    }
+    for (let i = SHEET - 1, j = outerEnd + 1; i >= 0; i -= 1, j += 1) profileV[j] = profileV[BODY + 3 + i];
+    for (let j = outerEnd + SHEET + 1; j < bodyProfile.length; j += 1) profileV[j] = profileV[BODY + 2];
     const pos = waterBody.geometry.attributes.position.array;
-    let n = 0;
+    const uv = waterBody.geometry.attributes.uv.array;
+    let n = 0, m = 1;
     for (let i = 0; i <= SEGMENTS; i += 1) {
       const phi = i / SEGMENTS * Math.PI * 2, sin = Math.sin(phi), cos = Math.cos(phi);
-      for (const p of bodyProfile) { pos[n++] = p.x * sin; pos[n++] = p.y; pos[n++] = p.x * cos; }
+      for (let j = 0; j < bodyProfile.length; j += 1) {
+        const p = bodyProfile[j];
+        pos[n++] = p.x * sin; pos[n++] = p.y; pos[n++] = p.x * cos;
+        uv[m] = profileV[j]; m += 2;
+      }
     }
     waterBody.geometry.attributes.position.needsUpdate = true;
+    waterBody.geometry.attributes.uv.needsUpdate = true;
     waterBody.geometry.computeVertexNormals();
     waterBody.geometry.computeBoundingSphere();
   };
   for (const retired of [fallingJet, film, spillCurtain, waterCone, coneCrown, risingColumn]) retired.removeFromParent();
+  // Pass 106: the constant supply along the conduit and the discharge along
+  // the floor channel, as slow streaked currents inside their still bodies.
+  const upperDepth = upperInner - skin, lowerDepth = lowerInner - skin;
+  const currents = [
+    flowingStreamSurface({
+      start: new THREE.Vector3(channelLeftX + 0.05, reservoirWaterY, -upperDepth / 2),
+      end: new THREE.Vector3(-0.30, reservoirWaterY, -upperDepth / 2),
+      halfWidth: upperDepth / 2 - 0.03,
+      depth: (reservoirWaterY - channelFloorY) / 2,
+      thickness: (reservoirWaterY - channelFloorY) / 2 - 0.035,
+      speed: 0.45,
+      cyclePeriod: cycleDuration,
+      streakLength: 0.9,
+      fade: 0.08,
+      role: 'constant-supply-current-along-conduit',
+    }),
+    flowingStreamSurface({
+      start: new THREE.Vector3(0.28, lowerWaterY, -lowerDepth / 2),
+      end: new THREE.Vector3(outletRightX - 0.03, lowerWaterY, -lowerDepth / 2),
+      halfWidth: lowerDepth / 2 - 0.04,
+      depth: (lowerWaterY - receiverFloorY) / 2,
+      thickness: (lowerWaterY - receiverFloorY) / 2 - 0.035,
+      speed: 0.45,
+      cyclePeriod: cycleDuration,
+      streakLength: 0.9,
+      fade: 0.08,
+      role: 'lower-discharge-current-along-floor-channel',
+    }),
+  ];
+  for (const current of currents) root.add(current);
   const baseUpdate = update;
   const liveUpdate = (time) => {
     baseUpdate(time);
-    updateWaterBody(stateAtTime(time));
+    const state = stateAtTime(time);
+    updateWaterBody(state);
+    // The streaks advance with the integrated downward discharge (the
+    // tracer travel above), so they slow while the cone checks the flow.
+    const offset = -THREE.MathUtils.euclideanModulo(STREAK_TILES_PER_TURN * parts.markerTravelTurns, 1);
+    const material = waterBody.material;
+    if (material.map) material.map.offset.y = offset;
+    if (material.normalMap) material.normalMap.offset.y = offset;
+    for (const current of currents) current.update(time);
   };
 
   const sourceState = stateAtInputAngle(0);
@@ -995,5 +1069,19 @@ function dectolOscillatingColumn(movement) {
 
 export function createAuthoredOscillatingWaterColumnMovement(movement) {
   if (movement.id !== 445 && movement.id !== 446) return null;
-  return applyCutawayFor(dectolOscillatingColumn(movement), 445);
+  const model = dectolOscillatingColumn(movement);
+  // The cutaway clones the water materials to add its clipping plane;
+  // material cloning drops the streak look's fresnel shader hook, so carry
+  // it across.
+  const hooks = new Map();
+  model.root.traverse((object) => {
+    if (object.isMesh && object.material?.userData?.waterStream) hooks.set(object, object.material);
+  });
+  applyCutawayFor(model, 445);
+  for (const [object, original] of hooks) {
+    if (object.material === original) continue;
+    object.material.onBeforeCompile = original.onBeforeCompile;
+    object.material.customProgramCacheKey = original.customProgramCacheKey;
+  }
+  return model;
 }

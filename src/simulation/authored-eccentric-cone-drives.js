@@ -103,8 +103,11 @@ function crossedWebStandardGeometry({
   neckHalfX,
   neckHalfZ,
   topY,
-  cradleRadius,
+  bossRadius,
+  boreRadius,
+  filletRadius,
   webHalfThickness,
+  acrossHalfThickness = webHalfThickness,
 }) {
   const webOutline = (footHalf, neckHalf, top) => {
     const coveBase = footHalf * 0.84;
@@ -125,17 +128,42 @@ function crossedWebStandardGeometry({
     ]];
   };
   const alongTop = [[neckHalfX, topY], [-neckHalfX, topY]];
+  // p106: the across web's head is a round boss concentric with the screw
+  // (nut E is seated in its bore). The straight neck sides run tangent into
+  // the boss through circular fillets; no flat-topped stem under a ring.
+  const filletCentreU = neckHalfZ + filletRadius;
+  const filletCentreY = -Math.sqrt((bossRadius + filletRadius) ** 2
+    - filletCentreU ** 2);
+  const bossTangentAngle = Math.atan2(filletCentreY, filletCentreU);
   const acrossTop = [];
-  for (let index = 0; index <= 16; index += 1) {
-    const z = neckHalfZ - 2 * neckHalfZ * index / 16;
-    acrossTop.push([z, -Math.sqrt(cradleRadius ** 2 - z ** 2)]);
+  // Right fillet: from the neck line (angle pi) round to the boss tangent.
+  const filletEnd = bossTangentAngle + Math.PI;
+  for (let index = 0; index <= 12; index += 1) {
+    const angle = Math.PI + (filletEnd - Math.PI) * index / 12;
+    acrossTop.push([filletCentreU + filletRadius * Math.cos(angle),
+      filletCentreY + filletRadius * Math.sin(angle)]);
   }
+  for (let index = 1; index < 96; index += 1) {
+    const angle = bossTangentAngle
+      + (Math.PI - 2 * bossTangentAngle) * index / 96;
+    acrossTop.push([bossRadius * Math.cos(angle),
+      bossRadius * Math.sin(angle)]);
+  }
+  for (let index = 12; index >= 0; index -= 1) {
+    const angle = Math.PI + (filletEnd - Math.PI) * index / 12;
+    acrossTop.push([-(filletCentreU + filletRadius * Math.cos(angle)),
+      filletCentreY + filletRadius * Math.sin(angle)]);
+  }
+  const bore = Array.from({ length: 96 }, (_, index) => {
+    const angle = -2 * Math.PI * index / 96;
+    return [boreRadius * Math.cos(angle), boreRadius * Math.sin(angle)];
+  });
   // Outline u -> world x, extrusion -> world z.
   const alongWeb = plate([webOutline(footHalfX, neckHalfX, alongTop)],
     -webHalfThickness, webHalfThickness);
   // Outline u -> world z, extrusion -> world x.
-  const acrossWeb = plate([webOutline(footHalfZ, neckHalfZ, acrossTop)],
-    -webHalfThickness, webHalfThickness).rotateY(-Math.PI / 2);
+  const acrossWeb = plate([[...webOutline(footHalfZ, neckHalfZ, acrossTop),
+    bore]], -acrossHalfThickness, acrossHalfThickness).rotateY(-Math.PI / 2);
   const foot = new THREE.BoxGeometry(2 * footHalfX, footTopY - bottomY,
     2 * footHalfZ).translate(0, (footTopY + bottomY) / 2, 0).toNonIndexed();
   const parts = [alongWeb, acrossWeb, foot].map((geometry) => {
@@ -1003,14 +1031,20 @@ function eccentricConeFrictionReverser(movement) {
   // the side view's proportions (foot 54 px, neck under nut E).
   nutPost.geometry = crossedWebStandardGeometry({
     bottomY: coneEccentricity - coneLargeRadius * 76 / 55,
-    cradleRadius: 0.309,
+    // Nut E (outer radius 0.31, 0.28 long) is seated in the boss's bore and
+    // stands 0.02 proud of each face; the boss is as thick as the post.
+    bossRadius: 0.42,
+    boreRadius: 0.306,
+    filletRadius: 0.1,
+    acrossHalfThickness: 0.12,
     footHalfX: 0.56,
     footHalfZ: 1.05,
     footTopY: coneEccentricity - coneLargeRadius * 67 / 55,
     neckBottomY: -0.7,
     neckHalfX: 0.12,
     neckHalfZ: 0.2,
-    topY: -0.309,
+    // The along-axis web runs up into the boss's underside.
+    topY: -0.4,
     webHalfThickness: 0.06,
   });
   // Brown draws a plain face with one circle round D on B's large end (18 of

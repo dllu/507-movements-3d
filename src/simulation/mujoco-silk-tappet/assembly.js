@@ -51,7 +51,10 @@ export function makeSilkTraverseAssembly(bundle) {
  }
  for(const [name,x]of [['lower',-2.04],['upper',1.96]]){
   const outline=poly([[-.19,-.26],[.19,-.26],[.19,.26],[-.19,.26]]);
-  const bearing=add(name+'Bearing',alongX(plate(clip.difference(outline,round(.135)),-.13,.13)),PALETTE.frame,'carrier',carrier);bearing.position.x=x;
+  // p106: the upper block runs out to just short of the star's hub, so the
+  // star sits close against the frame end as Brown draws it (no bare shaft).
+  const high=name==='upper'?bundle.parameters.station-.055*(bundle.parameters.axialScale??1)-.02-x:.13;
+  const bearing=add(name+'Bearing',alongX(plate(clip.difference(outline,round(.135)),-.13,high)),PALETTE.frame,'carrier',carrier);bearing.position.x=x;
  }
  // Solid trapezoidal thread, integral with its root cylinder.
  const screw=new THREE.Group();screw.rotation.y=Math.PI/2;carrier.add(screw);
@@ -65,28 +68,38 @@ export function makeSilkTraverseAssembly(bundle) {
  const nut=new THREE.Group();carrier.add(nut);
  const nutOutline=poly([[-.18,-.153],[.18,-.153],[.18,.153],[-.18,.153]]);
  add('nut',alongX(plate(clip.difference(nutOutline,round(.125)),-.16,.16)),PALETTE.brass,'nut',nut);
- add('wrist',plate(round(.12),.15,1.53),PALETTE.ink,'nut',nut);
+ // p106: the yoke, its guide rod, the guide bearing and its bracket lie just
+ // in front of the star wheel's orbit (teeth reach z 0.853), not 1.1 in front
+ // of the screw frame; the wrist ends 0.02 past the yoke's front face. The
+ // rod passes in front of the curved bracket (as drawn), which lies in the
+ // thin layer between the star's orbit and the rod.
+ const yokeLow=.955,yokeHigh=1.135,rodZ=(yokeLow+yokeHigh)/2,bracketLow=.87,bracketHigh=.95;
+ add('wrist',plate(round(.12),.15,yokeHigh+.02-screwZ),PALETTE.ink,'nut',nut);
  const yoke=new THREE.Group();root.add(yoke);
  const outer=capsule([0,(283-179)*scale],[0,(283-400)*scale],20*scale);
  const inner=capsule([0,(283-180)*scale],[0,(283-399)*scale],9.2*scale);
- add('yoke',plate(clip.difference(outer,inner),1.51,1.69),PALETTE.driven,'yoke',yoke);
+ add('yoke',plate(clip.difference(outer,inner),yokeLow,yokeHigh),PALETTE.driven,'yoke',yoke);
  const rodLength=340*scale;
- const rod=add('guideRod',alongX(plate(round(.085),.24,rodLength)),PALETTE.driven,'yoke',yoke);rod.position.z=1.6;
+ const rod=add('guideRod',alongX(plate(round(.085),.24,rodLength)),PALETTE.driven,'yoke',yoke);rod.position.z=rodZ;
  const guideCenter=raster([367,283]);
- const guide=add('guideBearing',alongX(plate(clip.difference(round(.58),round(.091)),-.11,.11)),PALETTE.frame,'fixed');guide.position.set(guideCenter[0],0,1.6);
+ // Brown's upright bearing block: tall in y (as drawn) but shallow in z, so
+ // it clears the star's orbit beneath it and reaches back over the bracket.
+ // Section local coordinates are [-z, y] about the rod axis.
+ const guideMid=bracketLow+.15,guideSection=clip.difference(capsule([rodZ-guideMid,-.43],[rodZ-guideMid,.43],.15,64),round(.091));
+ const guide=add('guideBearing',alongX(plate(guideSection,-.11,.11)),PALETTE.frame,'fixed');guide.position.set(guideCenter[0],0,rodZ);
  const bracketShape=new THREE.Shape();
  const move=(x,y)=>bracketShape.moveTo(...raster([x,y]));
  const line=(x,y)=>bracketShape.lineTo(...raster([x,y]));
  const curve=(a,b,c)=>bracketShape.bezierCurveTo(...raster(a),...raster(b),...raster(c));
  move(363,289);line(382,289);curve([407,291],[416,308],[422,340]);line(496,340);line(496,328);line(441,328);
  curve([432,291],[418,275],[382,274]);line(363,274);bracketShape.closePath();
- add('guideBracket',plate(poly(bracketShape.getPoints(32).map(p=>p.toArray())),1.8,1.94),PALETTE.frame,'fixed');
+ add('guideBracket',plate(poly(bracketShape.getPoints(32).map(p=>p.toArray())),bracketLow,bracketHigh),PALETTE.frame,'fixed');
  // Brown breaks the fixed blocks off at the right edge. Model them whole as
  // two plain square-ended blocks (pass 101: the undrawn upright and web that
  // joined them into one C-frame are gone; neither block needs a drawn support).
- add('guideFoot',plate(sourcePoly([[386,346],[545,346],[545,391],[386,391]]),1.74,2.01),PALETTE.frame,'fixed');
+ add('guideFoot',plate(sourcePoly([[386,346],[545,346],[545,391],[386,391]]),bracketLow,bracketLow+.27),PALETTE.frame,'fixed');
  // Join the source foot and curved support without inventing an overall base.
- add('footNeck',plate(sourcePoly([[422,336],[496,336],[496,350],[422,350]]),1.8,1.94),PALETTE.frame,'fixed');
+ add('footNeck',plate(sourcePoly([[422,336],[496,336],[496,350],[422,350]]),bracketLow,bracketHigh),PALETTE.frame,'fixed');
  // Pass 101: Brown's stout stud. The shank is the contact capsule itself
  // (solids.js), horizontal in the source view; a hex nut and a turned collar
  // (Brown's collar is about a quarter of the star wheel's diameter) seat it

@@ -719,12 +719,15 @@ function redirectedChineseWindlass(movement) {
   // feet of the A-frame; it is a slender bar, a little stouter here so it
   // reads as a lever.
   const crankRadius = 0.94;
+  // p106: brass, not the A-frame's grey, and 0.1 further inboard (still
+  // 0.08 clear of the rope pack's flange), so it no longer reads as part of
+  // the left leg beside it.
   const handspikeX = largeRopeExit.x - largeBarrelWidth / 2
-    - largeBarrelExtension + 0.2;
+    - largeBarrelExtension + 0.3;
   const crankArm = makeBeam(
     new THREE.Vector3(handspikeX, -crankRadius, 0),
     new THREE.Vector3(handspikeX, crankRadius, 0),
-    { color: PALETTE.frame, depth: 0.11, thickness: 0.11 },
+    { color: PALETTE.brass, depth: 0.11, thickness: 0.11 },
   );
   crankArm.userData.role = 'handspike-through-large-barrel';
   windlassRotor.add(

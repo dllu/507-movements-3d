@@ -28,10 +28,13 @@ test('401 finite guide slots, pitman eyes and shaft bearings clear their pins fo
    assert.ok(bounds(pin).max.z>bounds(b.pitmanBar).max.z);
   }
   assert.ok(bounds(b.pitmanBar).min.z>bounds(b.wristBoss).max.z);
-  for(const [bearing,shaft,r] of [[b.wheelBearing,b.wheelShaft,.12],[b.treadleBearing,b.treadleShaft,.09],[b.faceDisc,b.wheelShaft,.12],[b.hub,b.wheelShaft,.12],[b.treadleBeam,b.treadleShaft,.09],[b.treadlePivotBoss,b.treadleShaft,.09]]){
+  for(const [bearing,shaft,r] of [[b.wheelBearing,b.wheelShaft,.12],[b.faceDisc,b.wheelShaft,.12],[b.hub,b.wheelShaft,.12],[b.treadleBeam,b.treadleShaft,.09]]){
    clearZ(bearing,shaft.getWorldPosition(new THREE.Vector3()),r);
   }
  }
+ // p106: the fulcrum is one short pin (0.03 proud of each face) in the treadle's own round eye.
+ {const pin=bounds(b.treadleShaft),beam=bounds(b.treadleBeam);assert.ok(Math.abs(pin.min.z-(beam.min.z-.03))<1e-6&&Math.abs(pin.max.z-(beam.max.z+.03))<1e-6);
+  assert.equal(b.treadleBearing,undefined);assert.equal(b.treadlePivotBoss,undefined);}
  update(1.5);root.updateMatrixWorld(true);
  assert.ok(Math.abs(b.tangentSlide.position.x)<1e-12);
  assert.equal(b.slideStop,undefined);

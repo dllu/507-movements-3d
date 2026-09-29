@@ -205,7 +205,7 @@ test('movement 299 builds an adjustable two-weight foliot and an open odd-tooth 
   assert.equal(blocks.crownWheel.userData.body.visible, true);
   assert.equal(blocks.crownRim.parent,
     blocks.crownWheel.userData.rotor);
-  assert.equal(blocks.crownSpokes.length, 4);
+  assert.equal(blocks.crownSpokes.length, 2);
   blocks.crownSpokes.forEach((spoke, index) => {
     assert.equal(spoke.parent, blocks.crownWheel.userData.rotor);
     assert.equal(spoke.userData.index, index);

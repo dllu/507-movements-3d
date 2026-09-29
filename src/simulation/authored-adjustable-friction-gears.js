@@ -1,6 +1,6 @@
 import { correctFriction413, finishFrictionFamily } from './friction-family-working-parts.js';
 import * as THREE from 'three';
-import { standardTurnedHandleGeometry, handleShank, HANDLE_FOOT_EMBED } from './turned-handle.js';
+import { turnedHandleGeometry, handleShank, HANDLE_FOOT_EMBED } from './turned-handle.js';
 import {
   PALETTE,
   markShadows,
@@ -447,10 +447,21 @@ function adjustableFrictionGear(movement) {
   // place of a rod and a separate ellipsoid 0.82 long. Its foot is sunk in
   // the left flank's outer face (x -0.247; see correctFriction413) and its
   // shank runs on through the flank, ending just inside its back at x 0.
+  // p106: Brown's handle is a stout turned grip standing clearly off the
+  // face at 0.8 of the face radius (1.04 of 1.29), not a small knob on a thin
+  // stalk: the shared turned-handle lathe with a stout profile (neck 0.12
+  // across, bulb 0.19, 0.46 proud of the face) rising from a round boss on
+  // the face, both concentric with the handle axis.
   const flankOuterX = -0.247;
+  const handleBossDepth = 0.05;
+  const handleBoss = cylinderAlongX(0.15, handleBossDepth + 0.01, drivenMaterial, 48);
+  handleBoss.position.set(flankOuterX - handleBossDepth / 2 + 0.005, -handleRadius, 0);
+  handleBoss.userData.role = 'lower-wheel-crank-handle-boss';
+  lowerRotor.add(handleBoss);
   const handleGrip = new THREE.Mesh(
-    standardTurnedHandleGeometry({ height: 0.40 + HANDLE_FOOT_EMBED, bulbRadius: 0.09,
-      shank: handleShank(-flankOuterX) }),
+    turnedHandleGeometry({ height: 0.46 + handleBossDepth + HANDLE_FOOT_EMBED,
+      shank: handleShank(-flankOuterX),
+      side: [[0.085, 0], [0.085, 0.1], [0.06, 0.26], [0.065, 0.42], [0.088, 0.6], [0.095, 0.76]] }),
     accentMaterial,
   );
   handleGrip.rotation.z = Math.PI / 2; // lathe +y points out along -x

@@ -118,7 +118,9 @@ export function makeTappetStudStop({computeStopOutline=false,...options}={}) {
   const stopShape=new THREE.Shape(paths.stop.map(q=>new THREE.Vector2(...q)));
   const bore=new THREE.Path();bore.absarc(0,0,.174,0,TAU,false);stopShape.holes.push(bore);
   attach('stopBody',extrusion(stopShape,.145,.265,96),PALETTE.accent,stop,'stop');
-  const pivot=attach('fixedPivot',drum(.17,0,-.18,.30),PALETTE.ink,root,'fixed');pivot.position.set(...p.pivot,0);
+  // p106: the fixed pin ends 0.02 behind the rear head instead of running a
+  // bare 0.3 stub back into space.
+  const pivot=attach('fixedPivot',drum(.17,0,.095,.30),PALETTE.ink,root,'fixed');pivot.position.set(...p.pivot,0);
   for(const [name,lo,hi] of [['rearPivotHead',.115,.135],['frontPivotHead',.275,.295]]){
     const head=attach(name,drum(.23,.17,lo,hi),PALETTE.ink,root,'fixed');head.position.set(...p.pivot,0);
   }

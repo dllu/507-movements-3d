@@ -60,7 +60,7 @@
     },
     {
       "file": "src/simulation/mujoco-silk-tappet/assembly.js",
-      "sha256": "1bd41801804b4fd22e241611d9facca8ac0102e849bb8e678e486fb34be679c1"
+      "sha256": "0a79aa4fd5f15c0fa45bf3527eaf56ed19817083e9905cf62b05054a9af24fe0"
     },
     {
       "file": "src/simulation/mujoco-silk-tappet/solids.js",

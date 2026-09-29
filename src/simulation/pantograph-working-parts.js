@@ -9,8 +9,12 @@ const replace = (mesh, geometry) => { mesh.geometry.dispose(); mesh.geometry = g
 const horizontalPlate = (shape, bottom, top) => plate(shape, -top, -bottom).rotateX(Math.PI / 2);
 
 // All stations are fixed in their own rigid bar. No mesh is rebuilt in update.
+// p106: the long arms end at the right corner in their round eye (r 0.15,
+// the washer radius, concentric with the pin), not a square bar end whose
+// corners poked out past the washer.
 function barGeometry(length, holes, thickness) {
-  const outline = clip.union(rectangle(0, length, -.085, .085),
+  const end = Math.min(length, holes.at(-1).station);
+  const outline = clip.union(rectangle(0, end, -.085, .085),
     ...holes.map(({station}) => poly(circle([station, 0], .15, 64))));
   return horizontalPlate(clip.difference(outline,
     ...holes.map(({station, radius}) => poly(circle([station, 0], radius, 96)))),

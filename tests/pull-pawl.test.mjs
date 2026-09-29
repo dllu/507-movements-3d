@@ -40,7 +40,14 @@ test('078 the wheel, rocker and independent pawls have real shaft bores',()=>{
 test('078 settles physically, then advances one clockwise tooth per complete rocking cycle',()=>{
  const model=makePullPawlDrive(),u=model.root.userData,p=u.geometry,initial=pose(model,0),first=pose(model,4);
  near(initial.theta,-.0175);near(initial.q,0);
- near((initial.theta-first.theta)/p.pitch,.85169022537,1e-7);
+ // p106: the right pawl is 13 source px shorter, so it seats in a root at
+ // the start of its stroke; the re-simulated first cycle advances 0.9939.
+ near((initial.theta-first.theta)/p.pitch,.99394672377,1e-7);
+ // Each pulling stroke carries about half a pitch (was 0.33 / 0.67).
+ const rising=(pose(model,5).theta-pose(model,7).theta+pose(model,7).theta-pose(model,9).theta)/p.pitch;
+ const falling=(pose(model,5).theta-pose(model,7).theta)/p.pitch,risingOnly=(pose(model,7).theta-pose(model,9).theta)/p.pitch;
+ near(falling+risingOnly,rising);near(falling+risingOnly,1,1e-6);
+ assert.ok(falling>.45&&falling<.55&&risingOnly>.45&&risingOnly<.55,`strokes ${falling} ${risingOnly}`);
  for(const time of [4,4.1,4.5,5,6,7.8,8,19.2,103.7]){
   const a=pose(model,time),b=pose(model,time+4);near(b.theta-a.theta,-p.pitch);
   for(const key of ['q','leftAngle','rightAngle'])near(b[key],a[key]);
@@ -54,7 +61,7 @@ test('078 settles physically, then advances one clockwise tooth per complete roc
   previous=state;
  }
  assert.ok(startupReverse/p.pitch>5e-5&&startupReverse/p.pitch<2e-4,'Retain the tiny initial physical rollback');
- assert.ok(steadyReverse<1e-8);assert.ok(stopped/4000>.43&&stopped/4000<.49);
+ assert.ok(steadyReverse<1e-8);assert.ok(stopped/4000>.37&&stopped/4000<.43);
  assert.ok(pose(model,4.5).theta>pose(model,5).theta,'First pulling stroke advances the wheel');
  assert.ok(pose(model,6.5).theta>pose(model,7).theta,'Second pulling stroke advances the wheel');
  near(u.playbackPeriod,4);near(u.minimumDisplayCycleSeconds,4);dispose(model);

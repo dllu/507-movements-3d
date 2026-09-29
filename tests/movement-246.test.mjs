@@ -459,3 +459,20 @@ test('movement 246 closes one trace in six seconds and leaves movement 507 autho
   disposeModel(model.root);
   disposeModel(model289.root);
 });
+
+test('p106: 246 long arms end at the right corner in a round eye no smaller than the washer', () => {
+  const movement = catalog.movements.find((entry) => entry.id === 246);
+  const model = createMovementModel(movement);
+  try {
+    const bars = model.root.userData.workingParts.bars;
+    for (const bar of bars) {
+      const last = bar.userData.holes.at(-1).station;
+      bar.geometry.computeBoundingBox();
+      const box = bar.geometry.boundingBox;
+      assert.ok(box.max.x <= last + 0.15 + 1e-6, `${bar.userData.role} ends in its eye (${box.max.x} vs ${last})`);
+      assert.ok(box.max.x >= last + 0.15 - 1e-3, `${bar.userData.role} eye radius at least the washer's`);
+    }
+  } finally {
+    model.dispose?.();
+  }
+});

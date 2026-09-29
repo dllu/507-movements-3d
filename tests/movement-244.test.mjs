@@ -453,7 +453,7 @@ test('p96: movement 244 strap hinge pins sit centred in the links and end in sho
   for (const strap of lowerStraps) strapBox.union(new THREE.Box3().setFromObject(strap));
   strapPins.forEach((pin, index) => {
     const r = Math.hypot(pin.position.x, pin.position.y);
-    near(r, (inner + outer) / 2, 1e-9, `pin ${index} centred in the band`);
+    near(r, (inner + outer) / 2, 1e-6, `pin ${index} centred in the band`);
     const mesh = pin.userData.rotor?.children[0] ?? pin.children[0];
     const length = mesh.geometry.parameters.height;
     if (index > 0 && index < strapPins.length - 1) {

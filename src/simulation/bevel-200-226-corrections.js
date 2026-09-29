@@ -36,7 +36,10 @@ export function singleInclinedTwoSpeedBevel(makeGear){
  const sleeveLow=upperOutput.userData.hubLow+.01;
  replace(sleeveMesh,boredLatheGeometry([{radial:sleeveOuter,axial:sleeveLow},{radial:sleeveOuter,axial:sleeveTop}],.121,64));sleeveMesh.rotation.set(Math.PI/2,0,0);
  sleeve.userData.role='sleeve-fast-to-upper-wheel';
- for(const part of [commonSpindle,sleeve])applyRotationIndicator(part,{axis:'auto'});
+ // p106: the sleeve is fast to the toothed upper wheel, whose teeth already
+ // show its speed; the quadrant cue on this short dark tube read as two flat
+ // facets, so only the inner spindle (whose top shows above) keeps the cue.
+ applyRotationIndicator(commonSpindle,{axis:'auto'});
  root.add(driver,upperOutput,lowerOutput,inputShaft,commonSpindle,sleeve);
  const upperContactPoint=inputAxis.clone().multiplyScalar(Math.cos(delta)).addScaledVector(radialUp,Math.sin(delta)).multiplyScalar(R*(1+fraction)/2),lowerContactPoint=inputAxis.clone().multiplyScalar(Math.cos(delta)).addScaledVector(radialUp,-Math.sin(delta)).multiplyScalar(R*(1+fraction)/2);
  const angle=(gear,point)=>{const p=point.clone().applyQuaternion(gear.quaternion.clone().invert());return Math.atan2(p.y,p.x);};

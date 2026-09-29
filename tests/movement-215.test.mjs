@@ -773,8 +773,10 @@ test('movement 215 renders separated carrier and locking planes with nominal pro
     'raised crescent and Geneva wheel share the locking-plane front face');
   assert.ok(pinBounds.max.z > driverBounds.max.z + 0.35,
     'the single face pin projects from the rear carrier');
-  assert.ok(pinBounds.max.z > stopWheelBounds.max.z + 0.35,
-    'the face pin bridges into the radial-slot plane');
+  // p106: the pin ends just (0.03) past the star's front face.
+  assert.ok(pinBounds.max.z > stopWheelBounds.max.z + 0.02
+    && pinBounds.max.z < stopWheelBounds.max.z + 0.04,
+    'the face pin bridges the radial-slot plane and ends just past it');
   assert.ok(sectorBounds.min.z > stopWheelBounds.max.z - 0.01,
     'the convex terminal sector is visibly highlighted on the front face');
   assert.equal(blocks.stopWheelBody.geometry.parameters.shapes[0].holes.length, 1);
@@ -844,7 +846,9 @@ test('movement 215 renders separated carrier and locking planes with nominal pro
   const sweptSize = sweptBounds.getSize(new THREE.Vector3());
   assert.ok(sweptSize.x > 9);
   assert.ok(sweptSize.y > 7.5);
-  assert.ok(sweptSize.z > 1.65, 'the planes use depth without the undrawn frame');
+  // p106: the shafts end just proud of what they carry, so the depth is the
+  // carrier, crescent, arbor and star stack (about 1.27).
+  assert.ok(sweptSize.z > 1.2, 'the planes use depth without the undrawn frame');
   let meshCount = 0;
   model.root.traverse((object) => {
     if (object.isMesh) meshCount += 1;

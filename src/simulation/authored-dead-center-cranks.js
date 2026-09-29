@@ -405,10 +405,10 @@ function brownellDeadCenterCrank(movement) {
   wheelBearing.position.set(wheelCenter.x, wheelCenter.y, -.44);
   wheelBearing.userData.role = 'fixed-faceplate-shaft-bearing';
   root.add(wheelBearing);
-  const treadleBearing = boredJournal(.16, .094, .52, inkMaterial);
-  treadleBearing.position.set(treadlePivot.x, treadlePivot.y, -0.13);
-  treadleBearing.userData.role = 'fixed-treadle-fulcrum-bearing';
-  root.add(treadleBearing);
+  // p106: Brown draws the treadle fulcrum as a plain eye on a pin. The
+  // stacked black bearing and boss (0.52 and 0.38 deep) read as a handle
+  // grip across the lever; the treadle now ends in its own round eye on one
+  // short steel pin.
 
   const faceplate = new THREE.Group();
   faceplate.position.set(wheelCenter.x, wheelCenter.y, 0);
@@ -530,12 +530,9 @@ function brownellDeadCenterCrank(movement) {
     [treadleRearArm-beamCenterX,-.065],
     [treadleRearArm-beamCenterX,.065],
     [-treadleForwardArm-beamCenterX,.03],
-  ]),poly(circle([treadleRearArm-beamCenterX,0],.14,64))),poly(circle([-beamCenterX,0],.10,64))),-.075,.075);
+  ]),poly(circle([treadleRearArm-beamCenterX,0],.14,64)),poly(circle([-beamCenterX,0],.18,64))),poly(circle([-beamCenterX,0],.094,64))),-.075,.075);
   treadleBeam.userData.role = 'rigid-treadle-rocker';
   treadle.add(treadleBeam);
-  const treadlePivotBoss = boredJournal(.18,.094,.38,inkMaterial);
-  treadlePivotBoss.userData.role = 'treadle-fulcrum-boss';
-  treadle.add(treadlePivotBoss);
   // From just behind the treadle to just proud of the pitman's front face.
   const rearJointBoss = cylinderAlongZ(.09, .675, steelPinMaterial, 30);
   rearJointBoss.position.z = .2425;
@@ -553,8 +550,10 @@ function brownellDeadCenterCrank(movement) {
   const wheelShaft = cylinderAlongZ(.12, .90, inkMaterial);
   wheelShaft.position.set(wheelCenter.x,wheelCenter.y,-.35);
   root.add(wheelShaft);
-  const treadleShaft = cylinderAlongZ(.09,.94,inkMaterial);
-  treadleShaft.position.set(treadlePivot.x,treadlePivot.y,.05);
+  // One short fixed pin through the treadle's eye, 0.03 proud of each face.
+  const treadleShaft = cylinderAlongZ(.09,.21,steelPinMaterial);
+  treadleShaft.position.set(treadlePivot.x,treadlePivot.y,.34);
+  treadleShaft.userData.role = 'fixed-treadle-fulcrum-pin';
   root.add(treadleShaft);
 
   const slideLawAtPhase = (phase) => {
@@ -735,8 +734,8 @@ function brownellDeadCenterCrank(movement) {
       voluteSpring,
       wheelBearing,
       wheelStand,
-      faceDisc, treadleBeam, treadlePivotBoss, slideBody, wristPin, wristBoss, pitmanBar, rearJointBoss,
-      wheelShaft, treadleShaft, treadleBearing, hub,
+      faceDisc, treadleBeam, slideBody, wristPin, wristBoss, pitmanBar, rearJointBoss,
+      wheelShaft, treadleShaft, hub,
     },
     constraintResiduals: {
       sourcePitmanLength: sourceState.pitmanLengthResidual,

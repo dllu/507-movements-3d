@@ -472,12 +472,20 @@ function commonCapstan(movement) {
   ), 'fixed-deck-under-capstan');
   root.add(deck);
 
+  // Pass 106: the lay's travel is the hauled distance scaled by 1.0016 so
+  // the net haul of one turn per loop (2 pi r = 4.373) moves the strand
+  // pattern a whole number (49) of its repeats (a third of a lay); the lay
+  // no longer jumps at the loop reset. The 0.16 % slip is invisible.
+  const layRepeat = cable.geometry.userData.ropeLay.lay / cable.geometry.userData.ropeLay.strands;
+  const layTravelScale = Math.round(FULL_TURN * barrelRadius / layRepeat) * layRepeat
+    / (FULL_TURN * barrelRadius);
   const update = (time) => {
     const state = stateAtTime(time);
     capstanRotor.rotation.y = state.capstanRotationY;
     pawl.rotation.z = state.pawlClosure.pawlPitchAngleRadian;
-    cable.geometry.setTravel(state.cableDistanceHauled);
-    cableLead.geometry.setTravel(state.cableDistanceHauled + leadLength);
+    const layTravel = state.cableDistanceHauled * layTravelScale;
+    cable.geometry.setTravel(layTravel);
+    cableLead.geometry.setTravel(layTravel + leadLength);
   };
 
   const maximumAxialPitchPerRadian = helixRise / (wrapAngle - 0.125);
@@ -486,6 +494,7 @@ function commonCapstan(movement) {
     maximumAxialPitchPerRadian,
   ) / barrelRadius;
   const geometry = {
+    layTravelScale,
     barrelRadius,
     cablePathLength,
     freeCableEndX,

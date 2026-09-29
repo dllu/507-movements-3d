@@ -1,7 +1,8 @@
 import {correctWeir} from './chain-weir-working-parts.js';
 import * as THREE from 'three';
 import { plate, poly, circle, polygonClipping } from './finite-plate-geometry.js';
-import { waterJetGeometry, waterJetMaterial, waterVolumeGeometry, waterVolumeMaterial } from './water-volume.js';
+import { waterJetGeometry, waterVolumeGeometry, waterVolumeMaterial } from './water-volume.js';
+import { waterStreamMaterial } from './water-stream.js';
 import {
   PALETTE,
   markShadows,
@@ -886,8 +887,31 @@ function selfActingWeir(movement) {
     notchFlow.geometry.dispose();
     notchFlow.geometry = waterJetGeometry(nappeCurve, nappeOptions(1));
     notchFlow.geometry.userData.deforming = true;
-    notchFlow.material = waterJetMaterial({ opacity: 0.42 });
+    // Pass 106: the nappe wears the shared WaterStream streak look (431,
+    // 441-443), its streaks running over the crest and down the fall (it was
+    // a still glass sheet whose only motion was its edge as the head moved).
+    // The jet's vertex colours are white with the fade in alpha, so the tint
+    // goes on the material.
+    const nappeMaterial = waterStreamMaterial({ opacity: 0.42 });
+    nappeMaterial.color.copy(nappeMaterial.userData.tint);
+    notchFlow.material = nappeMaterial;
     notchFlow.renderOrder = 1;
+    const NAPPE_SEGMENTS = 80, NAPPE_RADIAL = 24;
+    // Streak tiles per unit of sheet length and around its section, and
+    // whole tiles per cycle (about 1.3 per second) so the loop is seamless.
+    const nappeTilesPerUnit = 0.9, nappeTilesAround = 3, nappeTilesPerCycle = 16;
+    const writeNappeUv = () => {
+      const uv = notchFlow.geometry.attributes.uv;
+      const length = nappeCurve.getLength() * nappeTilesPerUnit;
+      for (let i = 0, k = 0; i <= NAPPE_SEGMENTS; i += 1) {
+        for (let j = 0; j <= NAPPE_RADIAL; j += 1, k += 2) {
+          uv.array[k] = j / NAPPE_RADIAL * nappeTilesAround;
+          uv.array[k + 1] = i / NAPPE_SEGMENTS * length;
+        }
+      }
+      uv.needsUpdate = true;
+    };
+    writeNappeUv();
     const updateNappe = (state) => {
       const flow = state.notchFlowFraction / ordinaryNotchFraction;
       notchFlow.visible = flow > 1e-3;
@@ -899,6 +923,10 @@ function selfActingWeir(movement) {
         notchFlow.geometry.attributes[name].needsUpdate = true;
       }
       next.dispose();
+      writeNappeUv();
+      const offset = -THREE.MathUtils.euclideanModulo(nappeTilesPerCycle * state.phase, 1);
+      notchFlow.material.map.offset.y = offset;
+      notchFlow.material.normalMap.offset.y = offset;
       notchFlow.geometry.computeBoundingBox();
       notchFlow.geometry.computeBoundingSphere();
     };

@@ -7,7 +7,7 @@ import {
   markShadows,
   matte,
 } from './primitives.js';
-import {waterJetGeometry, waterJetMaterial, waterVolumeMaterial} from './water-volume.js';
+import {waterVolumeMaterial} from './water-volume.js';
 import {WaterStream,collectWaterStreams,ballisticPath} from './water-stream.js';
 
 const FULL_TURN = Math.PI * 2;
@@ -632,13 +632,31 @@ function waterBucketReciprocator(movement) {
   root.add(flume);
   // The fall from the flume lip is one translucent stream narrowing as it
   // speeds up (unit length along y, stretched to the bucket's water).
-  const fallingWater = new THREE.Mesh(
-    waterJetGeometry(new THREE.LineCurve3(new THREE.Vector3(0, 2.35, 0),
-      new THREE.Vector3(0, -2.35, 0)), { radius: 0.13, endRadius: 0.09, segments: 12 }),
-    waterJetMaterial(),
-  );
-  fallingWater.renderOrder = 2;
-  fallingWater.position.set(bucketRopeX+.33, -.55, 0.06);
+  // Pass 106: it is a shared WaterStream (the 431/441-443 streak look)
+  // whose streaks fall at the free-fall speed, so the feed visibly runs; its
+  // path is rewritten in place as the bucket rises and falls.
+  const fallSamples = 24, fallLipY = 1.80, fallStartSpeed = 1.5;
+  const fallPath = {points: Array.from({length: fallSamples + 1}, () => new THREE.Vector3()),
+    speeds: new Array(fallSamples + 1).fill(fallStartSpeed), times: new Array(fallSamples + 1).fill(0)};
+  const setFallBottom = (bottomY) => {
+    for (let i = 0; i <= fallSamples; i += 1) {
+      const y = fallLipY + (bottomY - fallLipY) * i / fallSamples;
+      const v = Math.sqrt(fallStartSpeed ** 2 + 2 * 9.81 * (fallLipY - y));
+      fallPath.points[i].set(bucketRopeX + .33, y, 0.06);
+      fallPath.speeds[i] = v;
+      fallPath.times[i] = (v - fallStartSpeed) / 9.81;
+    }
+  };
+  setFallBottom(-0.5);
+  const fallingWater = new WaterStream(fallPath, {
+    width: 0.13, thickness: 0.13, widthExponent: 0.5,
+    // It narrows gently as it speeds up (0.13 at the lip to 0.09 at 4.7 below).
+    section: (i) => {
+      const r = 0.13 - 0.04 * THREE.MathUtils.clamp((fallLipY - fallPath.points[i].y) / 4.70, 0, 1);
+      return [r, r];
+    },
+    radialSegments: 16, cyclePeriod: cycleDuration, streakRate: 3, streakAcross: 3, opacity: 0.5,
+  });
   fallingWater.userData.role =
     'continuous-vertical-water-stream-through-bucket-station';
   root.add(fallingWater);
@@ -702,8 +720,9 @@ function waterBucketReciprocator(movement) {
     const streamBottom = state.bucketAttachmentY + (poolDepth >= 0.004
       ? bucketWaterFloorY + poolDepth - Math.min(0.02, poolDepth / 2) : -0.978);
     const streamLength = 1.80 - streamBottom;
-    fallingWater.position.y = (1.80 + streamBottom) / 2;
-    fallingWater.scale.y = streamLength / 4.70;
+    setFallBottom(streamBottom);
+    fallingWater.setPath(fallPath);
+    fallingWater.update(time);
     const flowPhase = THREE.MathUtils.euclideanModulo(time / 0.92, 1);
     for (let markerIndex = 0; markerIndex < flowMarkers.length;
       markerIndex += 1) {

@@ -109,7 +109,11 @@ export function correctEjectorTrapParts(root,id,update) {
   if(id===475) {
     const steamCurve=d.flowPaths.steamPipeCurve;steamCurve.points.at(-2).set(0,.46,0);steamCurve.updateArcLengths();d.flowPaths.steamFlowCurve.updateArcLengths();
     replace(b.steamPipeCore,new THREE.TubeGeometry(steamCurve,90,.085,16,false));
-    const profile=[[-1.16,.53],[-1.02,.89],[-.65,1.23],[-.08,1.38],[.48,1.30],[1.05,1.04],[1.56,.57]];
+    // Pass 106: D's necks end at the pipes' own outer radii (B 0.47, C 0.54;
+    // they were 0.53 and 0.57), and each pipe butts on D's end rim with the
+    // same wall (bore = D's inner radius there), so bore and wall run on
+    // through each join without the stepped, notched section.
+    const profile=[[-1.16,.47],[-1.02,.89],[-.65,1.23],[-.08,1.38],[.48,1.30],[1.05,1.04],[1.56,.54]];
     // A smooth spline through Brown's pear section, sampled densely, so D's
     // silhouette is a continuous curve instead of a seven-facet polygon.
     const smooth=new THREE.SplineCurve(profile.map(([y,r])=>new THREE.Vector2(y,r))).getPoints(240).map(p=>[p.x,p.y]);
@@ -121,7 +125,7 @@ export function correctEjectorTrapParts(root,id,update) {
     {const c=d.flowPaths.steamPipeCurve,f=t=>{const q=c.getPoint(t);return Math.hypot(q.x,q.z)-radius(q.y);};let lo=0,hi=.6;for(let i=0;i<60;i++){const m=(lo+hi)/2;if(f(m)>0)lo=m;else hi=m;}
      const t=(lo+hi)/2,P0=c.getPoint(t),T=c.getTangent(t).normalize();
      replace(b.chamber,roundPortedShell(levels,radius,y=>radius(y)-.065,P0,T,.202));b.chamber.userData.port={center:P0,axis:T,radius:.202};}
-    replace(b.suctionPipe,horizontalRing(.40,.47,-.895,.895,64));
+    replace(b.suctionPipe,horizontalRing(.405,.47,-.875,.875,128));b.suctionPipe.position.y=-2.035;
     // The water itself shows the ejector working (the streamline tubes and
     // markers are flow notation and are not presented). Translucent water
     // bodies in the bores of B, D and C follow the state's water level: it
@@ -133,7 +137,11 @@ export function correctEjectorTrapParts(root,id,update) {
       // rim and the rear wall) reads through the water filling the rear half.
       // Pass 62: a light, clearly watery blue, so the filled rear half reads
       // as water over the dark wall rather than as a teal body.
-      const water=waterVolumeMaterial({color:0x8fd3ee,opacity:.62}),bilge=-2.91,dBottom=-1.16,dTop=1.56,outlet=3.40,rB=.395,rC=.465,rD=y=>radius(y)-.07;
+      const water=waterVolumeMaterial({color:0x8fd3ee,opacity:.62}),bilge=-2.91,dBottom=-1.16,dTop=1.56,outlet=3.40,rD=y=>radius(y)-.065-.006*Math.hypot(1,(radius(y+1e-3)-radius(y-1e-3))/2e-3),rB=rD(dBottom),rC=rD(dTop);
+      // (Pass 106: D's water keeps 0.006 off the inner wall measured along
+      // the wall's normal, not across: at the flat shoulders a 0.005 radial
+      // gap was under 0.002 thick and the water z-fought the wall. B and C's
+      // columns take D's end radii, so the water runs on through the joins.)
       const column=(r,role)=>{const o=add(root,new THREE.CylinderGeometry(r,r,1,64,1,true).translate(0,.5,0),water,role);o.renderOrder=1;return o;};
       const inB=column(rB,'water-rising-in-suction-pipe-B'),inC=column(rC,'water-rising-in-discharge-pipe-C');
       inB.position.y=bilge;inC.position.y=dTop;
@@ -164,7 +172,7 @@ export function correctEjectorTrapParts(root,id,update) {
         surface.position.y=level;surface.scale.set(r,1,r);surface.visible=level>bilge+1e-3;
       };
     }
-    replace(b.dischargePipe,horizontalRing(.47,.54,-.94,.94,64));
+    replace(b.dischargePipe,horizontalRing(.475,.54,-.92,.92,128));b.dischargePipe.position.y=2.48;
     replace(b.steamPipe,curvedPipeWall(d.flowPaths.steamPipeCurve,.105,.20,90,32));
     Object.assign(b.steamPipe.material,{transparent:false,opacity:1});
     replace(b.nozzle,horizontalRing(.125,.19,-.11,.11,64));

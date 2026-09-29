@@ -2875,7 +2875,9 @@ function compensatedMovableDrive() {
   belt.userData.continuousThreePulleyLoop = true;
 
   const guideRadius = 0.20;
-  const ropePlane = 0.5;
+  // p106: B's sheaves, weight C and their rope lie in A's mid-plane, so the
+  // load hangs from the middle of A's stirrup instead of its front edge.
+  const ropePlane = 0;
   const guideCenters = [
     new THREE.Vector3(compensatorBase.x + guideRadius, 2.12, ropePlane),
     new THREE.Vector3(2.39, 2.12, ropePlane),
@@ -2970,24 +2972,63 @@ function compensatedMovableDrive() {
   );
   const driverAxle = addKeyedShaft(driver, 0.80);
   const movableAxle = addKeyedShaft(movable, 0.80);
+  // p106: A's stirrup is one symmetric U strap straddling both sheaves
+  // (z ±0.23) at z ±0.30. Each leg is a flat plate that tapers tangentially
+  // into a round eye concentric with the axle; the crown is the same section
+  // bent round two concentric arcs, butt-joined to the legs at a common
+  // section so the strap reads as one bent bar. The rope eye is centred on
+  // the crown, and the axle ends just proud of the legs.
+  const strapArm = 0.30, strapThickness = 0.045, strapHalfWidth = 0.04,
+    strapEye = 0.11, bendRadius = 0.075;
+  const shoulder = compensatorRadius + 0.10, legTop = shoulder - bendRadius;
   const compensatorAxle = addAxle(
     root,
-    new THREE.Vector3(compensatorBase.x, compensatorBase.y, 0.07),
-    1.02,
+    new THREE.Vector3(compensatorBase.x, compensatorBase.y, 0),
+    2 * (strapArm + strapThickness / 2 + 0.02),
   );
   // Brown draws no frame: the guide pulleys B and the driver turn on plain
-  // axle stubs, as elsewhere in the belt family (p60 support policy).
-  const guideAxles = guides.map((guide) => addAxle(root, guide.position, 0.42));
+  // axle stubs, as elsewhere in the belt family (p60 support policy); they
+  // end 0.025 proud of the sheaves' 0.29-long hubs.
+  const guideAxles = guides.map((guide) => addAxle(root, guide.position, 0.34));
   const hanger = new THREE.Group();
-  const shoulder = compensatorRadius + 0.10;
-  for (const z of [-0.36, ropePlane]) {
-    hanger.add(makeBeam(new THREE.Vector3(0, 0, z), new THREE.Vector3(0, shoulder, z),
-      { thickness: 0.055, depth: 0.045, color: PALETTE.ink }));
+  const strapMaterial = matte(PALETTE.ink, { metalness: 0.2, roughness: 0.55 });
+  const legOutline = (() => {
+    const tangentAngle = (x, y) => Math.atan2(y, x) - Math.acos(strapEye / Math.hypot(x, y));
+    const right = tangentAngle(strapHalfWidth, legTop), left = Math.PI - right, points = [];
+    for (let i = 0; i <= 96; i += 1) {
+      const a = right - (right - (left - 2 * Math.PI)) * i / 96;
+      points.push([strapEye * Math.cos(a), strapEye * Math.sin(a)]);
+    }
+    points.push([-strapHalfWidth, legTop], [strapHalfWidth, legTop]);
+    return polygonClipping.difference(poly(points), poly(circle([0, 0], 0.075 + 0.004, 96)));
+  })();
+  for (const side of [-1, 1]) {
+    const leg = new THREE.Mesh(plate(legOutline, side * strapArm - strapThickness / 2,
+      side * strapArm + strapThickness / 2), strapMaterial);
+    leg.userData.role = 'take-up-stirrup-leg';
+    hanger.add(leg);
   }
-  hanger.add(makeBeam(new THREE.Vector3(0, shoulder, -0.36), new THREE.Vector3(0, shoulder, ropePlane),
-    { thickness: 0.055, depth: 0.045, color: PALETTE.ink }));
-  const eye = new THREE.Mesh(new THREE.TorusGeometry(0.075, 0.022, 12, 40), matte(PALETTE.ink));
-  eye.position.set(0, shoulder + 0.11, ropePlane);
+  const crownOutline = [];
+  const arcPoints = (cz, radius, from, to) => {
+    for (let i = 0; i <= 32; i += 1) {
+      const a = from + (to - from) * i / 32;
+      crownOutline.push([cz + radius * Math.cos(a), legTop + radius * Math.sin(a)]);
+    }
+  };
+  const bendCentre = strapArm - bendRadius;
+  arcPoints(-bendCentre, bendRadius + strapThickness / 2, Math.PI, Math.PI / 2);
+  arcPoints(bendCentre, bendRadius + strapThickness / 2, Math.PI / 2, 0);
+  arcPoints(bendCentre, bendRadius - strapThickness / 2, 0, Math.PI / 2);
+  arcPoints(-bendCentre, bendRadius - strapThickness / 2, Math.PI / 2, Math.PI);
+  const crown = new THREE.Mesh(
+    plate(poly(crownOutline), -strapHalfWidth, strapHalfWidth).rotateY(-Math.PI / 2),
+    strapMaterial,
+  );
+  crown.userData.role = 'take-up-stirrup-crown';
+  hanger.add(crown);
+  const eye = new THREE.Mesh(new THREE.TorusGeometry(0.075, 0.022, 24, 64), strapMaterial);
+  eye.position.set(0, shoulder + strapThickness / 2 + 0.087, ropePlane);
+  eye.userData.role = 'take-up-stirrup-rope-eye';
   hanger.add(eye);
   root.add(hanger);
   root.userData.cameraFov = 18;
@@ -7417,10 +7458,12 @@ function alternatingPlaneLinkChainPulley(movement) {
   hub.userData.role = 'chain-pulley-annular-hub';
   sprocketRotor.add(sprocket, hub);
 
+  // p106: the shaft ends 0.025 proud of each hub face (the hub is 0.34
+  // deep); a longer stub threw a clock-hand shadow across the pulley face.
   const shaft = makeShaft({
     axis: Z_AXIS,
     color: PALETTE.ink,
-    length: 1.45,
+    length: 0.34 + 0.05,
     radius: shaftHoleRadius * 0.72,
   });
   shaft.position.copy(wheelCenter);
@@ -8588,7 +8631,9 @@ function toothedLinkChainWheel() {
   const shaftHoleRadius = 0.5 * sourceScale;
   const hubOuterRadius = 1 * sourceScale;
   const hubDepth = 0.36;
-  const shaftLength = 1.25;
+  // p106: the shaft ends 0.025 proud of each hub face; the old 1.25 stub
+  // threw a shadow bar across the wheel face.
+  const shaftLength = hubDepth + 0.05;
   const inputAngularSpeed = fullTurn / 4;
   const cyclePeriod = fullTurn / inputAngularSpeed;
   const wheelRootReferenceAngle = leftTangentAngle - chainNodeStep / 2;
@@ -9573,7 +9618,9 @@ function leverContractedCraneBandBrake(movement) {
   wheelIndex.userData.role = 'brake-wheel-rotation-index';
   wheelRotor.add(wheelIndex);
   root.add(wheel);
-  const wheelShaft = makeShaft({ length: 1.15, radius: 0.13 });
+  // p106: the shaft ends 0.025 proud of each hub face (hub 0.62 deep); the
+  // longer stub threw a lollipop shadow across the drum face.
+  const wheelShaft = makeShaft({ length: 0.62 + 0.05, radius: 0.13 });
   wheelShaft.userData.role = 'brake-wheel-shaft';
   root.add(wheelShaft);
 

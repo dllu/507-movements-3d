@@ -395,7 +395,9 @@ function barkerReactionMill(movement) {
       endY: 4.04 + funnelWaterTopY - 0.02, samples: 24}),
   ), {
     width: 0.3, thickness: 0.045, widthAxis: new THREE.Vector3(0, 0, 1).applyQuaternion(inletFlume.quaternion),
-    widthExponent: 0.35, foam: {start: 0.9, amount: 0.4}, cyclePeriod: cycleDuration, streakRate: 1.1, opacity: 0.5,
+    widthExponent: 0.35, foam: {start: 0.9, amount: 0.4}, cyclePeriod: cycleDuration,
+    // Pass 106: quicker, denser streaks so the short pour visibly runs.
+    streakRate: 3.5, streakAcross: 3, opacity: 0.5,
   });
   inletStream.userData.role = 'water-falling-from-flume-into-shaft-hopper';
   root.add(inletStream);

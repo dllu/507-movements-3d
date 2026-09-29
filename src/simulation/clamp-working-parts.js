@@ -168,12 +168,52 @@ function correctProny(root) {
     for(const part of [b.stopPost,...b.stopBridges])part.traverse(o=>{o.visible=false;});
     root.traverse(o=>{if(/^stop-standard-(lower-length|foot)$/.test(o.userData.role??''))o.visible=false;});
     centreProny244OnDrum(root,b,g,wood);
+    knuckleProny244Strap(b,g,wood);
   }
   root.userData.minimumDisplayCycleSeconds=g.cyclePeriod;
   root.userData.workingClampReview={
     interfaces:'Unbeveled finite friction liners tangent to the drum, connected fixed stops, an open suspension eye and flush rotation index.',
     residual:'The brake illustrates an already balanced steady operating point. Applied clamp load, Coulomb coefficient and scale weight determine the reported torque algebraically; lever equilibrium is prescribed, not a passive contact/thermal solve. Strap articulation, screw adjustment and detailed pressure distribution remain simplified.',
   };
+}
+// p106: the articulated strap's hinge pins sat in the 2.2° gaps between the
+// links, half in air on the links' end faces. Each inner joint is now a
+// knuckle: the leading link ends in a round tongue concentric with the pin
+// (one extrusion with the link), the next link's end is a concentric cup a
+// running clearance larger, and the pin (a rivet dot) is bored through the
+// tongue's middle. The lower lining between drum and strap is Brown's hatched
+// wood, like the upper block, instead of a black rim, and stops short of the
+// strap's inner face.
+function knuckleProny244Strap(b,g,wood) {
+  const straps=[...b.lowerStraps].sort((p,q)=>p.userData.strapIndex-q.userData.strapIndex);
+  const inner=straps[0].userData.innerRadius,outer=straps[0].userData.outerRadius,mid=(inner+outer)/2;
+  const tongue=.046,clearance=.004,pinR=.028,bore=pinR+.0015,seam=clearance/mid;
+  const pins=b.strapPins,unwrap=(a,ref)=>a+2*Math.PI*Math.round((ref-a)/(2*Math.PI));
+  const boundary=[];
+  for(let k=1;k<pins.length-1;k++){
+    const a=Math.atan2(pins[k].position.y,pins[k].position.x);
+    boundary[k]=k===1?a:unwrap(a,boundary[k-1]+(straps[1].userData.endAngle-straps[1].userData.startAngle));
+  }
+  const centre=k=>[mid*Math.cos(boundary[k]),mid*Math.sin(boundary[k])];
+  straps.forEach((strap,i)=>{
+    const d=strap.userData,n=straps.length;
+    const lo=i===0?unwrap(d.startAngle,boundary[1]):boundary[i]+seam,hi=i===n-1?unwrap(d.endAngle,boundary[n-1]):boundary[i+1];
+    let outline=sector(inner,outer,lo,hi,256);
+    if(i<n-1)outline=clip.union(outline,poly(circle(centre(i+1),tongue,128)));
+    if(i>0)outline=clip.difference(outline,poly(circle(centre(i),tongue+clearance,128)));
+    if(i<n-1)outline=clip.difference(outline,poly(circle(centre(i+1),bore,64)));
+    const low=-g.brakeDepth/2,high=g.brakeDepth/2;
+    replace(strap,plate(outline,low,high));
+    d.knuckle={tongue,clearance,pinRadius:pinR,bore};
+  });
+  for(let k=1;k<pins.length-1;k++){
+    const pin=pins[k],pinMesh=pin.userData.rotor?.children[0]??pin.children[0],h=pinMesh.geometry.parameters.height;
+    replace(pinMesh,new THREE.CylinderGeometry(pinR,pinR,h,48));
+    const [x,y]=centre(k);pin.position.x=x;pin.position.y=y;
+  }
+  const backing=b.lowerBandBacking,p=backing.userData,depth=g.brakeDepth*.86;
+  replace(backing,plate(sector(g.drumRadius/Math.cos((p.endAngle-p.startAngle)/512),inner-.003,p.startAngle,p.endAngle,256),-depth/2,depth/2));
+  backing.material=wood;backing.userData.role='continuous-lower-band-or-chain-backing';
 }
 // p93: Brown's lever D rests on the wooden block, both centred on the pulley.
 // The lever, its nuts and bolts, the scale ring and stops C, C' were all built

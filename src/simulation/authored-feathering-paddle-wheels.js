@@ -356,11 +356,15 @@ function featheringPaddleWheel(movement) {
     ), `vertical-broad-face-of-bucket-a-${index + 1}`);
     panel.position.set(0, 0, -1.05);
     panel.geometry.dispose();
-    panel.geometry = plate(clip.difference(poly([[-bucketThicknessSceneUnit/2,-bucketHeightSceneUnit/2],
+    // Pass 106: the plate (0.13 thick) is thickened along its pivot line by
+    // a round hub (radius 0.24, the pivot boss's) in the same extrusion, so
+    // the 0.18 pin runs in a centred bore instead of slitting both faces.
+    const bucketSection = clip.union(poly([[-bucketThicknessSceneUnit/2,-bucketHeightSceneUnit/2],
       [bucketThicknessSceneUnit/2,-bucketHeightSceneUnit/2],[bucketThicknessSceneUnit/2,bucketHeightSceneUnit/2],
-      [-bucketThicknessSceneUnit/2,bucketHeightSceneUnit/2]]),poly(circle([0,0],.184,64))), -.50, .74);
-    const rearWeb = new THREE.Mesh(new THREE.BoxGeometry(bucketThicknessSceneUnit,
-      bucketHeightSceneUnit, .24), bucketMaterial);
+      [-bucketThicknessSceneUnit/2,bucketHeightSceneUnit/2]]),poly(circle([0,0],.24,64)));
+    panel.geometry = plate(clip.difference(bucketSection,poly(circle([0,0],.184,64))), -.50, .74);
+    // The blind end of the bore: the same section, unbored.
+    const rearWeb = new THREE.Mesh(plate(bucketSection, -.12, .12), bucketMaterial);
     rearWeb.position.z = -1.67;
     rearWeb.userData.role = 'blind-paddle-axle-bore-back-wall';
     bucket.add(rearWeb);

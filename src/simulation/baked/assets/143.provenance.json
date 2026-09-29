@@ -83,11 +83,11 @@
   "validation": [
     {
       "file": "docs/validation/143-render-contact.json",
-      "sha256": "efa3184d529f6bb021a6aee8aec4f51e7ae9ae4626ec9b591945715892bd8cc2"
+      "sha256": "8fca368fbf359562b17e103b1cb0a00ca451f1c580df21ef4c3d99e6ac559e2a"
     },
     {
       "file": "docs/validation/143-assembly.json",
-      "sha256": "e2e56d3444e98866c0a73d718a22be8184e871dbf1fa59e6923bcdecad9ccf4c"
+      "sha256": "b3ed1c2d9260ddad6b7d8987564bdcf2b3888c9efd424ef4b88e65728370e47b"
     },
     {
       "file": "docs/validation/143-envelope.json",

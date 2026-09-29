@@ -34,17 +34,22 @@ export function concentricEnd(far1,far2,c,r,n=96){
  return out;
 }
 
-export function makePullPawlGeometry({phase=1.115052755202599,rootRadius=.872,rootAngle=-.045,leftRearRelief=true,leftRearLimit=304,leftRearTop=553}={}){
+export function makePullPawlGeometry({phase=1.115052755202599,rootRadius=.872,rootAngle=-.045,leftRearRelief=true,leftRearLimit=304,leftRearTop=553,rightExtension=0}={}){
  const center=[590.1847816329412,748.5887383490219],scale=379.2944180983833,
   source=p=>[(p[0]-center[0])/scale,(center[1]-p[1])/scale],
   A=source([598.0604838709677,272.83266129032256]),
   pivotPx={left:[431.5703125,259.177734375],right:[765.4758364312268,269.70260223048325]},
   pivots={left:source(pivotPx.left),right:source(pivotPx.right)},
-  hooks={left:source([316,553]),right:source([478,401])},
+  // p106: the right pawl's hook is carried rightExtension px further along
+  // the pawl's own axis (pivot to hook), so its toe drops into a root at
+  // the start of its stroke.
+  rightAxis=(()=>{const d=[478-pivotPx.right[0],401-pivotPx.right[1]],l=Math.hypot(...d);return[d[0]/l,d[1]/l];})(),
+  extend=([x,y])=>[x+rightExtension*rightAxis[0],y+rightExtension*rightAxis[1]],
+  hooks={left:source([316,553]),right:source(extend([478,401]))},
   arms=Object.fromEntries(Object.entries(pivots).map(([k,p])=>[k,sub(p,A)])),
   lengths=Object.fromEntries(Object.entries(hooks).map(([k,p])=>[k,Math.hypot(...sub(p,pivots[k]))])),
   initialAngles=Object.fromEntries(Object.entries(hooks).map(([k,p])=>{const d=sub(p,pivots[k]);return[k,Math.atan2(-d[1],-d[0])];})),
-  p={center,scale,A,pivots,hooks,arms,lengths,initialAngles,teeth:26,pitch:2*Math.PI/26,phase,outerRadius:1,rootRadius,rootAngle,leftRearRelief,leftRearLimit,leftRearTop,innerRadius:315.5246053439235/scale},
+  p={center,scale,A,pivots,hooks,arms,lengths,initialAngles,rightExtension,teeth:26,pitch:2*Math.PI/26,phase,outerRadius:1,rootRadius,rootAngle,leftRearRelief,leftRearLimit,leftRearTop,innerRadius:315.5246053439235/scale},
   root=new THREE.Group(),parts={},families={},blocks={},profiles={};
  for(const family of ['wheel','lever','left','right','fixed']){blocks[family]=new THREE.Group();root.add(blocks[family]);}
  blocks.lever.position.set(...A,0);
@@ -129,11 +134,11 @@ export function makePullPawlGeometry({phase=1.115052755202599,rootRadius=.872,ro
   // traced hook; the traced eyes were egg-shaped and off the pin.
   left:[['M',244,523],['Q',232,543,241,552],['Q',249,566,275,560],['L',322,556],
    ['Q',326,550,313,548],['Q',290,544,278,536],['Q',272,533,280,522],...concentricEnd([280,522],[244,523],pivotPx.left,24),['L',244,523]],
-  right:[['M',456,380],['Q',430,391,439,401],['Q',450,412,478,406],['L',479,392],
-   ...concentricEnd([479,392],[456,380],pivotPx.right,28),['L',456,380]]},
+  right:[['M',...extend([456,380])],['Q',...extend([430,391]),...extend([439,401])],['Q',...extend([450,412]),...extend([478,406])],['L',...extend([479,392])],
+   ...concentricEnd(extend([479,392]),extend([456,380]),pivotPx.right,28),['L',...extend([456,380])]]},
   toes={left:[['M',244,523],['Q',232,543,241,552],['Q',249,566,275,560],['L',322,556],
    ['Q',326,550,313,548],['Q',290,544,278,536],['Q',272,533,280,522],['L',244,523]],
-   right:[['M',456,380],['Q',430,391,439,401],['Q',450,412,478,406],['L',479,392],['L',484,390],['L',477,370],['L',456,380]]};
+   right:[['M',...extend([456,380])],['Q',...extend([430,391]),...extend([439,401])],['Q',...extend([450,412]),...extend([478,406])],['L',...extend([479,392])],['L',...extend([484,390])],['L',...extend([477,370])],['L',...extend([456,380])]]};
  for(const key of ['left','right']){
   const local=v=>rotate(sub(source(v),pivots[key]),-initialAngles[key]),
    body=clip.difference(poly(sourceContour(contours[key],local)),poly(circle([0,0],.037))),

@@ -41,6 +41,9 @@ export function correctCraneBrakeJoints(root) {
     holes: [{ center: g.upperBandEnd.toArray(), radius: pinBore }, { center: g.leverFulcrum.toArray(), radius: fulcrumBore }],
     eyes: [{ center: g.upperBandEnd.toArray(), radius: .15 }, { center: g.leverFulcrum.toArray(), radius: .17 }] });
   anchor.position.z = .59;
+  // p106: Brown draws the anchor link as a light bar with two eyes, not a
+  // pin-black shaft; it takes steel grey.
+  anchor.material = new THREE.MeshStandardMaterial({ color: 0x7e8584, metalness: .22, roughness: .5 });
   const lowerRing = b.lowerEndpointJoint.children[0];
   replace(lowerRing, bore(.155, pinBore, .07).rotateX(Math.PI / 2)); lowerRing.position.z = .105;
   const lowerPin = mesh(b.lowerEndpointJoint, new THREE.CylinderGeometry(pinRadius, pinRadius, .56, 48).rotateX(Math.PI / 2), dark, 'lower-strap-pin-spanning-band-and-lever');
@@ -79,7 +82,10 @@ export function correctCraneBrakeJoints(root) {
     replace(pin, new THREE.CylinderGeometry(radius, radius, high - low, 48));
     return (low + high) / 2;
   };
-  const lowerHead = leverZ + lowerRing.position.z + .035;
+  // p106: no black cap over the lower strap end. Its pin ends just proud of
+  // the lever's front face like the upper pin, so the lever's own eye shows.
+  lowerRing.visible = false;
+  const lowerHead = leverFront + proud;
   lowerPin.geometry.dispose();
   lowerPin.geometry = new THREE.CylinderGeometry(pinRadius, pinRadius, lowerHead - (bandBack - proud), 48).rotateX(Math.PI / 2);
   lowerPin.position.z = (lowerHead + bandBack - proud) / 2 - leverZ;

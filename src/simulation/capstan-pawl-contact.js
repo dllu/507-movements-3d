@@ -2,17 +2,6 @@ import * as THREE from 'three';
 import { capstanPawlSamples, capstanPawlReleasePhase, capstanPawlSeatPhase, capstanPawlRecoilSamples } from './capstan-pawl-profile.js';
 export { capstanPawlReleasePhase, capstanPawlSeatPhase };
 const FULL_TURN = 2 * Math.PI;
-function appendTriangle(positions, first, second, third) {
-  for (const point of [first, second, third]) {
-    positions.push(point.x, point.y, point.z);
-  }
-}
-
-function appendQuad(positions, first, second, third, fourth) {
-  appendTriangle(positions, first, second, third);
-  appendTriangle(positions, first, third, fourth);
-}
-
 function polarPoint(radius, height, angle) {
   return new THREE.Vector3(
     radius * Math.cos(angle),
@@ -29,80 +18,78 @@ export function makeCrownRatchetGeometry({
   outerRadius,
   phaseOffset,
   toothCount,
+  slices = 16,
 }) {
+  // Pass 106: each tooth is cut into `slices` angular slices, so the ramp is
+  // a true helicoid and the outer and inner skirts are round (they were one
+  // flat facet per tooth, reading polygonal from above). The skirts carry
+  // radial normals and shade as smooth cylinders; the ramp, risers and foot
+  // shade flat.
   const positions = [];
+  const normals = [];
   const toothPitch = FULL_TURN / toothCount;
+  const edgeA = new THREE.Vector3();
+  const edgeB = new THREE.Vector3();
+  const faceNormal = new THREE.Vector3();
+  const triangle = (points, pointNormals = null) => {
+    if (!pointNormals) {
+      edgeA.subVectors(points[1], points[0]);
+      edgeB.subVectors(points[2], points[0]);
+      faceNormal.crossVectors(edgeA, edgeB).normalize();
+    }
+    points.forEach((point, index) => {
+      positions.push(point.x, point.y, point.z);
+      const n = pointNormals ? pointNormals[index] : faceNormal;
+      normals.push(n.x, n.y, n.z);
+    });
+  };
+  const quad = (a, b, c, d, n = null) => {
+    triangle([a, b, c], n && [n[0], n[1], n[2]]);
+    triangle([a, c, d], n && [n[0], n[2], n[3]]);
+  };
+  const radial = (angle, sign) => new THREE.Vector3(sign * Math.cos(angle), 0, sign * Math.sin(angle));
+  const down = new THREE.Vector3(0, -1, 0);
   for (let tooth = 0; tooth < toothCount; tooth += 1) {
     const startAngle = phaseOffset + tooth * toothPitch;
     const endAngle = startAngle + toothPitch;
+    for (let slice = 0; slice < slices; slice += 1) {
+      const a0 = startAngle + toothPitch * slice / slices;
+      const a1 = startAngle + toothPitch * (slice + 1) / slices;
+      const h0 = lowHeight + (highHeight - lowHeight) * slice / slices;
+      const h1 = lowHeight + (highHeight - lowHeight) * (slice + 1) / slices;
+      const inner0 = polarPoint(innerRadius, h0, a0);
+      const inner1 = polarPoint(innerRadius, h1, a1);
+      const outer0 = polarPoint(outerRadius, h0, a0);
+      const outer1 = polarPoint(outerRadius, h1, a1);
+      const innerFoot0 = polarPoint(innerRadius, bottomHeight, a0);
+      const innerFoot1 = polarPoint(innerRadius, bottomHeight, a1);
+      const outerFoot0 = polarPoint(outerRadius, bottomHeight, a0);
+      const outerFoot1 = polarPoint(outerRadius, bottomHeight, a1);
+      quad(inner0, inner1, outer1, outer0);
+      const out0 = radial(a0, 1), out1 = radial(a1, 1);
+      quad(outer0, outer1, outerFoot1, outerFoot0, [out0, out1, out1, out0]);
+      const in0 = radial(a0, -1), in1 = radial(a1, -1);
+      quad(inner1, inner0, innerFoot0, innerFoot1, [in1, in0, in0, in1]);
+      quad(innerFoot0, outerFoot0, outerFoot1, innerFoot1, [down, down, down, down]);
+    }
     const lowInner = polarPoint(innerRadius, lowHeight, startAngle);
     const lowOuter = polarPoint(outerRadius, lowHeight, startAngle);
     const highInner = polarPoint(innerRadius, highHeight, endAngle);
     const highOuter = polarPoint(outerRadius, highHeight, endAngle);
-    const bottomStartInner = polarPoint(
-      innerRadius,
-      bottomHeight,
-      startAngle,
-    );
-    const bottomStartOuter = polarPoint(
-      outerRadius,
-      bottomHeight,
-      startAngle,
-    );
-    const bottomEndInner = polarPoint(
-      innerRadius,
-      bottomHeight,
-      endAngle,
-    );
-    const bottomEndOuter = polarPoint(
-      outerRadius,
-      bottomHeight,
-      endAngle,
-    );
-
-    appendQuad(positions, lowInner, highInner, highOuter, lowOuter);
-    appendQuad(
-      positions,
-      lowOuter,
-      highOuter,
-      bottomEndOuter,
-      bottomStartOuter,
-    );
-    appendQuad(
-      positions,
-      highInner,
-      lowInner,
-      bottomStartInner,
-      bottomEndInner,
-    );
-    appendQuad(
-      positions,
-      highOuter,
-      highInner,
-      bottomEndInner,
-      bottomEndOuter,
-    );
-    appendQuad(
-      positions,
-      lowInner,
-      lowOuter,
-      bottomStartOuter,
-      bottomStartInner,
-    );
-    appendQuad(
-      positions,
-      bottomStartInner,
-      bottomStartOuter,
-      bottomEndOuter,
-      bottomEndInner,
-    );
+    quad(highOuter, highInner, polarPoint(innerRadius, bottomHeight, endAngle),
+      polarPoint(outerRadius, bottomHeight, endAngle));
+    quad(lowInner, lowOuter, polarPoint(outerRadius, bottomHeight, startAngle),
+      polarPoint(innerRadius, bottomHeight, startAngle));
   }
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute(
     'position',
     new THREE.Float32BufferAttribute(positions, 3),
   );
-  geometry.computeVertexNormals();
+  geometry.setAttribute(
+    'normal',
+    new THREE.Float32BufferAttribute(normals, 3),
+  );
   geometry.computeBoundingBox();
   return geometry;
 }

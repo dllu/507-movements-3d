@@ -2860,7 +2860,9 @@ function curvedSlottedArmVariableVibration() {
     new THREE.CylinderGeometry(
       followerPinRadius,
       followerPinRadius,
-      0.94,
+      // p106: just proud (0.03) of the output arm's back face (-0.49) and the
+      // curved arm's front face (0.14); it was 0.94 long, 0.21 out behind.
+      0.69,
       96,
     ),
     // Brass, not white or pale steel: a pale pin reads as a hole on the
@@ -2868,7 +2870,7 @@ function curvedSlottedArmVariableVibration() {
     matte(PALETTE.brass, { metalness: 0.24, roughness: 0.47 }),
   );
   followerPin.rotation.x = Math.PI / 2;
-  followerPin.position.set(-outputArmLength, 0, -0.23);
+  followerPin.position.set(-outputArmLength, 0, -0.175);
   followerPin.userData.fitsCircularSlot = true;
   followerPin.userData.role = 'single-pin-sliding-in-curved-arm-slot';
   const followerPinRim = new THREE.Mesh(
@@ -2897,23 +2899,26 @@ function curvedSlottedArmVariableVibration() {
     outputRotationIndex,
   );
 
+  // p106 stub policy: each shaft ends 0.03 proud of the faces it carries
+  // (curved arm back face -0.14 to boss front 0.263; output arm -0.49 to
+  // -0.29) instead of standing up to 1.08 proud as a black post.
   const inputShaft = makeShaft({
     axis: Z_AXIS,
     color: PALETTE.ink,
-    length: 1.35,
+    length: 0.463,
     radius: sourceScale - 0.01,
   });
-  inputShaft.position.set(inputPivot.x, inputPivot.y, 0.05);
+  inputShaft.position.set(inputPivot.x, inputPivot.y, 0.0615);
   inputShaft.userData.fixedCenter = true;
   inputShaft.userData.keyedToInputArm = true;
   inputShaft.userData.role = 'fixed-center-shaft-keyed-to-curved-input-arm';
   const outputShaft = makeShaft({
     axis: Z_AXIS,
     color: PALETTE.ink,
-    length: 1.42,
+    length: 0.26,
     radius: 1.3 * sourceScale - 0.01,
   });
-  outputShaft.position.set(outputPivot.x, outputPivot.y, 0.08);
+  outputShaft.position.set(outputPivot.x, outputPivot.y, -0.39);
   outputShaft.userData.fixedCenter = true;
   outputShaft.userData.keyedToOutputArm = true;
   outputShaft.userData.role = 'fixed-center-shaft-keyed-to-straight-output-arm';

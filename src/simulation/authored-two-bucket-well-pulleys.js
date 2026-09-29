@@ -67,7 +67,10 @@ function twoBucketWellPulley(movement) {
   // away from the viewer, its body swinging forward clear of the post and
   // shelf behind, and its lip pours onto the ground's top (y -0.51) between
   // the kerb wall and the ground's end.
-  const asideBailX = 1.86;
+  // Pass 106: 2.16 (was 1.86, the posts' own x), so the pour from the far
+  // lip falls in open air just outside the post (|x| <= 1.96) instead of
+  // running down its front face.
+  const asideBailX = 2.16;
   const groundTopY = -0.51;
   const emptyBucketWeight = 24;
   const waterPayloadWeight = 76;
@@ -506,7 +509,9 @@ function twoBucketWellPulley(movement) {
         0.08,
         34,
       ),
-      darkMaterial,
+      // Pass 106: the base is closed in the stave colour, so a tipped
+      // bucket's underside reads as its bottom, not as a black hole.
+      bucketMaterial,
     );
     bottom.position.y = -bucketHeight / 2;
     bucket.add(bottom);

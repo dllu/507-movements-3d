@@ -1231,7 +1231,16 @@ function sixPointAnchorEscapement(movement) {
     plateDepth / 2,
   ), wheelMaterial);
   wheelBody.userData.role = 'six-point-star-wheel-body-D';
-  const wheelHub = new THREE.Mesh(ring(wheelBore, 0.15, -0.17, 0.17, 96), wheelMaterial);
+  // p106: the bosses take a darker tint (x0.68) of their part, as on
+  // 212/235/239/241, so they read as bosses rather than a crescent shadow.
+  const bossTint = (material) => {
+    const tinted = material.clone();
+    tinted.color.multiplyScalar(0.68);
+    return tinted;
+  };
+  // Their bores stand 0.004 back from the plates' so the two bore walls
+  // (now different tints) do not coincide.
+  const wheelHub = new THREE.Mesh(ring(wheelBore + 0.004, 0.15, -0.17, 0.17, 96), bossTint(wheelMaterial));
   wheelHub.userData.role = 'star-wheel-boss-D';
   rotor.add(wheelBody, wheelHub);
   root.add(escapeWheel);
@@ -1250,7 +1259,7 @@ function sixPointAnchorEscapement(movement) {
     plateDepth / 2,
   ), anchorMaterial);
   palletBody.userData.role = 'anchor-plate-with-step-B-and-hook-C';
-  const palletHub = new THREE.Mesh(ring(pivotBore, 0.3, -0.16, 0.16, 96), anchorMaterial);
+  const palletHub = new THREE.Mesh(ring(pivotBore + 0.004, 0.3, -0.16, 0.16, 96), bossTint(anchorMaterial));
   palletHub.userData.role = 'anchor-boss-at-A';
   palletCarrier.add(palletBody, palletHub);
   root.add(palletCarrier);
@@ -2992,8 +3001,13 @@ function oldFashionedClockVergeEscapement(movement) {
   // radius here) around a pivot circle about a third of its size, so the
   // pallet strips show nearly their full length beside it. The staff is a
   // slender rod ending in the collar, with only its pivot standing proud.
-  const vergeStaffLength = 7.22;
-  const vergeStaffCenter = 1.19;
+  // p106: the foliot is not displayed (Brown's crop), so the staff ends
+  // just past the far pallet (world 1.37, local 2.24) instead of running
+  // on another 1.5 past the crown's far rim.
+  const vergeStaffBottom = -2.42;
+  const vergeStaffTop = 2.32;
+  const vergeStaffLength = vergeStaffTop - vergeStaffBottom;
+  const vergeStaffCenter = (vergeStaffTop + vergeStaffBottom) / 2;
   const vergeStaff = new THREE.Mesh(
     new THREE.CylinderGeometry(0.07, 0.07, vergeStaffLength, 30),
     matte(PALETTE.ink, { metalness: 0.27, roughness: 0.45 }),
@@ -3093,6 +3107,16 @@ function oldFashionedClockVergeEscapement(movement) {
     object.scale.y = keptHeight / height;
     object.position.z = baseGeometry.toothBaseZ - 0.02 - keptHeight / 2;
   });
+  // p106: Brown draws no floor inside the band; from below it read as a
+  // solid black disc. The band is carried by the rim and two slim bars.
+  const crownFloors = [];
+  blocks.crownWheel.userData.rotor.traverse((object) => {
+    if (object.userData.role === 'crown-wheel-floor') crownFloors.push(object);
+  });
+  for (const floor of crownFloors) {
+    floor.removeFromParent();
+    floor.geometry.dispose();
+  }
   // Brown draws no arbor: only a stub inside the cup is kept.
   const crownShaftStub = 0.2;
   blocks.crownShaft.scale.z = crownShaftStub / blocks.crownShaft.userData.length;
@@ -3106,8 +3130,11 @@ function oldFashionedClockVergeEscapement(movement) {
     - baseGeometry.bodyDepth * 0.44;
   crownRim.userData.role = 'open-clock-crown-wheel-rim';
   blocks.crownWheel.userData.rotor.add(crownRim);
+  // p106: two crossed bars (four arms). Indices 2 and 3 duplicated 0 and 1
+  // exactly (coincident faces); Brown draws no floor inside the band, so the
+  // shared cup's floor disc is dropped and only these slim arms carry it.
   const crownSpokes = [];
-  for (let index = 0; index < 4; index += 1) {
+  for (let index = 0; index < 2; index += 1) {
     const spoke = new THREE.Mesh(
       new THREE.BoxGeometry(
         blocks.crownWheel.userData.toothBandRadius * 2,
@@ -3479,10 +3506,15 @@ function oldFashionedClockVergeEscapement(movement) {
   // horizontal) the fit spans about two and a quarter pitches, as Brown's
   // strip spans two: the wheel ends run out of view, and only the far teeth
   // nearest the verge show through the gaps (Brown's X at the left).
+  // p106: the fitted box is enlarged 1/0.5 about its centre so the default
+  // view shows the whole drawn band (about 0.55 of the old zoom).
+  const fitCentre = new THREE.Vector3(0.45, 0, 0).multiplyScalar(displayScale);
   root.userData.cameraFitBounds = new THREE.Box3(
     new THREE.Vector3(-0.6 * displayScale, -1.5 * displayScale, -1.0 * displayScale),
     new THREE.Vector3(1.5 * displayScale, 1.5 * displayScale, 1.0 * displayScale),
-  );
+  ).translate(fitCentre.clone().negate()).applyMatrix4(
+    new THREE.Matrix4().makeScale(1 / 0.5, 1 / 0.5, 1 / 0.5),
+  ).translate(fitCentre);
   root.userData.cameraFov = 12;
   // The raked tooth faces lie nearly edge-on to the key light; a tight shadow
   // map with normal-offset bias removes the fine acne striping on them.
