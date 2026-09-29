@@ -16,3 +16,4 @@ artifacts/review/*
 .env
 .env.*
 !.env.example
+*.tmp.mjs
