@@ -95,3 +95,24 @@ test('213 corrected playback retains full pin, source limits and stable scene al
  assert.equal(d.minimumDisplayCycleSeconds,18);assert.equal(d.hideGround,true);assert.match(d.reconstructionNote,/shorter/);assert.match(d.reconstructionNote,/not dynamically solved/);
  m.root.traverse(o=>{for(const material of[].concat(o.material??[]))assert.equal(material.fog,false);});
 });
+
+test('213 p105: the gaps have radial walls at Brown\'s near 1:1 castellation', async () => {
+ const {splitRim213Contact: bake} = await import('../src/simulation/baked/split-rim-213-contact.js');
+ const o = bake.outline;
+ for (const R of [1.6, 1.7, 1.8]) {
+  const hits = [];
+  for (let i = 0; i < o.length - 1; i++) {
+   const a = Math.hypot(...o[i]) - R, b = Math.hypot(...o[i + 1]) - R;
+   if (a * b < 0) { const t = a / (a - b); hits.push(Math.atan2(o[i][1] + (o[i + 1][1] - o[i][1]) * t, o[i][0] + (o[i + 1][0] - o[i][0]) * t)); }
+  }
+  // The split's own edge also crosses R (above the axis); keep the sector.
+  const sector = hits.filter((h) => h < 0);
+  assert.equal(sector.length, 12);
+  hits.splice(0, hits.length, ...sector);
+  const spans = hits.slice(1).map((h, i) => h - hits[i]).slice(0, 11);
+  const gaps = spans.filter((_, i) => i % 2 === 0), teeth = spans.filter((_, i) => i % 2 === 1);
+  for (const g of gaps) assert.ok(Math.abs(g - 2 * bake.slotHalfAngle) < 2e-3, `gap angle at ${R}`);
+  const ratio = gaps[0] / teeth[0];
+  assert.ok(ratio > 1 && ratio < 1.2, `gap:tooth ${ratio} at ${R}`);
+ }
+});

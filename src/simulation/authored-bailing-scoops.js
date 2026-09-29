@@ -591,19 +591,35 @@ function bailingScoop(movement) {
     speeds: dischargeFullPath.speeds.slice(), times: dischargeFullPath.times.slice()};
   // The run-off starts at the bucket and advances along the floor as the
   // flow starts (sampled in place from the full path; no allocation).
-  const setDischargeReach = (fraction) => {
+  const setDischargeReach = (fraction, start = 0) => {
     const last = dischargeFullPath.points.length - 1, count = dischargePath.points.length - 1;
+    const low = Math.min(start, 0.98), high = Math.max(low + 0.02, fraction);
     for (let i = 0; i <= count; i += 1) {
-      const u = Math.max(0.02, fraction) * last * i / count, k = Math.min(last - 1, Math.floor(u)), w = u - k;
+      const u = (low + (high - low) * i / count) * last, k = Math.min(last - 1, Math.floor(u)), w = u - k;
       dischargePath.points[i].lerpVectors(dischargeFullPath.points[k], dischargeFullPath.points[k + 1], w);
       dischargePath.speeds[i] = dischargeFullPath.speeds[k] * (1 - w) + dischargeFullPath.speeds[k + 1] * w;
       dischargePath.times[i] = dischargeFullPath.times[k] * (1 - w) + dischargeFullPath.times[k + 1] * w;
     }
   };
-  const dischargeStream = addRole(new WaterStream(joinPaths(
+  // p105: Brown's beak gathers the mouth-wide run-off into one jet. Past
+  // the lip the sheet (0.68 across, seen edge-on from the front) closes
+  // over the first 0.22 of its fall into a round jet of the same section
+  // area, so the pour reads from the plate's front view as a falling
+  // stream about 0.4 thick instead of a 0.24 sliver.
+  const jetFormLength = 0.22;
+  const lipX = spoutLip.x;
+  const initialDischarge = joinPaths(
     dischargeRun(),
     ballisticPath({origin: spoutLip, velocity: spoutDirection.multiplyScalar(1.4), endY: -0.60, samples: 16}),
-  ), {width: 0.34, thickness: 0.12, widthAxis: new THREE.Vector3(0, 0, 1), widthExponent: 0.15,
+  );
+  let dischargePoints = initialDischarge.points;
+  const dischargeStream = addRole(new WaterStream(initialDischarge, {width: 0.34, thickness: 0.12, widthAxis: new THREE.Vector3(0, 0, 1), widthExponent: 0.15,
+    section: (i, u, [a, b]) => {
+      const beyond = lipX - dischargePoints[i].x;
+      if (!(beyond > 0)) return [a, b];
+      const t = Math.min(1, beyond / jetFormLength), w = t * t * (3 - 2 * t), r = Math.sqrt(a * b);
+      return [a + (r - a) * w, b + (r - b) * w];
+    },
     foam: {start: 0.9, amount: 0.4}, cyclePeriod: cycleDuration, streakRate: 1.2, opacity: 0.5}),
   'intermittent-discharge-from-raised-scoop-to-left-channel');
   root.add(dischargeStream);
@@ -628,8 +644,14 @@ function bailingScoop(movement) {
     const dischargeFlow = Math.min(1, state.dischargeFlowRate / maximumDischargeRate);
     dischargeStream.visible = dischargeFlow > 0.004;
     if (dischargeStream.visible) {
-      setDischargeReach(Math.min(1, dischargeFlow / 0.3));
+      // p105: the run-off front advances while the flow builds; once half
+      // the load has gone the stream already reaches the channel, and as
+      // the flow dies away its tail leaves the scoop and falls after it
+      // (it no longer retracts back up the floor).
+      if (state.waterFraction < 0.5) setDischargeReach(1, 1 - Math.min(1, dischargeFlow / 0.3));
+      else setDischargeReach(Math.min(1, dischargeFlow / 0.3));
       dischargeStream.flow = Math.max(0.004, dischargeFlow);
+      dischargePoints = dischargePath.points;
       dischargeStream.setPath(dischargePath);
     }
     updateStreams(time);

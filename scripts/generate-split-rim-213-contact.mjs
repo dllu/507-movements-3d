@@ -9,7 +9,7 @@ const model=create({id:213}),g=model.root.userData.geometry,TAU=2*Math.PI,pitch=
 // regenerated output so --check never depends on the previous bake.
 const referenceInitial=(2+g.sourceIndexProgress)*pitch;
 const mid=(g.freeApproachInputAngle+TAU)/2,steps=4096,allowance=.0002;
-// Brown draws square teeth: flat tops, parallel-sided gaps and a flat root,
+// Brown draws square teeth: flat tops, radial-walled gaps and a flat root,
 // with the pin (radius 7.8 source px) dipping only a little below the tips.
 // The tops sit below the pin's closest approach (1.897), so the pin drives on
 // the square top corners and its approach path clears the neighbouring tops.
@@ -23,18 +23,20 @@ const wrap=a=>Math.atan2(Math.sin(a),Math.cos(a));
 // pin runs straight in and out along a radial gap; otherwise the wheel rests.
 const trial=u=>{const phase=((u%TAU)+TAU)%TAU;if(Math.abs(phase-mid)>Math.PI/2)return referenceInitial-(phase>mid?pitch:0);
  const s=wrap(Math.atan2(...pin(u).slice().reverse())+Math.PI/2),p=Math.max(0,Math.min(1,(pitch/2-s)/pitch));return referenceInitial-pitch*p;};
-// One gap in the wheel frame: a parallel-sided slot from the root out past
-// the tops, as wide as the pin's chord at the tops (the Geneva law keeps the
-// pin on its centre line). Any part of the pin's path over the resting wheel
-// that reaches the tops cuts them from outside, which a radial profile
-// represents exactly; with these tops that relief is empty.
+// One gap in the wheel frame: a radial-walled gap (Brown draws square
+// castellations, tooth and gap alike) from a flat root out past the tops.
+// Its half-angle is the least that lets the pin, at its closest approach on
+// the gap's centre line (the Geneva law keeps it there), just meet both
+// rounded top corners, keeping the index free of play. Any part of the pin's
+// path over the resting wheel that reaches the tops cuts them from outside,
+// which a radial profile represents exactly; with these tops that relief is empty.
 const gapCenter=Math.atan2(...rotate(pin(mid),-trial(mid)).slice().reverse());
-// The gap is sized so the pin at its closest approach just meets both
-// rounded top corners (fillet radius below), keeping the index free of play.
-const cornerFillet=.008,closest=g.centerDistance-g.facePinOrbitRadius,filletGap=h=>{const t=Math.sqrt((toothTop-cornerFillet)**2-(h+cornerFillet)**2);return Math.hypot(closest-t,h+cornerFillet)-cornerFillet-r;};
-let slotHalf=0;{let low=0,high=r;for(let i=0;i<80;i++){const m=(low+high)/2;if(filletGap(m)<allowance)low=m;else high=m;}slotHalf=high;}
-const inSlotBand=c=>{const a=Math.atan2(c[1],c[0]),k=Math.round((a-gapCenter)/pitch),b=gapCenter+k*pitch;return Math.abs(-c[0]*Math.sin(b)+c[1]*Math.cos(b))<slotHalf+1e-9&&c[0]*Math.cos(b)+c[1]*Math.sin(b)>0;};
-const slotRegion=(b,widen=0)=>{const along=[Math.cos(b),Math.sin(b)],across=[-along[1],along[0]],half=slotHalf+widen,at=(radius,side)=>[radius*along[0]+side*half*across[0],radius*along[1]+side*half*across[1]];return poly([at(toothRoot,-1),at(g.stopOuterRadius+.5,-1),at(g.stopOuterRadius+.5,1),at(toothRoot,1)]);};
+const cornerFillet=.008,closest=g.centerDistance-g.facePinOrbitRadius,filletTangent=Math.sqrt((toothTop-cornerFillet)**2-cornerFillet**2),
+ filletGap=a=>Math.hypot(closest-(filletTangent*Math.cos(a)-cornerFillet*Math.sin(a)),filletTangent*Math.sin(a)+cornerFillet*Math.cos(a))-cornerFillet-r;
+let slotHalfAngle=0;{let low=0,high=pitch/2;for(let i=0;i<80;i++){const m=(low+high)/2;if(filletGap(m)<allowance)low=m;else high=m;}slotHalfAngle=high;}
+const wrapNear=(a,b)=>Math.atan2(Math.sin(a-b),Math.cos(a-b));
+const inSlotBand=c=>{const a=Math.atan2(c[1],c[0]),k=Math.round((a-gapCenter)/pitch);return Math.abs(wrapNear(a,gapCenter+k*pitch))<slotHalfAngle+1e-9;};
+const slotRegion=(b,widen=0)=>{const half=slotHalfAngle+widen/toothTop,at=(radius,side)=>{const a=b+side*half,rr=radius/Math.cos(half);return[rr*Math.cos(a),rr*Math.sin(a)];};return poly([at(toothRoot,-1),at(g.stopOuterRadius+.5,-1),at(g.stopOuterRadius+.5,1),at(toothRoot,1)]);};
 // Radial cut by pin circles (material is r < R(angle)); pins inside a slot
 // band below the tops are already inside the slot and are skipped.
 const radialCut=(radiusAt,angle,centers)=>{let value=radiusAt;for(const c of centers){const delta=angle-c.angle,side=c.rho*Math.sin(delta),projection=c.rho*Math.cos(delta);if(projection>0&&Math.abs(side)<c.radius)value=Math.min(value,projection-Math.sqrt(c.radius*c.radius-side*side));}return value;};
@@ -43,9 +45,9 @@ const n=1024,periodicRadii=Array.from({length:n},(_,i)=>{const a=gapCenter+pitch
 const radiusAtPeriodic=a=>{const x=(((a-gapCenter)%pitch)+pitch)%pitch/pitch*n,i=Math.floor(x),t=x-i;return periodicRadii[i%n]*(1-t)+periodicRadii[(i+1)%n]*t;};
 // Each tooth's top corners are rounded with a small fillet, so the pin always
 // bears on a smooth face; at the view scale the teeth still read square.
-const cornerPieces=(b,keep=()=>true,widen=0)=>[-1,1].flatMap(side=>{const slotHalfHere=slotHalf+widen;
- const along=[Math.cos(b),Math.sin(b)],across=[-along[1],along[0]],offset=side*(slotHalfHere+cornerFillet),t=Math.sqrt((toothTop-cornerFillet)**2-offset**2),center=[t*along[0]+offset*across[0],t*along[1]+offset*across[1]];
- const tWall=Math.sqrt(toothTop**2-(side*slotHalfHere)**2),corner=[tWall*along[0]+side*slotHalfHere*across[0],tWall*along[1]+side*slotHalfHere*across[1]],wall=[t*along[0]+side*slotHalfHere*across[0],t*along[1]+side*slotHalfHere*across[1]];
+const cornerPieces=(b,keep=()=>true,widen=0)=>[-1,1].flatMap(side=>{const wallAngle=b+side*(slotHalfAngle+widen/toothTop);
+ const along=[Math.cos(wallAngle),Math.sin(wallAngle)],across=[-along[1],along[0]],offset=side*cornerFillet,t=filletTangent,center=[t*along[0]+offset*across[0],t*along[1]+offset*across[1]];
+ const corner=[toothTop*along[0],toothTop*along[1]],wall=[t*along[0],t*along[1]];
  const topPoint=[center[0]*toothTop/(toothTop-cornerFillet),center[1]*toothTop/(toothTop-cornerFillet)];if(!keep(Math.atan2(topPoint[1],topPoint[0])))return[];
  const a0=Math.atan2(topPoint[1]-center[1],topPoint[0]-center[0]),a1=Math.atan2(wall[1]-center[1],wall[0]-center[0]);let sweep=a1-a0;while(sweep>Math.PI)sweep-=TAU;while(sweep<-Math.PI)sweep+=TAU;
  const arc=Array.from({length:65},(_,i)=>[center[0]+cornerFillet*Math.cos(a0+sweep*i/64),center[1]+cornerFillet*Math.sin(a0+sweep*i/64)]);
@@ -112,7 +114,7 @@ const first=ring.findIndex(p=>near(p,start,g.stopOuterRadius));ring=[...ring.sli
 const last=ring.findIndex(p=>near(p,end,g.stopOuterRadius));if(first<0||last<0)throw Error('213 split corners not found');
 const outer=ring.slice(0,last+1),inner=Array.from({length:151},(_,i)=>{const a=end-(end-start)*i/150;return[g.stopInnerRadius*Math.cos(a),g.stopInnerRadius*Math.sin(a)];});
 const outline=[...outer,...inner];
-const data={initialAngle,angles,firstAngles,reverseAngles,repeatReverseAngles,outline,outer,regularRadiusRange:[toothRoot,toothTop],allowance,steps,trialLaw:'geneva'};
+const data={slotHalfAngle,initialAngle,angles,firstAngles,reverseAngles,repeatReverseAngles,outline,outer,regularRadiusRange:[toothRoot,toothTop],allowance,steps,trialLaw:'geneva'};
 const output='// Generated by scripts/generate-split-rim-213-contact.mjs.\nexport const splitRim213Contact = '+JSON.stringify(data)+';\n';
 const target=new URL('../src/simulation/baked/split-rim-213-contact.js',import.meta.url);
 if(process.argv.includes('--check')){if(await readFile(target,'utf8')!==output)throw Error('213 bake differs');console.log('213 bake is byte-identical');}else{await writeFile(target,output);console.log({initialAngle,advance:initialAngle-angles.at(-1),regularRadiusRange:data.regularRadiusRange,points:outline.length,pathCenters:pathCenters.length});}

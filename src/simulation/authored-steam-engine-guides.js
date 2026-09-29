@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {boredLatheGeometry} from './bored-lathe-geometry.js';
+import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {capsule, circle, plate, poly, polygonClipping} from './finite-plate-geometry.js';
 import {
   PALETTE,
@@ -112,12 +113,23 @@ function verticalCapsuleCurve(
 // its foot (the old quadratic met the taper with a 15 degree kink) and
 // keeping the old quadratic's tangent under the cap's overhang; its handles
 // keep the hollow no narrower than before where the connecting rod swings.
-const SHOULDER_START = [3.004629, -6.353234];
-const SHOULDER_END = [4.5, -3.25];
+//
+// p105: Brown's crown lies 46 px below the shaft for a 56 px crank (0.82
+// crank radii), where the canvas model's crown at -2.25 is 0.56; with it
+// the crank dipped 0.50 below the crown into a crank pit spanning 94% of
+// the crown. The crown, its slab and the shoulder therefore sit one unit
+// lower (crown at -3.25, 0.81 crank radii), the shoulder sliding down the
+// same straight taper; the slot, stroke and every other landmark keep the
+// canvas model's dimensions.
+const CROWN_Y = -3.25;
+const CROWN_DROP = CROWN_Y + 2.25;
+const TAPER_X = (y) => 6 + (y + 24.625) * (3.004629 - 6) / (24.625 - 6.353234);
+const SHOULDER_START = [TAPER_X(-6.353234 + CROWN_DROP), -6.353234 + CROWN_DROP];
+const SHOULDER_END = [4.5, CROWN_Y - 1];
 const SHOULDER_CONTROLS = (() => {
   const taper = [SHOULDER_START[0] - 6, SHOULDER_START[1] + 24.625];
   const taperLength = Math.hypot(...taper);
-  const overhang = [SHOULDER_END[0] - 3.28, SHOULDER_END[1] + 3.75];
+  const overhang = [SHOULDER_END[0] - 3.28, SHOULDER_END[1] + 3.75 - CROWN_DROP];
   const overhangLength = Math.hypot(...overhang);
   return [
     [SHOULDER_START[0] + 0.5 * taper[0] / taperLength,
@@ -139,25 +151,25 @@ function sourceFrameShape(scale) {
   shape.lineTo(s(7), s(-27.625));
   shape.lineTo(s(7), s(-24.625));
   shape.lineTo(s(6), s(-24.625));
-  shape.lineTo(s(3.004629), s(-6.353234));
+  shape.lineTo(s(SHOULDER_START[0]), s(SHOULDER_START[1]));
   shape.bezierCurveTo(
     s(SHOULDER_CONTROLS[0][0]),
     s(SHOULDER_CONTROLS[0][1]),
     s(SHOULDER_CONTROLS[1][0]),
     s(SHOULDER_CONTROLS[1][1]),
-    s(4.5),
-    s(-3.25),
+    s(SHOULDER_END[0]),
+    s(SHOULDER_END[1]),
   );
-  shape.lineTo(s(4.5), s(-2.25));
-  shape.lineTo(s(-4.5), s(-2.25));
-  shape.lineTo(s(-4.5), s(-3.25));
+  shape.lineTo(s(4.5), s(CROWN_Y));
+  shape.lineTo(s(-4.5), s(CROWN_Y));
+  shape.lineTo(s(-SHOULDER_END[0]), s(SHOULDER_END[1]));
   shape.bezierCurveTo(
     s(-SHOULDER_CONTROLS[1][0]),
     s(SHOULDER_CONTROLS[1][1]),
     s(-SHOULDER_CONTROLS[0][0]),
     s(SHOULDER_CONTROLS[0][1]),
-    s(-3.004629),
-    s(-6.353234),
+    s(-SHOULDER_START[0]),
+    s(SHOULDER_START[1]),
   );
   shape.lineTo(s(-6), s(-24.625));
   shape.lineTo(s(-7), s(-24.625));
@@ -187,9 +199,9 @@ function hollowStandardOutlines(scale, wall, windowRadius) {
     return [0, 1].map((axis) => points.reduce(
       (sum, point, index) => sum + weights[index] * point[axis], 0));
   };
-  const taperX = (y) => 6 + (y + 24.625) * (3.004629 - 6) / (24.625 - 6.353234);
+  const taperX = TAPER_X;
   const rightOuter = [[7, -27.625], [7, -24.625], [6, -24.625],
-    ...Array.from({length: 49}, (_, i) => shoulder(i / 48)), [4.5, -2.25]];
+    ...Array.from({length: 49}, (_, i) => shoulder(i / 48)), [4.5, CROWN_Y]];
   const outer = [...rightOuter, ...rightOuter.slice().reverse()
     .map(([x, y]) => [-x, y])].map(([x, y]) => [s(x), s(y)]);
   const innerBottom = -24.625 - wall;
@@ -629,33 +641,58 @@ function verticalPlanedSlotPistonGuide(movement) {
   standardSideWalls.userData.role =
     'hollow-standard-side-walls-under-the-cap';
 
-  // The crank dips 0.50 below the standard's top edge and its sweep spans
-  // nearly the whole crown (half-chord 0.93 of the crown's 0.97), so the cap
-  // is one extrusion across the crank's depth: flush with the top edge and
-  // cut by a crank pit whose floor is an arc concentric with the shaft,
-  // 0.06 outside the crank's sweep. In front of it a narrow transverse slot
-  // stays open for the connecting rod. Its outline is the walls' own inner
-  // outline, so it meets them exactly.
+  // p105: the cap is a closed crown casting from the back plate to the
+  // front skin, not an open tray. With the crown at Brown's height the crank
+  // dips 0.28 below it, so the casting is cut by a pocket only as deep as
+  // the crank, pin and rod stack (from 0.005 in front of the pillow block to
+  // the skin): its floor is an arc concentric with the shaft, 0.06 outside
+  // the crank's sweep, and under the rod's plane the floor keeps only the
+  // rod's own swept fan (0.03 clear) open down into the hollow standard.
+  // Behind the pocket the crown is solid under the pillow block. Its
+  // outline is the walls' own inner outline, so it meets them exactly.
   const crankSweepRadius = crankRadius + crankPinRadius * 1.65;
   const crankPitRadius = crankSweepRadius + 0.06;
-  const capTopY = -2.25 * sourceScale;
+  const capTopY = CROWN_Y * sourceScale;
   const capBottomY = -crankPitRadius - 0.06;
   const connectingRodSlotBackZ = connectingRodPlaneZ
     - connectingRodDepth / 2 - 0.04;
+  const crankPocketBackZ = 0.315;
   const capHalfWidth = 5 * sourceScale;
+  const capOutline = polygonClipping.intersection(hollowStandard.inner, poly([
+    [-capHalfWidth, capBottomY], [capHalfWidth, capBottomY],
+    [capHalfWidth, capTopY], [-capHalfWidth, capTopY],
+  ]));
+  const crankPit = poly(circle([0, 0], crankPitRadius, 96));
+  const rodFanHalfWidth = 0.66 * sourceScale * 0.72 / 2 + 0.03;
+  const rodFan = polygonClipping.union(...Array.from({length: 240}, (_, index) => {
+    const angle = FULL_TURN * index / 240;
+    const pin = [crankRadius * Math.cos(angle), crankRadius * Math.sin(angle)];
+    const wrist = [0, pin[1] - Math.sqrt(connectingRodLength ** 2 - pin[0] ** 2)];
+    const length = Math.hypot(wrist[0] - pin[0], wrist[1] - pin[1]);
+    const across = [(pin[1] - wrist[1]) / length * rodFanHalfWidth,
+      (wrist[0] - pin[0]) / length * rodFanHalfWidth];
+    return poly([[pin[0] + across[0], pin[1] + across[1]],
+      [wrist[0] + across[0], wrist[1] + across[1]],
+      [wrist[0] - across[0], wrist[1] - across[1]],
+      [pin[0] - across[0], pin[1] - across[1]]]);
+  }));
+  const capBack = plate(capOutline, frameFrontZ, crankPocketBackZ);
+  const capPit = plate(polygonClipping.difference(capOutline, crankPit),
+    crankPocketBackZ, connectingRodSlotBackZ);
+  const capRod = plate(polygonClipping.difference(capOutline, crankPit, rodFan),
+    connectingRodSlotBackZ, standardSkinBackZ);
   const standardCap = new THREE.Mesh(
-    plate(polygonClipping.difference(
-      polygonClipping.intersection(hollowStandard.inner, poly([
-        [-capHalfWidth, capBottomY], [capHalfWidth, capBottomY],
-        [capHalfWidth, capTopY], [-capHalfWidth, capTopY],
-      ])),
-      poly(circle([0, 0], crankPitRadius, 96)),
-    ), frameFrontZ, connectingRodSlotBackZ),
+    mergeGeometries([capBack, capPit, capRod]),
     frameMaterial,
   );
+  for (const geometry of [capBack, capPit, capRod]) geometry.dispose();
+  standardCap.geometry.userData.crankPocket = {
+    backZ: crankPocketBackZ, rodSlotBackZ: connectingRodSlotBackZ,
+    frontZ: standardSkinBackZ, pitRadius: crankPitRadius, rodFanHalfWidth,
+  };
   standardCap.userData.fixed = true;
   standardCap.userData.role =
-    'hollow-standard-cap-with-concentric-crank-pit-and-rod-slot-in-front';
+    'closed-crown-casting-with-concentric-crank-pocket-and-rod-fan';
 
   // The piston rod runs down inside the hollow standard into a bore in the
   // foot. The foot is deep enough to hide the rod's end at the bottom of
@@ -727,8 +764,8 @@ function verticalPlanedSlotPistonGuide(movement) {
   const housingBackZ = frameBackZ;
   const housingFrontZ = 0.31;
   const footHalfWidth = 2.1 * sourceScale;
-  const footBottomLocalY = -2.25 * sourceScale;
-  const footShoulderY = -1.72 * sourceScale;
+  const footBottomLocalY = CROWN_Y * sourceScale;
+  const footShoulderY = (CROWN_Y + 0.53) * sourceScale;
   const tangentPoint = (px, py) => {
     // Upper tangent point from (px, py) to the housing circle.
     const d = Math.hypot(px, py);

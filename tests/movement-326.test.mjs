@@ -523,7 +523,7 @@ test('movement 326 closes exactly and leaves movement 339 as the next authored d
   disposeModel(model.root);
 });
 
-test('movement 326 hides the connecting rod inside the capped hollow standard', () => {
+test('movement 326 hides the connecting rod inside the capped hollow standard', async () => {
   const model = createMovementModel(catalog.movements[325]);
   const { blocks, geometry } = model.root.userData;
   const box = (object) => new THREE.Box3().setFromObject(object);
@@ -538,14 +538,20 @@ test('movement 326 hides the connecting rod inside the capped hollow standard', 
   assert.ok(skin.max.y < 0);
   const pin = box(blocks.crankPinShaft);
   assert.ok(skin.min.z > pin.max.z);
-  // A cap flush with the top edge closes the top behind a narrow slot for
-  // the rod; the crank dips into a pit whose floor is an arc concentric
-  // with the shaft, just outside the crank's sweep.
+  // p105: the cap is a closed crown casting from the back plate to the
+  // skin, cut only by a crank pocket as deep as the crank/pin/rod stack,
+  // solid under the pillow block, with the rod's own fan open below.
   const cap = box(blocks.standardCap);
   near(cap.min.z, geometry.frameFrontZ, 1e-6, 'cap meets the back plate');
-  const slot = skin.min.z - cap.max.z;
-  assert.ok(slot > geometry.connectingRodDepth && slot < 0.3, `rod slot ${slot}`);
+  near(cap.max.z, skin.min.z, 1e-6, 'cap meets the front skin (no open tray)');
   near(cap.max.y, skin.max.y, 1e-6, 'cap is flush with the top edge');
+  const pocket = blocks.standardCap.geometry.userData.crankPocket;
+  const housing = box(blocks.bearingHousing);
+  assert.ok(pocket.backZ > housing.max.z && pocket.backZ - housing.max.z < 0.01,
+    'pillow block sits wholly on the solid crown behind the pocket');
+  assert.ok(pin.min.z > pocket.backZ, 'crank pin clears the pocket back wall');
+  const crankBack = box(blocks.crankArm).min.z;
+  assert.ok(crankBack - pocket.backZ < 0.06, 'pocket no deeper than the crank stack');
   const radialExtent = (mesh, reduce) => {
     mesh.updateMatrixWorld(true);
     const position = mesh.geometry.attributes.position;
@@ -566,6 +572,35 @@ test('movement 326 hides the connecting rod inside the capped hollow standard', 
       assert.ok(radialExtent(part, Math.max) < pitRadius - 0.05,
         `crank clears the pit at ${step}`);
     }
+  }
+  // The connecting rod passes the crown only through its fan: no rendered
+  // shank point lies inside the cap casting.
+  {
+    const { solidSurface } = await import('./helpers/solid-surface.mjs');
+    const field = solidSurface(blocks.standardCap.geometry);
+    const shank = blocks.connectingRod.children.find((part) =>
+      part.userData.role === 'constant-length-connecting-rod-shank');
+    shank.geometry.computeBoundingBox();
+    const { min: low, max: high } = shank.geometry.boundingBox;
+    const points = [];
+    for (let i = 0; i <= 400; i += 1) for (const y of [low.y, high.y]) for (const z of [low.z, 0, high.z]) {
+      points.push(new THREE.Vector3(low.x + (high.x - low.x) * i / 400, y, z));
+    }
+    let minimum = Infinity;
+    for (let step = 0; step < 48; step += 1) {
+      model.update(4 * step / 48);
+      model.root.updateMatrixWorld(true);
+      const transform = blocks.standardCap.matrixWorld.clone().invert()
+        .multiply(shank.matrixWorld);
+      for (const point of points) {
+        const local = point.clone().applyMatrix4(transform);
+        if (local.y > cap.max.y || local.y < cap.min.y) continue;
+        const gap = field.signedDistance(local, 0.05);
+        minimum = Math.min(minimum, gap);
+      }
+    }
+    assert.ok(minimum > 0.01, `rod clears the crown casting (${minimum})`);
+    console.log({ rodCrownClearance: minimum });
   }
   // The piston rod runs inside the hollow standard, into the foot's bore.
   const foot = box(blocks.foundationFoot);

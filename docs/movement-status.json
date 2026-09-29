@@ -8499,11 +8499,11 @@
       "id": 213,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-104 lane, integrated by primary agent",
-        "reviewPass": 104,
+        "reviewer": "Claude Opus 5.5 — pass-105 lane, integrated by primary agent",
+        "reviewPass": 105,
         "reviewedOn": "2026-09-28",
-        "evidence": "docs/p104-g1-review.md",
-        "note": "Pass 104: The ring's six gaps are narrower than Brown's 1:1 (a re-bake of the split-rim outline is needed)."
+        "evidence": "docs/p105-a-review.md",
+        "note": "Pass 105: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -8529,7 +8529,8 @@
         "docs/p81-audit-review.md",
         "docs/p81-fa-review.md",
         "docs/p93-g-review.md",
-        "docs/p104-g1-review.md"
+        "docs/p104-g1-review.md",
+        "docs/p105-a-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -8537,9 +8538,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-28",
-      "visibleFlaws": "The ring's six gaps are narrower than Brown's 1:1 (a re-bake of the split-rim outline is needed).",
-      "limits": "Tips sit at 1.84, recessed about 14 px inside the uncut rim; the pin drives on filleted top corners through a Geneva-style index; friction retention, pickup impact and load are prescribed. The fixed stud fills the split-ring bore; the stop ring and ratchet are separate fixed arbors that touch only through the face pin. Brown's drawn face pin is kept, flush with the ring face, with the ratchet 0.03 behind the ring. p93: low audit finding fixed (see review). p104: arbor −0.39…0.14 and stud −0.03…0.26, so the clock-hand shadows are gone.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "Tips sit at 1.84, recessed about 14 px inside the uncut rim; the pin drives on filleted top corners through a Geneva-style index; friction retention, pickup impact and load are prescribed. The fixed stud fills the split-ring bore; the stop ring and ratchet are separate fixed arbors that touch only through the face pin. Brown's drawn face pin is kept, flush with the ring face, with the ratchet 0.03 behind the ring. p93: low audit finding fixed (see review). p104: arbor −0.39…0.14 and stud −0.03…0.26, so the clock-hand shadows are gone. p105: radial-walled gaps at 1.17:1 (the least the 0.156 pin needs; exactly 1:1 would need r ≤ 0.145); re-baked split-rim outline.",
+      "assessment": "reasonable"
     },
     {
       "id": 214,
@@ -12986,11 +12987,11 @@
       "id": 326,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-104 lane, integrated by primary agent",
-        "reviewPass": 104,
+        "reviewer": "Claude Opus 5.5 — pass-105 lane, integrated by primary agent",
+        "reviewPass": 105,
         "reviewedOn": "2026-09-28",
-        "evidence": "docs/p104-g4-review.md",
-        "note": "Pass 104: The open crank-pit tray remains in view (the crank sweeps through it)."
+        "evidence": "docs/p105-a-review.md",
+        "note": "Pass 105: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -13012,7 +13013,8 @@
         "docs/p88-y-review.md",
         "docs/p93-fd-review.md",
         "docs/p94-a-review.md",
-        "docs/p104-g4-review.md"
+        "docs/p104-g4-review.md",
+        "docs/p105-a-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -13020,9 +13022,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-28",
-      "visibleFlaws": "The open crank-pit tray remains in view (the crank sweeps through it).",
-      "limits": "The rod clears the side walls by about 0.011; the rendered piston rod is shorter than the official stroke geometry. p88: the dark planed strips sit 0.003 off the slot wall and stand 0.003 proud of the frame (they were flush). p93: inset cap with a narrow rod slot; round rod inside the standard; rear bridge removed. p94: the cap is flush with the crown, cut by a crank pit concentric with the shaft (the crank dips 0.50 below the crown); the rod runs into a bored foot deep enough to hide its 1.76 stroke (Brown crops the base). p104: the pillow block is one tangent-sided extrusion.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "The rod clears the side walls by about 0.011; the rendered piston rod is shorter than the official stroke geometry. p88: the dark planed strips sit 0.003 off the slot wall and stand 0.003 proud of the frame (they were flush). p93: inset cap with a narrow rod slot; round rod inside the standard; rear bridge removed. p94: the cap is flush with the crown, cut by a crank pit concentric with the shaft (the crank dips 0.50 below the crown); the rod runs into a bored foot deep enough to hide its 1.76 stroke (Brown crops the base). p104: the pillow block is one tangent-sided extrusion. p105: crown at Brown's 0.81 crank radii (−3.25); the crank dips 0.28 into a pocket in a closed crown casting (visible from above as an intended recess); the rod clears the walls by 0.10 and the crown by 0.03 through its fan.",
+      "assessment": "reasonable"
     },
     {
       "id": 327,
@@ -18666,11 +18668,11 @@
       "id": 460,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-104 lane, integrated by primary agent",
-        "reviewPass": 104,
+        "reviewer": "Claude Opus 5.5 — pass-105 lane, integrated by primary agent",
+        "reviewPass": 105,
         "reviewedOn": "2026-09-28",
-        "evidence": "docs/p104-g5-review.md",
-        "note": "Pass 104: The pour is largely edge-on from the front view."
+        "evidence": "docs/p105-a-review.md",
+        "note": "Pass 105: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -18688,7 +18690,8 @@
         "docs/p70-c-review.md",
         "docs/p73-audit-review.md",
         "docs/p90-ff-review.md",
-        "docs/p104-g5-review.md"
+        "docs/p104-g5-review.md",
+        "docs/p105-a-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -18696,9 +18699,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-28",
-      "visibleFlaws": "The pour is largely edge-on from the front view.",
-      "limits": "The fill schedule is prescribed; a 79° beam stroke is needed for a full drain; the lift to the channel is 0.67. p90: the lever is Brown's deep tapered beam as one plate with its notch row; the discharge is a mouth-wide sheet tied to the drain rate (seen edge-on from the front). p104: 0.16-cycle pour dwell (pour shows in 3 of 20 sampled phases).",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "The fill schedule is prescribed; a 79° beam stroke is needed for a full drain; the lift to the channel is 0.67. p90: the lever is Brown's deep tapered beam as one plate with its notch row; the discharge is a mouth-wide sheet tied to the drain rate (seen edge-on from the front). p104: 0.16-cycle pour dwell (pour shows in 3 of 20 sampled phases). p105: gathered into a round jet past the lip, and the tail falls away when the flow dies (pour reaches the channel in 13% of the cycle); small at default zoom because Brown's lip is only about 0.3 above the channel water.",
+      "assessment": "reasonable"
     },
     {
       "id": 461,
