@@ -59,26 +59,12 @@ function beamBetween(start, end, width, depth, material) {
   return beam;
 }
 
-function lineTube(points, radius, material) {
-  const curve = new THREE.CatmullRomCurve3(points, false, 'centripetal');
-  return new THREE.Mesh(
-    new THREE.TubeGeometry(
-      curve,
-      Math.max(64, points.length * 2),
-      radius,
-      8,
-      false,
-    ),
-    material,
-  );
-}
-
 function makeRule({
   depth,
   lengthMax,
   lengthMin,
   material,
-  outsideSide,
+  bodySide,
   role,
   whiteMaterial,
   width,
@@ -92,7 +78,7 @@ function makeRule({
   );
   body.position.set(
     (lengthMin + lengthMax) / 2,
-    outsideSide * (width / 2 + GUIDE_RADIUS),
+    bodySide * (width / 2 + GUIDE_RADIUS),
     0,
   );
   body.userData.role = `${role}-straight-rigid-body`;
@@ -102,7 +88,7 @@ function makeRule({
     whiteMaterial,
   );
   workingEdge.position.set((lengthMin + lengthMax) / 2,
-    outsideSide * (GUIDE_RADIUS + .016), depth * 0.58);
+    bodySide * (GUIDE_RADIUS + .016), depth * 0.58);
   workingEdge.userData.role = `${role}-pin-contact-working-edge`;
   rule.add(workingEdge);
   const endMarks = [lengthMin + 0.22, lengthMax - 0.22].map((x, index) => {
@@ -110,7 +96,7 @@ function makeRule({
       new THREE.BoxGeometry(0.055, width * 0.72, depth * 0.16),
       whiteMaterial,
     );
-    mark.position.set(x, outsideSide * (width / 2 + GUIDE_RADIUS), depth * 0.59);
+    mark.position.set(x, bodySide * (width / 2 + GUIDE_RADIUS), depth * 0.59);
     mark.userData.role = `${role}-end-index-${index + 1}`;
     rule.add(mark);
     return mark;
@@ -139,10 +125,6 @@ function cyclograph(movement) {
     chordHalf,
   );
   const leftEndpointAngle = Math.PI - rightEndpointAngle;
-  const endpointMarginAngle = 0.055;
-  const traceStartAngle = leftEndpointAngle - endpointMarginAngle;
-  const traceEndAngle = rightEndpointAngle + endpointMarginAngle;
-  const traceAngleSpan = traceEndAngle - traceStartAngle;
   const includedRuleAngle = 2 * Math.atan(chordHalf / sagitta);
   const leftGuidePin = new THREE.Vector2(-chordHalf, 0);
   const rightGuidePin = new THREE.Vector2(chordHalf, 0);
@@ -155,6 +137,21 @@ function cyclograph(movement) {
   // length (was 0.036).
   const ruleWidth = 0.40;
   const ruleDepth = 0.14;
+  // p105: with the rules inside the angle (Brown's arrangement, below) each
+  // rule's tail runs on past the pencil across the other rule's working edge,
+  // so as the pencil nears one pin that pin meets the other rule's tail. The
+  // pin clears it once it stands (w + 2r + clearance) / sin(angle) from the
+  // pencil along its edge; the stroke reverses there (it was 0.176, clear of
+  // the pin only). Both rules stand through the same height band as the
+  // pins, so no stacking lets either pin pass under a tail.
+  const tailClearance = 0.02;
+  const nearestPinDistance = (ruleWidth + 2 * GUIDE_RADIUS + tailClearance)
+    / Math.sin(includedRuleAngle);
+  const endpointMarginAngle = 2 * Math.asin(nearestPinDistance
+    / (2 * circleRadius));
+  const traceStartAngle = leftEndpointAngle - endpointMarginAngle;
+  const traceEndAngle = rightEndpointAngle + endpointMarginAngle;
+  const traceAngleSpan = traceEndAngle - traceStartAngle;
   // Pass 101: Brown's brace lies along the chord, its upper edge by the
   // guide pins (which he dots behind it), so it sits 3.6 from the crossing.
   const braceDistance = 3.6;
@@ -344,40 +341,103 @@ function cyclograph(movement) {
     return border;
   });
 
-  const chordLine = beamBetween(
-    new THREE.Vector3(-chordHalf, 0, -0.11),
-    new THREE.Vector3(chordHalf, 0, -0.11),
-    0.032,
-    0.025,
-    fixedMaterial,
-  );
+  // p105: the drawing plane is the board's top face, 0.002 under the
+  // pencil point; the ink lies on it (the pencil used to hover 0.026 above
+  // the board, touching the centre of a round tube). Brown draws the chord
+  // but not the versed sine, so only the chord is laid out.
+  const boardTop = -0.077;
+  const inkLift = 0.0015;
+  const inkWidth = 0.05;
+  // Brown's thin laid-down chord, a flat line on the paper from pin to pin
+  // (it runs under the rules to the pin bores, where he dashes it).
+  const chordInkWidth = 0.022;
+  // It stops at the pins' base washers (radius 0.16) instead of running
+  // into them.
+  const chordGeometry = new THREE.PlaneGeometry(chordLength - 2 * 0.16,
+    chordInkWidth);
+  chordGeometry.deleteAttribute('uv');
+  const chordMaterial = matte(PALETTE.ink, { metalness: 0, roughness: 0.9 });
+  chordMaterial.polygonOffset = true;
+  chordMaterial.polygonOffsetFactor = -1;
+  chordMaterial.polygonOffsetUnits = -1;
+  const chordLine = new THREE.Mesh(chordGeometry, chordMaterial);
+  chordLine.position.set(0, 0, boardTop + inkLift);
   chordLine.userData.role = 'laid-out-chord-line';
-  const versedSineLine = beamBetween(
-    new THREE.Vector3(0, 0, -0.105),
-    new THREE.Vector3(0, sagitta, -0.105),
-    0.028,
-    0.026,
-    fixedMaterial,
-  );
-  versedSineLine.userData.role = 'laid-out-versed-sine';
-  root.add(chordLine, versedSineLine);
+  root.add(chordLine);
 
-  const arcPoints = Array.from({ length: 161 }, (_, index) => {
-    const angle = THREE.MathUtils.lerp(
-      leftEndpointAngle,
-      rightEndpointAngle,
-      index / 160,
-    );
-    return new THREE.Vector3(
-      circleCenter.x + circleRadius * Math.cos(angle),
-      circleCenter.y + circleRadius * Math.sin(angle),
-      -0.075,
-    );
-  });
-  const describedArc = lineTube(arcPoints, 0.026, traceMaterial);
+  // p105: the arc is a flat ink ribbon on the paper that the pencil lays
+  // down. The return stroke (right to left) draws it behind the pencil, the
+  // next stroke retraces it, and it is wiped just before the pencil turns at
+  // the right end to draw again. t = 0 is Brown's apex pose on the retracing
+  // stroke, so the whole arc shows there, as on the plate.
+  const inkSamples = 241;
+  const inkAngleAt = (value) => traceStartAngle + traceAngleSpan * value;
+  const inkPositions = new Float32Array(inkSamples * 2 * 3);
+  const inkNormals = new Float32Array(inkSamples * 2 * 3);
+  for (let index = 0; index < inkSamples * 2; index += 1) {
+    inkNormals[index * 3 + 2] = 1;
+  }
+  const inkIndices = [];
+  for (let index = 0; index < inkSamples - 1; index += 1) {
+    const a = index * 2;
+    inkIndices.push(a, a + 2, a + 1, a + 2, a + 3, a + 1);
+  }
+  const inkGeometry = new THREE.BufferGeometry();
+  inkGeometry.setAttribute('position',
+    new THREE.BufferAttribute(inkPositions, 3));
+  inkGeometry.setAttribute('normal', new THREE.BufferAttribute(inkNormals, 3));
+  inkGeometry.setIndex(inkIndices);
+  const writeInkSample = (slot, value) => {
+    const angle = inkAngleAt(value);
+    const cosine = Math.cos(angle);
+    const sine = Math.sin(angle);
+    for (const [side, offset] of [[0, 1], [1, -1]]) {
+      const radius = circleRadius + offset * inkWidth / 2;
+      const base = (slot * 2 + side) * 3;
+      inkPositions[base] = circleCenter.x + radius * cosine;
+      inkPositions[base + 1] = circleCenter.y + radius * sine;
+      inkPositions[base + 2] = boardTop + inkLift;
+    }
+  };
+  // The ribbon runs from the right end of the stroke (value 1) to `from`.
+  const setInkExtent = (from) => {
+    const reach = THREE.MathUtils.clamp(1 - from, 0, 1) * (inkSamples - 1);
+    const whole = Math.floor(reach);
+    for (let slot = 0; slot <= whole; slot += 1) {
+      writeInkSample(slot, 1 - slot / (inkSamples - 1));
+    }
+    let segments = whole;
+    if (reach > whole + 1e-9) {
+      writeInkSample(whole + 1, from);
+      segments += 1;
+    }
+    inkGeometry.setDrawRange(0, segments * 6);
+    inkGeometry.attributes.position.needsUpdate = true;
+    inkGeometry.computeBoundingSphere();
+    inkGeometry.computeBoundingBox();
+  };
+  // Always blended (opacity 1 outside the wipe), so the wipe needs no
+  // shader switch; the ink writes no depth and the board and rules above it
+  // still occlude it.
+  traceMaterial.transparent = true;
+  traceMaterial.depthWrite = false;
+  traceMaterial.polygonOffset = true;
+  traceMaterial.polygonOffsetFactor = -1;
+  traceMaterial.polygonOffsetUnits = -1;
+  const describedArc = new THREE.Mesh(inkGeometry, traceMaterial);
   describedArc.userData.role =
     'circular-arc-described-by-pencil-at-crossing-angle';
+  describedArc.userData.noShadow = true;
   root.add(describedArc);
+  // Wipe window at the end of the retracing stroke, where the pencil has all
+  // but stopped at the right end (smootherstep travel within 0.9% of it).
+  const wipeStart = 0.45;
+  const inkStateAtPhase = (cyclePhase, value) => {
+    if (cyclePhase >= 0.5) return { from: value, opacity: 1 };
+    if (cyclePhase < wipeStart) return { from: 0, opacity: 1 };
+    const fade = (cyclePhase - wipeStart) / (0.5 - wipeStart);
+    return { from: 0, opacity: 1 - smootherStep(fade) };
+  };
 
   const guidePins = [
     [leftGuidePin, 'left-fixed-chord-end-guide-pin'],
@@ -408,12 +468,20 @@ function cyclograph(movement) {
   carriage.userData.role =
     'single-rigid-three-rule-cyclograph-carriage';
   root.add(carriage);
+  // p105: Brown lays each rule INSIDE the angle, on the chord side of its
+  // pin-to-pencil line: the arc ends meet the rules' outer edges, the chord
+  // runs under the rules to the pins (his dashes) and the pencil stands in
+  // the V between the two tails where the outer edges cross. So the whole
+  // traced arc lies outside both rules at the apex pose, as he draws it.
+  // (The rules used to lie outside the angle and covered the arc's bulge.)
+  // In the carriage frame the left rule's chord side is +y, the right's -y.
+  const bodySide = 1;
   const leftRule = makeRule({
     depth: ruleDepth,
     lengthMax: ruleLengthMax,
     lengthMin: ruleLengthMin,
     material: rulerMaterial,
-    outsideSide: -1,
+    bodySide,
     role: 'left-sloping-rule-guided-by-left-chord-pin',
     whiteMaterial,
     width: ruleWidth,
@@ -424,7 +492,7 @@ function cyclograph(movement) {
     lengthMax: ruleLengthMax,
     lengthMin: ruleLengthMin,
     material: rulerMaterial,
-    outsideSide: 1,
+    bodySide: -bodySide,
     role: 'right-sloping-rule-guided-by-right-chord-pin',
     whiteMaterial,
     width: ruleWidth,
@@ -437,10 +505,10 @@ function cyclograph(movement) {
 
   const leftBracePoint = new THREE.Vector2(
     braceDistance,
-    -(ruleWidth / 2 + GUIDE_RADIUS),
+    bodySide * (ruleWidth / 2 + GUIDE_RADIUS),
   );
   const rightBracePoint = rotate2(
-    new THREE.Vector2(braceDistance, ruleWidth / 2 + GUIDE_RADIUS),
+    new THREE.Vector2(braceDistance, -bodySide * (ruleWidth / 2 + GUIDE_RADIUS)),
     includedRuleAngle,
   );
   const braceDirection = rightBracePoint.clone().sub(leftBracePoint)
@@ -480,9 +548,9 @@ function cyclograph(movement) {
   // pencil in the open angle, with its axis off both rules' edges.
   const crossingHalfWidth = ruleWidth / 2 + GUIDE_RADIUS;
   const crossingCentre = new THREE.Vector2(
-    -crossingHalfWidth * (1 + Math.cos(includedRuleAngle))
+    bodySide * crossingHalfWidth * (1 + Math.cos(includedRuleAngle))
       / Math.sin(includedRuleAngle),
-    -crossingHalfWidth,
+    bodySide * crossingHalfWidth,
   );
   const apexFastener = cylinderAlongZ(
     0.075,
@@ -522,6 +590,11 @@ function cyclograph(movement) {
 
   const update = (time) => {
     const state = stateAtTime(time);
+    const ink = inkStateAtPhase(state.cyclePhase, state.travel.value);
+    setInkExtent(ink.from);
+    traceMaterial.opacity = ink.opacity;
+    describedArc.visible = ink.opacity > 0.002;
+    state.ink = ink;
     carriage.position.set(
       state.pencilPoint.x,
       state.pencilPoint.y,
@@ -574,7 +647,6 @@ function cyclograph(movement) {
       pencilShaft,
       pencilTip,
       rightRule,
-      versedSineLine,
     },
     constraints: {
       brace:
@@ -634,6 +706,9 @@ function cyclograph(movement) {
       traceAngleSpan,
       traceEndAngle,
       traceStartAngle,
+      boardTop,
+      inkWidth,
+      inkWipeWindow: [wipeStart, 0.5],
     },
     mechanism:
       'two straight sloping rules are fastened at a constant crossing angle and held rigid by one transverse third-rule brace; one fixed pin at each chord end slides along its corresponding working edge, forcing the pencil at the edge intersection to follow a circular arc',
@@ -641,6 +716,8 @@ function cyclograph(movement) {
       cycleDuration,
       sequence:
         'trace from near the left chord-end singularity across the prescribed circular arc to near the right endpoint -> reverse with zero speed and acceleration -> retrace to the left -> reverse smoothly',
+      ink:
+        'the right-to-left stroke lays the arc down behind the pencil; the left-to-right stroke retraces it; the arc is wiped while the pencil comes to rest at the right end, before it is drawn again',
       tracedArcAngle: Math.abs(traceAngleSpan),
     },
     sourceAnimation: {
@@ -711,7 +788,7 @@ function cyclograph(movement) {
   root.userData.cameraDirection = new THREE.Vector3(6.4, 5.4, 11.6);
   root.userData.groundFloorY = -3.12;
   markShadows(root);
-  for (const object of [board, describedArc, chordLine, versedSineLine]) {
+  for (const object of [board, describedArc, chordLine]) {
     object.castShadow = false;
   }
   // The construction lines define a drawing plane without an opaque board
@@ -723,7 +800,6 @@ function cyclograph(movement) {
   // Pass 57: the arc is traced on a drawing board whose top face is the
   // drawing plane (the arc line's underside). The guide pins stand in bores
   // through it and their washers seat on it; the rules ride above it.
-  const boardTop = -0.075 - 0.026;
   addDrawingBoard(root, {
     min: [-3.35, -0.55], max: [3.35, 2.15], top: boardTop,
     holes: [leftGuidePin, rightGuidePin].map((p) => [p.x, p.y, GUIDE_RADIUS + 0.0005]), holeDepth: 0.10,

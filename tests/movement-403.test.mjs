@@ -422,3 +422,123 @@ test('movement 403 crossing fastening is centred on both rules where they cross 
     .applyMatrix4(left.matrixWorld.clone().invert()).x + left.geometry.parameters.width / 2;
   assert.ok(tail > 1.2, `tail past the crossing ${tail}`);
 });
+
+// p105: Brown lays the rules inside the angle, so the traced arc shows at
+// his apex pose; the arc is an ink ribbon on the board that the pencil draws.
+function inkPoints(mesh) {
+  const position = mesh.geometry.attributes.position;
+  const index = mesh.geometry.index;
+  const { start, count } = mesh.geometry.drawRange;
+  const used = new Set();
+  for (let i = start; i < Math.min(index.count, start + count); i += 1) used.add(index.getX(i));
+  return [...used].map((i) => new THREE.Vector3().fromBufferAttribute(position, i));
+}
+
+test('movement 403 rules lie inside the angle, so the whole traced arc shows at the apex pose (p105)', () => {
+  const model = createMovementModel(catalog.movements[402]);
+  const { blocks, geometry } = model.root.userData;
+  model.update(0);
+  model.root.updateMatrixWorld(true);
+  const points = inkPoints(blocks.describedArc);
+  assert.ok(points.length > 400, `${points.length} ink vertices at t = 0`);
+  const spanAngle = (p) => Math.atan2(p.y - geometry.circleCenter.y, p.x - geometry.circleCenter.x);
+  const angles = points.map(spanAngle);
+  near(Math.max(...angles), geometry.traceStartAngle, 1e-6, 'ink reaches the left end of the stroke');
+  near(Math.min(...angles), geometry.traceEndAngle, 1e-6, 'ink reaches the right end of the stroke');
+  for (const rule of [blocks.leftRule, blocks.rightRule]) {
+    const { width, height } = rule.body.geometry.parameters;
+    let covered = 0;
+    for (const point of points) {
+      const local = rule.body.worldToLocal(point.clone());
+      if (Math.abs(local.x) < width / 2 && Math.abs(local.y) < height / 2) covered += 1;
+    }
+    // Only the tails beyond the pencil cross the arc, as on the plate.
+    assert.ok(covered / points.length < 0.2, `${rule.rule.userData.role} covers ${covered}/${points.length}`);
+  }
+  // Brown's apex pose: the chord mid-point lies between the two rules, clear.
+  for (const rule of [blocks.leftRule, blocks.rightRule]) {
+    const local = rule.body.worldToLocal(new THREE.Vector3(0, geometry.sagitta / 2, 0));
+    const { height } = rule.body.geometry.parameters;
+    assert.ok(Math.abs(local.y) > height / 2, 'triangle interior open');
+    // The arc apex side of the pencil is outside both rule bodies.
+    const outer = rule.body.worldToLocal(new THREE.Vector3(0, geometry.sagitta + 0.2, 0));
+    assert.ok(Math.abs(outer.y) > height / 2 || Math.abs(outer.x) > rule.body.geometry.parameters.width / 2);
+  }
+  disposeModel(model.root);
+});
+
+test('movement 403 ink is drawn right to left, retraced, and wiped at the right end; the loop closes (p105)', () => {
+  const model = createMovementModel(catalog.movements[402]);
+  const { blocks, geometry, stateAtTime } = model.root.userData;
+  const period = geometry.cycleDuration;
+  const timeAt = (cyclePhase) => (cyclePhase - geometry.sourcePhaseOffset) * period;
+  const segments = () => blocks.describedArc.geometry.drawRange.count / 6;
+  model.update(timeAt(0.25));
+  const whole = segments();
+  assert.equal(whole, 240);
+  assert.equal(blocks.describedArc.material.opacity, 1);
+  // Drawing stroke: the ink ends under the pencil.
+  let previous = 0;
+  for (const phase of [0.52, 0.6, 0.75, 0.9, 0.99]) {
+    model.update(timeAt(phase));
+    const state = stateAtTime(timeAt(phase));
+    assert.equal(state.travel.direction, 'right-to-left-return-stroke');
+    const points = inkPoints(blocks.describedArc);
+    const tip = points.reduce((best, p) => (Math.atan2(p.y - geometry.circleCenter.y, p.x - geometry.circleCenter.x)
+      > Math.atan2(best.y - geometry.circleCenter.y, best.x - geometry.circleCenter.x) ? p : best));
+    const tipAngle = Math.atan2(tip.y - geometry.circleCenter.y, tip.x - geometry.circleCenter.x);
+    near(tipAngle, state.traceAngle, 1e-6, `ink ends at the pencil at ${phase}`);
+    assert.ok(segments() >= previous);
+    previous = segments();
+  }
+  // Retrace keeps the whole arc; the wipe fades it only while the pencil rests.
+  model.update(timeAt(0.1));
+  assert.equal(segments(), whole);
+  const [wipeStart, wipeEnd] = geometry.inkWipeWindow;
+  let lastOpacity = 1;
+  for (let phase = wipeStart; phase < wipeEnd; phase += 0.01) {
+    model.update(timeAt(phase));
+    const state = stateAtTime(timeAt(phase));
+    assert.ok(state.travel.value > 0.98, 'pencil has all but stopped at the right end');
+    assert.ok(blocks.describedArc.material.opacity <= lastOpacity + 1e-12);
+    lastOpacity = blocks.describedArc.material.opacity;
+  }
+  model.update(timeAt(0.5 + 1e-6));
+  assert.ok(segments() <= 1);
+  // Loop closure of the ink.
+  model.update(0);
+  const a = inkPoints(blocks.describedArc).length;
+  model.update(period);
+  assert.equal(inkPoints(blocks.describedArc).length, a);
+  assert.equal(blocks.describedArc.material.opacity, 1);
+  disposeModel(model.root);
+});
+
+test('movement 403 ink and chord lie on the board under the pencil point; the stroke stops where the far pin clears the other tail (p105)', () => {
+  const model = createMovementModel(catalog.movements[402]);
+  const { blocks, geometry, stateAtTime } = model.root.userData;
+  model.update(0);
+  model.root.updateMatrixWorld(true);
+  const ink = new THREE.Box3().setFromObject(blocks.describedArc);
+  near(ink.min.z, geometry.boardTop + 0.0015, 1e-6, 'ink just above the board');
+  near(ink.max.z, ink.min.z, 1e-6, 'flat ink');
+  const tipZ = blocks.pencilTip.localToWorld(new THREE.Vector3(0, blocks.pencilTip.geometry.parameters.height / 2, 0)).z;
+  assert.ok(tipZ > ink.max.z && tipZ - ink.max.z < 0.001, `pencil point ${tipZ} on the ink ${ink.max.z}`);
+  let board;
+  model.root.traverse((o) => { if (o.userData.role === 'fixed-drawing-board-under-pins-and-traced-curve') board = o; });
+  near(new THREE.Box3().setFromObject(board).max.z, geometry.boardTop, 1e-6, 'board top');
+  // Brown's laid-down chord is kept (the versed sine he does not draw is not).
+  assert.equal(blocks.chordLine.parent, model.root);
+  assert.equal(blocks.versedSineLine, undefined);
+  const chord = new THREE.Box3().setFromObject(blocks.chordLine);
+  near(chord.max.x, geometry.chordHalf - 0.16, 1e-6, 'chord stops at the washer');
+  // Stroke ends: the nearer pin stands where the far pin clears the other tail.
+  let nearest = Infinity;
+  for (let i = 0; i <= 6000; i += 1) {
+    const s = stateAtTime(geometry.cycleDuration * i / 6000);
+    nearest = Math.min(nearest, s.leftContactLocal.x, s.rightContactLocal.x);
+  }
+  const need = (geometry.ruleWidth + 2 * geometry.guideRadius) / Math.sin(geometry.includedRuleAngle);
+  assert.ok(nearest > need && nearest < need + 0.03, `nearest pin ${nearest} vs ${need}`);
+  disposeModel(model.root);
+});

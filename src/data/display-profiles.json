@@ -7654,20 +7654,20 @@
       }
     },
     "403": {
-      "peakAngularSpeed": 0.6312551097935654,
-      "peakVisibleAngularSpeed": 0.6312551097935654,
-      "sustainedVisibleAngularSpeed": 0.5548337980463852,
-      "floorY": -5.275007280982331,
-      "fastestPart": "right-sloping-rule-guided-by-right-chord-pin",
+      "peakAngularSpeed": 0.5426640220706771,
+      "peakVisibleAngularSpeed": 0.5426640220706771,
+      "sustainedVisibleAngularSpeed": 0.476967767483986,
+      "floorY": -4.964416748908392,
+      "fastestPart": "single-rigid-three-rule-cyclograph-carriage",
       "motionBounds": {
         "min": [
-          -6.451720282616529,
-          -5.275007280982331,
-          -0.2409999966621399
+          -6.039112546181554,
+          -4.964416748908392,
+          -0.21699999272823334
         ],
         "max": [
-          6.451720282616528,
-          2.852040363930632,
+          6.039112546181549,
+          2.420505502731238,
           1.1000000143051147
         ]
       }

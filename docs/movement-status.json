@@ -16230,11 +16230,11 @@
       "id": 403,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-104 lane, integrated by primary agent",
-        "reviewPass": 104,
+        "reviewer": "Claude Opus 5.5 — pass-105 lane, integrated by primary agent",
+        "reviewPass": 105,
         "reviewedOn": "2026-09-28",
-        "evidence": "docs/p104-g4-review.md",
-        "note": "Pass 104: At the default pose the traced arc is hidden under the 0.40-wide rules (Brown draws the rules about 0.24 wide and the arc visible)."
+        "evidence": "docs/p105-b-review.md",
+        "note": "Pass 105: The traced arc stops 0.63 short of each pin; with Brown's tails the far pin meets the other rule's tail there (forced by the plate)."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -16256,7 +16256,8 @@
         "docs/p90-fe-review.md",
         "docs/p92-e-review.md",
         "docs/p101-f5-review.md",
-        "docs/p104-g4-review.md"
+        "docs/p104-g4-review.md",
+        "docs/p105-b-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -16264,8 +16265,8 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-28",
-      "visibleFlaws": "At the default pose the traced arc is hidden under the 0.40-wide rules (Brown draws the rules about 0.24 wide and the arc visible).",
-      "limits": "Manual three-rule tracing prescribed; friction, pin play, drawing force and historical depths remain inferred. p89: brace fastener 1 ends 0.01 inside the left rule (it was flush in its back face). p90: rules 0.40 wide, brace 0.36; the crossing no longer interpenetrates. p92: the rules cross in a full X; the fastening is a rivet centred in the crossing; the pencil rides in the inner angle, tangent to both working edges. p101: the brace sits 3.6 from the crossing along the chord by the pins, in a lighter blue.",
+      "visibleFlaws": "The traced arc stops 0.63 short of each pin; with Brown's tails the far pin meets the other rule's tail there (forced by the plate).",
+      "limits": "Manual three-rule tracing prescribed; friction, pin play, drawing force and historical depths remain inferred. p89: brace fastener 1 ends 0.01 inside the left rule (it was flush in its back face). p90: rules 0.40 wide, brace 0.36; the crossing no longer interpenetrates. p92: the rules cross in a full X; the fastening is a rivet centred in the crossing; the pencil rides in the inner angle, tangent to both working edges. p101: the brace sits 3.6 from the crossing along the chord by the pins, in a lighter blue. p105: the rules lie inside the angle as on the plate (Brown's rules are about 0.055 of their length, 0.30–0.33 model units; the model keeps 0.40; the earlier '0.24' claim was wrong). The pencil stands in the V between the tails. The stroke reverses where the far pin clears the other rule's tail by 0.02 (0.629 from the pencil), tracing 81.5% of the arc. The arc is a flat ink ribbon on the board, drawn right to left, retraced, and faded at the right-end rest; Brown's chord is drawn, the versed sine is not.",
       "assessment": "minor"
     },
     {

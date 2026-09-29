@@ -711,8 +711,8 @@ export default {
     note: 'Face view of the two open balance rims (plain rims joined to their hubs by see-through webs) crossing so the toothed arm shows, their pinions meshing the internal teeth (upper) and external teeth (left) of lever B\'s single curved arm, anchor A one plate with B, and the twelve-tooth escape wheel in the same plane; the bar Brown draws in front of the wheel from B\'s pivot to the wheel\'s centre is the fixed bridge carrying both arbors, see-through where it covers the teeth he dots.',
   },
   403: {
-    remove: ['(?:left|right)-sloping-rule-guided-by-(?:left|right)-chord-pin-end-index-[12]', '(?:left|right)-sloping-rule-guided-by-(?:left|right)-chord-pin-pin-contact-working-edge', 'laid-out-(?:chord-line|versed-sine)', '(?:left|right)-fixed-chord-end-guide-pin-white-cap'],
-    note: 'The two sloping rules crossed at the pencil and braced by the third rule, sliding against the two pins at the chord ends, which stand in a plain drawing board carrying the traced arc; no end indices, painted working edges, white pin caps or laid-out chord and versed-sine construction lines are drawn.',
+    remove: ['(?:left|right)-sloping-rule-guided-by-(?:left|right)-chord-pin-end-index-[12]', '(?:left|right)-sloping-rule-guided-by-(?:left|right)-chord-pin-pin-contact-working-edge', '(?:left|right)-fixed-chord-end-guide-pin-white-cap'],
+    note: 'The two sloping rules crossed at the pencil and braced by the third rule, sliding against the two pins at the chord ends, which stand in a plain drawing board carrying the laid-down chord and the traced arc; no end indices, painted working edges or white pin caps are drawn, and Brown draws no versed sine.',
   },
   404: {
     remove: ['(?:left|right)-white-roller-angular-index', 'given-required-arc-point-[123]'],
