@@ -83,3 +83,18 @@ node scripts/bake-internal-rack.mjs
 node scripts/review-internal-rack-playback.mjs
 node --test tests/internal-rack-profile.test.mjs tests/internal-rack-bake.test.mjs
 ```
+
+## Pass 107: involute pinion and trapezoidal rack
+
+Following the user's rule for square-drawn racks and pinions, the ten-tooth
+pinion is an ideal involute cut by the standard 20-degree basic rack
+(addendum 1, dedendum 1.25, full-radius cutter tips), and sweeping it round the
+pitch path regenerates trapezoidal basic-rack teeth on the straight runs and
+conjugate teeth round the ends (720 ideal poses, zero overlap). The native
+study and bake were rerun with the commands above: the accepted candidate has no
+resets over 32 s, maximum penetration 0.034 px, rod closure 0.036 px, and the
+passive rack lags the ideal pitch path by up to 1.32 px in the end turns.
+Timestep halving and contact stiffening move the rack by 0.43 and 0.58 px. The
+bundle is 1,325,090 bytes; rendered overlap between recordings peaks at 0.0389
+square px. Figures above this section describe earlier bakes. See
+[p107-b review](p107-b-review.md).

@@ -2388,13 +2388,67 @@ function sidewaysBalanceWheelCrownEscapement(movement) {
   // the cup instead of rising between the teeth toward C.
   {
     const length = crownShaft.userData.length;
-    const bottom = crownShaft.position.z - length / 2;
+    // Pass 107: down through the pinion (bottom z -3.0425) to Brown's pivot.
+    const bottom = -3.1;
     const top = crownWheel.userData.toothBaseZ - 0.05;
     crownShaft.scale.z = (top - bottom) / length;
     crownShaft.position.z = (top + bottom) / 2;
   }
   drivePinion.position.z = -2.72;
   drivePinion.userData.role = 'coaxial-lower-drive-pinion';
+  // Pass 107: Brown's lower pinion is a small, tall pinion of fine leaves
+  // (raster 53 px across by 43 px high, about 0.80 by 0.65 here), not the
+  // inherited squat 8-leaf escape pinion (1.36 by 0.46). Rebuild it with the
+  // shared involute gear builder: 12 leaves, outside diameter 0.80, 0.645
+  // high, centred at Brown's height; the arbor runs on through it to a
+  // pointed pivot below, as drawn, instead of ending in its dark bore.
+  {
+    const leaves = 12;
+    const outer = 0.40;
+    const module302 = outer / (leaves / 2 + 1);
+    // 0.575 between the chamfers, 0.645 overall.
+    const height = 0.575;
+    const replacement = makeGear({
+      axis: Z_AXIS,
+      color: PALETTE.accent,
+      depth: height,
+      radius: module302 * leaves / 2,
+      teeth: leaves,
+      addendum: module302,
+      dedendum: module302 * 1.25,
+    });
+    const oldRotor = drivePinion.userData.rotor;
+    const newRotor = replacement.userData.rotor;
+    const [oldBody, oldHub] = oldRotor.children;
+    const [newBody] = newRotor.children;
+    oldBody.geometry.dispose();
+    oldBody.geometry = newBody.geometry;
+    newBody.geometry = new THREE.BufferGeometry();
+    // The arbor itself now shows through the pinion; its dark hub is not drawn.
+    oldHub.visible = false;
+    for (const key of ['radius', 'angularPitch', 'baseRadius', 'involuteStartRadius', 'module',
+      'outerRadius', 'pitchRadius', 'pressureAngle', 'rootRadius', 'teeth', 'addendum',
+      'dedendum', 'toothHeight', 'toothProfile']) {
+      drivePinion.userData[key] = replacement.userData[key];
+    }
+    drivePinion.userData.role = 'coaxial-lower-twelve-leaf-drive-pinion';
+    // Brown's pointed lower pivot, turning with the arbor (0.22 long, from
+    // just inside the arbor's end at z -3.1 to Brown's point at z -3.29).
+    const shaftRadius = new THREE.Box3().setFromObject(crownShaft).max.x;
+    const pivot = new THREE.Mesh(
+      new THREE.ConeGeometry(shaftRadius, 0.22, 48, 1).rotateX(-Math.PI / 2),
+      matte(PALETTE.ink, { metalness: 0.22, roughness: 0.5 }),
+    );
+    pivot.position.z = -3.09 - 0.11 - drivePinion.position.z;
+    pivot.userData.role = 'pointed-lower-pivot-of-crown-arbor';
+    oldRotor.add(pivot);
+    replacement.traverse((object) => {
+      if (object.isMesh) {
+        object.geometry.dispose();
+        for (const material of [object.material].flat()) material.dispose();
+      }
+    });
+  }
 
   // Brown's A and B are plain blades radiating from the collar at C. Each
   // pallet is one brass blade: the carrier continues the working face at its

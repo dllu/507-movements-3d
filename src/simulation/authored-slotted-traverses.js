@@ -98,20 +98,6 @@ function slottedCapsuleGeometry({
   return geometry;
 }
 
-function beamBetween3D(start, end, width, depth, material) {
-  const delta = end.clone().sub(start);
-  const beam = new THREE.Mesh(
-    new THREE.BoxGeometry(delta.length(), width, depth),
-    material,
-  );
-  beam.position.copy(start).add(end).multiplyScalar(0.5);
-  beam.quaternion.setFromUnitVectors(
-    new THREE.Vector3(1, 0, 0),
-    delta.clone().normalize(),
-  );
-  return beam;
-}
-
 function boreRectangularMember(mesh, x, y, radius) {
   const { width: w, height: h, depth: d } = mesh.geometry.parameters;
   mesh.geometry.dispose();
@@ -516,52 +502,14 @@ function slottedTraverse(movement) {
     sourceFixedPinO,
     jointPlaneZ,
   );
-  const fixedPinSupport = beamBetween3D(
-    new THREE.Vector3(-2.15, 0.28, fixedFramePlaneZ),
-    new THREE.Vector3(
-      fixedPinWorld.x,
-      fixedPinWorld.y,
-      fixedFramePlaneZ,
-    ),
-    0.20,
-    0.24,
-    frameMaterial,
-  );
-  fixedPinSupport.userData.role = 'fixed-upper-pin-rear-support';
-  // Pass 101: fixed pin O is carried by one flat bracket cast on guide a's
-  // right upright (it floated as a drum behind the lever): a post continuing
-  // the upright up past the traversing bar, a round-cornered arm across to
-  // O, and a round boss concentric with O and bored for it, joined by
-  // tangent fillets. It lies between the moving standard (z <= -0.58) and
-  // the lever (z >= 0.21), and stays above boss C, so it never meets them.
-  const oBracketBackZ = -0.50, oBracketFrontZ = -0.12;
-  const oBracketOutline = (() => {
-    const rect = (x0, y0, x1, y1) => poly([[x0, y0], [x1, y0], [x1, y1], [x0, y1]]);
-    const ox = fixedPinWorld.x, oy = fixedPinWorld.y, armHalf = 0.11, bossRadius = 0.18, fillet = 0.05;
-    const postX0 = plateGuideXs[1] * sourceScale - 0.08, postX1 = plateGuideXs[1] * sourceScale + 0.08;
-    const postBottom = sourceOutputRailWorldY + (plateOutputRailHeight + 0.50) / 2 - 0.08;
-    const armTop = oy + armHalf, armBottom = oy - armHalf, corner = postX1 - postX0, inner = 0.08;
-    let shape = clip.union(rect(postX0, postBottom, postX1, armTop), rect(ox, armBottom, postX1, armTop),
-      poly(circle([ox, oy], bossRadius, 72)));
-    // round outer corner concentric with the inner fillet's corner
-    shape = clip.difference(shape, clip.difference(rect(postX0, armTop - corner, postX1, armTop),
-      poly(circle([postX0, armTop - corner], corner, 48))));
-    shape = clip.union(shape, clip.difference(rect(postX0 - inner, armBottom - inner, postX0, armBottom),
-      poly(circle([postX0 - inner, armBottom - inner], inner, 32))));
-    const rise = armHalf + fillet, dx = Math.sqrt((bossRadius + fillet) ** 2 - rise ** 2), tangentRise = rise * bossRadius / (bossRadius + fillet);
-    for (const side of [-1, 1]) shape = clip.union(shape, clip.difference(
-      rect(ox, oy + Math.min(side * armHalf, side * tangentRise), ox + dx, oy + Math.max(side * armHalf, side * tangentRise)),
-      poly(circle([ox + dx, oy + side * rise], fillet, 32))));
-    return clip.difference(shape, poly(circle([ox, oy], 0.112 + 0.004, 48)));
-  })();
-  const fixedPinBearing = new THREE.Mesh(plate(oBracketOutline, oBracketBackZ, oBracketFrontZ), frameMaterial);
-  fixedPinBearing.userData.role = 'fixed-bracket-on-guide-a-2-with-bored-boss-for-pin-O';
+  // Pass 107 (user): pin O stands as Brown draws it, with no undrawn
+  // bracket or rear support (the p101 bracket on guide a-2 is removed).
 
   const inputGuideWorldY = worldOffsetY
     + sourceInputGuideY * sourceScale;
   // Brown only dots D's path. D rides on one plain round rod laid along that
   // line, behind the lever and below guides a, a; a bored shoe centred on D
-  // slides on it. The rod is an ideal fixed guide (like O's bearing).
+  // slides on it. The rod is an ideal fixed guide (like pin O).
   const inputRodRadius = 0.06;
   const inputRodZ = -0.08;
   const inputGuideRail = new THREE.Mesh(
@@ -652,8 +600,6 @@ function slottedTraverse(movement) {
   fixedFrame.add(
     base,
     baseEdge,
-    fixedPinSupport,
-    fixedPinBearing,
     inputGuideRail,
     ...inputRodHangers.flatMap(({ hanger, lug }) => [hanger, lug]),
   );
@@ -679,8 +625,7 @@ function slottedTraverse(movement) {
   // Brown carries the lever's centre pin C on the broad standard's own
   // centreline. One plain round boss stands forward from the standard's
   // front face to just behind the lever, centred on C and bored for the
-  // pin. It stays 0.59 or more from pin O, so it clears O's bearing (which
-  // lies between the standard and the lever) at every pose.
+  // pin. It stays 0.59 or more from pin O at every pose.
   const standardFrontLocalZ = -0.61;
   const bossFrontLocalZ = leverPlaneZ - leverDepth / 2 - 0.012 - outputBarPlaneZ;
   const outputJointBoss = boredJournal(0.24, 0.136,
@@ -823,8 +768,10 @@ function slottedTraverse(movement) {
   );
   root.add(leverAssembly);
 
-  const fixedPinO = cylinderAlongZ(0.112, 0.76, pinMaterial, 32);
-  fixedPinO.position.copy(fixedPinWorld).setZ(0.09);
+  // Pass 107: with no bracket behind it, O is a plain pin standing 0.03
+  // proud of the lever's back face (0.19 to 0.47), as Brown draws it.
+  const fixedPinO = cylinderAlongZ(0.112, 0.28, pinMaterial, 32);
+  fixedPinO.position.copy(fixedPinWorld).setZ(0.33);
   fixedPinO.userData.role = 'stationary-steel-pin-in-upper-lever-slot-O';
   const fixedPinCap = cylinderAlongZ(0.065, 0.035, inkMaterial, 28);
   fixedPinCap.position.copy(fixedPinWorld).setZ(0.4825); // seated 0.005 into the pin end face (was 0.0175 proud of it)
@@ -981,11 +928,9 @@ function slottedTraverse(movement) {
     centralJointPin,
     centerBoss,
     fixedFrame,
-    fixedPinBearing,
     fixedPinCap,
     fixedPinO,
     fixedPinSlotAnchor,
-    fixedPinSupport,
     inputGuideDashes,
     inputGuideRail,
     inputRodHangers,

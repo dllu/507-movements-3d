@@ -2,28 +2,33 @@
   "movement": 150,
   "method": "All visible mesh pairs belonging to different rigid bodies, bidirectional vertices/edge midpoints/face centers, 65 native-physics poses in the third demonstration, spanning all selections. Soft carrier/roller contact reported separately. Same-body mating interfaces excluded. No continuous collision proof.",
   "summary": {
-    "parts": 61,
-    "pairs": 1262,
+    "parts": 46,
+    "pairs": 692,
     "poses": 65,
-    "checks": 27934174,
+    "checks": 14522956,
     "failingPairs": 0
   },
   "failures": {},
   "workingContacts": {
-    "throw-1-working-cam-plate-15/working-roller-tread-on-selected-cam-51": {
-      "firstPose": 10,
+    "throw-1-working-cam-plate-15/working-roller-tread-on-selected-cam-39": {
+      "firstPose": 11,
+      "points": 3,
+      "maximumDepth": 0.000005672706834135938
+    },
+    "throw-2-working-cam-plate-18/working-roller-tread-on-selected-cam-39": {
+      "firstPose": 28,
       "points": 9,
-      "maximumDepth": 0.000014772512922625263
+      "maximumDepth": 0.000015451724579698465
     },
-    "throw-3-working-cam-plate-26/working-roller-tread-on-selected-cam-51": {
-      "firstPose": 42,
-      "points": 15,
-      "maximumDepth": 0.000025660333001943015
+    "throw-3-working-cam-plate-22/working-roller-tread-on-selected-cam-39": {
+      "firstPose": 44,
+      "points": 12,
+      "maximumDepth": 0.000017861721337943577
     },
-    "throw-4-working-cam-plate-33/working-roller-tread-on-selected-cam-51": {
-      "firstPose": 59,
-      "points": 10,
-      "maximumDepth": 0.00002412668554717524
+    "throw-4-working-cam-plate-27/working-roller-tread-on-selected-cam-39": {
+      "firstPose": 63,
+      "points": 3,
+      "maximumDepth": 0.000021191118807110343
     }
   },
   "sources": [
@@ -33,11 +38,11 @@
     },
     {
       "file": "src/simulation/selectable-cam-valve.js",
-      "sha256": "131ad0809a8b63440e5a86c4daa4416eee147ed3430074f0d7d1dd7f6b99425a"
+      "sha256": "ae4052b66ccd5d925e4e6de632e2bb219a54097302fecde44f39898a86285c55"
     },
     {
       "file": "src/simulation/authored-selectable-cams.js",
-      "sha256": "8ae138e078f5ba7f03f59be35c98256550ae477fbe3e542973b67f5b0c1f95e9"
+      "sha256": "9db2669d9f4bee7a8d496b9338c4adc75d25380668041674eefbaa24a6222562"
     },
     {
       "file": "src/simulation/finite-plate-geometry.js",

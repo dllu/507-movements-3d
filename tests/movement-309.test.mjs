@@ -613,7 +613,7 @@ test("movement 309 cuts Brown's slanted ratchet teeth and joins each pallet arm 
 });
 function disposeLike(root) { root.traverse((o) => o.geometry?.dispose?.()); }
 
-test("movement 309 drops B's bottom edge into Brown's small nib short of the cocking tooth's sweep", () => {
+test("movement 309 (p108): B's end is one pawl, its bottom edge the lifting face run straight to the rounded corner (no toe nib)", () => {
   const model = createMovementModel(catalog.movements[308]);
   const root = model.root;
   model.update(0, 0.016);
@@ -630,14 +630,13 @@ test("movement 309 drops B's bottom edge into Brown's small nib short of the coc
     ray.set(origin, new THREE.Vector3(0, 0, -1).transformDirection(root.matrixWorld));
     return ray.intersectObject(plate).length > 0;
   };
-  // Brown's level bottom edge (y ~206) with open space below it...
-  assert.ok(solidAt(112, 204), 'level bottom edge');
-  assert.ok(!solidAt(112, 208.5), 'open below the level bottom');
-  // ...then the edge drops into a small nib (p101: at the corner of the
-  // 0.035 relief contour, about 2 px below the line at x 125.8).
-  assert.ok(solidAt(125.3, 207.6), 'nib hangs below the bottom line');
-  assert.ok(!solidAt(122, 208.2), 'nib is a point, not a thickened bottom');
-  assert.ok(!solidAt(127.8, 210.8), 'nib stands clear of the next tooth');
+  // Solid just above the bottom line near the corner and under the face...
+  assert.ok(solidAt(112, 190), 'end body above the bottom line');
+  assert.ok(solidAt(140, 186), 'lifting face runs on to the stop');
+  // ...and nothing hangs below it: the old toe nib (125.3, 207.6) and the
+  // old lower bottom edge (112, 204) are gone.
+  assert.ok(!solidAt(125.3, 207.6), 'no toe nib below the bottom line');
+  assert.ok(!solidAt(112, 204), 'no second prong under the corner');
   // Everything under the lifting face, where the cocking tooth passes, is cut.
   assert.ok(!solidAt(134, 205), 'no material in the cocking tooth sweep');
   disposeLike(root);

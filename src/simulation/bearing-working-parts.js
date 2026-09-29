@@ -3,6 +3,7 @@ import {circle, ring, plate, poly, polygonClipping} from './finite-plate-geometr
 import {boredCylinderGeometry, fitPistonGuide} from './piston-guide-parts.js';
 import {creaseLatheNormals} from './crease-normals.js';
 import {applyRotationIndicator} from './rotation-indicator.js';
+import {makeSeeThrough} from './see-through-part.js';
 
 function replace(mesh, geometry) {
   mesh.geometry.dispose();
@@ -297,74 +298,69 @@ vPosition = vec3( position );
   };
 }
 
-// Brown's plate 270 draws two figures: the assembled pulley on the left, with
-// a cover over the bearing showing six pin holes and a fluted journal end,
-// and the exposed rollers on the right. The working cutaway stays at the
-// origin as the right figure; the left figure shares its geometry and motion.
-function addAssembledView(model) {
+// Brown's plate 270 draws one pulley bearing twice: assembled on the left,
+// with a cover over the bearing showing six pin holes and a fluted journal
+// end, and opened on the right to show the six rollers. Paired views of one
+// mechanism share ONE model: the working cutaway gets the assembled figure's
+// pulley face and retainer cover, both in the shared see-through style, so
+// the rollers turning behind them show through as in the right figure. The
+// cover rides with the retainer, and its six holes sit over the retainer
+// pins at the roller centres; the pin ends are Brown's centre dots.
+function mergeAssembledView(model) {
   const root = model.root;
   const {blocks: b, geometry: g, sourceReference} = root.userData;
   const view = sourceReference.plate270;
   const pixel = g.pulleyOuterRadius / view.assembledView.pulleyOuterRadius;
-  const offsetX = (view.assembledView.centerX - view.cutawayView.centerX) * pixel;
   const coverRadius = view.assembledView.coverRadius * pixel;
-  // Brown's cover holes sit on a 44 px circle, a little inside the 49 px
-  // roller circle of his right figure. This figure holds no rollers, so the
-  // holes follow the left figure and show the open space behind the cover.
-  const pinHoleCircle = view.assembledView.holeCircleRadius * pixel;
   const pinHoleRadius = view.assembledView.holeRadius * pixel;
-  const front = g.pulleyDepth / 2;
-  const figure = new THREE.Group();
-  figure.position.x = offsetX;
-  figure.userData.role = 'assembled-left-view-of-the-same-pulley-bearing';
-  const pulleyRotor = new THREE.Group();
-  pulleyRotor.userData.role = 'assembled-view-pulley-rotor';
-  for (const part of [b.pulleyWeb, b.pulleyRim, b.pulleyFrontFlange, b.pulleyRearFlange]) {
-    pulleyRotor.add(part.clone());
+  // The pins run through the roller centres, so the holes follow them.
+  const pinHoleCircle = g.rollerCenterRadius;
+  // Roller hubs stand 0.01 proud of the roller faces; the cover and the
+  // pulley face clear them by 0.01 and stay clear of the rope (z ±0.08 at
+  // the tread, far outside).
+  const hubHalf = g.rollerDepth * 0.52;
+  // The hub's bore is 0.0025 inside the roller's (0.065), so the two bores
+  // are not coincident surfaces seen through the cover; the pin is 0.060.
+  for (const assembly of b.rollerAssemblies) {
+    replace(assembly.hub, boredCylinderGeometry(.105, .0625, 2 * hubHalf));
   }
+  const coverLow = hubHalf + 0.01, coverHigh = coverLow + 0.045;
+  const pinEnd = coverHigh - 0.012;
+  for (const pin of b.cagePins) {
+    const low = -.362;
+    replace(pin, new THREE.CylinderGeometry(.060, .060, pinEnd - low, 64));
+    pin.position.z = (low + pinEnd) / 2;
+  }
+  // The pulley face: a flange of the turning pulley from the web out to the
+  // rim, lipped in over the rollers to Brown's cover circle. One lathe
+  // section with creased flat faces.
+  const bore = g.outerRaceInnerRadius + 0.01;
+  const webFront = g.pulleyDepth / 2;
+  const faceOuter = g.pulleyWebOuterRadius - 0.121;
+  const section = [[coverRadius + 0.006, coverLow], [bore, coverLow], [bore, webFront - 0.001],
+    [faceOuter, webFront - 0.001], [faceOuter, coverHigh], [coverRadius + 0.006, coverHigh],
+    [coverRadius + 0.006, coverLow]].map(([r, z]) => new THREE.Vector2(r, z));
   const face = new THREE.Mesh(
-    ring(coverRadius + 0.004, g.pulleyWebOuterRadius - 0.121, front + 0.001, front + 0.05, 256),
+    creaseLatheNormals(new THREE.LatheGeometry(section, 256)).rotateX(Math.PI / 2),
     b.pulleyWeb.material,
   );
   face.userData.role = 'assembled-view-pulley-front-face';
-  pulleyRotor.add(face);
-  const cover = new THREE.Group();
-  cover.userData.role = 'assembled-view-roller-retainer-cover';
-  let section = polygonClipping.difference(
+  b.pulleyRotor.add(face);
+  let coverSection = polygonClipping.difference(
     poly(circle([0, 0], coverRadius, 256)),
-    poly(circle([0, 0], g.innerRaceRadius + 0.004, 256)),
+    poly(circle([0, 0], g.innerRaceRadius + 0.012, 256)),
   );
   for (let index = 0; index < 6; index += 1) {
-    const angle = Math.PI / 2 + index * Math.PI / 3;
-    section = polygonClipping.difference(section,
+    const angle = b.rollerAssemblies[index].initialAngle;
+    coverSection = polygonClipping.difference(coverSection,
       poly(circle([pinHoleCircle * Math.cos(angle), pinHoleCircle * Math.sin(angle)], pinHoleRadius, 48)));
   }
-  const coverPlate = new THREE.Mesh(plate(section, front + 0.001, front + 0.05), b.cagePlate.material);
-  coverPlate.userData.role = 'assembled-view-cover-with-six-pin-holes';
-  cover.add(coverPlate);
-  // The holes are blind: a backing disc closes them, and each shows Brown's
-  // centre dot, the end of a retainer pin, a little below the cover face.
-  const coverBack = new THREE.Mesh(
-    ring(g.innerRaceRadius + 0.004, coverRadius - 0.004, front - 0.05, front + 0.01, 256),
-    b.cagePlate.material,
-  );
-  coverBack.userData.role = 'assembled-view-cover-backing-closing-the-pin-holes';
-  cover.add(coverBack);
-  for (let index = 0; index < 6; index += 1) {
-    const angle = Math.PI / 2 + index * Math.PI / 3;
-    const pinEnd = new THREE.Mesh(
-      new THREE.CylinderGeometry(pinHoleRadius * 0.45, pinHoleRadius * 0.45, 0.06, 24),
-      b.innerRace.material,
-    );
-    pinEnd.rotation.x = Math.PI / 2;
-    pinEnd.position.set(pinHoleCircle * Math.cos(angle), pinHoleCircle * Math.sin(angle), front - 0.01);
-    pinEnd.userData.role = `assembled-view-retainer-pin-end-${index + 1}`;
-    cover.add(pinEnd);
-  }
-  const journal = new THREE.Mesh(b.innerRace.geometry, b.innerRace.material);
-  journal.position.copy(b.innerRace.position);
-  journal.rotation.copy(b.innerRace.rotation);
-  journal.userData.role = 'assembled-view-stationary-journal';
+  const cover = new THREE.Mesh(plate(coverSection, coverLow, coverHigh), b.cagePlate.material);
+  cover.userData.role = 'assembled-view-retainer-cover-with-six-pin-holes-see-through';
+  b.rollerCarrier.add(cover);
+  makeSeeThrough(face);
+  makeSeeThrough(cover);
+  // Brown's fluted journal end on the fixed journal's front face.
   const star = new THREE.Shape();
   for (let index = 0; index <= 96; index += 1) {
     const angle = index * Math.PI * 2 / 96;
@@ -378,20 +374,14 @@ function addAssembledView(model) {
   );
   starMesh.position.z = b.innerRace.position.z + g.innerRaceDepth / 2;
   starMesh.userData.role = 'assembled-view-fluted-journal-end';
-  figure.add(b.belt.clone(), pulleyRotor, cover, journal, starMesh);
-  const lowerSheave = b.lowerReturnAssembly?.clone();
-  if (lowerSheave) figure.add(lowerSheave);
-  const lowerRotor = lowerSheave?.children.find((part) => part.userData.role === 'lower-return-sheave-of-endless-rope-below-plate-crop');
-  root.add(figure);
-  Object.assign(b, {assembledCover: cover, assembledFigure: figure, assembledPulleyRotor: pulleyRotor});
+  starMesh.userData.fixed = true;
+  root.add(starMesh);
+  Object.assign(b, {assembledCover: cover, assembledFace: face, assembledJournalEnd: starMesh});
   root.userData.bearingInterpretation.consolidatedView =
-    'Brown’s assembled left view and exposed right view are shown side by side; the left figure shares the right figure’s pulley and retainer motion';
+    'Brown’s assembled left view and exposed right view are one model: the assembled left view’s pulley face and retainer cover are see-through, so the exposed right view’s six rollers show turning behind them';
   const baseUpdate = model.update;
   model.update = (time) => {
     baseUpdate(time);
-    pulleyRotor.rotation.z = b.pulleyRotor.rotation.z;
-    if (lowerRotor) lowerRotor.rotation.z = b.pulleyRotor.rotation.z;
-    cover.rotation.z = b.rollerCarrier.rotation.z;
     for (const marker of b.beltMarkers) marker.visible = false;
   };
   model.update(0);
@@ -413,7 +403,7 @@ export function correctBearingParts(model, id) {
       baseUpdate(time);
       model.root.userData.layRopeAtTime?.(time);
     };
-    addAssembledView(model);
+    mergeAssembledView(model);
   }
   fitPistonGuide(model.root, model.update, model.root.userData.minimumDisplayCycleSeconds);
   // Frame Brown's crop: the rope runs on below it to the lower return sheave.

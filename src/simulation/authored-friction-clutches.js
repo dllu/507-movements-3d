@@ -1,5 +1,6 @@
 import { correctFriction267, finishFrictionFamily } from './friction-family-working-parts.js';
 import * as THREE from 'three';
+import { circle, plate, poly, polygonClipping as clip } from './finite-plate-geometry.js';
 import {
   PALETTE,
   makeDynamicCable,
@@ -252,20 +253,34 @@ function springBiasedOverrunningPulley(movement) {
   const rearWebDepth = 0.12;
   const looseHubOuterRadius = 0.55;
   const shaftRadius = 0.31;
-  const carrierPhase = THREE.MathUtils.degToRad(80);
+  // Pass 107: pivot centres measured from the plate's four pin circles.
+  const carrierPhase = THREE.MathUtils.degToRad(79);
   const carrierBaseRadius = 0.75;
   const carrierLobeAmplitude = 0.13;
   const carrierDepth = 0.22;
-  const pivotRadius = 0.72;
-  const pivotBossRadius = 0.13;
+  const carrierZ = 0.2;
+  const pivotRadius = 0.67;
+  const pivotBossRadius = 0.055;
   const pivotCount = 4;
-  const contactLeadAngle = THREE.MathUtils.degToRad(-18);
-  const releasedArmAngle = THREE.MathUtils.degToRad(-18);
-  const armStartHalfWidth = 0.16;
-  const armEndHalfWidth = 0.085;
-  const armDepth = 0.16;
-  const armPlaneZ = 0.3;
-  const springPlaneZ = 0.43;
+  // Brown's wedge: the radial straight side leads the pivot by 10.8 degrees,
+  // the shoe runs from 1 to 15.5 degrees behind it (the clockwise end is the
+  // drawn contact), and the relief ends on the rim 6 degrees ahead.
+  const straightEdgeLead = THREE.MathUtils.degToRad(10.8);
+  const straightEdgeOuterRadius = 1.78;
+  const reliefEndLead = THREE.MathUtils.degToRad(6);
+  const reliefDepth = 0.035;
+  const shoeStartLead = THREE.MathUtils.degToRad(-1);
+  const contactLeadAngle = THREE.MathUtils.degToRad(-15.5);
+  const releasedArmAngle = THREE.MathUtils.degToRad(-21);
+  // The plates lie behind the carrier, as drawn (the hub covers their roots).
+  const armDepth = 0.14;
+  const armPlaneZ = -0.02;
+  const bandDepth = 0.12;
+  const springPlaneZ = armPlaneZ;
+  const pinBack = armDepth / 2 + 0.012 - armPlaneZ;
+  const pinFront = carrierZ + carrierDepth / 2 + 0.025 + 0.012;
+  const clipBack = bandDepth / 2 + 0.01;
+  const clipFront = carrierZ - carrierDepth / 2 - 0.025 + 0.01 - armPlaneZ;
   const driveDuration = 4;
   const freewheelDuration = 4;
   const springResetDuration = 1.2;
@@ -328,7 +343,9 @@ function springBiasedOverrunningPulley(movement) {
   looseHub.userData.role = 'loose-pulley-hub-free-on-output-shaft';
   const spokes = Array.from({ length: 4 }, (_, index) => {
     const spoke = radialSpoke({
-      angle: index * Math.PI / 2,
+      // Behind the middle of each wedge, so the plates hide the rear web
+      // while the clutch is locked (Brown draws no spokes).
+      angle: carrierPhase - THREE.MathUtils.degToRad(2.35) + index * Math.PI / 2,
       depth: rearWebDepth,
       innerRadius: looseHubOuterRadius - 0.03,
       material: driverMaterial,
@@ -364,7 +381,7 @@ function springBiasedOverrunningPulley(movement) {
     }),
     drivenMaterial,
   );
-  carrier.position.z = 0.12;
+  carrier.position.z = carrierZ;
   carrier.userData.role = 'four-lobed-output-shaft-arm-carrier';
   const shaft = new THREE.Mesh(
     new THREE.CylinderGeometry(shaftRadius, shaftRadius, 1.18, 40),
@@ -383,33 +400,102 @@ function springBiasedOverrunningPulley(movement) {
   shaftFace.userData.role = 'driven-output-shaft-front-face';
   carrierRotor.add(carrier, shaft, shaftFace);
 
+  // Pass 107: each arm is a wedge-shaped plate traced from the engraving
+  // (the enclosed white region between a radial line and a curved band) and
+  // idealized to lines and circular arcs. In arm coordinates (origin at the
+  // pivot, +x along the pivot radial), carrier polar angles are relative to
+  // the pivot's radial. The plate's counterclockwise side is Brown's straight
+  // radial line (10.8 degrees ahead of the pivot), tangent to the pivot eye;
+  // its outer end is a broad shoe concentric with the rim from 1 to 15.5
+  // degrees behind the pivot radial, relieved ahead of it (Brown's chamfer);
+  // its clockwise side is Brown's curved band, a circular arc about bandCenter.
+  // Only shoe points behind (clockwise of) the pivot radial meet the rim, so
+  // counterclockwise drag swings the plate outward and wedges it, and
+  // clockwise drag swings it inward and releases it.
+  const shoeInnerRadius = rimInnerRadius * Math.cos(Math.PI / 768) - 1e-6;
+  const polarArm = (radius, angle) => new THREE.Vector2(
+    radius * Math.cos(angle) - pivotRadius,
+    radius * Math.sin(angle),
+  );
+  const eyeRadius = pivotRadius * Math.sin(straightEdgeLead);
+  const bandCenter = new THREE.Vector2(0.282, -0.79);
+  const bandRadius = 0.62;
+  const bandHalfWidth = 0.025;
+  const bandEdgeRadius = bandRadius + bandHalfWidth + 0.003;
+  const bandTopAngle = THREE.MathUtils.degToRad(49.2);
+  const bandContactEndAngle = THREE.MathUtils.degToRad(98);
+  const bandClipAngle = THREE.MathUtils.degToRad(158);
+  const bandRootAngle = THREE.MathUtils.degToRad(166);
+  const onBand = (radius, angle) => bandCenter.clone().add(
+    new THREE.Vector2(Math.cos(angle), Math.sin(angle)).multiplyScalar(radius),
+  );
+  const armOutline = [];
+  const pushArc = (center, radius, from, to, steps) => {
+    for (let index = 0; index <= steps; index += 1) {
+      const angle = THREE.MathUtils.lerp(from, to, index / steps);
+      armOutline.push(center.clone().add(
+        new THREE.Vector2(Math.cos(angle), Math.sin(angle)).multiplyScalar(radius),
+      ));
+    }
+  };
+  const tangentStart = polarArm(pivotRadius * Math.cos(straightEdgeLead), straightEdgeLead);
+  armOutline.push(tangentStart, polarArm(straightEdgeOuterRadius, straightEdgeLead));
+  armOutline.push(polarArm(shoeInnerRadius - reliefDepth, reliefEndLead));
+  for (let index = 0; index <= 96; index += 1) {
+    const angle = THREE.MathUtils.lerp(shoeStartLead, contactLeadAngle, index / 96);
+    armOutline.push(polarArm(shoeInnerRadius, angle));
+  }
+  armOutline.push(polarArm(1.8, contactLeadAngle - THREE.MathUtils.degToRad(0.3)));
+  pushArc(bandCenter, bandEdgeRadius, bandTopAngle, bandContactEndAngle, 64);
+  const bandLow = armOutline.at(-1);
+  const lowDistance = bandLow.length();
+  const lowAngle = Math.atan2(bandLow.y, bandLow.x);
+  const eyeTangentAngle = lowAngle - Math.acos(eyeRadius / lowDistance);
+  const tangentStartAngle = Math.atan2(tangentStart.y, tangentStart.x);
+  pushArc(new THREE.Vector2(0, 0), eyeRadius, eyeTangentAngle,
+    tangentStartAngle - FULL_TURN, 64);
+  armOutline.pop();
+  const armRegion = clip.difference(
+    poly(armOutline.map((point) => point.toArray())),
+    poly(circle([0, 0], pivotBossRadius + 0.004, 64)),
+  );
+  const armGeometry = plate(armRegion, -armDepth / 2, armDepth / 2);
+  const bandOutline = [];
+  for (let index = 0; index <= 96; index += 1) {
+    const angle = THREE.MathUtils.lerp(bandTopAngle + 0.04, bandRootAngle, index / 96);
+    bandOutline.push(onBand(bandRadius - bandHalfWidth, angle).toArray());
+  }
+  for (let index = 1; index < 24; index += 1) {
+    const u = Math.PI * index / 24;
+    const end = onBand(bandRadius, bandRootAngle);
+    const radial = new THREE.Vector2(Math.cos(bandRootAngle), Math.sin(bandRootAngle));
+    const tangent = new THREE.Vector2(-radial.y, radial.x);
+    bandOutline.push(end.clone().addScaledVector(radial, -bandHalfWidth * Math.cos(u))
+      .addScaledVector(tangent, bandHalfWidth * Math.sin(u)).toArray());
+  }
+  for (let index = 0; index <= 96; index += 1) {
+    const angle = THREE.MathUtils.lerp(bandRootAngle, bandTopAngle + 0.04, index / 96);
+    bandOutline.push(onBand(bandRadius + bandHalfWidth, angle).toArray());
+  }
+  for (let index = 1; index < 24; index += 1) {
+    const u = Math.PI * index / 24;
+    const end = onBand(bandRadius, bandTopAngle + 0.04);
+    const radial = new THREE.Vector2(Math.cos(bandTopAngle + 0.04), Math.sin(bandTopAngle + 0.04));
+    const tangent = new THREE.Vector2(-radial.y, radial.x);
+    bandOutline.push(end.clone().addScaledVector(radial, bandHalfWidth * Math.cos(u))
+      .addScaledVector(tangent, -bandHalfWidth * Math.sin(u)).toArray());
+  }
+  const bandTop = onBand(bandEdgeRadius, bandTopAngle);
+  const bandClip = onBand(bandRadius + 0.02, bandClipAngle);
+
+  const pivotLocal = new THREE.Vector2(pivotRadius, 0);
   const contactRadial = new THREE.Vector2(
     Math.cos(contactLeadAngle),
     Math.sin(contactLeadAngle),
   );
-  const pivotLocal = new THREE.Vector2(pivotRadius, 0);
-  const tipCenterRelative = contactRadial.clone()
-    .multiplyScalar(rimInnerRadius - armEndHalfWidth)
-    .sub(pivotLocal);
   const tipOuterRelative = contactRadial.clone()
     .multiplyScalar(rimInnerRadius)
     .sub(pivotLocal);
-  const clockwiseTangent = new THREE.Vector2(
-    Math.sin(contactLeadAngle),
-    -Math.cos(contactLeadAngle),
-  );
-  const armControlPoints = [
-    new THREE.Vector2(-0.04, 0),
-    new THREE.Vector2(0.43, 0.08),
-    tipCenterRelative.clone().addScaledVector(clockwiseTangent, -0.36),
-    tipCenterRelative.clone(),
-  ];
-  const armGeometry = taperedCurvedArmGeometry({
-    controlPoints: armControlPoints,
-    depth: armDepth,
-    endHalfWidth: armEndHalfWidth,
-    startHalfWidth: armStartHalfWidth,
-  });
   const arms = [];
   const pivotBosses = [];
   const springs = [];
@@ -430,55 +516,52 @@ function springBiasedOverrunningPulley(movement) {
     arm.userData.armIndex = index;
     arm.userData.contactLeadAngle = contactLeadAngle;
     arm.userData.eccentricArm = true;
-    arm.userData.role = 'curved-eccentric-friction-arm-body';
+    arm.userData.role = 'wedge-shaped-eccentric-friction-arm-plate';
     armGroup.add(arm);
     arms.push(armGroup);
     carrierRotor.add(armGroup);
 
+    // A plain steel pin through the carrier lobe (Brown's small circles) and
+    // the plate's eye behind it.
     const boss = new THREE.Mesh(
-      new THREE.CylinderGeometry(
-        pivotBossRadius,
-        pivotBossRadius,
-        0.24,
-        30,
-      ),
+      new THREE.CylinderGeometry(pivotBossRadius, pivotBossRadius, pinBack + pinFront, 30),
       darkMaterial,
     );
     boss.rotation.x = Math.PI / 2;
-    boss.position.set(pivot.x, pivot.y, armPlaneZ + 0.06);
+    boss.position.set(pivot.x, pivot.y, (pinFront - pinBack) / 2);
     boss.userData.role = 'fixed-to-carrier-eccentric-arm-pivot-pin';
     pivotBosses.push(boss);
     carrierRotor.add(boss);
 
-    // Brown draws each spring as a small flat block beside the arm's root.
-    // Here it is a short flat leaf standing on a seat on the carrier's lobe,
-    // its free end bearing on the arm's clockwise edge; it swings about its
-    // seat as the arm retracts (a stiff cantilever), always in contact.
+    // Brown's curved band is the leaf spring: clipped to the carrier by the
+    // small rectangle beside the next pivot, it runs up the plate's clockwise
+    // flank to the plate's outer corner. Retracting the plate bends it; its
+    // free part follows the plate and its root stays in the clip.
     const spring = new THREE.Group();
-    spring.position.set(0, 0, 0);
-    const seat = new THREE.Mesh(
-      new THREE.BoxGeometry(0.1, 0.1, 0.16),
+    spring.position.set(pivot.x, pivot.y, armPlaneZ);
+    spring.rotation.z = baseAngle;
+    const leafGeometry = plate(poly(bandOutline), -bandDepth / 2, bandDepth / 2);
+    const leaf = new THREE.Mesh(leafGeometry, darkMaterial);
+    leaf.userData.role = 'curved-leaf-spring-along-arm-flank';
+    const restPositions = leafGeometry.attributes.position.array.slice();
+    const restNormals = leafGeometry.attributes.normal.array.slice();
+    const clipBlock = new THREE.Mesh(
+      new THREE.BoxGeometry(0.13, 0.1, clipBack + clipFront),
       darkMaterial,
     );
-    seat.userData.role = 'block-spring-seat-on-carrier-lobe';
-    const leaf = new THREE.Mesh(
-      new THREE.BoxGeometry(1, 0.036, 0.12),
-      darkMaterial,
-    );
-    leaf.userData.role = 'flat-block-spring-leaf-bearing-on-arm';
-    spring.add(seat, leaf);
-    spring.userData.seat = seat;
+    // Across the band, from just inside it to under the carrier's edge.
+    clipBlock.position.set(bandClip.x, bandClip.y, (clipFront - clipBack) / 2);
+    clipBlock.rotation.z = bandClipAngle;
+    clipBlock.userData.role = 'spring-clip-on-carrier';
+    spring.add(leaf, clipBlock);
     spring.userData.leaf = leaf;
+    spring.userData.seat = clipBlock;
+    spring.userData.restPositions = restPositions;
+    spring.userData.restNormals = restNormals;
     spring.userData.role = 'spring-holding-eccentric-arm-toward-rim';
     springs.push(spring);
     carrierRotor.add(spring);
-    springDefinitions.push({
-      anchorOffset: new THREE.Vector2(-0.15, -0.16),
-      attachmentOffset: new THREE.Vector2(0.18, 0.08),
-      baseAngle,
-      pivot,
-      spring,
-    });
+    springDefinitions.push({ baseAngle, pivot, spring });
   }
 
   const directionArrow = clockwiseArrow({
@@ -499,15 +582,10 @@ function springBiasedOverrunningPulley(movement) {
   const armTipClearanceAtAngle = (armPivotAngle) => (
     rimInnerRadius - armTipRadiusAtAngle(armPivotAngle)
   );
-  const springLengthAtAngle = (armPivotAngle) => {
-    const anchor = pivotLocal.clone().add(
-      springDefinitions[0].anchorOffset,
-    );
-    const attachment = pivotLocal.clone().add(
-      rotate2(springDefinitions[0].attachmentOffset, armPivotAngle),
-    );
-    return anchor.distanceTo(attachment);
-  };
+  // Spring span: the clip to the plate's outer corner, where the band ends.
+  const springLengthAtAngle = (armPivotAngle) => (
+    bandClip.distanceTo(rotate2(bandTop, armPivotAngle))
+  );
 
   const stateAtTime = (time) => {
     const phase = THREE.MathUtils.euclideanModulo(time, demonstrationPeriod);
@@ -679,30 +757,42 @@ function springBiasedOverrunningPulley(movement) {
     sourcePrescribesTiming: false,
   };
   root.userData.geometry = {
-    armControlPoints: armControlPoints.map((point) => point.clone()),
     armDepth,
-    armEndHalfWidth,
+    armOutline: armOutline.map((point) => point.clone()),
     armPlaneZ,
-    armStartHalfWidth,
+    bandCenter: bandCenter.clone(),
+    bandClipAngle,
+    bandContactEndAngle,
+    bandHalfWidth,
+    bandRadius,
+    bandRootAngle,
+    bandTopAngle,
     carrierBaseRadius,
     carrierDepth,
     carrierLobeAmplitude,
     carrierPhase,
+    carrierZ,
     contactLeadAngle,
+    eyeRadius,
     looseHubOuterRadius,
     pivotBossRadius,
     pivotCount,
     pivotRadius,
     rearWebDepth,
     rearWebZ,
+    reliefDepth,
+    reliefEndLead,
     releasedArmAngle,
     releasedTipClearance: armTipClearanceAtAngle(releasedArmAngle),
     rimDepth,
     rimInnerRadius,
     rimOuterRadius,
     shaftRadius,
+    shoeInnerRadius,
+    shoeStartLead,
     springPlaneZ,
-    tipCenterRelative: tipCenterRelative.clone(),
+    straightEdgeLead,
+    straightEdgeOuterRadius,
     tipOuterRelative: tipOuterRelative.clone(),
   };
   root.userData.sourceAnimation = {
@@ -717,30 +807,34 @@ function springBiasedOverrunningPulley(movement) {
       imageHeight: 525,
       imageWidth: 525,
       inferredTopology:
-        'one independently rotating four-spoke loose pulley rim surrounding a shaft-fixed four-lobed carrier with four pivoted clockwise-leading eccentric arms and four return springs',
+        'one independently rotating loose pulley rim (carried by an undrawn rear web) surrounding a shaft-fixed four-lobed carrier with four pivoted wedge-shaped eccentric plates and four return springs (the curved bands clipped to the carrier)',
       measurementUncertaintyPixels: 7,
       officialAnimationAvailable: false,
       rasterArrow: {
         end: { x: 466, y: 194 },
         start: { x: 396, y: 79 },
       },
+      // Pass 107: where each wedge's clockwise side meets the rim (the end
+      // of its shoe) and the centres of the four pin circles on the hub.
       rasterArmContactPoints: [
-        { x: 349, y: 103 },
-        { x: 421, y: 367 },
-        { x: 181, y: 434 },
-        { x: 108, y: 193 },
+        { x: 347, y: 97 },
+        { x: 433, y: 357 },
+        { x: 183, y: 438 },
+        { x: 95, y: 194 },
       ],
       rasterCarrierPivotCenters: [
-        { x: 276, y: 204 },
-        { x: 328, y: 282 },
-        { x: 253, y: 334 },
-        { x: 203, y: 238 },
+        { x: 276, y: 205 },
+        { x: 328, y: 283 },
+        { x: 253, y: 333 },
+        { x: 206, y: 258 },
       ],
       rasterInnerWorkingRadius: 190,
       rasterOuterRimCenter: { x: 266, y: 269 },
       rasterOuterRimRadius: 209,
       rasterShaftRadius: 33,
-      rasterSpokeCount: 4,
+      rasterArmCount: 4,
+      // The four straight lines are the wedges' radial sides, not spokes.
+      rasterSpokeCount: 0,
     },
     primaryScan: {
       archiveIdentifier: 'fivehundredseven00browiala',
@@ -767,73 +861,50 @@ function springBiasedOverrunningPulley(movement) {
     outputAdvancePerDemonstrationCycle: FULL_TURN,
   };
 
-  // The arm's clockwise edge near its root, in arm coordinates.
-  const armEdge = [];
-  for (let index = 0; index <= 48; index += 1) {
-    const progress = index / 48;
-    const center = cubicPoint(armControlPoints, progress);
-    const tangent = cubicTangent(armControlPoints, progress);
-    const halfWidth = THREE.MathUtils.lerp(
-      armStartHalfWidth, armEndHalfWidth, smootherStep(progress),
+  // The band's free part (on the plate's flank) follows the plate; from the
+  // end of that contact to the clip it bends progressively (a smooth ramp of
+  // the plate's rotation about the pivot), and its root stays in the clip.
+  const bendWeight = (point) => {
+    const angle = Math.atan2(point.y - bandCenter.y, point.x - bandCenter.x);
+    const u = THREE.MathUtils.clamp(
+      (angle - bandContactEndAngle) / (bandClipAngle - bandContactEndAngle), 0, 1,
     );
-    armEdge.push(center.addScaledVector(new THREE.Vector2(-tangent.y, tangent.x), -halfWidth));
-  }
-  // Signed distance of an arm-frame point from the edge (positive outside).
-  const edgeOffset = (point) => {
-    let best = Infinity;
-    let sign = 1;
-    for (let index = 0; index < armEdge.length - 1; index += 1) {
-      const a = armEdge[index];
-      const b = armEdge[index + 1];
-      const ab = b.clone().sub(a);
-      const t = THREE.MathUtils.clamp(point.clone().sub(a).dot(ab) / ab.lengthSq(), 0, 1);
-      const foot = a.clone().addScaledVector(ab, t);
-      const distance = point.distanceTo(foot);
-      if (distance < best) {
-        best = distance;
-        sign = Math.sign(ab.x * (point.y - a.y) - ab.y * (point.x - a.x)) || 1;
-      }
-    }
-    return -sign * best;
+    return 1 - smootherStep(u);
   };
-  const springSeat = new THREE.Vector2(-0.12, -0.26);
-  const springLeafLength = 0.27;
-  const leafHalfThickness = 0.018;
-  const leafAngleAt = (armPivotAngle) => {
-    // Bisect the leaf angle so its outer face touches the arm edge.
-    const gap = (angle) => {
-      const tip = springSeat.clone().add(new THREE.Vector2(Math.cos(angle), Math.sin(angle)).multiplyScalar(springLeafLength));
-      return edgeOffset(rotate2(tip, -armPivotAngle)) - leafHalfThickness;
-    };
-    let low = -0.2;
-    let high = 1.2;
-    for (let step = 0; step < 40; step += 1) {
-      const middle = (low + high) / 2;
-      if (gap(middle) > 0) low = middle; else high = middle;
+  const bandWeights = (() => {
+    const rest = springDefinitions[0].spring.userData.restPositions;
+    const weights = new Float32Array(rest.length / 3);
+    for (let index = 0; index < weights.length; index += 1) {
+      weights[index] = bendWeight(new THREE.Vector2(rest[3 * index], rest[3 * index + 1]));
     }
-    return (low + high) / 2;
-  };
-  const seatAngle = leafAngleAt(0);
+    return weights;
+  })();
+  let bentAngle = null;
   const updateSprings = (armPivotAngle) => {
-    const leafAngle = leafAngleAt(armPivotAngle);
-    springDefinitions.forEach((definition) => {
-      const seat = definition.pivot.clone().add(rotate2(springSeat, definition.baseAngle));
-      const { seat: seatMesh, leaf } = definition.spring.userData;
-      seatMesh.position.set(seat.x, seat.y, armPlaneZ - 0.02);
-      seatMesh.rotation.z = definition.baseAngle + seatAngle;
-      const direction = new THREE.Vector2(
-        Math.cos(definition.baseAngle + leafAngle),
-        Math.sin(definition.baseAngle + leafAngle),
-      );
-      leaf.scale.x = springLeafLength;
-      leaf.position.set(
-        seat.x + direction.x * springLeafLength / 2,
-        seat.y + direction.y * springLeafLength / 2,
-        // Clear of the carrier's bevelled face (0.255), within the arm's depth.
-        armPlaneZ + 0.02,
-      );
-      leaf.rotation.z = definition.baseAngle + leafAngle;
-      definition.spring.userData.leafAngle = leafAngle;
+    if (armPivotAngle === bentAngle) return;
+    bentAngle = armPivotAngle;
+    springDefinitions.forEach(({ spring }) => {
+      const { leaf, restNormals, restPositions } = spring.userData;
+      const position = leaf.geometry.attributes.position;
+      const normal = leaf.geometry.attributes.normal;
+      for (let index = 0; index < bandWeights.length; index += 1) {
+        const angle = bandWeights[index] * armPivotAngle;
+        const c = Math.cos(angle);
+        const s = Math.sin(angle);
+        const x = restPositions[3 * index];
+        const y = restPositions[3 * index + 1];
+        position.array[3 * index] = c * x - s * y;
+        position.array[3 * index + 1] = s * x + c * y;
+        const nx = restNormals[3 * index];
+        const ny = restNormals[3 * index + 1];
+        normal.array[3 * index] = c * nx - s * ny;
+        normal.array[3 * index + 1] = s * nx + c * ny;
+      }
+      position.needsUpdate = true;
+      normal.needsUpdate = true;
+      leaf.geometry.computeBoundingBox();
+      leaf.geometry.computeBoundingSphere();
+      spring.userData.bendAngle = armPivotAngle;
     });
   };
 

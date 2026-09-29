@@ -27,10 +27,13 @@ test('150 valve rod ends plainly: no lower eye or cross-pin (pass 93)',()=>{
  }finally{m.dispose();}
 });
 
-test('150 p104: the rocking lever is 0.054 thick and clears every sliding cam and its roller',()=>{
+test('150 p108: the rocking lever is 0.10 thick beside a 0.17 roller and clears every sliding cam and its roller',()=>{
  const m=makeSelectableCamValve(),u=m.root.userData,g=u.geometry,lever=u.valveParts['pinned-lever'];
  lever.geometry.computeBoundingBox();const box=lever.geometry.boundingBox;
- assert.ok(Math.abs(box.max.z-box.min.z-.054)<1e-6);assert.equal(u.valveParts['roller-axle-retainer'],undefined);
+ assert.ok(Math.abs(box.max.z-box.min.z-.10)<1e-6);
+ const tread=u.blocks.followerRoller.tread;tread.geometry.computeBoundingBox();assert.ok(Math.abs(tread.geometry.boundingBox.max.z-tread.geometry.boundingBox.min.z-.17)<1e-6);assert.equal(g.rollerWidth,.17);
+ // the roller's lever-side face stands 0.01 short of the lever
+ m.update(0);m.root.updateMatrixWorld(true);const lb=new THREE.Box3().setFromObject(lever),tb=new THREE.Box3().setFromObject(tread);assert.ok(Math.abs(lb.min.z-tb.max.z)>.009);assert.equal(u.valveParts['roller-axle-retainer'],undefined);
  const cams=[];m.root.traverse(o=>{if(o.isMesh&&/working-cam-plate|common-heel|keyed-hub/.test(o.userData.role??''))cams.push(o);});
  cams.push(u.blocks.followerRoller.tread);assert.ok(cams.length>=6);
  const L={s:solidSurface(lever.geometry),p:surfacePoints(lever.geometry)},cache=new Map();

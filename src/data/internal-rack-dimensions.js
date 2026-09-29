@@ -11,8 +11,9 @@ export const internalRackDimensions={
  },
  // Common-module reconstruction chosen to match the measured outer dimensions.
  // Ten pinion teeth as drawn, nine straight pitches and 18 equivalent circular
- // teeth on the ends. Brown's rack teeth are square and flat-topped: a
- // 14.5-degree basic rack with a small tip radius.
+ // teeth on the ends. Pass 107 (user rule): where Brown draws square racks
+ // and pinions, use an ideal involute pinion cut by the standard 20-degree
+ // basic rack, so the straight runs carry trapezoidal basic-rack teeth.
  module:.053,pinionTeeth:10,endTeeth:18,straightTeeth:9,sourceRackX:-.05,
- tooth:{pressureAngle:14.5*Math.PI/180,pinionAddendum:1,pinionDedendum:1.25,cutterTipRadius:.12},
+ tooth:{pressureAngle:20*Math.PI/180,pinionAddendum:1,pinionDedendum:1.25},
 };

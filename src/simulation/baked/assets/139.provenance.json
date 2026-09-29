@@ -14,8 +14,8 @@
     "roller1"
   ],
   "period": 8,
-  "loopStart": 11.34,
-  "loopEnd": 19.34,
+  "loopStart": 21.09,
+  "loopEnd": 29.09,
   "turns": [
     16.336281798666924,
     0,
@@ -31,20 +31,20 @@
   ],
   "bounds": {
     "min": [
-      -3.421025148997028,
+      -3.4199405434273733,
       -1.9899999475479127,
       -0.31
     ],
     "max": [
-      3.552260256896559,
-      1.7300188586286054,
-      0.6124160265922547
+      3.5516550955893416,
+      1.7300156528174502,
+      0.6093641495704651
     ]
   },
   "focus": [
-    0.06561755394976565,
-    -0.12999054445965363,
-    0.15120801329612735
+    0.06585727608098413,
+    -0.12999214736523124,
+    0.14968207478523257
   ],
   "cameraDirection": [
     0.1,
@@ -52,7 +52,7 @@
     15
   ],
   "source": {
-    "reportSha256": "308c84d7bd64ef51e3b969e509104f4ec17dc3252bea4665ee40ccf13bb66ad9",
+    "reportSha256": "3f6b8974d39a3a5b1ddb12d08c3c75e1f39bdd141b99c66724298e5761569554",
     "sources": [
       {
         "file": "scripts/probe-internal-rack.mjs",
@@ -68,11 +68,11 @@
       },
       {
         "file": "src/simulation/mujoco-internal-rack/profile.js",
-        "sha256": "6ab27ae26a9cf86375cf24ec9c635e9037ff21dd3f99a093480b191b96ff2773"
+        "sha256": "cd40ca3a0c226d04c7040402854c3f06ae4c2289c75b6f1fd5dcec3f27be452f"
       },
       {
         "file": "src/data/internal-rack-dimensions.js",
-        "sha256": "c1411a25b610acb0ac1545a31ea4295011fd102f6387ca786d5fd87b8f69b9c8"
+        "sha256": "72eea2a644c926b68499c8f1320f8c3622fa53e0cdb3d8ce1cab9466e05da3ac"
       },
       {
         "file": "src/simulation/mujoco/simulation.js",
@@ -80,18 +80,18 @@
       }
     ],
     "metersPerWorldUnit": 0.1,
-    "maximumLoopSeamPixels": 6.161790078174079e-7,
-    "maximumLoopVelocitySeamPixelsPerSecond": 0.00003341380150345685,
-    "maximumPenetrationPixels": 0.04443425865988605,
+    "maximumLoopSeamPixels": 1.8185141281712447e-7,
+    "maximumLoopVelocitySeamPixelsPerSecond": 0.0000014153053728982457,
+    "maximumPenetrationPixels": 0.03728569459206049,
     "assumptions": {
-      "rackMass": 0.05206790404517207,
-      "rimMass": 0.038773099861818025,
-      "backingMass": 0.013294804183354051,
-      "pinionDepth": 0.11707573512077409,
-      "frameDepth": 0.04291066158605417,
-      "crankDepth": 0.0403483278445067,
-      "rodDepth": 0.03308153638872174,
-      "couplerDepth": 0.22741602916312836,
+      "rackMass": 0.051369171187861926,
+      "rimMass": 0.0381619519030565,
+      "backingMass": 0.013207219284805427,
+      "pinionDepth": 0.10928280347023972,
+      "frameDepth": 0.04233481568388227,
+      "crankDepth": 0.03980686755491986,
+      "rodDepth": 0.03263759387040859,
+      "couplerDepth": 0.22436418648251225,
       "materials": {
         "rackRim": "steel",
         "backing": "aluminium",
@@ -103,7 +103,7 @@
     },
     "physics": "Passive rack and suspension with assumed lumped masses/inertias; horizontal coupler reduced to a top-pin point mass. Geometry panel masses illustrate feasibility, not an exact inertia match. Only the input pinion is driven."
   },
-  "samples": 1935,
-  "bytes": 1248972,
-  "assetSha256": "2e2f85ba9108f8c9cce63e15a3949472a96896f8ac630e59be5782a5c9484e3c"
+  "samples": 2910,
+  "bytes": 1325090,
+  "assetSha256": "2a576595fc1a5940a0baf1cdcd8097d85cc28c1c84e8441dac90a52511c29f16"
 }

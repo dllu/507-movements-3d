@@ -1539,17 +1539,17 @@
       "peakAngularSpeed": 1.5707963268064362,
       "peakVisibleAngularSpeed": 1.5707963268064362,
       "sustainedVisibleAngularSpeed": 1.5707963267892275,
-      "floorY": -5.8393858886327585,
+      "floorY": -6.089813894359209,
       "fastestPart": "Group",
       "motionBounds": {
         "min": [
           -1.8778470754623413,
-          -5.8393858886327585,
+          -6.089813894359209,
           -0.25775402784347534
         ],
         "max": [
           1.1384736749764008,
-          8.33999440972325,
+          8.339994603764866,
           0.4577540159225464
         ]
       }
@@ -4312,19 +4312,19 @@
     "227": {
       "peakAngularSpeed": 1.6449340195133924,
       "peakVisibleAngularSpeed": 1.6449340195085742,
-      "sustainedVisibleAngularSpeed": 1.5197703503909519,
-      "floorY": -11.128037880060234,
-      "fastestPart": "edge-on-flat-loop-link-across-tooth",
+      "sustainedVisibleAngularSpeed": 1.5197703503951154,
+      "floorY": -11.218037913438835,
+      "fastestPart": "pinned-outer-link-side-plates-across-tooth",
       "motionBounds": {
         "min": [
           -3.5999999046325684,
-          -11.128037880060234,
-          -0.19499999284744268
+          -11.218037913438835,
+          -0.20399999618530285
         ],
         "max": [
           3.5999999046325684,
           3.6799999046325684,
-          0.19499999284744268
+          0.20399999618530287
         ]
       }
     },
@@ -5070,11 +5070,11 @@
       }
     },
     "267": {
-      "peakAngularSpeed": 2.9450074636405774,
-      "peakVisibleAngularSpeed": 2.9450074636405774,
+      "peakAngularSpeed": 2.945007463639467,
+      "peakVisibleAngularSpeed": 2.945007463638357,
       "sustainedVisibleAngularSpeed": 2.458651097933952,
       "floorY": -2.068000072541946,
-      "fastestPart": "spring-biased-pivoted-eccentric-friction-arm",
+      "fastestPart": "spring-clip-on-carrier",
       "motionBounds": {
         "min": [
           -2.068000072541946,
@@ -5134,7 +5134,7 @@
       "fastestPart": "cylindrical-working-body-of-roller-6",
       "motionBounds": {
         "min": [
-          -6.272461982760808,
+          -2.077400035858154,
           -10.914500870396065,
           -1.0433999887943268
         ],
@@ -5738,12 +5738,12 @@
       "peakAngularSpeed": 0.6031424738232539,
       "peakVisibleAngularSpeed": 0.6031424738232539,
       "sustainedVisibleAngularSpeed": 0.5572491284788118,
-      "floorY": -2.9494999957084658,
+      "floorY": -3.3099999994039533,
       "fastestPart": "balance-C-and-pallet-arbor",
       "motionBounds": {
         "min": [
           -2.5291853884992865,
-          -2.9494999957084658,
+          -3.3099999994039533,
           -3.6699999994039536
         ],
         "max": [
@@ -8699,9 +8699,9 @@
       }
     },
     "458": {
-      "peakAngularSpeed": 7.930187740398498,
-      "peakVisibleAngularSpeed": 7.930187740396554,
-      "sustainedVisibleAngularSpeed": 1.970718385013113,
+      "peakAngularSpeed": 7.930187740399052,
+      "peakVisibleAngularSpeed": 7.9301877403969705,
+      "sustainedVisibleAngularSpeed": 2.2592892222617813,
       "floorY": -3.0400000002980234,
       "fastestPart": "bail-turning-on-the-ears",
       "motionBounds": {

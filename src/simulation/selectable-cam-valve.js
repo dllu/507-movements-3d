@@ -8,8 +8,15 @@ export function makeSelectableCamValve(){
  const model=createAuthoredSelectableCamMovement({id:150}),{root}=model,b=root.userData.blocks,g=root.userData.geometry;
  const legacyUpdate=model.update,legacyState=root.userData.stateAtTime;
  const guideX=g.sourceValvePinProjected.x,rodLength=g.sourceValvePinProjected.y-(g.sourceShaft.y-354)*g.sourceScale,pinDistance=rodLength-.13;
- // Fit the lever in the 0.06-unit gap beside the selected cam.
- const leverPlane=g.workingCamPlaneZ+g.camDepth/2+.03;
+ // p108: the lever is 0.10 thick. Its roller end sits inside the roller's
+ // circle, which the working cam never enters, so the lever may overlap the
+ // working cam's slab there; only the neighbouring cam limits it. The roller
+ // is narrowed to 0.17 (centred on its cam) and the lever occupies the
+ // 0.06 gap plus the working cam's outer 0.045, 0.005 short of the
+ // neighbouring cam's face and 0.01 beyond the roller's face.
+ const leverHalf=.05,rollerWidth=.17,neighbourClearance=.005;
+ const leverPlane=g.workingCamPlaneZ+g.camPitch-g.camDepth/2-neighbourClearance-leverHalf;
+ g.rollerWidth=rollerWidth;
  g.leverPlaneZ=leverPlane;b.lever.position.z=leverPlane;
  b.followerRoller.root.position.z=g.workingCamPlaneZ-leverPlane;
  b.leverPivotPost.position.z=leverPlane-.25;
@@ -35,20 +42,16 @@ export function makeSelectableCamValve(){
  for(const m of detachedMaterials)if(!retainedMaterials.has(m))m.dispose();
  const leverOutline=clip.union(poly([[0,-.14],[g.outputArmLength,-.14],[g.leverLength,-.075],[g.leverLength,.075],[g.outputArmLength,.14],[0,.14]]),poly(circle([0,0],.44,96)),poly(circle([g.outputArmLength,0],.23,96)),poly(circle([g.leverLength,0],.19,96)));
  const holes=clip.union(poly(circle([0,0],.264,96)),poly(circle([g.outputArmLength,0],.074,96)),poly(circle([g.leverLength,0],.094,96)));
- // p104: the lever is as thick as the selection allows (0.054). The cams
- // slide past its roller end during selection, so it must pass through the
- // 0.06 gap between neighbouring cams (0.003 clearance each side), and the
- // full-width roller stands 0.008 beyond its inner face.
- const leverHalf=.027;g.leverHalfThickness=leverHalf;
+ g.leverHalfThickness=leverHalf;
  add('pinned-lever',plate(clip.difference(leverOutline,holes),-leverHalf,leverHalf),b.lever,'driven');
- b.fixedLeverPivotShaft.geometry.dispose();b.fixedLeverPivotShaft.geometry=new THREE.CylinderGeometry(.26,.26,.40,96);b.fixedLeverPivotShaft.position.z=leverPlane-.16;
- add('pivot-retainer',disk(.30,leverPlane+.04,leverPlane+.07,96).translate(g.leverPivot.x,g.leverPivot.y,0),b.fixedFrame,'ink');
+ b.fixedLeverPivotShaft.geometry.dispose();b.fixedLeverPivotShaft.geometry=new THREE.CylinderGeometry(.26,.26,.36+leverHalf+.013,96);b.fixedLeverPivotShaft.position.z=leverPlane+(leverHalf+.013-.36)/2;
+ add('pivot-retainer',disk(.30,leverPlane+leverHalf+.013,leverPlane+leverHalf+.043,96).translate(g.leverPivot.x,g.leverPivot.y,0),b.fixedFrame,'ink');
  b.outputPin.geometry.dispose();b.outputPin.geometry=disk(.07,-.09,.29,96);b.outputPin.rotation.set(0,0,0);b.outputPin.position.z=0;b.outputPin.userData.role='ordinary-valve-rod-upper-pin';
  add('upper-pin-retainer',disk(.105,.29,.32,96).translate(g.outputArmLength,0,0),b.lever,'ink');
  b.followerRoller.tread.geometry.dispose();b.followerRoller.tread.geometry=ring(.094,g.rollerRadius,-g.rollerWidth/2,g.rollerWidth/2,96);b.followerRoller.tread.rotation.set(0,0,0);
  // The roller axle ends just inside the lever's bore (no washer proud of
  // the lever face, which would enter the inter-cam gap).
- b.followerAxle.geometry.dispose();b.followerAxle.geometry=disk(.09,g.workingCamPlaneZ-leverPlane-.15,leverHalf-.006,96);b.followerAxle.rotation.set(0,0,0);b.followerAxle.position.z=0;
+ b.followerAxle.geometry.dispose();b.followerAxle.geometry=disk(.09,g.workingCamPlaneZ-leverPlane-rollerWidth/2-.015,leverHalf-.006,96);b.followerAxle.rotation.set(0,0,0);b.followerAxle.position.z=0;
  // Brown cuts the shaft flush with the front of the cam series, its hatched
  // section sitting inside the smallest cam. The hatching is engraving
  // notation: the model shows the plain end of the shaft itself. Both ends
@@ -111,7 +114,7 @@ export function makeSelectableCamValve(){
   // An open slot in the bracket clears the lower pin's retainer over the stroke.
   const slot=poly([[guideX-.105,low-.01],[guideX+.105,low-.01],[guideX+.105,high-.09],[guideX-.105,high-.09]]);
   add('output-guide-bracket',plate(clip.difference(clip.union(poly([[guideX-.23,low],[guideX+.23,low],[guideX+.23,high],[guideX-.23,high]]),strap,poly(circle([p.x,p.y],.24,96))),slot),bracketLow,bracketHigh),b.fixedFrame,'frame');
-  add('fulcrum-standoff',disk(.2,leverPlane+.07,bracketLow,96).translate(p.x,p.y,0),b.fixedFrame,'frame');
+  add('fulcrum-standoff',disk(.2,leverPlane+leverHalf+.043,bracketLow,96).translate(p.x,p.y,0),b.fixedFrame,'frame');
  }
  const update=time=>{legacyUpdate(time);const s=stateAtTime(time);rod.position.set(s.valve.top.x,s.valve.top.y,rodZ);rod.rotation.z=s.valve.angle;slider.position.set(s.valve.bottom.x,s.valve.bottom.y,rodZ);root.userData.kinematics=s;root.updateMatrixWorld(true);};
  Object.assign(root.userData,{stateAtTime,reconstructionStatus:'candidate',reconstructionNote:'The lever uses ordinary pin joints. A reconstructed lower slide guides the valve output vertically while the connecting rod tilts. The minimal lower guide, its bracket and the fulcrum standoff are not shown in the engraving.',valveGeometry:{guideX,rodLength,pinDistance,rodZ,low,high},valveParts:parts,valveBodies:{rod,slider}});

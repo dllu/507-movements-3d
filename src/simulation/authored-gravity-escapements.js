@@ -1094,41 +1094,32 @@ function mudgeGravityEscapement(movement) {
     if (side < 0) {
       // B lifts on the arm's end face; b's stop wall rises toward C.
       const endWallTop = stopEnd.clone().add(new THREE.Vector2(0.006, 0.201));
-      // Brown's B end: a well-rounded outer corner at his (101.7, 202.5)
-      // and his level bottom edge (y 206.5), which drops into a small nib
-      // before rising into the lifting face. Brown hangs his nib in the
-      // tooth space behind the locked tooth (x 135-151, down to y 215),
-      // but the cocking tooth sweeps everything under the lifting face
-      // (right of x ~129), so the nib hangs just short of that sweep: the
-      // bottom runs to x 121.5, slopes down to a point at (128.3, 212.3)
-      // and its right side rises beside the swept path into the lifting
-      // face. The bake trims its lower edge clear of the next tooth's tip.
-      const bluntCorner = sourceLocal(new THREE.Vector2(101.7, 202.5));
-      const brownBottomEnd = sourceLocal(new THREE.Vector2(121.5, 206.1));
-      // p101: B bears at one clean contact. Every edge that does no work
-      // stands at least about 0.035 off the envelope the teeth sweep relative
-      // to B over the period (the p99 nib hung 0.015 over the next tooth's
-      // tip while locked, and its inner wall and the stop's end wall grazed
-      // teeth at 0.003-0.006 as the lift began). The nib moves 2.5 px left
-      // and 4 px up to the corner of that relief contour; the leg's inner
-      // wall drops square from a short extension of the lifting face; the
-      // stop's end wall rises steeply from the stop's end. Brown's nib
-      // (145, 214) lies deep inside the swept envelope (see p99).
-      const nibPoint = sourceLocal(new THREE.Vector2(125.8, 208.2));
-      // The extension sits the bake's running clearance (0.006) inside the
-      // face line, flush with the trimmed lifting face.
+      // p108: ONE pawl end. Brown's B end is a rounded outer corner and a
+      // bottom edge into the working face; the separate toe nib hung below
+      // the bottom line left of the lifting face (Brown's nib position lies
+      // inside the swept tooth envelope, see p99), so the end read as two
+      // prongs side by side with the stop hook: a "double pawl". The nib is
+      // gone: the bottom edge is now the lifting face itself, continued
+      // straight (flush with its trimmed line, the bake's 0.006 running
+      // clearance inside it) out to the rounded outer corner, so the end is
+      // one flat-bottomed pawl whose only hook is the stop b at its inner end.
       const liftDirection = liftFacePoints[1].clone().sub(liftFacePoints[0]).normalize();
       const intoPallet = new THREE.Vector2(-liftDirection.y, liftDirection.x);
       const liftStartRelieved = liftFacePoints[0].clone().addScaledVector(intoPallet, 0.006);
-      const nibRise = liftStartRelieved.clone().addScaledVector(liftDirection, -0.036);
-      const bottomDirection = brownBottomEnd.clone().sub(bluntCorner).normalize();
-      const round = 0.14;
-      const cornerIn = bluntCorner.clone().addScaledVector(armDirection, -round);
-      const cornerOut = bluntCorner.clone().addScaledVector(bottomDirection, round);
+      // Corner: the outer edge meets the lifting-face line.
+      const denominator = armDirection.x * liftDirection.y - armDirection.y * liftDirection.x;
+      const offset = liftStartRelieved.clone().sub(outerTop);
+      const along = (offset.x * liftDirection.y - offset.y * liftDirection.x) / denominator;
+      const squareCorner = outerTop.clone().addScaledVector(armDirection, along);
+      const bottomDirection = liftDirection.clone();
+      // The corner is acute (about 66 degrees), so it gets a generous round.
+      const round = 0.22;
+      const cornerIn = squareCorner.clone().addScaledVector(armDirection, -round);
+      const cornerOut = squareCorner.clone().addScaledVector(bottomDirection, round);
       const cornerArc = Array.from({ length: 9 }, (_, index) => {
         const u = (index + 1) / 10;
         return cornerIn.clone().multiplyScalar((1 - u) ** 2)
-          .addScaledVector(bluntCorner, 2 * u * (1 - u))
+          .addScaledVector(squareCorner, 2 * u * (1 - u))
           .addScaledVector(cornerOut, u * u);
       });
       armOutline = [
@@ -1136,9 +1127,6 @@ function mudgeGravityEscapement(movement) {
         cornerIn,
         ...cornerArc,
         cornerOut,
-        brownBottomEnd,
-        nibPoint,
-        nibRise,
         liftStartRelieved,
         ...liftFacePoints,
         ...stopArc.slice(1),

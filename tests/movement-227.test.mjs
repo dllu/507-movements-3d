@@ -335,7 +335,7 @@ test('movement 227 has smooth straight-to-pulley handoffs and a closed hoist str
   disposeModel(model.root);
 });
 
-test('movement 227 renders interlocked plate and loop links in genuinely orthogonal planes', () => {
+test('movement 227 renders pinned plate links in alternating planes', () => {
   const model = createMovementModel(catalog.movements[226]);
   const { blocks, geometry, stateAtTime } = model.root.userData;
   let sphereCount = 0;
@@ -346,10 +346,16 @@ test('movement 227 renders interlocked plate and loop links in genuinely orthogo
   // Brown draws flat plate links pierced at each joint; the links standing
   // across the teeth are flat loops seen edge-on.
   assert.equal(blocks.links.length % 2, 0);
-  // p93: each edge-on loop is one piece, broad along its sides and narrowed
-  // through the end bars that pass through the plates' eyes.
-  assert.equal(blocks.links[1].geometry.userData.profile, 'one-piece-edge-on-loop-link-227');
-  assert.ok(Math.hypot(blocks.links[1].geometry.userData.endBarHalf, geometry.linkWireRadius) < 0.048);
+  // p107 (user direction): the chain is formed with pins, not single bent
+  // pieces. Each link across a tooth is two side bars in front of and behind
+  // the pulley plane, joined by a pin at each joint through the flat plate's
+  // eye, with rivet heads outside; the tooth enters between the bars.
+  const outer = blocks.links[1].geometry.userData;
+  assert.equal(outer.profile, 'pinned-outer-link-two-side-plates-227');
+  assert.equal(blocks.links[1].userData.role, 'pinned-outer-link-side-plates-across-tooth');
+  assert.ok(outer.pinRadius < geometry.plateLinkEyeRadius - 0.004, 'pin runs clear in the plate eye');
+  assert.ok(outer.headRadius > geometry.plateLinkEyeRadius, 'rivet head covers the eye');
+  assert.ok(outer.sidePlateHalfGap > geometry.sprocketDepth / 2 + 0.03, 'the tooth passes between the side bars');
   blocks.links[1].traverse((object) => { if (object.userData.role === 'edge-on-link-side-strap') assert.equal(object.visible, false); });
   assert.equal(blocks.links[0].geometry.type, 'ExtrudeGeometry');
   assert.equal(blocks.links[0].geometry.parameters.shapes.holes.length, 2);
@@ -423,4 +429,21 @@ test('movement 227 runtime closes in four authored seconds while 262 stays autho
   );
   disposeModel(movement507.root);
   disposeModel(model.root);
+});
+
+test('movement 227 plate links are as broad as Brown\'s riveted plates (pass 107)', () => {
+  const model = createMovementModel(catalog.movements[226]);
+  const { geometry } = model.root.userData;
+  // On the plate the flat links are about 0.39-0.46 of the pin pitch across
+  // (top link 32 px wide on a 69 px pitch; hanging links 28 on 73).
+  const ratio = 2 * geometry.plateLinkEndRadius / geometry.linkPitch;
+  assert.ok(ratio > 0.38 && ratio < 0.46, `plate width / pitch ${ratio}`);
+  const plates = [];
+  model.root.traverse((object) => {
+    if (object.userData.role === 'flat-plate-link-in-pulley-plane') plates.push(object);
+  });
+  assert.ok(plates.length > 0);
+  plates[0].geometry.computeBoundingBox();
+  const box = plates[0].geometry.boundingBox;
+  near(box.max.y - box.min.y, 2 * geometry.plateLinkEndRadius, 1e-6, 'plate link width');
 });

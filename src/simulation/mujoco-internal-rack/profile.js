@@ -22,11 +22,14 @@ export function internalRackPitchPose(phase){
 }
 export function makeConjugateInternalRack({sweepSteps=1024,clearance=.0008,samples=64,cutterSteps=2048,tooth=source.tooth}={}){
  const d=internalRackPitchDimensions(),{radius,module,halfSpan,teeth}=d;
- // Brown draws square, flat-topped rack teeth. A 14.5-degree basic rack with
- // a small tip radius cuts the pinion; sweeping that pinion regenerates the
- // same flat-topped teeth on the straight runs. (Truncating the rack tips
- // left radial play that let the passive rack drift and jam at the ends.)
- const gear=roundedRackGear({teeth,module,depth:.12,boreRadius:.08,samples,cutterSteps,pressureAngle:tooth.pressureAngle,addendum:tooth.pinionAddendum,dedendum:tooth.pinionDedendum,tipRadius:tooth.cutterTipRadius*module});
+ // A standard 20-degree basic rack (full-radius cutter tips) cuts an ideal
+ // involute pinion; sweeping that pinion regenerates trapezoidal basic-rack
+ // teeth on the straight runs and conjugate teeth round the ends.
+ // (Truncating the rack tips left radial play that let the passive rack
+ // drift and jam at the ends, pass 102.)
+ const cut={teeth,module,depth:.12,boreRadius:.08,samples,cutterSteps,pressureAngle:tooth.pressureAngle,addendum:tooth.pinionAddendum,dedendum:tooth.pinionDedendum};
+ if(tooth.cutterTipRadius!==undefined)cut.tipRadius=tooth.cutterTipRadius*module;
+ const gear=roundedRackGear(cut);
  const pinion=gear.userData.outline.map(p=>p.toArray());gear.dispose();
  const cutter=pinion.map(([x,y])=>{const r=Math.hypot(x,y);return[x*(1+clearance/r),y*(1+clearance/r)];});
  const at=(points,phase)=>{const {x,y,angle}=internalRackPitchPose(phase),c=Math.cos(angle),s=Math.sin(angle);return poly(points.map(([a,b])=>[c*a-s*b-x,s*a+c*b-y]));};

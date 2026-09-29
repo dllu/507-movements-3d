@@ -12,28 +12,28 @@
   },
   "summary": {
     "samples": 1201,
-    "minProfileGap": -0.00004401928910552355,
-    "maxProfileGap": 0.0003396126910676367,
-    "maxPinError": 9.47833240092008e-9,
-    "maxPenetration": 0.00004392562483260558,
-    "missingContact": 206,
-    "maxLeverError": 0.00013325221616034,
-    "maxSliderError": 0.00026570886048116193,
-    "maxShaftError": 0.0012654187035323616,
-    "maxSelectorError": 0.0029315401793932605,
+    "minProfileGap": -0.00004484858601144781,
+    "maxProfileGap": 0.00795889458750687,
+    "maxPinError": 9.34685995842138e-9,
+    "maxPenetration": 0.00004481826143818885,
+    "missingContact": 171,
+    "maxLeverError": 0.002626623031370734,
+    "maxSliderError": 0.005279730080589573,
+    "maxShaftError": 0.0005896129068929667,
+    "maxSelectorError": 0.014152275877740927,
     "closure": {
-      "carrier": 5.118392099046076e-8,
-      "lever": 6.892549873072085e-7,
-      "rod": -5.326308336606189e-7,
-      "slider": -0.0000013538806717923088
+      "carrier": 1.6922089285387187e-9,
+      "lever": 1.0227498714598937e-7,
+      "rod": -7.903411480825184e-8,
+      "slider": -2.0089432613453214e-7
     },
     "velocityClosure": [
-      0.000002621501749899835,
-      1.0153002423018983e-9,
-      -0.00006416940195669556,
-      0.00018508785982884746,
-      0.000049590529144888894,
-      0.0001260449288881839
+      1.292137246089453e-7,
+      5.693227263781268e-10,
+      0.0000026722348554523642,
+      -0.000008757754726751443,
+      -0.0000020646846531700673,
+      -0.000005250541486297687
     ]
   },
   "sources": [
@@ -47,11 +47,11 @@
     },
     {
       "file": "src/simulation/selectable-cam-valve.js",
-      "sha256": "131ad0809a8b63440e5a86c4daa4416eee147ed3430074f0d7d1dd7f6b99425a"
+      "sha256": "ae4052b66ccd5d925e4e6de632e2bb219a54097302fecde44f39898a86285c55"
     },
     {
       "file": "src/simulation/authored-selectable-cams.js",
-      "sha256": "8ae138e078f5ba7f03f59be35c98256550ae477fbe3e542973b67f5b0c1f95e9"
+      "sha256": "9db2669d9f4bee7a8d496b9338c4adc75d25380668041674eefbaa24a6222562"
     },
     {
       "file": "src/simulation/mujoco/mass.js",

@@ -13,27 +13,9 @@ function mesh(parent,geometry,material,role){const m=new T.Mesh(geometry,materia
 export function correctFriction267(model){
  const d=model.root.userData,b=d.blocks,g=d.geometry;
  replace(b.rim,bore(g.rimOuterRadius,g.rimInnerRadius,.72,768).rotateX(Math.PI/2));b.rim.position.z=.06;b.innerLiner.visible=false;
- const shape=b.arms[0].children[0].geometry.parameters.shapes.extractPoints(24).shape.map(p=>p.toArray());
- // Pass 98: Brown's arms end in broad shoes mated to the rim over a long arc.
- // Each arm now runs on from its tip into a curved shoe as deep as the tip
- // (0.17): a band between the rim's bore and 0.17 inside it, with a round
- // end, running 28 degrees clockwise along the rim from the old tip (carrier
- // polar angles -18 to -46 degrees about the pivot's radial). Its working
- // face is an arc concentric with the rim, so the engaged shoe bears on the
- // rim along that whole arc instead of at one tangent point. All of it lies
- // clockwise of the pivot radial, so the clockwise release swings it inward
- // (0.092 clear at the tip, 0.18 at the far end, fully released). The face
- // lies on the circle inscribed in the rim's 768-sided bore, so it bears on
- // the bore's flats without entering them.
- const shoeDepth=2*g.armEndHalfWidth,shoeFrom=-18*Math.PI/180,shoeTo=-46*Math.PI/180,Ri=g.rimInnerRadius*Math.cos(Math.PI/768)-1e-6,P=g.pivotRadius;
- const polar=(r,a)=>[-P+r*Math.cos(a),r*Math.sin(a)],shoePoints=[],steps=72,capSteps=24,mid=Ri-shoeDepth/2;
- for(let i=0;i<=steps;i++)shoePoints.push(polar(Ri,shoeFrom+(shoeTo-shoeFrom)*i/steps));
- for(let i=1;i<capSteps;i++){const c=polar(mid,shoeTo),u=Math.PI*i/capSteps,dir=shoeTo;shoePoints.push([c[0]+shoeDepth/2*(Math.cos(dir)*Math.cos(u)+Math.sin(dir)*Math.sin(u)),c[1]+shoeDepth/2*(Math.sin(dir)*Math.cos(u)-Math.cos(dir)*Math.sin(u))]);}
- for(let i=0;i<=steps;i++)shoePoints.push(polar(Ri-shoeDepth,shoeTo+(shoeFrom-shoeTo)*i/steps));
- for(let i=1;i<capSteps;i++){const c=polar(mid,shoeFrom),u=Math.PI*i/capSteps,dir=shoeFrom;shoePoints.push([c[0]-shoeDepth/2*(Math.cos(dir)*Math.cos(u)+Math.sin(dir)*Math.sin(u)),c[1]-shoeDepth/2*(Math.sin(dir)*Math.cos(u)-Math.cos(dir)*Math.sin(u))]);}
- const region=clip.difference(clip.intersection(clip.union(poly(shape),poly(circle([0,0],.18,64)),poly(circle(g.tipCenterRelative.toArray(),g.armEndHalfWidth,64)),poly(shoePoints)),poly(circle([-g.pivotRadius,0],g.rimInnerRadius,512))),poly(circle([0,0],g.pivotBossRadius+.004,64)));
- for(const arm of b.arms)replace(arm.children[0],plate(region,-g.armDepth/2,g.armDepth/2));
- const cap=mesh(b.carrierRotor,bore(.37,.305,.24),b.carrier.material,'shaft-collar-joining-four-arm-carrier');cap.rotation.x=Math.PI/2;cap.position.z=.12;b.carrierCollar=cap;
+ // Pass 107: the arms are Brown's wedge plates, built with their broad
+ // rim-concentric shoes in springBiasedOverrunningPulley.
+ const cap=mesh(b.carrierRotor,bore(.37,.305,.24),b.carrier.material,'shaft-collar-joining-four-arm-carrier');cap.rotation.x=Math.PI/2;cap.position.z=g.carrierZ;b.carrierCollar=cap;
  d.workingPartsReview={qualification:'Actual finite eccentric arm faces now meet the rim in the same axial band and retreat on reverse drag. Engagement and spring preload remain prescribed; no force threshold or passive clutch simulation is claimed.'};
  return model;
 }

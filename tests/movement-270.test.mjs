@@ -570,17 +570,46 @@ test('movement 270 closes all marked members and leaves movement 507 authored', 
   disposeModel(model.root);
 });
 
-test('movement 270 closes the bearing behind the rollers and blinds the cover holes', () => {
+test('movement 270 closes the bearing behind the rollers and shows both engraved views as one model', () => {
   const model = createMovementModel(catalog.movements[269]);
   const { blocks, geometry } = model.root.userData;
   const plateBox = new THREE.Box3().setFromObject(blocks.cagePlate);
   const webBox = new THREE.Box3().setFromObject(blocks.pulleyWeb);
   // The rear retaining plate lies behind the web and spans past the bore.
   assert.ok(plateBox.max.z < webBox.min.z, 'the retaining plate stays behind the turning web');
-  assert.ok(plateBox.max.x > geometry.outerRaceInnerRadius + 0.05, 'the plate covers the pulley bore');
+  model.root.updateMatrixWorld(true);
+  assert.ok(plateBox.max.x > (geometry.outerRaceInnerRadius + 0.05) * model.root.scale.x, 'the plate covers the pulley bore');
   const roles = [];
-  model.root.traverse((object) => roles.push(object.userData.role ?? ''));
-  assert.equal(roles.filter((role) => role === 'assembled-view-cover-backing-closing-the-pin-holes').length, 1);
-  assert.equal(roles.filter((role) => /^assembled-view-retainer-pin-end-/.test(role)).length, 6);
+  let pulleyRims = 0;
+  model.root.traverse((object) => {
+    roles.push(object.userData.role ?? '');
+    let lower = false;
+    for (let p = object; p; p = p.parent) if (p === blocks.lowerReturnAssembly) lower = true;
+    if (!lower && object.isMesh && object.userData.role === 'wide-belt-pulley-rim-and-working-tread') pulleyRims += 1;
+  });
+  // Paired views of one mechanism share one model: one pulley (plus the
+  // rope's lower return sheave below the crop), one rope.
+  assert.equal(pulleyRims, 1);
+  assert.equal(roles.filter((role) => /assembled-left-view|assembled-view-pulley-rotor/.test(role)).length, 0);
+  assert.equal(roles.filter((role) => /^single-laid-three-strand-rope/.test(role)).length, 1);
+  // The assembled view's cover rides with the retainer, see-through over the rollers.
+  const { assembledCover: cover, assembledFace: face } = blocks;
+  assert.equal(cover.parent, blocks.rollerCarrier);
+  assert.equal(face.parent, blocks.pulleyRotor);
+  assert.equal(cover.userData.seeThrough, true);
+  assert.equal(face.userData.seeThrough, true);
+  const coverBox = new THREE.Box3().setFromObject(cover);
+  for (const assembly of blocks.rollerAssemblies) {
+    const hubBox = new THREE.Box3().setFromObject(assembly.hub);
+    const bodyBox = new THREE.Box3().setFromObject(assembly.body);
+    assert.ok(coverBox.min.z > hubBox.max.z + 0.005, 'the cover clears the roller hubs');
+    assert.ok(coverBox.min.z > bodyBox.max.z + 0.005, 'the cover clears the rollers');
+  }
+  for (const pin of blocks.cagePins) {
+    const pinBox = new THREE.Box3().setFromObject(pin);
+    assert.ok(pinBox.max.z > coverBox.min.z && pinBox.max.z < coverBox.max.z - 0.005,
+      'each retainer pin ends recessed inside its cover hole');
+  }
+  assert.equal(roles.filter((role) => role === 'assembled-view-fluted-journal-end').length, 1);
   disposeModel(model.root);
 });

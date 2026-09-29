@@ -127,3 +127,22 @@ test('p106: 081 playback starts in the settled loop, so the first cycle matches 
  for(let i=0;i<=40;i++){const t=i*4/40;near(u.stateAtTime(t).rackY,u.stateAtTime(t+4).rackY,1e-10);near(u.stateAtTime(t).rackY,u.stateAtTime(t+12).rackY,1e-10);}
  dispose(m);
 });
+
+test('p108: 081 rests one pitch lower so the segment drives the top rack tooth and all seven teeth flank driven gaps',()=>{
+ const m=makeSpringRackDrive(),u=m.root.userData,p=u.geometry,c=u.motion.contact,driven=new Map();
+ near(p.restDrop,p.pitch,1e-12);near(u.profile.range[0],-.8299893355932074-p.pitch,1e-12);
+ for(let i=0;i<=4000;i++){
+  const s=u.stateAtTime(i/1000),theta=p.gearPhase+s.q;
+  for(const row of c.pair(s.q,s.rackY,.0005).rows){
+   const k=+row.id.match(/R(\d+)/)[1],a=Math.atan2(row.gearPoint[1],row.gearPoint[0])-theta,
+    g=((Math.round(a/(2*Math.PI/p.teeth))%p.teeth)+p.teeth)%p.teeth;
+   if(!driven.has(k))driven.set(k,new Set());driven.get(k).add(g);
+  }
+ }
+ // Gear tooth g drives rack tooth g; the bottom tooth only bounds the last gap.
+ for(let g=0;g<6;g++)assert.ok(driven.get(g)?.has(g),`segment tooth ${g} must drive rack tooth ${g}`);
+ const guide=u.parts.lowerRackGuide;guide.geometry.computeBoundingBox();
+ const lowest=Math.min(...u.profiles.rackTeeth[6][0][0].map(v=>v[1]))+u.profile.range[0];
+ assert.ok(lowest-guide.geometry.boundingBox.max.y>.05,'lowest tooth clears the lower guide at rest');
+ dispose(m);
+});

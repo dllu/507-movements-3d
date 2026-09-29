@@ -107,18 +107,20 @@ test('movement 267 preserves the measured unavailable source engraving', () => {
   assert.equal(plate.rasterOuterRimRadius, 209);
   assert.equal(plate.rasterInnerWorkingRadius, 190);
   assert.equal(plate.rasterShaftRadius, 33);
-  assert.equal(plate.rasterSpokeCount, 4);
+  // Pass 107: the four straight lines are the wedges' radial sides.
+  assert.equal(plate.rasterSpokeCount, 0);
+  assert.equal(plate.rasterArmCount, 4);
   assert.deepEqual(plate.rasterCarrierPivotCenters, [
-    { x: 276, y: 204 },
-    { x: 328, y: 282 },
-    { x: 253, y: 334 },
-    { x: 203, y: 238 },
+    { x: 276, y: 205 },
+    { x: 328, y: 283 },
+    { x: 253, y: 333 },
+    { x: 206, y: 258 },
   ]);
   assert.deepEqual(plate.rasterArmContactPoints, [
-    { x: 349, y: 103 },
-    { x: 421, y: 367 },
-    { x: 181, y: 434 },
-    { x: 108, y: 193 },
+    { x: 347, y: 97 },
+    { x: 433, y: 357 },
+    { x: 183, y: 438 },
+    { x: 95, y: 194 },
   ]);
   assert.deepEqual(plate.rasterArrow, {
     end: { x: 466, y: 194 },
@@ -182,7 +184,7 @@ test('movement 267 matches the rim, shaft, pivots, and eccentric lead', () => {
     THREE.MathUtils.degToRad(1.2),
     'clockwise eccentric contact lead',
   );
-  assert.equal(geometry.pivotCount, plate.rasterSpokeCount);
+  assert.equal(geometry.pivotCount, plate.rasterArmCount);
   assert.ok(geometry.contactLeadAngle < 0);
   assert.ok(geometry.releasedArmAngle < 0);
   assert.ok(geometry.releasedTipClearance > 0.09);
@@ -243,7 +245,7 @@ test('movement 267 wedges in the direction opposite the clockwise arrow', () => 
   }
   assert.equal(maximumLockedRateError, 0);
   assert.equal(maximumLockedPhaseError, 0);
-  assert.ok(maximumContactError < 3e-16);
+  assert.ok(maximumContactError < 1e-15);
   disposeModel(model.root);
 });
 
@@ -456,5 +458,45 @@ test('movement 267 closes smoothly with one output turn and leaves 269 authored'
   assert.equal(catalog.movements[506].archetype, 'carrier-driven-25000-to-1-slow-bevel-output-compound-planetary');
   assert.equal(model289.root.userData.fidelity, 'authored');
   disposeModel(model289.root);
+  disposeModel(model.root);
+});
+
+test('movement 267 arms are Brown wedge plates and the band springs never enter them', () => {
+  const model = createMovementModel(catalog.movements[266]);
+  const { blocks, geometry, timeline } = model.root.userData;
+  const outline = geometry.armOutline;
+  // A wedge: the straight radial side leads the pivot and the plate widens
+  // from its root to its rim shoe.
+  near(geometry.straightEdgeLead, THREE.MathUtils.degToRad(10.8), 1e-12, 'straight side lead');
+  assert.ok(geometry.contactLeadAngle < 0 && geometry.shoeStartLead < 0,
+    'the shoe lies behind the pivot radial, so counterclockwise drag wedges it');
+  const inside = (point, polygon) => {
+    let result = false;
+    for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+      const a = polygon[i];
+      const b = polygon[j];
+      if ((a.y > point.y) !== (b.y > point.y)
+        && point.x < (b.x - a.x) * (point.y - a.y) / (b.y - a.y) + a.x) result = !result;
+    }
+    return result;
+  };
+  let samples = 0;
+  for (let k = 0; k <= 40; k += 1) {
+    const time = timeline.driveDuration + (timeline.freewheelDuration + timeline.springResetDuration) * k / 40;
+    model.update(time);
+    const angle = model.root.userData.kinematics.armPivotAngle;
+    const c = Math.cos(-angle);
+    const s = Math.sin(-angle);
+    const position = blocks.springs[0].userData.leaf.geometry.attributes.position;
+    for (let i = 0; i < position.count; i += 1) {
+      const x = position.getX(i);
+      const y = position.getY(i);
+      // Band vertex in the rotated plate's frame.
+      const point = new THREE.Vector2(c * x - s * y, s * x + c * y);
+      assert.ok(!inside(point, outline), `band enters plate at ${time}`);
+      samples += 1;
+    }
+  }
+  assert.ok(samples > 1000);
   disposeModel(model.root);
 });

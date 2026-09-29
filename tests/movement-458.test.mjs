@@ -235,15 +235,20 @@ test('movement 458 preserves one constant rope length and exactly opposite bucke
       `reported rope length at ${sample}`);
     near(state.leftBailY + state.rightBailY, bailSum, 3e-16,
       `opposed bail travel at ${sample}`);
-    // Each bucket hangs from its bail: turned half round, a bucket tipped
-    // past 50 degrees hangs forward of it by bailHang (mirrored in z).
-    for (const [bail, center, tilt] of [[state.leftBail, state.leftBucketCenter, state.leftBucketTilt],
-      [state.rightBail, state.rightBucketCenter, state.rightBucketTilt]]) {
-      const hang = bailHang(tilt, geometry.bucketHandleRise);
-      near(center.x, bail.x, 0, `bucket under its bail x at ${sample}`);
+    // Each bucket hangs from its bail, turned half round; drawn aside it is
+    // turned a quarter turn more so it tips outward in the view plane. A
+    // bucket tipped past 50 degrees hangs back from its bail by bailHang,
+    // turned with it (pass 107).
+    for (const [side, bail, center, tilt, yaw, aside] of [
+      [-1, state.leftBail, state.leftBucketCenter, state.leftBucketTilt, state.leftBucketYaw, state.leftBucketAside],
+      [1, state.rightBail, state.rightBucketCenter, state.rightBucketTilt, state.rightBucketYaw, state.rightBucketAside]]) {
+      near(yaw, Math.PI - side * (Math.PI / 2) * aside, 1e-15, `bucket yaw at ${sample}`);
+      if (tilt > 0) near(aside, 1, 0, `tipped only when fully drawn aside at ${sample}`);
+      const hang = bailHang(tilt, geometry.bucketHandleRise).applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
+      near(center.x - hang.x, bail.x, 1e-12, `bucket under its bail x at ${sample}`);
       near(center.y - hang.y, bail.y - geometry.bucketHeight / 2 - geometry.bucketHandleRise, 1e-12,
         `bucket under its bail y at ${sample}`);
-      near(center.z + hang.z, bail.z, 1e-12, `bucket hang z at ${sample}`);
+      near(center.z - hang.z, bail.z, 1e-12, `bucket hang z at ${sample}`);
     }
     // Upright on its leg, each bail hangs at the rope's nominal height on the
     // sheave's tangent; drawn aside, it keeps the same leg-plus-wrap length.
@@ -459,4 +464,42 @@ test('movement 458 has finite render bounds and movement 507 remains the next au
   assert.notEqual(model507.root.userData.archetype, ARCHETYPE);
   disposeModel(model458.root);
   disposeModel(model507.root);
+});
+
+test('movement 458 pours outward in the view plane onto the ground bank (pass 107)', () => {
+  const model = createMovementModel(catalog.movements[457]);
+  const { geometry } = model.root.userData;
+  const pours = [];
+  const banks = [];
+  model.root.traverse((object) => {
+    if (object.userData.role === 'water-poured-from-tipped-bucket') pours.push(object);
+    if (object.userData.role === 'fixed-ground-bank-beside-the-well-kerb') banks.push(object);
+  });
+  assert.equal(pours.length, 2);
+  assert.equal(banks.length, 2);
+  let seen = 0;
+  const point = new THREE.Vector3();
+  for (let i = 0; i <= 400; i += 1) {
+    model.update(geometry.cycleDuration * i / 400);
+    model.root.updateMatrixWorld(true);
+    for (const pour of pours) {
+      if (!pour.visible || pour.material.opacity < 0.05) continue;
+      const position = pour.geometry.attributes.position;
+      const landing = new THREE.Box3();
+      const whole = new THREE.Box3();
+      for (let j = 0; j < position.count; j += 1) {
+        point.fromBufferAttribute(position, j).applyMatrix4(pour.matrixWorld);
+        whole.expandByPoint(point);
+        if (point.y < geometry.groundTopY + 0.1) landing.expandByPoint(point);
+      }
+      if (landing.isEmpty()) continue;
+      seen += 1;
+      const bank = new THREE.Box3().setFromObject(banks.find((b) => Math.sign(b.position.x) === Math.sign(landing.min.x)));
+      assert.ok(landing.min.x >= bank.min.x && landing.max.x <= bank.max.x, `pour lands on the bank at ${i}`);
+      assert.ok(Math.abs(landing.min.y - bank.max.y) < 0.02, `pour ends on the bank top at ${i}`);
+      // The stream stays in the sheave's plane, so the bucket cannot hide it.
+      assert.ok(whole.max.z < 0.1 && whole.min.z > -0.1, `pour in the view plane at ${i}`);
+    }
+  }
+  assert.ok(seen > 20);
 });

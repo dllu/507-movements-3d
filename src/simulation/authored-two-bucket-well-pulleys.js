@@ -63,10 +63,10 @@ function twoBucketWellPulley(movement) {
   // Drawn aside, the raised bucket's bail goes out to x = ±1.86 in the
   // sheave's plane (a rope leaning out of that plane would cross the sheave
   // flange): over the ground outside the kerb wall (outer face |x| 1.70).
-  // The buckets hang turned half round (invisible upright), so each tips
-  // away from the viewer, its body swinging forward clear of the post and
-  // shelf behind, and its lip pours onto the ground's top (y -0.51) between
-  // the kerb wall and the ground's end.
+  // Each bucket, turned a quarter turn as it is drawn aside, tips outward in
+  // the view plane (pass 107), its body swinging in over the kerb in front of
+  // the post and shelf (|z| <= 0.38 against the post's front face at -0.50),
+  // and its outer lip pours onto the ground's top (y -0.51) outside the post.
   // Pass 106: 2.16 (was 1.86, the posts' own x), so the pour from the far
   // lip falls in open air just outside the post (|x| <= 1.96) instead of
   // running down its front face.
@@ -241,11 +241,20 @@ function twoBucketWellPulley(movement) {
     leftBucketCenter.y -= bucketHandleRise + bucketHeight / 2;
     const rightBucketCenter = rightAside.bail.clone();
     rightBucketCenter.y -= bucketHandleRise + bucketHeight / 2;
-    // Turned half round, each bucket tips toward -z and hangs forward (+z)
-    // of its bail by bailHang.
-    const hangForward = (tilt) => bailHang(tilt, bucketHandleRise).multiply(new THREE.Vector3(1, 1, -1));
-    leftBucketCenter.add(hangForward(leftWaterProfile.tilt ?? 0));
-    rightBucketCenter.add(hangForward(rightWaterProfile.tilt ?? 0));
+    // Pass 107: each bucket hangs turned half round (its bail across the
+    // view, as drawn). While the operator draws it aside he also turns it a
+    // quarter turn on the rope, so it tips outward in the view plane, away
+    // from the well: the pour leaves the outer lip in full view and falls in
+    // open air beyond the post (the old half-round tip poured from the far
+    // lip, hidden behind the bucket). The bucket hangs back from its bail by
+    // bailHang, turned with it.
+    const bucketYaw = (side, aside) => Math.PI - side * (Math.PI / 2) * aside;
+    const leftYaw = bucketYaw(-1, leftWaterProfile.aside ?? 0);
+    const rightYaw = bucketYaw(1, rightWaterProfile.aside ?? 0);
+    const up = new THREE.Vector3(0, 1, 0);
+    const hangTurned = (tilt, yaw) => bailHang(tilt, bucketHandleRise).applyAxisAngle(up, yaw);
+    leftBucketCenter.add(hangTurned(leftWaterProfile.tilt ?? 0, leftYaw));
+    rightBucketCenter.add(hangTurned(rightWaterProfile.tilt ?? 0, rightYaw));
     const leftVerticalLength = pulleyCenter.y - leftBailY;
     const rightVerticalLength = pulleyCenter.y - rightBailY;
     const pulleyAngle = ropeDisplacement / pulleyRadius;
@@ -281,6 +290,7 @@ function twoBucketWellPulley(movement) {
       leftBucketWeight,
       leftVerticalLength,
       leftBucketTilt: leftWaterProfile.tilt ?? 0,
+      leftBucketYaw: leftYaw,
       leftWaterFraction,
       leftWaterFractionAcceleration,
       leftWaterFractionRate:
@@ -301,6 +311,7 @@ function twoBucketWellPulley(movement) {
       rightBucketWeight,
       rightVerticalLength,
       rightBucketTilt: rightWaterProfile.tilt ?? 0,
+      rightBucketYaw: rightYaw,
       rightWaterFraction,
       rightWaterFractionAcceleration,
       rightWaterFractionRate:
@@ -368,12 +379,17 @@ function twoBucketWellPulley(movement) {
   ), 'well-water-at-bottom-of-two-bucket-shaft');
   wellWater.position.set(0, -2.76, 0);
   root.add(wellWater);
-  for (const x of [-1.86, 1.86]) {
+  // Pass 107: Brown's ground runs out from the kerb to the plate's edges on
+  // both sides, so each bank runs out to |x| 2.95 (was a 0.40 strip at the
+  // kerb): the raised bucket's pour lands on its top, not in mid-air.
+  const bankInner = 1.66, bankOuter = 2.95;
+  for (const side of [-1, 1]) {
     const bank = new THREE.Mesh(
-      new THREE.BoxGeometry(0.40, 2.45, 2.28),
+      new THREE.BoxGeometry(bankOuter - bankInner, 2.45, 2.28),
       frameMaterial,
     );
-    bank.position.set(x, -1.74, 0);
+    bank.position.set(side * (bankInner + bankOuter) / 2, -1.74, 0);
+    bank.userData.role = 'fixed-ground-bank-beside-the-well-kerb';
     root.add(bank);
   }
 
@@ -566,6 +582,8 @@ function twoBucketWellPulley(movement) {
     layRope(state);
     leftBucket.bucket.position.copy(state.leftBucketCenter);
     rightBucket.bucket.position.copy(state.rightBucketCenter);
+    leftBucket.bucket.rotation.y = state.leftBucketYaw;
+    rightBucket.bucket.rotation.y = state.rightBucketYaw;
     updateBucketWater(leftBucket, state.leftWaterFraction);
     updateBucketWater(rightBucket, state.rightWaterFraction);
     root.userData.updateWorkingParts?.(state);

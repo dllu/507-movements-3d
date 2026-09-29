@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import profiles from './chain-drive-profiles.js';
 import {plate,ring,polygonClipping as clip} from './finite-plate-geometry.js';
+import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
+import {creaseLatheNormals} from './crease-normals.js';
 const TAPER_SIDE_228=1;
 const replace=(mesh,geometry)=>{mesh.geometry.dispose();mesh.geometry=geometry;};
 // 227: Brown's pulley is a clean, regular six-pointed wheel. Each tooth
@@ -77,6 +79,46 @@ function edgeOnLinkGeometry227(g){
  geometry.userData={profile:'one-piece-edge-on-loop-link-227',broadHalf:broad,endBarHalf:narrow};
  return geometry;
 }
+// p107: the user's direction is that 227's chain is formed with pins, not
+// single bent pieces. Each link standing across a tooth is a real pin-chain
+// outer link: two flat side plates, one in front of and one behind the
+// pulley plane (the "different planes" of Brown's caption; the tooth enters
+// the space between them), joined at each joint by a pin through the flat
+// inner plate's eye, with a round rivet head outside each side plate. As
+// Brown draws them, the side plates are narrow bars (the strips across the
+// teeth and between the hanging plates), round-ended concentric with the
+// pins, so each broad inner plate shows its two rivet heads at its ends. Built in the link's frame: x along the chord, y across the
+// pulley plane (world z after the link's quarter turn), z radial.
+function pinnedOuterLinkGeometry227(g){
+ const L=g.linkPitch,r=g.linkLoopHalfWidth,t=g.linkWireRadius,pin=(g.plateLinkEyeRadius??.048)-.006,
+  head=pin*1.45,broad=head+.022,embed=.004,parts=[];
+ const shape=new THREE.Shape();
+ shape.absarc(L,0,broad,-Math.PI/2,Math.PI/2,false);
+ shape.absarc(0,0,broad,Math.PI/2,3*Math.PI/2,false);
+ shape.closePath();
+ for(const side of [-1,1]){
+  // Shape (x, z) extruded 2t along -y by the quarter turn, then centred on y = side*r.
+  const plateGeometry=new THREE.ExtrudeGeometry(shape,{bevelEnabled:false,curveSegments:16,depth:2*t,steps:1}).rotateX(Math.PI/2);
+  plateGeometry.translate(0,side*r+t,0);
+  parts.push(plateGeometry.index?plateGeometry.toNonIndexed():plateGeometry);
+ }
+ for(const x of [0,L]){
+  // The pin runs between the side plates' inner faces (ends embedded).
+  const shaft=new THREE.CylinderGeometry(pin,pin,2*(r-t)+2*embed,20,1,false);shaft.translate(x,0,0);parts.push(shaft.toNonIndexed());
+  for(const side of [-1,1]){
+   const profile=[[0,0],[head,0],[head,.012],[head*.72,.024],[0,.028]].map(([a,b])=>new THREE.Vector2(a,b));
+   const cap=creaseLatheNormals(new THREE.LatheGeometry(profile,24));
+   if(side<0)cap.rotateX(Math.PI);
+   cap.translate(x,side*(r+t-embed),0);
+   parts.push(cap.toNonIndexed());
+  }
+ }
+ for(const part of parts){part.deleteAttribute('uv');}
+ const geometry=mergeGeometries(parts);
+ geometry.computeBoundingBox();geometry.computeBoundingSphere();
+ geometry.userData={profile:'pinned-outer-link-two-side-plates-227',broadHalf:broad,pinRadius:pin,headRadius:head,sidePlateHalfGap:r-t};
+ return geometry;
+}
 export function correctChainDrive(model,id){
  const {root}=model,d=root.userData,b=d.blocks,g=d.geometry;
  const wheel=id===227?b.sprocket:id===229?b.wheel:null;
@@ -84,9 +126,9 @@ export function correctChainDrive(model,id){
  d.chainDriveParts={originalWheelPolygons};
  if(id===227){
   replace(wheel,plate(cleanSprocketProfile227(g),-g.sprocketDepth/2,g.sprocketDepth/2));
-  const loop=edgeOnLinkGeometry227(g);let shared=null;
+  const outer=pinnedOuterLinkGeometry227(g);let shared=null;
   root.traverse(o=>{if(o.userData.role!=='edge-on-flat-loop-link-across-tooth')return;
-   if(!shared){shared=o.geometry;}o.geometry=loop;
+   if(!shared){shared=o.geometry;}o.geometry=outer;o.userData.role='pinned-outer-link-side-plates-across-tooth';
    for(const strap of o.children)if(strap.userData.role==='edge-on-link-side-strap')strap.visible=false;});
   shared?.dispose();
  }

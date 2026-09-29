@@ -5,6 +5,7 @@ import {horizontalPlate, horizontalRing} from './horizontal-turbine-solids.js';
 import {curvedPipeWall, mergePassageParts} from './finite-fluid-passages.js';
 import {fitPistonGuide} from './piston-guide-parts.js';
 import {PALETTE, markShadows, matte} from './primitives.js';
+import {makeSeeThrough} from './see-through-part.js';
 
 // Movement 483, Brown's dry gas meter, rebuilt element by element from the
 // plate (pass 74). Plate pixels (525 px image) map to scene units by
@@ -361,9 +362,9 @@ function dryGasMeter(movement) {
     boxBetween(side < 0 ? -L.wallOuterX : L.wallInnerX, side < 0 ? -L.wallInnerX : L.wallOuterX, L.floorTopY, L.roofBottomY, L.backOuterZ, L.frontZ),
     caseMaterial, side < 0 ? 'fixed-left-case-wall' : 'fixed-right-case-wall'));
   const backPanel = addMesh(fixedCase, boxBetween(-L.wallInnerX, L.wallInnerX, L.floorTopY, L.roofBottomY, L.backOuterZ, L.backZ), caseMaterial, 'fixed-back-panel-of-case');
-  const roof = addMesh(fixedCase, horizontalPlate(clip.difference(
-    planRect(-L.wallOuterX, L.wallOuterX, L.backOuterZ, L.frontZ),
-    planCircle(L.columnCenter, 0.205, 64)), L.roofBottomY, L.roofBottomY + 0.12), caseMaterial, 'fixed-dry-meter-roof');
+  // p108: no roof. The user asked for the top removed so the valve, crank
+  // and links show from above; Brown's plate draws no top either (the outlet
+  // column rises straight out of the open case).
 
   // Brown's thick shelf carries B's seat; the exhaust passage from B's
   // central port to the outlet column is cored between its layers.
@@ -379,6 +380,12 @@ function dryGasMeter(movement) {
     horizontalPlate(clip.difference(shelfOutline, ...portHoles(), passage, rodBore), L.shelfTopY - 0.18, L.shelfTopY - 0.08),
     horizontalPlate(clip.difference(shelfOutline, ...portHoles(), rodBore), L.shelfBottomY, L.shelfTopY - 0.18),
     horizontalPlate(clip.difference(seatOutline, ...portHoles()), L.shelfTopY - 0.10, L.shelfTopY),
+    // p108: B's thin seat plate carries a round boss underneath, as deep as
+    // the shelf, round the ports that lie right of the shelf's end, so every
+    // duct drop meets a solid bored face (two drops used to stop 0.12 short
+    // of the thin seat).
+    horizontalPlate(clip.difference(clip.intersection(planCircle(L.crankCenter, L.portRadius + 0.16, 96), planRect(L.shelfEndX, L.seatEndX, -1.0, 1.0)),
+      ...portHoles()), L.shelfBottomY, L.shelfTopY - 0.10),
   ]), caseMaterial, 'fixed-shelf-carrying-seat-of-B-with-cored-exhaust-passage');
 
   // Fixed boards and the central partition.
@@ -403,6 +410,9 @@ function dryGasMeter(movement) {
 
   // Dial-work case: the plain box Brown draws at the upper right.
   const dialCase = addMesh(fixedCase, boxBetween(L.seatEndX, L.wallInnerX, py(165), L.roofBottomY, 1.45, L.frontZ), caseMaterial, 'fixed-dial-work-case-at-upper-right');
+  // p108: the box stands in front of A′'s rod top, its arm and the link to
+  // B's crank; it is see-through in the shared style so they show.
+  makeSeeThrough(dialCase);
 
   // Ducts from the four seat ports to the fixed boards of their spaces.
   const ductRuns = [];
@@ -665,7 +675,7 @@ function dryGasMeter(movement) {
     blocks: {
       backPanel, bellowsA, bellowsAPrime, cBracket, crankDisc, crankLinkA, crankLinkAPrime, crankPins, sheave,
       dialCase, ductRuns, fixedBoards, fixedCase, flagLinksA, flagLinksAPrime, floor, inletPipe, leather,
-      movingA, movingAPrime, outletColumn, partition, rodA, rodAPrime, roof, shelf, spindle, spindleShaft,
+      movingA, movingAPrime, outletColumn, partition, rodA, rodAPrime, shelf, spindle, spindleShaft,
       valveB, walls,
     },
     fidelity: 'authored',

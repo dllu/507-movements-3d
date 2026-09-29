@@ -7523,7 +7523,7 @@ function alternatingPlaneLinkChainPulley(movement) {
   // Links in the pulley plane are flat plates: a narrow round-ended bar
   // pierced at each joint by an eye just larger than the neighbouring loop's
   // end bar (whose centreline leans only 0.003 across the plate thickness).
-  const plateLinkEndRadius = 0.12;
+  const plateLinkEndRadius = 0.21;
   const plateLinkEyeRadius = 0.048;
   const plateLinkShape = new THREE.Shape();
   plateLinkShape.absarc(linkPitch, 0, plateLinkEndRadius, -Math.PI / 2, Math.PI / 2, false);

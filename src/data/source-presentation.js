@@ -516,7 +516,7 @@ export default {
     note: 'The disk A with its crossed slots at about 29 degrees and slides c, and the bar B broken off above the disk; no stand, base, external guide, guide pin or white indices are drawn.',
   },
   350: {
-    remove: ['fixed-wide-base', 'fixed-base-edge', 'lower-input-direction-dash-\\d+', 'fixed-upper-pin-rear-support', 'white-traverse-index-on-output-bar', 'output-bar-motion-rib-\\d', 'moving-pin-D-green-front-index'],
+    remove: ['fixed-wide-base', 'fixed-base-edge', 'lower-input-direction-dash-\\d+', 'white-traverse-index-on-output-bar', 'output-bar-motion-rib-\\d', 'moving-pin-D-green-front-index'],
     note: 'The slotted link with its two pins, the short bar with its riser and guides a, a; the lower pin\'s drive is only a dotted line on the plate, so D rides on one plain round rod laid along that line, in a bored shoe centred on it; no dashes, base, pin post or indices are drawn.',
   },
   351: {
@@ -1105,6 +1105,9 @@ export default {
   269: {
     remove: ['fixed-post-behind-moving-frame-holding-pinion', 'fixed-base-of-output-shaft-bearing', 'stationary-bearing-around-output-shaft', '(?:upper|lower)-rack-active-pitch-contact', 'visible-no-full-depth-contact-marker-during-relieved-tooth-handoff', 'white-index-exposing-output-reversals', 'white-index-showing-frame-translation-without-rotation'],
     note: 'The frame, racks and spur gear; no post, bearing, contact marker or index is drawn.',
+  },
+  270: {
+    note: 'Front elevation of the one rope pulley on its six-roller bearing. Brown draws it twice, assembled on the left (cover with six pin holes, fluted journal end) and opened on the right (the six rollers round the journal); one model shows both: the assembled figure\'s pulley face and retainer cover are see-through, so the six rollers turn behind them. The laid rope runs anticlockwise with Brown\'s arrow, on below his crop round a lower return sheave.',
   },
   281: {
     camera: [0.03, 0.01, 1],

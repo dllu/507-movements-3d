@@ -194,3 +194,28 @@ test('movement 483 (pass 99): A’s flag rod needs no floor step; it ends just u
   assert.ok(rod.min.y > -L.bellowsHalfHeight - 0.3, 'at most a short stub shows under the end board');
   disposeModel(model.root);
 });
+
+test('movement 483 (p108): open top, see-through dial-work box, and every duct drop meets a bored solid face', () => {
+  const { model } = movementModel();
+  const { blocks, geometry } = model.root.userData;
+  const L = geometry.layout;
+  const found = roles(model.root);
+  assert.ok(!found.includes('fixed-dry-meter-roof'), 'no roof');
+  assert.ok(blocks.dialCase.userData.seeThrough, 'dial-work box see-through');
+  assert.ok(!blocks.dialCase.castShadow, 'see-through box casts no shadow');
+  // Each duct starts 0.02 up inside the shelf or the seat's boss: a
+  // downward ray from just above the duct's top rim hits shelf solid within
+  // the drop's outer radius just outside the 0.085 bore (the drop is 0.07 outer).
+  model.root.updateMatrixWorld(true);
+  const raycaster = new THREE.Raycaster();
+  for (const run of blocks.ductRuns) {
+    const top = run.points[0];
+    assert.ok(Math.abs(top.y - (L.shelfBottomY + 0.02)) < 1e-9);
+    for (const [dx, dz] of [[0.1, 0], [-0.1, 0], [0, 0.1], [0, -0.1]]) {
+      raycaster.set(new THREE.Vector3(top.x + dx, L.shelfBottomY - 0.5, top.z + dz), new THREE.Vector3(0, 1, 0));
+      const hit = raycaster.intersectObject(blocks.shelf, false)[0];
+      assert.ok(hit && Math.abs(hit.point.y - L.shelfBottomY) < 1e-6, `solid underside beside the ${run.mesh.userData.role} drop at ${dx},${dz}`);
+    }
+  }
+  disposeModel(model.root);
+});

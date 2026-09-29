@@ -399,3 +399,25 @@ test('movement 302 closes in four authored seconds and leaves movement 507 autho
   disposeModel(model507.root);
   disposeModel(model.root);
 });
+
+test('movement 302 lower pinion is Brown\'s small, tall pinion with the arbor through it (pass 107)', () => {
+  const model = createMovementModel(catalog.movements[301]);
+  const { blocks } = model.root.userData;
+  const pinion = blocks.drivePinion;
+  assert.equal(pinion.userData.teeth, 12);
+  const body = pinion.userData.rotor.children[0];
+  body.geometry.computeBoundingBox();
+  const box = body.geometry.boundingBox;
+  const width = box.max.x - box.min.x;
+  const height = box.max.z - box.min.z;
+  // Brown's raster pinion is 53 px across by 43 px high.
+  near(height / width, 43 / 53, 0.05, 'pinion height to width');
+  near(width, 0.8, 0.04, 'pinion diameter');
+  // In the model frame (the arbor along z): the arbor's end is below the pinion's.
+  const shaft = blocks.crownShaft;
+  const shaftBottom = shaft.position.z - shaft.scale.z * shaft.userData.length / 2;
+  assert.ok(shaftBottom < pinion.position.z + box.min.z, 'the arbor runs on through the pinion');
+  const roles = [];
+  model.root.traverse((object) => roles.push(object.userData.role));
+  assert.ok(roles.includes('pointed-lower-pivot-of-crown-arbor'));
+});

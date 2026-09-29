@@ -2,26 +2,26 @@
   "purpose": "Illustrative mass-ratio realizability; not yet the visible model or a strength/inertia validation.",
   "rack": {
     "steelRim": {
-      "areaM2": 0.008231206670094289,
+      "areaM2": 0.008103389308121853,
       "thicknessM": 0.0006,
       "density": 7850,
-      "massKg": 0.0387689834161441
+      "massKg": 0.03816696364125392
     },
     "aluminiumBacking": {
-      "areaM2": 0.01969513221758836,
+      "areaM2": 0.019567314855615744,
       "thicknessM": 0.00025,
       "density": 2700,
-      "massKg": 0.013294214246872145
+      "massKg": 0.013207937527540629
     },
-    "massKg": 0.052063197663016245
+    "massKg": 0.05137490116879455
   },
   "coupler": {
     "material": "brass",
     "density": 8500,
     "frontWidthM": 0.008,
     "pinSpanM": 0.254,
-    "massKg": 0.41650558130412996,
-    "depthM": 0.024022389071194142,
+    "massKg": 0.4109992093503564,
+    "depthM": 0.023704803388356264,
     "massRatio": 8
   },
   "frame": {
@@ -29,16 +29,16 @@
     "thicknessM": 0.005,
     "density": 450,
     "massKg": 0.11082375000000005,
-    "massRatio": 2.128638942181708
+    "massRatio": 2.1571574344422317
   },
   "pairedRods": {
     "material": "aluminium",
-    "depthM": 0.004121454398655487,
+    "depthM": 0.004066967107420507,
     "massRatio": 0.2
   },
   "pinion": {
     "material": "aluminium",
-    "depthM": 0.0106445749394605,
+    "depthM": 0.009986844801903724,
     "massRatio": 1
   },
   "limitations": [

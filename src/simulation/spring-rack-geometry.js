@@ -7,7 +7,7 @@ import {poly,circle,capsule,plate,ring,disk,polygonClipping as clip,familyMass} 
 const source=point=>[(point[0]-measured.center[0])/measured.scale,(measured.center[1]-point[1])/measured.scale],
  px=value=>value/measured.scale,rect=(left,right,bottom,top)=>poly([[left,bottom],[right,bottom],[right,top],[left,top]]);
 
-export function makeSpringRackGeometry({pressureDegrees=10,rackTipWidthPixels=22,backlashPixels=.5,rackPhasePixels=0,gearPhaseOffset=0,stopTopSource=703}={}){
+export function makeSpringRackGeometry({pressureDegrees=10,rackTipWidthPixels=22,backlashPixels=.5,rackPhasePixels=0,gearPhaseOffset=0,stopTopSource=703,restDropPixels=0,lowerGuideDropPixels=0}={}){
  const root=new THREE.Group(),parts={},families={},blocks={},profiles={},
   p={source:measured,pressureAngle:pressureDegrees*Math.PI/180,teeth:measured.virtualTeeth,installedTeeth:measured.gearTeeth,
    pitch:px(measured.pitch),pitchRadius:px(measured.pitch*measured.virtualTeeth/(2*Math.PI)),gearPhase:measured.gearPhase+gearPhaseOffset,
@@ -59,17 +59,23 @@ export function makeSpringRackGeometry({pressureDegrees=10,rackTipWidthPixels=22
  // Brown's tail stops just below the lower guide, but the settled stroke lifts
  // the rack by 2.268 (profile.parameters.upper); the hollow rod is extended so
  // its lower end stays through the guide at the top of the stroke.
- const strokeTop=2.268160511922817;
+ // p108: the rest (and the whole settled stroke) sits restDropPixels (one rack
+ // pitch) lower, so the segment's first tooth takes the rack's TOP tooth and
+ // all seven rack teeth flank the six driven gaps. The lower guide sits
+ // lowerGuideDropPixels lower than Brown's so the lowest tooth clears it at rest.
+ const restDrop=px(restDropPixels),lowerGuide={...measured.rod.lowerGuide,top:measured.rod.lowerGuide.top+lowerGuideDropPixels,bottom:measured.rod.lowerGuide.bottom+lowerGuideDropPixels},
+  strokeTop=2.268160511922817-restDrop;
+ p.restDrop=restDrop;p.lowerGuide=lowerGuide;
  const horizontal=(outer,hole,low,high)=>{
   const geometry=plate(hole?clip.difference(outer,hole):outer,low,high);geometry.rotateX(-Math.PI/2);return geometry;
  },xzRectangle=(xs,zs)=>rect(source([xs[0],0])[0],source([xs[1],0])[0],-zs[1],-zs[0]),
-  channel=xzRectangle(p.guide.channelX,p.guide.channelZ),rodLow=Math.min(source([0,1257])[1],source([0,measured.rod.lowerGuide.bottom])[1]-strokeTop-px(4)),rodHigh=source([0,507])[1];
+  channel=xzRectangle(p.guide.channelX,p.guide.channelZ),rodLow=Math.min(source([0,1257])[1],source([0,lowerGuide.bottom])[1]-strokeTop-px(4)),rodHigh=source([0,507])[1];
  // p106: the rack-rod is ONE plain closed bar that runs, as Brown draws it,
  // up through collar B, spring C and the upper guide plate (no fixed grey
  // mandrel inside the spring). At the lowest rest position (the motion's
  // lower limit, 0.830 below the source pose) its top still stands px(10)
  // proud of the upper plate; over the stroke it rises through that plate.
- const strokeBottom=.8299893355932074,rodTop=source([0,measured.rod.upperSeat.top])[1]+px(10)+strokeBottom,
+ const strokeBottom=.8299893355932074+restDrop,rodTop=source([0,measured.rod.upperSeat.top])[1]+px(10)+strokeBottom,
   rackRod=horizontal(xzRectangle([617,653],p.layers.rack),null,rodLow,rodTop);
  p.rodTop=rodTop;
  attach('rackRod',rackRod,'rack',PALETTE.driven);
@@ -78,7 +84,7 @@ export function makeSpringRackGeometry({pressureDegrees=10,rackTipWidthPixels=22
  plateSeat('movingSpringSeat',measured.rod.movingSeat,'rack',null,100);
  const rodPassage=xzRectangle([616,654],[p.layers.rack[0]-px(1),p.layers.rack[1]+px(1)]);
  plateSeat('upperSpringSeat',measured.rod.upperSeat,'fixed',rodPassage,100);
- plateSeat('lowerRackGuide',measured.rod.lowerGuide,'fixed',rodPassage,48);
+ plateSeat('lowerRackGuide',lowerGuide,'fixed',rodPassage,48);
  profiles.rackTeeth=[];
  for(let i=0;i<measured.rackTeeth;i++){
   const cy=source([0,measured.rackUpperStrokeOrigin+11+measured.pitch*i+rackPhasePixels])[1],
