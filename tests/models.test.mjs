@@ -4020,7 +4020,7 @@ test('movement 73 lets carried spring B index A one tooth while fixed spring C p
   assert.equal(stopPad.material, strongSpring.userData.mesh.material);
   stopPad.geometry.computeBoundingBox();
   const padBox = stopPad.geometry.boundingBox;
-  assert.ok(Math.abs(padBox.min.z - geometry.strongTipZ[0]) < 1e-6 && Math.abs(padBox.max.z - geometry.strongTipZ[1]) < 1e-6);
+  assert.ok(Math.abs(padBox.min.z - geometry.strongZ[0]) < 1e-6 && Math.abs(padBox.max.z - geometry.strongZ[1]) < 1e-6);
   assert.ok(Math.abs(padBox.max.x - geometry.stopPadRadius) < 1e-6 && Math.abs(padBox.min.x) < 1e-6);
   assert.ok(Math.abs(geometry.strongHalfWidth - geometry.stopPadRadius) < 1e-12);
 
@@ -4045,60 +4045,35 @@ test('movement 73 lets carried spring B index A one tooth while fixed spring C p
   assert.ok(new THREE.Box3().setFromObject(driverBody).max.z < new THREE.Box3().setFromObject(ratchetBody).min.z,
     'large driving wheel D is coaxial with and behind ratchet A');
 
-  // Depth layers: B's leaf passes under C's web; only B's nib reaches
-  // forward to meet C's web and A's teeth, and C's thin end works in A's
-  // front half, clear of the nib.
+  // One plane: C (constant section) and B's nib work within A's depth;
+  // B's leaf lies under them on D's face.
   const ratchetBack = geometry.ratchetPlaneZ - geometry.ratchetDepth / 2;
   const ratchetFront = geometry.ratchetPlaneZ + geometry.ratchetDepth / 2;
-  assert.ok(geometry.catchLeafZ[1] < geometry.strongWebZ[0], 'B passes under C');
-  assert.ok(geometry.catchNibZ[1] > ratchetBack && geometry.catchNibZ[1] > geometry.strongWebZ[0], 'the nib reaches A and C\'s web');
-  assert.ok(geometry.catchNibZ[1] < geometry.strongTipZ[0], 'C\'s end and B\'s nib share a tooth space without meeting');
-  assert.ok(geometry.strongTipZ[0] < ratchetFront, 'C\'s end reaches into A');
+  assert.ok(geometry.catchLeafZ[1] < geometry.strongZ[0] && geometry.catchLeafZ[1] < ratchetBack, 'B passes under C and A');
+  assert.ok(geometry.strongZ[0] >= ratchetBack && geometry.strongZ[1] <= ratchetFront, 'C works in A’s plane');
+  assert.ok(geometry.catchNibZ[1] > geometry.strongZ[1] - 0.011, 'the nib meets C edge to edge');
   assert.ok(geometry.catchLeafZ[0] > geometry.driverPlaneZ + geometry.driverDepth / 2 - 1e-12, 'B lies on D\'s face');
-  assert.ok(geometry.pressToothMargin > 0 && geometry.driveCrestSpan > 0, 'the designed nib path clears and drives the teeth');
 
-  // The nib never enters C's web: its back stays at least pressGap inside
-  // the web wherever the deep web lies over it, and touches it while pressed.
-  const nibClearance = (psi) => {
-    const radius = u.nibRadiusAt(psi);
-    let clearance = Infinity;
-    for (let k = 0; k <= 32; k += 1) {
-      const theta = psi + geometry.nibAngularLength * k / 32;
-      if (theta < geometry.webEndTheta || Math.abs(theta - geometry.webNormalAngle) > 1.4) continue;
-      clearance = Math.min(clearance, u.webInnerAt(theta) - radius - geometry.nibHalfWidth);
-    }
-    return clearance;
-  };
-  for (let k = 0; k <= 720; k += 1) {
-    const psi = geometry.driveEndPsi + geometry.fullTurn * k / 720;
-    assert.ok(nibClearance(psi) >= geometry.pressGap - 1e-9, `nib enters C at ${psi}`);
-  }
-  const pressedPsi = (geometry.drivePsi0 + geometry.escapeStartPsi) / 2;
-  assert.ok(Math.abs(nibClearance(pressedPsi) - geometry.pressGap) < 1e-9, 'C bears on the back of B\'s nib while it drives');
-
-  // One turn of D, sampled: dwell, press, index, escape, release.
+  // One turn of D, sampled: dwell, press, index, C's return and A's seating.
   const period = geometry.driverCyclePeriod;
   const stages = new Set();
-  let maximumStopError = 0;
-  for (let sample = 0; sample <= 1440; sample += 1) {
-    const state = u.stateAtTime(period * sample / 1440);
+  for (let sample = 0; sample <= 2880; sample += 1) {
+    const state = u.stateAtTime(period * sample / 2880);
     stages.add(state.stage);
-    if (state.stopContactEngaged) maximumStopError = Math.max(maximumStopError, state.stopContact.contactError);
-    if (!state.indexing) assert.equal(state.drivenAngularSpeed, 0);
-    else assert.ok(state.drivenAngularSpeed < 0, 'A advances clockwise with B');
+    if (state.indexing) assert.ok(state.drivenAngularSpeed < 0, 'A advances clockwise with B');
   }
-  assert.deepEqual([...stages].sort(), ['catch-spring-escape', 'catch-spring-index', 'catch-spring-release',
-    'ratchet-dwell', 'strong-spring-press']);
-  assert.ok(maximumStopError < 1e-9, 'C stays tangent to A as stop');
+  assert.deepEqual([...stages].sort(), ['catch-spring-index', 'catch-spring-release', 'ratchet-dwell',
+    'ratchet-settle', 'strong-spring-press']);
   const start = u.stateAtTime(0), turn = u.stateAtTime(period);
   assert.ok(Math.abs(turn.driverAngle - start.driverAngle + geometry.fullTurn) < 1e-9, 'D turns clockwise');
   assert.ok(Math.abs(turn.drivenAngle - start.drivenAngle + geometry.toothPitch) < 1e-9, 'one turn of D advances A one tooth');
   assert.ok(Math.abs(u.stateAtTime(11 * period).drivenAngle - start.drivenAngle + geometry.fullTurn) < 1e-9);
   assert.ok(start.driverActualAngularSpeed < 0, 'the source arrow makes D rotate clockwise');
   assert.equal(u.minimumDisplayCycleSeconds, 10, 'one turn of D plays in at least ten seconds');
+  assert.equal(u.simulation.baked, true, 'production replays the baked pass');
 
   // The rendered parts follow the state.
-  for (const fraction of [0, 0.3, 0.55, 0.58, 0.61, 0.64, 0.67, 0.9]) {
+  for (const fraction of [0, 0.3, 0.6, 0.62, 0.64, 0.65, 0.66, 0.67, 0.9]) {
     model.update(period * fraction, 0.016);
     const state = u.kinematics;
     assert.equal(driver.userData.rotor.rotation.z, state.driverAngle);
@@ -4109,26 +4084,19 @@ test('movement 73 lets carried spring B index A one tooth while fixed spring C p
     assert.ok(strongSpring.userData.curve.getPoint(0).distanceTo(geometry.strongSpringAnchor) < 1e-9);
     assert.ok(strongSpring.userData.curve.getPoint(1).clone().setZ(0).distanceTo(
       new THREE.Vector3(state.stopContact.center.x, state.stopContact.center.y, 0)) < 1e-9);
+    assert.ok(stopPad.position.distanceTo(new THREE.Vector3(state.stopContact.center.x, state.stopContact.center.y, 0)) < 1e-9);
     assert.equal(u.contacts.catchTooth.engaged, state.catchToothContactEngaged);
     assert.equal(u.contacts.springPress.engaged, state.strongSpringPressEngaged);
     assert.equal(u.contacts.strongStop.engaged, state.stopContactEngaged);
   }
-  // Pass 96: C bends as one leaf from its block (propped by B's nib), and
-  // its end drops back into the seat over a tenth of a second instead of
-  // jumping there. Its end never jumps and never enters A.
-  let previous = u.stateAtTime(0).stopContact.center.clone(), dropping = 0, webMoved = 0;
+  // Pass 110: C's end never jumps and never enters A.
+  let previous = u.stateAtTime(0).stopContact.center.clone();
   for (let sample = 1; sample <= 4000; sample += 1) {
     const state = u.stateAtTime(period * sample / 4000), center = state.stopContact.center;
-    assert.ok(center.distanceTo(previous) < 0.02, `C's end jumps at ${sample}`);
+    assert.ok(center.distanceTo(previous) < 0.012, `C's end jumps at ${sample}`);
     previous = center.clone();
-    if (state.stopMode === 'dropping-into-seat') dropping += 1;
-    const relaxed = u.stateAtTime(0).strongCurve.getPoint(0.4), bent = state.strongCurve.getPoint(0.4);
-    webMoved = Math.max(webMoved, relaxed.distanceTo(bent));
-    const local = new THREE.Vector2(center.x, center.y).rotateAround(new THREE.Vector2(), -state.drivenAngle);
-    assert.ok(local.length() > geometry.ratchetRootRadius, 'C stays outside A');
+    assert.ok(state.stopContact.gap > -3e-4, 'C stays outside A');
   }
-  assert.ok(dropping >= 30, 'the drop lasts several frames');
-  assert.ok(webMoved > 0.005 && webMoved < 0.06, `the whole leaf takes part, gently (${webMoved})`);
   disposeModel(model.root);
 });
 

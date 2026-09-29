@@ -18,62 +18,6 @@ const zRange = (object) => {
   return [box.min.z, box.max.z];
 };
 
-// Plan outline (world XY) of the rendered flat band of a leaf spring, keeping
-// only the rings whose [back, front] depth span passes `keep`. Neighbouring
-// rings are kept too, because the quads between a kept and a dropped ring
-// still carry part of the solid into the kept depth range.
-const bandOutline = (spring, keep) => {
-  const { mesh } = spring.userData;
-  const position = mesh.geometry.attributes.position;
-  const rings = (position.count - 8) / 8;
-  const vertex = (index) => new THREE.Vector3()
-    .fromBufferAttribute(position, index).applyMatrix4(mesh.matrixWorld);
-  // Ring corner 0 is (+w, front), 1 is (+w, back), 5 is (-w, front).
-  const kept = (ring) => ring >= 0 && ring < rings
-    && keep(vertex(ring * 8 + 1).z, vertex(ring * 8).z);
-  const outer = [];
-  const inner = [];
-  for (let ring = 0; ring < rings; ring += 1) {
-    if (!(kept(ring) || kept(ring - 1) || kept(ring + 1))) continue;
-    const a = vertex(ring * 8);
-    const b = vertex(ring * 8 + 5);
-    outer.push(new THREE.Vector2(a.x, a.y));
-    inner.push(new THREE.Vector2(b.x, b.y));
-  }
-  return [...outer, ...inner.reverse()];
-};
-const inside = (point, polygon) => {
-  let result = false;
-  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i, i += 1) {
-    const a = polygon[i];
-    const b = polygon[j];
-    if ((a.y > point.y) !== (b.y > point.y)
-      && point.x < (b.x - a.x) * (point.y - a.y) / (b.y - a.y) + a.x) result = !result;
-  }
-  return result;
-};
-const edgeDistance = (point, polygon) => {
-  let distance = Infinity;
-  for (let index = 0; index < polygon.length; index += 1) {
-    const a = polygon[index];
-    const edge = polygon[(index + 1) % polygon.length].clone().sub(a);
-    const t = THREE.MathUtils.clamp(point.clone().sub(a).dot(edge) / edge.lengthSq(), 0, 1);
-    distance = Math.min(distance, a.clone().addScaledVector(edge, t).distanceTo(point));
-  }
-  return distance;
-};
-// Negative when either outline has a vertex inside the other.
-const signedGap = (first, second) => {
-  let gap = Infinity;
-  for (const [points, polygon] of [[first, second], [second, first]]) {
-    for (const point of points) {
-      const distance = edgeDistance(point, polygon);
-      gap = Math.min(gap, inside(point, polygon) ? -distance : distance);
-    }
-  }
-  return gap;
-};
-
 test('movement 73 shows only D, A, springs B and C and C’s fixed block', () => {
   const model = build();
   const { blocks } = model.root.userData;
@@ -114,191 +58,242 @@ test('movement 73 shows only D, A, springs B and C and C’s fixed block', () =>
   assert.ok(model.cameraDirection.z > Math.abs(model.cameraDirection.x) * 8);
 });
 
-test('movement 73 layers D, A and both springs without axial overlap', () => {
+
+test('movement 73 puts C, A and B’s nib in one plane, with B’s leaf under them', () => {
   const model = build();
-  const { blocks, geometry, stateAtTime } = model.root.userData;
+  const { blocks, geometry } = model.root.userData;
   model.update(0, 0.016);
   model.root.updateMatrixWorld(true);
   const [driverBack, driverFront] = zRange(blocks.driverBody);
   const [, sleeveFront] = zRange(blocks.driverSleeve);
-  const [ratchetBack] = zRange(blocks.ratchetBody);
+  const [ratchetBack, ratchetFront] = zRange(blocks.ratchetBody);
   const [clampBack, clampFront] = zRange(blocks.catchClamp);
   const [catchBack, catchFront] = zRange(blocks.catchSpring);
-  const [strongBack] = zRange(blocks.strongSpring);
-  const [padBack] = zRange(blocks.stopPad);
+  const [strongBack, strongFront] = zRange(blocks.strongSpring);
   const [blockBack] = zRange(blocks.strongSpringClamp);
 
   assert.ok(sleeveFront < ratchetBack - 0.005, 'D’s sleeve stops behind A and its hub');
-  // p106: A's shaft fills the bores; D keeps a running clearance on it.
-  assert.ok(geometry.driverBoreRadius > blocks.ratchetShaft.userData.radius + 0.004,
-    'D turns loose on A’s shaft');
-  assert.ok(clampBack >= driverFront - 1e-6, 'B’s clamp stands on D’s face');
-  assert.ok(catchBack >= driverFront - 1e-6, 'B lies on D’s face, not in it');
+  assert.ok(geometry.driverBoreRadius > blocks.ratchetShaft.userData.radius + 0.004, 'D turns loose on A’s shaft');
+  assert.ok(clampBack >= driverFront - 1e-6 && catchBack >= driverFront - 1e-6, 'B and its clamp stand on D’s face');
   assert.ok(blockBack > driverFront, 'C’s block stands in front of D');
   assert.ok(driverBack < driverFront);
 
-  // B's clamp and all of B's leaf except the nib lie behind C and behind A,
-  // so they pass under C; only the nib reaches forward.
-  assert.ok(clampFront < strongBack, 'B’s clamp passes under C');
-  assert.ok(geometry.catchLeafZ[1] < strongBack && geometry.catchLeafZ[1] < ratchetBack,
-    'B’s leaf passes under C and behind A');
-  const { mesh } = blocks.catchSpring.userData;
-  const position = mesh.geometry.attributes.position;
-  const tip = stateAtTime(0).catchCurveLocal.getPoint(1);
-  const nibReach = geometry.nibLength + geometry.nibHalfWidth + 0.02;
-  let forward = 0;
+  // C is one flat leaf of constant section: every vertex of its band lies
+  // on its back or front plane, and the band keeps one width.
+  const position = blocks.strongSpring.userData.mesh.geometry.attributes.position;
   for (let index = 0; index < position.count; index += 1) {
-    if (position.getZ(index) <= geometry.catchLeafZ[1] + 1e-6) continue;
+    const z = position.getZ(index);
+    assert.ok(Math.abs(z - geometry.strongZ[0]) < 1e-6 || Math.abs(z - geometry.strongZ[1]) < 1e-6, `C vertex at z ${z}`);
+  }
+  const rings = (position.count - 8) / 8;
+  for (let ring = 0; ring < rings; ring += 1) {
+    const outer = new THREE.Vector2(position.getX(ring * 8), position.getY(ring * 8));
+    const inner = new THREE.Vector2(position.getX(ring * 8 + 5), position.getY(ring * 8 + 5));
+    assert.ok(Math.abs(outer.distanceTo(inner) - 2 * geometry.strongHalfWidth) < 1e-5, `C’s width at ring ${ring}`);
+  }
+  assert.ok(Math.abs(strongBack - geometry.strongZ[0]) < 1e-6 && Math.abs(strongFront - geometry.strongZ[1]) < 1e-6);
+  // C and the nib work within A's depth, and the nib spans all but a
+  // sliver of C's depth, so C bears on it edge to edge.
+  assert.ok(geometry.strongZ[0] >= ratchetBack && geometry.strongZ[1] <= ratchetFront, 'C works in A’s plane');
+  assert.ok(geometry.catchNibZ[1] >= geometry.strongZ[1] - 0.011 && geometry.catchNibZ[1] < ratchetFront,
+    'the nib reaches through C’s plane');
+  // B's leaf and clamp pass under C and behind A ("B passes under the
+  // strong spring C"); only the nib reaches forward.
+  assert.ok(clampFront < strongBack && clampFront < ratchetBack, 'B’s clamp passes under C');
+  assert.ok(geometry.catchLeafZ[1] < strongBack && geometry.catchLeafZ[1] < ratchetBack, 'B’s leaf passes under C and behind A');
+  const catchPosition = blocks.catchSpring.userData.mesh.geometry.attributes.position;
+  const tip = model.root.userData.stateAtTime(0).catchCurveLocal.getPoint(1);
+  let forward = 0;
+  for (let index = 0; index < catchPosition.count; index += 1) {
+    if (catchPosition.getZ(index) <= geometry.catchLeafZ[1] + 1e-6) continue;
     forward += 1;
-    assert.ok(Math.hypot(position.getX(index) - tip.x, position.getY(index) - tip.y) < nibReach,
-      'only B’s nib reaches forward of the leaf plane');
+    assert.ok(Math.hypot(catchPosition.getX(index) - tip.x, catchPosition.getY(index) - tip.y)
+      < geometry.nibLength + geometry.nibHalfWidth + 0.03, 'only B’s nib reaches forward of the leaf plane');
   }
-  assert.ok(forward > 0, 'B’s nib reaches forward into A and C’s web');
-  assert.ok(catchFront > ratchetBack && catchFront > strongBack, 'the nib reaches A’s teeth and C’s web');
-
-  // C's thin end and round tip work in A's front half, wholly in front of
-  // B's nib, so they share a tooth space without meeting.
-  assert.ok(catchFront < geometry.strongTipZ[0] && catchFront < padBack,
-    'B’s nib and C’s end are axially clear');
-  assert.ok(padBack < ratchetBack + geometry.ratchetDepth, 'C’s end reaches into A');
+  assert.ok(forward > 0 && Math.abs(catchFront - geometry.catchNibZ[1]) < 1e-6);
 });
 
-test('movement 73 keeps B’s nib off C while C presses it through a tooth', () => {
-  const model = build();
-  const { blocks, geometry } = model.root.userData;
-  // The parts of B and C that share a depth: B's forward-reaching nib and
-  // C's deep web.
-  const gapAt = (time) => {
-    model.update(time, 0.016);
-    model.root.updateMatrixWorld(true);
-    return signedGap(
-      bandOutline(blocks.catchSpring, (back, front) => front > geometry.strongWebZ[0] + 1e-9),
-      bandOutline(blocks.strongSpring, (back) => back < geometry.catchNibZ[1] - 1e-9),
-    );
-  };
-  const period = geometry.driverCyclePeriod;
-  let minimum = Infinity;
-  const indexGaps = [];
-  let firstIndex = null;
-  let lastIndex = null;
-  for (let sample = 0; sample <= 240; sample += 1) {
-    const time = period * sample / 240;
-    const state = model.root.userData.stateAtTime(time);
-    if (state.indexing) {
-      firstIndex ??= time;
-      lastIndex = time;
-    }
-    minimum = Math.min(minimum, gapAt(time));
+// Plan clearances between C (a round-ended band), the nib and A at one time.
+const clearances = (model, time) => {
+  const { geometry, simulation, stateAtTime } = model.root.userData;
+  const leaf = simulation.model;
+  const state = stateAtTime(time);
+  const h = geometry.strongHalfWidth;
+  leaf.deform(state.leafModes);
+  const { px, py } = leaf.positions();
+  const theta = state.drivenAngle;
+  const c = Math.cos(theta), s = Math.sin(theta);
+  const wheel = leaf.ratchetProfile.map(([x, y]) => [c * x - s * y, s * x + c * y]);
+  let leafWheel = Infinity, leafNib = Infinity, nibWheel = Infinity;
+  for (let i = 1; i <= leaf.N; i += 1) {
+    const hit = leaf.wheelDistance(px[i], py[i], theta);
+    if (hit) leafWheel = Math.min(leafWheel, hit.distance - h);
   }
-  // Densely through the one-tooth index itself.
-  for (let sample = 0; sample <= 240; sample += 1) {
-    const time = THREE.MathUtils.lerp(firstIndex, lastIndex, sample / 240);
-    const state = model.root.userData.stateAtTime(time);
-    const gap = gapAt(time);
-    minimum = Math.min(minimum, gap);
-    if (state.stage === 'catch-spring-index') indexGaps.push(gap);
+  for (const [x, y] of wheel) leafWheel = Math.min(leafWheel, leaf.leafClosest(x, y, 1).distance - h);
+  leaf.placeNib(state.driverAngle, state.nibRadius - geometry.relaxedNibRadius);
+  for (const [x, y] of leaf.nibWorld) {
+    const hit = leaf.wheelDistance(x, y, theta);
+    if (hit) nibWheel = Math.min(nibWheel, hit.distance);
+    leafNib = Math.min(leafNib, leaf.leafClosest(x, y, 1).distance - h);
   }
-  assert.ok(minimum > 0, `B’s nib never enters C’s web (closest ${minimum})`);
-  indexGaps.sort((a, b) => a - b);
-  const median = indexGaps[Math.floor(indexGaps.length / 2)];
-  // Pass 96: C now bends as a propped leaf, so its web eases up to about
-  // 0.0035 further off the nib than the relaxed press gap.
-  assert.ok(Math.abs(median - geometry.pressGap) < 0.004,
-    `C bears on the back of B’s nib while it carries the tooth (median gap ${median})`);
+  for (const [x, y] of wheel) {
+    const hit = leaf.nibDistance(x, y);
+    if (hit) nibWheel = Math.min(nibWheel, hit.distance);
+  }
+  for (let i = 1; i <= leaf.N; i += 1) {
+    const hit = leaf.nibDistance(px[i], py[i]);
+    if (hit) leafNib = Math.min(leafNib, hit.distance - h);
+  }
+  return { leafNib, leafWheel, nibWheel, state };
+};
 
-  // C's press is what makes B catch: the relaxed nib clears A's crests, and
-  // the pressed nib spans the crest radius while it carries the tooth.
-  assert.ok(geometry.relaxedNibRadius - geometry.nibHalfWidth > geometry.ratchetOuterRadius);
-  for (let sample = 0; sample <= 60; sample += 1) {
-    const state = model.root.userData.stateAtTime(THREE.MathUtils.lerp(firstIndex, lastIndex, sample / 60));
-    if (state.stage !== 'catch-spring-index') continue;
-    assert.ok(state.nibRadius - geometry.nibHalfWidth < geometry.ratchetOuterRadius
-      && state.nibRadius + geometry.nibHalfWidth > geometry.ratchetOuterRadius, 'the nib spans the crest');
-  }
-});
-
-test('movement 73 bends B and C as smooth cantilevers from their clamps', () => {
+test('movement 73: C presses the nib into A, bends out of its way and seats A, all in one plane', () => {
   const model = build();
   const { geometry, stateAtTime } = model.root.userData;
-  // Signed turn between successive chords of `samples` equal parameter steps.
-  const turns = (curve, samples) => {
-    const points = curve.getPoints(samples);
+  const period = geometry.driverCyclePeriod;
+  // The nib's pass occupies travel [0, windowAngle) after psiStart.
+  const passStart = (geometry.psiStart - THREE.MathUtils.degToRad(10) - geometry.fullTurn) / geometry.driverAngularSpeed + period;
+  const passLength = geometry.windowAngle / geometry.driverAngularSpeed;
+  let worst = { leafNib: Infinity, leafWheel: Infinity, nibWheel: Infinity };
+  let pressed = 0, indexing = 0, settling = 0, highest = 0, deepest = Infinity, overshoot = 0;
+  const seat = stateAtTime(passStart - 0.01);
+  for (let sample = 0; sample <= 2400; sample += 1) {
+    const { leafNib, leafWheel, nibWheel, state } = clearances(model, passStart + passLength * sample / 2400);
+    worst = {
+      leafNib: Math.min(worst.leafNib, leafNib),
+      leafWheel: Math.min(worst.leafWheel, leafWheel),
+      nibWheel: Math.min(worst.nibWheel, nibWheel),
+    };
+    if (state.strongSpringPressEngaged) pressed += 1;
+    if (state.indexing) indexing += 1;
+    if (state.stage === 'ratchet-settle') settling += 1;
+    highest = Math.max(highest, state.stopContact.center.length() - seat.stopContact.center.length());
+    deepest = Math.min(deepest, state.nibRadius);
+    overshoot = Math.max(overshoot, seat.drivenAngle - geometry.toothPitch - state.drivenAngle);
+  }
+  // Nothing interpenetrates (tolerance: interpolation of the 4 ms replay).
+  for (const [pair, value] of Object.entries(worst)) assert.ok(value > -3e-4, `${pair} overlaps by ${-value}`);
+  assert.ok(pressed > 100 && indexing > 100 && settling > 10, `${pressed} ${indexing} ${settling}`);
+  // C presses the nib below A's crests (the relaxed nib clears them) ...
+  assert.ok(geometry.relaxedNibRadius - geometry.nibHalfWidth > geometry.ratchetOuterRadius + 0.02);
+  assert.ok(deepest + geometry.nibHalfWidth < geometry.ratchetOuterRadius + 0.03
+    && deepest - geometry.nibHalfWidth < geometry.ratchetOuterRadius - 0.08, `the nib reaches ${deepest}`);
+  // ... and its end is lifted clear out of A's teeth to let the nib pass.
+  assert.ok(highest > 0.15, `C’s end lifts ${highest}`);
+  // A overshoots a little while B lets go, then C's preload seats it.
+  assert.ok(overshoot > 0.02 && overshoot < 0.2, `A overshoots ${overshoot}`);
+  const after = stateAtTime(passStart + passLength + 0.01);
+  assert.ok(Math.abs(after.drivenAngle - seat.drivenAngle + geometry.toothPitch) < 1e-9, 'one tooth per turn of D');
+  assert.ok(after.stopContact.center.distanceTo(seat.stopContact.center.clone()
+    .rotateAround(new THREE.Vector2(), 0)) < 1e-6, 'C’s end returns to the same seat');
+  assert.ok(Math.abs(after.nibRadius - geometry.relaxedNibRadius) < 1e-6, 'B springs back out');
+  // At rest C's end sits in the corner of a tooth space, touching A.
+  const rest = clearances(model, 0);
+  assert.ok(Math.abs(rest.leafWheel) < 2e-4, `C rests on A (${rest.leafWheel})`);
+});
+
+test('movement 73 moves continuously, with no jump or teleport anywhere in the turn', () => {
+  const model = build();
+  const { geometry, stateAtTime } = model.root.userData;
+  const period = geometry.driverCyclePeriod;
+  const samples = 20000;
+  let previous = stateAtTime(0);
+  let pad = 0, nib = 0, wheel = 0, leaf = 0;
+  for (let sample = 1; sample <= samples; sample += 1) {
+    const state = stateAtTime(period * sample / samples);
+    pad = Math.max(pad, state.stopContact.center.distanceTo(previous.stopContact.center));
+    nib = Math.max(nib, Math.abs(state.nibRadius - previous.nibRadius));
+    wheel = Math.max(wheel, Math.abs(state.drivenAngle - previous.drivenAngle));
+    leaf = Math.max(leaf, state.strongCurve.getPoint(0.5).distanceTo(previous.strongCurve.getPoint(0.5)));
+    previous = state;
+  }
+  // Per 1/20000 turn (0.44 ms): C's end falls back at under 2.5 units/s,
+  // A turns at about D's rate at most.
+  const step = period / samples;
+  assert.ok(pad / step < 2.5, `C’s end moves at ${pad / step}`);
+  assert.ok(nib / step < 3, `the nib moves at ${nib / step}`);
+  assert.ok(wheel / step < 1.3 * geometry.driverAngularSpeed, `A turns at ${wheel / step}`);
+  assert.ok(leaf / step < 1, `C’s middle moves at ${leaf / step}`);
+  // The turn closes on itself one tooth on.
+  const start = stateAtTime(0), turn = stateAtTime(period);
+  assert.ok(Math.abs(turn.drivenAngle - start.drivenAngle + geometry.toothPitch) < 1e-9);
+  assert.ok(turn.stopContact.center.distanceTo(start.stopContact.center) < 1e-9);
+  assert.ok(Math.abs(turn.nibRadius - start.nibRadius) < 1e-9);
+});
+
+test('movement 73 bends C as one elastic leaf, most at its clamp, and B as a smooth guided leaf', () => {
+  const model = build();
+  const { geometry, stateAtTime } = model.root.userData;
+  const turns = (points) => {
     const result = [];
-    for (let index = 1; index < samples; index += 1) {
+    for (let index = 1; index < points.length - 1; index += 1) {
       const before = points[index].clone().sub(points[index - 1]);
       const after = points[index + 1].clone().sub(points[index]);
       result.push(Math.atan2(before.x * after.y - before.y * after.x, before.x * after.x + before.y * after.y));
     }
     return result;
   };
-  const largest = (values) => Math.max(...values.map(Math.abs));
-  const relaxed = stateAtTime(0);
-  const clampDirection = (curve) => curve.getPoint(0.01).sub(curve.getPoint(0)).normalize();
-  // C's deep web ends at webEndFraction; beyond it C is formed into a tight
-  // hook that turns into its seat in A. That hook is a deliberate bend, so
-  // it is judged by its radius and by the evenness of its turning rather
-  // than by the leaf-wide limit. C is a polyline of evenly spaced vertices;
-  // at that native spacing a smooth bend turns each vertex by close to the
-  // mean of its neighbours' turns, whereas a kink either way is one vertex
-  // departing from that mean by the kink's whole angle.
-  const webVertices = Math.floor(geometry.webEndFraction * 96) - 1;
-  let leaf = 0;
-  let tightest = Infinity;
-  let kink = 0;
-  let clampSlip = 0;
-  for (let sample = 0; sample <= 400; sample += 1) {
-    const state = stateAtTime(geometry.driverCyclePeriod * sample / 400);
-    leaf = Math.max(leaf, largest(turns(state.catchCurveLocal, 96)),
-      largest(turns(state.strongCurve, 96).slice(0, webVertices)));
-    const hook96 = turns(state.strongCurve, 96).slice(webVertices);
-    const native = state.strongCurve.relaxedPoints.length - 1;
-    const hookNative = turns(state.strongCurve, native)
-      .slice(Math.floor(geometry.webEndFraction * native) - 2);
-    const step = state.strongCurve.getLength() / 96;
-    tightest = Math.min(tightest, step / largest(hook96));
-    for (let index = 1; index < hookNative.length - 1; index += 1) {
-      kink = Math.max(kink,
-        Math.abs(hookNative[index] - (hookNative[index - 1] + hookNative[index + 1]) / 2));
+  const relaxed = turns(geometry.relaxedStrongPoints);
+  const length = (points) => points.reduce((sum, point, index) => index ? sum + point.distanceTo(points[index - 1]) : sum, 0);
+  const period = geometry.driverCyclePeriod;
+  let lifted = null, liftedBy = 0, roughness = 0, stretch = 0, clampSlip = 0, catchTurn = 0;
+  const clampDirection = (points) => points[1].clone().sub(points[0]).normalize();
+  for (let sample = 0; sample <= 1200; sample += 1) {
+    const state = stateAtTime(period * (0.55 + 0.2 * sample / 1200));
+    const points = state.strongCurve.points;
+    const change = turns(points).map((value, index) => value - relaxed[index]);
+    for (let index = 1; index < change.length - 1; index += 1) {
+      roughness = Math.max(roughness, Math.abs(change[index + 1] - 2 * change[index] + change[index - 1]));
     }
-    clampSlip = Math.max(
-      clampSlip,
-      clampDirection(state.catchCurveLocal).angleTo(clampDirection(relaxed.catchCurveLocal)),
-      clampDirection(state.strongCurve).angleTo(clampDirection(relaxed.strongCurve)),
-    );
+    stretch = Math.max(stretch, Math.abs(length(points) - length(geometry.relaxedStrongPoints)));
+    clampSlip = Math.max(clampSlip, clampDirection(points).angleTo(clampDirection(geometry.relaxedStrongPoints)));
+    const lift = points.at(-1).distanceTo(geometry.relaxedStrongPoints.at(-1));
+    if (lift > liftedBy) { liftedBy = lift; lifted = change; }
+    catchTurn = Math.max(catchTurn, ...turns(state.catchCurveLocal.getPoints(96)).map(Math.abs));
   }
-  assert.ok(leaf < 0.06, `no kink: largest turn per 1/96 of B and of C’s web is ${leaf}`);
-  // C's end is one arc that lifts radially over a crest, so its tightest
-  // bend (about 2.8 half-widths at full lift) is short of the old J-hook's.
-  assert.ok(tightest > 2.5 * geometry.strongHalfWidth,
-    `C’s end bends with radius ${tightest}, well over its half-width, so the band never folds`);
-  // A 0.02 rad (1.1°) corner anywhere in C's end would exceed the largest
-  // departure where the long arc runs into the tip arc.
-  assert.ok(kink < 0.02, `C’s hook is a smooth bend, not a corner (departure ${kink})`);
-  assert.ok(clampSlip < 0.01, `each leaf leaves its clamp along its clamped direction (${clampSlip})`);
+  assert.ok(liftedBy > 0.15, `C bends out of the way (${liftedBy})`);
+  // Bent furthest, C's curvature change is largest at its clamp and falls
+  // steadily to nothing at its free end, as a leaf loaded near its end.
+  const magnitude = lifted.map(Math.abs);
+  assert.ok(magnitude[0] >= Math.max(...magnitude) - 1e-9, 'curvature changes most at the clamp');
+  for (let index = 8; index < magnitude.length; index += 8) {
+    assert.ok(magnitude[index] <= magnitude[index - 8] + 1e-7, `curvature change rises again at ${index}`);
+  }
+  assert.ok(magnitude.at(-1) < 0.05 * magnitude[0], 'no moment at the free end');
+  assert.ok(roughness < 1e-5, `no kink: largest second difference ${roughness}`);
+  assert.ok(stretch < 1e-5, `C keeps its length (${stretch})`);
+  // (The first segment turns by the rotation at its midpoint.)
+  assert.ok(clampSlip < 1e-3, `C leaves its block along its clamped direction (${clampSlip})`);
+  assert.ok(catchTurn < 0.06, `B turns smoothly (${catchTurn})`);
 });
 
-test('movement 73 draws C as one smooth leaf of two tangent arcs bending one way', () => {
+test('movement 73 draws C as one circular arc fitted to Brown’s leaf, bending one way', async () => {
   const { geometry } = build().root.userData;
   const points = geometry.relaxedStrongPoints.map((point) => new THREE.Vector2(point.x, point.y));
-  const webCount = Math.floor(geometry.webEndFraction * (points.length - 1));
-  // Every point lies on the long web arc up to the web's end and on the
-  // tighter tip arc after it.
-  points.forEach((point, index) => {
-    const onWeb = Math.abs(point.distanceTo(geometry.webArcCenter) - geometry.webArcRadius);
-    const onTip = Math.abs(point.distanceTo(geometry.tipArcCenter) - geometry.tipArcRadius);
-    if (index < webCount - 1) assert.ok(onWeb < 2e-3, `point ${index} is off the web arc by ${onWeb}`);
-    if (index > webCount + 1) assert.ok(onTip < 2e-3, `point ${index} is off the tip arc by ${onTip}`);
-  });
-  assert.ok(geometry.tipArcRadius > 4 * geometry.strongHalfWidth
-    && geometry.tipArcRadius < geometry.webArcRadius);
-  // No kink, J-hook or reversal: the leaf turns clockwise at every vertex.
+  for (const point of points) {
+    assert.ok(Math.abs(point.distanceTo(geometry.strongArcCenter) - geometry.strongArcRadius) < 1e-9);
+  }
+  assert.ok(geometry.strongArcFit < 0.03, `fits the plate within ${geometry.strongArcFit}`);
   for (let index = 1; index + 1 < points.length; index += 1) {
     const before = points[index].clone().sub(points[index - 1]);
     const after = points[index + 1].clone().sub(points[index]);
-    const turn = Math.atan2(cross2(before, after), before.dot(after));
-    assert.ok(turn < 1e-9 && turn > -0.08, `vertex ${index} turns ${turn}`);
+    assert.ok(Math.atan2(cross2(before, after), before.dot(after)) < 0, 'turns clockwise throughout');
   }
-  // It rises from the block's corner and ends in C's seat.
-  assert.ok(points[0].distanceTo(new THREE.Vector2(geometry.strongSpringAnchor.x,
-    geometry.strongSpringAnchor.y)) < 1e-9);
+  assert.ok(points[0].distanceTo(new THREE.Vector2(geometry.strongSpringAnchor.x, geometry.strongSpringAnchor.y)) < 1e-9);
+  assert.ok(points.at(-1).distanceTo(geometry.seat) < 1e-9, 'it ends in C’s seat');
+  assert.ok(Math.abs(Math.atan2(geometry.seat.y, geometry.seat.x) - geometry.seatWorldAngle) < 1e-9);
+});
+
+test('movement 73 replays a bake that matches the live simulation', async () => {
+  const { simulateSpringIndex073, springIndex073Fingerprint } = await import('../src/simulation/spring-index-073-leaf.js');
+  const { default: baked } = await import('../src/simulation/baked/spring-index-073-leaf.js');
+  const { simulation, simulationConfig } = build().root.userData;
+  assert.equal(simulation.baked, true, 'production replays the bake');
+  assert.equal(baked.fingerprint, springIndex073Fingerprint(simulationConfig));
+  const live = simulateSpringIndex073(simulationConfig);
+  assert.equal(live.samples, baked.samples);
+  let error = 0;
+  for (let index = 0; index < live.states.length; index += 1) error = Math.max(error, Math.abs(live.states[index] - baked.states[index]));
+  assert.ok(error < 1e-6, `bake differs from live by ${error}`);
+  assert.ok(Math.max(...live.residual.map(Math.abs)) < 1e-5, 'the pass ends settled');
 });

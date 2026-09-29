@@ -1384,9 +1384,9 @@
       }
     },
     "73": {
-      "peakAngularSpeed": 1.9770564114338098,
-      "peakVisibleAngularSpeed": 0.7200000000046947,
-      "sustainedVisibleAngularSpeed": 0.7199999999996985,
+      "peakAngularSpeed": 1.391837672203206,
+      "peakVisibleAngularSpeed": 0.7903224999936277,
+      "sustainedVisibleAngularSpeed": 0.719999999999421,
       "floorY": -2.195000011920929,
       "fastestPart": "rounded-end-of-strong-spring-C",
       "motionBounds": {

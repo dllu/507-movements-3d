@@ -108,16 +108,26 @@ function polygonNormals(poly) {
   return { normals, vertexNormals };
 }
 
+// Physical and solver parameters (C's first-mode frequency in Hz and
+// damping ratio, B's nib likewise, C's tip stiffness over B's, C's preload
+// into A, A's bearing damping as a fraction of the preload force and its
+// inertia as a time constant, the step, PGS sweeps, contact margin and
+// penetration recovery).
+export const SPRING_INDEX_073_DEFAULTS = Object.freeze({
+  leafFrequency: 3, leafDamping: 0.45, nibFrequency: 4, nibDamping: 0.4,
+  tipStiffnessRatio: 4, preload: 0.04, wheelDampingRatio: 0.8, wheelTimeConstant: 0.03,
+  dt: 1e-3, pgsIterations: 30, margin: 0.012, baumgarte: 0.2,
+});
+
 export function makeSpringIndex073Model(config) {
   const {
     strongPoints, halfWidth, ratchetProfile, nibOutline, driverSpeed,
     params = {},
   } = config;
   const {
-    leafFrequency = 3, leafDamping = 0.45, nibFrequency = 4, nibDamping = 0.4,
-    tipStiffnessRatio = 4, preload = 0.04, wheelDampingRatio = 0.35, wheelTimeConstant = 0.03,
-    dt = 1e-3, pgsIterations = 30, margin = 0.012, baumgarte = 0.2,
-  } = params;
+    leafFrequency, leafDamping, nibFrequency, nibDamping, tipStiffnessRatio, preload,
+    wheelDampingRatio, wheelTimeConstant, dt, pgsIterations, margin, baumgarte,
+  } = { ...SPRING_INDEX_073_DEFAULTS, ...params };
   const N = strongPoints.length - 1;
   const segX = new Float64Array(N + 1), segY = new Float64Array(N + 1);
   for (let j = 1; j <= N; j += 1) {
@@ -438,7 +448,7 @@ export function makeSpringIndex073Model(config) {
 // solver revision.
 export const SPRING_INDEX_073_SOLVER = 2;
 export function springIndex073Fingerprint(config) {
-  const text = JSON.stringify({ config, solver: SPRING_INDEX_073_SOLVER },
+  const text = JSON.stringify({ config, defaults: SPRING_INDEX_073_DEFAULTS, solver: SPRING_INDEX_073_SOLVER },
     (key, value) => (typeof value === 'number' ? Math.round(value * 1e6) / 1e6 : value));
   let hash = 0x811c9dc5;
   for (let index = 0; index < text.length; index += 1) {

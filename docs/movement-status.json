@@ -2715,11 +2715,11 @@
       "id": 73,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-106 lane, integrated by primary agent",
-        "reviewPass": 106,
+        "reviewer": "Claude Opus 5.5 — pass-110 lane, integrated by primary agent",
+        "reviewPass": 110,
         "reviewedOn": "2026-09-28",
-        "evidence": "docs/p106-f1-review.md",
-        "note": "Pass 106: flaw fixed; checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p110-a-review.md",
+        "note": "Pass 110: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -2743,7 +2743,8 @@
         "docs/p62-audit-review.md",
         "docs/p90-fa-review.md",
         "docs/p96-u-review.md",
-        "docs/p106-f1-review.md"
+        "docs/p106-f1-review.md",
+        "docs/p110-a-review.md"
       ],
       "mujoco": {
         "mode": "validation-only",
@@ -2755,7 +2756,7 @@
       },
       "updatedOn": "2026-09-28",
       "visibleFlaws": "",
-      "limits": "C's web presses B's nib as a designed kinematic contact, not a force solution; one turn of D takes at least 10 s. p90: spring C is one strip of two tangent arcs. p96: C bends as one propped leaf from its block; its end drops back to the seat over 0.1 s. p106: A's shaft fills A's hub bore and turns loose in D's; trimmed 0.025 past the sleeve and hub.",
+      "limits": "p110 (user): C is one flat constant-section leaf in the plane of A and B's nib: one circular arc fitted to the plate (RMS 0.019), simulated as an inextensible elastic rod (four cantilever modes, clamped, preloaded 0.04 into A) with B's nib on a radial spring and A on damped bearings, frictionless one-sided contacts, baked offline and replayed (live fallback matches the bake to 1e-6). C presses the nib into a tooth, the nib drives it, then lifts C bodily (end +0.19) and passes; C drops in behind, B springs out, and C's preload seats A back about 7° into the corner of the tooth space. Exactly one tooth per turn; no overlap beyond 0.0001 at 6,000 samples per turn. D is kinematic; stiffness, damping and preload are reconstruction choices. p106: A's shaft fills A's hub bore and turns loose in D's; trimmed 0.025 past the sleeve and hub.",
       "assessment": "reasonable",
       "userReported": "2026-09-24"
     },
@@ -12885,11 +12886,11 @@
       "id": 321,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-109 lane, integrated by primary agent",
-        "reviewPass": 109,
+        "reviewer": "User review (repository owner), recorded by Claude Opus 5.5",
+        "reviewPass": 110,
         "reviewedOn": "2026-09-28",
-        "evidence": "docs/p109-f2-review.md",
-        "note": "Pass 109: The mechanism fills less of the frame (the weight falls 5.0 per cycle); at the plate pose the weight hangs about 1.2 below Brown's box."
+        "evidence": "docs/movement-status.md",
+        "note": "Pass 110: the user accepted the drum and weight."
       },
       "intersections": {
         "status": "known",
@@ -12917,7 +12918,8 @@
         "docs/p93-fd-review.md",
         "docs/p94-a-review.md",
         "docs/p96-fd-review.md",
-        "docs/p109-f2-review.md"
+        "docs/p109-f2-review.md",
+        "docs/movement-status.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -12925,9 +12927,9 @@
         "note": "Baked geometric ratchet-click paths with prescribed clock motion; not MuJoCo."
       },
       "updatedOn": "2026-09-28",
-      "visibleFlaws": "The mechanism fills less of the frame (the weight falls 5.0 per cycle); at the plate pose the weight hangs about 1.2 below Brown's box.",
-      "limits": "Clicks are seated finite plates on saw ratchets (B's 18 teeth as drawn); backlash (T 0.08, R 0.12 pitch) is prescribed; T's nose droops more steeply than Brown's; impact, spring bias and loaded holding not force-validated. p90: clicks T and R are broader flat plates (0.22); the cord leaves a drum behind the wheels on its tangent. p93: the spring lies in the ratchet plane on short supports and casts a shadow; the arbor end is flush. p94: the spring is a smooth curve through Brown's centre line (tightest bend 0.185). p96: a stud on G at S′ would strike click T, so the post and arm stay; the weight stops at least 0.20 below G's teeth. p109: the rope drum is barrel B's radius (0.80) coaxial behind G; the rope leaves its tangent and ends in a spliced loop through a ring eye on the weight.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "Clicks are seated finite plates on saw ratchets (B's 18 teeth as drawn); backlash (T 0.08, R 0.12 pitch) is prescribed; T's nose droops more steeply than Brown's; impact, spring bias and loaded holding not force-validated. p90: clicks T and R are broader flat plates (0.22); the cord leaves a drum behind the wheels on its tangent. p93: the spring lies in the ratchet plane on short supports and casts a shadow; the arbor end is flush. p94: the spring is a smooth curve through Brown's centre line (tightest bend 0.185). p96: a stud on G at S′ would strike click T, so the post and arm stay; the weight stops at least 0.20 below G's teeth. p109: the rope drum is barrel B's radius (0.80) coaxial behind G; the rope leaves its tangent and ends in a spliced loop through a ring eye on the weight. p110: accepted by the user (the larger drum and lower weight are fine).",
+      "assessment": "reasonable"
     },
     {
       "id": 322,
@@ -18645,11 +18647,11 @@
       "id": 457,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-109 lane, integrated by primary agent",
-        "reviewPass": 109,
+        "reviewer": "User review (repository owner), recorded by Claude Opus 5.5",
+        "reviewPass": 110,
         "reviewedOn": "2026-09-28",
-        "evidence": "docs/p109-f3-review.md",
-        "note": "Pass 109: The tipped bucket's bail is seen edge-on."
+        "evidence": "docs/movement-status.md",
+        "note": "Pass 110: the user accepted the bucket animation."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -18672,7 +18674,8 @@
         "docs/p72-c-review.md",
         "docs/p73-audit-review.md",
         "docs/p92-r-review.md",
-        "docs/p109-f3-review.md"
+        "docs/p109-f3-review.md",
+        "docs/movement-status.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -18680,9 +18683,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-28",
-      "visibleFlaws": "The tipped bucket's bail is seen edge-on.",
-      "limits": "The raised bucket is drawn aside, tipped and righted over a 3.2 s dwell; the pour lands on the ground just outside the kerb without a puddle; the operator's draw-aside, tip and timing are prescribed; the bail touches the rim at its ear hinges. Pass 92: rope/belt recoloured to the shared hemp brown so it contrasts with the pulleys. p109: the bucket tips in the view plane (as 458), no black base.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "The raised bucket is drawn aside, tipped and righted over a 3.2 s dwell; the pour lands on the ground just outside the kerb without a puddle; the operator's draw-aside, tip and timing are prescribed; the bail touches the rim at its ear hinges. Pass 92: rope/belt recoloured to the shared hemp brown so it contrasts with the pulleys. p109: the bucket tips in the view plane (as 458), no black base. p110: accepted by the user (the tipped bucket animation is fine).",
+      "assessment": "reasonable"
     },
     {
       "id": 458,
