@@ -48,7 +48,7 @@ test('495 corrects the output tooth phase and clears every independent shaft jou
  // Brown's cast standards carry shaft D in true bores; the invented posts, brace and indices are gone.
  assert.equal(b.castStandards.length,2);
  for(const standard of b.castStandards){assert.equal(standard.parent,m.root);shaftFits(standard,.085,'x',[g.apex.y,0]);}
- assert.equal(b.standardBearings.length,2);for(const bearing of b.standardBearings)shaftFits(bearing,.085,'y');
+ assert.equal(b.standardBearings.length,0);
  assert.deepEqual(b.bearings,[]);assert.deepEqual(b.bearingPosts,[]);assert.equal(b.outputIndex,undefined);assert.equal(b.carrierIndex,undefined);assert.equal(b.fixedGearBrace,undefined);
  shaftFits(b.outputSleeve,.085);shaftFits(b.outputDrum,.085);shaftFits(b.drivingPulley,.085,'y');
  const floorTop=b.base.position.y+b.base.geometry.parameters.height/2;

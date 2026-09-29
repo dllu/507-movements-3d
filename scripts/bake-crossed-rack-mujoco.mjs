@@ -2,13 +2,16 @@
 //
 //   node scripts/bake-crossed-rack-mujoco.mjs [--loops N] [--dry-run]
 //
-// One 24-second physical loop: the prescribed lever swings three times
-// (q = -0.16 cos(2 pi tau / 8)). For two swings the pawls lift the rack by
-// ratchet action; then a demonstration reset (a rack support force and
-// pawl-clearing torques, both ramped smoothly) raises the rack off the hooks,
-// swings both hooks clear, lets the rack down four pitches, releases the
+// One 32-second physical loop: the prescribed lever swings four times
+// (q = -0.16 cos(2 pi tau / 8)). For three swings the pawls lift the rack by
+// ratchet action; then a brief demonstration reset (a rack support force and
+// pawl-clearing torques, both ramped smoothly) lifts the rack just off the
+// hooks, swings both hooks clear, lets the rack down six pitches, releases the
 // hooks, and sets the rack back onto the right hook near the top of its swing.
-// The last 2.6 seconds run free again, so the loop ends in ordinary operation.
+// Pass 99: three lifting swings instead of two, and a shorter, gentler reset
+// (4.7 of 32 physical seconds instead of 5.4 of 24), so the undrawn reset is
+// a smaller part of the loop. The last 3.3 seconds run free again, so the
+// loop ends in ordinary operation.
 // The loop is simulated repeatedly without restarting until its end state
 // repeats its start state; the last loop is recorded and simplified.
 import fs from 'node:fs';
@@ -25,11 +28,11 @@ const ramp = (x, [a, b]) => smooth((x - a) / (b - a));
 const rampRate = (x, [a, b]) => smoothRate((x - a) / (b - a)) / (b - a);
 
 const mujoco = await loadMujoco();
-const ph = makeCrossedRackPhysics(mujoco), o = ph.options, loop = 3 * o.period, liftEnd = 2 * o.period;
+const liftSwings = 3, ph = makeCrossedRackPhysics(mujoco), o = ph.options, loop = (liftSwings + 1) * o.period, liftEnd = liftSwings * o.period;
 
 // Reset plan, in seconds after the lift ends (the lever is then at q = -A).
-const plan = {raise: [0, .8], raiseBy: .14, support: [0, .6], clear: [.4, 1.2], lower: [1.4, 3.6], release: [3.3, 4.3],
- settle: [4.3, 5.1], unsupport: [4.5, 5.4], clearAngle: .15, holdAbove: .1, settleBelow: .04, supportHz: 4, clearHz: 2};
+const plan = {raise: [0, .6], raiseBy: .1, support: [0, .5], clear: [.3, .9], lower: [.8, 3.55], release: [3.2, 3.9],
+ settle: [3.9, 4.5], unsupport: [4.0, 4.7], clearAngle: .15, holdAbove: .1, settleBelow: .04, supportHz: 4, clearHz: 2};
 
 // Seat height: the right hook's top face at the lever's top of swing (q = +A,
 // pawl at its source angle) touching tooth 7's underside, less the margin.
@@ -61,7 +64,7 @@ ph.setExternal((tau, data) => {
 
 // Start inside a reset, hooks held clear and the rack supported above them.
 const startT = plan.lower[0], tau0 = liftEnd + startT, lever0 = ph.lever(tau0);
-reset = {start: seat + 4 * pitchLength};
+reset = {start: seat + 2 * liftSwings * pitchLength};
 ph.setState({tau: tau0, qpos: [lever0.q, plan.clearAngle - lever0.q, -plan.clearAngle - lever0.q, reset.start + plan.raiseBy],
  qvel: [lever0.v, -lever0.v, -lever0.v, 0]});
 const stepsPerLoop = Math.round(loop / o.timestep), stride = 4, started = Date.now();

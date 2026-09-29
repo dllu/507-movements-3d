@@ -295,12 +295,19 @@ test('movement 407 update binds the dynamic ribbon, tip pencil, and both cord en
     const helixPath = blocks.cordLoop.geometry.parameters.path;
     vectorNear(cordStart,helixPath.getPoint(1),1e-12,'free run leaves the peg turns');
     const radial=new THREE.Vector2(cordStart.x-state.slidePin.x,cordStart.y-state.slidePin.y);
-    near(radial.length(),.085,1e-12,'free run leaves on the wrap radius');
+    near(radial.length(),data.windingPeg.wrapRadius,1e-12,'free run leaves on the wrap radius');
     near(radial.dot(new THREE.Vector2(cordEnd.x-cordStart.x,cordEnd.y-cordStart.y)),0,1e-12,'free run is tangent to the peg');
     const tip=new THREE.Vector3(state.tip.x,state.tip.y,.33),direction=new THREE.Vector3(tip.x-cordStart.x,tip.y-cordStart.y,0).normalize();
     vectorNear(cordEnd,tip.clone().addScaledVector(direction,-.139),1e-13,'cord meets outside of pencil loop');
     const winding=data.cordWinding;
     near(winding.total,winding.designTotal,1e-9,'inextensible cord keeps one length');
+    // The turns lie on the drum between the slide cheek and the round head;
+    // there is no thumb wing.
+    const peg=data.windingPeg;
+    near(peg.wrapRadius,peg.drumRadius+peg.ropeRadius,1e-12,'turns bear on the drum');
+    for(const t of [0,.25,.5,.75,1]){const q=helixPath.getPoint(t);assert.ok(q.z+peg.ropeRadius<peg.drumFront+1e-9,'turn stays behind the head');assert.ok(q.z-peg.ropeRadius>.27-1e-9,'turn clear of the slide cheek');}
+    assert.ok(winding.turns>=.25-1e-9&&winding.turns<2.1,'at most about two turns on the drum');
+    assert.equal(blocks.slide.children.some(o=>o.userData.role==='winding-peg-thumb-wing'),false);
     near(cordEnd.distanceTo(cordStart),winding.freeRun,1e-12,'rendered free run');
     const collar = blocks.pencil.children.find(({ userData }) =>
       userData.role === 'white-cord-and-bar-tip-connection-collar');

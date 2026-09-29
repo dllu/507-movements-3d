@@ -99,8 +99,9 @@ test('movement 194 matches Brown\'s one face-pin circle, one pinion, groove guid
     'uniform-pinion-single-double-sided-face-pin-circle-closed-shaft-guide-equal-speed-oscillation',
   );
 
-  assert.equal(blocks.toothPins.length, 25);
-  assert.equal(blocks.pinRoots.length, 25);
+  // p99: Brown's 22 pins (the two end pins are round reversal studs).
+  assert.equal(blocks.toothPins.length, 22);
+  assert.equal(blocks.pinRoots.length, 22);
   assert.equal(blocks.pinion.userData.teeth, 10);
   assert.equal(blocks.wheel.parent, model.root);
   assert.equal(blocks.wheelRotor.parent, blocks.wheel);
@@ -124,7 +125,9 @@ test('movement 194 matches Brown\'s one face-pin circle, one pinion, groove guid
     assert.equal(pin.userData.index, index);
     assert.equal(
       pin.userData.role,
-      'double-sided-radial-face-pin-on-single-pitch-circle',
+      index === 0 || index === 21
+        ? 'round-reversal-stud-ending-single-pin-circle'
+        : 'double-sided-radial-face-pin-on-single-pitch-circle',
     );
     near(
       pin.position.lengthSq() - pin.position.z ** 2,
@@ -138,27 +141,27 @@ test('movement 194 matches Brown\'s one face-pin circle, one pinion, groove guid
   assert.deepEqual(sourceAnchors.pinionCenter.toArray(), [260, 456]);
   vector2Near(
     sourceAnchors.modeledPinionCenter,
-    new THREE.Vector2(262, 449.39130434782606),
-    2e-12,
+    new THREE.Vector2(262, 457.1380952380953),
+    2e-9,
     'modeled source pinion follows the hand-drawn bottom axle',
   );
   assert.ok(
     sourceAnchors.modeledPinionCenter.distanceTo(
       sourceAnchors.pinionCenter,
-    ) < 7,
+    ) < 2.5,
     'modeled axle remains within the line weight of Brown\'s drawing',
   );
   assert.deepEqual(sourceAnchors.toothPitchBottom.toArray(), [262, 400]);
   vector2Near(
     sourceAnchors.outerGuideBottom,
-    new THREE.Vector2(262, 449.39130434782606),
-    2e-12,
+    new THREE.Vector2(262, 457.1380952380953),
+    2e-9,
     'outer shaft-guide branch follows the source',
   );
   vector2Near(
     sourceAnchors.innerGuideBottom,
-    new THREE.Vector2(262, 350.6086956521739),
-    2e-12,
+    new THREE.Vector2(262, 342.8619047619047),
+    2e-9,
     'inner shaft-guide branch follows the source',
   );
   near(
@@ -174,12 +177,13 @@ test('movement 194 matches Brown\'s one face-pin circle, one pinion, groove guid
     2e-12,
     'the two terminal tooth contacts share one height',
   );
-  assert.ok(sourceAnchors.terminalContacts[0].x > 191);
-  assert.ok(sourceAnchors.terminalContacts[0].x < 192);
-  assert.ok(sourceAnchors.terminalContacts[1].x > 332);
-  assert.ok(sourceAnchors.terminalContacts[1].x < 333);
-  assert.ok(sourceAnchors.terminalContacts[0].y > 134);
-  assert.ok(sourceAnchors.terminalContacts[0].y < 135);
+  // Brown's end pins stand at (195.8, 134.6) and (328.5, 134.1).
+  assert.ok(sourceAnchors.terminalContacts[0].x > 195);
+  assert.ok(sourceAnchors.terminalContacts[0].x < 196);
+  assert.ok(sourceAnchors.terminalContacts[1].x > 328);
+  assert.ok(sourceAnchors.terminalContacts[1].x < 329);
+  assert.ok(sourceAnchors.terminalContacts[0].y > 132);
+  assert.ok(sourceAnchors.terminalContacts[0].y < 133);
   assert.deepEqual(sourceRaster, {
     height: 525,
     scale: 1.15 / 142,
@@ -282,7 +286,7 @@ test('movement 194 closes one tangent shaft guide around exactly one double-side
     geometry.toothArcLength,
     geometry.circularPitch * geometry.toothPitchIntervals,
     2e-14,
-    '25 pins span 24 exact tooth pitches',
+    '22 pins span 21 exact tooth pitches',
   );
   near(
     geometry.mainArcSweep + geometry.gapHalfAngle * 2,
@@ -473,7 +477,7 @@ test('movement 194 keeps exact rolling and equal opposite main-run speeds over 3
   assert.ok(transmission.wheelSwing < FULL_TURN);
   near(
     transmission.pinionRevolutionsPerMangleCycle,
-    5.8,
+    5.2,
     2e-14,
     'pinion turns per closed guide cycle',
   );
@@ -634,9 +638,11 @@ test('movement 194 is fully three-dimensional and remains distinct as the review
     ]) physicalBounds.expandByObject(object);
   }
   const size = physicalBounds.getSize(new THREE.Vector3());
-  assert.ok(size.x > 4.3);
-  assert.ok(size.y > 4.4);
-  assert.ok(size.z > 2.3);
+  // The wheel (3.81 across) with the pinion below it on its outer run, and
+  // the long pinion shaft standing out in front (p99).
+  assert.ok(size.x > 3.8);
+  assert.ok(size.y > 4.3);
+  assert.ok(size.z > 3.5);
   assert.ok(physicalBounds.min.z < -0.76);
   assert.ok(physicalBounds.max.z > 0.79);
   let meshCount = 0;
@@ -647,13 +653,13 @@ test('movement 194 is fully three-dimensional and remains distinct as the review
     if (object.userData.role === 'double-sided-radial-face-pin-on-single-pitch-circle') {
       facePinCount += 1;
     }
-    if (object.userData.role === 'dark-seat-of-double-sided-face-pin') {
+    if (object.userData.role === 'round-reversal-stud-ending-single-pin-circle') {
       facePinSeatCount += 1;
     }
   });
   assert.ok(meshCount >= 63, "the undrawn index and pitch line are presented away");
-  assert.equal(facePinCount, 25);
-  assert.equal(facePinSeatCount, 25);
+  assert.equal(facePinCount, 20);
+  assert.equal(facePinSeatCount, 2);
   assert.ok(model.cameraDirection.x > 0);
   assert.ok(model.cameraDirection.y > 0);
   assert.ok(model.cameraDirection.z > model.cameraDirection.x * 1.7);

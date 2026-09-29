@@ -130,6 +130,58 @@ test('027 rollers are bored clear of their pins and their hubs stay within the f
   assert.ok(solidClearance < 0.035);
 });
 
+test('027 rollers hang on true eyes of one chamfered carrier plate; the wheel has Brown\'s sector frames', () => {
+  const model = modelFor(27);
+  model.root.updateMatrixWorld(true);
+  const { driver, driven } = model.root.userData.blocks;
+  const frame = driver.userData.rotor;
+  const plate = frame.children.find((part) => part.userData.role === 'three-arm-carrier-plate-with-roller-eyes');
+  assert.ok(plate, 'one carrier plate');
+  const { eyeRadius, plateHalfThickness: h } = driver.userData;
+  const position = plate.geometry.attributes.position, normal = plate.geometry.attributes.normal;
+  // Indexed with authored normals (the load-time facet smoother leaves it alone).
+  assert.ok(plate.geometry.index && normal);
+  for (const roller of driver.userData.rollers) {
+    const c = roller.position;
+    // The outline round each pin is an arc of eyeRadius concentric with it:
+    // wall vertices near the pin whose normal points away from it lie on that circle.
+    let near = 0;
+    for (let i = 0; i < position.count; i += 1) {
+      const z = position.getZ(i), d = Math.hypot(position.getX(i) - c.x, position.getY(i) - c.y);
+      const radial = ((position.getX(i) - c.x) * normal.getX(i) + (position.getY(i) - c.y) * normal.getY(i)) / d;
+      if (Math.abs(normal.getZ(i)) < 1e-6 && d < 1.2 * eyeRadius && radial > 1 - 1e-6) {
+        near += 1;
+        assert.ok(Math.abs(d - eyeRadius) < 1e-6, `eye vertex off its circle: ${d}`);
+        assert.ok(Math.abs(z) <= h);
+      }
+    }
+    assert.ok(near > 100, 'each eye is a densely sampled arc');
+    // The roller runs on its pin just behind the eye, with no shared face.
+    const hubFront = new THREE.Box3().setFromObject(roller).applyMatrix4(frame.matrixWorld.clone().invert()).max.z;
+    assert.ok(hubFront < -h && hubFront > -h - 0.006, `roller hub ${hubFront} not seated behind the eye`);
+  }
+  const pins = frame.children.filter((part) => part.userData.role === 'roller-pin-through-eye');
+  assert.equal(pins.length, 3);
+  for (const pin of pins) {
+    const box = new THREE.Box3().setFromObject(pin).applyMatrix4(frame.matrixWorld.clone().invert());
+    assert.ok(box.max.z > h && box.min.z < -h - 0.3, 'each pin runs through its eye into its roller');
+  }
+  // Chamfer normals: every band vertex normal is unit and the chamfers lean 45 degrees.
+  let chamfers = 0;
+  for (let i = 0; i < normal.count; i += 1) {
+    const nz = Math.abs(normal.getZ(i));
+    if (nz > 0.1 && nz < 0.9) { chamfers += 1; assert.ok(Math.abs(nz - Math.SQRT1_2) < 1e-6); }
+  }
+  assert.ok(chamfers > 0);
+  // The wheel: grooves run out through the rim between raised sector frames
+  // with a constant web width; no ink floor planes remain.
+  assert.equal(driven.userData.grooves.filter((groove) => groove.isMesh).length, 0);
+  assert.ok(driven.userData.webWidth > 0.1 && driven.userData.pocketOuterRadius < driven.userData.radius);
+  let inkPlanes = 0;
+  driven.traverse((part) => { if (part.isMesh && part.geometry.type === 'ShapeGeometry') inkPlanes += 1; });
+  assert.equal(inkPlanes, 0);
+});
+
 test('028 disk boss is a concave trumpet, not a straight cone', () => {
   const model = modelFor(28);
   let boss;

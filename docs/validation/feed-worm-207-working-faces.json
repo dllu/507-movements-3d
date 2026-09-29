@@ -8,19 +8,19 @@
   "sources": [
     {
       "file": "src/simulation/feed-worm-assembly-parts.js",
-      "sha256": "cae898f234946171980d9353e5beffe3cb78a1d95131a777cc2beec1faca3aa4"
+      "sha256": "0a6011b18d06c7546138bf4da465ecda6f38ca60bc52db59e383d8f7d8403c69"
     },
     {
-      "file": "src/data/face-worm-195.js",
-      "sha256": "97c6c55d2c4835ed76527768dec2374cdfea7b77a782b48ee76c4e923a4f6e68"
+      "file": "src/simulation/face-slot-worm-195.js",
+      "sha256": "2f256e70fc8cee9553ee93c76258a68165516a29a5c10c2fdb66afdaa11a923a"
     },
     {
-      "file": "src/data/face-worm-195-mesh.js",
-      "sha256": "9673f951b341652903ad0bec69ee8c0cd51aa7d1e712c27387ddd0da3bb95daa"
+      "file": "src/data/worm-crest-195.js",
+      "sha256": "247b826756601c58dc7c7cab963e48350b75c05437b1e1a84a70ed03716a31c6"
     },
     {
-      "file": "scripts/bake-face-worm-195-mesh.mjs",
-      "sha256": "5614fd9301d5dfcf366edb6b5642b07f4dac01f068d92e8e3b106a451c73d57d"
+      "file": "scripts/generate-worm-crest-195.mjs",
+      "sha256": "93cb38173925216e480e65e60cd52fbad6f33c8d12c5c090f9636b610885b3a6"
     },
     {
       "file": "src/simulation/solid-worm.js",
@@ -36,7 +36,7 @@
     },
     {
       "file": "scripts/review-feed-worm-working-faces.mjs",
-      "sha256": "c2a0b279cca2eb73ee2b42f7d4cfde53bcfd4819d22bd4370405b3653d13cd0f"
+      "sha256": "cba77e6948694bef5e63a351b9fea89d84e9f5716090982930d746e087eb0f39"
     }
   ],
   "method": "Actual wheel triangle centers and closest worm triangles, opposing outward normals; resisting input moment and intended output moment. Finite clearance is not loaded zero-gap contact.",

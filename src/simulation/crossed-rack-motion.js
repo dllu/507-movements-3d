@@ -21,5 +21,5 @@ export function sampleCrossedRackMotion(time, {period = profile.playbackPeriod} 
   {x, v} = tableState(tau);
  return {q: -A * Math.cos(omega * tau), rackY: x[0], leftAngle: x[1], rightAngle: x[2], rackVelocity: v[0] * rate,
   angularVelocities: [rate * A * omega * Math.sin(omega * tau), v[1] * rate, v[2] * rate],
-  physicsTime: tau, period, duration: loop / rate, finished: false, inputStopped: false, returning: tau > 2 * profile.physicsPeriod};
+  physicsTime: tau, period, duration: loop / rate, finished: false, inputStopped: false, returning: tau > profile.liftEnd};
 }

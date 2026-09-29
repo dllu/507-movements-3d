@@ -876,6 +876,10 @@ test('movement 190 (pass 92): turned handle stands on its axis inside the crank 
       near(Math.hypot(x - axisX, arm.getZ(i) + handleArm.position.z), endRadius, 1e-6, 'bar end on the arc about the handle');
     }
     assert.ok(beyond > 10, 'the bar runs past the handle axis');
+    // Pass 99: the grip's shank runs through the bar to 0.005 inside its underside.
+    handleGrip.geometry.computeBoundingBox();
+    const barBottom = handleArm.position.y + handleArm.geometry.boundingBox.min.y;
+    near(handleGrip.position.y + handleGrip.geometry.boundingBox.min.y, barBottom + 0.005, 1e-6, 'shank ends 0.005 inside the bar underside');
   } finally {
     disposeModel(model.root);
   }

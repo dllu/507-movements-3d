@@ -5,7 +5,7 @@ import test from 'node:test';
 import polygonClipping from 'polygon-clipping';
 import { createAuthoredGuernseyEscapementMovement } from '../src/simulation/authored-guernsey-escapements.js';
 import {
-  DESIGN, gearing, leverAngleAt, leverOutline, pitch, rackLayout, rotateAbout, seats, solveWheel, toothCorners, wheelOutline,
+  DESIGN, gearing, leverAngleAt, leverOutline, leverRange, pitch, rackLayout, rotateAbout, seats, solveWheel, toothCorners, wheelOutline,
 } from '../src/simulation/guernsey-anchor.js';
 import { guernseyAnchorBake } from '../src/simulation/baked/guernsey-anchor-402.js';
 
@@ -62,15 +62,22 @@ test('402 the single arm carries internal teeth for the upper pinion and externa
   const racks = rackLayout();
   assert.ok(Math.max(...racks.internal) < lever.barAngle && Math.min(...racks.external) > lever.barAngle);
   assert.ok(racks.internal.length >= 7 && racks.external.length >= 7);
-  // Brown draws long runs of fine teeth and 18-20-tooth pinions: thirteen
+  // Brown draws long runs of fine teeth and 18-20-tooth pinions: sixteen
   // teeth per run, every one of which passes its pitch point over the swing.
   assert.equal(DESIGN.pinionTeeth, 20);
-  assert.equal(racks.internal.length, 13);
-  assert.equal(racks.external.length, 13);
+  assert.equal(racks.internal.length, 16);
+  assert.equal(racks.external.length, 16);
+  const [lo, hi] = leverRange();
+  assert.ok(hi - lo >= 26 * Math.PI / 180 - 1e-12, 'lever swing at least 26 degrees');
   for (const [list, R, center] of [[racks.internal, g.internalRadius, g.upperAngle], [racks.external, g.externalRadius, g.leftAngle]]) {
     const beta = Math.PI * g.m / R;
-    for (const a of list) assert.ok(Math.abs(a - center) <= DESIGN.leverAmplitude + 1.5 * beta + 1e-12, 'every rack tooth comes into mesh');
+    for (const a of list) assert.ok(center - a >= lo - 1.5 * beta - 1e-12 && center - a <= hi + 1.5 * beta + 1e-12, 'every rack tooth comes into mesh');
   }
+  // The upper run reaches Brown's top end (his last tooth at 98.7 degrees
+  // about B), and the lower run reaches at least 185 degrees.
+  const DEGREE = Math.PI / 180;
+  assert.ok(racks.internal[0] <= 98.8 * DEGREE && racks.external.at(-1) >= 185 * DEGREE);
+  assert.ok(Math.abs(leverAngleAt(0)) < 1e-12, 'the lever passes the plate pose at phase 0');
   // The two runs are each concentric with B, stepped at the bar: the lower
   // run's plain back lies inside its external teeth, the upper's outside its
   // internal teeth.
@@ -105,23 +112,30 @@ test('402 the bake is current and the wheel advances exactly one tooth per lever
   assert.ok(back < 0.01, `per-step recoil ${back}`);
 });
 
-test('402 each pallet seats flank-flush with its nose in the root at the end of its swing', () => {
-  const s = seats(), A = DESIGN.leverAmplitude;
-  for (const [pallet, phase, theta, k] of [[s.upper, 0.75, -A, 0], [s.lower, 0.25, A, 3]]) {
-    const w = d.stateAtTime(phase * DESIGN.period).wheelAngle;
-    // The baked wheel is exactly at the seat, modulo a pitch.
-    const seatWheel = pallet === s.upper ? s.upperWheel : s.lowerWheel;
-    const off = (w - seatWheel) / pitch();
-    assert.ok(Math.abs(off - Math.round(off)) < 0.01, `seat off by ${off}`);
-    const turn = seatWheel; // the wheel outline repeats every pitch
-    const t = toothCorners(k);
-    const place = (q) => { const r = rotateAbout(q, turn); return [r[0] + O[0], r[1] + O[1]]; };
-    const tip = place(t.tip), rootPt = place(t.frontRoot);
-    const [nose, heel] = pallet.flank.map((q) => rotateAbout(q, theta));
-    const face = Math.atan2(tip[1] - rootPt[1], tip[0] - rootPt[0]), flank = Math.atan2(heel[1] - nose[1], heel[0] - nose[0]);
-    assert.ok(Math.abs(Math.atan2(Math.sin(face - flank), Math.cos(face - flank))) < 1e-6, 'flank along the front face');
-    assert.ok(Math.hypot(nose[0] - rootPt[0], nose[1] - rootPt[1]) <= DESIGN.palletSetback + 1e-9, 'nose in the root');
+test('402 pallet A hangs point-down as Brown draws it; the lower pallet seats flank-flush with its nose in the root', () => {
+  const s = seats(), [, hi] = leverRange();
+  // A at the plate pose: a narrow wedge, point down, both flanks within 15
+  // degrees of vertical, point near Brown's (plate 353, 326).
+  const [tip, left] = s.upper.flank, right = s.upper.back;
+  for (const top of [left, right]) {
+    assert.ok(top[1] - tip[1] > 0.4, 'point below the top');
+    assert.ok(Math.abs(Math.atan2(top[0] - tip[0], top[1] - tip[1])) < 15 * Math.PI / 180, 'flank near vertical');
   }
+  assert.ok(Math.hypot(tip[0] - 0.936, tip[1] - 0.072) < 0.04, 'point at Brown\'s');
+  assert.ok(Math.hypot(right[0] - left[0], right[1] - left[1]) < 0.2, 'narrow wedge');
+  // Lower pallet at the counter-clockwise extreme.
+  const phase = (Math.PI / 2 - Math.asin(-DESIGN.leverCenter / DESIGN.leverAmplitude)) / (2 * Math.PI);
+  assert.ok(Math.abs(leverAngleAt(phase * DESIGN.period) - hi) < 1e-12);
+  const w = d.stateAtTime(phase * DESIGN.period).wheelAngle;
+  const off = (w - s.lowerWheel) / pitch();
+  assert.ok(Math.abs(off - Math.round(off)) < 0.01, `seat off by ${off}`);
+  const t = toothCorners(3);
+  const place = (q) => { const r = rotateAbout(q, s.lowerWheel); return [r[0] + O[0], r[1] + O[1]]; };
+  const tipPt = place(t.tip), rootPt = place(t.frontRoot);
+  const [nose, heel] = s.lower.flank.map((q) => rotateAbout(q, hi));
+  const face = Math.atan2(tipPt[1] - rootPt[1], tipPt[0] - rootPt[0]), flank = Math.atan2(heel[1] - nose[1], heel[0] - nose[0]);
+  assert.ok(Math.abs(Math.atan2(Math.sin(face - flank), Math.cos(face - flank))) < 1e-6, 'flank along the front face');
+  assert.ok(Math.hypot(nose[0] - rootPt[0], nose[1] - rootPt[1]) <= DESIGN.palletSetback + 1e-9, 'nose in the root');
 });
 
 test('402 lever/anchor and wheel outlines never overlap over the period, and the pallets touch at lock', () => {

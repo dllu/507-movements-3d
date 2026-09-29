@@ -138,7 +138,7 @@ export const bakeConfigs = {
     // compared at the loop's start time has long finished its thread, so the
     // round trip is checked against the second baked loop.
     roundTripLoops: 1,
-    note: 'The lathe drive reverses each period: the tool carriage descends along the stock and returns up its groove. Playback opens part-way down the first cut (threaded above the tool, plain blank below); that descent finishes the thread and every later pass chases it, so the loop never exchanges the work. The route sync rebuilds the cut from the recorded work angle and playback time; one 24 s period closes the loop.',
+    note: 'The lathe drive reverses each period: the tool carriage descends along the stock to one work-thread turn below the drawn tool and returns up its groove. Playback opens at the drawn tool position on the first cut (threaded above the tool, plain blank below); that descent cuts one more turn, and every later pass chases the thread down to the same stop, so the rest of the blank stays a plain shank as drawn and the loop never exchanges the work. The route sync rebuilds the cut from the recorded work angle and playback time; one 16 s period closes the loop.',
   },
   110: {
     directory: 'src/simulation/mujoco-half-nut',

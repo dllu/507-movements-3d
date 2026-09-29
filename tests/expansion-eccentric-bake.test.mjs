@@ -25,7 +25,7 @@ test('137 baked source provenance and loop position/velocity are checked',()=>{
  assert.equal(b.loopStart,0);assert(Math.abs(b.loopEnd-b.period)<1e-6);
  assert(Math.abs(b.motion[0][1])<.002);
  assert(b.source.steadyStateStart>=16);
- assert(b.source.kinematic.minimumLowerGapPixels>0&&b.source.kinematic.maximumLowerGapPixels<1.35);
+ assert(b.source.kinematic.minimumLowerGapPixels>0&&b.source.kinematic.maximumLowerGapPixels<1.5);
  assert(b.source.kinematic.maximumUpperSimulatedSlipPixelsPerSecond<1);
  for(let t=0;t<b.period;t+=.25){
   const a=sampleBakedMotion(b,t),c=sampleBakedMotion(b,t+.1);

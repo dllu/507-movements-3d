@@ -4,10 +4,10 @@
 export function treadmillLegState(time, index, geometry) {
   const { treadPitch, treadRadius, treadCount, wheelStartAngle, wheelPeriod,
     hipX, hipY, upperLength, lowerLength,
-    touchdownAngle = 30 * Math.PI / 180 } = geometry;
+    touchdownAngle = 30 * Math.PI / 180, stanceFraction = 0.60,
+    footRadial = 0.04, swingOut = 1.80, swingUp = 1.70 } = geometry;
   const speed = 2 * Math.PI / wheelPeriod;
   const cycle = 2 * treadPitch;
-  const stanceFraction = 0.60;
   const phase = (speed * time + touchdownAngle - wheelStartAngle - treadPitch)
     / cycle + index / 2;
   const progress = phase - Math.floor(phase);
@@ -16,7 +16,7 @@ export function treadmillLegState(time, index, geometry) {
   const planted = progress <= stanceFraction;
   // .0525 board half-thickness + .10 sole thickness + .0005 clearance.
   const normalOffset = 0.153;
-  const radius = treadRadius + 0.04;
+  const radius = treadRadius + footRadial;
   const point = a => [radius * Math.cos(a) - normalOffset * Math.sin(a),
     radius * Math.sin(a) + normalOffset * Math.cos(a)];
   let [ankleX, ankleY] = point(angle);
@@ -37,11 +37,11 @@ export function treadmillLegState(time, index, geometry) {
     const endD = [speed*end[1]/vRate, -speed*end[0]/vRate];
     const pos = [0,1].map(i=>h[0]*start[i]+h[1]*end[i]+h[2]*startD[i]+h[3]*endD[i]);
     const vel = [0,1].map(i=>vRate*(dh[0]*start[i]+dh[1]*end[i]+dh[2]*startD[i]+dh[3]*endD[i]));
-    ankleX = pos[0] + 1.80*(1-v)**2*Math.sin(Math.PI*v)**2;
-    ankleY = pos[1] + 1.70*v**2*Math.sin(Math.PI*v)**2;
-    velocityX = vel[0] + 1.80*((1-v)**2*Math.PI*Math.sin(2*Math.PI*v)
+    ankleX = pos[0] + swingOut*(1-v)**2*Math.sin(Math.PI*v)**2;
+    ankleY = pos[1] + swingUp*v**2*Math.sin(Math.PI*v)**2;
+    velocityX = vel[0] + swingOut*((1-v)**2*Math.PI*Math.sin(2*Math.PI*v)
       - 2*(1-v)*Math.sin(Math.PI*v)**2)*vRate;
-    velocityY = vel[1] + 1.70*(v**2*Math.PI*Math.sin(2*Math.PI*v)+2*v*Math.sin(Math.PI*v)**2)*vRate;
+    velocityY = vel[1] + swingUp*(v**2*Math.PI*Math.sin(2*Math.PI*v)+2*v*Math.sin(Math.PI*v)**2)*vRate;
   }
   const dx = ankleX - hipX, dy = ankleY - hipY;
   const distanceSquared = dx * dx + dy * dy;

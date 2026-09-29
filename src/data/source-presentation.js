@@ -95,7 +95,7 @@ export default {
   },
   134: {
     remove: ['rear-fixed-pedestal-supporting-drum-axis', 'fixed-foot-of-drum-bearing-pedestal', 'fixed-bearing-behind-drum-hub'],
-    note: 'Front elevation of the rope cage: two spoked end wheels with a large hub ring, joined by eight beams parallel to the axis whose ends are Brown\'s eight radial blocks. The rope is wound once round the beams, so it lies on an octagon of straight chords inside the rear flange\'s outer circle, and runs off along the ground line; the cage turns uniformly, so the rope moves at a rate that pulses eight times a turn. No pedestal or bearing is drawn.',
+    note: 'Front elevation of the rope cage: two spoked end wheels with a large hub ring, joined by eight beams parallel to the axis whose ends are Brown\'s eight radial blocks. The rope is wound four turns side by side round the beams, so it lies as Brown\'s broad band on an octagon of straight chords inside the rear flange\'s outer circle, and runs off along the ground line; the cage turns uniformly, so the rope moves at a rate that pulses eight times a turn. No pedestal or bearing is drawn.',
   },
   139: {
     remove: ['bearing-post', 'base', 'roller-post-\\d'],
@@ -321,7 +321,7 @@ export default {
     note: 'The pantograph arms, the round fixed point C, tracer B and pencil A over a blank ground; no drawing board or traced figures are drawn.',
   },
   247: {
-    note: 'Front section through the rod, the weight and the catch, with the probe foot below; the camera looks up from the sea bottom\'s level, so the undrawn bottom is seen edge-on as the lower frame edge (the caption has the weight detach on striking bottom). The loaded rod is lowered onto the bottom, the probe trips the catch and the weight drops; the rod is lifted on its line just clear of the spent weight, and the second of two alternating weights, let go on the line far above, runs down the line and the rod onto the catch; as the rod returns into Brown\'s pose the vessel moves on to the next station, the bottom and the spent weight moving off sideways together. The loop is two soundings long; no reload gear is shown.',
+    note: 'Front section through the rod, the weight and the catch, with the probe foot below; the camera looks up from the sea bottom\'s level, so the undrawn bottom is seen edge-on as the lower frame edge (the caption has the weight detach on striking bottom). The loaded rod is lowered onto the bottom, the probe trips the catch and the weight drops free. The rod rises out and goes back into the same weight as it lies on the bottom, its top rim camming the catch in; the weight is then slid up the rod over the catch, which springs out under it, and set down on the seat (an undrawn reset lift of about 1.6 s). No reload gear is shown.',
   },
   248: {
     remove: ['raised-grip-rib-on-nut-B', 'white-rotation-index-on-nut-B'],
@@ -451,15 +451,15 @@ export default {
   },
   310: {
     remove: ['pendulum-bob', 'single-wheel-bearing-bracket', '(?:.*-)?white-.*witness', '(?:.*-)?beat-pin-tip-witness'],
-    note: 'Front elevation of the lyre-shaped gravity legs under the T crossbar, the three-legged wheel with its fly and stops D, E; as Brown dashes it, the pendulum rod hangs behind the whole escapement, just behind the pivot block and arbor end, with the beat pins reaching back to it from the arms; it runs out of the bottom of the plate with no bob, and no wheel bracket or index marks are drawn.',
+    note: 'Front elevation of the lyre-shaped gravity legs under the T crossbar, the three-legged wheel with its fly and stops D, E; as Brown dashes it, the pendulum rod hangs behind the whole escapement, just behind the pivot block and arbor end; Brown\u2019s beat collar is a deep clamp block reaching forward from the rod to just behind arm B, so the beat pins are short; it runs out of the bottom of the plate with no bob, and no wheel bracket or index marks are drawn.',
   },
   311: {
     remove: ['pendulum-bob', 'double-wheel-bearing-bracket', '(?:.*-)?white-.*witness', '(?:.*-)?beat-pin-tip-witness'],
-    note: 'Front elevation of the diamond of gravity legs, the double three-legged wheel and the long fly; the pendulum rod runs out of the bottom of the plate with no bob, and no wheel bracket or index marks are drawn.',
+    note: 'Front elevation of the diamond of gravity legs, the double three-legged wheel and the long fly; the pendulum rod Brown breaks off below the wheels is modelled whole in front of them and see-through, and runs out of the bottom of the plate with no bob, and no wheel bracket or index marks are drawn.',
   },
   312: {
     remove: ['fixed-bloxam-support-frame', 'bloxam-pendulum-bob', '(left-A-E|right-B-F)-anti-double-impulse-reinforcement-wire', 'documented-point-two-inch-primitive-diameter-ring', '(?:.*-)?white-.*witness'],
-    note: 'Front elevation of the two wheels and the gravity arms hung from C; E and F are flat oblong tabs of the arm metal, as Brown\u2019s slots, and the trapezoid outline is the arms themselves, with no separate support frame drawn. Brown dashes the pendulum behind the wheels; here it hangs from the stud at C in front of the wheels, just in front of the arbor end and see-through, because E and F sit inside the large wheel\u2019s spokes, and no bob is drawn.',
+    note: 'Front elevation of the two wheels and the gravity arms hung from C; E and F are flat oblong tabs of the arm metal, as Brown\u2019s slots, and the trapezoid outline is the arms themselves, with no separate support frame drawn. Brown\u2019s dashed pendulum line runs through open space above the wheel too, so it is his centre line: the rod hangs from the stud at C just in front of the arms, see-through, with the small wheel behind the arms (E and F sit inside the large wheel\u2019s spokes, so the rod cannot hang behind that wheel), and no bob is drawn.',
   },
   315: {
     remove: ['fixed-bearing-bridge-post', 'fixed-upper-spindle-bearing', 'nonphysical-wrist-orbit-reference-circle', 'white-crank-rotation-index', 'white-spindle-rotation-index', 'white-pendulum-orientation-index'],

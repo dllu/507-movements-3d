@@ -13,25 +13,25 @@
   "turns": [
     6.283185307179586,
     0,
-    -16.117053105748276,
-    -15.609459678626664,
+    -16.28581949392413,
+    -15.772959949345893,
     0
   ],
   "bounds": {
     "min": [
-      -1.27367779393362,
-      -3.1666794865453958,
+      -1.296933331738722,
+      -3.16548145213786,
       -0.660000023841858
     ],
     "max": [
-      4.411408113142371,
-      2.11002981578797,
+      4.411179634319999,
+      2.107810811777506,
       0.48000001668930053
     ]
   },
   "focus": [
-    1.5688651596043754,
-    -0.5283248353787129,
+    1.5571231512906385,
+    -0.528835320180177,
     -0.09000000357627871
   ],
   "cameraDirection": [
@@ -40,7 +40,7 @@
     15
   ],
   "source": {
-    "reportSha256": "53c084e495318e2cdd960c8230a578f90a4c4e59d9aa9f388d67017f9e7a8a32",
+    "reportSha256": "dc8d0ce4646a99cc8193739b900bf0ab9bb49ff887a8d5cea7d881e7ad1ffab4",
     "simulationSources": [
       {
         "file": "src/data/expansion-eccentric-outline.js",
@@ -48,7 +48,7 @@
       },
       {
         "file": "src/simulation/expansion-eccentric-profile.js",
-        "sha256": "da52e2ee7149e3735e426b2d27ff364930a144cb2a5991f1419e68291150f187"
+        "sha256": "04751230e1c13ee9a3efa08aa5bd3e3f87fa41dffbbda25b35f189a997915328"
       },
       {
         "file": "src/simulation/mujoco-expansion-eccentric/physics.js",
@@ -83,20 +83,20 @@
       "spread": 4.05,
       "samples": 384
     },
-    "maximumLoopSeamPixels": 0.006694611455230776,
-    "maximumLoopVelocitySeamPixelsPerSecond": 0.17457855588251958,
-    "maximumPenetrationPixels": 0.0008557867079816983,
+    "maximumLoopSeamPixels": 0.019869855803091203,
+    "maximumLoopVelocitySeamPixelsPerSecond": 0.23997679491918023,
+    "maximumPenetrationPixels": 0.0010181991742352903,
     "steadyStateStart": 16.249999999986578,
     "kinematic": {
       "lowerRoller": "no-slip rolling on the nearest cam point",
-      "minimumLowerGapPixels": 0.06543547487946055,
-      "maximumLowerGapPixels": 1.1770604508557214,
-      "maximumUpperSimulatedSlipPixelsPerSecond": 0.30262002566393464,
-      "upperSimulatedTurns": -16.117053105748276,
-      "upperNoSlipTurns": -16.111442594829075
+      "minimumLowerGapPixels": 0.0745698977666076,
+      "maximumLowerGapPixels": 1.4210384393332331,
+      "maximumUpperSimulatedSlipPixelsPerSecond": 0.286404053001033,
+      "upperSimulatedTurns": -16.28581949392413,
+      "upperNoSlipTurns": -16.280537089252512
     }
   },
   "samples": 4001,
-  "bytes": 463227,
-  "assetSha256": "dd618b9d336abdfff3e1a7dfafae4c73ed19551844f8b11e01dd3f2183794d2a"
+  "bytes": 464522,
+  "assetSha256": "721124510d7be7027e38c882d8841bd6f3d575814442574ee1216cf1a02c0dbc"
 }

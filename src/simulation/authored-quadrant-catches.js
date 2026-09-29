@@ -47,9 +47,8 @@ function interpolateRow(phase) {
 // the piston rod and the wing, and take no part in the latch.
 function restoreBrown184Weights(upper, lower) {
   const upperEye = [PU[0] - 103, PU[1] + 85], lowerEye = [PL[0] + 97, PL[1] - 107];
-  // The wing is squared off radially at its tip, which drops 183's tab.
-  const tipCut = [[[PU, ...[-100, -70, -44.5].map((a) => [PU[0] + 220 * Math.cos(a * deg), PU[1] + 220 * Math.sin(a * deg)]), PU]]];
-  upper.parts.wing = { ...upper.parts.wing, poly: polygonClipping.difference(upper.parts.wing.poly, tipCut) };
+  // The wing's straight edge already meets its rim square at the tip, as
+  // Brown squares it off on plate 184, so 183's casting is used unchanged.
   delete upper.parts.weightArm;
   upper.parts.weightArm = { planes: 'W', poly: tangentLever(PU, 20, upperEye, eyeRadius) };
   upper.parts.hub = { ...upper.parts.hub, planes: 'WAF' };
@@ -74,8 +73,10 @@ function sourceHandGear(movementId) {
     lower: matte(PALETTE.accent, { metalness: 0.14, roughness: 0.58 }),
     steel: matte(0x9aa19d, { metalness: 0.3, roughness: 0.45 }),
     rod: matte(PALETTE.frame, { metalness: 0.2, roughness: 0.5 }),
-    piston: matte(PALETTE.driver, { metalness: 0.1, roughness: 0.62 }),
-    tappet: matte(0x9c3b28, { metalness: 0.1, roughness: 0.62 }),
+    // Pass 99: the piston rod is steel grey so the orange tappet on its face
+    // reads as a separate part.
+    piston: matte(PALETTE.muted, { metalness: 0.2, roughness: 0.55 }),
+    tappet: matte(PALETTE.driver, { metalness: 0.1, roughness: 0.62 }),
   };
   const blocks = {};
   const makeHandle = (name, body) => {

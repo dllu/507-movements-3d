@@ -1,40 +1,48 @@
-import {writeFile}from'node:fs/promises';
-import{createAuthoredGearMovement as create}from'../src/simulation/authored-gears.js';
+// Cuts movement 194's pinion offline as the envelope of Brown's 22 face pins
+// (radial stadium studs, round studs at the two ends) through the model's own
+// prescribed rolling law over one whole cycle: both runs and both reversals.
+// The outline is a polar raster (the entry distance of each ray into every
+// swept pin), held to ten-fold symmetry: each cycle advances the pinion 52
+// teeth, so over five cycles every tooth space meets both reversals.
+import {writeFile} from 'node:fs/promises';
+import {createAuthoredGearMovement as create} from '../src/simulation/authored-gears.js';
 const m=create({id:194}),d=m.root.userData,g=d.geometry,b=d.blocks;
-const samples=4096,radial=4000,outer=.472,clearance=.00045,pinRadius=.052+clearance,halfLength=.065;
-const radii=new Float64Array(radial).fill(outer),cs=Array.from({length:radial},(_,i)=>Math.cos(i*2*Math.PI/radial)),sn=Array.from({length:radial},(_,i)=>Math.sin(i*2*Math.PI/radial));
+const samples=16384,radial=7200,tip=.5,clearance=.0005,teeth=g.pinionTeeth;
+const pins=b.toothPins.map(p=>({angle:p.userData.pitchAngle,half:p.userData.halfLength,radius:p.userData.radius}));
+const radii=new Float64Array(radial).fill(tip),cs=Array.from({length:radial},(_,i)=>Math.cos(i*2*Math.PI/radial)),sn=Array.from({length:radial},(_,i)=>Math.sin(i*2*Math.PI/radial));
 function circleEntry(ex,ey,x,y,r){const dot=x*ex+y*ey,disc=r*r-x*x-y*y+dot*dot;if(disc<0)return Infinity;const span=Math.sqrt(disc);return dot+span>=0?Math.max(0,dot-span):Infinity;}
-function capsuleEntry(ex,ey,x,y,ux,uy){
+function capsuleEntry(ex,ey,x,y,ux,uy,half,radius){
  const vx=-uy,vy=ux,cu=x*ux+y*uy,cv=x*vx+y*vy,eu=ex*ux+ey*uy,ev=ex*vx+ey*vy;
  let lo=0,hi=Infinity;
- for(const [c,e,h]of [[cu,eu,halfLength],[cv,ev,pinRadius]]) {
+ for(const [c,e,h]of [[cu,eu,half],[cv,ev,radius]]) {
   if(Math.abs(e)<1e-12){if(Math.abs(c)>h){lo=Infinity;break;}}
   else{const a=(c-h)/e,b=(c+h)/e;lo=Math.max(lo,Math.min(a,b));hi=Math.min(hi,Math.max(a,b));}
  }
- return Math.min(hi>=lo?lo:Infinity,circleEntry(ex,ey,x+ux*halfLength,y+uy*halfLength,pinRadius),circleEntry(ex,ey,x-ux*halfLength,y-uy*halfLength,pinRadius));
+ return Math.min(hi>=lo?lo:Infinity,circleEntry(ex,ey,x+ux*half,y+uy*half,radius),circleEntry(ex,ey,x-ux*half,y-uy*half,radius));
 }
 let cutters=0;
 for(let i=0;i<=samples;i++) {
  const s=d.stateAtTime(d.transmission.cyclePeriod*i/samples),ca=Math.cos(-s.pinionAngle),sa=Math.sin(-s.pinionAngle);
- for(const pin of b.pinRoots){const a=pin.rotation.z+Math.PI/2+s.wheelAngle,xw=g.toothPitchRadius*Math.cos(a)-s.pinionCenter.x,yw=g.toothPitchRadius*Math.sin(a)-s.pinionCenter.y,x=xw*ca-yw*sa,y=xw*sa+yw*ca,r=Math.hypot(x,y);
- if(r>outer+halfLength+pinRadius)continue;cutters++;
- const phi=Math.atan2(y,x),reach=Math.asin(Math.min(1,(halfLength+pinRadius)/r)),ux=Math.cos(a-s.pinionAngle),uy=Math.sin(a-s.pinionAngle);
- const lo=Math.floor((phi-reach)*radial/(2*Math.PI))-1,hi=Math.ceil((phi+reach)*radial/(2*Math.PI))+1;
- for(let j=lo;j<=hi;j++){const k=((j%radial)+radial)%radial;radii[k]=Math.min(radii[k],capsuleEntry(cs[k],sn[k],x,y,ux,uy));}
+ for(const pin of pins){
+  const a=pin.angle+s.wheelAngle,xw=g.toothPitchRadius*Math.cos(a)-s.pinionCenter.x,yw=g.toothPitchRadius*Math.sin(a)-s.pinionCenter.y;
+  const x=xw*ca-yw*sa,y=xw*sa+yw*ca,r=Math.hypot(x,y),reachRadius=pin.half+pin.radius+clearance;
+  if(r>tip+reachRadius)continue;cutters++;
+  const phi=Math.atan2(y,x),reach=r>reachRadius?Math.asin(reachRadius/r):Math.PI,ux=Math.cos(a-s.pinionAngle),uy=Math.sin(a-s.pinionAngle);
+  const lo=Math.floor((phi-reach)*radial/(2*Math.PI))-1,hi=Math.ceil((phi+reach)*radial/(2*Math.PI))+1;
+  for(let j=lo;j<=hi;j++){const k=((j%radial)+radial)%radial;radii[k]=Math.min(radii[k],capsuleEntry(cs[k],sn[k],x,y,ux,uy,pin.half,pin.radius+clearance));}
  }
 }
-// One cycle advances 58 tooth pitches, or 29 periods of a repeated tooth
-// pair. Enforce exact five-fold symmetry; identical adjacent teeth impose an
-// unnecessary extra constraint on the opposed finite pin profiles.
-const perTooth=radial/5;
+const perTooth=radial/teeth;
 for(let i=0;i<perTooth;i++){
- let r=outer;
- for(let tooth=0;tooth<5;tooth++)r=Math.min(r,radii[i+tooth*perTooth]);
- for(let tooth=0;tooth<5;tooth++)radii[i+tooth*perTooth]=r;
+ let r=tip;
+ for(let tooth=0;tooth<teeth;tooth++)r=Math.min(r,radii[i+tooth*perTooth]);
+ for(let tooth=0;tooth<teeth;tooth++)radii[i+tooth*perTooth]=r;
 }
 const points=Array.from(radii,(r,i)=>[r*cs[i],r*sn[i]].map(x=>Math.round(x*1e10)/1e10));
-const data={points,samples,radial,clearance,pinRadius:.052,pinHalfLength:halfLength,
- teeth:10,rotationalSymmetry:5,min:Math.min(...radii),max:Math.max(...radii),cutters};
+const round=x=>Math.round(x*1e10)/1e10;
+const data={points,samples,radial,clearance,tip,teeth,rotationalSymmetry:teeth,
+ pinCount:pins.length,pinHalfLength:b.toothPins[1].userData.halfLength,pinRadius:b.toothPins[1].userData.radius,endStudRadius:b.toothPins[0].userData.radius,
+ min:round(Math.min(...radii)),max:round(Math.max(...radii)),cutters};
 await writeFile(new URL('../src/simulation/baked/radial-pin-mangle-pinion.js',import.meta.url),
  `// Generated by scripts/generate-radial-pin-mangle-pinion.mjs.\nexport default ${JSON.stringify(data)};\n`);
-console.log({samples,radial,clearance,min:Math.min(...radii),max:Math.max(...radii),cutters});
+console.log({samples,radial,clearance,min:data.min,max:data.max,cutters});

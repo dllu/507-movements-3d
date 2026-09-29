@@ -10,16 +10,21 @@ const TAU=2*Math.PI;
 // knock at each end where it meets the radius circles tangentially). A
 // slightly flatter arc (sagitta = arcSagitta * crank radius) crosses them at
 // a finite angle, so the rocker leaves and rejoins its near-rest smoothly.
-export function openCrescentShuttleLaw({crankCenter,rockerPivot,crankRadius,reference,period,arcSagitta=.8}){
+// With an explicit arc ({center, radius} about the rocker pivot, in the
+// rocker's frame at angle 0) the slot is that arc instead: the pin radius
+// still selects a unique station, on the arc's counterclockwise side of the
+// pivot-to-centre line, and the arc need not pass through the pin's nearest
+// and farthest points as they stand at rest.
+export function openCrescentShuttleLaw({crankCenter,rockerPivot,crankRadius,reference,period,arcSagitta=.8,arc=null}){
   const c=crankCenter.clone().sub(rockerPivot),D=c.length(),beta=Math.atan2(c.y,c.x),low=D-crankRadius,high=D+crankRadius;
   const omega=TAU/period,u=new THREE.Vector2(Math.cos(beta),Math.sin(beta)),n=new THREE.Vector2(-u.y,u.x);
-  const sag=arcSagitta*crankRadius,arcRadius=(crankRadius*crankRadius+sag*sag)/(2*sag);
-  const arcCenter=c.clone().addScaledVector(n,sag-arcRadius),dC=arcCenter.length(),e=arcCenter.clone().multiplyScalar(1/dC);
+  const sag=arcSagitta*crankRadius,arcRadius=arc?arc.radius:(crankRadius*crankRadius+sag*sag)/(2*sag);
+  const arcCenter=arc?new THREE.Vector2(arc.center[0],arc.center[1]):c.clone().addScaledVector(n,sag-arcRadius),dC=arcCenter.length(),e=arcCenter.clone().multiplyScalar(1/dC);
   function slotAngle(rho){
     rho=Math.max(low,Math.min(high,rho));
     const a=(rho*rho-arcRadius*arcRadius+dC*dC)/(2*dC),h=Math.sqrt(Math.max(0,rho*rho-a*a));
     const p1=new THREE.Vector2(a*e.x-h*e.y,a*e.y+h*e.x),p2=new THREE.Vector2(a*e.x+h*e.y,a*e.y-h*e.x);
-    const p=p1.clone().sub(c).dot(n)>p2.clone().sub(c).dot(n)?p1:p2;
+    const p=arc?p1:p1.clone().sub(c).dot(n)>p2.clone().sub(c).dot(n)?p1:p2;
     return Math.atan2(p.y,p.x);
   }
   // Exact derivatives from the implicit arc G(rho, f) = |rho u(f) - C|^2 - R^2 = 0.
@@ -41,6 +46,6 @@ export function openCrescentShuttleLaw({crankCenter,rockerPivot,crankRadius,refe
       lawPhase:((phase%1)+1)%1,stage:dwell?'near-rest-on-crescent-arc':speed<0?'outward-output-stroke':'return-output-stroke',rho,
       progress:(rho-low)/(high-low),slotPoint:new THREE.Vector2(rho*Math.cos(f.angle),rho*Math.sin(f.angle))};
   }
-  return {atPhase,profile,low,high,beta,arcSagitta,arcRadius,arcCenter,
+  return {atPhase,profile,low,high,beta,arcSagitta:arc?null:arcSagitta,arcRadius,arcCenter,
     pointAtRadius:rho=>{const f=profile(rho);return new THREE.Vector2(rho*Math.cos(f.angle),rho*Math.sin(f.angle));}};
 }

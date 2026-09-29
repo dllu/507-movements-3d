@@ -6,7 +6,7 @@
     },
     {
       "file": "src/simulation/authored-entwistle-gearing.js",
-      "sha256": "ae4833948f0898409912dc0516235d3a73609149c15bf902728dc6f3c8b258d2"
+      "sha256": "8a245c008a8a550e08d6948c6515db86ebcf7f56a8e028311fa9a7c4073b2776"
     },
     {
       "file": "src/simulation/capstan-entwistle-corrections.js",
@@ -74,7 +74,7 @@
     {
       "id": 495,
       "poses": 33,
-      "queries": 2513596,
+      "queries": 4827004,
       "penetrations": 0,
       "maxDepth": 0,
       "worst": null,

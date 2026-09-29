@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {circle, plate, poly, polygonClipping as clip} from './finite-plate-geometry.js';
 import {PALETTE, markShadows, matte} from './primitives.js';
+import generatedEnds from './generated-parsons-ends.js';
 
 // Movement 394, C. Parsons's endless rack. The plate shows an oblong frame
 // toothed all round its inside (two straight rows joined by two toothed
@@ -19,11 +20,17 @@ import {PALETTE, markShadows, matte} from './primitives.js';
 // shifts up and down by 2e while the pinion goes round each end; the
 // oscillating cylinder the rod belongs to allows that.
 //
-// Tooth forms: the pinion is a true involute; the straight rows are the
-// conjugate straight-flanked rack of the same module and pressure angle; the
-// ends are internal involute gears of the same module (see parsonsDesign).
-// With 10 pinion teeth and 14-tooth internal ends (a tooth difference of
-// four) internal tip interference is checked with exact polygons.
+// Tooth forms (pass 99): Brown's box teeth. The straight rows are a
+// zero-pressure-angle rack: square notches with vertical walls, their tooth
+// tips on the pitch line and half a pitch wide. Each tip corner, lying on the
+// pitch line, traces an involute of the pinion's pitch circle as the rack
+// rolls, so the pinion's teeth are those involutes (base circle = pitch
+// circle) with radial walls below it: the corner drives the involute along the
+// pitch line with a contact ratio of 1.11. The ends are internal gears of the
+// same zero-angle form with their tips on the pitch circle; with 10 pinion
+// teeth and 14-tooth ends the pinion tips would sweep the ring tooth corners
+// outside the line of action, so each end is relieved by the sweep of the
+// pinion itself (scripts/generate-parsons-ends.py), as a gear shaper would.
 //
 // The two concentric flanges of different diameters sit behind the pinion
 // and run against two stepped rebates ("grooves on its side") in the back of
@@ -77,26 +84,23 @@ const stadium = (halfStraight, radius, count = 96) => {
   return points;
 };
 
-// Tooth form (pass 84): 22.5 degree involute, addendum 0.7m, working depth
-// 1.4m, the pinion shifted out by 0.2m (the rows and the internal ends move
-// out with it, so the path and centre distances are unchanged) and the
-// internal ends' tips trimmed to 0.6m. Against the earlier 25 degree 0.6m stub
-// this gives steeper, deeper rack teeth (0.53 pitch deep, Brown about 0.5) and
-// lifts the straight-row contact ratio from 0.91 to 1.06 (ends 1.07); lower
-// pressure angles either foul the 10/14 internal ends or drop a contact ratio
-// below 1. Below the pinion's tip reach each rack space is relieved with
-// vertical walls to a flat root, so the rows read as Brown's square notches
-// where no involute action is needed.
+// Tooth form (pass 99): zero pressure angle. The pinion is shifted out by
+// 0.55m with addendum 0.55m, so its tips stand 1.1m above its pitch circle and
+// the rack and ring tips (shift minus addendum) lie exactly on their pitch
+// lines; the rack spaces are 1.6m (0.51 pitch) deep with flat roots. Pass 84's
+// 22.5 degree involute rows tapered the rack tips to 0.32 pitch.
 export function parsonsDesign(overrides = {}) {
   const pinionTeeth = 10;
   const endTeeth = 14; // full-circle count of each toothed semicircular end
   const straightPitches = 14; // pitches along each straight row
   const module = 0.13;
-  const pressureAngle = (overrides.pressureDeg ?? 22.5) * Math.PI / 180;
-  const addendum = (overrides.addendum ?? 0.7) * module;
-  const dedendum = (overrides.dedendum ?? 0.95) * module;
-  const profileShift = (overrides.profileShift ?? 0.2) * module;
-  const endAddendum = (overrides.endAddendum ?? 0.6) * module;
+  const pressureAngle = (overrides.pressureDeg ?? 0) * Math.PI / 180;
+  const addendum = (overrides.addendum ?? 0.55) * module;
+  const dedendum = (overrides.dedendum ?? 1.05) * module;
+  const profileShift = (overrides.profileShift ?? 0.55) * module;
+  const endAddendum = (overrides.endAddendum ?? 0.55) * module;
+  // The generated end relief belongs to the default design only.
+  const endCarve = overrides.endCarve ?? Object.keys(overrides).length === 0;
   const backlash = (overrides.backlash ?? 0.02) * module;
   const pitch = Math.PI * module;
   const pinionPitchRadius = pinionTeeth * module / 2;
@@ -109,7 +113,7 @@ export function parsonsDesign(overrides = {}) {
   const rebateClearance = 0.01;
   const pathLength = 4 * halfStraight + FULL_TURN * eccentricity;
   return {
-    addendum, backlash, bandOuterRadius, dedendum, eccentricity, endAddendum, endPitchRadius,
+    addendum, backlash, bandOuterRadius, dedendum, eccentricity, endAddendum, endCarve, endPitchRadius,
     endTeeth, halfStraight, largeFlangeRadius, module, pathLength, pinionPitchRadius,
     pinionTeeth, pitch, pressureAngle, profileShift, rebateClearance, smallFlangeRadius, straightPitches,
     rackToothCount: 2 * straightPitches + endTeeth,
@@ -127,8 +131,11 @@ export function parsonsMeshRatios(g) {
   const approach = Math.sqrt(ra * ra - rb * rb);
   const inv = (a) => Math.tan(a) - a;
   const s = g.pitch / 2 - g.backlash / 2 + 2 * x * Math.tan(al);
+  // The rack's own addendum (its tips above the pitch line) adds action on the
+  // other side of the pitch point; at zero pressure angle it is zero.
+  const rackAddendum = g.addendum - x;
   return {
-    straightRows: (approach - rp * Math.sin(al) + (g.addendum - x) / Math.sin(al)) / pb,
+    straightRows: (approach - rp * Math.sin(al) + (rackAddendum > 1e-12 ? rackAddendum / Math.sin(al) : 0)) / pb,
     internalEnds: (approach - Math.sqrt(Ra * Ra - Rb * Rb) + (R - rp) * Math.sin(al)) / pb,
     pinionTipThickness: 2 * ra * (s / (2 * rp) + inv(al) - inv(Math.acos(rb / ra))),
   };
@@ -185,6 +192,10 @@ export function parsonsRackVoid(g) {
       ? poly([[L, -2 * H], [L + 2 * H, -2 * H], [L + 2 * H, 2 * H], [L, 2 * H]])
       : poly([[-L - 2 * H, -2 * H], [-L, -2 * H], [-L, 2 * H], [-L - 2 * H, 2 * H]]);
     parts.push(clip.intersection(moved, half));
+  }
+  if (g.endCarve) {
+    const right = generatedEnds.rightEndRelief;
+    parts.push([right], [right.map(([x, y]) => [-x, -y])]);
   }
   return clip.union(...parts);
 }

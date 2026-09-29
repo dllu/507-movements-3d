@@ -6,14 +6,14 @@ import { createAuthoredFanBlowerMovement as fan } from '../src/simulation/author
 import { surfacePoints, surfaceTriangles, solidSurface } from './helpers/solid-surface.mjs';
 for(const[id,factory]of[[496,spinning],[497,fan]]){
  test(`${id}: selected finite moving interfaces over complete cycle`,()=>{
-  const m=factory({id}),b=m.root.userData.blocks,p=m.root.userData.spinningFanWorkingParts,pairs=[],shafts=[];
+  const m=factory({id}),b=m.root.userData.blocks,p=m.root.userData.spinningFanWorkingParts,pairs=[],shafts=[],dynamic=new Set();
   if(id===496){
    for(const roll of b.drawingRolls){const axle=roll.children.find(c=>c.userData.role?.endsWith('-axle')).userData.rotor.children[0];shafts.push(axle);for(const bearing of b.rollBearings)if(bearing.position.x===roll.position.x&&bearing.position.y===roll.position.y)pairs.push([axle,bearing]);}
    shafts.push(p.shaft);
    for(const bobbin of[b.bobbinBarrel,...b.bobbinFlanges,b.spindleBearing])pairs.push([p.shaft,bobbin]);
    for(const a of[b.backTopRoll,b.frontTopRoll]){const bottom=a===b.backTopRoll?b.backBottomRoll:b.frontBottomRoll;for(const upper of[a.userData.body,...a.userData.ribs])for(const lower of[bottom.userData.body,...bottom.userData.ribs])pairs.push([upper,lower]);}
-   for(const fiber of[b.inputSliver,b.draftedFiber])for(const roll of b.drawingRolls)for(const part of[roll.userData.body,...roll.userData.ribs])pairs.push([fiber,part]);
-   for(const yarn of b.liveYarn.children)for(const part of[p.shaft,p.neck,b.flyerTopEye,b.flyerArmEye,...b.flyerArms,b.bobbinBarrel,...b.bobbinFlanges,...b.drawingRolls.flatMap(r=>[r.userData.body,...r.userData.ribs])])pairs.push([yarn,part]);
+   // p100: the yarn is one laid rope rebuilt every pose; it lies on the rolls.
+   for(const yarn of b.liveYarn.children){dynamic.add(yarn);for(const part of[p.shaft,p.neck,b.flyerTopEye,b.flyerArmEye,...b.flyerArms,b.bobbinBarrel,...b.bobbinFlanges,...b.drawingRolls.flatMap(r=>[r.userData.body,...r.userData.ribs])])pairs.push([yarn,part]);}
   }else{
    for(const moving of[...b.blades,b.hub,b.hubIndex])for(const fixed of[p.wall,b.frontPlate,b.rearPlate,...b.inletRims,...p.spiders])pairs.push([moving,fixed]);
    const shaft=b.shaft.userData.rotor.children[0];shafts.push(shaft);for(const bearing of b.bearings)pairs.push([shaft,bearing]);
@@ -34,6 +34,7 @@ for(const[id,factory]of[[496,spinning],[497,fan]]){
   for(let pose=0;pose<=16;pose++){
    // Offset intermediate phases to avoid repeatedly sampling the same flute angle.
    m.update(m.root.userData.geometry.cycleDuration*(pose+.2*Math.sin(Math.PI*pose/16))/16);m.root.updateMatrixWorld(true);
+   for(const a of dynamic)points.set(a.geometry,surfacePoints(a.geometry));
    for(const[a,b]of pairs){const transform=b.matrixWorld.clone().invert().multiply(a.matrixWorld),solid=solids.get(b.geometry);
     for(const q of points.get(a.geometry)){point.copy(q).applyMatrix4(transform);const d=solid.signedDistance(point,.005);checks++;min=Math.min(min,d);assert.ok(d>=-1e-5,`${id} pose${pose}: ${a.userData.role??a.parent.userData.role} cuts ${b.userData.role} by ${-d} at ${point.toArray()}`);}
    }

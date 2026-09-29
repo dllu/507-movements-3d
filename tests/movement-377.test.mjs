@@ -318,9 +318,13 @@ test('movement 377 two-leg gait is smooth, alternating, derivative-consistent, a
         after.legStates[index].lowerAngle
           - before.legStates[index].lowerAngle
       ) / (2 * step);
-      near(numericalUpperRate, leg.upperAngularSpeed, 1e-7,
+      // Relative tolerance: near the straight knee the central difference
+      // of a fast joint carries O(step^2) error of a few 1e-8 rad/s.
+      near(numericalUpperRate, leg.upperAngularSpeed,
+        1e-7 * Math.max(1, Math.abs(leg.upperAngularSpeed)),
         `leg ${index} upper analytic derivative`);
-      near(numericalLowerRate, leg.lowerAngularSpeed, 1e-7,
+      near(numericalLowerRate, leg.lowerAngularSpeed,
+        1e-7 * Math.max(1, Math.abs(leg.lowerAngularSpeed)),
         `leg ${index} lower analytic derivative`);
     }
     const halfCycleLater = stateAtTime(time + geometry.wheelPeriod / 14).legStates[0];

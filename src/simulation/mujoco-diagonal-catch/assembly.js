@@ -16,10 +16,9 @@ import {makeDiagonalCatchUpdater,DIAGONAL_CATCH_ROD_EDGE_Y} from './update-solid
 //   C  the catch, with the upper handle's horn and weight arm and the lower
 //      handle's beak: each catching face is simply the end of its own casting,
 //      joined to its boss in the catch's plane.
-// The joints between each face and its boss are carved from the region the
-// catch can occupy relative to that handle over its whole range, so nothing
-// in plane C but the qualified faces ever meets the catch; no rear plates,
-// axial webs, sleeves, rollers or pin heads are added. The back-weight rods
+// Each face's casting is the tangent hull of the face and its boss, clear of
+// the catch over the baked cycle except at the face; no rear plates, axial
+// webs, sleeves, rollers or pin heads are added. The back-weight rods
 // hang just behind the eyes they hang from.
 const Z=Object.freeze({
  rodsW:[-.585,-.54],W:[-.525,-.425],R:[-.405,-.265],U:[-.245,-.145],L:[-.125,-.025],rodsC:[-.005,.04],C:[.055,.165],
@@ -33,32 +32,31 @@ function hull(points){
  for(const q of p.reverse()){while(upper.length>1&&cross(upper.at(-2),upper.at(-1),q)<=0)upper.pop();upper.push(q);}
  return poly([...lower.slice(0,-1),...upper.slice(0,-1)]);
 }
-const rotate=([x,y],a)=>[x*Math.cos(a)-y*Math.sin(a),x*Math.sin(a)+y*Math.cos(a)];
+
 const tangentLever=(a,ra,b,rb)=>hull([...circle(a,ra,96),...circle(b,rb,64)]);
 
-// Brown's lower beak: the crescent rising from the boss to the catching face
-// (plate 181 px), in the lower handle's frame.
-function lowerCrescent(fit){
- const local=([x,y])=>[(x-271)*.0125-fit.pivot[0],(234-y)*.0125-fit.pivot[1]];
- const s=new THREE.Shape();s.moveTo(295,323);
- s.bezierCurveTo(312,319,326,315,329,288);
- s.bezierCurveTo(340,319,338,343,317,365);
- s.quadraticCurveTo(306,376,289,375);s.lineTo(285,351);s.closePath();
- return poly(s.getPoints(16).map(p=>local(p.toArray())));
+// The circular arc from p0 through pm to p1.
+function arc3(p0,pm,p1,n=64){
+ const [ax,ay]=p0,[bx,by]=pm,[cx,cy]=p1,d=2*(ax*(by-cy)+bx*(cy-ay)+cx*(ay-by));
+ const ux=((ax*ax+ay*ay)*(by-cy)+(bx*bx+by*by)*(cy-ay)+(cx*cx+cy*cy)*(ay-by))/d,uy=((ax*ax+ay*ay)*(cx-bx)+(bx*bx+by*by)*(ax-cx)+(cx*cx+cy*cy)*(bx-ax))/d;
+ const ang=([x,y])=>Math.atan2(y-uy,x-ux),a0=ang(p0),am=ang(pm),a1=ang(p1),r=Math.hypot(ax-ux,ay-uy),T=2*Math.PI;
+ const mod=v=>((v%T)+T)%T;let sweep=mod(a1-a0);if(mod(am-a0)>sweep)sweep-=T;
+ return Array.from({length:n+1},(_,i)=>[ux+r*Math.cos(a0+sweep*i/n),uy+r*Math.sin(a0+sweep*i/n)]);
 }
-
-// Remove from `shape` (a handle's frame) every place the catch, with its eye
-// boss and a running clearance, can reach over the handle's and the catch's
-// full angular ranges.
-function carveCatchSweep(shape,pivot,[h0,h1],catchPolygons,gap=.015){
- const offsets=[[0,0],...Array.from({length:8},(_,k)=>[gap*Math.cos(k*Math.PI/4),gap*Math.sin(k*Math.PI/4)])];
- let free=shape;
- for(const c of [0,.019,.038,.057])for(let h=h0;h<=h1+1e-9;h+=.005)for(const [ox,oy]of offsets){
-  free=clip.difference(free,catchPolygons.map(p=>p.map(r=>r.map(pt=>{
-   const w=rotate(pt,c),v=rotate([w[0]-pivot[0],w[1]-pivot[1]],-h);return[v[0]+ox,v[1]+oy];}))));
- }
- return free;
+// The circular arc leaving p along direction dir (tangent there) and ending at e.
+function tangentArc(p,dir,e,n=64){
+ const l=Math.hypot(...dir),t=[dir[0]/l,dir[1]/l],w=[p[0]-e[0],p[1]-e[1]];
+ let nrm=[-t[1],t[0]];const dot=nrm[0]*w[0]+nrm[1]*w[1];
+ if(dot>0)nrm=[-nrm[0],-nrm[1]];
+ const r=(w[0]**2+w[1]**2)/(-2*(nrm[0]*w[0]+nrm[1]*w[1])),c=[p[0]+nrm[0]*r,p[1]+nrm[1]*r];
+ const a0=Math.atan2(p[1]-c[1],p[0]-c[0]),a1=Math.atan2(e[1]-c[1],e[0]-c[0]);
+ const turn=t[0]*(p[1]-c[1])-t[1]*(p[0]-c[0])<0?1:-1;
+ let sweep=a1-a0;while(turn*sweep<0)sweep+=turn*2*Math.PI;
+ return Array.from({length:n+1},(_,i)=>[c[0]+r*Math.cos(a0+sweep*i/n),c[1]+r*Math.sin(a0+sweep*i/n)]);
 }
+// Beak (plate-181 px, lower handle frame): its point, the end of its working
+// edge, and where its outer arc (tangent to that edge) meets the boss.
+export const BEAK_ARC=[[329,288],[332,307],[300,363.5]];
 
 let cachedPlates=null;
 function castingOutlines(scaffold){
@@ -67,13 +65,32 @@ function castingOutlines(scaffold){
  const catchEye=[b.catchWeightAnchor.position.x,b.catchWeightAnchor.position.y];
  const catchWithEye=clip.union(catchOutline,poly(circle(catchEye,EYE,96)));
  const plates={catchEye,catch:catchWithEye};
- for(const [side,range]of [['upper',[-1.0,.0014]],['lower',[-.947,.003]]]){
+ for(const side of ['upper','lower']){
   const finger=diagonalLatchFinger(side),fit=finger.fit,weight=[b[side+'HandleWeightAnchor'].position.x,b[side+'HandleWeightAnchor'].position.y];
   const hub=poly(circle([0,0],HUB,128));
-  // The face's casting: Brown's horn (the hull of face and boss) above the
-  // upper boss; his crescent beak beside the lower one.
-  const body=side==='upper'?hull([...finger.polygons.flat(2),...circle([0,0],HUB,128)]):clip.union(lowerCrescent(fit),hull([...finger.polygons.flat(2),...circle([0,0],.2,64)]));
-  const carved=clip.union(carveCatchSweep(body,fit.pivot,range,catchWithEye),finger.polygons,hub);
+  // Pass 99: each face's casting is one clean outline, the tangent hull of
+  // its qualified catching face and its boss (straight flanks tangent to the
+  // boss), so it has no carved steps, slits or notches. It stays clear of
+  // the catch over the whole baked cycle except at the face itself
+  // (tests/diagonal-catch-baked.test.mjs).
+  let body=hull([...finger.polygons.flat(2),...circle([0,0],side==='upper'?HUB:.2,128)]);
+  // The beak's hull is squared off along the line of its heel's end face
+  // (plate-181 px, handle frame), which the catch grazes on entry.
+  if(side==='lower'){
+   const local=([x,y])=>[(x-271)*.0125-fit.pivot[0],(234-y)*.0125-fit.pivot[1]];
+   // Brown's crescent: the beak's outer edge is one circular arc from its
+   // point to the boss, bulging clear of the face's working corners.
+   const [p0,p1,end]=BEAK_ARC.map(local);
+   body=clip.union(body,poly([p0,...tangentArc(p1,[p1[0]-p0[0],p1[1]-p0[1]],end),[0,0]]));
+   const a=local([305.5,277.8]),b=local([308.7,274.4]),d=[b[0]-a[0],b[1]-a[1]],n=[d[1],-d[0]],k=40;
+   body=clip.difference(body,poly([[a[0]-d[0]*k,a[1]-d[1]*k],[a[0]+d[0]*k,a[1]+d[1]*k],
+    [a[0]+d[0]*k-n[0]*k,a[1]+d[1]*k-n[1]*k],[a[0]-d[0]*k-n[0]*k,a[1]-d[1]*k-n[1]*k]]));
+  }
+  // Drop the zero-length spur the squared end leaves at the face's corner.
+  const carved=clip.union(body,finger.polygons,hub).map(rings=>rings.map(ring=>{
+   const kept=ring.filter((p,i)=>i===0||Math.hypot(p[0]-ring[i-1][0],p[1]-ring[i-1][1])>2e-4);
+   return kept.filter((p,i)=>{if(i===0||i===kept.length-1)return true;const a=kept[i-1],b=kept[i+1];
+    return Math.hypot(b[0]-a[0],b[1]-a[1])>2e-4;});}));
   const working=clip.union(b[side+'HandleWorkingArm'].children[0].geometry.userData.plate.polygons,
    poly(circle([b[side+'HandleWorkingTip'].position.x,b[side+'HandleWorkingTip'].position.y],.10,64)),hub);
   const weightArm=tangentLever([0,0],HUB,weight,EYE);
@@ -90,8 +107,10 @@ export function createDiagonalCatchAssembly(){
  disposeObject3D(scaffold.root);
  const steel=new THREE.MeshStandardMaterial({color:'#9aa19d',roughness:.45,metalness:.3});
  const rodSteel=new THREE.MeshStandardMaterial({color:'#6f7773',roughness:.5,metalness:.2});
- const tappetMaterial=new THREE.MeshStandardMaterial({color:'#c9563d',roughness:.62,metalness:.1});
- const pistonMaterial=new THREE.MeshStandardMaterial({color:'#de5a3f',roughness:.62,metalness:.1});
+ // Pass 99: the piston rod is steel grey so the orange tappet on its face
+ // reads as a separate part.
+ const tappetMaterial=new THREE.MeshStandardMaterial({color:'#de5a3f',roughness:.62,metalness:.1});
+ const pistonMaterial=new THREE.MeshStandardMaterial({color:'#7e8584',roughness:.55,metalness:.2});
  const root=new THREE.Group(),groups={};
  const bored=(polygons,center,radius)=>clip.difference(polygons,poly(circle(center,radius,96)));
  const mesh=(geometry,material,role,parent)=>{const m=new THREE.Mesh(geometry,material);m.userData.role=role;parent.add(m);return m;};

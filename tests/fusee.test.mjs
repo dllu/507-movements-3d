@@ -63,7 +63,7 @@ test('046 fixes every rigid chain pitch and both rotating attachments throughout
   }
 });
 
-test('046 stepped tiers and deforming ribbon remain closed with outward shading', () => {
+test('046 helical-ledge fusee and deforming ribbon remain closed with outward shading', () => {
   const motion = makeFuseeMotion();
   const body = steppedFuseeGeometry(fuseeParameters);
   assertClosedOutward(body);
@@ -180,7 +180,7 @@ test('046 adjacent articulated leaves remain in separate axial slabs', () => {
   console.log('046 neighboring plate separation', { poses: 129, checked, minimum });
 });
 
-test('046 chain surfaces clear the actual fusee triangles on the tiers and their climbs', () => {
+test('046 chain surfaces clear the actual fusee triangles on the helical ledge', () => {
   const model = createMovementModel(catalog.movements[45]);
   const { chain, fusee, springBox } = model.root.userData.blocks;
   const data = chain.userData, motion = model.root.userData.motion;
@@ -259,74 +259,119 @@ test('046 chain surfaces clear the actual fusee triangles on the tiers and their
   console.log('046 chain / actual fusee triangles', { poses: 129, rays: checked, minimum, minimumBarrel });
 });
 
-test('046 p98: seen from above the tier risers form one smooth Archimedean spiral, steps on one radius', () => {
-  const p = fuseeParameters, body = steppedFuseeGeometry(p).userData;
-  const turn = 2 * Math.PI, slope = p.radialPitch / turn;
-  // Tier k spans the spiral turn from its step at stepAngle + 2 pi (k - 1).
-  let previousEnd;
-  for (let k = 0; k < p.tierCount; k += 1) {
-    const start = p.stepAngle + turn * (k - 1);
-    for (let i = 0; i <= 720; i += 1) {
-      const theta = start + turn * (i === 720 ? 719.999 : i) / 720;
-      const expected = p.chainRadiusStart + slope * theta - p.riserGap;
-      assert.ok(Math.abs(body.outlineRadiusAt(k, theta) - expected) < 1e-12, 'riser radius is linear in angle');
-    }
-    const startRadius = body.outlineRadiusAt(k, p.stepAngle + 1e-9);
-    if (previousEnd !== undefined) assert.ok(Math.abs(startRadius - previousEnd) < 1e-8,
-      'each tier starts where the tier above ends: one continuous spiral');
-    previousEnd = body.outlineRadiusAt(k, p.stepAngle - 1e-9);
-    assert.ok(Math.abs(previousEnd - startRadius - p.radialPitch) < 1e-8, 'one radial step per tier');
+test('046 p99: one helical ledge on a cone — radial steps only, none round the circumference', () => {
+  const p = fuseeParameters, geometry = steppedFuseeGeometry(p), body = geometry.userData;
+  const turn = 2 * Math.PI;
+  assert.equal(body.helicalLedge, true);
+  // Every vertical face of the body faces radially (riser or rim): there is
+  // no step face across the circumference anywhere.
+  const position = geometry.attributes.position;
+  let vertical = 0;
+  for (let i = 0; i < position.count; i += 3) {
+    const [a, b, c] = [0, 1, 2].map((k) => new THREE.Vector3().fromBufferAttribute(position, i + k));
+    const normal = b.clone().sub(a).cross(c.clone().sub(a));
+    if (normal.lengthSq() < 1e-20) continue;
+    normal.normalize();
+    if (Math.abs(normal.z) > 1e-3) continue;
+    const middle = a.clone().add(b).add(c).setZ(0).normalize();
+    assert.ok(Math.abs(normal.dot(middle)) > 0.99, 'a vertical face must face radially, not tangentially');
+    vertical += 1;
   }
-  // The chain centre line is the same spiral, riserGap outside it.
+  assert.ok(vertical > 1000);
+  // Followed round the circumference just outside a riser, the tread height
+  // changes continuously (linearly with angle): one helix, no jumps.
+  for (const start of [0, 3, 7.5, 12]) {
+    let previous;
+    for (let i = 0; i <= 2000; i += 1) {
+      const theta = start + turn * i / 2000;
+      const height = body.surfaceHeightAt(body.riserRadiusAt(theta) + p.riserGap, theta);
+      if (previous !== undefined) assert.ok(Math.abs(height - previous) < p.leadPerTurn / 2000 + 1e-9, 'no step round the circumference');
+      previous = height;
+    }
+  }
+  // Radially the section is a staircase: one lead per turn outward.
+  for (const theta of [1, 5, 9]) {
+    const inner = body.surfaceHeightAt(body.riserRadiusAt(theta) + 0.05, theta);
+    const outer = body.surfaceHeightAt(body.riserRadiusAt(theta + turn) + 0.05, theta);
+    assert.ok(Math.abs(inner - outer - p.leadPerTurn) < 1e-9);
+  }
+  // The chain centre line is the Archimedean spiral in plan and a conical helix.
   const path = makeFuseeMotion().tierPath;
   for (let i = 0; i <= 400; i += 1) {
     const theta = path.wrapAngle * i / 400, point = path.at(theta);
-    assert.ok(Math.abs(point.radius - p.chainRadiusStart - slope * theta) < 1e-12);
-    assert.equal(point.dRadius, slope);
+    assert.ok(Math.abs(point.radius - p.chainRadiusStart - p.radialPitch * theta / turn) < 1e-12);
+    assert.ok(Math.abs(point.height - p.fuseeZTop + p.leadPerTurn * theta / turn) < 1e-12);
   }
-  assert.equal(body.archimedeanRisers, true);
 });
 
-test('046 p96/p98: the chain is seated on the stepped tiers, backed by the spiral riser, and never hovers', () => {
-  const p = fuseeParameters, motion = makeFuseeMotion();
-  const body = steppedFuseeGeometry(p).userData;
-  let seated = 0, riser = 0, total = 0, maximumStepLift = 0;
+test('046 p99: the chain lies on the helical tread against the riser all the way, never hovering', () => {
+  const p = fuseeParameters, motion = makeFuseeMotion(), body = steppedFuseeGeometry(p).userData;
+  const turn = 2 * Math.PI, slope = p.radialPitch / turn;
+  let total = 0, minimumBacking = Infinity;
   for (let sample = 0; sample <= 96; sample += 1) {
     const state = motion.stateAtProgress(sample / 96);
-    maximumStepLift = Math.max(maximumStepLift, state.stepLift);
     const onFusee = state.barrelLength + state.spanLength;
     state.pins.forEach((pin, index) => {
       if (state.stations[index] <= onFusee + 1e-9) return;
       const x = pin.x - p.fuseeCenterX, y = -pin.z, radius = Math.hypot(x, y);
-      total += 1;
-      const easing = state.stations[index] < onFusee + state.settle;
       const phi = Math.atan2(y, x) - state.fuseeAngle;
-      const tier = p.tierChainHeights.findIndex((height) => Math.abs(pin.y - height) < 1e-9);
-      if (easing) {
-        // Leaving the fusee: eased off its path towards the span, clear of it.
-        for (const [band, top] of body.tops.entries()) {
-          if (pin.y + 0.037 >= body.bottoms[band] && pin.y - 0.037 <= top) {
-            assert.ok(radius - 0.017 > body.outlineRadiusAt(band, phi) - 1e-9, 'the easing chain clears the body');
-          }
-        }
-      } else if (tier >= 0) {
-        // Level on its shelf: pin ends 0.002 above the shelf of the tier below.
-        seated += 1;
-        assert.ok(Math.abs(pin.y - 0.037 - p.tierShelves[tier] - 0.002) < 1e-9, 'the chain sits on its shelf');
-        assert.ok(Math.abs(radius - p.riserGap - body.outlineRadiusAt(tier, phi)) < 1e-6,
-          'a seated pin is backed by the spiral riser above it');
-      } else {
-        // Running down the next riser after a step, still on the spiral.
-        riser += 1;
-        const band = [...Array(p.tierCount).keys()].find((k) => Math.abs(radius - p.riserGap - body.outlineRadiusAt(k, phi)) < 1e-6);
-        assert.ok(band !== undefined, 'a descending pin runs on the spiral riser');
-        assert.ok(pin.y - 0.037 < body.tops[band] + 0.002 + 1e-9 && pin.y + 0.037 > body.bottoms[band], 'beside that riser, which backs it (or just leaving the step edge)');
+      const base = THREE.MathUtils.euclideanModulo(phi, turn);
+      const theta = base + turn * Math.round((radius - p.chainRadiusStart - slope * base) / p.radialPitch);
+      total += 1;
+      assert.ok(Math.abs(radius - p.riserGap - body.riserRadiusAt(theta)) < 1e-6, 'the pin runs against the spiral riser');
+      const tread = p.topTread - p.leadPerTurn * theta / turn;
+      assert.ok(Math.abs(pin.y - 0.037 - tread - 0.002) < 1e-6, 'the pin ends sit 0.002 over the helical tread');
+      // The riser behind stands above the chain.
+      const riserTop = body.surfaceHeightAt(body.riserRadiusAt(theta) - 1e-4, theta);
+      minimumBacking = Math.min(minimumBacking, riserTop - (pin.y + 0.037));
+    });
+  }
+  assert.ok(total > 3000);
+  assert.ok(minimumBacking > 0.1, 'the riser backs the whole chain height: ' + minimumBacking);
+  console.log('046 helical seating', { poses: 97, pins: total, minimumBacking });
+});
+
+test('046 p99: the span leaves along the helix, clears the ledge, and the barrel lays separate turns', () => {
+  const p = fuseeParameters, motion = makeFuseeMotion(), body = steppedFuseeGeometry(p).userData;
+  let maximumSlope = 0, minimumClearance = Infinity;
+  for (let sample = 0; sample <= 400; sample += 1) {
+    const state = motion.stateAtProgress(sample / 400, sample % 8 === 0);
+    const run = state.barrelContact.clone().sub(state.fuseeContact);
+    const angle = Math.atan2(run.y, Math.hypot(run.x, run.z));
+    maximumSlope = Math.max(maximumSlope, angle);
+    // The span rises towards the barrel at the helix's own lead angle.
+    const point = motion.tierPath.at(2 * Math.PI * p.grooveTurns * state.progress);
+    assert.ok(Math.abs(Math.tan(angle) + point.dHeight / Math.hypot(point.radius, point.dRadius)) < 1e-9);
+    if (!state.pins) continue;
+    // Span pins over the fusee clear the ledge surface under both plate edges.
+    state.pins.forEach((pin, index) => {
+      const station = state.stations[index];
+      if (station <= state.barrelLength || station >= state.barrelLength + state.spanLength - 1e-9) return;
+      const x = pin.x - p.fuseeCenterX, y = -pin.z, radius = Math.hypot(x, y);
+      if (radius > p.baseRadius + 0.02) return;
+      const phi = Math.atan2(y, x) - state.fuseeAngle;
+      for (const offset of [-0.017, 0, 0.017]) {
+        const surface = body.surfaceHeightAt(radius + offset, phi);
+        minimumClearance = Math.min(minimumClearance, pin.y - 0.037 - surface);
       }
     });
   }
-  assert.ok(seated > 0.65 * total, `most of the wound chain lies level on the tiers (${seated}/${total})`);
-  assert.ok(maximumStepLift > 0.05 && maximumStepLift < 0.3, 'the span rides over a step edge when it must');
-  console.log('046 tier seating', { poses: 97, pins: total, seated, onRisers: riser, maximumStepLift });
+  assert.ok(minimumClearance > 0, 'the span clears the ledge: ' + minimumClearance);
+  assert.ok(maximumSlope < 4.3 * Math.PI / 180, 'the lead angle is small: ' + maximumSlope);
+  // Barrel: each turn lies clear below the last.
+  const end = motion.stateAtProgress(1, false).barrelLength;
+  let minimumDrop = Infinity;
+  for (let sigma = 0; sigma < end; sigma += 0.01) {
+    const target = motion.barrelTurnsAtLength(sigma) + 1;
+    let low = sigma, high = sigma + 8;
+    while (high - low > 1e-6) {
+      const middle = (low + high) / 2;
+      if (motion.barrelTurnsAtLength(middle) < target) low = middle; else high = middle;
+    }
+    if (low < end) minimumDrop = Math.min(minimumDrop, motion.barrelHeightAtLength(sigma) - motion.barrelHeightAtLength(low));
+  }
+  assert.ok(minimumDrop > 0.1, 'each barrel turn lies clear below the last: ' + minimumDrop);
+  console.log('046 span and barrel', { maximumSlopeDegrees: maximumSlope * 180 / Math.PI, minimumClearance, minimumDrop });
 });
 
 // Closest distance between nondegenerate finite segments, including

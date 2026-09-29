@@ -1,4 +1,5 @@
 import { correctFriction280, finishFrictionFamily } from './friction-family-working-parts.js';
+import { frictionBackstopData } from './friction-windlass-backstop-data.js';
 import * as THREE from 'three';
 import { crankArmOutline, turnedHandleGeometry } from './turned-handle.js';
 import { plate, poly, circle, polygonClipping as clip } from './finite-plate-geometry.js';
@@ -879,7 +880,8 @@ function frictionWindlass(movement) {
   const rearStandards = [
     standardBox(0.24, 1.24, -2.12, 1.76, standardZ - standardDepth / 2,
       standardZ + standardDepth / 2, 'fixed-broad-standard-behind-wheel'),
-    standardBox(1.65, 2.77, -2.12, 1.76, standardZ - standardDepth / 2,
+    // Pass 99: widened left to 1.42 so the pawl studs stand 0.2 inside it.
+    standardBox(1.42, 2.77, -2.12, 1.76, standardZ - standardDepth / 2,
       standardZ + standardDepth / 2, 'fixed-post-behind-travelling-jaw'),
     standardBox(0.24, 2.77, 1.76, 2.04, standardZ - standardDepth / 2,
       standardZ + standardDepth / 2, 'fixed-head-joining-rear-standards'),
@@ -1154,29 +1156,65 @@ export function createAuthoredFrictionWindlassMovement(movement) {
 // do). The white phase index is not drawn.
 function hideBackstopBehindWheel(model) {
   const blocks = model.root.userData.blocks;
-  // The travelling jaw's rear cheek wraps the rim down to z = -0.54, so the
-  // backstop must stay behind it; there, perspective showed the tooth tips
-  // (0.985 R) past the rim's upper right. Shrink the whole backstop - ratchet,
-  // pawls and pawl pins - as a similar figure about the wheel axis so the tips
-  // sit well inside the rim while every pawl/tooth relation is preserved.
-  const rearPlane = -0.65;
+  // Pass 99: the backstop is a real part in its own plane just in front of
+  // the rear standards, not a ring floating behind the wheel. The ratchet is
+  // one flat toothed plate carried on the rear end of the windlass barrel,
+  // and the two pawls turn on studs set into the post behind the jaw (the
+  // plate's panel with the two eyes), so the backstop reads as intended from
+  // behind, above and below. The whole backstop - ratchet, pawls and studs -
+  // is still a similar figure shrunk about the wheel axis so the tooth tips
+  // stay inside the rim in the front and rotated views; every pawl/tooth
+  // relation (and the baked lift table) is preserved.
+  const rearPlane = -1.30;
   const backstopScale = BACKSTOP_PRESENTATION_SCALE;
-  blocks.ratchetWheel.position.z = rearPlane;
-  blocks.ratchetWheel.scale.set(backstopScale, backstopScale, 1);
-  blocks.ratchetCarrier.position.z = rearPlane + 0.07;
-  // The carrier web is a Z-turned bored disk: its radius is local x and z.
-  blocks.ratchetCarrier.scale.set(backstopScale, 1, backstopScale);
-  for (const object of [
-    blocks.upperPawl,
-    blocks.lowerPawl,
-    ...blocks.holdingPawlPivotPins,
-  ]) {
-    object.position.set(object.position.x * backstopScale,
-      object.position.y * backstopScale, rearPlane);
-    object.scale.x *= backstopScale;
-    // Pins are Y-axis cylinders turned onto Z: their radius is x and z.
-    if (object.isMesh) object.scale.z *= backstopScale;
-    else object.scale.y *= backstopScale;
+  const ratchet = blocks.ratchetWheel;
+  ratchet.position.z = rearPlane;
+  ratchet.scale.set(backstopScale, backstopScale, 1);
+  for (const object of [...ratchet.children]) object.removeFromParent();
+  const { profile, pitch } = frictionBackstopData;
+  const toothRootRadius = Math.hypot(...profile[2]);
+  const teeth = Math.round(FULL_TURN / pitch);
+  const rotate = ([x, y], angle) => [x * Math.cos(angle) - y * Math.sin(angle),
+    x * Math.sin(angle) + y * Math.cos(angle)];
+  // The bore (0.60 in the wheel's units) lies inside the 0.69 barrel.
+  const ratchetOutline = clip.difference(
+    clip.union(poly(circle([0, 0], toothRootRadius, teeth * 16)),
+      ...Array.from({ length: teeth }, (_, index) =>
+        poly(profile.map((point) => rotate(point, index * pitch))))),
+    poly(circle([0, 0], 0.60 / backstopScale, 96)),
+  );
+  const ratchetBody = new THREE.Mesh(plate(ratchetOutline, -0.08, 0.08),
+    blocks.ratchetTeeth[0].material);
+  ratchetBody.userData.role = 'one-piece-backstop-ratchet-on-barrel-end';
+  ratchet.add(ratchetBody);
+  blocks.ratchetBody = ratchetBody;
+  blocks.ratchetTeeth = [ratchetBody];
+  blocks.ratchetCarrier.removeFromParent();
+  delete blocks.ratchetCarrier;
+  for (const pawl of [blocks.upperPawl, blocks.lowerPawl]) {
+    pawl.position.set(pawl.position.x * backstopScale,
+      pawl.position.y * backstopScale, rearPlane);
+    pawl.scale.x *= backstopScale;
+    pawl.scale.y *= backstopScale;
+  }
+  // Each shouldered stud stands 0.05 into the post face (z -1.45) with a
+  // collar as broad as its head up to 0.04 behind the pawl, runs through the
+  // pawl eye with a 0.003 running fit and ends in a head 0.005 clear of the
+  // pawl's front face.
+  const pawlFront = rearPlane + 0.06;
+  const pawlBack = rearPlane - 0.06;
+  const stud = new THREE.LatheGeometry([
+    [0, -1.50], [0.115, -1.50], [0.115, pawlBack - 0.04], [0.072, pawlBack - 0.04],
+    [0.072, pawlFront + 0.005],
+    [0.115, pawlFront + 0.005], [0.115, pawlFront + 0.040], [0, pawlFront + 0.040],
+  ].map(([radius, z]) => new THREE.Vector2(radius, z - rearPlane)), 48);
+  for (const pin of blocks.holdingPawlPivotPins) {
+    pin.geometry.dispose();
+    pin.geometry = stud;
+    pin.position.set(pin.position.x * backstopScale,
+      pin.position.y * backstopScale, rearPlane);
+    pin.scale.set(1, 1, 1);
+    pin.rotation.set(Math.PI / 2, 0, 0);
   }
   model.root.userData.geometry.backstopScale = backstopScale;
   const whiteIndices = [];

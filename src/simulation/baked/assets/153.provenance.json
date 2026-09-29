@@ -19,19 +19,19 @@
   "loopEnd": 12,
   "bounds": {
     "min": [
-      -3.95784878820004,
-      -1.658000066052371,
+      -3.957716753117475,
+      -1.6580000647552628,
       -0.5600000214576721
     ],
     "max": [
-      4.208613368178467,
-      2.5153716614485147,
+      4.208611799728029,
+      2.51200000333786,
       1.0780000042915345
     ]
   },
   "focus": [
-    0.1253822899892134,
-    0.4286857976980718,
+    0.12544752330527698,
+    0.4269999692912987,
     0.2589999914169312
   ],
   "cameraDirection": [
@@ -46,7 +46,7 @@
     },
     {
       "file": "src/simulation/mujoco-stud-reverser/geometry.js",
-      "sha256": "b1eb767f1dbae5ffbbbd5d13eb7c86cbafec954e0c582ef56a96dc45b0437bf2"
+      "sha256": "61f443ca61da1c5a21283aa6b005f6c64c072fa9404600a0e6afd4a45fb4ed07"
     },
     {
       "file": "src/simulation/mujoco-stud-reverser/physics.js",
@@ -66,27 +66,27 @@
     },
     {
       "file": "docs/validation/153-supported-fine.json",
-      "sha256": "172fed55baa027280c85e62e2b12ee41e8018d36dd4925e8d56664d270c3a1e8"
+      "sha256": "54950193d148c18ae2a08281e3a36bab4b99d89597a85931bcd99a7269a8f330"
     },
     {
       "file": "docs/validation/153-assembly.json",
-      "sha256": "05e434cb470064388a69dbee497f0207697daa2cceb5d30eddd0fa5dcb420fd8"
+      "sha256": "d1b97d1d7fcec39f72fd7bbc25bc1cf7c39a559104ef319aa33b0bfe3b7d06d7"
     },
     {
       "file": "docs/validation/153-moving-volumes.json",
-      "sha256": "d99a5e424ac17b2ca8aaf7bec2fc5dd833f088b88d810b8ff1ad5cb3f6136ee8"
+      "sha256": "6d30bdbb7f4d8b65d88fa214b9ea92f63b480470e60d98f7ab1797c768e37d53"
     }
   ],
   "closure": [
-    1.4846079920971533e-10,
-    2.2436759394839356e-10,
+    1.4841106121821213e-10,
+    1.505636171295066e-10,
     0,
-    -6.410502684239816e-10,
-    -6.410502684239816e-10
+    -4.3018175133191505e-10,
+    -4.3018175133191505e-10
   ],
   "sourceTime": 60,
-  "bytes": 285110,
-  "sha256": "7185a3c23ee14db230e1c53045440b72b8c0537e9af758ef0e23d62cbc0072a7",
+  "bytes": 286760,
+  "sha256": "29890190e8e28d366ddc22b8fbe41118a7d32d15d197aaa7644d33b1980d2287",
   "samples": 6001,
   "meshes": 14
 }

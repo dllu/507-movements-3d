@@ -64,9 +64,9 @@ export function stopBand240(stop,profile,tipRadius){
 // from it. Below the block, the traced lower edge swings left and curls down
 // into the round knob. The drawn hole is a plain hole.
 export const C240_PLATE={
- top:[[40,262],[120,250],[230,236],[330,196],[392,140]],
+ top:[[40,258],[80,241],[130,227],[200,213],[330,187],[392,140]],
  bottom:[[447,232],[400,275],[360,300],[290,308],[240,295],[200,272],[150,268],[125,282],[116,322],[102,366],[76,390],[42,382],[20,332],[22,280]],
- hole:[335,225],holeRadius:.05,joint:[395,282]};
+ hole:[335,225],holeRadius:.05,joint:[395,282],blockFoot:[170,219]};
 export const C240={band:.055,leaf:.17,eye:.17,clearance:.012,inner:1.3};
 export function wheelTipAngles240(profile,tipRadius){
  const tips=[];for(let i=0;i<profile.length;i+=3){const a=profile[i+1],b=profile[i+2];if(a.length()>tipRadius-1e-6&&b.length()>tipRadius-1e-6){const m=a.clone().add(b);tips.push(Math.atan2(m.y,m.x));}}return tips;
@@ -83,7 +83,11 @@ export function stopC240(stop,profile,tipRadius,g){
  const behind=wheelTipAngles240(profile,tipRadius).map(wrap).filter(a=>a<-.02).sort((u,v)=>v-u),t2=tT+behind[1];
  const polar=(a,rad)=>new THREE.Vector2(rad*Math.cos(a),rad*Math.sin(a));
  const top=smooth(C240_PLATE.top.map(world),48),arc=[];for(let i=0;i<=48;i++)arc.push(polar(tT+(t2-tT)*i/48,C240.inner));
- const upper=polyOf([...top,T,...arc,polar(t2,tipRadius+.03)]);
+ // p99: the block's left edge drops from the second tip to the handle's top
+ // line at Brown's foot (plate px 172, beside the lettered C); the space above
+ // the neck stays open, so the knob hangs from a slim neck, not a filled wedge.
+ const foot=world(C240_PLATE.blockFoot),leftFoot=top.reduce((best,p,i)=>p.distanceTo(foot)<top[best].distanceTo(foot)?i:best,0);
+ const upper=polyOf([...top.slice(leftFoot),T,...arc,polar(t2,tipRadius+.03)]);
  // The wheel dilated by the running clearance, near C only.
  const pieces=[poly(profile.map(p=>p.toArray()))],c=C240.clearance;
  profile.forEach((a,i)=>{const b=profile[(i+1)%profile.length],m=Math.atan2(a.y+b.y,a.x+b.x);if(Math.abs(Math.atan2(Math.sin(m-(tT+t2)/2),Math.cos(m-(tT+t2)/2)))>.9||a.distanceTo(b)<1e-9)return;pieces.push(capsule(a.toArray(),b.toArray(),c,12));});

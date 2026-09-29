@@ -6,6 +6,7 @@ import {boredCylinderGeometry} from './piston-guide-parts.js';
 import {addMangleUniversalDrive} from './mangle-universal-drive.js';
 import {involuteSpurOutline, smoothExtrudeGeometry} from './smooth-extrusion.js';
 
+const CAM194=[0.8,3.4,16];
 function area(points) {
   return Math.abs(points.reduce((sum,p,i)=>{const q=points[(i+1)%points.length];return sum+p[0]*q[1]-p[1]*q[0];},0));
 }
@@ -81,7 +82,9 @@ export function finishReversingMangleGuides(root,update,id) {
   // exactly: finely sampled involutes, arcs concentric with the pinion at tip
   // and root, one flat extrusion over the same depth with flat end faces,
   // smooth flank normals and creased edges. The cavity is cut by this outline.
-  {
+  // 194's pinion is instead the offline envelope of its pins
+  // (fitRadialPinManglePinion), which this rebuild must not replace.
+  if(id!==194){
     const gear=b.pinion.userData.rotor.children[0],old=gear.geometry,u=b.pinion.userData;
     old.computeBoundingBox();let {min:{z:low},max:{z:high}}=old.boundingBox;
     // p93: 192's six-tooth pinion is set by Brown's pitch and the small
@@ -146,5 +149,7 @@ export function finishReversingMangleGuides(root,update,id) {
   // standing end-on in front of the wheel is not enlarged by perspective.
   d.cameraFov??=16;
   markShadows(root);
-  return {root,update,cameraDirection:new THREE.Vector3(1.6,.9,16)};
+  // 194: a little more from above, so the drive standing out in front of the
+  // pinion falls below it rather than across its face and hub.
+  return {root,update,cameraDirection:id===194?new THREE.Vector3(CAM194[0],CAM194[1],CAM194[2]):new THREE.Vector3(1.6,.9,16)};
 }

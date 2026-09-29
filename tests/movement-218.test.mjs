@@ -485,3 +485,30 @@ test('movement 218 catch G is a flat plate whose lug seats in F and never cuts i
   assert.ok(motion.catchLiftAngle > 0);
   disposeModel(model.root);
 });
+
+test('movement 218 p99: square lug G in square notches of F, milled while the rocker holds still', async () => {
+  const {woolComberNotch} = await import('../src/data/wool-comber-notch.js');
+  const model = createMovementModel(catalog.movements[217]);
+  const {geometry, rockerLawAtPhase, motion} = model.root.userData;
+  assert.ok(geometry.lugCornerRadius <= 0.03, 'lug corners are small roundings, not a round tip');
+  // The notch root is a straight segment (the flat end of the lug) at least
+  // as long as the lug is wide less its corner roundings.
+  const profile = woolComberNotch.square218;
+  let longest = 0, run = 0, heading = null;
+  for (let i = 0; i < profile.length; i += 1) {
+    const a = profile[i], b = profile[(i + 1) % profile.length];
+    const length = Math.hypot(a[0] - b[0], a[1] - b[1]);
+    if (length < 1e-9) continue;
+    const direction = Math.atan2(b[1] - a[1], b[0] - a[0]);
+    const straight = heading !== null && Math.abs(Math.atan2(Math.sin(direction - heading), Math.cos(direction - heading))) < 0.01;
+    const deep = Math.hypot(...a) < 1.45 && Math.hypot(...b) < 1.45;
+    run = deep ? (straight ? run + length : length) : 0;
+    heading = direction; longest = Math.max(longest, run);
+  }
+  assert.ok(longest > 2 * (geometry.catchHookRadius - geometry.lugCornerRadius) - 0.01, `flat root ${longest}`);
+  // G lifts and drops only while the rocker stands still.
+  for (const phase of [motion.forwardEndPhase + 0.001, motion.liftRiseEndPhase - 0.001, motion.liftFallStartPhase + 0.001, 0.999]) {
+    assert.equal(rockerLawAtPhase(phase).derivative, 0, `phase ${phase}`);
+  }
+  disposeModel(model.root);
+});

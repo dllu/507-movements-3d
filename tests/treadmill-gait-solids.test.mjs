@@ -82,7 +82,7 @@ test('377 free feet and trouser legs clear the body and rail, without deforming 
 test('377 touchdown and lift-off preserve joint position and velocity in both time directions',()=>{
   const g=data.geometry, step=1e-7;
   const offset=(g.gaitGeometry.touchdownAngle-g.wheelStartAngle-g.treadPitch)/(2*g.treadPitch);
-  for(const index of[0,1])for(let cycle=-2;cycle<=8;cycle++)for(const edge of[0,.60]) {
+  for(const index of[0,1])for(let cycle=-2;cycle<=8;cycle++)for(const edge of[0,g.gaitGeometry.stanceFraction]) {
     const time=(cycle+edge-offset-index/2)*g.wheelPeriod/7;
     const before=data.stateAtTime(time-step).legStates[index],after=data.stateAtTime(time+step).legStates[index];
     for(const name of['upperAngle','lowerAngle'])assert.ok(Math.abs(after[name]-before[name])<1e-5,`${name} jumps`);

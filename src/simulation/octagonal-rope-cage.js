@@ -21,8 +21,9 @@ import polygonClipping from 'polygon-clipping';
 //   full on the front face.
 // - Eight beams, 18 px wide as drawn, standing radially on the rims (Brown's
 //   eight radial blocks are their ends) with round noses the rope bends over.
-// - The rope: one laid rope from a far guide on the left, once round the eight
-//   beam noses on an octagonal helix, and away to a far guide on the right.
+// - The rope: one laid rope from a far guide on the left, four turns side by
+//   side round the eight beam noses on an octagonal helix (pass 99; the
+//   caption allows once or more), and away to a far guide on the right.
 //   Each span runs from its guide (beyond the crop, on Brown's ground line) to
 //   its tangent beam, so it tilts slightly as the beams pass; the rope never
 //   slips on the beams, so the lay is carried round with the cage and flows
@@ -58,14 +59,21 @@ export function octagonalRopeCageDrive() {
   const beamNoseCenterRadius = ropeVertexRadius - bendRadius;
   const beamFootRadius = rimInnerRadius + 0.01;
   const beamTopRadius = beamNoseCenterRadius + beamHalfWidth;
-  const drumWidth = 0.5;
+  // Pass 99: the rope makes four turns side by side across the beams, so the
+  // wound rope reads as Brown's broad hatched octagonal band; the beams are
+  // lengthened to carry the four turns between the end wheels.
+  const wrapTurns = 4;
+  const drumWidth = 0.56;
   const ringDepth = 0.07;
-  const axialLead = 0.14;
+  // One rope diameter plus a small gap per turn: adjacent turns lie side by
+  // side without touching.
+  const axialLead = 2 * ropeRadius + 0.006;
+  const bandHalfWidth = wrapTurns * axialLead / 2;
   const leftCropX = (sourceRasterRopeLeftX - sourceRasterDrumCenter.x) * sourceScale;
   const rightCropX = (sourceRasterRopeRightX - sourceRasterDrumCenter.x) * sourceScale;
   const guideRun = 1.0;
-  const leftGuide = new THREE.Vector3(leftCropX - guideRun, -ropeVertexRadius, -axialLead / 2);
-  const rightGuide = new THREE.Vector3(rightCropX + guideRun, -ropeVertexRadius, axialLead / 2);
+  const leftGuide = new THREE.Vector3(leftCropX - guideRun, -ropeVertexRadius, -bandHalfWidth);
+  const rightGuide = new THREE.Vector3(rightCropX + guideRun, -ropeVertexRadius, bandHalfWidth);
   const drumAngularSpeed = 0.72;
   const drumRotationPeriod = fullTurn / drumAngularSpeed;
   const arcStep = THREE.MathUtils.degToRad(3);
@@ -226,7 +234,7 @@ export function octagonalRopeCageDrive() {
   };
   // Axial position: a stationary helix, one lead per turn, by the rope's
   // unwrapped polar angle from the bottom of the cage.
-  const zAtPolar = (psi) => -axialLead / 2 + axialLead * psi / fullTurn;
+  const zAtPolar = (psi) => -bandHalfWidth + axialLead * psi / fullTurn;
   const polarFromBottom = (x, y) => Math.atan2(x, -y);
 
   const ropePathAt = (drumAngle) => {
@@ -239,7 +247,7 @@ export function octagonalRopeCageDrive() {
       if (!entry || t.direction < entry.direction) entry = { ...t, u };
     }
     let exit = null;
-    for (let u = entry.u + 6; u <= entry.u + 10; u += 1) {
+    for (let u = entry.u + 8 * wrapTurns - 2; u <= entry.u + 8 * wrapTurns + 2; u += 1) {
       const t = tangentOut(g2R, noseCenter(u, drumAngle));
       if (!exit || t.direction > exit.direction) exit = { ...t, u };
     }
@@ -296,10 +304,10 @@ export function octagonalRopeCageDrive() {
   const turnLength = beamCount * initialPath.pitchLength;
   const lay = turnLength / Math.round(turnLength / nominalLay);
   const ropeMesh = new THREE.Mesh(
-    new LaidRopeGeometry(polylineCurve(initialPath.points), 256, ropeRadius, 8, false, { travel: -initialPath.startMaterial, lay }),
+    new LaidRopeGeometry(polylineCurve(initialPath.points), 256 * wrapTurns, ropeRadius, 8, false, { travel: -initialPath.startMaterial, lay }),
     ropeMaterial,
   );
-  ropeMesh.userData.role = 'one-rope-wound-once-round-the-eight-beam-cage';
+  ropeMesh.userData.role = 'one-rope-wound-four-turns-round-the-eight-beam-cage';
   const rope = new THREE.Group();
   rope.add(ropeMesh);
   rope.userData.mesh = ropeMesh;
@@ -307,8 +315,8 @@ export function octagonalRopeCageDrive() {
   rope.userData.physicalCable = true;
   rope.userData.closed = false;
   rope.userData.ropeCount = 1;
-  rope.userData.wrapTurns = 1;
-  rope.userData.role = 'one-continuous-rope-wound-once-round-the-cage';
+  rope.userData.wrapTurns = wrapTurns;
+  rope.userData.role = 'one-continuous-rope-wound-four-turns-round-the-cage';
   root.add(rope);
 
   const stateAtDrumAngle = (drumAngle, time = null) => {
@@ -346,14 +354,14 @@ export function octagonalRopeCageDrive() {
     drumRotor.rotation.set(0, 0, state.drumAngle);
     drum.userData.angularSpeed = state.angularSpeed;
     replaceWithLaidRope(ropeMesh, polylineCurve(state.path.points), {
-      radius: ropeRadius, tubularSegments: 256, travel: -state.path.startMaterial, lay,
+      radius: ropeRadius, tubularSegments: 256 * wrapTurns, travel: -state.path.startMaterial, lay,
     });
     rope.userData.materialTravel = state.leftFeed;
     root.userData.kinematics = state;
   };
 
   Object.assign(root.userData, {
-    mechanism: 'single-rope-one-turn-octagonal-cage-linear-drive',
+    mechanism: 'single-rope-four-turn-octagonal-cage-linear-drive',
     cameraDistanceScale: 1.06,
     cameraFitBounds,
     blocks: { cameraEnvelope, drum, drumRotor, rearFlange, frontRim, spokes, hub, inputShaft, beams, pedestal, pedestalFoot, rearBearing, rope, ropeMesh },
@@ -363,7 +371,7 @@ export function octagonalRopeCageDrive() {
       sourceRasterShaftHoleRadius, sourceRasterBeamWidth, beamCount, spokeCount, beamPitch,
       flangeOuterRadius, rimInnerRadius, frontRimOuterRadius, hubOuterRadius, spokeTrimRadius: frontRimOuterRadius - 0.01, shaftRadius, beamHalfWidth,
       beamFootRadius, beamNoseCenterRadius, beamTopRadius, beamRearZ, beamFrontZ, bendRadius, ropeRadius,
-      ropeBeamGap, ropeVertexRadius, drumWidth, ringDepth, frontZ, rearZ, axialLead, leftCropX, rightCropX,
+      ropeBeamGap, ropeVertexRadius, drumWidth, ringDepth, frontZ, rearZ, axialLead, wrapTurns, bandHalfWidth, leftCropX, rightCropX,
       leftGuide, rightGuide, drumAngularSpeed, drumRotationPeriod, rearFrameZ, lay, turnLength,
     },
     ropePathAt,

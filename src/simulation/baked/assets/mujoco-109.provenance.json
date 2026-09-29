@@ -4,19 +4,19 @@
   "format": "mujoco-loop",
   "version": 1,
   "asset": "src/simulation/baked/assets/mujoco-109.json.gz",
-  "bytes": 28406,
-  "assetSha256": "7640049f223c94f5fb9403732ba952b1673e10a531da38f84aa39be4513abc95",
+  "bytes": 19716,
+  "assetSha256": "31d7e74d7a8ee21e23a22bdc2e1432ed5e000c45a4655e22a5a4b3b1c13c104a",
   "motionSources": {
-    "src/simulation/mujoco-thread-cutting/physics.js": "8683e896192fd092af40a8c4ba4f72cf595ae9e1f52aed7a86dc2ebcfe8e5112",
-    "src/simulation/mujoco-thread-cutting/profile.js": "4b9d76db0a5a695856a1143ea77f44b51395e207fcccca1c9dc125a6e08a544d",
+    "src/simulation/mujoco-thread-cutting/physics.js": "d5fbaed3fd0be288b2a80c885f568ad4a7b4985d92494cbf42ab53f0d10a5249",
+    "src/simulation/mujoco-thread-cutting/profile.js": "bc7a87f1bbb6de9d776cd0b49ff2ccdff258d5fd7573eb56e480b47b3ed897e1",
     "src/simulation/mujoco-thread-cutting/source.js": "4ab4c377e9797f92afef0e27445d87ad1eae73e3d659c952aa826bdaf547e75a",
     "src/simulation/mujoco-thread-cutting/stock.js": "df5513e4251a6ff5794f69ed8313a41463583ae54de48735f518ba36ed818c1f",
-    "src/simulation/mujoco-thread-cutting/visual.js": "7fa97a9e3a260cd379765d21bfdbd5b9f41e038673559c695de0fe32c1f9462a",
+    "src/simulation/mujoco-thread-cutting/visual.js": "8c0c05f893152dd5d8b50925f0a65caa5f1ecc6365231942b2ad33e93a4f35b8",
     "src/simulation/mujoco-thread-cutting/workpiece.js": "329f96428299f2918248424a3b7d2f510add0b4fc90aae1a352f556b98b30737",
     "src/simulation/mujoco/simulation.js": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
   },
   "visualSourcesAtBake": {
-    "src/simulation/mujoco-thread-cutting/geometry.js": "2909e2d1c1ff64d409536e83e521178f1c42e886267e2a61c4c08d683c25947c"
+    "src/simulation/mujoco-thread-cutting/geometry.js": "7c3be45ce6469f685b9c4617c8c66741a9e89e19f8ff948db0333078fde7c22e"
   },
   "physicsXmlSha256": {
     "default": "dbd1e82e43bbdaf7c6d0e2b9c009cf9ad24df3e88c87ff64c6c1af4f6807d0b5"
@@ -42,45 +42,45 @@
     ],
     "roundTripLoops": 1
   },
-  "cycleDesign": "The lathe drive reverses each period: the tool carriage descends along the stock and returns up its groove. Playback opens part-way down the first cut (threaded above the tool, plain blank below); that descent finishes the thread and every later pass chases it, so the loop never exchanges the work. The route sync rebuilds the cut from the recorded work angle and playback time; one 24 s period closes the loop.",
+  "cycleDesign": "The lathe drive reverses each period: the tool carriage descends along the stock to one work-thread turn below the drawn tool and returns up its groove. Playback opens at the drawn tool position on the first cut (threaded above the tool, plain blank below); that descent cuts one more turn, and every later pass chases the thread down to the same stop, so the rest of the blank stays a plain shank as drawn and the loop never exchanges the work. The route sync rebuilds the cut from the recorded work angle and playback time; one 16 s period closes the loop.",
   "variants": {
     "default": {
       "loop": {
         "mode": "periodic",
-        "duration": 24,
-        "samples": 1500,
+        "duration": 16,
+        "samples": 1000,
         "dt": 0.016,
-        "startTime": 48,
+        "startTime": 32,
         "periods": 1,
-        "drivePeriod": 24
+        "drivePeriod": 16
       },
       "closure": {
-        "rawSeamPixels": 4.3936733550977117e-10,
-        "maximumCorrectionPixels": 3.4817526466113247e-12,
+        "rawSeamPixels": 6.485478820650314e-10,
+        "maximumCorrectionPixels": 6.468323598095294e-10,
         "maximumRotationCorrection": 0,
         "wraps": [
           {
             "key": "blocks.lead",
-            "angle": 1.8714890748228186e-12,
-            "rawAngle": 1.8714890748228186e-12
+            "angle": -1.958332107587779e-10,
+            "rawAngle": -1.958332107587779e-10
           },
           {
             "key": "blocks.work",
-            "angle": -2.4913404672588513e-12,
-            "rawAngle": -2.4913404672588513e-12
+            "angle": -1.3648384505904332e-10,
+            "rawAngle": -1.3648384505904332e-10
           }
         ]
       },
-      "roundTripPixels": 0.006543567660093975,
+      "roundTripPixels": 0.006671250174759527,
       "seam": {
-        "seamStepPixels": 4.4891552922164255,
-        "interiorStepPixels": 4.502924866828755,
-        "seamSecondPixels": 0.3766474880528039,
-        "interiorSecondPixels": 0.3802232455781808
+        "seamStepPixels": 4.485289699720847,
+        "interiorStepPixels": 4.50896891120299,
+        "seamSecondPixels": 0.37594554030089533,
+        "interiorSecondPixels": 0.38025375388976945
       }
     }
   },
   "extras": [],
   "removed": [],
-  "bakeSeconds": 4.675663272857666
+  "bakeSeconds": 3.1902059597969057
 }

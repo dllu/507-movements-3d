@@ -21,7 +21,7 @@ test('236 both strokes drive from a toe seated in the root with positive normal 
     engaged += 1;
     const c = s.activeContactCenter.clone().rotateAround(new THREE.Vector2(), -s.wheelAngle);
     let root = 0;
-    for (let k = 0; k < outline.length; k += 3) if (outline[k].distanceTo(c) < outline[root].distanceTo(c)) root = k;
+    for (let k = 0; k < outline.length; k += outline.length / 15) if (outline[k].distanceTo(c) < outline[root].distanceTo(c)) root = k;
     const face = segment(c, outline[root], outline[root + 1]) - g.pawlNoseRadius;
     const back = segment(c, outline[(root - 1 + outline.length) % outline.length], outline[root]) - g.pawlNoseRadius;
     assert.ok(Math.abs(face) < 1e-9 && Math.abs(back) < 1e-9, `seated: face ${face} back ${back}`);
@@ -52,7 +52,8 @@ test('236 complete nose circles clear every float32 tooth edge and reseat contin
   }
   for (const phase of [0, 0.5, 1, 1.5, 15]) {
     const a = d.stateAtCycleCoordinate(phase - 1e-7), b = d.stateAtCycleCoordinate(phase + 1e-7);
-    for (const key of ['longTipCenter', 'shortTipCenter']) assert.ok(a[key].distanceTo(b[key]) < 2e-6);
+    // A returning toe may still be sliding into its root as the lever reverses.
+    for (const key of ['longTipCenter', 'shortTipCenter']) assert.ok(a[key].distanceTo(b[key]) < 4e-6);
     assert.ok(Math.abs(a.wheelAngularSpeed - b.wheelAngularSpeed) < 3e-6);
     // Returning pawls' speeds are the slopes of their tracked tables.
     for (const key of ['longPawlAngularSpeed', 'shortPawlAngularSpeed']) assert.ok(Math.abs(a[key] - b[key]) < 5e-5);

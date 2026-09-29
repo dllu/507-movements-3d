@@ -1,7 +1,7 @@
 import {rigidFamilyInertia} from '../mujoco/mass.js';
 import {createMujocoSimulation} from '../mujoco/simulation.js';
 const vec=a=>a.map(v=>Number(v.toPrecision(12))).join(' ');
-export function makeRackRectifierPhysics(mujoco,visual,{timestep=.0005,period=6,turnTime=.18,startup=.15,pawlSpring=.001,pawlRest=-.07,pawlDamping=.00005,outputDamping=.00005,friction=0,contactTime=.002,ccdTolerance=1e-6,multiCcd=false,pawlInitial=0,outputInitial=0,backlash=.008}={}){
+export function makeRackRectifierPhysics(mujoco,visual,{timestep=.0005,period=6,turnTime=.18,startup=.15,pawlSpring=.0025,pawlRest=-.04,pawlDamping=.00005,outputDamping=.00005,friction=0,contactTime=.002,ccdTolerance=1e-6,multiCcd=false,pawlInitial=0,outputInitial=0,backlash=.005}={}){
  if(![timestep,period,turnTime,startup,contactTime,ccdTolerance].every(v=>Number.isFinite(v)&&v>0)||turnTime>=period/4||![pawlSpring,pawlDamping,outputDamping,friction].every(v=>Number.isFinite(v)&&v>=0)||![pawlRest,pawlInitial,outputInitial].every(Number.isFinite)||!(Number.isFinite(backlash)&&backlash>=0&&backlash<.1)||typeof multiCcd!=='boolean')throw new RangeError('Invalid 116 physics options');
  const u=visual.root.userData,f=u.profile,names=['frame','upper','upperPawl','lower','lowerPawl','output'],mass=Object.fromEntries(names.map(n=>[n,rigidFamilyInertia(u.parts,u.families,n)])),density=1/mass.frame.volume,assets=[],geoms=Object.fromEntries(names.map(n=>[n,[]]));
  const inertia=n=>{const m=mass[n];return `<inertial pos="${vec(m.centroid)}" mass="${m.volume*density}" fullinertia="${vec(m.inertia.map(v=>v*density))}"/>`;};
@@ -13,6 +13,10 @@ export function makeRackRectifierPhysics(mujoco,visual,{timestep=.0005,period=6,
  for(const name of ['upper','lower'])bodies+=`<body name="${name}"><joint name="${name}" axis="0 0 1" damping=".0001"/>${inertia(name)}${geoms[name].join('')}<body name="${name}Pawl" pos="${vec([...f.pawlPivot,0])}"><joint name="${name}Pawl" axis="0 0 1" stiffness="${pawlSpring}" springref="${pawlRest}" damping="${pawlDamping}"/>${inertia(name+'Pawl')}${geoms[name+'Pawl'].join('')}</body></body>`;
  bodies+=`<body name="output"><joint name="output" axis="0 0 1" damping="${outputDamping}"/>${inertia('output')}${geoms.output.join('')}</body>`;
  const xml=`<mujoco model="116 double rack and ratchet clutches"><compiler angle="radian" inertiafromgeom="false"/><option timestep="${timestep}" gravity="0 -9.81 0" integrator="discrete" solver="Newton" iterations="80" tolerance="1e-10" cone="elliptic" ccd_tolerance="${ccdTolerance}"><flag multiccd="${multiCcd?'enable':'disable'}" diagexact="enable"/></option><default><geom condim="${friction?3:1}" friction="${friction} .001 .001" solref="${contactTime} 1" solimp=".99 .999 .001"/></default><asset>${assets.join('')}</asset><worldbody>${bodies}</worldbody><actuator><position joint="frame" kp="10000" kv="200"/></actuator></mujoco>`;
+ // p99: the broader (Brown-width) pawls have about twice the leaf inertia;
+ // a 0.0025 spring with a lighter -0.04 preload keeps them from being flung
+ // off the tooth backs at the reversals, and a 0.005 backlash (was 0.008)
+ // shortens the coast while the reversed pinion takes it up.
  // Pass 86: the nominal stroke is backlash pinion radians longer than a
  // quarter turn each way. The idle pawl then passes the root of the next
  // tooth before its pinion reverses and drops fully into it; the reversed

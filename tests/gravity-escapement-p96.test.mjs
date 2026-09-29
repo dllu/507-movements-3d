@@ -50,7 +50,7 @@ test('311: the rod hangs just in front of the arbor end; tips are part of the le
   assert.equal(byRole(root, /hardened/).length, 0);
 });
 
-test('312: E and F are flat tabs of the arm metal; the rod sits just in front of the arbor', () => {
+test('312: E and F are flat tabs of the arm metal; the rod sits just in front of arm B', () => {
   const { root } = load(312);
   const g = root.userData.geometry;
   for (const letter of ['E', 'F']) {
@@ -63,10 +63,20 @@ test('312: E and F are flat tabs of the arm metal; the rod sits just in front of
     assert.ok(Math.abs((b.max.x - b.min.x) / 2 - g.forkPinRadius) < 1e-6, 'bearing ends where the round pin was');
     assert.ok(b.max.y - b.min.y < b.max.x - b.min.x, 'oblong, as Brown draws');
   }
+  // p99: back to front, large wheel, small wheel, arm A, arm B, rod.
   const rod = box(byRole(root, /^bloxam-pendulum-rod$/)[0]);
   const shaft = box(byRole(root, /^common-arbor-rigidly-fixing-both-nine-tooth-wheels$/)[0]);
-  const gap = rod.min.z - shaft.max.z;
-  assert.ok(gap > 0 && gap < 0.05, `rod clears the arbor end by ${gap}`);
+  const armA = box(byRole(root, /^left-A-E-thin-tubular-main-arm$/)[0]);
+  const armB = box(byRole(root, /^right-B-F-thin-tubular-main-arm$/)[0]);
+  const smallHub = box(byRole(root, /^small-pallet-wheel-hub$/)[0]);
+  const gap = rod.min.z - armB.max.z;
+  assert.ok(gap > 0 && gap < 0.05, `rod clears arm B by ${gap}`);
+  assert.ok(shaft.max.z < armA.min.z, 'the arbor ends behind arm A');
+  assert.ok(smallHub.max.z < armA.min.z, 'the small wheel lies behind the arms');
+  for (const letter of ['E', 'F']) {
+    const tab = box(byRole(root, new RegExp(`fork-pin-${letter}$`))[0]);
+    assert.ok(tab.max.z - tab.min.z < 0.40, `${letter} is a short tab (${tab.max.z - tab.min.z})`);
+  }
   const hub = box(byRole(root, /^large-escape-wheel-hub$/)[0]);
   assert.ok(shaft.min.z < hub.min.z && shaft.min.z > hub.min.z - 0.1, 'arbor ends just behind the large hub');
 });

@@ -5,34 +5,41 @@ import { creaseIndexedNormals } from './crease-normals.js';
 
 const turn = 2 * Math.PI;
 /** Crown sag of the round stud heads at their rim. */
-export const conicalStudCrownSag = 0.03;
+export const conicalStudCrownSag = 0.012;
 const cache = new Map();
 
 export const conicalStudParameters = Object.freeze({
-  centerDistance: 1.8, radiusSlope: 0.42, axialAmplitude: 0.96,
-  // Brown draws round stud heads nearly flush on the cone face. The toothed
-  // cone therefore carries short stub teeth (addendum 0.15 module), so the
-  // stud body can sit close to its pitch cone and the round heads, faced
-  // parallel to the cone, stand only about 0.05 proud while still entering
-  // the tooth spaces.
-  halfHeight: 1.1, teeth: 17, studCount: 14, studRadius: 0.07,
-  studFront: 0.025, studBack: 0.20, toothAddendumFactor: 0.15,
+  // Brown's cones (plate 37), scaled to a 1.8 centre distance: 2.07 tall,
+  // toothed cone about 1.55 at the top and 0.45 at the foot (mean 1.02),
+  // stud cone a frustum about 0.23 across the top. He draws about 28 flutes.
+  // Studs sit one tooth pitch apart along the spiral, so 28 flutes with 17
+  // studs per turn put the spiral just above mid-height, where the toothed
+  // cone is the larger (h 0.15 +- 0.40 gives a solved mean radius of 1.022).
+  // The output angle between studs then grows from 13 to 34 degrees up the
+  // spiral, as Brown's spacing grows (16 to 21 degrees over his seven).
+  // The flutes are grooves cut into the pitch cone (no addendum), so the
+  // stud cone's body lies just inside its pitch cone and the round heads
+  // stand only their engagement (0.02) plus a 0.004 running relief proud.
+  centerDistance: 1.8, radiusSlope: 0.53, axialAmplitude: 0.4, axialCenter: 0.15,
+  halfHeight: 1.035, teeth: 28, studCount: 17, studRadius: 0.05,
+  studFront: 0.02, studBack: 0.16, toothAddendumFactor: 0,
 });
 
 /** An end-to-end spiral with equal axial steps, as in the engraving.
  * Nominal indexing integrates adjacent pitch ratios. This is prescribed
  * motion; continuous force transmission across the spiral seam is unresolved.
  */
-export function conicalStudMotion({ centerDistance, radiusSlope, axialAmplitude, teeth, studCount }) {
+export function conicalStudMotion({ centerDistance, radiusSlope, axialAmplitude, axialCenter = 0, teeth, studCount }) {
   const pitch = turn / teeth;
   const heights = Array.from({ length: studCount }, (_, index) =>
-    -axialAmplitude + 2 * axialAmplitude * index / (studCount - 1));
+    axialCenter - axialAmplitude + 2 * axialAmplitude * index / (studCount - 1));
   const ratiosAt = (mean) => heights.map((height) => {
     const radius = mean + radiusSlope * height;
     return (centerDistance - radius) / radius;
   });
-  let low = radiusSlope * axialAmplitude + 0.001;
-  let high = centerDistance - radiusSlope * axialAmplitude - 0.001;
+  const reach = radiusSlope * (Math.abs(axialCenter) + axialAmplitude);
+  let low = reach + 0.001;
+  let high = centerDistance - reach - 0.001;
   for (let iteration = 0; iteration < 60; iteration += 1) {
     const mean = (low + high) / 2;
     const ratios = ratiosAt(mean);

@@ -25,7 +25,7 @@ export function makeThreadCuttingGeometry(options={}) {
  // groove exists only where the tool has passed (Brown: cut above the tool,
  // plain blank below); afterwards the tool chases the finished thread. Live
  // and baked playback both call this with the drive time and work angle.
- const strokes=new Map(),syncCut=(time,workAngle,period=24,since=0)=>{
+ const strokes=new Map(),syncCut=(time,workAngle,period=16,since=0)=>{
   if(!strokes.has(period))strokes.set(period,makeThreadCuttingStroke(f,period));
   setCutAngle(f.contactAngle-toolHalfAngle-strokes.get(period).cutWorkAngle(time,workAngle,since));};
  for(const [i,name]of ['lead','work'].entries()) {

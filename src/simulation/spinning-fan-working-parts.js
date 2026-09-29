@@ -21,17 +21,8 @@ export function fanAirflowCurve(side,lane){
   const angle=THREE.MathUtils.lerp(start,-Math.PI/2,i/32),radius=THREE.MathUtils.lerp(.82,2.7,i/32);
   points.push(new THREE.Vector3(Math.cos(angle)*radius,Math.sin(angle)*radius,side*.08));
  }
- points.push(new THREE.Vector3(3.18,-2.62+lane*.08,side*.08),new THREE.Vector3(4.98,-2.62+lane*.08,side*.08));
+ points.push(new THREE.Vector3(3.18,-2.62+lane*.08,side*.08),new THREE.Vector3(5.12,-2.62+lane*.08,side*.08));
  const curve=new THREE.CatmullRomCurve3(points,false,'centripetal');curve.arcLengthDivisions=4096;curve.updateArcLengths();return curve;
-}
-function fanWall(shape,depth){
- const points=shape.getPoints(32);if(points[0].distanceTo(points.at(-1))<1e-6)points.pop();
- const sides=[[],[]];
- for(let i=0;i<points.length;i++){
-  const a=points[Math.max(0,i-1)],b=points[Math.min(points.length-1,i+1)],d=b.clone().sub(a).normalize(),n=new THREE.Vector2(-d.y,d.x).multiplyScalar(.07);
-  sides[0].push(points[i].clone().add(n).toArray());sides[1].push(points[i].clone().sub(n).toArray());
- }
- return plate(poly([...sides[0],...sides[1].reverse()]),-depth/2,depth/2);
 }
 export function correctSpinningFanParts(root,id){
  const b=root.userData.blocks,p={};
@@ -44,7 +35,6 @@ export function correctSpinningFanParts(root,id){
    const index=roll.children.find(child=>child.userData.role?.endsWith('-visible-index'));
    replace(index,new THREE.BoxGeometry(.29,.045,1.56));index.position.x=.245;
   }
-  b.inputSliver.scale.x=.2;b.draftedFiber.scale.x=.2;
   p.rollBridges=[];
   b.rollBearings.forEach(bearing=>{
    replace(bearing,tube(.145,.069,.10));bearing.rotation.x=Math.PI/2;
@@ -64,23 +54,19 @@ export function correctSpinningFanParts(root,id){
   root.userData.minimumDisplayCycleSeconds=12;
   root.userData.cameraDirection=new THREE.Vector3(-3,1.2,15);
   root.userData.cameraFitBounds=new THREE.Box3(new THREE.Vector3(-3.95,-2.2,-1.2),new THREE.Vector3(1.65,3.55,1.2));
-  root.userData.reconstructionNote='Drafting and differential winding are prescribed at fixed ratios. Flattened roving and the routed yarn illustrate the feed path; fiber friction, tension, bobbin drag, package growth and continuous material deposition are not dynamically solved.';
+  root.userData.reconstructionNote='Drafting and differential winding are prescribed at fixed ratios. One continuous laid cord illustrates the roving and yarn path; fiber friction, tension, bobbin drag, package growth and continuous material deposition are not dynamically solved.';
  }else{
-  const shape=b.frontPlate.geometry.parameters.shapes;
-  p.wall=add(b.voluteWall,fanWall(shape,1.28),b.voluteWall.children[0].material,'continuous-finite-volute-wall');
-  for(const old of b.voluteWall.children.slice(0,-1)){old.visible=false;}
-  let radius=0;const positions=b.blades[0].geometry.attributes.position;for(let i=0;i<positions.count;i++)radius=Math.max(radius,Math.hypot(positions.getX(i),positions.getY(i)));
-  const target=3.30,scale=target/radius;
-  // Pass 96: at t = 0 the blade tips stand at Brown's 1, 5 and 9 o'clock (28 degrees clockwise of the authored set).
-  const geometry=b.blades[0].geometry.clone().scale(scale,scale,1).rotateZ(-28*Math.PI/180);for(const blade of b.blades)blade.geometry=geometry;
-  root.userData.geometry.impellerOuterRadius=target;
+  // p100: the factory builds the circular housing wall, arms and blade plates.
+  p.wall=b.voluteWall.userData.mesh;
   replace(b.hub,tube(.57,.134,.98));replace(b.hubIndex,new THREE.BoxGeometry(.28,.065,1.02));b.hubIndex.position.x=.36;
   p.spiders=[];
   for(const bearing of b.bearings){
    replace(bearing,tube(.26,.134,.14));bearing.rotation.x=Math.PI/2;
    for(const side of[-1,1]){
-    p.spiders.push(add(root,new THREE.BoxGeometry(.16,1.02,.14),bearing.material,'inlet-bearing-spider',new THREE.Vector3(0,side*.75,bearing.position.z)));
-    p.spiders.push(add(root,new THREE.BoxGeometry(.16,.16,.52),bearing.material,'inlet-bearing-spider-standoff',new THREE.Vector3(0,side*1.22,Math.sign(bearing.position.z)*.97)));
+    // p100: the standoffs stand wholly on the side plate, clear of the inlet
+    // edge (the plate's inlet is no longer bevelled), and the bars reach them.
+    p.spiders.push(add(root,new THREE.BoxGeometry(.16,1.14,.14),bearing.material,'inlet-bearing-spider',new THREE.Vector3(0,side*.81,bearing.position.z)));
+    p.spiders.push(add(root,new THREE.BoxGeometry(.16,.16,.52),bearing.material,'inlet-bearing-spider-standoff',new THREE.Vector3(0,side*1.30,Math.sign(bearing.position.z)*.97)));
    }
   }
   root.userData.minimumDisplayCycleSeconds=4;

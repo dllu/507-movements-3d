@@ -2,7 +2,6 @@ import * as THREE from 'three';
 import {
   PALETTE,
   makeBeam,
-  makeDynamicCable,
   makeShaft,
   markShadows,
   matte,
@@ -14,37 +13,16 @@ const Z_AXIS = new THREE.Vector3(0, 0, 1);
 
 import { correctSpinningFanParts } from './spinning-fan-working-parts.js';
 import { boredLatheGeometry } from './bored-lathe-geometry.js';
+import { LAID_ROPE, LaidRopeGeometry, replaceWithLaidRope } from './laid-rope.js';
+
+// p100: the roving and yarn are one continuous laid cord of this radius, in
+// the project's brown rope style. It fills the 0.06 nip gap between each
+// pair of rolls, so it lies on both rolls at A and B and on the lower B roll.
+const YARN_RADIUS = 0.03;
 
 function addRole(object, role) {
   object.userData.role = role;
   return object;
-}
-
-function cylinderBetween(
-  start,
-  end,
-  startRadius,
-  endRadius,
-  material,
-  role,
-  sides = 20,
-) {
-  const direction = end.clone().sub(start);
-  const mesh = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(
-      endRadius,
-      startRadius,
-      direction.length(),
-      sides,
-    ),
-    material,
-  ), role);
-  mesh.position.copy(start).add(end).multiplyScalar(0.5);
-  mesh.quaternion.setFromUnitVectors(
-    Y_AXIS,
-    direction.clone().normalize(),
-  );
-  return mesh;
 }
 
 function tubeThrough(points, radius, material, role, segments = 64) {
@@ -202,29 +180,10 @@ function throstleDrawingAndTwisting(movement) {
     frontBottomRoll,
   ];
 
-  const fiberMaterial = matte(PALETTE.brass, {
-    metalness: 0.0,
-    roughness: 0.92,
-  });
+  const fiberMaterial = matte(PALETTE.rope, { roughness: 0.78 });
   const inputFiberStart = new THREE.Vector3(-2.90, nipY, 0);
   const backNip = new THREE.Vector3(backCenterX, nipY, 0);
   const frontNip = new THREE.Vector3(frontCenterX, nipY, 0);
-  const inputSliver = cylinderBetween(
-    inputFiberStart,
-    backNip,
-    0.115,
-    0.115,
-    fiberMaterial,
-    'thick-roving-entering-back-rolls-A',
-  );
-  const draftedFiber = cylinderBetween(
-    backNip,
-    frontNip,
-    0.11,
-    0.046,
-    fiberMaterial,
-    'roving-attenuated-between-slower-A-and-faster-B',
-  );
 
   const spindleOrigin = new THREE.Vector3(0.42, -0.62, 0);
   const topGuideLocal = new THREE.Vector3(0, 1.46, 0);
@@ -331,23 +290,24 @@ function throstleDrawingAndTwisting(movement) {
       -Math.sin(angle) * windingRadius,
     ));
   }
-  const woundYarn = tubeThrough(
-    wrapPoints,
-    0.026,
+  const woundYarn = addRole(new THREE.Mesh(
+    new LaidRopeGeometry(new THREE.CatmullRomCurve3(wrapPoints, false, 'centripetal'),
+      wrapSamples * 4, YARN_RADIUS),
     fiberMaterial,
-    'visible-helical-yarn-package-on-bobbin',
-    wrapSamples,
-  );
+  ), 'visible-helical-yarn-package-on-bobbin');
   bobbinAssembly.add(bobbinBarrel, ...bobbinFlanges, woundYarn);
 
-  const liveYarn = makeDynamicCable({
-    color: PALETTE.brass,
-    maxSegments: 36,
-    radius: 0.026,
-  });
-  liveYarn.userData.role =
-    'continuous-yarn-from-front-rolls-through-flyer-eye-to-bobbin';
+  // One laid cord from the roving's end, through the A and B nips, round the
+  // lower B roll and through the flyer to the bobbin.
+  const liveYarn = addRole(new THREE.Group(),
+    'continuous-yarn-from-front-rolls-through-flyer-eye-to-bobbin');
+  const liveYarnMesh = addRole(new THREE.Mesh(new THREE.BufferGeometry(), fiberMaterial),
+    'continuous-laid-roving-and-yarn');
+  liveYarnMesh.castShadow = true;
+  liveYarn.add(liveYarnMesh);
+  liveYarn.userData.mesh = liveYarnMesh;
   liveYarn.userData.isYarn = true;
+  liveYarn.userData.radius = YARN_RADIUS;
 
   const frameMaterial = matte(PALETTE.frame, {
     metalness: 0.1,
@@ -403,34 +363,44 @@ function throstleDrawingAndTwisting(movement) {
     ...rollBearings,
     spindleBearing,
     ...drawingRolls,
-    inputSliver,
-    draftedFiber,
     flyerAssembly,
     bobbinAssembly,
     liveYarn,
   );
 
-  // The yarn leaves the B nip, follows the right side of the lower B roll,
-  // drops to the top eye, leaves the slotted neck, runs beside the right
-  // flyer leg, threads its foot eye and winds on at the package.
+  // The yarn leaves the B nip, lies on the lower B roll round its right
+  // side, leaves it on the tangent to the top eye, leaves the slotted neck,
+  // runs beside the right flyer leg, threads its foot eye and winds on at
+  // the package. Its centreline stays YARN_RADIUS off the roll surface.
   const lowerFrontRollCenter = rollCenters.frontBottom;
-  const yarnWrapRadius = rollRadius + 0.058;
-  const yarnWrapPoints = [0, 1, 2, 3].map((index) => {
-    const angle = index * Math.PI / 6;
-    return new THREE.Vector3(
-      lowerFrontRollCenter.x + yarnWrapRadius * Math.sin(angle),
-      lowerFrontRollCenter.y + yarnWrapRadius * Math.cos(angle),
-      0,
-    );
-  });
-  yarnWrapPoints[0] = frontNip.clone();
+  const yarnWrapRadius = frontNip.y - lowerFrontRollCenter.y;
+  const wrapPoint = (angle) => new THREE.Vector3(
+    lowerFrontRollCenter.x + yarnWrapRadius * Math.sin(angle),
+    lowerFrontRollCenter.y + yarnWrapRadius * Math.cos(angle),
+    0,
+  );
+  // Clockwise wrap from the nip (angle 0) to the tangent point toward the
+  // top eye: (P - c) . (sin a, cos a) = r with the leaving run downhill.
+  const toGuide = topGuide.clone().sub(lowerFrontRollCenter);
+  const guideDistance = Math.hypot(toGuide.x, toGuide.y);
+  const leaveAngle = Math.atan2(toGuide.x, toGuide.y)
+    - Math.acos(yarnWrapRadius / guideDistance);
+  const leavePoint = wrapPoint(leaveAngle);
+  const sampleLine = (a, b, step = 0.05) => {
+    const count = Math.max(1, Math.ceil(a.distanceTo(b) / step));
+    return Array.from({length: count}, (_, i) => a.clone().lerp(b, i / count));
+  };
+  const wrapSteps = Math.ceil(leaveAngle / (Math.PI / 90));
+  const fixedYarnPoints = [
+    ...sampleLine(inputFiberStart, frontNip),
+    ...Array.from({length: wrapSteps}, (_, i) => wrapPoint(leaveAngle * i / wrapSteps)),
+    ...sampleLine(leavePoint, topGuide),
+  ];
+  const tailSamples = 160;
   const sourceYarnCurve = (angle, eye, contact) => {
     const rotate = (x, y, z) => new THREE.Vector3(x, y, z)
       .applyAxisAngle(Y_AXIS, angle).add(spindleOrigin);
-    return new THREE.CatmullRomCurve3([
-      ...yarnWrapPoints,
-      new THREE.Vector3(0.52, 1.30, 0),
-      new THREE.Vector3(topGuide.x, topGuide.y + 0.16, 0),
+    const tail = new THREE.CatmullRomCurve3([
       topGuide.clone(),
       rotate(0, 1.37, 0), rotate(0.22, 1.37, 0),
       rotate(0.46, 1.30, 0.15), rotate(0.80, 1.00, 0.16),
@@ -439,7 +409,19 @@ function throstleDrawingAndTwisting(movement) {
       rotate(flyerEyeLocal.x - 0.03, flyerEyeLocal.y + 0.05, -0.13),
       contact,
     ], false, 'centripetal');
+    const curve = new THREE.CatmullRomCurve3([
+      ...fixedYarnPoints,
+      ...tail.getSpacedPoints(tailSamples),
+    ], false, 'centripetal');
+    curve.arcLengthDivisions = 4000;
+    return curve;
   };
+  // The lay moves with the delivered yarn; its period divides the length
+  // delivered per cycle, so the loop closes on the same lay.
+  const deliveredPerCycle = frontDeliverySpeed * cycleDuration;
+  const naturalLay = LAID_ROPE.layPerDiameter * 2 * YARN_RADIUS;
+  const yarnLay = LAID_ROPE.strands * deliveredPerCycle
+    / Math.round(deliveredPerCycle / (naturalLay / LAID_ROPE.strands));
 
   const stateAtTime = (time) => {
     const backRollAngle = backAngularSpeed * time;
@@ -483,6 +465,7 @@ function throstleDrawingAndTwisting(movement) {
       frontTopNipVelocity: frontMaterialVelocity.clone(),
       liveYarnCurve,
       liveYarnPoints: liveYarnCurve.getSpacedPoints(36),
+      yarnTravel: frontDeliverySpeed * time,
       relativeWindingAngle,
       windingContact,
       windingContactAngleInBobbinFrame: relativeWindingAngle,
@@ -505,7 +488,6 @@ function throstleDrawingAndTwisting(movement) {
     bobbinAssembly,
     bobbinBarrel,
     bobbinFlanges,
-    draftedFiber,
     drawingRolls,
     flyerArmEye,
     flyerLeftFootEye,
@@ -515,7 +497,6 @@ function throstleDrawingAndTwisting(movement) {
     frontBottomRoll,
     frontRollsB: [frontTopRoll, frontBottomRoll],
     frontTopRoll,
-    inputSliver,
     liveYarn,
     rollBearings,
     rollStandMembers,
@@ -557,6 +538,10 @@ function throstleDrawingAndTwisting(movement) {
     topGuideLocal,
     windingContactLocal,
     windingRadius,
+    yarnLay,
+    yarnLeaveAngle: leaveAngle,
+    yarnRadius: YARN_RADIUS,
+    yarnWrapRadius,
   };
   root.userData.groundFloorY = -2.14;
   root.userData.sourceAnimation = {
@@ -631,7 +616,9 @@ function throstleDrawingAndTwisting(movement) {
     frontBottomRoll.rotation.z = state.frontBottomRollAngle;
     flyerAssembly.rotation.y = state.flyerAngle;
     bobbinAssembly.rotation.y = state.bobbinAngle;
-    liveYarn.userData.setPoints(state.liveYarnPoints);
+    replaceWithLaidRope(liveYarnMesh, state.liveYarnCurve, {
+      radius: YARN_RADIUS, travel: state.yarnTravel, lay: yarnLay, tubularSegments: 64,
+    });
     backTopRoll.userData.angularSpeed = backAngularSpeed;
     backBottomRoll.userData.angularSpeed = -backAngularSpeed;
     frontTopRoll.userData.angularSpeed = frontAngularSpeed;
@@ -676,16 +663,17 @@ function throstleDrawingAndTwisting(movement) {
 function fitThrostleToPlate(root) {
   const b = root.userData.blocks;
   const g = root.userData.geometry;
-  const bored = (radius, bore, height) => boredLatheGeometry([
+  const bored = (radius, bore, height, segments = 64) => boredLatheGeometry([
     { radial: radius, axial: -height / 2 },
     { radial: radius, axial: height / 2 },
-  ], bore, 64);
+  ], bore, segments);
   const swap = (mesh, geometry) => {
     mesh.geometry.dispose();
     mesh.geometry = geometry;
   };
   for (const roll of b.drawingRolls) {
-    swap(roll.userData.body, bored(g.rollRadius, 0.069, g.rollLength));
+    // p100: 128 sides, so the rolls stay round where the yarn lies on them.
+    swap(roll.userData.body, bored(g.rollRadius, 0.069, g.rollLength, 128));
     for (const rib of roll.userData.ribs) {
       rib.removeFromParent();
       rib.geometry.dispose();

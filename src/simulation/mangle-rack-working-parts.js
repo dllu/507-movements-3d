@@ -13,11 +13,10 @@ function clearChildren(group) { for (const child of [...group.children]) { child
 function boredPinion(b, id) {
   const gear = b.pinion.userData.rotor.children[0];
   const radius = id === 197 ? 0.075 : 0.083;
-  // p93: 198's six full-depth involute teeth were thin pointed petals. Brown
-  // draws short, square-topped teeth on a large hub. The count stays six: it
-  // is set by the 36-tooth rack and the pinion pitch circle (2 pi r / pitch
-  // = 6), which the rack path is built on. Cut stub teeth (addendum and
-  // dedendum 0.8 module) instead; the rack is regenerated against them.
+  // p93: 198's full-depth involute teeth were thin pointed petals. Brown
+  // draws short, square-topped teeth on a large hub: stub teeth (addendum and
+  // dedendum 0.8 module). p99: eight of them, as Brown draws, on the same
+  // pitch circle; the 48-tooth rack is regenerated against them.
   let points;
   if (id === 197) points = profiles[197].points;
   else {
@@ -29,7 +28,7 @@ function boredPinion(b, id) {
   }
   if (id === 198) gear.userData.sourceOutline = points;
   replace(gear, plate(polygonClipping.difference(poly(points), poly(circle([0, 0], radius, 96))), id === 197 ? -0.17 : -0.19, id === 197 ? 0.17 : 0.19));
-  gear.userData.role = id === 197 ? 'generated-ten-tooth-pin-rack-pinion' : 'bored-six-tooth-endless-rack-pinion';
+  gear.userData.role = id === 197 ? 'generated-ten-tooth-pin-rack-pinion' : 'bored-eight-tooth-endless-rack-pinion';
   const hub = b.pinion.userData.rotor.children[1];
   // The keyed hub rotates with its shaft; the finite opening still represents
   // the real shaft/body interface instead of two overlapping full cylinders.
@@ -232,7 +231,7 @@ export function finishMangleRackWorkingParts(root, update, id) {
   d.sourceAnimation = { available: true, registeredModel: `mm_${id}`, sourceUrl: `https://507movements.com/mm_${id}.html` };
   d.reconstructionNote = id === 197
     ? 'Ten finite pinion teeth are cut offline against the eleven full-radius rack pins. The rising and falling shaft, opposite straight runs and counterclockwise motor follow the registered source topology and direction. Motion is prescribed; guide loads, friction and passive branch selection are not dynamically solved.'
-    : 'The closed rack teeth are cut offline against the six-tooth pinion, retaining the two suspension links and fixed shaft. The shaft passes through a finite clearance opening and behind the front cross-tie. Rigid linkage closure and driving motion are prescribed; loads, friction and compliance are not dynamically solved.';
+    : 'The closed rack teeth are cut offline against the eight-tooth pinion, retaining the two suspension links and fixed shaft. The shaft passes through a finite clearance opening and behind the front cross-tie. Rigid linkage closure and driving motion are prescribed; loads, friction and compliance are not dynamically solved.';
   d.finiteWorkingProfile = profiles[id];
   const bounds = new THREE.Box3(), point = new THREE.Vector3();
   for (let i = 0; i <= 48; i++) { wrappedUpdate(d.transmission.cyclePeriod * i / 48); root.updateMatrixWorld(true); root.traverse(o => {

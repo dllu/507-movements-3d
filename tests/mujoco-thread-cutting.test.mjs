@@ -90,7 +90,7 @@ test('109 replay is deterministic and return travel does not restore removed mat
   v.update(2);const early=Array.from(p.data.qpos);v.reset();v.update(2);assert.deepEqual(Array.from(p.data.qpos),early);
  }finally{v.dispose();}
 });
-test('109 opens part-cut as drawn, finishes the thread on that descent and then chases it without a jump, live and baked alike',async()=>{
+test('109 keeps Brown\'s part-cut look: it cuts one turn below the drawn tool, then chases that thread without a jump, live and baked alike',async()=>{
  const fs=await import('node:fs'),{gunzipSync}=await import('node:zlib');
  const {makeBakedMujocoModel}=await import('../src/simulation/baked/mujoco-playback.js');
  const {bakedMujocoRoutes}=await import('../src/simulation/baked/mujoco-baked-routes.js');
@@ -99,6 +99,8 @@ test('109 opens part-cut as drawn, finishes the thread on that descent and then 
  const baked=makeBakedMujocoModel(bundle,await bakedMujocoRoutes[109].geometry(),bakedMujocoRoutes[109]),b=baked.root.userData;
  const volume=g=>inspectWeightedClutchSolid(g).volume,blank=volume(u.workpiece.geometry(-Infinity)),loop=bundle.variants.default.loop;
  const full=volume(u.workpiece.geometry(f.contactAngle-u.toolHalfAngle-s.bottomWorkAngle));
+ // (geometry(-Infinity) is the fully threaded work, geometry(Infinity) the uncut blank.)
+ const threaded=blank,uncut=volume(u.workpiece.geometry(Infinity)),groove=uncut-threaded;
  // The loop starts whole periods into the drive, so live time t and baked
  // playback time t share the same stroke position.
  assert(Math.abs(loop.startTime/loop.drivePeriod-Math.round(loop.startTime/loop.drivePeriod))<1e-9);
@@ -117,19 +119,25 @@ test('109 opens part-cut as drawn, finishes the thread on that descent and then 
     const g=u.parts.workpiece.geometry,pos=g.attributes.position.array;let lowestGroove=Infinity;
     for(let k=0;k<pos.length;k+=3){const r=Math.hypot(pos[k],pos[k+2]);if(r<f.stock.inner+1e-6&&r>1e-6&&pos[k+1]>f.stock.low+1e-6)lowestGroove=Math.min(lowestGroove,pos[k+1]);}
     assert(Number.isFinite(lowestGroove)&&lowestGroove>tool-f.grooveWidth/2-f.workPitch*.06,`groove below the tool at ${time}`);
-    if(i===0)assert(now>full+.05,'the job opens part-cut');
+    if(i===0)assert(now>full+.05*groove,'the job opens part-cut: one more turn is still to cut');
     assert(now>=full-blank*1e-9);
     first++;
    } else {
     // Afterwards the finished thread is chased: the cut volume stays put
     // across every reversal, including the loop seam.
-    if(finished===null){finished=now;assert(Math.abs(now-full)<blank*1e-4,'the thread is finished to the bottom');}
+    if(finished===null){finished=now;assert(Math.abs(now-full)<blank*1e-4,'the thread is cut to the lower stop');}
     assert(Math.abs(now-finished)<blank*1e-6,'the finished thread is chased unchanged at '+time);
     later++;
    }
    previous=now;
   }
-  assert(first>20&&later>steps/2);
+  assert(first>=4&&later>steps/2);
+  // p99: the stop is one work-thread turn below Brown's drawn tool (carriage
+  // 0), so the finished job stays threaded above and a plain shank below:
+  // the plain blank keeps most of its drawn length on every pass.
+  assert(Math.abs(f.lower+Math.abs(f.workPitch))<1e-12);
+  assert(full>threaded+.25*groove&&full<uncut-.25*groove,'the finished job stays part-cut');
+  assert((f.armY+f.lower)-f.stock.low>.35*(f.stock.high-f.stock.low),'a plain shank remains below the thread');
   // The loop seam: the end of one baked loop matches the start of the next.
   baked.update(loop.duration*3-1e-6);const a=volume(b.parts.workpiece.geometry);baked.update(loop.duration*3);
   assert(Math.abs(volume(b.parts.workpiece.geometry)-a)<blank*1e-6);

@@ -7148,7 +7148,10 @@ function twinObliqueRodTogglePressMotion() {
     return rod;
   });
 
-  const columnBottomY = bedTopY - 0.34;
+  // Ground at Brown's hatched floor line (raster 503, 0.336 below the bed
+  // top); the plinths are 0.2 high and each column sinks 0.02 into its own.
+  const groundY = bedTopY - 0.34;
+  const columnBottomY = groundY + 0.18;
   const columnTopY = topFrameY - 0.1;
   const columnHeight = columnTopY - columnBottomY;
   // Brown's columns are round, with a moulded base on each plinth and a
@@ -7222,8 +7225,10 @@ function twinObliqueRodTogglePressMotion() {
     'fixed-collar-around-upper-rotor-shaft';
 
   // Brown's bed is a low block on the ground between the column feet,
-  // about 0.42 of the column spacing wide and a fourteenth of it high.
-  const bedHeight = 0.14 * columnHalfSpan;
+  // about 0.42 of the column spacing wide. Its top is the drawn bed line
+  // and it stands on the same ground as the column plinths (pass 99: the
+  // old shorter bed floated above a separate centre foot, which is gone).
+  const bedHeight = bedTopY - groundY;
   const bed = new THREE.Mesh(
     new THREE.BoxGeometry(
       0.83 * columnHalfSpan,
@@ -7246,21 +7251,15 @@ function twinObliqueRodTogglePressMotion() {
   workpiece.position.set(0, bedTopY + workpieceHeight / 2, 0);
   workpiece.userData.role = 'stationary-workpiece-on-press-bed';
 
-  const frameFeet = [-1, 0, 1].map((sideSign, index) => {
-    const footWidth = sideSign === 0 ? 1.34 : 0.76;
+  const frameFeet = [-1, 1].map((sideSign, index) => {
     const foot = new THREE.Mesh(
-      new THREE.BoxGeometry(footWidth, 0.2, 0.86),
+      new THREE.BoxGeometry(0.76, 0.2, 0.86),
       frameMaterial,
     );
-    // Each column plinth sits centred under its (set-back) column.
-    foot.position.set(
-      sideSign * columnHalfSpan,
-      bedTopY - 0.42,
-      sideSign === 0 ? frameBackZ : columnZ,
-    );
-    foot.userData.role = sideSign === 0
-      ? 'fixed-center-anvil-foot'
-      : 'fixed-foot-under-press-column';
+    // Each column plinth sits centred under its (set-back) column, on the
+    // ground.
+    foot.position.set(sideSign * columnHalfSpan, groundY + 0.1, columnZ);
+    foot.userData.role = 'fixed-foot-under-press-column';
     foot.userData.index = index;
     return foot;
   });

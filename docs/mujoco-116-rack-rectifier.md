@@ -233,3 +233,39 @@ This replaces the stub plate plus a run-on box. The output shaft is now one
 piece (it had a separate tail). All parts are shadowed. Two native cycles
 give penetration 0.145 pixel (was 0.140) and seated lift 0.0014 radian. The
 bake was regenerated with the same 375-sample loop.
+
+## Pass 99 revision: Brown-width crescent pawls
+
+Brown's crescent is about 0.09 wide (line centre to line centre) along its
+whole length, a little wider than its eye, and its claw face spans the whole
+locking face. The pass-93 leaf was only about 0.04 wide (inscribed width).
+The leaf keeps the same construction with three new defaults:
+
+- the working face runs 1.15 face lengths from the claw (was 0.6), so the
+  heel stands just proud of the tooth tip;
+- the boss radius is 0.044 (was 0.036);
+- the outer arc leaves the boss at 125° (was 100°).
+
+The inscribed width is now 0.088 to 0.092 from the boss to the claw. The
+claw, nose underside and inner arc are unchanged, so seating is unchanged.
+
+The leaf has 1.86 times the volume and about twice the hinge inertia. With
+the old 0.001 spring, the idle pawl was thrown to 0.8 radian at each reversal
+and was still lifted when its pinion began to drive. The output then
+overran and the speed left the ±0.08 band (±0.14), which is why pass 96
+reverted its wider pawl. The retuned physics defaults are:
+
+- pawl spring 0.0025, rest angle −0.04 (was 0.001 and −0.07);
+- backlash 0.005 (was 0.008; 0.005 to 0.012 seated in pass 86).
+
+Two native cycles give output speeds −1.101 to −0.980 rad/s (pass 96:
+−1.075 to −0.982). The seated lift is 0.0012 radian and the seated offset
+0.045°. Every stroke seats. The maximum penetration is 0.167 pixel (was
+0.151). The largest reverse step is 3.5e-6 radian (was 2.9e-6), a contact
+recoil when the claw catches, and the test bound is now 4e-6.
+The bake was regenerated (375-sample loop, raw seam 0.0102 px, round trip
+0.0085 px).
+
+The surface audit script (`audit-rack-rectifier-clearances.mjs`) stops at its
+camera-bounds assertion on the pass-60 stem run-ons. It fails the same way
+on HEAD, so it was not rerun.

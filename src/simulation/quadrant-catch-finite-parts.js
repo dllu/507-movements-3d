@@ -127,69 +127,102 @@ function lineToCircle(a, b, c, r) {
 }
 const angleAbout = (c, p) => Math.atan2(p[1] - c[1], p[0] - c[0]) / deg;
 
-// Lower quadrant (plane F): a band between the rim (bandRadius) and an inner
-// rim at 111 px, both about the lower shaft, with straight end cuts; below
-// each end a short lip, then a concave web flank (one arc) into the hub. The
-// anvil window is the band's inner rim over two concave arc sides and a
-// straight foot.
+// Tangent point on circle (c, r) of the line from the external point p;
+// `side` +1/-1 picks which of the two tangents.
+function tangentFrom(p, c, r, side) {
+  const d = Math.hypot(p[0] - c[0], p[1] - c[1]), base = Math.atan2(p[1] - c[1], p[0] - c[0]);
+  return base + side * Math.acos(r / d);
+}
+
+// Pass 99: every casting is a clean construction of straight lines and
+// circular arcs (the C-arm alone is two splines, joined tangentially to its
+// round hook); the old outlines' lips, tab, steps and kinks are gone.
+//
+// Lower quadrant (plane F), symmetric about its centre line (quadrantAxis):
+// a band between the rim (bandRadius) and the window's rim (bandInner), both
+// about the lower shaft; each end is one straight cut across the band (leaning
+// out toward the web as Brown draws it) continued down to where the concave
+// web flank (one arc) leaves for the hub. The window is the band's inner rim
+// over two concave arcs and a straight foot.
 const bandInner = 111;
+export const quadrantAxis = -91.15;
+const quadrantEnd = Object.freeze({ outer: 40.3, inner: 45.1, flankRadius: 103.5 });
 function lowerQuadrantOutline() {
-  const leftOuter = lineToCircle([202.6, 276.4], [194.1, 251.9], PL, bandRadius + 3);
-  const rightOuter = lineToCircle([358.9, 273.9], [366.1, 251.5], PL, bandRadius + 3);
+  const b = quadrantAxis, E = quadrantEnd;
+  // One side (s = -1 left, +1 right), listed from the rim toward the hub.
+  const side = (s) => {
+    const o = polar(PL, bandRadius, b + s * E.outer), i = polar(PL, bandInner, b + s * E.inner);
+    // The end cut continued straight to the flank's radius.
+    const d = [i[0] - o[0], i[1] - o[1]], f = [o[0] - PL[0], o[1] - PL[1]];
+    const A = d[0] ** 2 + d[1] ** 2, B = 2 * (f[0] * d[0] + f[1] * d[1]), C = f[0] ** 2 + f[1] ** 2 - E.flankRadius ** 2;
+    const t = (-B - Math.sqrt(B * B - 4 * A * C)) / (2 * A);
+    const foot = [o[0] + d[0] * t, o[1] + d[1] * t];
+    const flank = arc3(foot, polar(PL, 69, b + s * 36.8), polar(PL, 26, b + s * 70));
+    return [o, ...flank];
+  };
+  const left = side(-1), right = side(+1);
   const outer = chain(
-    [leftOuter, [202.9, 277.6], [212.5, 276.8]],
-    arc3([212.5, 276.8], [240.5, 298.5], [252.4, 334]),
-    [[282, 336]],
-    arc3([310.5, 331], [323.9, 290.5], [344.5, 274.7]),
-    [[358.9, 273.9], rightOuter],
-    arcAbout(PL, bandRadius + 3, angleAbout(PL, rightOuter), angleAbout(PL, leftOuter), 256).slice(1, -1));
-  const tl = polar(PL, bandInner, -116.5), tr = polar(PL, bandInner, -68.2);
+    arcAbout(PL, bandRadius, b + E.outer, b - E.outer, 256),
+    left,
+    [PL],
+    [...right].reverse());
+  const w = 24.15, flankMid = 16.65, footHalf = 11.2;
   const window = chain(
-    arcAbout(PL, bandInner, -116.5, -68.2, 96),
-    arc3(tr, [302.9, 275.5], [290.4, 305.6]),
-    arc3([271.6, 305.6], [256.1, 274.5], tl).slice(0, -1));
+    arcAbout(PL, bandInner, b - w, b + w, 96),
+    arc3(polar(PL, bandInner, b + w), polar(PL, 81.5, b + flankMid), polar(PL, 48.4, b + footHalf)),
+    arc3(polar(PL, 48.4, b - footHalf), polar(PL, 81.5, b - flankMid), polar(PL, bandInner, b - w)).slice(0, -1));
   return polygonClipping.difference(P(outer), P(window));
 }
 
-// Upper wing (plane F): the rim (rimRadius) about the upper shaft; a squared
-// tab at the top; a straight upper edge running into the boss; a convex lower
-// edge (one arc) down to the toe, which is cut to the band's rim. The pointed
-// window is bounded by an arc concentric with the shaft (112 px) and two
-// concave arcs meeting a short flank beside the boss.
+// Upper wing (plane F): the rim (rimRadius) about the upper shaft; one
+// straight upper edge from the boss to the rim, meeting it square at the
+// tip; one convex arc for the lower edge from the boss to the toe, which is
+// cut to the band's rim (quadrantCatchParts). The pointed window is
+// symmetric about its centre line (wingWindowAxis): an arc concentric with
+// the shaft (112 px), two concave arcs, and a short concave flank beside the
+// boss.
+export const wingWindowAxis = 10.4;
 function upperWingOutline() {
-  const top = polar(PU, rimRadius + 3, -40.6);
+  const edgeA = [274, 103.4], edgeB = [350.3, 60.6];
+  const tip = lineToCircle(edgeA, edgeB, PU, rimRadius);
+  const toe = [333.3, 250];
   const outer = chain(
-    [top, [355, 41.6], [350.2, 49.5], [350.3, 60.6]],
-    [[274, 103.4]],
-    [[287, 155]],
-    arc3([291, 159.6], [320.1, 183], [334.4, 213.5]),
-    [[333.3, 250]],
-    arcAbout(PU, rimRadius + 3, 62, -40.6, 192).slice(0, -1));
-  const tr = polar(PU, 112, -19.4), br = polar(PU, 112, 40.2);
+    [edgeA, tip],
+    arcAbout(PU, rimRadius, angleAbout(PU, tip), 64, 192).slice(1),
+    [toe],
+    arc3(toe, [322.4, 189.4], [287, 155]),
+    [[275, 128]]);
+  const a = wingWindowAxis, w = 29.8, mid = 22.6, fl = 15.1;
   const window = chain(
-    arcAbout(PU, 112, -19.4, 40.2, 96),
-    arc3(br, [348.6, 175.7], [320.8, 149.8]),
-    arc3([320.8, 149.8], [319.2, 136.5], [322.5, 124.1]).slice(1),
-    arc3([322.5, 124.1], [350.3, 111.7], tr).slice(1, -1));
+    arcAbout(PU, 112, a - w, a + w, 96),
+    arc3(polar(PU, 112, a + w), polar(PU, 82.4, a + mid), polar(PU, 49.2, a + fl)),
+    arc3(polar(PU, 49.2, a + fl), polar(PU, 45, a), polar(PU, 49.2, a - fl)).slice(1),
+    arc3(polar(PU, 49.2, a - fl), polar(PU, 82.4, a - mid), polar(PU, 112, a - w)).slice(1, -1));
   return polygonClipping.difference(P(outer), P(window));
 }
 
-// Upper C-arm (plane A): two smooth splines through Brown's edges, ending in
-// the hook's round end, concentric with one centre.
+// Upper C-arm (plane A): two smooth splines through Brown's edges, each
+// meeting the hook's round end on its tangent from the last drawn point, so
+// the edges run into the hook without a kink.
 function upperArmOutline() {
   const hook = [207.6, 298.8], hookR = 7.4;
-  const left = [[248, 118], [240.5, 129], [234, 139.5], [222.5, 157], [216.4, 177], [218, 196], [225.5, 212.5], [230, 230], [229, 248],
-    [222.5, 268], [215.5, 285], polar(hook, hookR, -102)];
-  const right = [polar(hook, hookR, 85), [216.5, 304.2], [225.5, 296.5], [233.5, 285.5], [240.8, 274.5],
+  const leftDrawn = [[248, 118], [240.5, 129], [234, 139.5], [222.5, 157], [216.4, 177], [218, 196], [225.5, 212.5], [230, 230], [229, 248],
+    [222.5, 268], [215.5, 285]];
+  const rightDrawn = [[225.5, 296.5], [233.5, 285.5], [240.8, 274.5],
     [245.6, 255], [247.6, 236.5], [246.5, 221], [240.2, 206], [235.8, 191], [236.8, 178], [242.5, 168], [250.5, 162], [260, 160], [270, 162.5], [280, 160]];
-  const outline = chain(smooth(left, 10), arcAbout(hook, hookR, 258, 85, 48).slice(1, -1), smooth(right, 10));
+  const aIn = tangentFrom(leftDrawn.at(-1), hook, hookR, -1) / deg;
+  const aOut = tangentFrom(rightDrawn[0], hook, hookR, +1) / deg;
+  let sweep = aOut - aIn; while (sweep > 0) sweep -= 360;
+  const left = [...leftDrawn, polar(hook, hookR, aIn)], right = [polar(hook, hookR, aOut), ...rightDrawn];
+  const outline = chain(smooth(left, 10), arcAbout(hook, hookR, aIn, aIn + sweep, 48).slice(1, -1), smooth(right, 10));
   return P(outline);
 }
 
 // Brown's ball lever: a straight bar from the ball to a broad crook that
-// wraps under the web into the hub (plate 183 edges, px).
-const leverUpper = [[75, 300.5], [150, 300.5], [176, 301], [190, 305], [202, 317], [214, 330], [229, 335], [252, 337]];
-const leverLower = [[75, 313.5], [150, 313.5], [174, 314], [186, 321], [196, 334], [205, 350], [215, 363], [230, 371], [256, 374]];
+// wraps under the web into the hub (plate 183 edges, px); both edges run on
+// into the hub so no end face shows at the boss.
+const leverUpper = [[75, 300.5], [150, 300.5], [176, 301], [190, 305], [202, 317], [214, 330], [229, 335], [252, 337], [268, 338]];
+const leverLower = [[75, 313.5], [150, 313.5], [174, 314], [186, 321], [196, 334], [205, 350], [215, 363], [230, 371], [256, 374], [272, 374]];
 const leverOutline = () => union(P([...smooth(leverUpper), ...smooth(leverLower).reverse()]), circlePoly(knob.center, knob.radius, 64),
   circlePoly(PL, hubRadius.lower - 2, 96));
 
@@ -211,14 +244,16 @@ export function quadrantCatchParts() {
   upper.parts.hub = { planes: 'BAF', poly: circlePoly(PU, hubRadius.upper) };
   lower.parts.hub = { planes: 'WRBAFH', poly: circlePoly(PL, hubRadius.lower) };
   // The band's rims are true arcs about the lower shaft.
-  lower.parts.quadrant = { planes: 'F', poly: turnAbout(polygonClipping.intersection(lowerQuadrantOutline(), circlePoly(PL, bandRadius, 512)), PL, lowerCastingTurn.quadrant) };
+  // The web stops 1 px inside the boss, so no bore wall doubles the boss's own.
+  lower.parts.quadrant = { planes: 'F', poly: diff(turnAbout(lowerQuadrantOutline(), PL, lowerCastingTurn.quadrant),
+    circlePoly(PL, hubRadius.lower - 1, 128)) };
   lower.parts.lever = { planes: 'H', poly: turnAbout(leverOutline(), PL, lowerCastingTurn.lever) };
   lower.parts.weightArm = { planes: 'W', poly: tangentLever(PL, 24, eyes.lower, eyeRadius) };
   // The wing's outer rim is a true arc about the upper shaft; its toe is cut
   // to the band's rim, on which it rests in the plate pose.
   // The wing stops 1 px inside the boss, so its cut face is buried in the
   // boss and no bore wall doubles the boss's own.
-  upper.parts.wing = { planes: 'F', poly: diff(polygonClipping.intersection(upperWingOutline(), circlePoly(PU, rimRadius, 512)),
+  upper.parts.wing = { planes: 'F', poly: diff(upperWingOutline(),
     circlePoly(PL, bandRadius + 0.4, 512), circlePoly(PU, hubRadius.upper - 1, 128)) };
   upper.parts.arm = { planes: 'A', poly: union(upperArmOutline(), circlePoly(PU, hubRadius.upper - 2)) };
   upper.parts.weightArm = { planes: 'B', poly: tangentLever(PU, 20, eyes.upper, eyeRadius) };

@@ -35,7 +35,7 @@ const turn = 2 * Math.PI, result = {};
   const model = create({ id: 198 }), d = model.root.userData, g = d.geometry;
   const gear = d.blocks.pinion.userData.rotor.children[0];
   const outline = gear.userData.sourceOutline ?? gear.geometry.parameters.shapes.getPoints().map(p => p.toArray());
-  const count = 36 * 128, samples = 4096, allowance = 0.0009, pitch = g.circularPitch;
+  const count = d.blocks.rackTeeth.length * 128, samples = 4096, allowance = 0.0009, pitch = g.circularPitch;
   const stations = Array.from({ length: count }, (_, i) => {
     const s = d.evaluateRackToothPitch((i / 128 - 0.5) * pitch);
     return { x: s.point.x, y: s.point.y, nx: s.normal.x, ny: s.normal.y, h: -g.module };

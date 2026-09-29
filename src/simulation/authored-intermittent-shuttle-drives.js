@@ -141,17 +141,20 @@ function intermittentShuttleDrive(movement) {
   // The source has one open crescent, not the previous synthesized closed loop.
   // Radius about the fixed rocker pivot selects a unique groove station.
   const cycleDuration = 6;
-  // Plate: crank centre (381, 242) and pin (300, 195) px against the rocker
-  // pivot (327, 407), at 79.7 px per unit (pivot to top joint 3.75). Brown's
-  // slot stops 238 px from the pivot, but his crank would carry the pin to
-  // 268 px (centre distance plus throw), and the slot must reach the pin.
-  // The difference is shared: the centre stands 9 px left of and below his
-  // (0.575, 0.02), the throw is 1.00 (his 1.18), and the pin is drawn 9 px
-  // from his, so the slot's upper end runs 9 px past his stop, not 30.
-  const crankCenter = new THREE.Vector2(0.575, 0.02);
+  // Plate: crank centre (380, 241) and pin (299, 194) px against the rocker
+  // pivot (326, 406), at 79.7 px per unit (pivot to top joint 3.75). Brown's
+  // slot is an arc of his crank circle (radius 93 px), but it spans only
+  // 86-239 px from the pivot while his crank would carry the pin over
+  // 80-267 px, so no closed slot of his shape fits his crank. p99: the slot is
+  // one circular arc fitted to his (generate-open-crescent-shuttle.mjs); the
+  // crank centre, throw and drawn pin share the misfit with it (18.6 px from
+  // his arc, crank centre 18.6 px from his, pin 0.2 px), with the rocker
+  // upright at the drawn pose inside a near-rest.
+  const design = crescent.parameters;
+  const crankCenter = new THREE.Vector2(...design.crankCenter);
   const rockerPivot = new THREE.Vector2(0, -2.00);
-  const crankRadius = 1.00;
-  const crankReferenceAngle = THREE.MathUtils.degToRad(145);
+  const crankRadius = design.crankRadius;
+  const crankReferenceAngle = design.reference;
   const crankAngularSpeed = FULL_TURN / cycleDuration;
   const topJointRadius = 3.75;
   // Brown draws the rocker upright while it rests (his pose). The slot's
@@ -173,7 +176,7 @@ function intermittentShuttleDrive(movement) {
   const sourcePoseLawPhase = 0.35;
   const slotSampleCount = 513;
 
-  const openLaw=openCrescentShuttleLaw({crankCenter,rockerPivot,crankRadius,reference:crankReferenceAngle,period:cycleDuration});
+  const openLaw=openCrescentShuttleLaw({crankCenter,rockerPivot,crankRadius,reference:crankReferenceAngle,period:cycleDuration,arc:design.arc});
   const rockerLawAtPhase=phase=>openLaw.atPhase(phase-sourcePoseLawPhase);
   const crankPinWorldAtPhase = (driverPhase) => crankCenter.clone().add(
     rotate2(
@@ -574,7 +577,7 @@ function intermittentShuttleDrive(movement) {
           'also applied to three-revolution cylinder printing presses',
         ],
         reconstructionDisclosure:
-          'Brown supplies no animation, dimensions, slot coordinates, dwell fractions, crank direction, or speed. The open crescent is one plain circular arc (sagitta 0.8 crank radius) with rounded ends, as drawn; dimensions, end continuation, centerline constraint, six-second timing and the resulting dwell fraction are reconstructed. No two-dwell motion is imposed independently of the groove.',
+          'Brown supplies no animation, dimensions, slot coordinates, dwell fractions, crank direction, or speed. The open crescent is one plain circular arc with rounded ends, fitted to Brown’s slot arc (his arc is concentric with his crank but too short for its throw, so the crank centre and throw are adjusted); dimensions, end continuation, centerline constraint, six-second timing and the resulting dwell fraction are reconstructed. No two-dwell motion is imposed independently of the groove.',
       },
       officialPage: movement.sourceUrl,
       plate: 'Brown 1868, Movement 397',

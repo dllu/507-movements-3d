@@ -21,22 +21,22 @@
   ],
   "bounds": {
     "min": [
-      -2.555129788127052,
+      -2.5549207686688487,
       -3.3850000000000002,
       -0.6450000008940697
     ],
     "max": [
-      2.0988217201591697,
-      2.8221881723081412,
+      2.0988387512359066,
+      2.822197591035993,
       0.24000001430511478
     ]
   },
   "focus": [
-    -0.22815403398394118,
-    -0.2814059138459295,
+    -0.22804100871647104,
+    -0.28140120448200356,
     -0.2024999932944775
   ],
-  "inputHash": "186ae7de358aa4361e0fb7a141f4afa8da2f319469898ba989fc580518df6ef1",
+  "inputHash": "a7c8725cbbe23e22147f6770b74b450dd00c18930e843922932584b721215825",
   "sources": [
     {
       "file": "scripts/bake-diagonal-catch.mjs",
@@ -44,7 +44,7 @@
     },
     {
       "file": "src/simulation/mujoco-diagonal-catch/assembly.js",
-      "sha256": "16982f43d3867fd2eb18e0b0419d38f0ca10200874a18562e72a1d404c865efc"
+      "sha256": "9e6c2a7c391c3d8017c6f68f42d7051eb2630fc10cc0259d9fa77eb054a336b0"
     },
     {
       "file": "src/simulation/mujoco-diagonal-catch/update-solids.js",
@@ -52,11 +52,11 @@
     },
     {
       "file": "src/simulation/mujoco-diagonal-catch/catch-profile.js",
-      "sha256": "addb36f76a8643caf3a6f7c9b98bc70cad796fecf712dbb18c885ebdf87df8a2"
+      "sha256": "0a9402ce6e911f221461ddd3c502e5207dea600d266ad95fe0c1af6ee22bbf81"
     },
     {
       "file": "src/simulation/authored-diagonal-catches.js",
-      "sha256": "3e889913759fcdda8b97175898ac68cc8a4a53e571d5a2fadff77fa903254f62"
+      "sha256": "bc81e22a8453c5b9ab060424f9d53708886ea08e944b08a4cd4ab4b451b8cbb8"
     },
     {
       "file": "src/simulation/finite-plate-geometry.js",
@@ -64,14 +64,14 @@
     },
     {
       "file": "docs/validation/181-projected-contact-motion.json",
-      "sha256": "a6a2da47428ac497c5835c2349ffa29e545c2de590da16090028a384ff609472"
+      "sha256": "978acc4ac118c3f97b91d288e71caf20bc61361b8fa88ecb0c272d5222fcda24"
     }
   ],
   "keys": 9001,
-  "bytes": 597239,
-  "sha256": "9b9f48ce4903ac905def0af5624852b2f9c68d15e9ea09ef862496c95abae86e",
+  "bytes": 666045,
+  "sha256": "cd7814e0bcdbb7e20adffdaeb8433b19ef89780222690b59633dca4ce395a09e",
   "compactKeysModule": "src/simulation/baked/diagonal-catch-keys.js",
-  "compactKeys": 777,
-  "compactKeysSha256": "5f0d467d4dd87afd8f08ec0a72df6d5f4612e0cafc17193608d0a54405ffb44a",
+  "compactKeys": 775,
+  "compactKeysSha256": "78d1ecc748d36e97cedcada3f299f008b8a1b196ae73d3542ebaf3fc341e3cf9",
   "status": "baked-assembly-source-review-open"
 }

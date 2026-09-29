@@ -277,7 +277,9 @@ function coltCylinderRatchet(movement) {
   const sourceImageWidth = 525;
   const sourceImageHeight = 525;
   const sourceScale = 0.011;
-  const sourceRasterHammerPivot = new THREE.Vector2(301, 394);
+  // Pass 99: the hammer turns on Brown's hatched arbor (centre 302, 375;
+  // radius 27 px), no longer 19 px below it.
+  const sourceRasterHammerPivot = new THREE.Vector2(302, 375);
   const sourceRasterDogPivot = new THREE.Vector2(212, 389);
   const sourceRasterCylinderFrontTop = new THREE.Vector2(7, 98);
   const sourceRasterCylinderRearTop = new THREE.Vector2(112, 98);
@@ -332,7 +334,12 @@ function coltCylinderRatchet(movement) {
   // Planar layout across the page (z toward the viewer). The dog works on
   // the ratchet beside the cylinder axis, where its lift turns the teeth;
   // the tumbler lies behind the dog.
-  const dogPlaneZ = 0.17;
+  // Pass 99: 0.30 from the axis (was 0.17). With the pivot on Brown's arbor
+  // the dog tip rises about 0.52 per cock; at 0.17 that swept 109 degrees
+  // round the ratchet and left the resting hook on the next tooth's back.
+  // At 0.30 the sweep is about 79 degrees, as before: 60 to index plus the
+  // run across the land.
+  const dogPlaneZ = 0.3;
   const dogThickness = 0.06;
   const dogLow = dogPlaneZ - dogThickness / 2;
   const dogHigh = dogPlaneZ + dogThickness / 2;
@@ -1433,10 +1440,11 @@ function coltCylinderRatchet(movement) {
   root.userData.hideGround = true;
   // Left edge: Brown's crop through the cylinder (raster x = 7).
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(cylinderFrontX, -1.55, -2.28),
+    // (Pass 99: y limits follow the scene down by the 19 px pivot move.)
+    new THREE.Vector3(cylinderFrontX, -1.759, -2.28),
     // The hammer sweeps farther right when fully cocked than in Brown's rest
     // pose; include that whole envelope.
-    new THREE.Vector3(4.56, 4.08, 2.26),
+    new THREE.Vector3(4.56, 3.871, 2.26),
   );
   root.userData.geometry = {
     boreRadius,

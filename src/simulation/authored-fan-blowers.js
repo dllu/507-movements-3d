@@ -7,6 +7,8 @@ import {
   matte,
 } from './primitives.js';
 
+import { toCreasedNormals } from 'three/addons/utils/BufferGeometryUtils.js';
+import { circle, plate, poly, polygonClipping } from './finite-plate-geometry.js';
 import { correctSpinningFanParts, fanAirflowCurve } from './spinning-fan-working-parts.js';
 
 const Z_AXIS = new THREE.Vector3(0, 0, 1);
@@ -29,80 +31,122 @@ function centeredExtrusion(shape, depth, bevel = 0.018) {
   return geometry;
 }
 
+// p100: the housing is a circle concentric with the fan (Brown's scroll is
+// within a few pixels of one), a small uniform clearance outside the blade
+// tips, with the straight spout leaving it tangentially at the bottom and a
+// flange round its mouth, as drawn. The wall is one extrusion of that
+// outline, smooth-shaded; the side plates share its outer outline.
+export const FAN_HOUSING = Object.freeze({
+  tipRadius: 3.30,
+  clearance: 0.06,
+  wall: 0.12,
+  // Spout mouth: Brown's spout top sits half the casing radius below the
+  // axis and its mouth 1.5 radii out.
+  spoutTopFraction: 0.5,
+  mouthFraction: 1.5,
+  flangeReach: 0.22,
+  flangeThickness: 0.12,
+});
+
+function housingOutlines() {
+  const h = FAN_HOUSING;
+  const inner = h.tipRadius + h.clearance, outer = inner + h.wall;
+  const spoutTop = -h.spoutTopFraction * inner, mouth = h.mouthFraction * inner;
+  const ring = (radius) => circle([0, 0], radius, 720);
+  const shell = polygonClipping.union(poly(ring(outer)), poly([[0, -outer], [mouth, -outer], [mouth, spoutTop + h.wall], [0, spoutTop + h.wall]]));
+  const cavity = polygonClipping.union(poly(ring(inner)), poly([[0, -inner], [mouth + 1, -inner], [mouth + 1, spoutTop], [0, spoutTop]]));
+  const flange = poly([
+    [mouth - h.flangeThickness, -outer - h.flangeReach], [mouth, -outer - h.flangeReach],
+    [mouth, spoutTop + h.wall + h.flangeReach], [mouth - h.flangeThickness, spoutTop + h.wall + h.flangeReach],
+  ]);
+  return {
+    inner, outer, spoutTop, mouth,
+    wall: polygonClipping.difference(polygonClipping.union(shell, flange), cavity),
+    side: polygonClipping.union(shell, flange),
+  };
+}
+
+function smoothPlate(polygons, low, high) {
+  const raw = plate(polygons, low, high);
+  const geometry = toCreasedNormals(raw, Math.PI / 6);
+  raw.dispose();
+  return geometry;
+}
+
 function voluteSidePlateGeometry(depth, inletRadius) {
-  const shape = new THREE.Shape();
-  shape.moveTo(4.72, -1.54);
-  shape.lineTo(3.18, -1.54);
-  shape.bezierCurveTo(3.48, -0.75, 3.67, 0.28, 3.48, 1.35);
-  shape.bezierCurveTo(3.18, 3.0, 1.72, 3.96, -0.1, 4.0);
-  shape.bezierCurveTo(-2.32, 4.04, -4.02, 2.46, -4.08, 0.27);
-  shape.bezierCurveTo(-4.14, -1.93, -2.71, -3.57, -0.59, -3.76);
-  shape.lineTo(4.72, -3.76);
-  shape.closePath();
-  const inlet = new THREE.Path();
-  inlet.absarc(0, 0, inletRadius, 0, Math.PI * 2, true);
-  shape.holes.push(inlet);
-  return centeredExtrusion(shape, depth, 0.025);
+  const {side} = housingOutlines();
+  return smoothPlate(polygonClipping.difference(side, poly(circle([0, 0], inletRadius, 256))), -depth / 2, depth / 2);
+}
+
+// p100: Brown draws each vane as a thin curved blade plate carried on the
+// broad end of a separate curved arm from the hub. Blade 0 as drawn at the
+// start (polar radius, degrees): its centreline is the circular arc through
+// its inner end, middle and tip, bowed toward the counter-clockwise turn.
+const BLADE = {inner: [1.75, 51], middle: [2.60, 57.5], tip: [3.2787, 55], halfThickness: 0.06};
+const polar = ([radius, degrees]) => new THREE.Vector2(radius * Math.cos(degrees * Math.PI / 180), radius * Math.sin(degrees * Math.PI / 180));
+
+function bladeArc() {
+  const [a, m, c] = [BLADE.inner, BLADE.middle, BLADE.tip].map(polar);
+  // Circumcentre of the three points.
+  const d = 2 * (a.x * (m.y - c.y) + m.x * (c.y - a.y) + c.x * (a.y - m.y));
+  const sq = (v) => v.x * v.x + v.y * v.y;
+  const center = new THREE.Vector2(
+    (sq(a) * (m.y - c.y) + sq(m) * (c.y - a.y) + sq(c) * (a.y - m.y)) / d,
+    (sq(a) * (c.x - m.x) + sq(m) * (a.x - c.x) + sq(c) * (m.x - a.x)) / d,
+  );
+  const radius = a.distanceTo(center);
+  const angle = (v) => Math.atan2(v.y - center.y, v.x - center.x);
+  const a0 = angle(a);
+  let a1 = angle(c);
+  const am = angle(m);
+  // Take the way round that passes the middle point.
+  const between = (x, lo, hi) => (lo < hi ? x > lo && x < hi : x > hi && x < lo);
+  const wrap = (x) => x - 2 * Math.PI * Math.round((x - a0) / (2 * Math.PI));
+  a1 = wrap(a1);
+  if (!between(wrap(am), a0, a1)) a1 += a1 > a0 ? -2 * Math.PI : 2 * Math.PI;
+  const at = (t, offset = 0) => {
+    const q = a0 + (a1 - a0) * t;
+    return new THREE.Vector2(center.x + (radius + offset) * Math.cos(q), center.y + (radius + offset) * Math.sin(q));
+  };
+  // Offset side (+1 or -1) that lies toward the counter-clockwise turn.
+  const mid = at(0.5), out = at(0.5, 0.01).sub(mid);
+  const leadingSign = out.dot(new THREE.Vector2(-mid.y, mid.x)) > 0 ? 1 : -1;
+  return {at, leadingSign};
 }
 
 function bladeGeometry(depth) {
-  // Pass 96: Brown's blade curves one way: a circular-arc centreline from
-  // the hub to the tip, bowed (sagitta 0.34) toward the side leading in the
-  // counter-clockwise turn, of constant width with a square tip (it was an
-  // S-curve with an inflection at mid-length).
-  const root = new THREE.Vector2(0.50, 0.04), tip = new THREE.Vector2(2.97, -2.0);
-  const sagitta = 0.34, halfWidth = 0.18, samples = 48;
-  const chord = tip.clone().sub(root), length = chord.length();
-  const normal = new THREE.Vector2(chord.y, -chord.x).normalize();
-  // CCW tangent at the chord's middle is (-y, x); bow toward it.
-  const middle = root.clone().add(tip).multiplyScalar(0.5);
-  if (normal.dot(new THREE.Vector2(-middle.y, middle.x)) < 0) normal.negate();
-  const radius = (length * length / 4 + sagitta * sagitta) / (2 * sagitta);
-  const center = middle.clone().addScaledVector(normal, sagitta - radius);
-  const a0 = Math.atan2(root.y - center.y, root.x - center.x);
-  let a1 = Math.atan2(tip.y - center.y, tip.x - center.x);
-  if (a1 - a0 > Math.PI) a1 -= 2 * Math.PI;
-  if (a0 - a1 > Math.PI) a1 += 2 * Math.PI;
-  const side = (offset) => Array.from({ length: samples + 1 }, (_, i) => {
-    const a = a0 + (a1 - a0) * i / samples;
-    return new THREE.Vector2(center.x + (radius + offset) * Math.cos(a), center.y + (radius + offset) * Math.sin(a));
-  });
-  const shape = new THREE.Shape([...side(halfWidth), ...side(-halfWidth).reverse()]);
-  return centeredExtrusion(shape, depth, 0.025);
+  const {at} = bladeArc(), samples = 64, t = BLADE.halfThickness;
+  const side = (offset) => Array.from({length: samples + 1}, (_, i) => at(i / samples, offset).toArray());
+  const outline = [...side(t), ...side(-t).reverse()];
+  return smoothPlate(poly(outline), -depth / 2, depth / 2);
 }
 
-function makeOpenVoluteWall(material, depth) {
-  const guide = new THREE.CatmullRomCurve3([
-    new THREE.Vector3(4.72, -1.54, 0),
-    new THREE.Vector3(3.18, -1.54, 0),
-    new THREE.Vector3(3.53, 0.0, 0),
-    new THREE.Vector3(3.04, 2.55, 0),
-    new THREE.Vector3(0.72, 3.93, 0),
-    new THREE.Vector3(-2.15, 3.35, 0),
-    new THREE.Vector3(-4.06, 1.03, 0),
-    new THREE.Vector3(-3.53, -2.1, 0),
-    new THREE.Vector3(-0.59, -3.76, 0),
-    new THREE.Vector3(2.2, -3.76, 0),
-    new THREE.Vector3(4.72, -3.76, 0),
-  ], false, 'centripetal');
-  const points = guide.getSpacedPoints(108);
-  const wall = addRole(new THREE.Group(),
-    'open-peripheral-wall-of-volute-and-spout');
-  for (let index = 0; index < points.length - 1; index += 1) {
-    const start = points[index];
-    const end = points[index + 1];
-    const direction = end.clone().sub(start);
-    const panel = addRole(new THREE.Mesh(
-      new THREE.BoxGeometry(direction.length() + 0.025, 0.14, depth),
-      material,
-    ), 'short-panel-of-continuous-volute-wall');
-    panel.position.copy(start).add(end).multiplyScalar(0.5);
-    panel.rotation.z = Math.atan2(direction.y, direction.x);
-    wall.add(panel);
-  }
-  wall.userData.centerline = guide;
-  wall.userData.centerlinePoints = points;
-  return wall;
+// The arm runs from inside the hub to the blade: its trailing edge meets the
+// blade's inner end and runs along the blade's centreline (so the arm is
+// solidly welded into the plate) out to its broad square end.
+function armGeometry(depth) {
+  const {at} = bladeArc();
+  const along = (radius) => {
+    let lo = 0, hi = 1;
+    for (let k = 0; k < 50; k += 1) { const mid = (lo + hi) / 2; if (at(mid).length() < radius) lo = mid; else hi = mid; }
+    return lo;
+  };
+  const endT = along(2.48), samples = 24;
+  const trailing = new THREE.SplineCurve([[0.40, 33], [0.90, 41], [1.30, 46], [1.62, 49.5]].map(polar)).getPoints(32);
+  const onBlade = Array.from({length: samples + 1}, (_, i) => at(endT * i / samples));
+  const leading = new THREE.SplineCurve([[2.50, 61.5], [2.16, 61], [1.60, 61], [1.00, 65], [0.40, 77]].map(polar)).getPoints(48);
+  const outline = [...trailing, ...onBlade, ...leading].map((v) => v.toArray());
+  return smoothPlate(poly(outline), -depth / 2, depth / 2);
+}
+
+function makeHousingWall(material, depth) {
+  const {wall} = housingOutlines();
+  const mesh = addRole(new THREE.Mesh(smoothPlate(wall, -depth / 2, depth / 2), material),
+    'continuous-finite-volute-wall');
+  const group = addRole(new THREE.Group(), 'open-peripheral-wall-of-volute-and-spout');
+  group.add(mesh);
+  group.userData.mesh = mesh;
+  return group;
 }
 
 function centrifugalFanBlower(movement) {
@@ -116,7 +160,8 @@ function centrifugalFanBlower(movement) {
   const casingDepth = 1.28;
   const inletRadius = 1.18;
   const hubRadius = 0.57;
-  const impellerOuterRadius = 3.05;
+  const impellerOuterRadius = FAN_HOUSING.tipRadius;
+  const armDepth = 0.14;
   const flowCyclesPerRotorCycle = 2;
   const flowCyclesPerSecond = flowCyclesPerRotorCycle / cycleDuration;
 
@@ -126,19 +171,28 @@ function centrifugalFanBlower(movement) {
     metalness: 0.2,
     roughness: 0.46,
   });
+  const hubMaterial = matte(PALETTE.brass, { metalness: 0.3, roughness: 0.39 });
   const oneBladeGeometry = bladeGeometry(bladeDepth);
+  const oneArmGeometry = armGeometry(armDepth);
   const blades = [];
+  const arms = [];
   for (let index = 0; index < bladeCount; index += 1) {
     const blade = addRole(new THREE.Mesh(oneBladeGeometry, bladeMaterial),
-      `backward-curved-impeller-blade-${index + 1}`);
+      `curved-blade-plate-${index + 1}-on-impeller-arm`);
     blade.rotation.z = index / bladeCount * fullTurn;
     blade.userData.bladeIndex = index;
     blades.push(blade);
-    impeller.add(blade);
+    // The arm is cast with the hub, so it shares the hub's colour.
+    const arm = addRole(new THREE.Mesh(oneArmGeometry, hubMaterial),
+      `curved-impeller-arm-${index + 1}-carrying-blade`);
+    arm.rotation.z = blade.rotation.z;
+    arm.userData.bladeIndex = index;
+    arms.push(arm);
+    impeller.add(arm, blade);
   }
   const hub = addRole(new THREE.Mesh(
     new THREE.CylinderGeometry(hubRadius, hubRadius, bladeDepth + 0.26, 46),
-    matte(PALETTE.brass, { metalness: 0.3, roughness: 0.39 }),
+    hubMaterial,
   ), 'impeller-hub-fixed-to-shaft');
   hub.rotation.x = Math.PI / 2;
   const hubIndex = addRole(new THREE.Mesh(
@@ -190,7 +244,8 @@ function centrifugalFanBlower(movement) {
   frontPlate.position.z = casingDepth / 2;
   frontPlate.userData.fixed = true;
   frontPlate.renderOrder = 4;
-  const voluteWall = makeOpenVoluteWall(wallMaterial, casingDepth);
+  const housing = housingOutlines();
+  const voluteWall = makeHousingWall(wallMaterial, casingDepth - 0.12);
   voluteWall.userData.fixed = true;
   const inletRimMaterial = matte(PALETTE.ink, {
     metalness: 0.23,
@@ -207,19 +262,8 @@ function centrifugalFanBlower(movement) {
     return rim;
   });
 
-  const outletLipMaterial = matte(PALETTE.ink, {
-    metalness: 0.22,
-    roughness: 0.48,
-  });
-  const outletLips = [-1.54, -3.76].map((y, index) => {
-    const lip = addRole(new THREE.Mesh(
-      new THREE.BoxGeometry(0.16, 0.16, casingDepth + 0.28),
-      outletLipMaterial,
-    ), `open-spout-lip-${index + 1}`);
-    lip.position.set(4.72, y, 0);
-    lip.userData.fixed = true;
-    return lip;
-  });
+  // The spout's mouth flange is part of the wall's extrusion.
+  const outletLips = [];
 
   const bearingMaterial = matte(PALETTE.ink, {
     metalness: 0.28,
@@ -267,7 +311,6 @@ function centrifugalFanBlower(movement) {
     rearPlate,
     voluteWall,
     ...inletRims,
-    ...outletLips,
     ...bearings,
     impeller,
     ...airflowParticles,
@@ -309,6 +352,7 @@ function centrifugalFanBlower(movement) {
     airflowCurves,
     airflowParticles,
     bearings,
+    arms,
     blades,
     frontPlate,
     hub,
@@ -342,11 +386,14 @@ function centrifugalFanBlower(movement) {
     hubRadius,
     impellerOuterRadius,
     inletRadius,
+    housingInnerRadius: housing.inner,
+    housingOuterRadius: housing.outer,
+    tipClearance: FAN_HOUSING.clearance,
     outletBounds: {
-      bottom: -3.76,
-      left: 3.18,
-      right: 4.72,
-      top: -1.54,
+      bottom: -housing.inner,
+      left: Math.sqrt(housing.inner ** 2 - housing.spoutTop ** 2),
+      right: housing.mouth,
+      top: housing.spoutTop,
     },
     shaftAxis: Z_AXIS.clone(),
   };

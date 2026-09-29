@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { plate, poly, circle, polygonClipping } from './finite-plate-geometry.js';
-import { crankArmGeometry, turnedHandleGeometry, HANDLE_FOOT_EMBED } from './turned-handle.js';
+import { crankArmGeometry, turnedHandleGeometry, handleShank, HANDLE_FOOT_EMBED } from './turned-handle.js';
 import { helicalThread, threadAngles, chamferedHex } from './mujoco-screw/thread-geometry.js';
 import {
   PALETTE,
@@ -2402,7 +2402,9 @@ function screwThrustLeverClamp() {
   // handle's foot stands wholly on it. The grip is the shared turned handle
   // with plate 190's proportions (0.017 units per pixel): 0.63 tall above
   // the bar (37 px), foot 0.085, neck 0.058 at 0.32 of its height, bulb
-  // 0.155 across at 0.72 (19 px wide at y 224).
+  // 0.155 across at 0.72 (19 px wide at y 224). Pass 99: the grip's shank
+  // runs through the 0.14 bar to 0.005 inside its underside, like the other
+  // turned handles.
   const handleEndRadius = 0.13;
   const handleArm = new THREE.Mesh(
     crankArmGeometry({ handleX: handleRadius, handleEndRadius, hubEndRadius: 0.10,
@@ -2415,7 +2417,7 @@ function screwThrustLeverClamp() {
   const handleGrip = new THREE.Mesh(
     turnedHandleGeometry({ height: 0.63 + HANDLE_FOOT_EMBED, side: [
       [0.085, 0], [0.065, 0.12], [0.058, 0.32], [0.10, 0.52], [0.155, 0.72],
-    ] }),
+    ], shank: handleShank(0.14) }),
     darkMaterial,
   );
   handleGrip.position.set(handleRadius, handleLocalY + 0.07 - HANDLE_FOOT_EMBED, 0);

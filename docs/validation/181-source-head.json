@@ -49,7 +49,7 @@
   "measurements": [
     {
       "movement": 181,
-      "catchAngle": 0.0008035460946151729,
+      "catchAngle": 0.0008205886249546911,
       "pivot": [
         271,
         234
@@ -62,15 +62,15 @@
             113
           ],
           "modeled": [
-            202.90600707038126,
-            117.05467890120171
+            202.90401403608737,
+            117.05583941212535
           ],
-          "errorPixels": 10.70370950046263,
+          "errorPixels": 10.702304768785323,
           "previousModeled": [
-            192.90279611478016,
-            113.0627156526557
+            192.90073504878418,
+            113.0640466441853
           ],
-          "previousErrorPixels": 0.11567993944440878
+          "previousErrorPixels": 0.11813341259472762
         },
         {
           "name": "leftShoulder",
@@ -79,21 +79,21 @@
             113
           ],
           "modeled": [
-            178.9060148186168,
-            117.07396400539712
+            178.9040221164752,
+            117.07553353691404
           ],
-          "errorPixels": 10.711036938780806,
+          "errorPixels": 10.709791206841569,
           "previousModeled": [
-            168.90280386301566,
-            113.0820007568511
+            168.90074312917207,
+            113.08374076897398
           ],
-          "previousErrorPixels": 0.12716608497878476
+          "previousErrorPixels": 0.12986316950893378
         }
       ]
     },
     {
       "movement": 182,
-      "catchAngle": 0.03289975254790907,
+      "catchAngle": 0.03181643333672451,
       "pivot": [
         270,
         236
@@ -106,15 +106,15 @@
             128
           ],
           "modeled": [
-            198.18822138583758,
-            121.3000939308557
+            198.3125201117471,
+            121.22236617149083
           ],
-          "errorPixels": 13.579648572969088,
+          "errorPixels": 13.510496158604541,
           "previousModeled": [
-            188.0620575951343,
-            117.6311967009174
+            188.19033684905307,
+            117.54250122880107
           ],
-          "previousErrorPixels": 24.26490055232601
+          "previousErrorPixels": 24.187200898562022
         },
         {
           "name": "leftShoulder",
@@ -123,24 +123,24 @@
             124
           ],
           "modeled": [
-            174.20120893891627,
-            122.08954555777234
+            174.3246665122231,
+            121.98583174884503
           ],
-          "errorPixels": 14.921596866469729,
+          "errorPixels": 14.812909461730555,
           "previousModeled": [
-            164.07504514821295,
-            118.42064832783404
+            164.20248324952908,
+            118.30596680615527
           ],
-          "previousErrorPixels": 25.541780271651458
+          "previousErrorPixels": 25.44285461583451
         }
       ]
     }
   ],
-  "rmsErrorPixels": 12.61305492124134,
-  "previousRmsErrorPixels": 17.615316427197335,
-  "maximumErrorPixels": 14.921596866469729,
-  "previousMaximumErrorPixels": 25.541780271651458,
-  "motionHash": "186ae7de358aa4361e0fb7a141f4afa8da2f319469898ba989fc580518df6ef1",
+  "rmsErrorPixels": 12.561794738722655,
+  "previousRmsErrorPixels": 17.552708895323374,
+  "maximumErrorPixels": 14.812909461730555,
+  "previousMaximumErrorPixels": 25.44285461583451,
+  "motionHash": "a7c8725cbbe23e22147f6770b74b450dd00c18930e843922932584b721215825",
   "sources": [
     {
       "file": "scripts/review-diagonal-catch-source.mjs",
@@ -148,11 +148,11 @@
     },
     {
       "file": "src/simulation/mujoco-diagonal-catch/catch-profile.js",
-      "sha256": "addb36f76a8643caf3a6f7c9b98bc70cad796fecf712dbb18c885ebdf87df8a2"
+      "sha256": "0a9402ce6e911f221461ddd3c502e5207dea600d266ad95fe0c1af6ee22bbf81"
     },
     {
       "file": "docs/validation/181-projected-contact-motion.json",
-      "sha256": "2bc04871401dd4894be67183fab276bb4621644959f369037e924f1ac3f84106"
+      "sha256": "978acc4ac118c3f97b91d288e71caf20bc61361b8fa88ecb0c272d5222fcda24"
     },
     {
       "file": "public/engravings/mm_181.png",

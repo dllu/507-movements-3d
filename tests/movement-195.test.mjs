@@ -114,7 +114,7 @@ test('movement 195 preserves Brown\'s opposed-wheel layout and nominal source ge
   assert.equal(blocks.upperWheel.userData.teeth, 24);
   assert.equal(blocks.lowerWheel.userData.teeth, 24);
   assert.equal(blocks.worm.userData.starts, 1);
-  assert.equal(blocks.worm.userData.turns, 5);
+  assert.equal(blocks.worm.userData.turns, 3.5);
   assert.equal(
     blocks.upperWheelBody.geometry,
     blocks.lowerWheelBody.geometry,
@@ -166,13 +166,13 @@ test('movement 195 preserves Brown\'s opposed-wheel layout and nominal source ge
   assert.deepEqual(sourceAnchors.wormCenter.toArray(), [262, 254]);
   assert.equal(sourceAnchors.sourceWheelOuterRadius, 127);
   vector3Near(
-    sourcePointToModel(sourceAnchors.upperWheelCenter),
+    sourcePointToModel(sourceAnchors.upperWheelCenter, geometry.upperWheelCenter.z),
     geometry.upperWheelCenter,
     2e-14,
     'upper source hub maps to the upper modeled shaft',
   );
   vector3Near(
-    sourcePointToModel(sourceAnchors.lowerWheelCenter),
+    sourcePointToModel(sourceAnchors.lowerWheelCenter, geometry.lowerWheelCenter.z),
     geometry.lowerWheelCenter,
     2e-14,
     'lower source hub maps to the lower modeled shaft',
@@ -189,20 +189,23 @@ test('movement 195 preserves Brown\'s opposed-wheel layout and nominal source ge
     1e-14,
     'model origin maps back to Brown\'s worm midpoint',
   );
-  assert.ok(sourceAnchors.upperOuterTop.y > 15);
-  assert.ok(sourceAnchors.upperOuterTop.y < 16);
-  assert.ok(sourceAnchors.lowerOuterBottom.y > 492);
-  assert.ok(sourceAnchors.lowerOuterBottom.y < 493);
+  // p99: Brown's rims at 12 and 496; the worm axis radius is set from his
+  // 115 px hub-to-worm distance.
+  assert.ok(sourceAnchors.upperOuterTop.y > 13);
+  assert.ok(sourceAnchors.upperOuterTop.y < 14.5);
+  assert.ok(sourceAnchors.lowerOuterBottom.y > 493.5);
+  assert.ok(sourceAnchors.lowerOuterBottom.y < 495);
   sourceAnchors.modeledWormShaftEndpoints.forEach((point, index) => {
     assert.ok(
       point.distanceTo(sourceAnchors.wormShaftEndpoints[index]) < 5,
       `modeled shaft endpoint ${index} follows Brown's line`,
     );
   });
-  assert.ok(sourceAnchors.modeledThreadEndpoints[0].x > 197);
-  assert.ok(sourceAnchors.modeledThreadEndpoints[0].x < 198);
-  assert.ok(sourceAnchors.modeledThreadEndpoints[1].x > 326);
-  assert.ok(sourceAnchors.modeledThreadEndpoints[1].x < 327);
+  // Brown's threaded window runs from about 213 to 318.
+  assert.ok(sourceAnchors.modeledThreadEndpoints[0].x > 209);
+  assert.ok(sourceAnchors.modeledThreadEndpoints[0].x < 210);
+  assert.ok(sourceAnchors.modeledThreadEndpoints[1].x > 314);
+  assert.ok(sourceAnchors.modeledThreadEndpoints[1].x < 315);
   assert.deepEqual(sourceRaster, {
     height: 525,
     scale: geometry.centerDistance / 115,
@@ -239,7 +242,8 @@ test('movement 195 uses one matched single-start lead at two exact opposed pitch
   const { blocks, geometry } = model.root.userData;
 
   assert.equal(geometry.wormStarts, 1);
-  assert.equal(geometry.wormHandedness, 1);
+  // Left-handed: the visible front of each thread leans as Brown draws it.
+  assert.equal(geometry.wormHandedness, -1);
   assert.equal(geometry.wheelTeeth, 24);
   vector3Near(geometry.wormAxis, X_AXIS, 1e-15, 'horizontal worm axis');
   assert.ok(blocks.upperWheel.userData.axis.distanceTo(Z_AXIS) < 1e-15);
@@ -249,18 +253,22 @@ test('movement 195 uses one matched single-start lead at two exact opposed pitch
   vector3Near(blocks.upperWheel.position, geometry.upperWheelCenter, 1e-15, 'upper shaft center');
   vector3Near(blocks.lowerWheel.position, geometry.lowerWheelCenter, 1e-15, 'lower shaft center');
   vector3Near(blocks.worm.position, geometry.wormCenter, 1e-15, 'worm shaft center');
+  // The worm axis crosses over each face at the pitch radius, standing
+  // meshFaceOffset clear of it (p99).
   near(
     geometry.upperWheelCenter.distanceTo(geometry.wormCenter),
-    geometry.wheelPitchRadius + geometry.wormPitchRadius,
+    Math.hypot(geometry.wheelPitchRadius, geometry.meshFaceOffset),
     1e-15,
-    'upper pitch-cylinder center distance',
+    'upper wheel centre from the worm',
   );
   near(
     geometry.lowerWheelCenter.distanceTo(geometry.wormCenter),
-    geometry.wheelPitchRadius + geometry.wormPitchRadius,
+    Math.hypot(geometry.wheelPitchRadius, geometry.meshFaceOffset),
     1e-15,
-    'lower pitch-cylinder center distance',
+    'lower wheel centre from the worm',
   );
+  assert.equal(geometry.wormPitchRadius, geometry.meshFaceOffset);
+  assert.ok(geometry.wormTipRadius > geometry.meshFaceOffset);
   for (const [contact, center, label] of [
     [geometry.upperContactPoint, geometry.upperWheelCenter, 'upper'],
     [geometry.lowerContactPoint, geometry.lowerWheelCenter, 'lower'],
@@ -288,7 +296,7 @@ test('movement 195 uses one matched single-start lead at two exact opposed pitch
     geometry.wormLength,
     geometry.wormTurns * geometry.axialPitch,
     2e-15,
-    'five complete thread turns fill the source-fitted threaded region',
+    'three and a half thread turns fill Brown\'s threaded window',
   );
   near(
     geometry.wheelToothPitch,
@@ -329,7 +337,6 @@ test('movement 195 uses one matched single-start lead at two exact opposed pitch
     if (object.userData.screwThread) threadMeshes.push(object);
   });
   assert.equal(threadMeshes.length, 1, 'the drive contains one continuous helical start');
-  assert.equal(blocks.worm.userData.threadPoints.length, 141);
   near(blocks.worm.userData.pitch, geometry.axialPitch, 1e-15, 'rendered helix lead');
   near(blocks.worm.userData.length, geometry.wormLength, 1e-15, 'rendered helix length');
   disposeModel(model.root);
@@ -409,12 +416,12 @@ test('movement 195 counter-rotates equal wheels while both facing surfaces trave
       1e-15,
       `lower ratio ${index}`,
     );
-    assert.ok(state.upperWheelAngularSpeed < 0);
-    assert.ok(state.lowerWheelAngularSpeed > 0);
-    assert.ok(state.wormThreadAxialSpeed < 0);
+    assert.ok(state.upperWheelAngularSpeed > 0);
+    assert.ok(state.lowerWheelAngularSpeed < 0);
+    assert.ok(state.wormThreadAxialSpeed > 0);
     vector3Near(
       state.commonFeedDirection,
-      X_AXIS.clone().negate(),
+      X_AXIS,
       2e-15,
       `common feed direction ${index}`,
     );
@@ -431,8 +438,8 @@ test('movement 195 counter-rotates equal wheels while both facing surfaces trave
       `fixed lower contact ${index}`,
     );
     if (previousUpperAngle !== null) {
-      assert.ok(state.upperWheelAngle < previousUpperAngle);
-      assert.ok(state.lowerWheelAngle > previousLowerAngle);
+      assert.ok(state.upperWheelAngle > previousUpperAngle);
+      assert.ok(state.lowerWheelAngle < previousLowerAngle);
     }
     previousUpperAngle = state.upperWheelAngle;
     previousLowerAngle = state.lowerWheelAngle;
@@ -448,13 +455,13 @@ test('movement 195 counter-rotates equal wheels while both facing surfaces trave
   assert.equal(transmission.gearReduction, 24);
   near(
     transmission.upperToWormRatio,
-    -1 / geometry.wheelTeeth,
+    1 / geometry.wheelTeeth,
     1e-15,
     'upper wheel reduction',
   );
   near(
     transmission.lowerToWormRatio,
-    1 / geometry.wheelTeeth,
+    -1 / geometry.wheelTeeth,
     1e-15,
     'lower wheel reduction',
   );
@@ -469,28 +476,28 @@ test('movement 195 counter-rotates equal wheels while both facing surfaces trave
   );
   near(
     afterOneInputTurn.upperWheelAngle - start.upperWheelAngle,
-    -geometry.wheelToothPitch,
+    geometry.wheelToothPitch,
     3e-14,
-    'upper wheel advances one tooth backward',
+    'upper wheel advances one tooth forward',
   );
   near(
     afterOneInputTurn.lowerWheelAngle - start.lowerWheelAngle,
-    geometry.wheelToothPitch,
+    -geometry.wheelToothPitch,
     3e-14,
-    'lower wheel advances one tooth forward',
+    'lower wheel advances one tooth backward',
   );
-  near(afterOneInputTurn.upperOutputTeethAdvanced, -1, 2e-14, 'upper tooth count');
-  near(afterOneInputTurn.lowerOutputTeethAdvanced, 1, 2e-14, 'lower tooth count');
+  near(afterOneInputTurn.upperOutputTeethAdvanced, 1, 2e-14, 'upper tooth count');
+  near(afterOneInputTurn.lowerOutputTeethAdvanced, -1, 2e-14, 'lower tooth count');
   const closure = stateAtTime(cycleTime);
   near(
     closure.upperWheelAngle - start.upperWheelAngle,
-    -FULL_TURN,
+    FULL_TURN,
     2e-13,
     'upper wheel closes after 24 worm turns',
   );
   near(
     closure.lowerWheelAngle - start.lowerWheelAngle,
-    FULL_TURN,
+    -FULL_TURN,
     2e-13,
     'lower wheel closes after 24 worm turns',
   );
@@ -582,7 +589,7 @@ test('movement 195 rendered transforms expose uniform input, equal counter-rotat
     );
     vector3Near(
       contacts.opposedFeedSurfaces.commonDirection,
-      X_AXIS.clone().negate(),
+      X_AXIS,
       2e-15,
       `${name} published feed direction`,
     );
@@ -644,9 +651,10 @@ test('movement 195 is fully three-dimensional as the review queue advances throu
   }
   const size = physicalBounds.getSize(new THREE.Vector3());
   assert.ok(size.x > 4.9);
-  assert.ok(size.y > 5.3);
-  assert.ok(blocks.upperGeneratedFace.isInstancedMesh);
-  assert.ok(blocks.lowerGeneratedFace.isInstancedMesh);
+  assert.ok(size.y > 5.2);
+  // p99: one closed slotted solid per wheel (no instanced tooth sectors).
+  assert.ok(blocks.upperGeneratedFace.isMesh && !blocks.upperGeneratedFace.isInstancedMesh);
+  assert.ok(blocks.lowerGeneratedFace.isMesh && !blocks.lowerGeneratedFace.isInstancedMesh);
   assert.equal(blocks.framePost.visible, false, 'unpictured support frame is omitted');
   assert.ok(model.root.userData.cameraFitBounds.getSize(new THREE.Vector3()).z > .9);
   let visibleUpperSpaceCount = 0;
@@ -662,7 +670,7 @@ test('movement 195 is fully three-dimensional as the review queue advances throu
     if (object.userData.screwThread) screwThreadCount += 1;
   });
   for (const worm of [blocks.worm]) {
-    assert.equal(worm.userData.toothProfile, 'axial-straight-flanked-worm');
+    assert.equal(worm.userData.toothProfile, 'square-thread-slot-generated-crest');
     assert.equal(worm.userData.rotor.children.filter(child => child.isMesh).length, 2);
   }
   assert.equal(model.root.userData.hideGround, true);

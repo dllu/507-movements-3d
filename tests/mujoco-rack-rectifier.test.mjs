@@ -61,7 +61,10 @@ test('116 native pawls seat in the ratchet roots and alternately drive a nearly 
    const cs=d.contact;try{for(let j=0;j<cs.size();j++){const c=cs.get(j);try{pen=Math.max(pen,-c.dist);}finally{c.delete();}}}finally{cs.delete();}
   }
   const mean=(previous-at3)/9;
-  assert(previous<-12.3&&previous>-12.5);assert(Math.abs(mean+Math.PI/3)<.003);assert(mesh<.0015);assert(pen<.002);assert(reverse<3e-6);
+  assert(previous<-12.3&&previous>-12.5);assert(Math.abs(mean+Math.PI/3)<.003);assert(mesh<.0015);assert(pen<.002);
+  // p99: the Brown-width pawls catch with a contact recoil of about 3.5e-6 rad
+  // per step (0.0002 degree, invisible); the pass-86 leaf gave about 2.9e-6.
+  assert(reverse<4e-6);
   // Driving pawls sit in the root: hinge within 0.003 rad of the seated pose, face within 0.2 degree.
   assert(lift<.003);assert(offset<.2*Math.PI/180);assert.deepEqual([...dropped].sort(),[1,2,3]);
   t.diagnostic(JSON.stringify({output:previous,mean,meshPixels:100*mesh,penetrationPixels:100*pen,reverseStep:reverse,speed:[vmin,vmax],seatedLift:lift,seatedOffsetDegrees:offset*180/Math.PI}));
@@ -77,9 +80,16 @@ test('116 pawls are single bored plates whose claw seats in the ratchet root alo
   assert(Math.hypot(tip[0]-b[0],tip[1]-b[1])<.0003);
   // The working face runs along the locking face over most of its height.
   const face=[a[0]-b[0],a[1]-b[1]],work=[heel[0]-tip[0],heel[1]-tip[1]],cos=(face[0]*work[0]+face[1]*work[1])/Math.hypot(...face)/Math.hypot(...work);
-  assert(cos>.99999);assert(Math.hypot(...work)>.5*Math.hypot(...face));
+  assert(cos>.99999);
   const gap=(heel[0]-b[0])*normal[0]+(heel[1]-b[1])*normal[1];assert(gap>0&&gap<.0003);
   assert.equal(f.pawlBoss.bore,.013);assert(f.pawlBoss.radius>2*f.pawlBoss.bore);
+  // p99: Brown's crescent is about 1.2 eye diameters wide over its length
+  // (0.085-0.09 source units); across the leaf from the boss to the claw it
+  // stays at least 0.075 wide across (the pass-93 leaf narrowed to 0.039).
+  {const g=u.parts.upperPawl.geometry.attributes.position.array,L=Math.hypot(...f.pawlTip),ax=[f.pawlTip[0]/L,f.pawlTip[1]/L],bins=new Map();
+   for(let i=0;i<g.length;i+=3){const s=g[i]*ax[0]+g[i+1]*ax[1],t=-g[i]*ax[1]+g[i+1]*ax[0],k=Math.round(s/L*10),b=bins.get(k)??[Infinity,-Infinity];bins.set(k,[Math.min(b[0],t),Math.max(b[1],t)]);}
+   for(let k=1;k<=9;k++){const [lo,hi]=bins.get(k);assert(hi-lo>.075,`pawl width ${hi-lo} at ${k/10}`);}
+   assert(f.pawlBoss.radius>=.044);assert(Math.hypot(...work)>1.05*Math.hypot(...face),'claw face spans the locking face');}
  }finally{disposeObject3D(v.root);}
 });
 

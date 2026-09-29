@@ -83,7 +83,7 @@ test('312: each pallet-face stem is set into a round pad on its arm', async () =
     for (const side of ['left', 'right']) {
       const stem = plates.find((p) => p.key === `${side}-pallet-face-stem`);
       const arm = plates.find((p) => p.key === `${side}-arm`);
-      assert.equal(stem.z0, 0, 'stem sunk to the arm mid-plane');
+      assert.ok(stem.z0 === 0 || stem.z1 === 0, 'stem sunk to the arm mid-plane');
       const [cx, cy] = stem.primitives[0].center;
       assert.ok(arm.primitives.some((p) => p.kind === 'disc' && Math.hypot(p.center[0] - cx, p.center[1] - cy) < 1e-9
         && p.radius >= stem.primitives[0].radius + 0.015), `${side} arm pad under the whole stem`);

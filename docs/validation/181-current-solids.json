@@ -3,10 +3,10 @@
   "poses": 129,
   "meshes": 40,
   "pairs": 659,
-  "queries": 8690134,
+  "queries": 7852018,
   "intersections": {
-    "upper-backweighted-steam-eduction-valve-handle-roller-entering-diagonal-catch-pocket#6/source-fitted-s-shaped-diagonal-catch-backbone-plate#19": 0.09953490932183286,
-    "lower-backweighted-steam-eduction-valve-handle-roller-entering-diagonal-catch-pocket#16/source-fitted-s-shaped-diagonal-catch-backbone-plate#19": 0.10141595245656053,
+    "upper-backweighted-steam-eduction-valve-handle-roller-entering-diagonal-catch-pocket#6/source-fitted-s-shaped-diagonal-catch-backbone-plate#19": 0.10220465335594806,
+    "lower-backweighted-steam-eduction-valve-handle-roller-entering-diagonal-catch-pocket#16/source-fitted-s-shaped-diagonal-catch-backbone-plate#19": 0.10104879317945886,
     "lower-backweighted-steam-eduction-valve-handle-roller-entering-diagonal-catch-pocket#16/diagonal-catch-back-weight-arm-plate#20": 0.10264989445437449,
     "upper-backweighted-steam-eduction-valve-handle-roller-entering-diagonal-catch-pocket#6/upper-hook-pocket-holding-upper-valve-handle#21": 0.10381870120649973,
     "lower-backweighted-steam-eduction-valve-handle-roller-entering-diagonal-catch-pocket#16/lower-hook-pocket-holding-lower-valve-handle#22": 0.10331931324995099,
@@ -35,10 +35,10 @@
       "time": 4.5,
       "stage": "ascending-tappet-trips-lower-handle-and-releases-upper",
       "upper": 0,
-      "lower": -0.39724378763573526,
+      "lower": -0.3953823242101539,
       "catch": 0.0658367261940178,
       "upperGap": 0.09794555406406535,
-      "lowerGap": 0.519281919975555
+      "lowerGap": 0.5211641842672885
     },
     {
       "time": 6.75,
@@ -70,10 +70,10 @@
     {
       "time": 13.5,
       "stage": "descending-tappet-trips-upper-handle-and-releases-lower",
-      "upper": -0.011091000082637636,
+      "upper": -0.015841863823745306,
       "lower": -0.9446,
       "catch": -0.0259640540931075,
-      "upperGap": 0.035809814529313644,
+      "upperGap": 0.035428173068278654,
       "lowerGap": 0.04576496315336117
     },
     {
@@ -103,7 +103,7 @@
     },
     {
       "file": "src/simulation/authored-diagonal-catches.js",
-      "sha256": "9e0863ed965367880f5bb8b71381165ae5def02f142161f0bf1ded3c1764057e"
+      "sha256": "bc81e22a8453c5b9ab060424f9d53708886ea08e944b08a4cd4ab4b451b8cbb8"
     },
     {
       "file": "src/simulation/mujoco-diagonal-catch/handle-fit.js",

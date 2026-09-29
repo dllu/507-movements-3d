@@ -2653,7 +2653,12 @@ function internalGuardTappetStudIndex() {
   const driverAngularSpeed = 0.85;
   const driverCyclePeriod = fullTurn / driverAngularSpeed;
   const cycleBoundaryDriverAngle = contactStartDriverAngle - 1;
-  const initialDriverAngle = contactStartDriverAngle - 0.14;
+  // Phase 0 shows Brown's pose: tappet A on 161.3° (measured from B's centre,
+  // C at 180°), just before it meets the struck stud. The slits lie where each
+  // stud actually crosses the rim during the push, so they sit behind (clockwise
+  // of) the static orbit/rim intersections by the turn B makes before that
+  // crossing; see docs/p99-b-review.md.
+  const initialDriverAngle = THREE.MathUtils.degToRad(161.3);
   const toWorld = (planar, z) => layout.localToWorld(
     new THREE.Vector3(planar.x + driverLayoutX, planar.y, z),
   );
@@ -18574,13 +18579,20 @@ function alternatingTwoPawlContinuousRatchet(movement) {
   // rounded toes.
   const ratchetDepth = 0.32;
   const ratchetPlaneZ = 0.36;
-  const toothOuterStartPhase = 0.08;
-  const toothOuterEndPhase = 0.12;
+  // Offline design studies may override the layout constants below; the
+  // catalog never sets this.
+  const toothOuterStartPhase = 0.143;
+  const toothOuterEndPhase = 0.183;
   const pawlNoseRadius = 0.045;
   // Both noses seat fully in the root (the fraction is clamped to the seat).
   const longDriveFaceFraction = 1;
   const shortDriveFaceFraction = 1;
   const shortToothOffset = -3;
+  // Teeth each pawl advances per stroke; they sum to two per lever cycle, so
+  // each returning pawl retreats exactly two pitches relative to the wheel.
+  const longDriveTeeth = 1.175;
+  const teethPerCycle = 2;
+  const shortDriveTeeth = teethPerCycle - longDriveTeeth;
   const cyclesPerSecond = 0.25;
   const cyclePeriod = 1 / cyclesPerSecond;
   const sourceCyclePhase = 0.5; // Brown's pose: b seated at the end of its stroke.
@@ -18589,14 +18601,14 @@ function alternatingTwoPawlContinuousRatchet(movement) {
   // back into its root before it meets the face: the lever turns this far
   // (the pawl's backlash) while the wheel stands, so every stroke starts with
   // the rounded nose seated in the root.
-  const leverAmplitude = THREE.MathUtils.degToRad(19);
-  const leverBias = THREE.MathUtils.degToRad(-17);
-  const longEndSeatAngle = THREE.MathUtils.degToRad(148);
-
-  const baseFaceOuter = new THREE.Vector2(
+  const leverAmplitude = THREE.MathUtils.degToRad(14.7);
+  const leverBias = THREE.MathUtils.degToRad(-14.7);
+  const longEndSeatAngle = THREE.MathUtils.degToRad(147);
+  const crestCorner = new THREE.Vector2(
     Math.cos(toothOuterStartPhase * toothPitch) * ratchetOuterRadius,
     Math.sin(toothOuterStartPhase * toothPitch) * ratchetOuterRadius,
   );
+  const baseFaceOuter = crestCorner.clone();
   const baseFaceRoot = new THREE.Vector2(
     ratchetRootRadius,
     0,
@@ -18651,20 +18663,52 @@ function alternatingTwoPawlContinuousRatchet(movement) {
     rotateVector(sourceAnchor.clone().sub(fulcrum), leverAngle),
   );
   // Re-phased drive. Brown's drawn pose is the handoff: the lever stands at
-  // the top of its swing (2 degrees above its drawn angle), b has just
-  // finished its stroke with its nose seated at 148 degrees on the wheel
-  // (Brown's is at 159), and c, three teeth back, is about to take up the
-  // drive. The lever swings 38 degrees below that pose. Each pawl's length follows from its seat at the end of its
-  // stroke; the lever angle at which it meets the face one pitch earlier
-  // follows from that length, and between the reversal and that angle (the
-  // pawl's backlash) the wheel stands while the pawl slides into its root.
+  // the top of its swing, at its drawn angle, b has just finished its stroke
+  // with its nose seated at 147 degrees on the wheel (Brown's is at 159), and
+  // c, three teeth back, is about to take up the drive. The lever swings 29.4
+  // degrees below that pose. Each pawl's length follows from its seat at the
+  // end of its stroke; the lever angle at which it meets the face its share of
+  // teeth earlier follows from that length, and between the reversal and that
+  // angle (the pawl's backlash) the wheel stands while the pawl slides into
+  // its root. p99: b sits on the longer lever arm, so it drives 1.175 teeth
+  // and c 0.825 (two per cycle, so each returning pawl still retreats exactly
+  // two pitches and drops into a root); equal shares left b idling through a
+  // spare third of its stroke. The standing that remains is forced: a seated
+  // toe holds only while the pawl line leans into the face (psi >= the face's
+  // lean) through the stroke, yet it can drop straight into its root only if
+  // the face leans at least as far as the pawl does at the reversal, and psi
+  // falls by about 30 degrees over each stroke.
   // Straight bars seated in the roots need the tooth behind each nose to pass
   // clear of the bar, so b must stay well off the tangent through its whole
-  // stroke (at least 20 degrees here). The swing is set by c: returning, its
+  // stroke (at least 21 degrees here). The swing is set by c: returning, its
   // nose rides high on the backs, which carries it forward, so it has to
   // run on past its root before it can drop in.
+  // The hand's stroke: a rounded triangle wave, asin(k sin x) / asin(k),
+  // which runs at a steady rate and reverses briskly but smoothly (k = 0 is
+  // the plain cosine). Its value runs from -1 at the bottom (phase 0) to +1
+  // at the top (phase 1/2).
+  const leverLawSharpness = 0.9;
+  const leverShapeAt = (coordinate) => {
+    const x = fullTurn * coordinate - Math.PI / 2;
+    return leverLawSharpness === 0 ? Math.sin(x)
+      : Math.asin(leverLawSharpness * Math.sin(x)) / Math.asin(leverLawSharpness);
+  };
+  const leverShapeRateAt = (coordinate) => {
+    const x = fullTurn * coordinate - Math.PI / 2;
+    if (leverLawSharpness === 0) return fullTurn * Math.cos(x);
+    const k = leverLawSharpness;
+    return fullTurn * k * Math.cos(x)
+      / Math.sqrt(1 - (k * Math.sin(x)) ** 2) / Math.asin(k);
+  };
+  // Phase in [0, 1/2] at which the rising stroke reaches a shape value.
+  const leverRisingPhaseAt = (value) => {
+    const w = THREE.MathUtils.clamp(value, -1, 1);
+    const s = leverLawSharpness === 0 ? w
+      : Math.sin(w * Math.asin(leverLawSharpness)) / leverLawSharpness;
+    return (Math.asin(THREE.MathUtils.clamp(s, -1, 1)) + Math.PI / 2) / fullTurn;
+  };
   const leverAngleAtCycleCoordinate = (coordinate) => leverBias
-    - leverAmplitude * Math.cos(fullTurn * coordinate);
+    + leverAmplitude * leverShapeAt(coordinate);
   const seatAt = (angle) => new THREE.Vector2(
     Math.cos(angle) * longDriveGeometry.centerRadius,
     Math.sin(angle) * longDriveGeometry.centerRadius,
@@ -18685,24 +18729,24 @@ function alternatingTwoPawlContinuousRatchet(movement) {
   };
   const leverTop = leverBias + leverAmplitude;
   const leverBottom = leverBias - leverAmplitude;
-  const longStartAngle = longEndSeatAngle - toothPitch;
+  const longStartAngle = longEndSeatAngle - longDriveTeeth * toothPitch;
   const shortStartAngle = longEndSeatAngle + shortToothOffset * toothPitch;
   const longPawlLength = anchorAt(sourceLongAnchor, leverTop)
     .distanceTo(seatAt(longEndSeatAngle));
   const shortPawlLength = anchorAt(sourceShortAnchor, leverBottom)
-    .distanceTo(seatAt(shortStartAngle + toothPitch));
+    .distanceTo(seatAt(shortStartAngle + shortDriveTeeth * toothPitch));
   const longEngageLever = leverAngleAtLength(
     sourceLongAnchor, seatAt(longStartAngle), longPawlLength, leverBottom, leverTop);
   const shortEngageLever = leverAngleAtLength(
     sourceShortAnchor, seatAt(shortStartAngle), shortPawlLength, leverBottom, leverTop);
   // Fractions of the cycle from each reversal to the pawl meeting its face.
-  const longEngagePhase = Math.acos(
-    (leverBias - longEngageLever) / leverAmplitude) / fullTurn;
-  const shortEngagePhase = Math.acos(
-    (shortEngageLever - leverBias) / leverAmplitude) / fullTurn;
+  const longEngagePhase = leverRisingPhaseAt(
+    (longEngageLever - leverBias) / leverAmplitude);
+  const shortEngagePhase = 0.5 - leverRisingPhaseAt(
+    (shortEngageLever - leverBias) / leverAmplitude);
   const ratchetMountPhase = longStartAngle
     - longDriveGeometry.centerAngle;
-  const shortBaseContactAngle = shortStartAngle - toothPitch;
+  const shortBaseContactAngle = shortStartAngle - longDriveTeeth * toothPitch;
   const handoffTarget = shortToothOffset * toothPitch;
   const handoffError = shortStartAngle - longEndSeatAngle - handoffTarget;
 
@@ -18845,11 +18889,11 @@ function alternatingTwoPawlContinuousRatchet(movement) {
   // Each pawl's angle as it finishes its stroke, seated in its root.
   const longReturnStartAngle = pawlAngleBetween(
     anchorAt(sourceLongAnchor, leverTop),
-    seatAt(longStartAngle + toothPitch),
+    seatAt(longEndSeatAngle),
   );
   const shortReturnStartAngle = pawlAngleBetween(
     anchorAt(sourceShortAnchor, leverBottom),
-    seatAt(shortStartAngle + toothPitch),
+    seatAt(shortStartAngle + shortDriveTeeth * toothPitch),
   );
   const boundaryEpsilon = 1e-12;
   const normalizedCycleCoordinate = (coordinate) => {
@@ -18884,12 +18928,12 @@ function alternatingTwoPawlContinuousRatchet(movement) {
         ? longDriveGeometry.centerRadius
         : shortDriveGeometry.centerRadius,
       expectedWheelAngle: longDriving
-        ? toothPitch * fraction
-        : toothPitch * (1 + fraction),
+        ? toothPitch * longDriveTeeth * fraction
+        : toothPitch * (longDriveTeeth + shortDriveTeeth * fraction),
       pawlLength: longDriving ? longPawlLength : shortPawlLength,
     });
     const engaged = halfEngaged(longDriving, workingHalfFraction);
-    if (!engaged) localWheelAngle = longDriving ? 0 : toothPitch;
+    if (!engaged) localWheelAngle = longDriving ? 0 : longDriveTeeth * toothPitch;
     return {
       engaged,
       leverAngle,
@@ -19105,7 +19149,7 @@ function alternatingTwoPawlContinuousRatchet(movement) {
   const idleTrackOutset = 0.004;
   const wheelAngleAtCoordinate = (coordinate) => {
     const index = Math.floor(coordinate);
-    return index * 2 * toothPitch + localDriveAt(coordinate - index).localWheelAngle;
+    return index * teethPerCycle * toothPitch + localDriveAt(coordinate - index).localWheelAngle;
   };
   const restFrom = (anchor, length, wheelAngle, angle) => {
     let outset = idleTrackOutset;
@@ -19144,8 +19188,9 @@ function alternatingTwoPawlContinuousRatchet(movement) {
       angles[index] = angle;
     }
     // The last sample is the engagement itself: the toe seated in its root.
+    const trackedEnd = angles[idleTrackSteps];
     angles[idleTrackSteps] = unwrapNear(seatedAngle, angles[idleTrackSteps - 1]);
-    return { angles, span, startCoordinate, step };
+    return { angles, seatJump: angles[idleTrackSteps] - trackedEnd, span, startCoordinate, step };
   };
   const idleTracks = {
     long: trackIdlePawl({
@@ -19200,8 +19245,8 @@ function alternatingTwoPawlContinuousRatchet(movement) {
       : (cyclePhase - 0.5) * 2;
     const drive = localDriveAt(cyclePhase);
     const { engaged, leverAngle } = drive;
-    const leverAngularSpeed = leverAmplitude * fullTurn * cyclesPerSecond
-      * Math.sin(fullTurn * cyclePhase);
+    const leverAngularSpeed = leverAmplitude * cyclesPerSecond
+      * leverShapeRateAt(cyclePhase);
     const longAnchor = anchorAt(sourceLongAnchor, leverAngle);
     const shortAnchor = anchorAt(sourceShortAnchor, leverAngle);
     const longAnchorDerivative = perpendicular(
@@ -19221,7 +19266,7 @@ function alternatingTwoPawlContinuousRatchet(movement) {
       ? longStartAngle
       : shortBaseContactAngle;
     const { localWheelAngle } = drive;
-    const wheelAngle = cycleIndex * 2 * toothPitch + localWheelAngle;
+    const wheelAngle = cycleIndex * teethPerCycle * toothPitch + localWheelAngle;
     const activeContactCenter = contactCenterAtAngle(
       activeBaseContactAngle + localWheelAngle,
       activeContactRadius,
@@ -19292,7 +19337,7 @@ function alternatingTwoPawlContinuousRatchet(movement) {
       ? activePawlAngularSpeed
       : shortTracked.rate * cyclesPerSecond;
     const activeToothIndex = THREE.MathUtils.euclideanModulo(
-      (longDriving ? 0 : shortToothOffset) - 2 * cycleIndex,
+      (longDriving ? 0 : shortToothOffset) - teethPerCycle * cycleIndex,
       toothCount,
     );
     const activeFacePointBase = longDriving
@@ -19572,6 +19617,9 @@ function alternatingTwoPawlContinuousRatchet(movement) {
     pawlFlankPolylines,
     pawlToeArc,
     pawlWedges,
+    idleSeatJumps: { long: idleTracks.long.seatJump, short: idleTracks.short.seatJump },
+    longDriveTeeth,
+    shortDriveTeeth,
     axis: Z_AXIS.clone(),
     baseFaceNormal,
     baseFaceOuter,

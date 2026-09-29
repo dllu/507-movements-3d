@@ -317,19 +317,32 @@ test('movement 247 spring holds the catch against the spent weight\'s bore, then
   assert.equal(stateAtTime(timeline.rodRecovered - 1e-9).catchAngle, 0);
 
   const recovered = stateAtTime(timeline.rodRecovered + 1e-9);
-  // Clear above where the same weight will be held once lifted.
-  const liftedTop = geometry.liftedWeightCenterY + geometry.weightOuterRadius;
-  assert.ok(recovered.probeFootContactY > liftedTop + 0.1);
-  assert.equal(recovered.stage, 'same-weight-lifted-slightly-off-bottom');
+  // Pass 99: clear above the spent weight lying on the bottom.
+  const groundedTop = geometry.groundedWeightCenterY + geometry.weightOuterRadius;
+  assert.ok(recovered.probeFootContactY > groundedTop + 0.1);
+  assert.equal(recovered.stage, 'rod-hangs-above-spent-weight');
   disposeModel(model.root);
 });
 
-test('p98: movement 247 re-arms the same weight: it is lifted slightly, the rod enters from above, the top rim cams the catch in and it springs out under the weight', () => {
+test('p99: movement 247 re-arms the same weight: the rod enters it from above on the bottom, the top rim cams the catch in, the weight slides up the rod and the catch springs out under it', () => {
   const model = createMovementModel(catalog.movements[246]);
   const { geometry, stateAtTime, timeline, blocks, catchWeightLimit } = model.root.userData;
-  assert.ok(timeline.rodRecovered <= timeline.weightLiftBegins);
-  assert.ok(timeline.weightLifted < timeline.reloadedDescentBegins);
+  assert.ok(timeline.rodRecovered < timeline.reloadedDescentBegins);
+  assert.ok(timeline.rodInBore < timeline.weightLiftBegins);
   assert.ok(timeline.catchSprungUnderWeight < timeline.weightSeated);
+  // The weight is off the bottom and not on the catch for under 2 s, and it
+  // is moving (sliding up the rod, then set down) the whole time: no hold.
+  assert.ok(timeline.weightSeated - timeline.weightLiftBegins < 2);
+  for (let k = 1; k < 40; k += 1) {
+    const t = timeline.weightLiftBegins + (timeline.weightSeated - timeline.weightLiftBegins) * k / 40;
+    const a = stateAtTime(t - 0.02), b = stateAtTime(t + 0.02);
+    assert.ok(Math.abs(b.weightCenterY - a.weightCenterY) > 1e-4, `weight held still at ${t}`);
+  }
+  // Until the lift the weight lies on the bottom while the rod goes into it.
+  for (let k = 0; k <= 40; k += 1) {
+    const t = timeline.reloadedDescentBegins + (timeline.weightLiftBegins - timeline.reloadedDescentBegins) * k / 40;
+    near(stateAtTime(t).weightLowerOpeningY, geometry.seabedY, 1e-9, `weight on the bottom at ${t}`);
+  }
   // Only a slight lift: less than the weight's radius, and just enough that
   // the probe foot stays clear of the bottom while the catch passes under.
   assert.ok(geometry.weightLiftHeight > 0.5 && geometry.weightLiftHeight < geometry.weightOuterRadius,
@@ -347,7 +360,6 @@ test('p98: movement 247 re-arms the same weight: it is lifted slightly, the rod 
     const rel = nominal.weightCenterY - nominal.bodyPositionY;
     if (time < timeline.catchSprungUnderWeight) {
       assert.ok(!catchWeightLimit.catchHitsWeight(state.catchAngle, rel), `catch in weight at ${time}`);
-      near(state.weightCenterY - geometry.liftedWeightCenterY, 0, 0.01, `weight held at ${time}`);
     }
     if (camIn === null && state.catchAngle < -1e-3) camIn = time;
     if (camIn !== null && deepIn === null && state.catchAngle < geometry.rimWindows.deepest + 1e-3) deepIn = time;
@@ -364,8 +376,8 @@ test('p98: movement 247 re-arms the same weight: it is lifted slightly, the rod 
   // Seated on the finite seat, then carried continuously into Brown's pose.
   const landing = stateAtTime(timeline.weightSeated - 1e-6);
   const seated = stateAtTime(timeline.weightSeated + 1e-6);
-  near(landing.weightCenterY, seated.weightCenterY, 1e-5, 'seat meets the held weight');
-  near(seated.weightVelocity, 0, 1e-3, 'picked up at rest');
+  near(landing.weightCenterY, seated.weightCenterY, 1e-5, 'seat meets the weight set down on it');
+  near(seated.weightVelocity, 0, 1e-3, 'set down at rest');
   assert.equal(seated.catchToWeightContactActive, true);
   near(stateAtTime(timeline.cycleClosure - 1e-9).weightCenterY, stateAtTime(0).weightCenterY, 1e-6, 'loop closes');
 
@@ -472,11 +484,13 @@ test('movement 247 reported rates close away from edge release and leave movemen
     7.4,
     7.2,
     7.5,
-    8.0,
+    // Pass 99: 8.0 is now the top-rim cam-in (a limit-bound catch).
+    7.8,
     8.5,
     9.0,
-    9.8,
-    10.5,
+    10.2,
+    // Pass 99: 10.5 is the bottom-rim snap-out (a limit-bound catch).
+    11.0,
     11.2,
   ]) {
     const before = stateAtTime(time - step);

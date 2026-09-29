@@ -5,15 +5,26 @@ import {disposeObject3D} from '../dispose-model.js';
 
 // Reconstruction hypothesis: raise the inner input arm above the disk studs,
 // retaining only its distal driving face at the original working depth.
+// A flat arm cannot work at Brown's layout: his arm end lies on the stud
+// orbit, so any arm joining it to the pivot straddles the orbit until the
+// end has swung about 66° (the return needs 25°). The relief is kept as
+// shallow as the contact allows: the raised back face clears the stud ends
+// by 0.026 and the driving pad overlaps their pins by 0.064, a 0.12 step
+// (half the former 0.24). The pad's
+// inner edge is an arc concentric with the arm's rounded end, crossing the
+// arm's centre line at the contact minimum, so it reads as a round striking
+// boss. (An arc reaching the arm edges at the contact minimum, radius 0.29,
+// holds the stud long enough to throw the elbow over; see p99-e review.)
 export function makeRelievedStudReverser({inputContactMinimum=1.4}={}){
  const model=createAuthoredStudDriveMovement({id:153}),u=model.root.userData,b=u.blocks,g=u.geometry,arm=b.inputArm;
  const material=arm.children[0].material,L=g.leverInputLength,h=g.leverInputHalfWidth;
  if(!(inputContactMinimum>h&&inputContactMinimum<L-h))throw new RangeError('Invalid relieved arm length');
  for(const mesh of [...arm.children]){arm.remove(mesh);mesh.geometry.dispose();}
  const rectangle=(l,r)=>poly([[l,-h],[r,-h],[r,h],[l,h]]);
- const working=new THREE.Mesh(plate(clip.union(rectangle(inputContactMinimum,L),poly(circle([L,0],h,96))),-.10,.34),material);
+ const padRadius=L-inputContactMinimum,pad=clip.intersection(rectangle(L-padRadius,L),poly(circle([L,0],padRadius,192)));
+ const working=new THREE.Mesh(plate(clip.union(pad,poly(circle([L,0],h,96))),-.02,.34),material);
  working.name='distal-input-driving-face';
- const raised=new THREE.Mesh(plate(clip.difference(rectangle(0,inputContactMinimum),poly(circle([0,0],g.leverPivotRadius,96))),.14,.34),material);raised.name='raised-inner-input-arm';
+ const raised=new THREE.Mesh(plate(clip.difference(clip.difference(rectangle(0,L),pad),poly(circle([0,0],g.leverPivotRadius,96))),.10,.34),material);raised.name='raised-inner-input-arm';
  arm.add(working,raised);arm.userData.blocks={working,raised};g.inputContactMinimum=inputContactMinimum;
  const replace=(mesh,geometry)=>{mesh.geometry.dispose();mesh.geometry=geometry;mesh.rotation.set(0,0,0);};
  replace(b.diskBody,ring(.134,g.diskRadius,-g.diskDepth/2,g.diskDepth/2,128));
@@ -42,7 +53,9 @@ export function makeRelievedStudReverser({inputContactMinimum=1.4}={}){
  const outputShape=clip.difference(clip.union(poly([[0,-oh-wide[0]],[tip[0],-oh-wide[1]],[tip[0],oh],[0,oh]]),poly(circle(tip,tipRadius,96))),poly(circle([0,0],g.leverPivotRadius,96).map(([x,y])=>{const a=-output.rotation.z;return [x*Math.cos(a)-y*Math.sin(a),x*Math.sin(a)+y*Math.cos(a)];})));
  const outputMesh=new THREE.Mesh(plate(outputShape,-.1,.1),outputMaterial);outputMesh.name='bored-return-arm';output.add(outputMesh);output.position.z=.05;output.userData.blocks={body:outputMesh};
  // Keep visible moving volumes disjoint: studs and hubs start at their host faces.
- for(const assembly of b.pinAssemblies){const p=assembly.userData.blocks;replace(p.pin,disk(g.studRadius,.12-g.studCenterZ,.73-g.studCenterZ,96));replace(p.face,disk(g.studRadius*.72,-.022,.020,96));}
+ for(const assembly of b.pinAssemblies){const p=assembly.userData.blocks;replace(p.pin,disk(g.studRadius,.12-g.studCenterZ,.704-g.studCenterZ,96));replace(p.face,disk(g.studRadius*.72,-.048,-.018,96));}
+ // Each stud ends at z 0.734 (a 0.03 end cap on its pin), so the raised arm
+ // clears the whole stud by 0.026 and the driving pad overlaps the pin by 0.064.
  replace(b.barFrontStud,disk(g.barStudRadius,-.03,.21,96));
  replace(b.barFrontStudFace,disk(g.barStudRadius*.70,-.020,.019,96));
  b.barMotionIndex.removeFromParent();b.barMotionIndex.geometry.dispose();

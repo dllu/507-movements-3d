@@ -94,7 +94,7 @@ test('movement 198 matches Brown\'s fixed pinion, endless rack, two lifting rods
   assert.equal(model.root.userData.archetype, movement.archetype);
   assert.equal(
     model.root.userData.mechanism,
-    'six-tooth-fixed-pinion-rolls-five-turns-around-thirty-six-tooth-rack-with-exact-two-rod-carrier-closure',
+    'eight-tooth-fixed-pinion-rolls-five-turns-around-forty-eight-tooth-rack-with-exact-two-rod-carrier-closure',
   );
   assert.equal(
     model.root.userData.variant,
@@ -115,7 +115,7 @@ test('movement 198 matches Brown\'s fixed pinion, endless rack, two lifting rods
   blocks.frameMembers.forEach((member) => {
     assert.equal(member.parent, blocks.outerFrame);
   });
-  assert.equal(blocks.rackTeeth.length, 36);
+  assert.equal(blocks.rackTeeth.length, 48);
   blocks.rackTeeth.forEach((tooth, index) => {
     assert.equal(tooth.parent, blocks.rackCarrier);
     assert.equal(tooth.userData.index, index);
@@ -126,7 +126,7 @@ test('movement 198 matches Brown\'s fixed pinion, endless rack, two lifting rods
     assert.equal(roller.parent, model.root);
     assert.equal(roller.userData.fixedCenter, true);
   });
-  assert.equal(blocks.pinion.userData.teeth, 6);
+  assert.equal(blocks.pinion.userData.teeth, 8);
   assert.equal(blocks.pinionShaft.userData.fixed, true);
   assert.match(blocks.pinionShaft.userData.role, /does-not-rise-or-fall/);
   assert.match(blocks.topSuspensionRod.userData.role, /upper-rack-lifting/);
@@ -214,7 +214,7 @@ test('movement 198 matches Brown\'s fixed pinion, endless rack, two lifting rods
   disposeModel(model.root);
 });
 
-test('movement 198 has an exact 30-pitch center loop, 36-tooth rack, and five-turn pinion cycle', () => {
+test('movement 198 has an exact 40-pitch center loop, 48-tooth rack, and five-turn pinion cycle', () => {
   const model = createMovementModel(catalog.movements[197]);
   const {
     blocks,
@@ -228,25 +228,25 @@ test('movement 198 has an exact 30-pitch center loop, 36-tooth rack, and five-tu
     geometry.pinionPitchRadius,
     geometry.pinionTeeth * geometry.circularPitch / FULL_TURN,
     1e-15,
-    'six-tooth pinion pitch radius',
+    'eight-tooth pinion pitch radius',
   );
   near(
     geometry.straightRackLength,
     geometry.rackStraightPitchCount * geometry.circularPitch,
     1e-15,
-    'each straight rack run has twelve pitches',
+    'each straight rack run has sixteen pitches',
   );
   near(
     geometry.centerPathPerimeter,
-    geometry.circularPitch * 30,
-    2e-15,
-    'pinion-center loop has thirty pitches',
+    geometry.circularPitch * 40,
+    4e-15,
+    'pinion-center loop has forty pitches',
   );
   near(
     geometry.rackToothPitchPerimeter,
     geometry.circularPitch * geometry.rackToothCount,
     2e-15,
-    'outer rack pitch curve has thirty-six pitches',
+    'outer rack pitch curve has forty-eight pitches',
   );
   near(
     geometry.inputTravelPerCycle,
@@ -254,11 +254,11 @@ test('movement 198 has an exact 30-pitch center loop, 36-tooth rack, and five-tu
     2e-14,
     'one rack cycle requires five pinion turns',
   );
-  assert.equal(geometry.pinionTeeth, 6);
-  assert.equal(geometry.rackToothCount, 36);
-  assert.equal(geometry.rackStraightPitchCount, 12);
+  assert.equal(geometry.pinionTeeth, 8);
+  assert.equal(geometry.rackToothCount, 48);
+  assert.equal(geometry.rackStraightPitchCount, 16);
   assert.equal(transmission.pinionRevolutionsPerRackCycle, -5);
-  assert.equal(transmission.rackTeethPassingPerCycle, 36);
+  assert.equal(transmission.rackTeethPassingPerCycle, 48);
   assert.equal(transmission.frameReversalsPerCycle, 2);
 
   const pathSegments = new Set();
@@ -285,7 +285,7 @@ test('movement 198 has an exact 30-pitch center loop, 36-tooth rack, and five-tu
       `pitch contact offset ${index}`,
     );
     assert.ok(state.activeRackToothIndex >= 0);
-    assert.ok(state.activeRackToothIndex < 36);
+    assert.ok(state.activeRackToothIndex < 48);
   }
   assert.deepEqual(pathSegments, new Set([
     'left-end-pinion-lift',
@@ -504,7 +504,7 @@ test('movement 198 preserves both rigid rods and exact rolling through 32,769 st
       - sourceState.absoluteRackToothPitchDistance,
     geometry.rackToothPitchPerimeter,
     3e-14,
-    'contact advances through all thirty-six rack teeth',
+    'contact advances through all forty-eight rack teeth',
   );
   assert.equal(closure.activeRackToothIndex, sourceState.activeRackToothIndex);
   vector2Near(
@@ -729,7 +729,7 @@ test('movement 198 fills a real 3D envelope as the reviewed queue advances throu
   model.root.traverse((object) => {
     if (object.isMesh && object.visible) visibleMeshCount += 1;
     if (object.userData.role
-      === 'tooth-of-closed-thirty-six-tooth-mangle-rack') {
+      === 'tooth-of-closed-forty-eight-tooth-mangle-rack') {
       rackToothCount += 1;
     }
     if (/constant-length-.*rack-lifting-rod/.test(
@@ -748,7 +748,7 @@ test('movement 198 fills a real 3D envelope as the reviewed queue advances throu
   // The traced carrier plate replaces the capsule rail and two stub arms.
   // The dark slot and face rims Brown only inks are retired.
   assert.ok(visibleMeshCount >= 83);
-  assert.equal(rackToothCount, 36);
+  assert.equal(rackToothCount, 48);
   assert.equal(suspensionRodCount, 2);
   assert.equal(fixedGuideRollerCount, 4);
   assert.ok(model.cameraDirection.x > 0);
@@ -787,11 +787,11 @@ test('movement 198 fills a real 3D envelope as the reviewed queue advances throu
   disposeModel(model.root);
 });
 
-test('movement 198 pinion has six stub involute teeth on a full hub (p93)', () => {
+test('movement 198 pinion has eight stub involute teeth on a full hub (p93, p99)', () => {
   const model = createMovementModel(catalog.movements[197]);
   const {pitchRadius, teeth, outerRadius, rootRadius} = model.root.userData.blocks.pinion.userData;
   const m = 2 * pitchRadius / teeth;
-  assert.equal(teeth, 6);
+  assert.equal(teeth, 8);
   assert.ok(Math.abs(outerRadius - pitchRadius - 0.8 * m) < 1e-9);
   assert.ok(Math.abs(pitchRadius - rootRadius - 0.8 * m) < 1e-9);
   const gear = model.root.userData.blocks.pinion.userData.rotor.children[0];

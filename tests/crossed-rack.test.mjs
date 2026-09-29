@@ -55,16 +55,18 @@ test('080 renders closed outward surfaces and real shaft bores and slot',()=>{
 // Display time of a physical loop time (display zero is a quarter swing in).
 const display=tau=>((tau-profile.displayOffset+profile.loopPeriod)%profile.loopPeriod)/2;
 
-test('080 plays a baked MuJoCo ratchet lift and reset as a seamless twelve-second loop',()=>{
+test('080 plays a baked MuJoCo ratchet lift and reset as a seamless sixteen-second loop',()=>{
  const model=makeCrossedRackDrive(),u=model.root.userData,p=u.geometry,keys=['q','rackY','leftAngle','rightAngle'],at=tau=>sampleCrossedRackMotion(display(tau));
  // Display zero shows the source pose: lever level, rack at its drawn height, right hook seated.
  const start=sampleCrossedRackMotion(0);near(start.q,0);assert(Math.abs(start.rackY)<.01&&Math.abs(start.rightAngle)<.005);
- // Two lever swings lift the rack about two pitches each, with physical rollback at each handoff.
- near((at(16).rackY-at(8).rackY)/p.pitch,2,.1);near((at(16).rackY-at(0).rackY)/p.pitch,3.95,.15);
+ // Pass 99: three lever swings lift the rack about two pitches each, with physical rollback at each handoff.
+ near((at(16).rackY-at(8).rackY)/p.pitch,2,.1);near((at(24).rackY-at(16).rackY)/p.pitch,2,.1);near((at(24).rackY-at(0).rackY)/p.pitch,5.95,.2);
  assert(at(5.2).rackY<at(4.8).rackY-.02,'Physical rollback at handoff');
- // The reset lets the rack down again and the loop closes in pose and speed.
- assert(at(20).rackY<at(16).rackY-3*p.pitch,'the released rack is let down');
- const loop=12;near(start.duration,loop);assert.equal(u.playbackDuration,undefined);
+ // The brief reset (4.7 of 32 physical seconds) lets the rack down again and
+ // the loop closes in pose and speed.
+ assert.equal(profile.liftEnd,24);assert(profile.provenance.plan.unsupport[1]<=4.7);
+ assert(at(27.2).rackY<at(24).rackY-5*p.pitch,'the released rack is let down');
+ const loop=16;near(start.duration,loop);assert.equal(u.playbackDuration,undefined);
  for(const seam of [loop,2*loop,5*loop])for(const key of keys)near(sampleCrossedRackMotion(seam-1e-7)[key],sampleCrossedRackMotion(seam+1e-7)[key],1e-6);
  const before=sampleCrossedRackMotion(loop-2e-3),after=sampleCrossedRackMotion(loop+2e-3);
  near(before.rackVelocity,after.rackVelocity,.02);near(before.angularVelocities[0],after.angularVelocities[0],1e-3);
@@ -89,13 +91,13 @@ test('080 baked motion is current, and rendered hooks never overlap the rack',()
  assert.equal(v.mujoco.version,JSON.parse(fs.readFileSync('node_modules/@mujoco/mujoco/package.json')).version);
  assert(v.minimumContactGap>0&&v.renderedOverlap.maximum<=1e-6&&v.periodicResiduals.at(-1).position<1e-4);
  const model=makeCrossedRackDrive(),overlap=makeCrossedRackOverlap(model.root.userData);let worst=0;
- for(let i=0;i<=2400;i++)worst=Math.max(worst,overlap(sampleCrossedRackMotion(i*12/2400)));
+ for(let i=0;i<=3200;i++)worst=Math.max(worst,overlap(sampleCrossedRackMotion(i*16/3200)));
  assert(worst<=1e-6,'rendered hook/rack overlap '+worst);dispose(model);
 });
 
 test('080 free pawls remain pinned to the rotating lever throughout finite travel',()=>{
  const model=makeCrossedRackDrive(),u=model.root.userData;
- for(let i=0;i<=240;i++){
+ for(let i=0;i<=320;i++){
   model.update(i/20);
   for(const key of ['left','right']){
    const eye=new THREE.Vector3().applyMatrix4(u.blocks[key].matrixWorld),pin=new THREE.Vector3().applyMatrix4(u.parts[key+'PawlPin'].matrixWorld);
@@ -122,7 +124,7 @@ test('080 each loaded hook supports actual rack material',()=>{
 
 test('080 independent solid families clear through startup, handoffs and the reset',()=>{
  const model=makeCrossedRackDrive(),u=model.root.userData,parts=Object.entries(u.parts).map(([name,mesh])=>({name,mesh,solid:solidSurface(mesh.geometry),points:surfacePoints(mesh.geometry)}));
- for(const time of [0,.1,.2,.3,.5,1,1.5,1.6,2,2.5,3,3.1,3.5,4,5,5.6,6,7,7.5,8,8.5,9,9.2,9.4,9.6,10,10.5,11,11.5,12]){
+ for(const time of [0,.1,.2,.3,.5,1,1.5,1.6,2,2.5,3,3.1,3.5,4,5,5.6,6,7,7.5,8,8.5,9,9.2,9.4,9.6,10,10.5,11,11.5,12,12.4,12.8,13.2,13.6,14,14.5,15,15.5,16]){
   model.update(time);const boxes=parts.map(p=>p.solid.box.clone().applyMatrix4(p.mesh.matrixWorld));
   for(let i=0;i<parts.length;i++)for(let j=i+1;j<parts.length;j++)if(u.families[parts[i].name]!==u.families[parts[j].name]&&boxes[i].intersectsBox(boxes[j])){
    for(const [a,b]of [[parts[i],parts[j]],[parts[j],parts[i]]]){

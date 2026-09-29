@@ -27,8 +27,27 @@ for (const id of [217, 218]) {
     const model = transmission(id), {blocks: b, geometry: g} = model.root.userData;
     try {
       const points = b.notchWheel.geometry.parameters.shapes.getPoints();
-      const contact = angle => nearestBoundary(points,
-        g.engagedHookLocal.clone().rotateAround(new THREE.Vector2(), -angle), g.catchHookRadius);
+      // 218's lug is square (p99): sample its tip outline at the engaged pose.
+      const lug = id === 218 ? g.catchLugOutline(0.2, 0, 24, 96).map(point => point.clone().add(g.catchPivotLocal)) : null;
+      const inside = point => {
+        let result = false;
+        for (let i = 0, j = points.length - 1; i < points.length; j = i++) {
+          const a = points[i], b = points[j];
+          if ((a.y > point.y) !== (b.y > point.y) && point.x < (b.x - a.x) * (point.y - a.y) / (b.y - a.y) + a.x) result = !result;
+        }
+        return result;
+      };
+      const contact = angle => {
+        if (!lug) return nearestBoundary(points,
+          g.engagedHookLocal.clone().rotateAround(new THREE.Vector2(), -angle), g.catchHookRadius);
+        let best = null;
+        for (const local of lug) {
+          const q = local.clone().rotateAround(new THREE.Vector2(), -angle), near = nearestBoundary(points, q, 0);
+          const gap = (inside(q) ? -1 : 1) * (near.gap);
+          if (!best || gap < best.gap) best = {gap, point: near.point, normal: (gap < 0 ? near.point.clone().sub(q) : q.clone().sub(near.point)).normalize()};
+        }
+        return best;
+      };
       for (const sign of [-1, 1]) {
         let lo = 0, hi = .01;
         assert.ok(contact(0).gap > .0018, 'finite milling clearance remains');
@@ -38,7 +57,9 @@ for (const id of [217, 218]) {
           if (contact(sign * mid).gap > 0) lo = mid;else hi = mid;
         }
         assert.ok(hi > .001 && hi < .002, `take-up is bounded: ${hi}`);
-        const {point, normal} = contact(sign * hi);
+        // A lug sample can sit exactly on the outline at the bisection limit;
+        // take the flank normal a hair deeper into the flank then.
+        const {point, normal} = contact(sign * (id === 218 ? hi + .0002 : hi));
         const wheelReactionTorque = -(point.x * normal.y - point.y * normal.x);
         assert.ok(sign * wheelReactionTorque < -1.1,
           'each flank supplies a tangential reaction opposing relative rotation');

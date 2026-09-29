@@ -45,7 +45,7 @@ test('027 rollers enter real radial channels, touch their walls, and clear the b
           'the passing roller is not falsely reported as engaged');
       }
     }
-    const plate = driver.userData.rotor.children.find((part) => part.geometry?.type === 'ExtrudeGeometry');
+    const plate = driver.userData.rotor.children.find((part) => part.userData.role === 'three-arm-carrier-plate-with-roller-eyes');
     const box = new THREE.Box3().setFromObject(plate);
     assert.ok(box.min.z > driven.userData.wallTopZ + 0.02, 'the carrier clears the raised channel walls');
   }

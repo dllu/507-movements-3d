@@ -284,6 +284,38 @@ function groovedCamWoolComberRollerMotion(movementId) {
   // Length of 218's straight lug from its rounded tip to the bar's centreline.
   const catchLugLength = 0.32;
   const notchRootRadius = engagedHookRadius - catchHookRadius - woolComberNotch.clearance;
+  // p99 (218): Brown draws G's lug and F's notches square. The lug is a
+  // straight bar (half-width catchHookRadius) with a flat end through the old
+  // round tip's lowest point and small rounded corners; its axis is the tip's
+  // release direction (square to the hinge radius), so lifting draws it
+  // straight out. F's notches are milled to its envelope (square218 below).
+  const lugCornerRadius = 0.025;
+  const lugRadial = new THREE.Vector2(catchLinkLocal.y, -catchLinkLocal.x).normalize();
+  if (lugRadial.dot(engagedHookLocal) < 0) lugRadial.negate();
+  const lugOutboard = new THREE.Vector2(lugRadial.y, -lugRadial.x);
+  if (lugOutboard.dot(catchLinkLocal) < 0) lugOutboard.negate();
+  // Rounded-rectangle lug outline in G's frame (origin at the hinge), from
+  // `length` above the tip centre down round the flat end; `inflate` grows it.
+  const lugOutline = (length, inflate = 0, arcSamples = 12, flatSamples = 24) => {
+    const half = catchHookRadius + inflate, corner = lugCornerRadius + inflate;
+    const at = (along, across) => catchLinkLocal.clone()
+      .addScaledVector(lugRadial, along).addScaledVector(lugOutboard, across);
+    const points = [at(length, half)];
+    const cornerAlong = -catchHookRadius + lugCornerRadius;
+    const cornerAcross = catchHookRadius - lugCornerRadius;
+    for (const side of [1, -1]) {
+      for (let i = 0; i <= arcSamples; i += 1) {
+        const angle = side > 0 ? Math.PI / 2 * i / arcSamples : Math.PI / 2 + Math.PI / 2 * i / arcSamples;
+        points.push(at(cornerAlong - corner * Math.sin(angle), side * cornerAcross + corner * Math.cos(angle)));
+      }
+      if (side > 0) for (let i = 1; i < flatSamples; i += 1) {
+        points.push(at(-half, cornerAcross - 2 * cornerAcross * i / flatSamples));
+      }
+    }
+    points.push(at(length, -half));
+    return points;
+  };
+  const lugTipLocal = outputPlateFocus ? lugOutline(0.2) : null;
 
   const grooveHalfWidth = 0.155;
   const followerRollerRadius = 0.12;
@@ -294,9 +326,12 @@ function groovedCamWoolComberRollerMotion(movementId) {
   // The hinged hook leaves on an oblique arc, so radial notch flanks bind.
   // This offline milled envelope retains two driving flanks with small take-up;
   // playback still prescribes ideal output and catch lift, not passive dynamics.
+  const notchProfile = outputPlateFocus && woolComberNotch.square218
+    ? woolComberNotch.square218
+    : woolComberNotch.profile;
   const cutters = Array.from({length: notchCount}, (_, index) => {
     const angle = notchPhaseAngle + index * notchPitchAngle;
-    return poly(woolComberNotch.profile.map(([x, y]) => [
+    return poly(notchProfile.map(([x, y]) => [
       x * Math.cos(angle) - y * Math.sin(angle),
       x * Math.sin(angle) + y * Math.cos(angle),
     ]));
@@ -320,6 +355,34 @@ function groovedCamWoolComberRollerMotion(movementId) {
     }
     return {clearance: (inside ? -1 : 1) * Math.sqrt(squaredDistance) - catchHookRadius,
       nearestIsNotch};
+  };
+  // 218: the square lug's signed clearance to F's outline, from its sampled
+  // tip outline placed by G's hinge (in F's frame) and G's angle relative to F.
+  const lugClearanceInWheel = (pivot, angle) => {
+    const reach = catchLinkLocal.length() + 0.45;
+    const edges = wheelEdges.filter(({a}) => a.distanceTo(pivot) < reach);
+    let clearance = Infinity, nearestIsNotch = false;
+    for (const local of lugTipLocal) {
+      const point = rotate2(local, angle).add(pivot);
+      let inside = false, squaredDistance = Infinity, notch = false;
+      const ray = point.clone().normalize();
+      for (const {a, dx, dy, lengthSquared, notch: edgeNotch} of edges) {
+        const t = Math.max(0, Math.min(1, ((point.x - a.x) * dx + (point.y - a.y) * dy) / lengthSquared));
+        const distance = (point.x - a.x - t * dx) ** 2 + (point.y - a.y - t * dy) ** 2;
+        if (distance < squaredDistance) {squaredDistance = distance;notch = edgeNotch;}
+        // Parity along the outward radial ray, which only meets F's outline
+        // beside the point (all such edges lie within reach).
+        const denominator = ray.x * dy - ray.y * dx;
+        if (Math.abs(denominator) > 1e-15) {
+          const ax = a.x - point.x, ay = a.y - point.y;
+          const along = (ax * dy - ay * dx) / denominator, u = (ax * ray.y - ay * ray.x) / denominator;
+          if (along > 0 && u >= 0 && u < 1) inside = !inside;
+        }
+      }
+      const signed = (inside ? -1 : 1) * Math.sqrt(squaredDistance);
+      if (signed < clearance) {clearance = signed;nearestIsNotch = notch;}
+    }
+    return {clearance, nearestIsNotch};
   };
 
   const rockerLawAtPhase = (phase) => {
@@ -350,8 +413,22 @@ function groovedCamWoolComberRollerMotion(movementId) {
         segmentParameter: parameter,
       };
     }
-    const phaseSpan = 1 - forwardEndPhase;
-    const parameter = (phase - forwardEndPhase) / phaseSpan;
+    // p99 (218): the rocker holds still while G lifts out at e and while it
+    // drops in at C, so the square lug moves only about its hinge, along its
+    // own axis, and F's notches stay square on both flanks.
+    const returnStart = outputPlateFocus ? liftRiseEndPhase : forwardEndPhase;
+    const returnEnd = outputPlateFocus ? liftFallStartPhase : 1;
+    if (phase <= returnStart || phase >= returnEnd) {
+      return {
+        angle: phase <= returnStart ? netOutputAdvance : 0,
+        derivative: 0,
+        secondDerivative: 0,
+        segment: 'e-to-C-disengaged-return-dwell',
+        segmentParameter: phase <= returnStart ? 0 : 1,
+      };
+    }
+    const phaseSpan = returnEnd - returnStart;
+    const parameter = (phase - returnStart) / phaseSpan;
     return {
       angle: netOutputAdvance * (1 - quinticStep(parameter)),
       derivative: -netOutputAdvance
@@ -370,8 +447,10 @@ function groovedCamWoolComberRollerMotion(movementId) {
   // the angle at which the tip circle clears the rim, not a free 0.35 park.
   // (217 keeps its own law.)
   const catchRideRadius = notchWheelOuterRadius + catchHookRadius + 0.0005;
-  const catchHookRadiusAtLift = (lift) => catchPivotLocal.clone()
-    .add(rotate2(catchLinkLocal, -lift)).length();
+  const catchHookRadiusAtLift = (lift) => (outputPlateFocus
+    ? Math.min(...lugTipLocal.map((point) => catchPivotLocal.clone().add(rotate2(point, -lift)).length()))
+      + catchHookRadius
+    : catchPivotLocal.clone().add(rotate2(catchLinkLocal, -lift)).length());
   let catchRideFraction = 1;
   if (outputPlateFocus) {
     let low = 0, high = catchLiftAngle;
@@ -578,7 +657,9 @@ function groovedCamWoolComberRollerMotion(movementId) {
         nearestNotchIndex = index;
       }
     }
-    const finiteHook = hookClearanceInWheel(rotate2(catchHookFromOutput, -outputAngle));
+    const finiteHook = outputPlateFocus
+      ? lugClearanceInWheel(rotate2(catchPivotWorld.clone().sub(outputCenter), -outputAngle), catchAngle - outputAngle)
+      : hookClearanceInWheel(rotate2(catchHookFromOutput, -outputAngle));
     const hookWithinNotchOpening = finiteHook.nearestIsNotch;
     const catchSolidClearance = finiteHook.clearance;
 
@@ -908,11 +989,9 @@ function groovedCamWoolComberRollerMotion(movementId) {
     catchBar.geometry.dispose();
     // The lug's axis is the tip's release direction (square to the hinge
     // radius), so lifting draws it straight out of the notch.
-    const radial = new THREE.Vector2(catchLinkLocal.y, -catchLinkLocal.x).normalize();
-    if (radial.dot(engagedHookLocal) < 0) radial.negate();
+    const radial = lugRadial;
     const lugTop = catchLinkLocal.clone().addScaledVector(radial, catchLugLength);
-    const outboard = new THREE.Vector2(radial.y, -radial.x);
-    if (outboard.dot(catchLinkLocal) < 0) outboard.negate();
+    const outboard = lugOutboard;
     const knob = lugTop.clone().addScaledVector(outboard, 0.06);
     const gOutward = catchTripBossAbsoluteLocal.clone().normalize();
     const gLobe = catchTripBossRelativeLocal.clone().addScaledVector(gOutward, 0.12);
@@ -922,7 +1001,7 @@ function groovedCamWoolComberRollerMotion(movementId) {
       [
         poly(circle([0, 0], 0.24, 48)),
         poly(circle([knob.x, knob.y], 0.15, 48)),
-        capsule([catchLinkLocal.x, catchLinkLocal.y], [lugTop.x, lugTop.y], catchHookRadius, 32),
+        poly(lugOutline(catchLugLength).map((point) => [point.x, point.y])),
         poly(circle([gLobe.x, gLobe.y], tripRollerRadius, 32)),
       ],
       [{center: new THREE.Vector2(0, 0), radius: 0.155}],
@@ -962,6 +1041,15 @@ function groovedCamWoolComberRollerMotion(movementId) {
     catchLinkLocal.y,
     catchHookCenterZ,
   );
+  if (outputPlateFocus) {
+    // 218's hidden seat marker is the square lug's own tip (G's outline).
+    catchHook.geometry.dispose();
+    catchHook.geometry = extrudedShape(
+      shapeFromPoints(lugTipLocal.map((point) => point.clone().sub(catchLinkLocal))),
+      catchHookLength, 0, catchMaterial,
+    ).geometry;
+    catchHook.rotation.set(0, 0, 0);
+  }
   catchHook.userData.role = 'catch-G-hook-entering-F-notch';
   // On 218 the lug is part of G's outline; no pin enters the notch.
   catchHook.visible = !outputPlateFocus;
@@ -1139,6 +1227,8 @@ function groovedCamWoolComberRollerMotion(movementId) {
     catchLayerZ,
     catchLinkLocal,
     catchLugLength,
+    catchLugOutline: lugOutline,
+    lugCornerRadius,
     catchOutlineLocal,
     catchPivotBaseAngle,
     catchPivotLocal,

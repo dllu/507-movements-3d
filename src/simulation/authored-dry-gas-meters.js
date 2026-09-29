@@ -517,11 +517,11 @@ function dryGasMeter(movement) {
   const movingAPrime = makePlate(plateAPrimeMaterial, 'moving-plate-of-A-prime', bellowsAPrime);
 
   // ---- flag rods, flags, top arms and links
-  const makeFlagRod = (spec, name, topY) => {
+  const makeFlagRod = (spec, name, topY, bottomY = L.floorTopY) => {
     const group = new THREE.Group();
     group.position.set(spec.rod[0], 0, spec.rod[1]);
     group.userData.role = `rocking-flag-rod-of-${name}`;
-    const shaft = addMesh(group, new THREE.CylinderGeometry(0.055, 0.055, topY - L.floorTopY, 24).translate(0, (topY + L.floorTopY) / 2, 0), ironMaterial, `vertical-flag-rod-of-${name}`);
+    const shaft = addMesh(group, new THREE.CylinderGeometry(0.055, 0.055, topY - bottomY, 24).translate(0, (topY + bottomY) / 2, 0), ironMaterial, `vertical-flag-rod-of-${name}`);
     const flagArms = [1, -1].map((sign) => {
       const arm = addMesh(group, barGeometry(spec.flagArm, 0.09, -0.04, 0.04, 0.09), ironMaterial, `${sign > 0 ? 'upper' : 'lower'}-flag-arm-of-${name}`);
       arm.position.y = sign * (L.flagY - 0.10);
@@ -551,7 +551,11 @@ function dryGasMeter(movement) {
   // pin and nothing stands on the spindle axis where a link passes over it.
   const sheaveY = [5.24, 5.32], discY = [5.34, 5.42];
   const rightTopY = discY[1], leftTopY = sheaveY[0] - 0.02;
-  const rodA = makeFlagRod(left, 'A', leftTopY);
+  // Pass 99: A's rod turns in its 5.08-long bore through A's outer end board
+  // and in the shelf, so it needs no floor step: it ends 0.02 under its lower
+  // flag arm, and only the stub between the board and that arm shows below
+  // the bellows (0.14 instead of 0.60 of bare rod beside the wall).
+  const rodA = makeFlagRod(left, 'A', leftTopY, -(L.flagY - 0.10) - 0.06);
   const rodAPrime = makeFlagRod(right, 'A-prime', rightTopY);
   const makeLink = (length, role, y, width = 0.08, holeRadius = 0.04) => {
     const mesh = addMesh(root, barGeometry(length, width, -0.04, 0.04, width, [[0, holeRadius], [length, holeRadius + 0.015]]), ironMaterial, role);

@@ -35,19 +35,6 @@ function vectorNear(actual, expected, tolerance, message) {
   near(actual.distanceTo(expected), 0, tolerance, message);
 }
 
-function dynamicCableEndpoints(cable) {
-  const visible = cable.children.filter((segment) => segment.visible);
-  assert.ok(visible.length > 1);
-  cable.updateWorldMatrix(true, true);
-  return {
-    end: new THREE.Vector3(0, 0.5, 0)
-      .applyMatrix4(visible.at(-1).matrixWorld),
-    start: new THREE.Vector3(0, -0.5, 0)
-      .applyMatrix4(visible[0].matrixWorld),
-    visible,
-  };
-}
-
 function disposeModel(root) {
   const geometries = new Set();
   const materials = new Set();
@@ -217,12 +204,13 @@ test('movement 496 live yarn is a smooth closed-cycle path fixed to both guides'
   for (let sample = 0; sample <= 3600; sample += 1) {
     const time = timeStep * sample;
     const state = stateAtTime(time);
-    vectorNear(state.liveYarnPoints[0], geometry.frontNip, 0,
-      `yarn begins at B nip ${sample}`);
+    vectorNear(state.liveYarnPoints[0], geometry.inputFiberStart, 0,
+      `yarn begins at the roving's end ${sample}`);
     vectorNear(state.liveYarnPoints.at(-1), state.windingContact, 5e-15,
       `yarn ends on bobbin ${sample}`);
-    assert.ok(state.liveYarnCurve.getLength() > 5.50);
-    assert.ok(state.liveYarnCurve.getLength() < 5.51);
+    // p100: one cord from the roving's end through both nips.
+    assert.ok(state.liveYarnCurve.getLength() > 8.47);
+    assert.ok(state.liveYarnCurve.getLength() < 8.48);
     if (previousEye) {
       assert.ok(state.flyerEye.distanceTo(previousEye) < 0.0092,
         `flyer eye motion is continuous ${sample}`);
@@ -237,12 +225,15 @@ test('movement 496 live yarn is a smooth closed-cycle path fixed to both guides'
     const state = stateAtTime(time);
     model.update(time);
     model.root.updateMatrixWorld(true);
-    const endpoints = dynamicCableEndpoints(blocks.liveYarn);
-    vectorNear(endpoints.start, geometry.frontNip, 2e-14,
-      `rendered yarn starts at B nip ${time}`);
-    vectorNear(endpoints.end, state.windingContact, 2e-14,
+    const rope = blocks.liveYarn.userData.mesh;
+    assert.equal(rope.geometry.type, 'LaidRopeGeometry');
+    assert.equal(blocks.liveYarn.children.length, 1);
+    const path = rope.geometry.parameters.path;
+    vectorNear(path.getPoint(0), geometry.inputFiberStart, 1e-12,
+      `rendered yarn starts at the roving's end ${time}`);
+    vectorNear(path.getPoint(1), state.windingContact, 1e-12,
       `rendered yarn reaches bobbin ${time}`);
-    assert.equal(endpoints.visible.length, 36);
+    assert.equal(rope.geometry.parameters.radius, geometry.yarnRadius);
   }
   disposeModel(model.root);
 });
@@ -318,5 +309,36 @@ test('movement 496 closes all integer turns, fits all poses, and leaves movement
   assert.equal(nextModel.root.userData.fidelity, 'authored');
   assert.notEqual(nextModel.root.userData.archetype, ARCHETYPE);
   disposeModel(nextModel.root);
+  disposeModel(model.root);
+});
+
+test('movement 496 yarn is one constant-radius cord lying on the rolls', () => {
+  const { model } = movementModel();
+  const { blocks, geometry, stateAtTime } = model.root.userData;
+  const c = geometry.rollCenters.frontBottom;
+  // It fills each nip gap and its centreline lies one yarn radius off the
+  // lower B roll from the nip to the tangent toward the top eye.
+  assert.ok(Math.abs(geometry.yarnWrapRadius - geometry.rollRadius - geometry.yarnRadius) < 1e-12);
+  const curve = stateAtTime(1.3).liveYarnCurve;
+  let onRoll = 0;
+  for (let i = 0; i <= 4000; i += 1) {
+    const p = curve.getPointAt(i / 4000);
+    for (const center of Object.values(geometry.rollCenters)) {
+      assert.ok(p.distanceTo(center) >= geometry.rollRadius + geometry.yarnRadius - 2e-4,
+        `yarn cuts a roll at ${p.toArray()}`);
+    }
+    const angle = Math.atan2(p.x - c.x, p.y - c.y);
+    if (angle > 0.05 && angle < geometry.yarnLeaveAngle - 0.05) {
+      assert.ok(Math.abs(p.distanceTo(c) - geometry.yarnWrapRadius) < 2e-4, `yarn floats off roll B at ${angle}`);
+      onRoll += 1;
+    }
+  }
+  assert.ok(onRoll > 20);
+  for (const mesh of [blocks.liveYarn.userData.mesh, blocks.woundYarn]) {
+    assert.equal(mesh.geometry.type, 'LaidRopeGeometry');
+    assert.equal(mesh.geometry.parameters.radius, geometry.yarnRadius);
+  }
+  assert.equal(blocks.inputSliver, undefined);
+  assert.equal(blocks.draftedFiber, undefined);
   disposeModel(model.root);
 });

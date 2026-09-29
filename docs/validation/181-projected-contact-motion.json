@@ -11,20 +11,20 @@
   "nativeCycle": 2,
   "projectionGap": 0.00003,
   "keys": 9001,
-  "correctedPoses": 14,
-  "maxIterations": 4,
+  "correctedPoses": 9,
+  "maxIterations": 3,
   "maximumCorrection": [
-    0.00016678005599113366,
-    0.00066367379352128,
-    0.0001519085277666792,
-    0.00038120161407595443
+    0.00022801100357328075,
+    0.000863429084214995,
+    0.00002649547935824198,
+    0.0005029438530371744
   ],
   "failures": 0,
   "poses": 36001,
-  "minimumInterpolatedGap": 0.000029721048935726913,
+  "minimumInterpolatedGap": 0.00002949326861445556,
   "independentPoses": 901,
   "maximumIntersectionArea": 0,
-  "maximumRawIntersectionArea": 1.3599267351116495e-7,
+  "maximumRawIntersectionArea": 0.000001202519193943541,
   "seam": [
     0,
     0,
@@ -55,7 +55,7 @@
     },
     {
       "file": "src/simulation/mujoco-diagonal-catch/catch-profile.js",
-      "sha256": "addb36f76a8643caf3a6f7c9b98bc70cad796fecf712dbb18c885ebdf87df8a2"
+      "sha256": "0a9402ce6e911f221461ddd3c502e5207dea600d266ad95fe0c1af6ee22bbf81"
     },
     {
       "file": "src/simulation/mujoco-diagonal-catch/handle-fit.js",
@@ -63,7 +63,7 @@
     },
     {
       "file": "src/simulation/authored-diagonal-catches.js",
-      "sha256": "3e889913759fcdda8b97175898ac68cc8a4a53e571d5a2fadff77fa903254f62"
+      "sha256": "bc81e22a8453c5b9ab060424f9d53708886ea08e944b08a4cd4ab4b451b8cbb8"
     },
     {
       "file": "src/simulation/mujoco-bench-clamp/profile.js",

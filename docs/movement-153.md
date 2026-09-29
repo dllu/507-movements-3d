@@ -13,8 +13,14 @@ choices:
 
 - The inner 100 source pixels of the input arm are raised above the disk stud
   ends. Its distal 19.08 pixels and rounded tip remain at working depth. The
-  raised rear face is Z=0.80 and stud ends are Z=0.73. This **hidden depth relief
-  is inferred**, not established by the engraving.
+  raised rear face is Z=0.76 and stud ends are Z=0.734 (pins end at 0.704 under
+  a 0.03 cap); the driving pad's rear face is Z=0.64, a 0.12 step (0.24 before
+  pass 99), and its inner edge is an arc concentric with the arm's rounded end.
+  This **hidden depth relief is inferred**, not established by the engraving.
+  A flat arm cannot work at Brown's layout: his arm end lies on the stud orbit,
+  so any arm joining it to the pivot straddles the orbit until the end has
+  swung about 66°, against the 22–25° the return needs (see
+  `docs/p99-e-review.md`).
 - Gravity resets the elbow onto a finite cylindrical stop. There is no elbow
   angular joint limit in this model. The stop bracket, bored bearings, rear
   supports and two C-shaped bar guides are inferred. Those guides remain
@@ -44,7 +50,7 @@ contribute overlapping host volumes to mass estimates. A within-body surface
 check covers 46 moving mesh pairs and 43,896 queries with no penetration above
 1e-6; this is finite geometric evidence, not an exact CSG union-volume proof.
 
-At dt=0.000125, the sixth-cycle bar range is 0.04069–1.02452. Consecutive settled
+At dt=0.000125, the sixth-cycle bar range is 0.03828–1.02453 (pass 99). Consecutive settled
 cycle endpoints differ by 2.41e-10 in bar position with effectively zero
 follower velocity. Halving dt from 0.00025 changes matched bar positions by
 at most 0.0005053 (0.0361 source pixel), disk angle by 0.0001805 rad and elbow

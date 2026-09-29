@@ -338,7 +338,10 @@ function fuseeCarriageTraverse(movement) {
   // Brown's wheels stand about 2.0 from the shaft, outside his long bars.
   const truckAxleX = 2.0;
   const truckWheelY = -0.675;
-  const frameZ = -0.43;
+  // Pass 99: the carriage frame (and the rail under its wheels) runs 1.25
+  // below the shaft, so Brown's lower long bar can pass under the fusee's
+  // large end, 0.71 from the shaft, and still clear the crank's sweep.
+  const frameZ = -1.25;
   const railTopZ = frameZ - wheelRadius;
   const supportX = 1.12;
   const crankRadius = 1.3;

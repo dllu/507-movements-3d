@@ -89,3 +89,14 @@ test('240 stop C is one broad block whose top edge sits in two tooth spaces',()=
  assert.equal(groups.length,2,'two teeth');const mid=groups.map(q=>(q[0]+q.at(-1))/2);assert.ok(Math.abs(Math.abs(mid[1]-mid[0])-g.toothPitch)<.08,`teeth ${mid}`);
  assert.ok(c.hole&&c.pivot.distanceTo(c.hole)>1);
 });
+test('240 p99: stop C hangs its knob from a slim neck; the space above the neck (lettered C) is open',()=>{
+ const m=create({id:240}),d=m.root.userData,b=d.blocks,g=d.geometry;
+ m.update(0);m.root.updateMatrixWorld(true);
+ const rootInverse=m.root.matrixWorld.clone().invert(),v=new THREE.Vector3();
+ const ring=b.springPawlStopBody.geometry.userData.plate.polygons[0][0].map(([x,y])=>{v.set(x,y,0).applyMatrix4(b.springPawlStopBody.matrixWorld).applyMatrix4(rootInverse);return[v.x,v.y];});
+ const inside=([x,y])=>{let r=false;for(let i=0,j=ring.length-1;i<ring.length;j=i++){const a=ring[i],c=ring[j];if((a[1]>y)!==(c[1]>y)&&x<(c[0]-a[0])*(y-a[1])/(c[1]-a[1])+a[0])r=!r;}return r;};
+ // Plate-local pixels (x4 about Brown's C at plate px 130, 330), as in C240_PLATE.
+ const world=([x,y])=>[(130+x/4-g.sourceImageCenter.x)*g.sourceScale,(g.sourceImageCenter.y-(330+y/4))*g.sourceScale];
+ for(const p of [[100,190],[130,170],[60,215]])assert.equal(inside(world(p)),false,`open above the neck at ${p}`);
+ for(const p of [[60,320],[150,240],[300,230]])assert.equal(inside(world(p)),true,`solid at ${p}`);
+});

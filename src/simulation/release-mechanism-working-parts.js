@@ -95,7 +95,8 @@ function finishSounding247Seat(model){
   if(t<release){v=(envelope(time+dh)-envelope(time-dh))/(2*dh);acc=acceleration(time);}
   else if(t<impact){v=releaseVelocity-gravity*(t-release);acc=-gravity;}
   else if(t<d.timeline.weightLiftBegins){v=0;acc=0;}
-  else if(t<d.timeline.weightSeated){v=(centerY(time+dh)-centerY(time-dh))/(2*dh);acc=(centerY(time+dh)-2*y+centerY(time-dh))/(dh*dh);}
+  // p99: exact rates of the reload slide plus the seat offset's ramp.
+  else if(t<d.timeline.weightSeated){v=s.weightVelocity+seatOffset*s.weightLiftProgressRate;acc=s.weightAcceleration+seatOffset*s.weightLiftProgressAcceleration;}
   else{v=s.bodyVelocity;acc=s.bodyAcceleration;}
   const active=t<release||t>=d.timeline.weightSeated,p=center(s.catchAngle),overlap=Math.hypot(p.x+r,zMax)-bore;return{...s,supportOverlap:overlap,supportRadialClearance:-overlap,supportRadialReach:bore+overlap,weightOnSeabed:t>=impact&&t<d.timeline.weightLiftBegins,weightCenterY:y,weightLowerOpeningY:y-g.weightOpeningHalfHeight,weightUpperOpeningY:y+g.weightOpeningHalfHeight,weightVelocity:v,weightAcceleration:acc,catchSupportPosition:s.catchSupportPosition.clone().setZ(0),catchToWeightContactActive:active,finiteSeatActive:active,finiteSeatReleaseTime:release,stage:t>=release&&t<impact?'weight-free-fall':t>=d.nominalKinematics247.timeline.supportRelease&&t<release?'finite-nose-withdrawing-before-release':s.stage};};
 

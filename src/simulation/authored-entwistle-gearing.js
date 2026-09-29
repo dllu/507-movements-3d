@@ -121,11 +121,11 @@ function presentHousedSection(root, material) {
   // Driving pulley fast on D beyond the right standard.
   const pulleyLeft = 2.12;
   const pulley = addRole(new THREE.Mesh(
-    boredLatheGeometry([
-      { axial: -(shaftRight - pulleyLeft) / 2, radial: 1.22 },
-      { axial: 0, radial: 1.28 },
-      { axial: (shaftRight - pulleyLeft) / 2, radial: 1.22 },
-    ], shaftRadius + 0.001, 96),
+    // p100: the crown is a smooth parabolic swell, not a ridge.
+    boredLatheGeometry(Array.from({ length: 17 }, (_, i) => {
+      const u = i / 8 - 1;
+      return { axial: u * (shaftRight - pulleyLeft) / 2, radial: 1.28 - 0.06 * u * u };
+    }), shaftRadius + 0.001, 192),
     matte(PALETTE.driver, { metalness: 0.18, roughness: 0.5 }),
   ), 'driving-pulley-fast-on-shaft-D');
   pulley.rotation.z = Math.PI / 2;
@@ -133,64 +133,91 @@ function presentHousedSection(root, material) {
   blocks.carrierAssembly.add(pulley);
   blocks.drivingPulley = pulley;
 
-  // Shaft D runs along x through each standard's boss: the elevation plate is
-  // slotted there and a turned bearing bored for D fills the slot.
-  const bearingRadius = 0.30;
-  const standardBearings = [];
-  const elevation = (outline, [x0, x1], role) => {
-    const slot = poly([
-      [x0 - 0.05, axisY - bearingRadius + 0.02], [x1 + 0.05, axisY - bearingRadius + 0.02],
-      [x1 + 0.05, axisY + bearingRadius - 0.02], [x0 - 0.05, axisY + bearingRadius - 0.02],
-    ]);
-    const mesh = addRole(new THREE.Mesh(
-      plate(polygonClipping.difference(poly(outline), slot), -depth, depth),
-      material,
-    ), role);
+  // p100: each standard is one closed casting. Its upper part is a round
+  // eye concentric with D, extruded along D across the standard's width,
+  // with the post running into the eye through tangent fillets; below the
+  // fillets the post is Brown's elevation outline extruded to the post's
+  // thickness. The two share the post's flat faces, so they form one solid
+  // with no seam, slot or separate bearing (the pass-94 eye was a disc
+  // perched on the slotted plate).
+  const standard = ({x0, x1, eye, post, fillet, joinY, lowerLeft, lowerRight, role}) => {
+    const bore = shaftRadius + 0.002;
+    const lift = Math.sqrt((eye + fillet) ** 2 - (post + fillet) ** 2);
+    const tangentY = axisY - lift;
+    const toEye = Math.atan2(lift, -(post + fillet));
+    // End profile across D (u = z, v = y), open along the join at joinY.
+    const profile = [[post, joinY], [post, tangentY]];
+    const filletSteps = 16, eyeSteps = 120;
+    for (let i = 1; i <= filletSteps; i += 1) {
+      const angle = Math.PI + (toEye - Math.PI) * i / filletSteps;
+      profile.push([post + fillet + fillet * Math.cos(angle), tangentY + fillet * Math.sin(angle)]);
+    }
+    const start = Math.atan2(-lift, post + fillet), end = Math.PI - start;
+    for (let i = 1; i < eyeSteps; i += 1) {
+      const angle = start + (end - start) * i / eyeSteps;
+      profile.push([eye * Math.cos(angle), axisY + eye * Math.sin(angle)]);
+    }
+    for (let i = filletSteps; i >= 1; i -= 1) {
+      const angle = Math.PI + (toEye - Math.PI) * i / filletSteps;
+      profile.push([-(post + fillet + fillet * Math.cos(angle)), tangentY + fillet * Math.sin(angle)]);
+    }
+    profile.push([-post, tangentY], [-post, joinY]);
+    const boreRing = Array.from({length: 64}, (_, i) => {
+      const angle = -i * Math.PI * 2 / 64;
+      return new THREE.Vector2(bore * Math.cos(angle), axisY + bore * Math.sin(angle));
+    });
+    const eyeShape = new THREE.Shape(profile.map(([u, v]) => new THREE.Vector2(u, v)));
+    eyeShape.holes.push(new THREE.Path(boreRing));
+    const eyePart = new THREE.ExtrudeGeometry(eyeShape, {depth: x1 - x0, bevelEnabled: false, curveSegments: 1})
+      .rotateY(-Math.PI / 2).translate(x1, 0, 0);
+    const legShape = new THREE.Shape([
+      [x0, joinY], ...lowerLeft, ...lowerRight, [x1, joinY],
+    ].map(([x, y]) => new THREE.Vector2(x, y)));
+    const legPart = new THREE.ExtrudeGeometry(legShape, {depth: 2 * post, bevelEnabled: false, curveSegments: 1})
+      .translate(0, 0, -post);
+    // Drop the two internal faces on the join plane, then merge.
+    const positions = [];
+    for (const part of [eyePart, legPart]) {
+      const q = part.attributes.position;
+      for (let i = 0; i < q.count; i += 3) {
+        if ([0, 1, 2].every((k) => Math.abs(q.getY(i + k) - joinY) < 1e-6)) continue;
+        for (let k = 0; k < 3; k += 1) positions.push(q.getX(i + k), q.getY(i + k), q.getZ(i + k));
+      }
+    }
+    eyePart.dispose(); legPart.dispose();
+    const raw = new THREE.BufferGeometry();
+    raw.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    const geometry = toCreasedNormals(raw, Math.PI / 6);
+    raw.dispose();
+    geometry.userData.standard = {x0, x1, eyeRadius: eye, postHalfThickness: post, fillet, joinY, boreRadius: bore};
+    const mesh = addRole(new THREE.Mesh(geometry, material), role);
     mesh.userData.fixed = true;
+    mesh.userData.boreRadius = bore;
     root.add(mesh);
-    const bearing = addRole(new THREE.Mesh(
-      boredLatheGeometry([
-        { axial: -(x1 - x0) / 2, radial: bearingRadius },
-        { axial: (x1 - x0) / 2, radial: bearingRadius },
-      ], shaftRadius + 0.002, 96),
-      material,
-    ), `${role}-bearing-for-shaft-D`);
-    bearing.rotation.z = Math.PI / 2;
-    bearing.position.set((x0 + x1) / 2, axisY, 0);
-    bearing.userData.fixed = true;
-    root.add(bearing);
-    standardBearings.push(bearing);
     return mesh;
   };
-  const boss = (x, radius, start, end, radiusY = radius, count = 48) => Array.from(
-    { length: count + 1 },
-    (_, i) => {
-      const angle = start + (end - start) * i / count;
-      return [x + radius * Math.cos(angle), axisY + radiusY * Math.sin(angle)];
-    },
-  );
-  // Right standard: a boss around D behind A, dropping to the foot.
+  // Right standard behind A: the eye carries A's back, the post drops
+  // straight, then flares to the foot as Brown draws it.
   const rightX = 1.72;
-  const standardRight = elevation([
-    ...boss(rightX, 0.34, Math.PI, 0, 0.82),
-    [2.06, -0.2],
-    ...spline([[2.06, -1.1], [2.14, -1.58], [2.36, footTop]]),
-    ...spline([[1.12, footTop], [1.34, -1.58], [1.40, -1.1]]),
-    [1.40, -0.2],
-  ], [1.40, 2.06], 'cast-right-standard-carrying-gear-A');
+  const standardRight = standard({
+    x0: 1.40, x1: 2.06, eye: 0.34, post: 0.22, fillet: 0.14, joinY: 0.20,
+    lowerLeft: [[1.40, -1.1], ...spline([[1.40, -1.1], [1.34, -1.58], [1.12, footTop]]).slice(1)],
+    lowerRight: [...spline([[2.36, footTop], [2.14, -1.58], [2.06, -1.1]]).slice(0, -1), [2.06, -1.1]],
+    role: 'cast-right-standard-carrying-gear-A',
+  });
   standardRight.userData.foot = new THREE.Vector3(rightX, footTop, 0);
-  // Left standard, broken off in the plate, carrying D beside drum C'.
-  const leftX = -3.40;
-  const standardLeft = elevation([
-    ...boss(leftX, 0.155, 0, Math.PI),
-    ...spline([[-3.555, axisY], [-3.56, -0.40], [-3.30, -1.30], [-2.88, footTop]]),
-    ...spline([[-2.28, footTop], [-2.70, -1.10], [-3.08, -0.45], [-3.25, -0.14]]),
-    [-3.25, axisY],
-  ], [-3.555, -3.25], 'cast-left-standard-carrying-shaft-D');
+  // Left standard beside drum C', its leg sweeping down to the foot.
+  const standardLeft = standard({
+    x0: -3.555, x1: -3.25, eye: 0.40, post: 0.20, fillet: 0.12, joinY: 0.10,
+    lowerLeft: spline([[-3.555, 0.10], [-3.555, -0.05], [-3.53, -0.45], [-3.30, -1.30], [-2.88, footTop]]).slice(1),
+    // Straight beside drum C' down to below its rim, clear of the drum.
+    lowerRight: spline([[-2.28, footTop], [-2.70, -1.10], [-3.08, -0.45], [-3.25, -0.20]]),
+    role: 'cast-left-standard-carrying-shaft-D',
+  });
   blocks.rightStandard = standardRight;
   blocks.leftStandard = standardLeft;
   blocks.castStandards = [standardLeft, standardRight];
-  blocks.standardBearings = standardBearings;
+  blocks.standardBearings = [];
 
   // One flat cast foot under both standards.
   const footLength = 3.34 + 3.84;
@@ -247,21 +274,55 @@ function truncateEntwistleBevel(gear, toeZ, heelZ) {
   // Stations along the cone; dense where the tips meet the turned band.
   const stations = [];
   for (let k = 0; k <= 8; k += 1) stations.push(toeZ + (heelZ - toeZ) * k / 8);
-  for (let k = 1; k <= 8; k += 1) stations.push(heelZ + (toothEnd - heelZ) * k / 8);
+  for (let k = 1; k <= 24; k += 1) stations.push(heelZ + (toothEnd - heelZ) * k / 24);
   // Inside the back disc the tips step 0.003 in, off the disc's own rim.
   stations.splice(stations.findIndex((z) => z > backZ), 0, backZ);
-  const ring = (z) => heelOutline.map((p) => {
-    const q = p.clone().multiplyScalar(z / heelZ), r = Math.hypot(q.x, q.y);
+  // p100: the heel outline in polar form. Each flank runs from its root to
+  // the tip; the tip arc joins them. Where the turned band cuts a station,
+  // every flank vertex slides down its own flank (keeping its fraction of the
+  // flank height) to end exactly on the band, and the tip arc becomes an arc
+  // of the band. Radially clamping individual vertices (pass 94) left a
+  // stair of notches where the band crossed each flank between vertices.
+  const polar = heelOutline.map((p) => ({rho: Math.hypot(p.x, p.y), phi: Math.atan2(p.y, p.x)}));
+  const tipFirst = polar.findIndex((q) => q.rho > tipHeel - 1e-5);
+  let tipLast = tipFirst;
+  while (tipLast + 1 < n && polar[tipLast + 1].rho > tipHeel - 1e-5) tipLast += 1;
+  const flankA = polar.slice(0, tipFirst + 1);
+  const flankB = polar.slice(tipLast).reverse();
+  const flankPhi = (flank, rho) => {
+    for (let i = 1; i < flank.length; i += 1) {
+      const a = flank[i - 1], b = flank[i];
+      if (rho <= b.rho + 1e-12) {
+        const t = b.rho - a.rho > 1e-12 ? (rho - a.rho) / (b.rho - a.rho) : 1;
+        return a.phi + (b.phi - a.phi) * Math.min(1, Math.max(0, t));
+      }
+    }
+    return flank.at(-1).phi;
+  };
+  const ring = (z) => {
+    const scale = z / heelZ;
     const limit = z > backZ + 1e-9 ? tipLimit - 0.003 : tipLimit;
-    if (r > limit) { q.x *= limit / r; q.y *= limit / r; }
-    return q;
-  });
+    const top = Math.min(tipHeel, limit / scale);
+    const at = (rho, phi) => new THREE.Vector3(rho * scale * Math.cos(phi), rho * scale * Math.sin(phi), z);
+    return polar.map((q, i) => {
+      if (top >= tipHeel - 1e-12) return at(q.rho, q.phi);
+      if (i > tipFirst && i < tipLast) {
+        const a = flankPhi(flankA, top), b = flankPhi(flankB, top);
+        return at(top, a + (b - a) * (q.phi - polar[tipFirst].phi) / (polar[tipLast].phi - polar[tipFirst].phi));
+      }
+      const flank = i <= tipFirst ? flankA : flankB;
+      const root = flank[0].rho;
+      const rho = root + (q.rho - root) * (top - root) / (tipHeel - root);
+      return at(rho, flankPhi(flank, rho));
+    });
+  };
   const rings = stations.map(ring);
   const positions = [];
   const push = (...points) => { for (const v of points) positions.push(v.x, v.y, v.z); };
-  const cap = THREE.ShapeUtils.triangulateShape(heelOutline.map((p) => new THREE.Vector2(p.x, p.y)), []);
   const toe = rings[0], end = rings.at(-1);
-  for (const [a, b, c] of cap) { push(toe[c], toe[b], toe[a]); push(end[a], end[b], end[c]); }
+  const capOf = (outline) => THREE.ShapeUtils.triangulateShape(outline.map((p) => new THREE.Vector2(p.x, p.y)), []);
+  for (const [a, b, c] of capOf(toe)) push(toe[c], toe[b], toe[a]);
+  for (const [a, b, c] of capOf(end)) push(end[a], end[b], end[c]);
   for (let k = 0; k + 1 < rings.length; k += 1) {
     const lo = rings[k], hi = rings[k + 1];
     for (let i = 0; i < n; i += 1) {

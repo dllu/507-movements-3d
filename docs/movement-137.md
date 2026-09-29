@@ -77,3 +77,13 @@ The earlier circular factory remains in the legacy registry for its historical
 measurement script. Browser loading routes 137 directly to the baked model.
 Continue the review at 138, retaining the spacing/hidden-contour qualifications
 above rather than claiming an exact reconstruction of the drawing.
+
+## Pass 99: dimples kept
+
+The cam is redesigned from its pitch curve. The upper roller's centre path has a polar radius about the shaft built from the constant term and odd harmonics only (1, 3, 5, 7), so the pitch diameter is constant at 218.3 px. The edge is the inner envelope of the 31 px roller rolled round that path.
+
+- **Fit.** Brown's visible landmarks fit to 3.62 px RMS, 7.9 px maximum.
+- **Dimples.** His three dimples are kept as concave hollows with a concave radius of at least 122 px.
+- **Lower roller.** It runs 0.07–1.65 px clear.
+
+See `docs/p99-c-review.md`.

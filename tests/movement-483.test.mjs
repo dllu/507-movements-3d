@@ -181,3 +181,16 @@ test('movement 483 hides A’s undrawn flag rod: inside A’s outer end board be
   assert.ok(rodZ < L.columnCenter[1] - 0.20, 'rod behind the column');
   disposeModel(model.root);
 });
+
+test('movement 483 (pass 99): A’s flag rod needs no floor step; it ends just under its lower flag arm', () => {
+  const { model } = movementModel();
+  const { blocks, geometry } = model.root.userData;
+  const L = geometry.layout;
+  model.root.updateMatrixWorld(true);
+  const rod = new THREE.Box3().setFromObject(blocks.rodA.shaft);
+  const arm = new THREE.Box3().setFromObject(blocks.rodA.flagArms[1]);
+  assert.ok(rod.min.y > L.floorTopY + 0.3, 'rod stands clear of the floor');
+  assert.ok(rod.min.y < arm.min.y - 0.01 && rod.min.y > arm.min.y - 0.05, 'rod ends just under the lower flag arm');
+  assert.ok(rod.min.y > -L.bellowsHalfHeight - 0.3, 'at most a short stub shows under the end board');
+  disposeModel(model.root);
+});

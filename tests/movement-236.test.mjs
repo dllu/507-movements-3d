@@ -124,11 +124,16 @@ test('movement 236 preserves the measured engraving layout and solved handoff', 
     3e-14,
     'the two selected roots share one ratchet phase',
   );
-  near(THREE.MathUtils.radToDeg(geometry.leverAmplitude), 19, 1e-12, 'lever amplitude');
+  near(THREE.MathUtils.radToDeg(geometry.leverAmplitude), 14.7, 1e-12, 'lever amplitude');
+  // p99: b and c share the two teeth of each lever cycle in proportion to
+  // their own leverage (b 1.175, c 0.825), so neither idles through spare
+  // stroke; each returning pawl still retreats exactly two pitches.
+  near(geometry.longDriveTeeth + geometry.shortDriveTeeth, 2, 1e-15, 'two teeth per lever cycle');
+  near(geometry.longDriveTeeth, 1.175, 1e-15, 'b drives 1.175 teeth');
   // Brown's drawn pose is the handoff: the lever at the top of its swing.
   assert.equal(geometry.sourceCyclePhase, 0.5);
   const source = stateAtCycleCoordinate(geometry.sourceCyclePhase);
-  near(THREE.MathUtils.radToDeg(source.leverAngle), 2, 1e-9, 'lever 2 degrees above the engraving');
+  near(THREE.MathUtils.radToDeg(source.leverAngle), 0, 1e-9, 'lever at the engraving angle at the top of its swing');
   vectorNear(source.longAnchor, geometry.sourceLongAnchor, 0.05,
     'engraving long-pawl pivot');
   vectorNear(source.shortAnchor, geometry.sourceShortAnchor, 0.05,
@@ -142,7 +147,7 @@ test('movement 236 preserves the measured engraving layout and solved handoff', 
   disposeModel(model.root);
 });
 
-test('movement 236 long pawl drives one exact pitch with rigid contact', () => {
+test('movement 236 long pawl drives its exact share of teeth with rigid contact', () => {
   const model = createMovementModel(catalog.movements[235]);
   const { geometry, stateAtCycleCoordinate } = model.root.userData;
   const samples = 16_384;
@@ -176,8 +181,8 @@ test('movement 236 long pawl drives one exact pitch with rigid contact', () => {
     maximumWheelSpeed = Math.max(maximumWheelSpeed, state.wheelAngularSpeed);
   }
   const handoff = stateAtCycleCoordinate(0.5);
-  near(handoff.wheelAngle, geometry.toothPitch, 3e-15,
-    'long pawl advances one pitch');
+  near(handoff.wheelAngle, geometry.longDriveTeeth * geometry.toothPitch, 3e-15,
+    'long pawl advances its share');
   near(handoff.wheelAngularSpeed, 0, 2e-15,
     'wheel stops at the lever reversal');
   assert.ok(maximumWheelSpeed > 0.31);
@@ -201,7 +206,7 @@ test('movement 236 short pawl continues counterclockwise through the return stro
     if (coordinate - 0.5 < geometry.shortEngagePhase) {
       assert.equal(state.engaged, false);
       assert.equal(state.wheelAngularSpeed, 0);
-      assert.equal(state.wheelAngle, geometry.toothPitch);
+      assert.equal(state.wheelAngle, geometry.longDriveTeeth * geometry.toothPitch);
       assert.ok(state.shortProfileClearance > -1e-10);
       continue;
     }
@@ -297,8 +302,8 @@ test('movement 236 output turns on both strokes and stands only while a pawl sea
     }
   }
   near(standing / samples, transmission.standingFractionOfCycle, 1e-4, 'standing fraction');
-  // The backlash costs about two fifths of the cycle.
-  assert.ok(transmission.standingFractionOfCycle < 0.45);
+  // The backlash costs under a third of the cycle (p94: 0.42).
+  assert.ok(transmission.standingFractionOfCycle < 0.32);
   for (const coordinate of [0, 0.5, 1]) {
     const state = stateAtCycleCoordinate(coordinate);
     assert.equal(state.inputReversing, true);
@@ -307,14 +312,14 @@ test('movement 236 output turns on both strokes and stands only while a pawl sea
   near(
     stateAtCycleCoordinate(0.5).wheelAngle
       - stateAtCycleCoordinate(0).wheelAngle,
-    geometry.toothPitch,
+    geometry.longDriveTeeth * geometry.toothPitch,
     3e-15,
     'first half-stroke travel',
   );
   near(
     stateAtCycleCoordinate(1).wheelAngle
       - stateAtCycleCoordinate(0.5).wheelAngle,
-    geometry.toothPitch,
+    geometry.shortDriveTeeth * geometry.toothPitch,
     4e-15,
     'second half-stroke travel',
   );

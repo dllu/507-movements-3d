@@ -2929,7 +2929,7 @@ test('movement 37 has full conical teeth, an end-to-end spiral, and explicitly p
   for (const [index, stud] of studs.entries()) {
     assert.equal(stud.userData.spiralStud, true);
     assert.ok(Math.abs(stud.userData.axialPosition
-      - (-g.studAxialAmplitude + 2 * g.studAxialAmplitude * index / (g.studCount - 1))) < 1e-12,
+      - (g.studAxialCenter - g.studAxialAmplitude + 2 * g.studAxialAmplitude * index / (g.studCount - 1))) < 1e-12,
     'the visible stud row progresses from one axial end to the other');
     assert.ok(stud.geometry.userData.generatedStudHead);
     if (index) assert.ok(stud.userData.outputProgress > studs[index - 1].userData.outputProgress);
@@ -2949,9 +2949,12 @@ test('movement 37 has full conical teeth, an end-to-end spiral, and explicitly p
       + state.studConeAngularSpeed) < 0.0002,
     'the displayed speed agrees with the derivative of the prescribed animation');
   }
-  assert.ok(Math.max(...speeds) / Math.min(...speeds) > 6.5,
-    'the shallower cone slope that leaves the plate\'s flat-topped stud frustum still varies speed strongly');
-  assert.ok(g.studBodyTopRadius > 0.14, 'the stud body is a frustum, not a pointed cone');
+  assert.ok(Math.max(...speeds) / Math.min(...speeds) > 2.5,
+    'the spiral across the plate\'s complementary cones varies the speed strongly');
+  assert.ok(g.studBodyTopRadius > 0.2, 'the stud body is a frustum, not a pointed cone');
+  // p99: Brown's about 28 flutes, one stud per tooth pitch along the spiral.
+  assert.equal(g.toothedConeTeeth, 28);
+  assert.ok(g.toothedTopRadius > 1.5 && g.toothedBottomRadius < 0.5, 'Brown\'s strongly tapered toothed cone');
   model.update(g.cycleDuration, 0);
   assert.ok(Math.abs(model.root.userData.kinematics.outputProgress - g.sourceOutputPhase - 2 * Math.PI) < 1e-12);
   assert.ok(Math.abs(model.root.userData.kinematics.inputAngle - g.sourceInputPhase - g.studCount * g.toothAngularPitch) < 1e-12);
@@ -3536,8 +3539,9 @@ test('movement 46 winds an articulated chain between a fusee and a fixed-arbor s
   assert.equal(model.root.userData.mechanism, 'articulated-chain-in-machined-fusee-with-fixed-spring-arbor');
   assert.equal(chain.userData.articulatedChain, true);
   assert.equal(chain.userData.links.length, g.linkCount);
-  assert.equal(fusee.userData.steppedTiers, true);
-  assert.equal(fusee.userData.tierCount, 3);
+  assert.equal(fusee.userData.helicalLedge, true);
+  assert.equal(fusee.userData.body.geometry.userData.helicalLedge, true);
+  assert.equal(model.root.userData.fuseeForm, 'helical-ledge-on-cone-archimedean-in-plan');
   assert.equal(spring.geometry.userData.constantLengthRibbon, true);
   for (const member of [barrelShaft, fuseeShaft, fusee, springBox]) {
     assert.ok(member.userData.axis.distanceTo(Y_AXIS) < 1e-12);
@@ -3546,11 +3550,10 @@ test('movement 46 winds an articulated chain between a fusee and a fixed-arbor s
     const state = model.root.userData.fuseeState;
     const wrapLeft = 2 * Math.PI * g.grooveTurns * (1 - state.progress);
     const contact = model.root.userData.motion.tierPath.at(2 * Math.PI * g.grooveTurns - wrapLeft);
-    assert.ok(Math.abs(wrapLeft - 5.0) < 1e-9 && contact.phase === 'level' && contact.tier === 2,
-      'the source pose leaves about one wrap on the lowest tier, as the plate draws');
-    // p98: the risers form one Archimedean spiral, so the contact radius
-    // grows steadily with the wrapped angle.
+    assert.ok(Math.abs(wrapLeft - 5.5) < 1e-9, 'the source pose leaves about one wrap on the fusee, as the plate draws');
+    // p99: the chain runs on one conical helix, Archimedean in plan.
     assert.ok(Math.abs(state.fuseeRadius - contact.radius) < 1e-12);
+    assert.ok(Math.abs(state.fuseeContact.y - contact.height) < 1e-12);
     assert.ok(Math.abs(state.fuseeRadius - g.chainRadiusStart - g.radialPitch * (2 * Math.PI * g.grooveTurns - wrapLeft) / (2 * Math.PI)) < 1e-12);
   }
   assertReadableTiming(model.root.userData.animationTiming);
@@ -3775,7 +3778,7 @@ test('movement 56 registers the contact-checked lathe engagement', () => {
 test('movement 57 registers the contact-checked band epicyclic train', () => {
   const model = createMovementModel(catalog.movements[56]);
   const { geometry, hideGround, reconstructionStatus } = model.root.userData;
-  assert.deepEqual([geometry.sunTeeth, geometry.planetTeeth, geometry.ringTeeth], [18, 10, 34]);
+  assert.deepEqual([geometry.sunTeeth, geometry.planetTeeth, geometry.ringTeeth], [16, 9, 34]);
   assert.equal(hideGround, true);
   assert.equal(reconstructionStatus, 'contact-verified-reconstruction');
   disposeModel(model.root);
@@ -30906,13 +30909,18 @@ test('movement 133 raises one guided platen through an exact six-to-one pinion-s
   disposeModel(model.root);
 });
 
-test('movement 134 winds one rope once round an eight-beam cage as an octagon, with no solid core', () => {
+test('movement 134 winds one rope four turns side by side round an eight-beam cage as an octagon, with no solid core', () => {
   const model = createMovementModel(catalog.movements[133]);
   const u = model.root.userData;
   const { beams, drum, drumRotor, frontRim, hub, rearFlange, rope, ropeMesh, spokes } = u.blocks;
   const g = u.geometry;
   assert.equal(u.fidelity, 'authored');
-  assert.equal(u.mechanism, 'single-rope-one-turn-octagonal-cage-linear-drive');
+  assert.equal(u.mechanism, 'single-rope-four-turn-octagonal-cage-linear-drive');
+  // Pass 99: four turns side by side make Brown's broad wound band; adjacent
+  // turns are a rope diameter plus a gap apart, so they never touch.
+  assert.equal(g.wrapTurns, 4);
+  assert.ok(g.axialLead > 2 * g.ropeRadius + .004);
+  assert.ok(g.bandHalfWidth + g.ropeRadius < g.drumWidth / 2 - .01);
   assert.ok(drum.userData.axis.distanceTo(Z_AXIS) < 1e-12);
   assert.equal(beams.length, 8);
   assert.equal(spokes.length, 8, 'four traced spokes on each end wheel');
@@ -30996,7 +31004,9 @@ test('movement 134 winds one rope once round an eight-beam cage as an octagon, w
   assert.equal(ropeMesh.geometry.attributes.position.array, buffer, 'playback must reuse rope geometry');
   let seam = 0;
   for (let i = 0; i < start.length; i += 1) seam = Math.max(seam, Math.abs(start[i] - buffer[i]));
-  assert.ok(seam < 2e-4, `loop seam ${seam}`);
+  // Four turns resample the arcs round the noses slightly differently a
+  // turn later (0.03 engraving px).
+  assert.ok(seam < 4e-4, `loop seam ${seam}`);
   // One brown laid rope, no markers, reels or stands.
   const ropes = [];
   model.root.traverse((object) => { if (object.userData.physicalCable) ropes.push(object); });

@@ -134,7 +134,7 @@ test('057 keeps physical differential ratios, repeatable seeking and continuous 
   }
   assert.ok(Math.abs(p.sunTeeth * (p.sunSpeed - p.carrierSpeed) + p.ringTeeth * (p.ringSpeed - p.carrierSpeed)) < 1e-12);
   assert.equal(model.root.userData.animationTiming.authoredCyclePeriod, p.carrierPeriod, 'the display profile covers a full carrier orbit');
-  assert.ok(p.carrierPeriod > 200, 'near cancellation is preserved instead of accelerating the carrier independently');
+  assert.ok(p.carrierPeriod > 50 && p.carrierPeriod < 70, 'the carrier orbits slowly from the band speed difference alone');
 });
 
 test('057 p93: shafts, collars and the planet cap are black steel; the cap is just larger than the planet bore', () => {
@@ -142,4 +142,15 @@ test('057 p93: shafts, collars and the planet cap are black steel; the cap is ju
   for (const name of ['sunShaft', 'driverShaft', 'planetAxle', 'planetCap']) assert.equal(parts[name].material.color.getHex(), 0x252a2d, name);
   const cap = parts.planetCap.geometry.parameters.radiusTop;
   assert.ok(cap > 0.131 && cap <= 0.18);
+});
+
+test('057 p99: a standard 16/9/34 train gives every tooth a broad flat top at one 20-degree pressure angle', () => {
+  const model = makeBandEpicyclic(), { parts, geometry: p } = model.root.userData;
+  assert.deepEqual([p.sunTeeth, p.planetTeeth, p.ringTeeth], [16, 9, 34]);
+  assert.equal(p.sunTeeth + 2 * p.planetTeeth, p.ringTeeth, 'standard planetary: one module on one orbit');
+  for (const angle of [p.externalWorkingAngle, p.internalWorkingAngle]) assert.ok(Math.abs(angle - Math.PI / 9) < 1e-9);
+  for (const name of ['sun', 'planet', 'ring']) {
+    const g = parts[name].geometry.userData, land = 2 * g.tipRadius * g.tipHalf;
+    assert.ok(land > 0.75 * p.module, `${name}: flat tip land ${land.toFixed(4)} is at least 0.75 module`);
+  }
 });

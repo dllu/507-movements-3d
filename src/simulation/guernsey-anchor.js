@@ -11,12 +11,18 @@
 //   curved arm of two runs, each an annular band concentric with B, stepped
 //   at the bar: the upper run carries the internal teeth that drive the upper
 //   balance pinion, the lower run the external teeth that drive the left one.
-// - Each pallet is a blade whose working flank lies exactly along a tooth's
-//   front face, with its rounded nose in the root, at the end of the lever's
-//   swing that drives it in (the upper pallet at -A, the lower at +A, half a
-//   pitch of wheel apart). Withdrawal lets the tooth slide out along the
-//   flank (impulse), the tooth drops onto the other pallet, which carries it
-//   back into its own root (recoil).
+// - Pallet A (upper) is Brown's narrow wedge hanging point-down from the end
+//   of the upper arm; a tooth's front face bears on its left flank and the
+//   tooth's tip slides off its point as A withdraws. The lower pallet is a
+//   blade whose working flank lies along a tooth's front face with its nose
+//   in the root at the lever's counter-clockwise extreme. The tooth dropped
+//   by one pallet falls onto the other, which pushes it back as it goes
+//   deeper (recoil).
+// - The lever swings 13 degrees either side of a centre 3 degrees clockwise
+//   of the plate pose, the most the anchor allows: each pallet moves about
+//   0.9-1.0 unit radially per radian and the teeth are only 0.24 deep, so a
+//   larger swing either drives A's wedge into the tooth space or lets the
+//   wheel run through while both pallets are out.
 // The wheel's motion is not prescribed: scripts/bake-guernsey-anchor-402.mjs
 // drives it forward and stops it wherever the outlines meet
 // (plate-escapement-kit.js solveDrivenWheel) and stores one period.
@@ -50,11 +56,21 @@ export const DESIGN = Object.freeze({
   // clockwise (-1).
   sense: -1,
   // The lower seat's wheel angle past the half pitch.
-  lowerSeatShift: 0,
+  lowerSeatShift: 10 * DEG,
   tipRound: 0.018,
   rootRound: 0.03,
-  // Lever (and anchor) swing either side of the plate pose.
-  leverAmplitude: 10 * DEG,
+  // Lever (and anchor) swing: amplitude about a centre measured from the
+  // plate pose (the lever passes the plate pose at phase 0).
+  leverAmplitude: 13 * DEG,
+  leverCenter: -3 * DEG,
+  // Pallet A as Brown draws it: a narrow wedge hanging from the end of the
+  // upper arm, point down (lever frame = plate pose). Its left flank takes
+  // the tooth; Brown's flanks lean 7 and 13 degrees from the vertical.
+  upperPalletTip: [0.92, 0.05],
+  upperPalletTopY: 0.504,
+  upperPalletLeftLean: 7 * DEG,
+  upperPalletRightLean: 13 * DEG,
+  upperPalletTipRound: 0.014,
   // Angle about the wheel of the root the upper pallet seats in at -A.
   upperSeatAngle: 114 * DEG,
   // Pallet blade: nose this far up the face from the root, flank running this
@@ -65,7 +81,7 @@ export const DESIGN = Object.freeze({
   palletChisel: 40 * DEG,
   palletNoseRound: 0.012,
   // Gearing: two equal twenty-tooth involute pinions (Brown draws 18-20
-  // fine teeth), 30 degree pressure. With the 10 degree swing, thirteen teeth
+  // fine teeth), 30 degree pressure. With the 26 degree swing, sixteen teeth
   // on each run pass the pitch point.
   pinionTeeth: 20,
   module: 0.026,
@@ -169,7 +185,22 @@ export function wheelCells(outline = wheelOutline()) {
 // ---------------------------------------------------------------------------
 // Lever / anchor (lever frame = the plate pose; the lever turns by theta
 // about the origin).
-export const leverAngleAt = (time) => DESIGN.leverAmplitude * Math.sin(TAU * time / DESIGN.period);
+// theta = c + A sin(2 pi t / T + phi0), with phi0 chosen so theta(0) = 0.
+export const leverRange = () => [DESIGN.leverCenter - DESIGN.leverAmplitude, DESIGN.leverCenter + DESIGN.leverAmplitude];
+export const leverAngleAt = (time) => DESIGN.leverCenter + DESIGN.leverAmplitude
+  * Math.sin(TAU * time / DESIGN.period + Math.asin(-DESIGN.leverCenter / DESIGN.leverAmplitude));
+
+// Pallet A: Brown's hanging wedge in the lever frame (plate pose).
+function hangingPallet() {
+  const tip = DESIGN.upperPalletTip, h = DESIGN.upperPalletTopY - tip[1];
+  const topLeft = [tip[0] - h * Math.tan(DESIGN.upperPalletLeftLean), DESIGN.upperPalletTopY];
+  const topRight = [tip[0] + h * Math.tan(DESIGN.upperPalletRightLean), DESIGN.upperPalletTopY];
+  return {
+    nose: tip, heel: topLeft, back: topRight,
+    flank: [tip, topLeft],
+    outline: ccw(roundPolygon([tip, topRight, topLeft], [DESIGN.upperPalletTipRound, 0, 0], 10)),
+  };
+}
 
 // Blade seated on tooth `k` of a wheel turned to `wheelAngle`, placed in
 // world coordinates; returned in the lever frame for lever angle `lever`.
@@ -200,7 +231,7 @@ function seatedPallet(wheelAngle, k, lever) {
 }
 
 export function seats() {
-  const A = DESIGN.leverAmplitude, p = pitch(), f = DESIGN.frontLean;
+  const [lo, hi] = leverRange(), p = pitch(), f = DESIGN.frontLean;
   // Upper pallet: at -A its root is at upperSeatAngle about the wheel.
   const s = DESIGN.sense, upperWheel = DESIGN.upperSeatAngle - s * f;
   // Lower pallet: at +A, half a pitch of wheel later, on the tooth whose
@@ -208,8 +239,8 @@ export function seats() {
   const lowerWheel = upperWheel + s * (p / 2 + DESIGN.lowerSeatShift);
   return {
     upperWheel, lowerWheel,
-    upper: seatedPallet(upperWheel, 0, -A),
-    lower: seatedPallet(lowerWheel, s > 0 ? 2 : 3, A),
+    upper: hangingPallet(),
+    lower: seatedPallet(lowerWheel, s > 0 ? 2 : 3, hi),
   };
 }
 
@@ -255,12 +286,14 @@ function rackTooth(R, internal, sink) {
 }
 
 export function rackLayout() {
-  const g = gearing(), A = DESIGN.leverAmplitude;
-  // Teeth whose centres pass within 1.5 pitches of the pitch point.
+  const g = gearing(), [lo, hi] = leverRange();
+  // Teeth whose centres pass within 1.5 pitches of the pitch point; a tooth
+  // stands on each pitch point at the plate pose. A tooth at arm angle phi
+  // meshes when phi + theta is the pinion's angle.
   const layout = (R, center, margin) => {
-    const beta = Math.PI * g.m / R, reach = A + margin * beta;
-    const n = Math.floor(reach / beta);
-    return Array.from({ length: 2 * n + 1 }, (_, i) => center + (i - n) * beta);
+    const beta = Math.PI * g.m / R;
+    const k0 = Math.ceil(-hi / beta - margin - 1e-9), k1 = Math.floor(-lo / beta + margin + 1e-9);
+    return Array.from({ length: k1 - k0 + 1 }, (_, i) => center + (k0 + i) * beta);
   };
   return {
     internal: layout(g.internalRadius, g.upperAngle, 1.5),
@@ -316,7 +349,7 @@ export function leverOutline() {
   parts.push(asPolygon(arc([0, 0], DESIGN.bossRadius, 0, TAU, 96).slice(0, -1)));
   // Upper arm: rises from the boss and arches over to pallet A's heel.
   const upperEnd = scale(add(s.upper.heel, s.upper.back), 0.5);
-  const upperPath = quadratic([0.08, 0.05], [0.18, 0.62], upperEnd, 32);
+  const upperPath = quadratic([0.08, 0.05], [0.26, 0.56], upperEnd, 32);
   parts.push(asPolygon(stroke(upperPath, w)));
   parts.push(asPolygon(s.upper.outline));
   // Lower arm: down from the boss, bowed a little to the left as Brown

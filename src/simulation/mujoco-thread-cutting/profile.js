@@ -20,7 +20,11 @@ export function makeThreadCuttingProfile({segments=128,leadTeeth=52,workTeeth=76
  const contactAngle=gearAngle+Math.PI,groovePhase=armY-workLead*contactAngle;
  const workThread={inner:workCoreRadius,outer:workRadius,low:y(source.cutRange[1]),high:y(source.cutRange[0]),width:workWidth,lead:workLead,phase:groovePhase-workPitch/2};
  const stock={...workThread,width:grooveWidth,phase:groovePhase};
- const upper=y(e.topBottom)-internal.high-.04,lower=y(e.gearTop)-internal.low+.04;
+ // The carriage runs from its upper stop down to one work-thread turn below
+ // Brown's drawn position (carriage 0) and back. The thread therefore ends a
+ // turn below the drawn tool and the rest of the blank stays a plain shank,
+ // so the loop keeps Brown's threaded-above, plain-below look on every pass.
+ const upper=y(e.topBottom)-internal.high-.04,lower=-Math.abs(workPitch);
  return {source,axis,x,y,segments,clearance,leadTeeth,workTeeth,module,distance,dx,dz,leadX,workX,leadZ,workZ,gearAngle,ratio,
   pitch,lead,width,coreRadius,crestRadius,external,internal,armY,armHeight,workRadius,workCoreRadius,workLead,workPitch,workWidth,grooveWidth,contactAngle,workThread,stock,upper,lower,
   shaftRadii:[(e.leadShaftRight-e.leadShaftLeft)/200,(e.workShaftRight-e.workShaftLeft)/200],

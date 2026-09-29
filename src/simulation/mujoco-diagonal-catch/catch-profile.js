@@ -9,7 +9,8 @@ function convexOutline(points){
  return [...half(sorted),...half([...sorted].reverse())];
 }
 
-// Outer boundary traced from plate 181, registered at the catch pivot. The
+// Outer boundary traced from plate 181, registered at the catch pivot. Pass
+// 99: the Bezier pieces join tangentially (no kinks) and are finely sampled. The
 // rounded head is a compromise between both plates, whose radial dimensions
 // differ. Keep the upper holding ledge at its qualified source-181 coordinates.
 // The two catching faces belong to this continuous plate, not circular sockets.
@@ -19,24 +20,28 @@ export function diagonalCatchProfile() {
  path.moveTo(...headLandmarks.lip);
  path.bezierCurveTo(200,132,180,130,...headLandmarks.leftShoulder);
  path.bezierCurveTo(177,100,199,92,212,103);
- path.bezierCurveTo(216,108,213,113,217,120);
+ path.bezierCurveTo(217,107.2,213,113,217,120);
  path.lineTo(211,126);
  path.bezierCurveTo(211,145,224,161,235,174);
- path.bezierCurveTo(242,190,251,197,268,194);
+ path.bezierCurveTo(243.5,184,251,197,268,194);
  path.bezierCurveTo(289,191,304,208,306,226);
  path.bezierCurveTo(308,244,321,259,341,281);
  path.bezierCurveTo(359,300,371,322,373,343);
  path.lineTo(374,354);
+ // Pass 99: the lower end is one lip, not a hook. In the simulated latch
+ // the beak's squared end seats under the lowest point of Brown's notch lip
+ // and never enters the pocket beyond it, so the pocket is filled: the lip's
+ // underside runs on (tangent there) as one fillet down to the eye.
  path.lineTo(365,352);
- path.lineTo(363,333);
- path.quadraticCurveTo(355,339,350,337);
+ path.bezierCurveTo(361,343,357,337.5,352.69,337.5);
+ path.quadraticCurveTo(351.25,337.5,350,337);
  path.quadraticCurveTo(354,319,344,305);
  path.bezierCurveTo(329,281,301,258,277,259);
- path.bezierCurveTo(254,267,235,254,232,234);
+ path.bezierCurveTo(253,260,235,254,232,234);
  path.bezierCurveTo(229,214,218,196,207,182);
  path.bezierCurveTo(197,168,205,143,...headLandmarks.lip);
  path.closePath();
- const raster=path.getPoints(12).map(p=>[p.x,p.y]);
+ const raster=path.getPoints(36).map(p=>[p.x,p.y]);
  const outline=poly(raster.map(([x,y])=>[(x-271)*.0125,(234-y)*.0125]));
  return {raster,headLandmarks,polygons:clip.difference(outline,poly(circle([0,0],.12,96)))};
 }

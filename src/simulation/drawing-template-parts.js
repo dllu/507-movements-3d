@@ -2,6 +2,9 @@ import * as T from 'three';
 import {plate,poly,circle,capsule,polygonClipping as clip} from './finite-plate-geometry.js';
 import {fitPistonGuide} from './piston-guide-parts.js';
 import {replaceWithLaidRope} from './laid-rope.js';
+import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
+import {applyRotationIndicator} from './rotation-indicator.js';
+import {PALETTE} from './primitives.js';
 const replace=(o,g)=>{o.geometry.dispose();o.geometry=g;};
 const add=(p,g,m,role)=>{const o=new T.Mesh(g,m);o.userData.role=role;p.add(o);return o;};
 // Fixed Gauss quadrature of a unit-speed curve whose curvature tapers to zero
@@ -74,24 +77,46 @@ export function correctDrawingTemplateParts(root,id,update){
   replace(b.baseBar,plate(clip.difference(base,capsule([g.slotLeft+.075,-.02],[g.slotRight-.075,-.02],.075,32)),-.19,.19));b.slot.visible=false;
   replace(b.slideBlock,plate(clip.difference(poly([[-.19,-.065],[.19,-.065],[.19,.065],[-.19,.065]]),poly(circle([0,0],.047,48))),-.22,.22));b.slideBlock.position.z=-.24;
   b.slideRetainers=[-.475,.005].map(z=>{const o=add(b.slide,plate(clip.difference(poly([[-.23,-.105],[.23,-.105],[.23,.105],[-.23,.105]]),poly(circle([0,0],.048,48))),-.025,.025),b.slideBlock.material,'finite-slot-slide-retaining-cheek');o.position.z=z;return o;});
-  // The pin is a winding peg: the cord's end is made fast at its outer end
-  // and its free run leaves the innermost turn. Turning the peg by its thumb
-  // wing takes up cord, so the free run shortens while the whole cord (turns
-  // on the peg plus free run) keeps one length.
-  const pin=b.slide.children.find(o=>o.userData.role==='slide-pin-carrying-cord-loop');replace(pin,new T.CylinderGeometry(.045,.045,.70,40));pin.position.z=.09;
-  b.pinWing=add(b.slide,new T.BoxGeometry(.20,.05,.04),pin.material,'winding-peg-thumb-wing');b.pinWing.position.z=.46;
-  const wrapRadius=.085,pitch=.084,anchorZ=.62,tipZ=.33,turnLength=Math.hypot(2*Math.PI*wrapRadius,pitch);
+  // The pin is a turned winding peg: a shank through the slide, a drum the
+  // cord winds on, and a round head that retains the turns and is turned by
+  // the fingers (Brown's circle at the pin, seen end-on). The cord's end is
+  // made fast in a cross-hole in the drum, and its free run leaves the last
+  // turn. Turning the peg takes up cord, so the free run shortens while the
+  // whole cord (turns on the peg plus free run) keeps one length.
+  const pin=b.slide.children.find(o=>o.userData.role==='slide-pin-carrying-cord-loop');
+  const ropeRadius=.04,drumRadius=.08,wrapRadius=drumRadius+ropeRadius,pitch=2*ropeRadius+.004,tipZ=.33,minTurns=.25;
+  // The fixed end dives into the drum over a quarter turn, from inside the
+  // drum to the wrap radius, with zero radial slope at both ends.
+  const dive=Math.PI/2,diveInner=drumRadius-.045;
+  const turnLength=Math.hypot(2*Math.PI*wrapRadius,pitch);
+  const radiusAt=s=>{if(s>=dive)return wrapRadius;const u=s/dive;return diveInner+(wrapRadius-diveInner)*u*u*(3-2*u);};
+  let diveLength=0;{const n=256;let prev=null;for(let i=0;i<=n;i++){const s=dive*i/n,r=radiusAt(s),p=new T.Vector3(r*Math.cos(s),r*Math.sin(s),-pitch*s/(2*Math.PI));if(prev)diveLength+=p.distanceTo(prev);prev=p;}}
+  let anchorZ=.55;
   const wound=(pinCenter,tip,turns)=>{
-   const L=tip.distanceTo(pinCenter),beta=Math.atan2(tip.y-pinCenter.y,tip.x-pinCenter.x),phi=beta-Math.acos(wrapRadius/L),z=anchorZ-pitch*turns;
+   const L=tip.distanceTo(pinCenter),beta=Math.atan2(tip.y-pinCenter.y,tip.x-pinCenter.x),phi=beta-Math.acos(wrapRadius/L),z=anchorZ-pitch*(dive/(2*Math.PI)+turns);
    const leave=new T.Vector3(pinCenter.x+wrapRadius*Math.cos(phi),pinCenter.y+wrapRadius*Math.sin(phi),z);
    const u=new T.Vector3(tip.x-leave.x,tip.y-leave.y,0).normalize(),end=new T.Vector3(tip.x,tip.y,tipZ).addScaledVector(u,-.139);
    return {phi,leave,end,span:end.distanceTo(leave)};
   };
-  const relaxed=d.pointOnWorkingEdge(1,g.minimumBend),pinCenter=g.slidePin;
-  // One turn stays on the peg when the bar is most relaxed.
-  const cordTotal=turnLength+wound(pinCenter,relaxed,1).span;
-  const turnsFor=tip=>{let n=1;for(let i=0;i<8;i++)n=(cordTotal-wound(pinCenter,tip,n).span)/turnLength;return n;};
-  class Helix extends T.Curve{constructor(){super();this.a0=0;this.turns=1;this.cx=0;this.cy=0;}getPoint(t,out=new T.Vector3()){const a=this.a0+2*Math.PI*this.turns*t;return out.set(this.cx+wrapRadius*Math.cos(a),this.cy+wrapRadius*Math.sin(a),anchorZ-pitch*this.turns*t);}}
+  const relaxed=d.pointOnWorkingEdge(1,g.minimumBend),setTip=d.pointOnWorkingEdge(1,1),pinCenter=g.slidePin;
+  let cordTotal=0;
+  const turnsFor=tip=>{let n=minTurns;for(let i=0;i<12;i++)n=(cordTotal-diveLength-wound(pinCenter,tip,n).span)/turnLength;return n;};
+  // A quarter turn stays on the drum when the bar is most relaxed; when the
+  // arch is set, the last turn leaves the drum in the cord's plane (tipZ).
+  for(let i=0;i<4;i++){cordTotal=diveLength+minTurns*turnLength+wound(pinCenter,relaxed,minTurns).span;anchorZ=tipZ+pitch*(dive/(2*Math.PI)+turnsFor(setTip));}
+  cordTotal=diveLength+minTurns*turnLength+wound(pinCenter,relaxed,minTurns).span;
+  {
+   const sz=b.slide.position.z,shankBack=-.02-sz,drumBack=.272-sz,drumFront=anchorZ+ropeRadius+.012-sz,headFront=drumFront+.05;
+   const piece=(r,z0,z1)=>{const c=new T.CylinderGeometry(r,r,z1-z0,48);c.rotateX(Math.PI/2);c.translate(0,0,(z0+z1)/2);return c;};
+   const parts=[piece(.045,shankBack,drumBack+.01),piece(drumRadius,drumBack,drumFront+.01),piece(wrapRadius+ropeRadius+.012,drumFront,headFront)];
+   for(const p of parts)p.deleteAttribute('uv');
+   replace(pin,mergeGeometries(parts));pin.rotation.set(0,0,0);pin.position.z=0;
+   pin.material=pin.material.clone();pin.material.color.set(PALETTE.brass);
+   pin.userData.role='slide-pin-carrying-cord-loop';
+   applyRotationIndicator(pin,{axis:'z'});
+   d.windingPeg={ropeRadius,drumRadius,wrapRadius,pitch,anchorZ,drumFront:drumFront+sz,headFront:headFront+sz,headRadius:wrapRadius+ropeRadius+.012};
+  }
+  class Helix extends T.Curve{constructor(){super();this.a0=0;this.turns=1;this.cx=0;this.cy=0;}getPoint(t,out=new T.Vector3()){const s=(dive+2*Math.PI*this.turns)*t,a=this.a0+s,r=radiusAt(s);return out.set(this.cx+r*Math.cos(a),this.cy+r*Math.sin(a),anchorZ-pitch*s/(2*Math.PI));}}
   const helix=new Helix();
   b.cordLoop.position.set(0,0,0);b.cordLoop.rotation.set(0,0,0);
   const [clamp,roller]=b.fulcrumPiece.children;roller.visible=false;
@@ -103,11 +128,11 @@ export function correctDrawingTemplateParts(root,id,update){
   d.updateWorkingParts=state=>{
    b.tipEye.position.set(state.tip.x,state.tip.y,0);
    const turns=turnsFor(state.tip),w=wound(state.slidePin,state.tip,turns);
-   helix.cx=state.slidePin.x;helix.cy=state.slidePin.y;helix.turns=turns;helix.a0=w.phi-2*Math.PI*turns;
-   const helixLength=turns*turnLength;
-   replaceWithLaidRope(b.cordLoop,helix,{radius:.04,tubularSegments:1024});
+   helix.cx=state.slidePin.x;helix.cy=state.slidePin.y;helix.turns=turns;helix.a0=w.phi-2*Math.PI*turns-dive;
+   const helixLength=diveLength+turns*turnLength;
+   replaceWithLaidRope(b.cordLoop,helix,{radius:ropeRadius,tubularSegments:1024});
    b.cord.userData.setEndpoints(w.leave,w.end,-helixLength);
-   b.pinWing.rotation.z=helix.a0;
+   pin.rotation.z=helix.a0;
    d.cordWinding={turns,helixLength,freeRun:w.span,total:helixLength+w.span,designTotal:cordTotal};
   };
  }

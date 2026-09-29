@@ -2,7 +2,7 @@ import {rigidFamilyInertia} from '../mujoco/mass.js';
 import {createMujocoSimulation} from '../mujoco/simulation.js';
 import {makeThreadCuttingStroke} from './profile.js';
 const vec=a=>a.map(v=>Math.abs(v)<1e-12?0:Number(v.toPrecision(12))).join(' ');
-export function makeThreadCuttingPhysics(mujoco,visual,{timestep=.001,period=24,kp=1000,kv=100,load=0,workTorque=0}={}) {
+export function makeThreadCuttingPhysics(mujoco,visual,{timestep=.001,period=16,kp=1000,kv=100,load=0,workTorque=0}={}) {
  const u=visual.root.userData,f=u.profile,mass=Object.fromEntries(['lead','work','carriage'].map(n=>[n,rigidFamilyInertia(u.parts,u.families,n)])),density=1/mass.lead.volume;
  const inertia=n=>{const m=mass[n];return `<inertial pos="${vec(m.centroid)}" mass="${m.volume*density}" fullinertia="${vec(m.inertia.map(v=>v*density))}"/>`;};
  const xml=`<mujoco model="109 change-gear thread cutting"><compiler angle="radian" inertiafromgeom="false"/><option timestep="${timestep}" gravity="0 -9.81 0" integrator="implicitfast" solver="Newton" iterations="40" tolerance="1e-10"/>

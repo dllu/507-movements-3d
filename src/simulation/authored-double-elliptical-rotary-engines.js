@@ -208,6 +208,12 @@ function doubleEllipticalRotaryEngine(movement) {
   const sourceShaftRadius = 1;
   const shaftRadius = sourceShaftRadius * sourceScale;
   const sourceProfilePhaseOffset = -Math.PI / 2;
+  // The conjugate 1:-1 law keeps the major axes a quarter turn apart
+  // (left π/2 + θ, right −θ), so both rotors' arms are parallel only at
+  // θ = −π/4 + kπ/2. The playback opens at θ = −π/4, where both arms lean
+  // up to the right at 45° as Brown draws them (his read about 65°, which
+  // no conjugate phasing reaches).
+  const openingInputAngle = -Math.PI / 4;
   const leftProfile = chainSourceProfile(HOLLY_LEFT_PROFILE_PATHS);
   const rightProfile = chainSourceProfile(HOLLY_RIGHT_PROFILE_PATHS);
 
@@ -302,7 +308,7 @@ function doubleEllipticalRotaryEngine(movement) {
   const stateAtTime = (time) => {
     const cycleTime = THREE.MathUtils.euclideanModulo(time, cycleDuration);
     return {
-      ...stateAtInputAngle(inputAngularSpeed * cycleTime),
+      ...stateAtInputAngle(openingInputAngle + inputAngularSpeed * cycleTime),
       cycleTime,
       phase: cycleTime / cycleDuration,
     };
@@ -315,6 +321,7 @@ function doubleEllipticalRotaryEngine(movement) {
     innerHousingRadius,
     inputAngularSpeed,
     leftCenter: leftCenter.clone(),
+    openingInputAngle,
     leftProfilePointCount: leftProfile.points.length,
     outerHousingRadius,
     rightCenter: rightCenter.clone(),

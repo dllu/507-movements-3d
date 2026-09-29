@@ -1715,6 +1715,14 @@ function singleThreeLeggedGravityEscapement(movement) {
   // the rod passes, so the rod's plane lies just behind that bearing and the
   // pivot block; the beat pins reach back to it below the wheel and fly.
   const pendulumPlaneZ = -1.0;
+  // Brown's beat collar is a clamp block on the rod whose depth his
+  // elevation leaves free. It reaches forward from the rod to just behind
+  // the rear arm B, so B's beat pin is a short stub and A's crosses only the
+  // gap between the arm planes. (It cannot pass an arm plane: each arm's eye
+  // round its pin reaches inside the collar's flank.)
+  const beatCollarFrontZ = -palletPlaneOffset - 0.07 - 0.03;
+  const beatCollarRearZ = pendulumPlaneZ - 0.11;
+  const beatPinBearingLength = 0.12;
   const lockingWheelDepth = 0.26;
   const lockingLegPitch = FULL_TURN / 3;
   const leftLockAngle = 5 * Math.PI / 6;
@@ -2545,12 +2553,15 @@ function singleThreeLeggedGravityEscapement(movement) {
     const adjustmentScrew = null;
 
     const beatPoint = beatPinLocalPoint(side);
-    const targetLocalZ = pendulumPlaneZ - side * palletPlaneOffset;
+    const targetLocalZ = beatCollarFrontZ - beatPinBearingLength / 2
+      - side * palletPlaneOffset;
     // The pin is set into the arm's eye (ending inside its far face) and
-    // reaches just past the collar's far face.
+    // reaches back into the deep collar's depth, bearing on its flank over
+    // beatPinBearingLength.
     const beatReach = Math.sign(targetLocalZ);
     const beatPinNearZ = -beatReach * (armHalfDepth - 0.02);
-    const beatPinFarZ = targetLocalZ + beatReach * 0.12;
+    const beatPinFarZ = beatCollarFrontZ - beatPinBearingLength
+      - side * palletPlaneOffset;
     const beatPin = cylinderAlongZ(
       beatPinRadius,
       Math.abs(beatPinFarZ - beatPinNearZ),
@@ -2664,10 +2675,12 @@ function singleThreeLeggedGravityEscapement(movement) {
     new THREE.Vector2(-beatCollarFlank, 0.34),
   ]);
   const beatCollar = new THREE.Mesh(
-    centeredExtrusion(beatCollarShape, 0.22, beatCollarBevel),
+    centeredExtrusion(beatCollarShape, beatCollarFrontZ - beatCollarRearZ,
+      beatCollarBevel),
     pendulumMaterial,
   );
-  beatCollar.position.set(0, beatCollarY, 0);
+  beatCollar.position.set(0, beatCollarY,
+    (beatCollarFrontZ + beatCollarRearZ) / 2 - pendulumPlaneZ);
   beatCollar.userData.role = 'pendulum-beat-collar-where-both-legs-end';
   pendulumAssembly.add(beatCollar);
   const beatCollarScrew = cylinderAlongZ(0.055, 0.30, darkMaterial, 20);
@@ -3119,16 +3132,23 @@ function doubleThreeLeggedGravityEscapement(movement) {
   const pendulumRodRadius = 0.068;
   const beatPinRadius = 0.098;
   const beatContactClearance = pendulumRodRadius + beatPinRadius;
-  const rearWheelPlaneZ = -0.54;
-  const frontWheelPlaneZ = 0.54;
   const leftPalletPlaneZ = -0.11;
   const rightPalletPlaneZ = 0.11;
-  // The rod must pass the common arbor at the wheel centre, and behind the
-  // wheels the long fly (half-span larger than the beat pins' distance from
-  // the arbor) sweeps the beat pins' path, so the rod hangs just in front of
-  // the arbor's front end.
-  const pendulumPlaneZ = 0.80;
   const lockingWheelDepth = 0.20;
+  // The wheels sit just wide enough apart for the pallets between them (0.03
+  // running clearance from each pallet face to the facing hub), as Brown's
+  // text says, which keeps the impulse pins as short as the stack allows.
+  const wheelHubHalfDepth = (lockingWheelDepth + 0.06) / 2;
+  const frontWheelPlaneZ = rightPalletPlaneZ + 0.06 + 0.03 + wheelHubHalfDepth;
+  const rearWheelPlaneZ = -frontWheelPlaneZ;
+  // Brown breaks the rod off below the wheels, the convention for a part in
+  // front cut away to show what lies behind it, so the rod hangs in front.
+  // It must pass the common arbor at the wheel centre, and behind the wheels
+  // the long fly (half-span larger than the beat pins' distance from the
+  // arbor) sweeps the beat pins' path, so the rod hangs just in front of the
+  // arbor's front end.
+  const pendulumPlaneZ = frontWheelPlaneZ + lockingWheelDepth / 2 + 0.05
+    + 0.03 + 0.08;
   const lockingLegPitch = FULL_TURN / 3;
   const rearWheelPhaseOffset = FULL_TURN / 6;
   const wheelAdvancePerBeat = FULL_TURN / 6;
@@ -4393,6 +4413,9 @@ function doubleThreeLeggedGravityEscapement(movement) {
   });
   root.userData.materialsIgnoreSceneFog = true;
   markShadows(root);
+  // Brown breaks the rod off below the wheels to show them; the whole rod
+  // is modelled and takes the shared see-through style over the wheels.
+  makeSeeThrough(pendulumRod);
   for (const object of [
     beatContactMarker,
     flyPhaseWitness,
@@ -4488,22 +4511,32 @@ function bloxamGravityEscapement(movement) {
   const forkPinLengthF = armAxisDistance - 0.50;
   const forkPinLength = forkPinLengthE;
   const forkPinLengthForSide = (side) => (side > 0 ? forkPinLengthF : forkPinLengthE);
-  const outerWheelPlaneZ = -0.30;
-  const palletWheelPlaneZ = 0.28;
   const leftArmPlaneZ = -0.055;
   const rightArmPlaneZ = 0.055;
-  // Brown dashes the pendulum behind the wheels, but fork pieces E and F sit
-  // 0.48 and 0.59 from the arbor, inside the large wheel's spokes (0.19 to
-  // 1.62), so anything reaching a pendulum behind that wheel would cross its
-  // turning spokes. Between the wheels the rod would cross the common arbor
-  // (the rod swings at most 0.18 either side of it). The rod therefore hangs
-  // just in front of the arbor's front end and is drawn see-through, so the
-  // small wheel and pallets read through it as they do on the plate.
+  const armSlabHalfDepth = 0.05;
+  // Depth order, back to front: large wheel, small wheel, arm A, arm B,
+  // pendulum rod. Brown draws both arms over the large wheel's spokes and
+  // the small wheel clear of the arms, so the small wheel can sit behind
+  // the arms; the pallet faces reach back to it as the stops reach back to
+  // the large wheel. The common arbor then ends just behind arm A, and the
+  // rod hangs directly in front of arm B: E and F are short tabs.
+  // Brown's dashed rod line runs through open space above the wheel (where
+  // nothing could hide it), so it is his pendulum centre line, not a hidden
+  // edge. The rod cannot hang behind the large wheel: E and F sit 0.48 and
+  // 0.59 from the arbor, inside the spokes (0.19 to 1.62), which would sweep
+  // any tab reaching back through that plane. It is drawn see-through so the
+  // small wheel and pallets read through it as on the plate.
   const outerWheelDepth = 0.20;
-  const palletWheelDepth = 0.18;
+  const palletWheelDepth = 0.13;
+  const wheelHubExtraDepth = 0.06;
+  const palletWheelPlaneZ = leftArmPlaneZ - armSlabHalfDepth - 0.03
+    - (palletWheelDepth + wheelHubExtraDepth) / 2;
+  const outerWheelPlaneZ = palletWheelPlaneZ
+    - (palletWheelDepth + wheelHubExtraDepth) / 2 - 0.03
+    - (outerWheelDepth + 0.06) / 2;
   const pendulumRodHalfDepth = 0.07;
-  const pendulumPlaneZ = palletWheelPlaneZ + palletWheelDepth / 2 + 0.05
-    + 0.02 + pendulumRodHalfDepth;
+  const pendulumPlaneZ = rightArmPlaneZ + armSlabHalfDepth + 0.03
+    + pendulumRodHalfDepth;
 
   const sourceImageWidth = 525;
   const sourceImageHeight = 525;
@@ -5277,7 +5310,7 @@ function bloxamGravityEscapement(movement) {
   wheelRotor.add(palletWheel);
   const palletWheelHub = cylinderAlongZ(
     0.105,
-    palletWheelDepth + 0.08,
+    palletWheelDepth + wheelHubExtraDepth,
     palletWheelMaterial,
     30,
   );
@@ -5317,7 +5350,9 @@ function bloxamGravityEscapement(movement) {
   palletWheelPhaseWitness.position.set(0.245, 0, palletWheelDepth / 2 + 0.05);
   palletWheelPhaseWitness.userData.role = 'white-small-wheel-phase-witness';
   palletWheel.add(palletWheelPhaseWitness);
-  const commonShaftFrontZ = palletWheelPlaneZ + palletWheelDepth / 2 + 0.05;
+  // The arbor ends just proud of the small wheel's hub, behind arm A.
+  const commonShaftFrontZ = palletWheelPlaneZ
+    + (palletWheelDepth + wheelHubExtraDepth) / 2 + 0.01;
   // Brown draws no frame (the presentation removes it), so the arbor ends
   // just behind the large wheel's hub instead of running on to a bearing.
   const commonShaftRearZ = outerWheelPlaneZ - (outerWheelDepth + 0.06) / 2
@@ -5469,9 +5504,10 @@ function bloxamGravityEscapement(movement) {
       // the arm reads as running on to its pallet face, not a wire hook.
       primitives: [plateDisc(faceBack, 0.19 / 2 - 0.015)],
       role: `${sideName}-pallet-face-stem`,
-      // Sunk to the arm's mid-plane: the stem is set into the arm.
-      z0: 0,
-      z1: palletSlabZ0,
+      // Sunk to the arm's mid-plane: the stem is set into the arm and
+      // reaches back to the small wheel's slab behind the arms.
+      z0: palletSlabZ1,
+      z1: 0,
     });
 
     const reinforcementStartWorld = new THREE.Vector2(

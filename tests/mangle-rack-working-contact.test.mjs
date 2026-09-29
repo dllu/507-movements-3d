@@ -22,10 +22,14 @@ for (const id of [197, 198]) {
     // The same spatial witness occurs at complementary time after reversing197.
     const time = id === 197 ? d.transmission.cyclePeriod - 12.43547092 : 4.36332313;
     model.update(time); model.root.updateMatrixWorld(true);
-    const tooth = (id === 197 ? b.rackPins : b.rackTeeth)[id === 197 ? 4 : 34];
+    // p99: 198's rack now has 48 teeth; check every tooth near the pinion.
     const gear = b.pinion.userData.rotor.children[0], field = solidSurface(gear.geometry);
-    const matrix = gear.matrixWorld.clone().invert().multiply(tooth.matrixWorld);
-    const gap = Math.min(...surfacePoints(tooth.geometry).map(p => field.signedDistance(p.applyMatrix4(matrix))));
+    const pinionCenter = new THREE.Vector3().setFromMatrixPosition(gear.matrixWorld);
+    const teeth = id === 197 ? [b.rackPins[4]] : b.rackTeeth.filter(t => new THREE.Vector3().setFromMatrixPosition(t.matrixWorld).distanceTo(pinionCenter) < 1);
+    const gap = Math.min(...teeth.flatMap(tooth => {
+      const matrix = gear.matrixWorld.clone().invert().multiply(tooth.matrixWorld);
+      return surfacePoints(tooth.geometry).map(p => field.signedDistance(p.applyMatrix4(matrix)));
+    }));
     assert.ok(gap > -1e-6 && gap < 0.003, `former interference: ${gap}`);
   });
   test(`${id} state queries do not allocate meshes and visible full-cycle vertices fit`, () => {

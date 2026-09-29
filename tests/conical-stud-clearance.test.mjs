@@ -67,8 +67,9 @@ test('037 conical teeth and cut studs clear the opposite rotating solids', () =>
       }
     }
   }
-  // Pass 65 seats the stud body just outside the stub teeth.
-  assert.ok(minBodyClearance > 0.01, `tooth/body clearance: ${minBodyClearance}`);
+  // p99: the flutes have no addendum; the stud body runs 0.004 inside its
+  // pitch cone, so the heads stand only 0.024 proud.
+  assert.ok(minBodyClearance > 0.003, `tooth/body clearance: ${minBodyClearance}`);
   assert.ok(minStudClearance >= -0.000002, `stud/tooth clearance: ${minStudClearance}`);
   // Keep the unresolved engagement visible. A clearance cut is not evidence
   // that every pose has a torque-transmitting contact.

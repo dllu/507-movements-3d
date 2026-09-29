@@ -253,20 +253,23 @@ function seabedTriggeredSoundingWeight(movement) {
     // Loop reset (p98, the user's review): the same weight is used again,
     // and nothing leaves the view. The rod is lifted on its line out of the
     // spent weight (the catch rubs up the bore and snaps out over its top
-    // rim) until its probe foot hangs clear above where the weight will be
-    // held. The weight is lifted slightly off the bottom and held there (the
-    // reset lift, by the leadsman or a hook from the vessel, is not drawn and
-    // not modelled). The rod is lowered into it from above: the weight's top
-    // rim cams the catch's sloped back inward, the catch rides down the bore
-    // and springs out under the lower opening. The rod is taken up a little
-    // until the seat meets the weight, the lift lets go, and the rod carries
-    // the weight up into Brown's pose.
-    rodRecovered: 7.6,
-    weightLiftBegins: 7.6,
-    weightLifted: 8.7,
-    reloadedDescentBegins: 8.8,
-    catchSprungUnderWeight: 11.1,
-    weightSeated: 11.5,
+    // rim) until its probe foot hangs clear above the weight.
+    // Pass 99: the rod is then lowered back into the weight where it lies on
+    // the bottom: the top rim cams the catch's sloped back inward and the
+    // catch rides down the bore; the rod stops with its foot just clear of
+    // the bottom. Nothing drawn can get the catch under a weight lying on the
+    // bottom (the foot hangs 1.23 below the seat), so the weight is then slid
+    // straight up the rod that runs through it (the reset lift, by the
+    // leadsman, is not drawn): its lower opening passes the catch, which
+    // springs out under it, and the weight is set down on the seat. The
+    // weight is off the bottom and not on the catch only while it slides,
+    // and the rod carries it up into Brown's pose.
+    rodRecovered: 6.9,
+    reloadedDescentBegins: 7.0,
+    rodInBore: 9.6,
+    weightLiftBegins: 9.7,
+    catchSprungUnderWeight: 10.95,
+    weightSeated: 11.3,
     rodReturned: cyclePeriod,
     cycleClosure: cyclePeriod,
   };
@@ -325,7 +328,8 @@ function seabedTriggeredSoundingWeight(movement) {
   const footClearance = 0.12;
   const catchSnapDepth = 0.08;
   const reloadLowBodyY = seabedContactBodyY + footClearance;
-  const seatedBodyY = reloadLowBodyY + catchSnapDepth;
+  // Pass 99: the rod waits at reloadLowBodyY while the weight slides up.
+  const seatedBodyY = reloadLowBodyY;
   // (liftedWeightCenterY, weightLiftHeight and clearBodyY are set below,
   // once the catch outline gives the seat's true rest height.)
   let liftedWeightCenterY = 0;
@@ -495,9 +499,11 @@ function seabedTriggeredSoundingWeight(movement) {
     }
     return high;
   })();
-  liftedWeightCenterY = seatedBodyY + seatRestRelativeY;
+  // Top of the slide: catchSnapDepth above the seat, so the catch has
+  // sprung out under the lower opening before the weight is set down on it.
+  liftedWeightCenterY = reloadLowBodyY + seatRestRelativeY + catchSnapDepth;
   weightLiftHeight = liftedWeightCenterY - groundedWeightCenterY;
-  clearBodyY = liftedWeightCenterY + weightOuterRadius
+  clearBodyY = groundedWeightCenterY + weightOuterRadius
     - probeFootContactLocalY + 0.2;
 
   // Where the rims act on the catch (p98). Scanning the weight's height
@@ -593,15 +599,22 @@ function seabedTriggeredSoundingWeight(movement) {
     [groundedWeightCenterY - rimWindows.topRim[0], null],
     [clearBodyY],
   ]);
-  // Down into the lifted weight: through the top rim, down the bore, and
-  // out under the lower opening to reloadLowBodyY.
-  const reloadTrack = planTrack(timeline.reloadedDescentBegins, timeline.catchSprungUnderWeight, [
+  // Pass 99: down into the weight lying on the bottom: through the top rim
+  // and down the bore, stopping with the foot footClearance above the bottom.
+  const reloadTrack = planTrack(timeline.reloadedDescentBegins, timeline.rodInBore, [
     [clearBodyY, null],
-    [liftedWeightCenterY - rimWindows.topRim[0], 'slow'],
-    [liftedWeightCenterY - rimWindows.topRim[1], null],
-    [liftedWeightCenterY - rimWindows.bottomRim[0], 'slow'],
-    [liftedWeightCenterY - rimWindows.bottomRim[1], 'settle'],
+    [groundedWeightCenterY - rimWindows.topRim[0], 'slow'],
+    [groundedWeightCenterY - rimWindows.topRim[1], null],
     [reloadLowBodyY],
+  ]);
+  // The weight slid up the rod: its lower opening passes the catch slowly,
+  // the catch springs out under it, and it comes to rest catchSnapDepth
+  // above the seat.
+  const weightSlideTrack = planTrack(timeline.weightLiftBegins, timeline.catchSprungUnderWeight, [
+    [groundedWeightCenterY, null],
+    [reloadLowBodyY + rimWindows.bottomRim[0], 'slow'],
+    [reloadLowBodyY + rimWindows.bottomRim[1], 'settle'],
+    [liftedWeightCenterY],
   ]);
 
   const catchStateForTime = (cycleTime) => {
@@ -665,13 +678,14 @@ function seabedTriggeredSoundingWeight(movement) {
   const modelGravity = 2 * (releaseWeightCenterY - groundedWeightCenterY)
     / fallDuration ** 2;
   Object.freeze(timeline);
-  // The reset lift: the spent weight is raised straight up off the bottom,
-  // on the rod's line, and held while the rod is lowered into it.
-  const liftedWeightYState = (cycleTime) => transitionState(cycleTime,
-    timeline.weightLiftBegins, timeline.weightLifted,
-    groundedWeightCenterY, liftedWeightCenterY);
+  // The reset lift (pass 99): the weight slides up the rod over the catch,
+  // then is set down on the sprung-out seat.
+  const liftedWeightYState = (cycleTime) => (cycleTime < timeline.catchSprungUnderWeight
+    ? weightSlideTrack(cycleTime)
+    : transitionState(cycleTime, timeline.catchSprungUnderWeight, timeline.weightSeated,
+      liftedWeightCenterY, reloadLowBodyY + seatRestRelativeY));
   const weightLiftProgress = (cycleTime) => transitionState(cycleTime,
-    timeline.weightLiftBegins, timeline.weightLifted, 0, 1);
+    timeline.weightLiftBegins, timeline.weightSeated, 0, 1);
 
   const bodyStateForTime = (cycleTime, catchAngleState) => {
     if (cycleTime < timeline.loadedDwellEnd) {
@@ -713,10 +727,9 @@ function seabedTriggeredSoundingWeight(movement) {
     if (cycleTime < timeline.reloadedDescentBegins) {
       return { acceleration: 0, value: clearBodyY, velocity: 0 };
     }
-    if (cycleTime < timeline.catchSprungUnderWeight) return reloadTrack(cycleTime);
+    if (cycleTime < timeline.rodInBore) return reloadTrack(cycleTime);
     if (cycleTime < timeline.weightSeated) {
-      return transitionState(cycleTime, timeline.catchSprungUnderWeight,
-        timeline.weightSeated, reloadLowBodyY, seatedBodyY);
+      return { acceleration: 0, value: reloadLowBodyY, velocity: 0 };
     }
     return transitionState(cycleTime, timeline.weightSeated,
       timeline.rodReturned, seatedBodyY, recoveredBodyY);
@@ -801,17 +814,17 @@ function seabedTriggeredSoundingWeight(movement) {
     if (cycleTime < timeline.rodRecovered) {
       return 'rod-lifted-out-of-spent-weight-catch-snaps-out-over-top-rim';
     }
-    if (cycleTime < timeline.weightLifted) {
-      return 'same-weight-lifted-slightly-off-bottom';
-    }
     if (cycleTime < timeline.reloadedDescentBegins) {
-      return 'weight-held-rod-hangs-above';
+      return 'rod-hangs-above-spent-weight';
+    }
+    if (cycleTime < timeline.weightLiftBegins) {
+      return 'rod-lowered-into-weight-on-bottom-top-rim-cams-catch-in';
     }
     if (cycleTime < timeline.catchSprungUnderWeight) {
-      return 'rod-lowered-into-weight-top-rim-cams-catch-in-until-it-springs-out-below';
+      return 'weight-slid-up-rod-catch-springs-out-under-it';
     }
     if (cycleTime < timeline.weightSeated) {
-      return 'rod-taken-up-until-seat-meets-weight';
+      return 'weight-set-down-on-seat';
     }
     return 'rod-carries-weight-up-to-brown-pose';
   };
@@ -936,6 +949,8 @@ function seabedTriggeredSoundingWeight(movement) {
       catchSprungAgainstWeight,
       weightReload,
       weightLiftProgress: weightLiftProgress(cycleTime).value,
+      weightLiftProgressRate: weightLiftProgress(cycleTime).velocity,
+      weightLiftProgressAcceleration: weightLiftProgress(cycleTime).acceleration,
       probeAcceleration,
       probeFootContactY,
       probeOffset,

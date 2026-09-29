@@ -19,7 +19,9 @@ test('134 octagonal rope rides the beam noses, clears the end wheels and reads a
       for (let k = 1; k < path.points.length; k += 1) longest = Math.max(longest, path.points[k].distanceTo(path.points[k - 1]));
       assert.ok(longest > chord - 1e-9, 'straight chords between the beams');
       const count = path.exit.u - path.entry.u;
-      assert.ok(count >= 7 && count <= 9, `wrap spans ${count} beam pitches`);
+      // Pass 99: four turns side by side.
+      assert.equal(g.wrapTurns, 4);
+      assert.ok(count >= 8 * g.wrapTurns - 1 && count <= 8 * g.wrapTurns + 1, `wrap spans ${count} beam pitches`);
       for (const p of path.points.slice(1, -1)) {
         assert.ok(Math.abs(p.z) + g.ropeRadius < g.drumWidth / 2, 'rope between the end wheels');
         assert.ok(Math.hypot(p.x, p.y) - g.ropeRadius > g.frontRimOuterRadius, 'rope clears the front rim in the front view');

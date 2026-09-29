@@ -849,7 +849,7 @@ function sourceScaledDiagonalCatchHandGear({ movementId }) {
       depth: handleDepth,
       material: handleMaterial,
       role: `${role}-curved-tappet-arm`,
-      widths: [0.20, 0.17, 0.145, 0.12],
+      widths: [0.20, 0.17, 0.14, 0.10],
     });
     const latchCurve = [
       new THREE.Vector2(0, 0),

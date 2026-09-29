@@ -129,7 +129,7 @@ test('movement 277 records Brown’s plate, unavailable animation, and Colt pate
   assert.deepEqual(plate.rasterCylinderFrontBottom, { x: 7, y: 469 });
   assert.deepEqual(plate.rasterCylinderRearBottom, { x: 112, y: 469 });
   assert.deepEqual(plate.rasterDogPivot, { x: 212, y: 389 });
-  assert.deepEqual(plate.rasterHammerPivot, { x: 301, y: 394 });
+  assert.deepEqual(plate.rasterHammerPivot, { x: 302, y: 375 });
   assert.match(plate.inferredTopology, /one pivoted dog a/);
   assert.match(plate.inferredTopology, /no cylinder lock is drawn/);
   assert.match(sourceReference.reconstruction, /undrawn detent/);

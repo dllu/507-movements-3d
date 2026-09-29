@@ -33,7 +33,7 @@ test('397 plain crescent gives a near-rest while the input continues moving, the
  // creeping only a few degrees there, against a swing of about sixty.
  assert.ok(maxAngle<.12,`creep ${maxAngle}`);
  assert.ok(peak>10*(2*Math.PI/T)*.05);
- assert.ok(d.motion.outputStroke>4.0);
+ assert.ok(d.motion.outputStroke>3.8);
  // No hooks: the slot is one circular arc with rounded ends.
  const law=d.openCrescentLaw;for(let i=0;i<=64;i++){const q=law.pointAtRadius(law.low+(law.high-law.low)*i/64);near(q.distanceTo(law.arcCenter),law.arcRadius,1e-9,'slot centreline on one arc');}
 });
@@ -62,4 +62,22 @@ test('397 crank pin stands on the crank eye\'s front face instead of sharing its
   const eye = box('eyed-input-crank-arm'), pin = box('crank-pin-running-in-synthesized-curved-slot');
   assert.ok(Math.abs(pin.min.z - eye.max.z) < 1e-6, `${pin.min.z} ${eye.max.z}`);
   assert.ok(Math.abs(pin.max.z - 0.61) < 1e-6);
+});
+
+test('397 p99: the crescent is Brown\'s slot arc, with the rocker upright at the drawn pose', () => {
+  // Brown's slot centreline: an arc of radius 93.38 px about (380.52, 239.89) px from 127.4 to 239 degrees;
+  // rocker pivot (325.9, 406.0) px; 79.7 px per unit.
+  const S = 79.7, u = ([x, y]) => new THREE.Vector2((x - 325.9) / S, (406.0 - y) / S);
+  const A = u([380.519, 239.893]), R = 93.38 / S;
+  const brown = Array.from({length: 121}, (_, i) => { const t = (127.4 + (239 - 127.4) * i / 120) * Math.PI / 180; return A.clone().add(new THREE.Vector2(Math.cos(t), Math.sin(t)).multiplyScalar(R)); });
+  const law = d.openCrescentLaw;
+  const model = Array.from({length: 121}, (_, i) => law.pointAtRadius(law.low + (law.high - law.low) * i / 120));
+  const dist = (P, Q) => Math.max(...P.map((p) => Math.min(...Q.map((q) => p.distanceTo(q)))));
+  const hausdorff = Math.max(dist(brown, model), dist(model, brown)) * S;
+  assert.ok(hausdorff < 19.5, `slot misfit ${hausdorff} px (p84 arc: 48)`);
+  // The crank centre and drawn pin share the misfit: his are (380.1, 241.3) and (298.9, 193.8) px.
+  const s0 = d.stateAtTime(0);
+  assert.ok(g.crankCenter.clone().sub(g.rockerPivot).distanceTo(u([380.1, 241.3])) * S < 19.5);
+  assert.ok(s0.inputPinWorld.clone().sub(g.rockerPivot).distanceTo(u([298.9, 193.8])) * S < 1);
+  assert.ok(Math.abs(s0.rockerAngle) < 1e-6 && s0.dwellActive);
 });

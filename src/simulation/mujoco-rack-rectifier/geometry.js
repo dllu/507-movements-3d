@@ -5,7 +5,7 @@ import {plate,poly,polygonClipping as clip,circle,disk,turned} from '../finite-p
 import {convexPlateCells} from '../mujoco/convex-plate.js';
 import {PALETTE,matte,markShadows} from '../primitives.js';
 export {THREE};
-export function makeRackRectifierGeometry({samples=96,cutterSteps=2048,ratchetSamples=64,pawlSeat=.0002,hook=35*Math.PI/180,innerMeet=.295,pawlUp=100*Math.PI/180,pawlDown=-60*Math.PI/180,ratchetPhase=s.ratchet.phase}={}){
+export function makeRackRectifierGeometry({samples=96,cutterSteps=2048,ratchetSamples=64,pawlSeat=.0002,hook=35*Math.PI/180,innerMeet=.295,pawlUp=125*Math.PI/180,pawlDown=-60*Math.PI/180,heelFraction=1.15,bossRadius=.044,ratchetPhase=s.ratchet.phase}={}){
  if(!Number.isInteger(samples)||samples<32||!Number.isInteger(cutterSteps)||cutterSteps<256||!Number.isInteger(ratchetSamples)||ratchetSamples<16||!Number.isFinite(pawlSeat)||pawlSeat<=0||pawlSeat>.002||!Number.isFinite(ratchetPhase))throw new RangeError('Invalid 116 geometry options');
  const root=new THREE.Group(),parts={},families={},blocks={},cells={},m=s.pinion.module,R=s.pinion.teeth*m/2,pitch=Math.PI*m,cutterR=R+s.pinion.profileShift*m,alpha=14.5*Math.PI/180,corner=.12*m,clearance=.001,rackAddendum=1.25,rackDedendum=0.62,rootY=cutterR+rackDedendum*m,tipY=cutterR-rackAddendum*m+clearance,amplitude=R*Math.PI/2;
  const f={source:s,axis:s.axis,pitchRadius:R,cutterPitchRadius:cutterR,pitch,module:m,pressureAngle:alpha,rootY,rackTipY:tipY,amplitude,origins:s.pinion.origins,counts:{upper:12,lower:12},samples,cutterSteps,ratchetSamples,pawlSeat,ratchetPhase,gearZ:.18,pawlZ:.38,pawlPivot:s.pawlPivot};
@@ -46,9 +46,15 @@ export function makeRackRectifierGeometry({samples=96,cutterSteps=2048,ratchetSa
  // from that arc to the claw tip, which nests in the root. The working face
  // lies along the ratchet's locking face from the tip to the heel. Built in
  // the seated pose (pawl hinge 0), pawlSeat clear of both flanks.
+ // p99: Brown's crescent is about 1.2 eye diameters wide along its whole
+ // length and its claw face spans the whole locking face. The working face
+ // now runs 1.15 face lengths (past the tooth tip), the boss is r 0.044 and
+ // the outer arc leaves it at 125 degrees, so the leaf is about 0.09 wide
+ // along its length (inscribed width; the pass-93 leaf was 0.04). The
+ // heavier leaf needs the stiffer pawl springs in physics.js.
  const P=s.pawlPivot,rel=q=>[q[0]-P[0],q[1]-P[1]],len=Math.hypot(a[0]-b[0],a[1]-b[1]),u=[(a[0]-b[0])/len,(a[1]-b[1])/len],normal=[-u[1],u[0]],rot=(v,t)=>[v[0]*Math.cos(t)-v[1]*Math.sin(t),v[0]*Math.sin(t)+v[1]*Math.cos(t)],along=(q,d,k)=>[q[0]+k*d[0],q[1]+k*d[1]],unit=w=>{const l=Math.hypot(...w);return[w[0]/l,w[1]/l];};
  const rise=(s.ratchet.tipRadius-s.ratchet.rootRadius)/((1-s.ratchet.faceFraction)*rp),back=unit([rise*Math.cos(aRoot)-s.ratchet.rootRadius*Math.sin(aRoot),rise*Math.sin(aRoot)+s.ratchet.rootRadius*Math.cos(aRoot)]);
- const tip=along(along(rel(b),normal,pawlSeat),u,pawlSeat),heel=along(tip,u,.6*len),under=rot(back,-hook),bossRadius=.036,boreRadius=.013,up=pawlUp,down=pawlDown;
+ const tip=along(along(rel(b),normal,pawlSeat),u,pawlSeat),heel=along(tip,u,heelFraction*len),under=rot(back,-hook),boreRadius=.013,up=pawlUp,down=pawlDown;
  // The nose underside (tip + t*under) rises to radius innerMeet about the
  // shaft; from there the concave inner arc runs to the boss, tangent to it at
  // angle down (external tangency, so the underside bulges away from the
@@ -61,7 +67,7 @@ export function makeRackRectifierGeometry({samples=96,cutterSteps=2048,ratchetSa
  const d=[Math.cos(up),Math.sin(up)],bossTop=[bossRadius*d[0],bossRadius*d[1]],w=[bossTop[0]-heel[0],bossTop[1]-heel[1]],Ro=(w[0]*w[0]+w[1]*w[1])/(2*(d[0]*w[0]+d[1]*w[1])),Co=[bossTop[0]-Ro*d[0],bossTop[1]-Ro*d[1]];
  const aHeel=Math.atan2(heel[1]-Co[1],heel[0]-Co[0]),aTop=Math.atan2(bossTop[1]-Co[1],bossTop[0]-Co[0]);
  const outline=[tip];
- for(let i=1;i<=8;i++)outline.push(along(tip,u,.6*len*i/8));
+ for(let i=1;i<=8;i++)outline.push(along(tip,u,heelFraction*len*i/8));
  for(let i=1;i<=48;i++){const t=aHeel+(aTop-aHeel)*i/48;outline.push([Co[0]+Ro*Math.cos(t),Co[1]+Ro*Math.sin(t)]);}
  {let t0=up,t1=down;while(t1<=t0)t1+=2*Math.PI;for(let i=1;i<64;i++){const t=t0+(t1-t0)*i/64;outline.push([bossRadius*Math.cos(t),bossRadius*Math.sin(t)]);}}
  // Inner arc from the boss to a small fillet into the nose underside.

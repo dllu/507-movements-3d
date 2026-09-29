@@ -54,10 +54,21 @@ const THIGH_RADIUS = 0.09;
 const KNEE_FILLET_RADIUS = 0.11;
 // Hip station relative to the drum axis; the standing leg is nearly
 // straight at the lowest planted board and the stepping knee rises high.
-const HIP_OFFSET = { x: 2.5, y: 0.75 };
-// Boards are met 12 degrees above the horizontal and left about 19
-// degrees below it, so the feet work near axle height as Brown draws.
-const TOUCHDOWN_DEGREES = 18;
+const HIP_OFFSET = { x: 2.51, y: 0.75 };
+// Pass 99: each sole stands on the outer part of its board, its heel at
+// the board's edge, so the legs reach less far in toward the drum. Boards
+// are met 10 degrees above the horizontal and left about 17 below it, near
+// axle height as Brown draws; 52% stance keeps a foot on a board at all
+// times. Chosen by a 2-D search of hip, touchdown, stance and swing
+// (docs/p99-e-review.md): mean planted thigh 87 degrees from vertical
+// against the old 98. Radial boards at the drum's side stop the raised
+// knee from coming in over the feet, so a fully upright stance is not
+// reachable with Brown's figure and drum proportions.
+const TOUCHDOWN_DEGREES = 10;
+const STANCE_FRACTION = 0.52;
+const FOOT_RADIAL = 0.07;
+const SWING_OUT = 2.0;
+const SWING_UP = 1.70;
 const LEAN_ANGLE = THREE.MathUtils.degToRad(0);
 const ANKLE_EASE_START = THREE.MathUtils.degToRad(60);
 const ANKLE_EASE_SPAN = THREE.MathUtils.degToRad(3);
@@ -78,7 +89,7 @@ function externalPersonTreadmill(movement) {
   // The boards' phase at the plate pose is chosen so that, as Brown draws
   // him, one leg is straight at the end of its stance while the other knee
   // is raised with its foot just set on a higher board.
-  const wheelStartAngle = THREE.MathUtils.degToRad(14.4);
+  const wheelStartAngle = THREE.MathUtils.degToRad(9.6);
   const gaitCyclesPerWheelTurn = treadCount / 2;
   const gaitAngularSpeed = Math.abs(wheelAngularSpeed)
     * gaitCyclesPerWheelTurn;
@@ -110,7 +121,9 @@ function externalPersonTreadmill(movement) {
     wheelPeriod, hipX: personCenterOfMass.x - wheelCenter.x,
     hipY: personCenterOfMass.y - wheelCenter.y - 0.27 * FIGURE_SCALE,
     upperLength: upperLegLength, lowerLength: lowerLegLength,
-    touchdownAngle: THREE.MathUtils.degToRad(TOUCHDOWN_DEGREES) };
+    touchdownAngle: THREE.MathUtils.degToRad(TOUCHDOWN_DEGREES),
+    stanceFraction: STANCE_FRACTION, footRadial: FOOT_RADIAL,
+    swingOut: SWING_OUT, swingUp: SWING_UP };
 
   const stateAtTime = (time) => {
     const wheelTravel = wheelAngularSpeed * time;

@@ -463,3 +463,30 @@ test('movement 358 (pass 96): the shaft runs on through two bored blocks on a br
     model.root.traverse((object) => object.geometry?.dispose?.());
   }
 });
+
+test('movement 358 (pass 99): Brown\'s lower long bar runs under the fusee\'s large end, 0.71 from the shaft, clear of the crank sweep', () => {
+  const model = createMovementModel(catalog.movements[357]);
+  try {
+    const find = (role) => { const out = []; model.root.traverse((o) => { if (o.isMesh && o.visible && o.userData.role === role) out.push(o); }); return out; };
+    const bars = find('long-carriage-side-bar-run-past-plate-break');
+    assert.equal(bars.length, 2);
+    // Carriage-local x is across the traverse (the plate's vertical); y runs along the shaft.
+    const offsets = bars.map((bar) => bar.position.x).sort((a, b) => a - b);
+    near(offsets[0], -0.71, 1e-9, 'lower bar 0.71 from the shaft');
+    near(offsets[1], 1.44, 1e-9, 'upper bar 1.44 from the shaft');
+    const lower = bars.find((bar) => bar.position.x < 0);
+    const halfWidth = lower.geometry.parameters.width / 2, top = lower.position.z + lower.geometry.parameters.depth / 2;
+    const { geometry } = model.root.userData;
+    const [handle] = find('source-visible-fusee-crank-handle');
+    handle.geometry.computeBoundingBox();
+    const handleRadius = Math.abs(handle.position.x) + handle.geometry.boundingBox.max.x;
+    // The bar's nearest edge stays outside the crank handle's swept radius.
+    assert.ok(Math.hypot(Math.abs(lower.position.x) - halfWidth, top) > handleRadius + 0.03, 'lower bar clears the crank sweep');
+    // In plan it lies under the fusee's large end.
+    assert.ok(Math.abs(lower.position.x) - halfWidth < 0.86, 'under the large end (radius 0.86) in plan');
+    const barStart = lower.position.y - lower.geometry.parameters.height / 2, barEnd = lower.position.y + lower.geometry.parameters.height / 2;
+    assert.ok(barStart < geometry.fuseeTopY && barEnd > geometry.crankHubY, 'runs past the fusee and the crank');
+  } finally {
+    model.root.traverse((object) => object.geometry?.dispose?.());
+  }
+});

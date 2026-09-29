@@ -69,8 +69,8 @@ face. The angular mesh splits through every axial band at that face so all
 adjoining edges meet; cached sectors keep playback inexpensive. The maximum
 reached work angle controls removal, so
 reversing the shafts cannot regrow material. Restart restores the initial
-partially cut source pose. A short unthreaded end remains above the gears,
-where carriage clearance limits the cutting stroke. This is a geometric
+partially cut source pose. Since pass 99 the thread stops one turn below the
+drawn tool; the plain shank below it runs down to the gears. This is a geometric
 illustration of a single cut; chip formation, successive depth passes and
 tool withdrawal are omitted.
 
@@ -95,8 +95,11 @@ removed. Gravity, implicit integration and a 1 ms timestep are used. Only the
 lead shaft is actuated; disabling both equalities leaves the work shaft still
 and lets the uncoupled carriage fall.
 
-An inferred 24-second cycle provides uniform working travel with short smooth
-reversals. The blends join with continuous velocity and acceleration. Default
+An inferred 16-second cycle (24 s before pass 99) provides uniform working
+travel with short smooth reversals. Since pass 99 the carriage's lower stop is
+one work-thread turn (30.68 px) below Brown's drawn tool position, so the
+thread ends there and the rest of the blank stays a plain shank: every pass
+keeps the plate's threaded-above, plain-below look. The blends join with continuous velocity and acceleration. Default
 working speed is 17.5259 source pixels per second, with the lead shaft turning
 about 0.835 revolution per second. The return retraces the cut groove.
 

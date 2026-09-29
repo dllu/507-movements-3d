@@ -2,11 +2,20 @@ import * as THREE from 'three';
 import { PALETTE, matte, markShadows } from './primitives.js';
 import { bandInvoluteGear } from './band-epicyclic-geometry.js';
 
-export function makeBandEpicyclicGearTrain({ baseFactor = 0.048, planetBaseHalf = 0.175,
-  sunTip = 0.955, planetTip = 0.6125, ringTip = 1.84, orbitRadius = 1.40625, loadGap = 0.000025, ringBlankOuter = 2.22 } = {}) {
-  const p = { sunTeeth: 18, planetTeeth: 10, ringTeeth: 34, baseFactor, planetBaseHalf,
-    sunTip, planetTip, ringTip, orbitRadius, loadGap, flankAllowance: 0.00004, ringOuter: 2.22, ringRoot: 2.045,
-    sunRoot: 0.78, planetRoot: 0.43, sourceScale: 160, sourceCenter: [721, 870], driverCenter: [-3 / 160, 629 / 160],
+// A standard 16/9/34 train (16 + 2 x 9 = 34) on Brown's orbit: one module and
+// one 20-degree pressure angle at both meshes, so every tooth, the ring's
+// included, keeps a broad flat top. The nine-tooth planet carries a +0.4
+// profile shift (thicker teeth, no undercut); tips and roots are cut to keep
+// 0.25-module clearance and the sun tip inside the planet's interference point.
+export function makeBandEpicyclicGearTrain({ pressureAngle = Math.PI / 9, planetShift = 0.4,
+  sunTip = 0.97, planetTip = 0.615, ringTip = 1.865, orbitRadius = 1.40625, loadGap = 0.000025, ringBlankOuter = 2.22 } = {}) {
+  const teeth = { sunTeeth: 16, planetTeeth: 9, ringTeeth: 34 };
+  const module = 2 * orbitRadius / (teeth.sunTeeth + teeth.planetTeeth), baseFactor = module / 2 * Math.cos(pressureAngle);
+  const planetBaseHalf = (Math.PI / 2 + 2 * planetShift * Math.tan(pressureAngle)) / teeth.planetTeeth
+    + Math.tan(pressureAngle) - pressureAngle;
+  const p = { ...teeth, module, pressureAngle, planetShift, baseFactor, planetBaseHalf,
+    sunTip, planetTip, ringTip, orbitRadius, loadGap, flankAllowance: 0.00004, ringOuter: 2.22, ringRoot: 2.05,
+    sunRoot: 0.755, planetRoot: 0.41, sourceScale: 160, sourceCenter: [721, 870], driverCenter: [-3 / 160, 629 / 160],
     driverPitch: 0.82, sunDrumPitch: 1.2, ringDrumPitch: 2.2, inputSpeed: Math.PI, carrierPhase: Math.atan2(-225, 6) };
   const { sunTeeth: ns, planetTeeth: np, ringTeeth: nr } = p;
   p.sunBase = ns * baseFactor; p.planetBase = np * baseFactor; p.ringBase = nr * baseFactor;

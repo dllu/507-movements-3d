@@ -5,27 +5,27 @@
   ],
   "poses": 65,
   "sources": {
-    "factory": "74c5ecce7aa2fed0bce58d85c8d7c78a4ecca7d717880134e451bcee344f0887",
-    "parts": "c6bad42793e8eeef60531496118eaba843ace5691b986d8ddb25dc4a1a1332b2",
-    "motion": "362ae8c403e903c8813c9422168f0a437b3de6c896f350a041dcfe2a1b00490b"
+    "factory": "f8648497c314ee614ce2b90bb0438ae2e813e4aaad13dce0927b2b76ca783858",
+    "parts": "eda0fc943dcdc94330d32f17931637bbe60544f440d503f9717fcd6eee21cd02",
+    "motion": "91bd90b058ef6bb7cdc9911a5e34e31637bb4bc947021af60153ad7e628c57f5"
   },
   "results": {
     "183": {
       "meshes": 16,
-      "worstPenetration": 0.0000453978744319936,
+      "worstPenetration": 0.00008162709331911669,
       "pairs": {
         "upper-handle-wing/lower-handle-quadrant": {
-          "depth": 0.0000453978744319936,
+          "depth": 0.00008162709331911669,
           "time": 13.21875
         }
       }
     },
     "184": {
       "meshes": 16,
-      "worstPenetration": 0.0000453978744319936,
+      "worstPenetration": 0.00008162709331911669,
       "pairs": {
         "upper-handle-wing/lower-handle-quadrant": {
-          "depth": 0.0000453978744319936,
+          "depth": 0.00008162709331911669,
           "time": 13.21875
         }
       }

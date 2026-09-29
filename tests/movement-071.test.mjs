@@ -243,3 +243,13 @@ test('movement 71 cuts plain slits that leave no knife-edge rim tips', () => {
   assert.equal(geometry.guardRimRegions.length, 2);
   for (const region of geometry.guardRimRegions) assert.equal(region.length, 1);
 });
+
+test('movement 71 p99: phase 0 shows tappet A on Brown\'s drawn line, just before it meets the struck stud', () => {
+  const model = build();
+  const { geometry, blocks } = model.root.userData;
+  model.update(0);
+  const tappet = blocks.driver.userData.rotor.rotation.z;
+  assert.ok(Math.abs(THREE.MathUtils.radToDeg(tappet) - 161.3) < 1e-9, 'Brown draws A on 161.3 deg from B (C at 180)');
+  assert.ok(tappet < geometry.contactStartDriverAngle && geometry.contactStartDriverAngle - tappet < 0.06,
+    'the push starts within 3.5 deg of the displayed pose');
+});

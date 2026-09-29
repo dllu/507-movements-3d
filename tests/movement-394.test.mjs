@@ -46,18 +46,25 @@ test('394 is an endless rack toothed all round inside, one ten-tooth involute pi
   assert.ok(Math.abs(g.pinionTurnsPerCycle * g.pinionTeeth - (2 * g.straightPitches + g.endTeeth - g.pinionTeeth)) < 1e-12);
 });
 
-test('394 involute pinion clears the finite rack band all round the path and stays in working contact', () => {
-  let worst = 0, loosest = 0;
+const posedTurned = (s, turn) => {
+  const p = parsonsPathPoint(g, s), a = Math.PI / 2 + s / g.pinionPitchRadius + turn;
+  return pinion.map(([x, y]) => [x * Math.cos(a) - y * Math.sin(a) + p.x, x * Math.sin(a) + y * Math.cos(a) + p.y]);
+};
+
+test('394 pinion clears the finite rack band all round the path and stays in working contact', () => {
+  let worst = 0, loose = 0;
   for (let i = 0; i < 1200; i += 1) {
     const s = g.pathLength * i / 1200;
     worst = Math.max(worst, area(polygonClipping.intersection([[posed(s)]], band)));
     if (i % 12 === 0) {
-      // Grown radially by 0.012 the pinion must touch the band: it never floats out of mesh.
-      loosest = Math.max(loosest, area(polygonClipping.intersection([[posed(s, 0.012)]], band)) > 0 ? 0 : 1);
+      // Turned 0.01 (arc at the pitch circle) either way the pinion must touch
+      // the band: it is held in mesh in both senses everywhere.
+      for (const sense of [1, -1])
+        if (!(area(polygonClipping.intersection([[posedTurned(s, sense * 0.01 / g.pinionPitchRadius)]], band)) > 0)) loose += 1;
     }
   }
   assert.equal(worst, 0, `pinion/band overlap ${worst}`);
-  assert.equal(loosest, 0, 'pinion stays within 0.012 of the rack teeth everywhere');
+  assert.equal(loose, 0, 'pinion has under 0.01 of free play at its pitch circle everywhere');
 });
 
 test('394 every rack tooth meshes: the pinion runs both rows and both toothed ends once per cycle', () => {
@@ -91,23 +98,35 @@ test('394 flanges clear their rebates and the band while bounding the mesh depth
   }
 });
 
-test('394 rack teeth are deep with square-walled roots, and every mesh keeps a contact ratio above one', () => {
+test('394 rack teeth are Brown\'s boxes: half-pitch square teeth and notches, and every mesh keeps a contact ratio above one', () => {
   const r = parsonsMeshRatios(g);
-  assert.ok(g.pressureAngle <= 22.5 * Math.PI / 180 + 1e-12, 'flanks no flatter than 22.5 degrees');
-  assert.ok((g.addendum + g.dedendum) / g.pitch >= 0.5, 'rack teeth at least half a pitch deep (Brown about 0.5)');
-  assert.ok(r.straightRows >= 1.05, `straight-row contact ratio ${r.straightRows}`);
-  assert.ok(r.internalEnds >= 1.05, `internal-end contact ratio ${r.internalEnds}`);
+  assert.equal(g.pressureAngle, 0, 'zero pressure angle: vertical rack walls');
+  assert.ok(Math.abs(g.profileShift - g.addendum) < 1e-12, 'rack and ring tips lie on their pitch lines');
+  assert.ok((g.profileShift + g.dedendum) / g.pitch >= 0.5, 'rack notches at least half a pitch deep (Brown about 0.5)');
+  assert.ok(r.straightRows >= 1.1, `straight-row contact ratio ${r.straightRows}`);
+  assert.ok(r.internalEnds >= 1.1, `internal-end contact ratio ${r.internalEnds}`);
   assert.ok(r.pinionTipThickness >= 0.6 * g.module, 'pinion tips stay square, not pointed');
-  // Below the pinion tips' reach each row space has vertical walls to a flat root.
-  const rootY = g.endPitchRadius + g.profileShift + g.dedendum;
-  const reachY = g.endPitchRadius + g.profileShift + g.addendum;
-  let walls = 0;
+  // Every upper-row notch away from the junctions is a rectangle: vertical
+  // walls from the tip line to a flat root, and the teeth between are half a
+  // pitch wide (less the backlash).
+  const tipY = g.endPitchRadius, rootY = g.endPitchRadius + g.profileShift + g.dedendum;
+  const walls = [];
   for (const polygon of parsonsRackVoid(g)) for (const ring of polygon) for (let i = 0; i + 1 < ring.length; i += 1) {
     const [a, b] = [ring[i], ring[i + 1]];
-    if (Math.abs(a[0] - b[0]) < 1e-9 && Math.abs(a[0]) < g.halfStraight
-      && Math.abs(Math.abs(a[1]) - reachY) + Math.abs(Math.abs(b[1]) - rootY) < 1e-6) walls += 1;
-    else if (Math.abs(a[0] - b[0]) < 1e-9 && Math.abs(a[0]) < g.halfStraight
-      && Math.abs(Math.abs(b[1]) - reachY) + Math.abs(Math.abs(a[1]) - rootY) < 1e-6) walls += 1;
+    if (Math.abs(a[0] - b[0]) < 1e-9 && Math.abs(a[0]) < g.halfStraight - 1.7 * g.pitch
+      && Math.abs(Math.min(a[1], b[1]) - tipY) < 2e-4 && Math.abs(Math.max(a[1], b[1]) - rootY) < 1e-6) walls.push(a[0]);
   }
-  assert.ok(walls >= 4 * (g.straightPitches - 1), `square-walled row roots ${walls}`);
+  walls.sort((a, b) => a - b);
+  assert.ok(walls.length >= 2 * (g.straightPitches - 4), `square notch walls ${walls.length}`);
+  for (let i = 1; i + 1 < walls.length; i += 2) {
+    const tooth = walls[i + 1] - walls[i];
+    assert.ok(Math.abs(tooth - (g.pitch / 2 - g.backlash)) < 1e-6, `tooth tip width ${tooth / g.pitch} pitch`);
+  }
+});
+
+test('394 generated end relief matches the current pinion and path', async () => {
+  const {parsonsEndCarveInputs} = await import('../scripts/export-parsons-geometry.mjs');
+  const {default: ends} = await import('../src/simulation/generated-parsons-ends.js');
+  assert.equal(ends.inputDigest, parsonsEndCarveInputs().digest,
+    'regenerate: node scripts/export-parsons-geometry.mjs && python3 scripts/generate-parsons-ends.py');
 });

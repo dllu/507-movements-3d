@@ -30,3 +30,21 @@ test('153 elbow boss is lever-coloured with its pin in the eye, and the return a
   assert.ok(Math.abs(arm.boundingBox.max.x-(g.leverOutputLength+g.leverOutputHalfWidth))<5e-3);
  }finally{v.dispose();}
 });
+test('153 relief is a shallow round striking boss: 0.12 step, clears whole studs, pad arc concentric with the arm end',async()=>{
+ const THREE=await import('three');const {makeRelievedStudReverser}=await import('../src/simulation/mujoco-stud-reverser/geometry.js');
+ const v=makeRelievedStudReverser({inputContactMinimum:1.4}),b=v.root.userData.blocks,g=v.root.userData.geometry;
+ try{
+  v.root.updateMatrixWorld(true);const box=o=>new THREE.Box3().setFromObject(o);
+  const work=box(b.inputArm.userData.blocks.working),raised=box(b.inputArm.userData.blocks.raised);
+  const studEnd=Math.max(...b.pinAssemblies.flatMap(a=>[box(a.userData.blocks.pin).max.z,box(a.userData.blocks.face).max.z]));
+  const pinEnd=Math.max(...b.pinAssemblies.map(a=>box(a.userData.blocks.pin).max.z));
+  assert.ok(raised.min.z-work.min.z<=.12+1e-6,'step at most 0.12');
+  assert.ok(raised.min.z-studEnd>=.02,'raised arm clears the whole stud');
+  assert.ok(pinEnd-work.min.z>=.06,'pad overlaps the stud pins');
+  assert.ok(Math.abs(work.max.z-raised.max.z)<1e-6,'front face flat');
+  // Pad's inner edge is an arc about the tip centre of radius L-1.4.
+  const p=b.inputArm.userData.blocks.working.geometry.attributes.position,L=g.leverInputLength,r=L-1.4;let inner=0;
+  for(let i=0;i<p.count;i++){const x=p.getX(i),y=p.getY(i);if(x<L-.13){inner++;assert.ok(Math.abs(Math.hypot(x-L,y)-r)<2e-3,`inner edge point ${x},${y} on the arc`);}}
+  assert.ok(inner>10);
+ }finally{v.dispose();}
+});

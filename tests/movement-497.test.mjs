@@ -73,7 +73,10 @@ test('movement 497 is one three-vane impeller inside a fixed double-inlet volute
   assert.equal(blocks.voluteWall.userData.fixed, true);
   assert.equal(blocks.inletRims.length, 2);
   assert.ok(blocks.inletRims.every((rim) => rim.userData.fixed));
-  assert.equal(blocks.outletLips.length, 2);
+  // p100: the spout's mouth flange is part of the housing wall's extrusion.
+  assert.equal(blocks.outletLips.length, 0);
+  assert.equal(blocks.arms.length, 3);
+  assert.ok(blocks.arms.every((arm, index) => arm.parent === blocks.impeller && arm.rotation.z === blocks.blades[index].rotation.z));
   assert.equal(degreesOfFreedom.independentShaftInputs, 1);
   assert.equal(degreesOfFreedom.independentBladeCoordinates, 0);
   const belts = [];
@@ -250,7 +253,8 @@ test('movement 497 closes exactly, fits every pose, and leaves movement 507 next
   assert.ok(Number.isFinite(swept.min.x));
   assert.ok(Number.isFinite(swept.max.z));
   assert.ok(swept.min.x < -geometry.impellerOuterRadius);
-  assert.ok(swept.max.x > geometry.outletBounds.right);
+  // p100: the mouth flange ends the spout at outletBounds.right.
+  assert.ok(swept.max.x >= geometry.outletBounds.right - 1e-6);
 
   const next = catalog.movements[506];
   const nextModel = createMovementModel(next);
@@ -262,5 +266,28 @@ test('movement 497 closes exactly, fits every pose, and leaves movement 507 next
   assert.equal(nextModel.root.userData.fidelity, 'authored');
   assert.notEqual(nextModel.root.userData.archetype, ARCHETYPE);
   disposeModel(nextModel.root);
+  disposeModel(model.root);
+});
+
+test('movement 497 housing is a circle concentric with the fan at a small uniform tip clearance', () => {
+  const { model } = movementModel();
+  const { blocks, geometry } = model.root.userData;
+  const wall = blocks.voluteWall.userData.mesh.geometry.attributes.position;
+  let arcVertices = 0;
+  for (let i = 0; i < wall.count; i += 1) {
+    const x = wall.getX(i), y = wall.getY(i), r = Math.hypot(x, y);
+    // Everywhere except the spout, the wall lies on the two circles.
+    if (x > 0 && y < geometry.outletBounds.top + 0.4) continue;
+    assert.ok(Math.abs(r - geometry.housingInnerRadius) < 2e-4 || Math.abs(r - geometry.housingOuterRadius) < 2e-4,
+      `wall vertex off the circles at ${x}, ${y}`);
+    arcVertices += 1;
+  }
+  assert.ok(arcVertices > 1000);
+  let tip = 0;
+  const blade = blocks.blades[0].geometry.attributes.position;
+  for (let i = 0; i < blade.count; i += 1) tip = Math.max(tip, Math.hypot(blade.getX(i), blade.getY(i)));
+  assert.ok(Math.abs(tip - geometry.impellerOuterRadius) < 1e-3);
+  assert.ok(Math.abs(geometry.housingInnerRadius - tip - geometry.tipClearance) < 1e-3);
+  assert.ok(geometry.tipClearance <= 0.06);
   disposeModel(model.root);
 });
