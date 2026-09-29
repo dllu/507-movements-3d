@@ -90,7 +90,24 @@ test('movement 317 is Brown’s complete compound-bar compensation pendulum', ()
     blocks.pendulumCarrier);
   assert.equal(blocks.rightEndWeight.group.parent,
     blocks.pendulumCarrier);
-  assert.equal(blocks.segmentMeshes.length, 40);
+  // p104: each lamina is one bent strip running through both W weights.
+  assert.equal(blocks.segmentMeshes.length, 1);
+  assert.equal(blocks.steelLamina.parent, blocks.compoundBar);
+  // W's passage fits the two-layer bar section (it was 0.31 for 0.21).
+  for (const weight of [blocks.leftEndWeight, blocks.rightEndWeight]) {
+    const { passage } = weight.block.userData;
+    const thickness = model.root.userData.geometry.layerThickness;
+    assert.ok(passage.top - passage.bottom - 2 * thickness < 0.06);
+    assert.ok(passage.halfDepth - model.root.userData.geometry.layerDepth / 2
+      <= 0.005);
+    assert.equal(weight.outerStem.parent, null);
+  }
+  // Rod, C, lower screw and nut all lie on the mechanism plane z = 0.
+  for (const part of [blocks.rod, blocks.lowerThread, blocks.lowerAdjuster,
+    blocks.mainBob]) {
+    assert.equal(part.position.z, 0);
+  }
+  assert.equal(blocks.brassLamina.parent, blocks.compoundBar);
   assert.equal(blocks.pivotBrackets.length, 2);
   assert.deepEqual(blocks.pendulumCarrier.userData.axis,
     new THREE.Vector3(0, 0, 1));
@@ -98,9 +115,14 @@ test('movement 317 is Brown’s complete compound-bar compensation pendulum', ()
   const roles = [];
   model.root.traverse((object) => roles.push(object.userData.role ?? ''));
   assert.equal(roles.filter((role) =>
-    role === 'upper-iron-or-steel-layer-of-compound-bar').length, 40);
+    role === 'upper-iron-or-steel-layer-of-compound-bar').length, 1);
   assert.equal(roles.filter((role) =>
-    role === 'lower-brass-layer-of-compound-bar').length, 40);
+    role === 'lower-brass-layer-of-compound-bar').length, 1);
+  // C is part of the flat rod; no separate clamp block or bar stubs.
+  assert.equal(roles.filter((role) =>
+    role === 'center-clamp-C-brazed-to-pendulum-rod').length, 0);
+  assert.equal(roles.filter((role) =>
+    role === 'compound-bar-projecting-end').length, 0);
   assert.equal(roles.filter((role) =>
     role === 'adjustable-compensation-weight-W').length, 2);
   assert.equal(roles.filter((role) =>
@@ -442,8 +464,10 @@ test('movement 317 renderer keeps brass below steel and binds the live bar, weig
     model.root.updateMatrixWorld(true);
     near(blocks.pendulumCarrier.rotation.z, expected.swingAngle, 0,
       `rendered swing at ${time}`);
-    near(blocks.rod.scale.y, expected.massProperties.rodLength - 0.25, 0,
-      `rendered rod below pivot hub at ${time}`);
+    // p104: the flat rod + C stretches so C stays on the bar centre.
+    near(blocks.rod.scale.y, (expected.barCenterDistance - 0.25)
+      / (geometry.referenceBarCenterDistance - 0.25), 0,
+    `rendered rod down to C at ${time}`);
     near(blocks.compoundBar.position.y,
       -expected.barCenterDistance, 0,
     `rendered bar-center travel at ${time}`);
@@ -463,18 +487,28 @@ test('movement 317 renderer keeps brass below steel and binds the live bar, weig
       .centerOfOscillationError, 0, 4e-15,
     `published compensation at ${time}`);
 
-    for (const index of [0, 10, 20, 30, 39]) {
-      const { brass, steel } = blocks.segmentMeshes[index];
-      assert.equal(brass.userData.layer, 'brass-lower');
-      assert.equal(steel.userData.layer, 'iron-or-steel-upper');
-      const layerSeparation = steel.position.clone().sub(brass.position);
-      const upperNormal = new THREE.Vector3(
-        -Math.sin(steel.rotation.z),
-        Math.cos(steel.rotation.z),
-        0,
-      );
-      near(layerSeparation.dot(upperNormal), geometry.layerThickness,
-        2e-15, `brass below steel in segment ${index} at ${time}`);
+    // Brass lies below steel all along the bar: sample the laminae's
+    // outer faces at the centre and near each W.
+    const steel = blocks.steelLamina.geometry.attributes.position;
+    const brass = blocks.brassLamina.geometry.attributes.position;
+    const across = (attribute, x, pick) => {
+      let best = null;
+      for (let i = 0; i < attribute.count; i += 1) {
+        if (Math.abs(attribute.getX(i) - x) > 0.05) continue;
+        const y = attribute.getY(i);
+        best = best === null ? y : pick(best, y);
+      }
+      return best;
+    };
+    for (const x of [-3.2, 0, 3.2]) {
+      const top = across(steel, x, Math.max);
+      const bottom = across(brass, x, Math.min);
+      const interfaceY = expected.barEndLift * (x / geometry.barHalfSpan) ** 2;
+      assert.equal(steel.getX(0) < 0, true);
+      near(top - interfaceY, geometry.layerThickness, 8e-3,
+        `steel above the interface at ${x}, ${time}`);
+      near(interfaceY - bottom, geometry.layerThickness, 8e-3,
+        `brass below the interface at ${x}, ${time}`);
     }
   }
   disposeModel(model.root);

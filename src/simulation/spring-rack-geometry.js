@@ -64,24 +64,30 @@ export function makeSpringRackGeometry({pressureDegrees=10,rackTipWidthPixels=22
   const geometry=plate(hole?clip.difference(outer,hole):outer,low,high);geometry.rotateX(-Math.PI/2);return geometry;
  },xzRectangle=(xs,zs)=>rect(source([xs[0],0])[0],source([xs[1],0])[0],-zs[1],-zs[0]),
   channel=xzRectangle(p.guide.channelX,p.guide.channelZ),rodLow=Math.min(source([0,1257])[1],source([0,measured.rod.lowerGuide.bottom])[1]-strokeTop-px(4)),rodHigh=source([0,507])[1];
- // Four touching closed walls form the hollow rod. The rear wall has a real
- // closed slot for the fixed stop pin; no stop force is applied to an empty
- // location or through a painted opening.
- for(const [name,xs,zs]of [['rackLeftWall',[617,627],p.layers.rack],['rackRightWall',[651,653],p.layers.rack],
-  ['rackFrontWall',[627,651],[p.guide.channelZ[1],p.layers.rack[1]]]])
-  attach(name,horizontal(xzRectangle(xs,zs),null,rodLow,rodHigh),'rack',PALETTE.driven);
- const rearOutline=rect(source([627,0])[0],source([651,0])[0],rodLow,rodHigh),
-  stopSlot=capsule(source([p.stop.sourceX,p.stop.slotTop+p.stop.slotRadius]),source([p.stop.sourceX,p.stop.slotBottom-p.stop.slotRadius]),px(p.stop.slotRadius),128),
-  rearShape=clip.difference(rearOutline,stopSlot);
- attach('slottedRackRearWall',plate(rearShape,p.layers.rack[0],p.guide.channelZ[0]),'rack',PALETTE.driven);
- profiles.stopSlot=stopSlot;
+ // The rack-rod is ONE closed solid: a plain rectangular bar whose upper
+ // length is bored by the channel that hides the fixed mandrel (the bore's
+ // floor lies below the mandrel's lowest reach over the stroke). No slot, pin
+ // or cap: the rest position is the motion's lower limit.
+ const outerRod=xzRectangle([617,653],p.layers.rack),boreFloor=source([0,1000])[1]-2.2,
+  closedBar=[horizontal(outerRod,channel,boreFloor,rodHigh),horizontal(outerRod,null,rodLow,boreFloor),horizontal(channel,null,boreFloor-1,boreFloor)],
+  at=(g,i)=>Math.abs(g.attributes.position.getY(i)-boreFloor)<1e-5,positions=[],normals=[];
+ closedBar.forEach((g,index)=>{const n=g.toNonIndexed(),a=n.attributes.position,m=n.attributes.normal;
+  for(let i=0;i<a.count;i+=3){
+   const cap=at(n,i)&&at(n,i+1)&&at(n,i+2);
+   // Keep the bored part's walls, the bar's walls and bottom, and only the
+   // channel's upward cap as the bore floor.
+   if(index<2?cap:!(cap&&m.getY(i)>0))continue;
+   for(let k=i;k<i+3;k++){positions.push(a.getX(k),at(n,k)?Math.fround(boreFloor):a.getY(k),a.getZ(k));normals.push(m.getX(k),m.getY(k),m.getZ(k));}
+  }});
+ const rackRod=new THREE.BufferGeometry();rackRod.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
+ rackRod.setAttribute('normal',new THREE.Float32BufferAttribute(normals,3));rackRod.computeBoundingBox();rackRod.computeBoundingSphere();
+ attach('rackRod',rackRod,'rack',PALETTE.driven);
+ p.boreFloor=boreFloor;
  const plateSeat=(name,range,family,hole,depth)=>attach(name,horizontal(xzRectangle([range.left,range.right],[.1-px(depth/2),.1+px(depth/2)]),hole,
   source([0,range.bottom])[1],source([0,range.top])[1]),family,family==='rack'?PALETTE.driven:PALETTE.muted);
  plateSeat('movingSpringSeat',measured.rod.movingSeat,'rack',channel,100);
  const stemShape=xzRectangle(p.guide.stemX,p.guide.stemZ);
  attach('fixedSlidingMandrel',horizontal(stemShape,null,source([0,p.guide.stemEndSourceY])[1],source([0,20])[1]),'fixed',PALETTE.muted);
- attach('fixedTravelStopPin',disk(px(p.stop.pinRadius),-.11,.1,128),'fixed',PALETTE.muted,[...source([p.stop.sourceX,p.stop.sourceY]),0]);
- attach('travelStopRearCap',disk(px(6),-.125,-.11,128),'fixed',PALETTE.muted,[...source([p.stop.sourceX,p.stop.sourceY]),0]);
  plateSeat('upperSpringSeat',measured.rod.upperSeat,'fixed',stemShape,100);
  plateSeat('lowerRackGuide',measured.rod.lowerGuide,'fixed',xzRectangle([616,654],[p.layers.rack[0]-px(1),p.layers.rack[1]+px(1)]),48);
  profiles.rackTeeth=[];
@@ -101,7 +107,7 @@ export function makeSpringRackGeometry({pressureDegrees=10,rackTipWidthPixels=22
  root.userData={parts,families,blocks,geometry:p,profiles,source,setState,halfAngle,involute,
   hideGround:true,cameraFov:8,shadowCameraHalfExtent:6,shadowBias:-.00003,shadowNormalBias:.003,
   mechanism:'mutilated-spur-rack-compression-spring-return',fidelity:'authored',
-  qualification:'Six involute teeth and seven finite rack teeth follow the measured source. A shallow rear flange, hollow rack with concealed sliding mandrel, rear travel-stop slot/pin, actual guide passages and constant-section spring wire are reconstruction assumptions. Motion follows the integrated finite-contact reconstruction.'};
+  qualification:'Six involute teeth and seven finite rack teeth follow the measured source. A shallow rear flange, one-piece rack-rod bored for a concealed sliding mandrel, actual guide passages and constant-section spring wire are reconstruction assumptions. Motion follows the integrated finite-contact reconstruction.'};
  setState();root.userData.masses={rack:familyMass(parts,families,'rack')};markShadows(root);
  return {root,setState,update:()=>{},cameraDirection:new THREE.Vector3(0,0,10)};
 }

@@ -255,9 +255,12 @@ function macdowallSinglePinEscapement(movement) {
   const halfBeatDuration = pendulumPeriod / 2;
   const pendulumAmplitude = THREE.MathUtils.degToRad(5.5);
   const escapeAngle = Math.atan(pinOrbitRadius / centerDistance);
-  // The clock starts with the pendulum upright, as Brown draws it, in the
-  // middle of the upper impulse.
-  const timeOrigin = halfBeatDuration / 2;
+  // The clock starts as Brown draws the pin: at 3 o'clock, in the neck
+  // corner between the two upright faces, just after it has left the floor
+  // dead face and begun the lower impulse. The pendulum then leans about
+  // 3.5 degrees (upright is 0.39 of a period earlier, mid upper impulse).
+  const displayStartPhase = 0.39;
+  const timeOrigin = halfBeatDuration / 2 + displayStartPhase * pendulumPeriod;
   // Share of a half-beat taken by the free drop from the impulse face onto
   // the opposite dead face (prescribed; in a clock it is almost instant).
   const dropSpan = 0.05;
@@ -678,7 +681,8 @@ function macdowallSinglePinEscapement(movement) {
 
   // Each adjustment hole carries an eccentric bush flush with the plate,
   // turned by its off-centre screw (Brown's small hatched circles).
-  const bushMaterial = matte(0x3d6e86, { metalness: 0.22, roughness: 0.5 });
+  // Brass, so the bushes read as separate parts in the blue plate.
+  const bushMaterial = matte(PALETTE.brass, { metalness: 0.3, roughness: 0.45 });
   const adjustmentScrews = adjustmentCenters.map(([x, y], index) => {
     const screw = new THREE.Group();
     screw.position.set(x, y, plateZ);

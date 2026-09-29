@@ -4,6 +4,7 @@ import { ornamentalRulerArmGeometry } from './ornamental-ruler-arm.js';
 import {finishDrawingRuler} from './drawing-ruler-parts.js';
 import {boredLatheGeometry} from './bored-lathe-geometry.js';
 import {circle, poly, plate, polygonClipping} from './finite-plate-geometry.js';
+import {extrudeOutline} from './plate-escapement-kit.js';
 import {
   PALETTE,
   makeBeam,
@@ -211,61 +212,37 @@ function makeNickedWheel({ radius, role, station, width }) {
     metalness: 0.20,
     roughness: 0.48,
   });
-  const whiteMaterial = matte(PALETTE.white, { roughness: 0.46 });
-  const body = boredCylinderAlongX(radius - 0.065, width, .084, wheelMaterial);
-  body.userData.role = `${role}-solid-wheel-body`;
-  group.add(body);
-
-  const nickCount = 16;
-  const nicks = [];
+  // p104: one flat body per wheel, its rim nicked with 36 shallow V cuts
+  // (Brown's fine edge hatching). The nicks double as the rolling cue; no
+  // loose nick blocks or face spokes are drawn.
+  const nickCount = 36;
+  const nickDepth = 0.028;
+  const nickHalfAngle = FULL_TURN / nickCount * 0.26;
+  const arcSamples = 6;
+  const outline = [];
   for (let index = 0; index < nickCount; index += 1) {
-    const angle = FULL_TURN * index / nickCount;
-    const nick = new THREE.Mesh(
-      new THREE.BoxGeometry(width * 0.96, 0.080, 0.105),
-      index === 0 ? whiteMaterial : darkMaterial,
-    );
-    const radialStation = Math.sqrt(radius ** 2 - (0.105 / 2) ** 2) - 0.040;
-    nick.position.set(
-      0,
-      Math.cos(angle) * radialStation,
-      Math.sin(angle) * radialStation,
-    );
-    nick.rotation.x = angle;
-    nick.userData.index = index;
-    nick.userData.role = index === 0
-      ? `${role}-white-rolling-index-nick`
-      : `${role}-paper-gripping-edge-nick`;
-    group.add(nick);
-    nicks.push(nick);
-  }
-
-  const sideRings = [-1, 1].map((side) => {
-    const ring = ringAroundX(radius - 0.031, 0.031, darkMaterial);
-    ring.position.x = side * (width / 2 + 0.012);
-    ring.userData.role = `${role}-side-rim`;
-    ring.visible = false; // ink edge line only: kept for references, not drawn
-    ring.userData.retiredInkOutline = true;
-    group.add(ring);
-    return ring;
-  });
-  const spokes = [];
-  for (const side of [-1, 1]) {
-    for (let index = 0; index < 4; index += 1) {
-      const spoke = new THREE.Mesh(
-        new THREE.BoxGeometry(0.026, radius * .48, 0.065),
-        index === 0 ? whiteMaterial : darkMaterial,
-      );
-      spoke.position.x = side * (width / 2 + 0.018);
-      spoke.rotation.x = index * Math.PI / 4;
-      spoke.position.y = Math.cos(spoke.rotation.x) * radius * .55;
-      spoke.position.z = Math.sin(spoke.rotation.x) * radius * .55;
-      spoke.userData.role = index === 0
-        ? `${role}-white-face-rotation-index`
-        : `${role}-face-spoke`;
-      group.add(spoke);
-      spokes.push(spoke);
+    const base = FULL_TURN * index / nickCount;
+    const next = FULL_TURN * (index + 1) / nickCount;
+    outline.push([radius * Math.cos(base - nickHalfAngle),
+      radius * Math.sin(base - nickHalfAngle)]);
+    outline.push([(radius - nickDepth) * Math.cos(base),
+      (radius - nickDepth) * Math.sin(base)]);
+    for (let step = 0; step <= arcSamples; step += 1) {
+      const angle = base + nickHalfAngle
+        + (next - base - 2 * nickHalfAngle) * step / arcSamples;
+      outline.push([radius * Math.cos(angle), radius * Math.sin(angle)]);
     }
   }
+  const bore = circle([0, 0], 0.084, 64).slice(0, 64).reverse();
+  const bodyGeometry = extrudeOutline(outline, [bore],
+    -width / 2, width / 2, 0.5);
+  bodyGeometry.rotateY(Math.PI / 2);
+  const body = new THREE.Mesh(bodyGeometry, wheelMaterial);
+  body.userData.role = `${role}-nicked-wheel-body`;
+  group.add(body);
+  const nicks = [];
+  const sideRings = [];
+  const spokes = [];
   const hub = boredCylinderAlongX(0.145, width * 1.45, .084, darkMaterial);
   hub.userData.role = `${role}-hub-fixed-to-axle-C`;
   group.add(hub);
@@ -426,20 +403,24 @@ function rollingWheelParallelRuler(movement) {
           'fixed-axle-C-journal-bearing-on-ruler-B';
         housing.add(sideBearing);
       }
-      for (const zSide of [-1, 1]) {
-        const crossRail = new THREE.Mesh(
-          new THREE.BoxGeometry(
-            housingOuterHalfLength * 2 + 0.14,
-            0.12,
-            0.13,
-          ),
-          housingMaterial,
-        );
-        crossRail.position.set(0, rulerTopY + 0.055,
-          zSide * housingOuterHalfWidth);
-        crossRail.userData.role = 'wheel-aperture-bearing-cross-rail';
-        housing.add(crossRail);
-      }
+      // p104: the drawn rectangle round each wheel is one flat frame on the
+      // ruler top (was two loose cross-rails). Its short sides are 0.01
+      // wider than the journal standards so no faces coincide.
+      const frameGeometry = plate(polygonClipping.difference(
+        poly([[-(housingOuterHalfLength + .08), -(housingOuterHalfWidth + .065)],
+          [housingOuterHalfLength + .08, -(housingOuterHalfWidth + .065)],
+          [housingOuterHalfLength + .08, housingOuterHalfWidth + .065],
+          [-(housingOuterHalfLength + .08), housingOuterHalfWidth + .065]]),
+        poly([[-(housingOuterHalfLength - .08), -(housingOuterHalfWidth - .065)],
+          [housingOuterHalfLength - .08, -(housingOuterHalfWidth - .065)],
+          [housingOuterHalfLength - .08, housingOuterHalfWidth - .065],
+          [-(housingOuterHalfLength - .08), housingOuterHalfWidth - .065]]),
+      ), rulerTopY - .005, rulerTopY + .115);
+      frameGeometry.rotateX(Math.PI / 2);
+      frameGeometry.scale(1, -1, 1);
+      const frame = new THREE.Mesh(frameGeometry, housingMaterial);
+      frame.userData.role = 'wheel-aperture-bearing-frame';
+      housing.add(frame);
       return markShadows(housing);
     },
   );

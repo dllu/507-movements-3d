@@ -427,17 +427,23 @@ test('movement 355 ring A is Brown\'s broad flat band clear of disk C (p93)', ()
   disposeModel(model.root);
 });
 
-test('movement 355 (pass 94): the opening view frames Brown\'s phase-0 pose, not the whole sweep', () => {
+test('movement 355 (pass 104): the opening view frames the whole precession, centred on the pillar', () => {
   const model = createMovementModel(catalog.movements[354]);
-  model.update(0, 0);
-  model.root.updateMatrixWorld(true);
-  const pose = new THREE.Box3();
-  model.root.traverseVisible((o) => { if (o.isMesh) pose.expandByObject(o); });
+  const { geometry } = model.root.userData;
   const fit = model.root.userData.cameraFitBounds;
-  const poseCenter = pose.getCenter(new THREE.Vector3());
   const fitCenter = fit.getCenter(new THREE.Vector3());
-  assert.ok(Math.abs(poseCenter.x - fitCenter.x) < 0.1, 'phase-0 pose centred across the view');
-  assert.ok(fit.max.x - fit.min.x < 6, 'box spans the pose, not the 9.5-wide sweep');
+  near(fitCenter.x, geometry.supportPivot.x, 1e-9, 'fit centred on the pillar axis (x)');
+  near(fitCenter.z, geometry.supportPivot.z, 1e-9, 'fit centred on the pillar axis (z)');
+  for (let i = 0; i < 24; i += 1) {
+    model.update(geometry.precessionCyclePeriod * i / 24, 0);
+    model.root.updateMatrixWorld(true);
+    const pose = new THREE.Box3();
+    model.root.traverseVisible((o) => { if (o.isMesh) pose.expandByObject(o); });
+    // x and y are the in-view extents; depth is foreshortened (a proxy).
+    assert.ok(pose.min.x >= fit.min.x - 1e-6 && pose.max.x <= fit.max.x + 1e-6, `sweep in view across at ${i}`);
+    assert.ok(pose.min.y >= fit.min.y - 1e-6 && pose.max.y <= fit.max.y + 1e-6, `sweep in view vertically at ${i}`);
+  }
+  disposeModel(model.root);
 });
 
 test('movement 355 (pass 96): ring A clears the bearing cup and neck F is a buried round S-neck', () => {

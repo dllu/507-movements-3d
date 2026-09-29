@@ -1285,9 +1285,11 @@ function notchedVGroovedRoundBandPulley(movement) {
     1 + 1 / Math.sin(grooveHalfAngle)
   );
 
+  // Rougher, less metallic than the sibling pulleys: at 0.53 the grazing
+  // notch flanks caught a near-white specular glint and read as pale cracks.
   const pulleyMaterial = matte(PALETTE.driver, {
-    metalness: 0.16,
-    roughness: 0.53,
+    metalness: 0.04,
+    roughness: 0.9,
   });
   const darkMaterial = matte(PALETTE.ink, {
     metalness: 0.27,

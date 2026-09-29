@@ -80,6 +80,12 @@ function smoothPx(points, origin, count = 160) {
   const curve = new THREE.CatmullRomCurve3(points.map(([x, y]) => new THREE.Vector3(...sub(P(x, y), origin), 0)), true, 'centripetal');
   return poly(curve.getSpacedPoints(count).slice(0, -1).map((p) => [p.x, p.y]));
 }
+// Points on an open centripetal Catmull-Rom spline through raster points
+// (both ends kept), `steps` per span.
+function smoothRunPx(points, steps = 8) {
+  const curve = new THREE.CatmullRomCurve3(points.map(([x, y]) => new THREE.Vector3(x, y, 0)), false, 'centripetal');
+  return curve.getPoints((points.length - 1) * steps).map((p) => [p.x, p.y]);
+}
 function plateMesh(shape, [low, high], material, role) {
   const mesh = new THREE.Mesh(plate(shape, low, high), material);
   mesh.userData.role = role;
@@ -249,15 +255,23 @@ export function springHandleGabDisengager() {
     // left, his heavy outer edge on the right) with notch a cut into its
     // lower outer corner. The outer edge curves in to the notch's roof along
     // a circular arc, as Brown draws the concavity at a.
-    polyPx([[470, 222], [478, 198], [493, 200], [490, 225], [490, 240], [491.5, 262], [493.5, 280], [495, 292],
+    // Pass 104: the drop's two long edges are smooth centripetal splines
+    // through the traced points (the chords showed 15-degree kinks).
+    // Pass 104: the fork head and its cross-pin ends are one flat casting
+    // with a single outline (they were a second plate 0.01-0.03 proud, which
+    // showed a vertical seam and a step on the head's top face): the left
+    // end's outer corners, one straight top, the right end's corners, then
+    // the drop.
+    polyPx([leftNub[0], leftNub[1], [493, 200.5], rightNub[1], rightNub[2], rightNub[3],
+      ...smoothRunPx([[490, 240], [491.5, 262], [493.5, 280], [495, 292]]),
       ...notchArc, [NOTCH.ceilX, NOTCH.ceilY], [NOTCH.rampX, NOTCH.flatY],
-      [NOTCH.flatX0, NOTCH.flatY], [452, 312.2], [460, 308], [467, 301.5], [473, 292], [476.5, 278], [477, 255], [475, 235]], C),
+      [NOTCH.flatX0, NOTCH.flatY], ...smoothRunPx([[452, 312.2], [460, 308], [467, 301.5], [473, 292], [476.5, 278], [477, 255], [475, 235]]),
+      leftNub[3]], C),
   );
-  const nubShape = polygonClipping.union(polyPx(leftNub, C), polyPx(rightNub, C));
-  const leverBody = plateMesh(polygonClipping.difference(leverOutline, nubShape, poly(circle([0, 0], PIN_C_R + BORE_GAP, 48))),
+  const leverBody = plateMesh(polygonClipping.difference(leverOutline, poly(circle([0, 0], PIN_C_R + BORE_GAP, 48))),
     Z.lever, mats.lever, 'cam-lever-claw-arm-and-notched-drop');
-  const leverNubs = plateMesh(nubShape, [Z.lever[0] + 0.01, Z.lever[1] + 0.03], mats.lever, 'fork-cross-pin-ends');
-  lever.add(leverBody, leverNubs);
+  const leverNubs = null;
+  lever.add(leverBody);
 
   // ---------- spring handle strap (deformable, in rod coordinates) ----------
   const J = [369, 266]; // the strap leaves its riveted pad just below and right of c

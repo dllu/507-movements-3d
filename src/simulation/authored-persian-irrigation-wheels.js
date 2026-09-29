@@ -7,6 +7,7 @@ import { horizontalTurned } from './horizontal-turbine-solids.js';
 import { ring, capsule, plate, poly, circle, polygonClipping } from './finite-plate-geometry.js';
 import { makePersianBucketTrip } from './persian-bucket-trip.js';
 import { waterVolume } from './water-volume.js';
+import { flowingStreamSurface } from './flowing-stream-surface.js';
 import {
   PALETTE,
   markShadows,
@@ -141,7 +142,9 @@ function persianIrrigationWheel(movement) {
   const hollowShaftInnerRadius = 0.31;
   const hollowShaftLength = 1.70;
   const streamSurfaceY = -1.36;
-  const streamVelocityX = 1.25;
+  // Pass 104: the current runs 1.5 times as fast as the float tips it
+  // drives (it was slower than them, 1.25 against 1.30).
+  const streamVelocityX = 1.5 * inputAngularSpeed * floatOuterRadius;
   const representativeStreamForce = 5.8;
   const streamDriveTorque = floatOuterRadius
     * representativeStreamForce;
@@ -586,6 +589,19 @@ function persianIrrigationWheel(movement) {
   streamWater.userData.role =
     'moving-stream-partly-immersing-curved-floats';
   root.add(streamWater);
+  // Pass 104: the current itself, left to right under the floats (the
+  // wheel turns counter-clockwise, as Brown's arrow shows), as a streaked
+  // body filling the upper stream, moving at the stream speed.
+  root.add(flowingStreamSurface({
+    start: new THREE.Vector3(-3.7, streamSurfaceY, 0),
+    end: new THREE.Vector3(3.7, streamSurfaceY, 0),
+    halfWidth: 1.44,
+    depth: 0.9,
+    thickness: 0.8,
+    speed: streamVelocityX,
+    cyclePeriod: cycleDuration,
+    role: 'rightward-stream-current-surface-driving-floats',
+  }));
   const currentMarkers = [];
   for (let index = 0; index < 14; index += 1) {
     const marker = new THREE.Mesh(

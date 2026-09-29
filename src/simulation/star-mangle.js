@@ -64,12 +64,12 @@ export function makeStarMangle({ profiles: data = profileData, contactMap = mapD
   const collar = new THREE.Mesh(turnedClutchGeometry(collarProfile, { angularSegments: 192, boreRadius: collarBore, color: PALETTE.brass }),
     new THREE.MeshStandardMaterial({ vertexColors: true, metalness: 0.18, roughness: 0.58 }));
   collar.position.z = -0.265; rotor.add(collar);
-  const crab = new THREE.Group(), crabEnds = [], crabReturns = [];
-  for (const first of [true, false]) for (const guideSide of [1, -1]) {
-    const geometry = starMangleCrabEnd(motion, first, { guideSide }), mesh = new THREE.Mesh(geometry, matte(PALETTE.brass));
-    mesh.rotation.z = geometry.userData.terminal; crab.add(mesh);
-    (guideSide > 0 ? crabEnds : crabReturns).push(mesh);
-  }
+  // The crossover guide paths (both faces of each crossover). They are the
+  // analytic collar-retaining surfaces used by the force and contact probes;
+  // the rendered block A carries the same channel as one solid, so they are
+  // not added to the scene.
+  const crab = new THREE.Group(), crabGuides = [];
+  for (const first of [true, false]) for (const guideSide of [1, -1]) crabGuides.push(starMangleCrabEnd(motion, first, { guideSide }).userData);
   const crabBlock = new THREE.Mesh(undefined, matte(PALETTE.brass));
   crab.add(crabBlock); wheel.add(crab);
   const applyState = (s) => {
@@ -88,7 +88,7 @@ export function makeStarMangle({ profiles: data = profileData, contactMap = mapD
   function collarSweep() {
     const points = [], centre = new THREE.Vector3(), inverse = new THREE.Matrix4();
     for (const start of [p.runTravel, p.returnStart]) {
-      for (let travel = start - 0.8; travel <= start + Math.PI + 0.8 + 1e-9; travel += 0.05) {
+      for (let travel = start - 0.8; travel <= start + Math.PI + 0.8 + 1e-9; travel += 0.01) {
         updateTravel(travel); root.updateMatrixWorld(true);
         inverse.copy(wheel.matrixWorld).invert();
         centre.setFromMatrixPosition(collar.matrixWorld).applyMatrix4(inverse);
@@ -105,7 +105,7 @@ export function makeStarMangle({ profiles: data = profileData, contactMap = mapD
     mechanism: 'radial-tooth-mangle-with-captured-crab-guide', reconstructionStatus: 'contact-verified-reconstruction',
     idealConstraints: 'Fixed output axis; external input bearing fixes X and follows Y²−Z²=R²−rp², with end stops at Z=±rp.', geometry: { ...p, ...loadedMotion?.parameters, initialTravel, initialInputTravel },
     blocks: { wheel, input }, parts: { spokes, teeth, innerRim, outerRim, hub, shaft, pinion, inputShaft,
-      collar, crab, crabEnds, crabReturns, crabBlock },
+      collar, crab, crabGuides, crabBlock },
     animationTiming: { authoredCyclePeriod: p.cycleDuration }, updateTravel, stateAtTime, loadedMotion };
   update(0); markShadows(root); return { root, update, cameraDirection: new THREE.Vector3(0, 0, 10) };
 }

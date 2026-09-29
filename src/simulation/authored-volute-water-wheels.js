@@ -412,13 +412,16 @@ function voluteWaterWheel(movement) {
     const r = Math.hypot(p.x, p.z), inner = r - 0.10 - 0.004;
     return [p.x * inner / r, -p.z * inner / r];
   });
+  // Pass 104: the water reaches 0.006 inside the vanes' inner ends, so its
+  // inner face no longer lies on their end faces (they flickered).
+  const waterInnerRadius = runnerInnerRadius - 0.006;
   const passageInner = outerWaterFace.map(([x, y]) => {
     const r = Math.hypot(x, y);
-    return [x * runnerInnerRadius / r, y * runnerInnerRadius / r];
+    return [x * waterInnerRadius / r, y * waterInnerRadius / r];
   }).reverse();
   const scrollWater = new THREE.Mesh(horizontalPlate(polygonClipping.union(
     poly([...outerWaterFace, ...passageInner]),
-    polygonClipping.difference(poly(circle([0, 0], runnerOuterRadius + 0.12, 192)), poly(circle([0, 0], runnerInnerRadius, 192))),
+    polygonClipping.difference(poly(circle([0, 0], runnerOuterRadius + 0.12, 192)), poly(circle([0, 0], waterInnerRadius, 192))),
   ), -0.74, scrollWaterTopY), waterVolumeMaterial({opacity: 0.36}));
   scrollWater.renderOrder = 1;
   scrollWater.userData.role = 'clockwise-water-confined-around-runner-by-volute-b';

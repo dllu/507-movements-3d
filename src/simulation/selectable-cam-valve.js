@@ -35,14 +35,20 @@ export function makeSelectableCamValve(){
  for(const m of detachedMaterials)if(!retainedMaterials.has(m))m.dispose();
  const leverOutline=clip.union(poly([[0,-.14],[g.outputArmLength,-.14],[g.leverLength,-.075],[g.leverLength,.075],[g.outputArmLength,.14],[0,.14]]),poly(circle([0,0],.44,96)),poly(circle([g.outputArmLength,0],.23,96)),poly(circle([g.leverLength,0],.19,96)));
  const holes=clip.union(poly(circle([0,0],.264,96)),poly(circle([g.outputArmLength,0],.074,96)),poly(circle([g.leverLength,0],.094,96)));
- add('pinned-lever',plate(clip.difference(leverOutline,holes),-.015,.015),b.lever,'driven');
+ // p104: the lever is as thick as the selection allows (0.054). The cams
+ // slide past its roller end during selection, so it must pass through the
+ // 0.06 gap between neighbouring cams (0.003 clearance each side), and the
+ // full-width roller stands 0.008 beyond its inner face.
+ const leverHalf=.027;g.leverHalfThickness=leverHalf;
+ add('pinned-lever',plate(clip.difference(leverOutline,holes),-leverHalf,leverHalf),b.lever,'driven');
  b.fixedLeverPivotShaft.geometry.dispose();b.fixedLeverPivotShaft.geometry=new THREE.CylinderGeometry(.26,.26,.40,96);b.fixedLeverPivotShaft.position.z=leverPlane-.16;
  add('pivot-retainer',disk(.30,leverPlane+.04,leverPlane+.07,96).translate(g.leverPivot.x,g.leverPivot.y,0),b.fixedFrame,'ink');
  b.outputPin.geometry.dispose();b.outputPin.geometry=disk(.07,-.09,.29,96);b.outputPin.rotation.set(0,0,0);b.outputPin.position.z=0;b.outputPin.userData.role='ordinary-valve-rod-upper-pin';
  add('upper-pin-retainer',disk(.105,.29,.32,96).translate(g.outputArmLength,0,0),b.lever,'ink');
  b.followerRoller.tread.geometry.dispose();b.followerRoller.tread.geometry=ring(.094,g.rollerRadius,-g.rollerWidth/2,g.rollerWidth/2,96);b.followerRoller.tread.rotation.set(0,0,0);
- b.followerAxle.geometry.dispose();b.followerAxle.geometry=disk(.09,g.workingCamPlaneZ-leverPlane-.15,.017,96);b.followerAxle.rotation.set(0,0,0);b.followerAxle.position.z=0;
- add('roller-axle-retainer',disk(.13,.017,.027,96).translate(g.leverLength,0,0),b.lever,'brass');
+ // The roller axle ends just inside the lever's bore (no washer proud of
+ // the lever face, which would enter the inter-cam gap).
+ b.followerAxle.geometry.dispose();b.followerAxle.geometry=disk(.09,g.workingCamPlaneZ-leverPlane-.15,leverHalf-.006,96);b.followerAxle.rotation.set(0,0,0);b.followerAxle.position.z=0;
  // Brown cuts the shaft flush with the front of the cam series, its hatched
  // section sitting inside the smallest cam. The hatching is engraving
  // notation: the model shows the plain end of the shaft itself. Both ends

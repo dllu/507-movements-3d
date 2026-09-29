@@ -26,7 +26,30 @@ function clearCycle(model, pairs) {
     }
   }
 }
-for(const [id,create] of [[190,createAuthoredClampMovement],[285,createAuthoredLatheHeadMovement]]) {
+// Pass 104: 190's screw is the shared fine two-start V-thread in a nut bore
+// carrying the matching internal V; sample the real solids through the cycle.
+test('190: fine V-thread screw clears its internal V, the nut, the drilled arm and the undrilled bench',()=>{
+  const model=createAuthoredClampMovement({id:190}),u=model.root.userData,b=u.blocks,g=u.geometry;
+  try {
+    const outer=b.externalThread.geometry.userData.vThread,inner=b.internalThread.geometry.userData.vThread;
+    assert.equal(outer.starts,2); assert.equal(inner.starts,2); assert.equal(outer.lead,g.threadLead);
+    assert.ok(outer.inner===null,'solid rod, closed to the axis');
+    assert.ok(g.threadCoreRadius<outer.outer.root,'core runs inside the rod');
+    assert.ok(inner.inner.root<outer.outer.crest-0.02,'radial engagement');
+    assert.ok(inner.inner.root>outer.outer.root&&inner.inner.crest>outer.outer.crest,'crest and root clearance');
+    assert.equal(u.hideGround,true);
+    model.root.traverse(object=>{for(const m of object.material?[].concat(object.material):[])assert.equal(m.fog,false);});
+    const pairs=[[b.externalThread,b.internalThread],...[b.nutBody,b.fixedFrame,b.bench].flatMap(m=>[[b.externalThread,m],[b.screwCore,m]])];
+    clearCycle(model,pairs);
+    // The screw stops above the bench, which is no longer bored.
+    for(let frame=0;frame<=24;frame++){model.update(frame*g.cyclePeriod/24);model.root.updateMatrixWorld(true);
+      assert.ok(new THREE.Box3().setFromObject(b.externalThread).min.y>g.benchTopY+0.05,'screw end clears the bench');}
+    const surface=solidSurface(b.bench.geometry);
+    const p=new THREE.Vector3(g.screwAxisX,0,0).applyMatrix4(b.bench.matrixWorld.clone().invert());p.y=0;
+    assert.ok(surface.inside(p),'bench is solid under the screw');
+  } finally {disposeObject3D(model.root);}
+});
+for(const [id,create] of [[285,createAuthoredLatheHeadMovement]]) {
   test(`${id}: integral screw threads mate radially and clear actual bored stationary solids through the cycle`,()=>{
     const model=create({id}),u=model.root.userData,b=u.blocks;
     try {

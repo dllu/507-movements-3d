@@ -5,6 +5,10 @@ import test from 'node:test';
 import * as THREE from 'three';
 import { createMovementModel } from '../src/simulation/registry.js';
 
+// p104: links ride directly on one another (0.02 layer gap), no bare pin.
+const FRONT_LAYER_Z = 0.10 + 0.09 + 0.02 + 0.08;
+const LOWER_BAR_Z = FRONT_LAYER_Z + 2 * 0.08 + 0.02;
+
 const catalog = JSON.parse(await readFile(
   new URL('../src/data/movements.json', import.meta.url),
   'utf8',
@@ -437,23 +441,23 @@ test('movement 333 renderer binds every named pin and spatial link', () => {
       ), 8e-16, `left radius at M at ${time}`);
     vector3Near(blocks.rightUpperRockerEndAnchor.getWorldPosition(
       new THREE.Vector3()), new THREE.Vector3(
-        state.pointW.x, state.pointW.y, 0.58,
+        state.pointW.x, state.pointW.y, FRONT_LAYER_Z,
       ), 1.5e-15, `upper rocker at W at ${time}`);
     vector3Near(blocks.centerLinkStartAnchor.getWorldPosition(
       new THREE.Vector3()), new THREE.Vector3(
-        state.pointM.x, state.pointM.y, 0.77,
+        state.pointM.x, state.pointM.y, FRONT_LAYER_Z,
       ), 0, `center link at M at ${time}`);
     vector3Near(blocks.pointNAnchor.getWorldPosition(
       new THREE.Vector3()), new THREE.Vector3(
-        state.pointN.x, state.pointN.y, 0.77,
+        state.pointN.x, state.pointN.y, FRONT_LAYER_Z,
       ), 5e-16, `center link at N at ${time}`);
     vector3Near(blocks.centerLinkEndAnchor.getWorldPosition(
       new THREE.Vector3()), new THREE.Vector3(
-        state.pointQ.x, state.pointQ.y, 0.77,
+        state.pointQ.x, state.pointQ.y, FRONT_LAYER_Z,
       ), 8e-16, `center link at Q at ${time}`);
     vector3Near(blocks.rightLowerRadiusEndAnchor.getWorldPosition(
       new THREE.Vector3()), new THREE.Vector3(
-        state.pointQ.x, state.pointQ.y, 0.98,
+        state.pointQ.x, state.pointQ.y, LOWER_BAR_Z,
       ), 1.1e-15, `lower radius at Q at ${time}`);
     vector3Near(blocks.leftPistonPointAnchor.getWorldPosition(
       new THREE.Vector3()), new THREE.Vector3(
@@ -478,7 +482,7 @@ test('movement 333 renderer binds every named pin and spatial link', () => {
   const size = bounds.getSize(new THREE.Vector3());
   assert.ok(size.x > 5.5);
   assert.ok(size.y > 2.6, 'no explanatory piston rods extend below the plate');
-  assert.ok(size.z > 1.2,
+  assert.ok(size.z > 1.0,
     'five rigid bars, the P rod and both fixed bearings occupy real layers');
   assert.ok(model.cameraDirection.x > 0);
   assert.ok(model.cameraDirection.y > 0);
@@ -569,3 +573,33 @@ test('333 P rod runs in front of pedestal O (p95): O, its radius bar and pin P n
   assert.ok(beam.max.z < rod.min.z, 'rod in front of the beam');
 });
 
+
+test('333 p104: links ride directly on one another, no long bare pin at M or R', async () => {
+  const catalog = JSON.parse(await readFile(new URL('../src/data/movements.json', import.meta.url)));
+  const model = createMovementModel(catalog.movements[332]);
+  model.update(0);
+  model.root.updateMatrixWorld(true);
+  const { blocks } = model.root.userData;
+  const box = (object) => {
+    const out = new THREE.Box3();
+    object.traverse((node) => {
+      if (node.isMesh && !/common-working-pin/.test(node.userData.role ?? '')) out.expandByObject(node);
+    });
+    return out;
+  };
+  const beam = box(blocks.longLinkBody);
+  const centre = box(blocks.centerLink);
+  const rocker = box(blocks.rightUpperRocker);
+  const lower = box(blocks.rightLowerRadiusBar);
+  const lug = box(blocks.rightPedestalR.userData.bearing);
+  const gap = (back, front) => front.min.z - back.max.z;
+  for (const [name, value] of [
+    ['beam to centre link at M', gap(beam, centre)],
+    ['beam to rocker at W', gap(beam, rocker)],
+    ['centre link to lower bar at Q', gap(centre, lower)],
+    ['rocker to lower bar at R', gap(rocker, lower)],
+    ['R lug to rocker', gap(lug, rocker)],
+  ]) assert.ok(value > 0.005 && value < 0.03, `${name}: ${value}`);
+  const pinM = new THREE.Box3().setFromObject(blocks.jointPins.M);
+  assert.ok(pinM.max.z - centre.max.z > 0 && pinM.max.z - centre.max.z < 0.03, 'M pin ends just proud of the centre link');
+});

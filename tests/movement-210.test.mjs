@@ -534,7 +534,8 @@ test('movement 210 renders exact transforms while 211–213 are distinct and aut
   const sweptSize = sweptBounds.getSize(new THREE.Vector3());
   assert.ok(sweptSize.x > 4.4, 'the rocking arm sweeps a real horizontal envelope');
   assert.ok(sweptSize.y > 8.4, 'the bar and arm sweep a real vertical envelope');
-  assert.ok(sweptSize.z > 1.5, 'shaft, plate, and roller use real depth');
+  // p104: the cam shaft is a stub just proud of the cam's faces.
+  assert.ok(sweptSize.z > 0.8, 'shaft, plate, and roller use real depth');
   assert.ok(sweptBounds.min.y < -3.3);
   assert.ok(sweptBounds.max.y > 5.0);
   assert.ok(model.cameraDirection.x > 0);

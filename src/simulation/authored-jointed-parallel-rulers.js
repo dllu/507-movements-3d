@@ -112,6 +112,14 @@ function jointedParallelRuler(movement) {
   const sourceArmLength = 2.386304;
   const sourceMinimumHalfSeparation = 1;
   const sourceMaximumHalfSeparation = 2;
+  // The official path closes to h = 1, where both main ruler edges lie on
+  // the arrow bar's edges, the two tails meet edge to edge on the centre line
+  // and the arrow nests in their V with zero clearance: coplanar same-colour
+  // rulers then read as one plate with the bar inlaid (p104 audit). The 3D
+  // path stops just short of that geometric limit so each ruler comes to rest
+  // against the bar with a visible hairline clearance and never overlaps it.
+  const closedHalfSeparation = 1.05;
+  const closingTravel = sourceMaximumHalfSeparation - closedHalfSeparation;
   const sourcePhaseOffset = 0.2;
   const sourceKeyframePhases = [0, 0.4, 0.5, 0.9];
   const sourceCyclesPerMinute = 15;
@@ -189,11 +197,11 @@ function jointedParallelRuler(movement) {
         : (phase + 0.2) / 0.4;
       return {
         accelerationPerPhaseSquared:
-          smootherStepSecond(u) / 0.4 ** 2,
+          closingTravel * smootherStepSecond(u) / 0.4 ** 2,
         phase,
         segment: 'smooth-upward-traverse',
-        value: 1 + smootherStep01(u),
-        velocityPerPhase: smootherStepFirst(u) / 0.4,
+        value: closedHalfSeparation + closingTravel * smootherStep01(u),
+        velocityPerPhase: closingTravel * smootherStepFirst(u) / 0.4,
       };
     }
     if (phase < 0.3) {
@@ -209,18 +217,18 @@ function jointedParallelRuler(movement) {
       u = (phase - 0.3) / 0.4;
       return {
         accelerationPerPhaseSquared:
-          -smootherStepSecond(u) / 0.4 ** 2,
+          -closingTravel * smootherStepSecond(u) / 0.4 ** 2,
         phase,
         segment: 'smooth-downward-traverse',
-        value: 2 - smootherStep01(u),
-        velocityPerPhase: -smootherStepFirst(u) / 0.4,
+        value: sourceMaximumHalfSeparation - closingTravel * smootherStep01(u),
+        velocityPerPhase: -closingTravel * smootherStepFirst(u) / 0.4,
       };
     }
     return {
       accelerationPerPhaseSquared: 0,
       phase,
       segment: 'lower-dwell',
-      value: 1,
+      value: closedHalfSeparation,
       velocityPerPhase: 0,
     };
   };
@@ -797,6 +805,7 @@ function jointedParallelRuler(movement) {
     sourceArmLength,
     sourceCenterX,
     sourceIntermediatePivotSpacing,
+    closedHalfSeparation,
     sourceMaximumHalfSeparation,
     sourceMinimumHalfSeparation,
     sourceOfficialIntermediatePivotSpacing,
@@ -854,11 +863,17 @@ function jointedParallelRuler(movement) {
     referenceScope:
       'official ruler and arrow-bar outlines, four equal 2.386304-unit arms, pivot stations, symmetric opening path, keyframe intervals, view, and 15-cpm demonstration timing',
     sourceUrl: movement.sourceUrl,
+    closedStop: {
+      officialHalfSeparation: sourceMinimumHalfSeparation,
+      modelHalfSeparation: closedHalfSeparation,
+      reason:
+        'the official closed pose has the rulers, tails and arrow bar exactly edge to edge; the 3D path stops 0.05 source units short so the three bars never overlap and stay visibly separate',
+    },
     timingRefinement: {
-      changesExtremaOrDwells: false,
+      changesExtremaOrDwells: true,
       interpolation: 'quintic smootherstep',
       reason:
-        'the official linear add_pos_interp changes velocity instantaneously at its four traverse/dwell boundaries; C2-continuous interpolation removes visible endpoint jerk while preserving every pose constraint, extremum, dwell interval, and cycle duration',
+        'the official linear add_pos_interp changes velocity instantaneously at its four traverse/dwell boundaries; C2-continuous interpolation removes visible endpoint jerk while preserving every pose constraint, the open extremum, every dwell interval and the cycle duration (only the closed dwell stops at closedStop.modelHalfSeparation)',
     },
   };
   root.userData.sourceReference = {

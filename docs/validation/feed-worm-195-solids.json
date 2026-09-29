@@ -31,7 +31,7 @@
   "sources": [
     {
       "file": "src/simulation/feed-worm-assembly-parts.js",
-      "sha256": "e9cafbacb25decc62d2188fcf6bb993a18fc831a5a2179a2cc4682a7ef4b2ff4"
+      "sha256": "9b2588088ec40b428f2521b2bf15390cb9f9d078f6b7e5eb2d3a146b5239e17d"
     },
     {
       "file": "src/simulation/face-slot-worm-195.js",

@@ -1079,7 +1079,13 @@ function seabedTriggeredSoundingWeight(movement) {
   probeAssembly.userData.axis = new THREE.Vector3(0, 1, 0);
   probeAssembly.userData.role =
     'bottom-projecting-seabed-probe-sliding-relative-to-rod';
-  const probeX = pivot.x + upperContactLocal.x + 0.09;
+  // Pass 104: Brown draws a T probe: a stem near the rod's axis (his is
+  // 0.10 left of it) carrying a symmetric foot. The stem runs 0.14 left of
+  // the axis, as near as the bell-crank pivot pin allows (0.07 clear of it
+  // in plan), up the guide block's bore to the pusher pad under the upper
+  // arm's roller. The pad already spans x -0.45 .. 0.14, so the roller
+  // contact, and with it the trip timing, is unchanged.
+  const probeX = -0.14;
   const probeShaftTopY = pivot.y + upperContactLocal.y - 0.08;
   const probeShaftBottomY = probeFootContactLocalY + 0.12;
   const probeShaft = new THREE.Mesh(
@@ -1109,14 +1115,14 @@ function seabedTriggeredSoundingWeight(movement) {
   );
   probePusher.userData.contactSurfaceY = pivot.y + upperContactLocal.y;
   probePusher.userData.role = 'probe-upper-pusher-pad';
-  // The foot is set toward the rod axis so it passes up through the
-  // released weight's bore when the rod is recovered.
+  // A symmetric T foot (+-0.25) centred on the stem; it passes up through
+  // the released weight's bore when the rod is recovered.
   const probeFoot = new THREE.Mesh(
     new THREE.BoxGeometry(0.50, 0.18, 0.42),
     probeMaterial,
   );
   probeFoot.position.set(
-    probeX + 0.20,
+    probeX,
     probeFootContactLocalY + 0.09,
     0.25,
   );

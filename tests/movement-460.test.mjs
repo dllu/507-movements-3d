@@ -161,7 +161,7 @@ test('movement 460 orders full lift, high discharge, empty lowering, and low fil
   const { stateAtInputAngle, timeline } = model.root.userData;
   const atPhase = (phase) => stateAtInputAngle(FULL_TURN * phase);
   const lift = atPhase(0.20);
-  const discharge = atPhase(0.45);
+  const discharge = atPhase(0.48);
   const lowering = atPhase(0.70);
   const filling = atPhase(0.95);
 

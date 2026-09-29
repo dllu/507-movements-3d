@@ -715,9 +715,12 @@ function makeRadialSlotWheel({ radius = 1.78, slotCount = 6, slotEndRadius = 1.5
   root.userData.rotor = rotor;
   const floorZ = -0.11;
   const wallTopZ = 0.25;
-  const body = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, 0.14, 96), matte(0x1d3b4b));
-  // The disc is the frames' own darker tone, so the recessed pocket and
-  // groove floors read below the raised frames.
+  // The disc's front face (the recessed pocket and groove floors) is the
+  // frames' own darker tone, so it reads below the raised frames. p104: its
+  // rim and back face take the frames' colour, so from behind the drum is
+  // not a black disc.
+  const frameTone = matte(PALETTE.driven, { metalness: 0.12 });
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, 0.14, 96), [frameTone, matte(0x1d3b4b), frameTone]);
   body.rotation.x = Math.PI / 2;
   body.position.z = floorZ - 0.07;
   rotor.add(body);
@@ -23202,10 +23205,12 @@ function threeRatioPinWheelAndSlidingSlottedPinion() {
   const inputShaft = makeShaft({
     axis: Z_AXIS,
     color: PALETTE.ink,
-    length: 1.5,
+    // Ends 0.03 proud of each hub face (+-0.15 in production); the longer
+    // stub cast a claw shadow on the face (p104).
+    length: 0.36,
     radius: inputShaftRadius,
   });
-  inputShaft.position.z = -0.23;
+  inputShaft.position.z = 0;
   inputShaft.userData.role = 'pin-wheel-input-shaft-normal-to-face';
 
   const makeAnnularSectorGeometry = ({
@@ -24458,9 +24463,12 @@ function rollingContactEllipsesWithToothedContinuation() {
   driver.position.copy(driverCenter);
   driven.position.copy(drivenCenter);
 
-  const driverShaft = addAxle(root, driverCenter, 1.55, Z_AXIS);
+  // p104: the shafts end 0.03 proud of the hubs (+-0.264), and the driven
+  // one 0.03 past the horn (0.34); longer stubs threw stripes on the faces.
+  const driverShaft = addAxle(root, driverCenter, 0.59, Z_AXIS);
   driverShaft.userData.role = 'left-focus-input-shaft';
-  const drivenShaft = addAxle(root, drivenCenter, 1.55, Z_AXIS);
+  const drivenShaft = addAxle(root, drivenCenter, 0.665, Z_AXIS);
+  drivenShaft.position.z += 0.0375;
   drivenShaft.userData.role = 'right-focus-output-shaft';
 
   const sourceGuidedDriverToothIndex = 1;
@@ -25711,7 +25719,9 @@ function curvedSlotRockerVariableVelocitySlide() {
   armIndexTip.userData.role = 'input-index-tip';
   arm.userData.rotor.add(bodyEdge, hubRing, armIndex, armIndexTip);
 
-  const inputShaft = makeShaft({ axis: Z_AXIS, length: 1.55,
+  // Brown draws only the cut shaft in the cam's boss: the stub ends 0.03
+  // proud of each face, so it no longer throws a wedge across the cam (p104).
+  const inputShaft = makeShaft({ axis: Z_AXIS, length: armDepth + 0.06,
     radius: hubBoreRadius - 0.005, color: PALETTE.ink });
   root.add(inputShaft);
   inputShaft.userData.role = 'rocking-input-shaft';
@@ -30021,6 +30031,9 @@ function partialLanternPinionMangleRack() {
       ? 'upper-running-surface-for-fixed-guide-rollers'
       : 'lower-running-surface-for-fixed-guide-rollers';
     track.userData.verticalSign = verticalSign;
+    // The rollers run on the frame's own outer edge; a black strip proud of
+    // the front face read as an ink rim line along each rail (p104).
+    track.visible = false;
     rackFrame.add(track);
     return track;
   });
@@ -30110,12 +30123,14 @@ function partialLanternPinionMangleRack() {
     'rotation-index-on-partial-lantern-pinion';
   lanternRotor.add(pinionIndexMarker);
 
+  // From the rear bearing to just proud of the front hub (0.29): a longer
+  // stub threw a fixed shadow bar that read as a painted crank (p104).
   const pinionShaft = makeShaft({
     axis: Z_AXIS,
-    length: 1.52,
+    length: 0.92,
     radius: 0.075,
   });
-  pinionShaft.position.z = -0.04;
+  pinionShaft.position.z = -0.14;
   pinionShaft.userData.fixedCenter = true;
   pinionShaft.userData.role =
     'fixed-axis-continuously-rotating-lantern-pinion-shaft';
@@ -30154,13 +30169,13 @@ function partialLanternPinionMangleRack() {
         ? 'upper-fixed-guide-roller-for-reciprocating-frame'
         : 'lower-fixed-guide-roller-for-reciprocating-frame';
       roller.userData.verticalSign = verticalSign;
+      // Short axle heads just proud of the roller faces (-0.196..0.166).
       const shaft = makeShaft({
         axis: Z_AXIS,
-        length: 0.86,
+        length: 0.4,
         radius: 0.055,
       });
       shaft.position.copy(roller.position);
-      shaft.position.z -= 0.06;
       shaft.userData.fixed = true;
       shaft.userData.role = 'fixed-guide-roller-shaft';
       guideRollers.push(roller);
@@ -30559,10 +30574,12 @@ function eccentricGearCarriedPinionRocker() {
   const inputShaft = makeShaft({
     axis: Z_AXIS,
     color: PALETTE.ink,
-    length: 1.42,
+    // Ends 0.03 proud of the gear's front face (0.48); the longer stub threw
+    // a stripe across the gear (p104).
+    length: 1.14,
     radius: 0.095,
   });
-  inputShaft.position.set(driverShaftCenter.x, driverShaftCenter.y, 0.08);
+  inputShaft.position.set(driverShaftCenter.x, driverShaftCenter.y, -0.06);
   inputShaft.userData.fixedCenter = true;
   inputShaft.userData.keyedToEccentricGear = true;
   inputShaft.userData.role = 'fixed-center-input-shaft-keyed-to-eccentric-gear';
@@ -30678,10 +30695,11 @@ function eccentricGearCarriedPinionRocker() {
   const pinionShaft = makeShaft({
     axis: Z_AXIS,
     color: PALETTE.ink,
-    length: 1.35,
+    // Ends 0.03 proud of the pinion hub (0.539).
+    length: 1.225,
     radius: 0.082,
   });
-  pinionShaft.position.set(0, carrierLength, 0.02);
+  pinionShaft.position.set(0, carrierLength, -0.0425);
   pinionShaft.userData.carriedCenter = true;
   pinionShaft.userData.role = 'carried-shaft-rigidly-joining-pinion-and-small-pulley';
 
@@ -30719,8 +30737,9 @@ function eccentricGearCarriedPinionRocker() {
   largePulleyFaceIndex.userData.role =
     'front-face-rotation-index-on-large-belt-pulley';
   largePulley.userData.rotor.add(largePulleyFaceIndex);
-  // The belt's centreline rides one belt radius outside each tread.
-  const beltRadius = 0.047;
+  // The belt's centreline rides half its thickness outside each tread.
+  const beltThickness = 0.024;
+  const beltRadius = beltThickness / 2;
   const beltCurve = beltCurveOpen(
     new THREE.Vector2(0, 0),
     new THREE.Vector2(0, carrierLength),
@@ -30728,13 +30747,14 @@ function eccentricGearCarriedPinionRocker() {
     smallPulleyRadius + beltRadius + 0.001,
     -0.42,
   );
-  // Brown draws a plain round band: the shared laid rope, whose moving lay
-  // shows the travel without painted markers.
+  // p104: Brown draws a flat double-lined band, so this is the shared flat
+  // belt section (as on the 1-23 belt family), centred on the 0.28-wide
+  // pulley faces.
   const belt = makeMovingBelt(beltCurve, {
     color: PALETTE.belt,
-    laid: true,
     markerCount: 0,
-    radius: beltRadius,
+    thickness: beltThickness,
+    width: 0.2,
   });
   belt.userData.active = true;
   belt.userData.beltCount = 1;
@@ -35245,8 +35265,9 @@ function pairedStopsForSpurGear(movement) {
   gear.userData.teeth = toothCount;
   gear.userData.toothProfile = 'source-square-straight-flank';
   root.add(gear);
-  const gearShaft = makeShaft({ axis: Z_AXIS, color: PALETTE.ink, length: 1.05, radius: 0.105 });
-  gearShaft.position.z = -0.08;
+  // p104: ends 0.03 proud of the hub front (0.298), not 0.15.
+  const gearShaft = makeShaft({ axis: Z_AXIS, color: PALETTE.ink, length: 0.933, radius: 0.105 });
+  gearShaft.position.z = -0.1385;
   gearShaft.userData.role = 'spur-gear-arbor';
   root.add(gearShaft);
 

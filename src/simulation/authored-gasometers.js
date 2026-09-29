@@ -487,9 +487,12 @@ function centerGuidedGasometer(movement) {
   // Brown draws A's bottom closed by a base from the skirt to sleeve a, which
   // the two fixed pipes pass through with running clearance. It sits 0.003
   // above the rim so that no face of it lies on the skirt's or sleeve's.
+  // Pass 104: it butts against a's outer wall instead of running half into
+  // it, so on Brown's section the base's and the sleeve's cut faces meet
+  // edge to edge rather than overlapping in one plane (they flickered).
   const baseThickness = 0.05, baseLift = 0.003, pipeClearance = 0.03;
   const baseHoles = pipeXs.map((x) => planCircle([x, 0], pipeOuter + pipeClearance, 64));
-  const baseA = addMesh(bellA, horizontalPlate(annulus(sleeveOuter - (sleeveOuter - sleeveInner) / 2, bellRadius - bellWall / 2, baseHoles),
+  const baseA = addMesh(bellA, horizontalPlate(annulus(sleeveOuter, bellRadius - bellWall / 2, baseHoles),
     baseLift, baseThickness), bellMaterial, 'base-of-vessel-A-from-skirt-to-sleeve-a-pierced-by-the-pipes');
   root.add(bellA);
 

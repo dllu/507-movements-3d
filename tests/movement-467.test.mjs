@@ -472,9 +472,14 @@ test('movement 467 is drawn as Brown’s section: back half-shells, plain cut fa
   const lever = new THREE.Box3().setFromObject(blocks.leverBar);
   const shell = new THREE.Box3().setFromObject(blocks.cylinderShell);
   assert.ok(lever.max.z < shell.min.z + 0.1 && lever.max.z < -0.6);
-  assert.equal(blocks.screwWings.length, 1);
+  // Pass 104: the flat wing plus its round hub, which encloses the shaft end.
+  assert.equal(blocks.screwWings.length, 2);
   const wing = new THREE.Box3().setFromObject(blocks.screwWings[0]);
   assert.ok(wing.max.y - wing.min.y > 0.4 && wing.max.z - wing.min.z < 0.08,
     'flat two-lobed wing across the screw');
+  const hub = new THREE.Box3().setFromObject(blocks.screwWings[1]);
+  const shaft = new THREE.Box3().setFromObject(blocks.screwShaft ?? blocks.screwWings[1]);
+  assert.ok(hub.max.z - hub.min.z >= 0.2 - 1e-9 && hub.max.y - hub.min.y >= 0.2 - 1e-9, 'hub wider than the 0.15 shaft');
+  assert.ok(shaft.min.x >= hub.min.x - 1e-9, 'shaft end inside the hub');
   disposeModel(model.root);
 });

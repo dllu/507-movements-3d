@@ -528,3 +528,15 @@ test('movement 330 closes exactly and leaves movement 507 as the next draft', ()
   disposeModel(model507.root);
   disposeModel(model.root);
 });
+
+test('330 p104: round rod through a round boss that encloses the bush ring; one-piece flywheel web', () => {
+  const model = createMovementModel(catalog.movements[329]);
+  model.update(0);
+  model.root.updateMatrixWorld(true);
+  const { blocks } = model.root.userData;
+  assert.equal(blocks.pistonRod.geometry.type, 'CylinderGeometry');
+  const shoe = new THREE.Box3().setFromObject(blocks.guideShoe);
+  const collar = new THREE.Box3().setFromObject(blocks.guideCollar);
+  assert.ok(shoe.containsBox(collar), 'bush ring fully inside the boss');
+  assert.equal(blocks.flywheelArms.length, 1, 'arms are one spoked web');
+});

@@ -2,7 +2,8 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { plate, poly, circle, polygonClipping } from './finite-plate-geometry.js';
 import { crankArmGeometry, turnedHandleGeometry, handleShank, HANDLE_FOOT_EMBED } from './turned-handle.js';
-import { helicalThread, threadAngles, chamferedHex } from './mujoco-screw/thread-geometry.js';
+import { chamferedHex } from './mujoco-screw/thread-geometry.js';
+import { threadedTubeGeometry } from './v-thread-geometry.js';
 import {
   PALETTE,
   markShadows,
@@ -526,24 +527,25 @@ function twinPivotedBenchClamp() {
     sourceBenchMaximum.x,
   ];
   const benchPlanks = [];
+  // Pass 104: the planks abut (the open 0.03 slits showed the background
+  // from behind); each seam is a shallow V-groove chamfered into the top
+  // edges of the two planks that meet there, so it still reads as a joint.
+  const seamChamfer = 0.012;
+  const benchTopZ = benchCenterZ + benchDepth / 2;
+  const benchBottomZ = benchCenterZ - benchDepth / 2;
   for (let index = 0; index < plankBoundaries.length - 1; index += 1) {
-    const minimumSourceX = plankBoundaries[index] + (index > 0 ? 1.2 : 0);
-    const maximumSourceX = plankBoundaries[index + 1]
-      - (index < plankBoundaries.length - 2 ? 1.2 : 0);
-    const minimumX = (minimumSourceX - sourceOrigin.x) * sourceScale;
-    const maximumX = (maximumSourceX - sourceOrigin.x) * sourceScale;
+    const minimumX = (plankBoundaries[index] - sourceOrigin.x) * sourceScale;
+    const maximumX = (plankBoundaries[index + 1] - sourceOrigin.x) * sourceScale;
+    const leftChamfer = index > 0 ? seamChamfer : 0;
+    const rightChamfer = index < plankBoundaries.length - 2 ? seamChamfer : 0;
+    // Section in (x, z), extruded along y over the bench's height.
+    const section = [[minimumX, benchBottomZ], [maximumX, benchBottomZ],
+      [maximumX, benchTopZ - rightChamfer], [maximumX - rightChamfer, benchTopZ],
+      [minimumX + leftChamfer, benchTopZ], [minimumX, benchTopZ - leftChamfer]]
+      .filter((point, i, all) => i === 0 || point[0] !== all[i - 1][0] || point[1] !== all[i - 1][1]);
     const plank = new THREE.Mesh(
-      new THREE.BoxGeometry(
-        maximumX - minimumX,
-        benchHeight,
-        benchDepth,
-      ),
+      plate(poly(section), -benchMaximum.y, -benchMinimum.y).rotateX(Math.PI / 2),
       frameMaterial,
-    );
-    plank.position.set(
-      (minimumX + maximumX) / 2,
-      (benchMinimum.y + benchMaximum.y) / 2,
-      benchCenterZ,
     );
     plank.userData.role = 'fixed-source-bench-top-plank';
     plank.userData.sourcePanelIndex = index;
@@ -605,11 +607,17 @@ function twinPivotedBenchClamp() {
   });
   upperJawParts.jaw.userData.side = 'upper-clockwise-closing';
   upperJawParts.plate.userData.side = 'upper';
+  // Pass 104: the lower jaw lies behind the upper one (Brown dots its tail);
+  // ochre, so the crossed tails do not merge into one blue X.
+  const lowerJawMaterial = matte(PALETTE.accent, {
+    metalness: 0.10,
+    roughness: 0.62,
+  });
   const lowerJawParts = makeSourceJaw({
     boreRadius: pivotBoreRadius,
     camCenterLocal: lowerCamCenterLocal,
     depth: jawDepth,
-    jawMaterial,
+    jawMaterial: lowerJawMaterial,
     markerLocal: new THREE.Vector2(0.52, -0.34),
     pivot: sourceLowerPivot,
     planeZ: lowerJawPlaneZ,
@@ -1669,20 +1677,29 @@ function screwThrustLeverClamp() {
   const openScrewOriginY = openBearing.worldPoint.y - collarHalfThickness;
   const clampedScrewOriginY = clampedBearing.worldPoint.y
     - collarHalfThickness;
-  const threadPitch = 0.17;
-  const threadLead = threadPitch;
+  // Pass 104: Brown hatches a slim, fine screw (about 0.3 across, hatch
+  // lines 0.08 apart rising to the right: a right-hand thread). It is the
+  // shared fine V-thread solid, two-start so the visible pitch is 0.085 while
+  // the lead stays 0.17 and the handle still turns less than 160 degrees.
+  const threadLead = 0.17;
+  const threadStarts = 2;
+  const threadPitch = threadLead / threadStarts;
   const threadLeadPerRadian = threadLead / FULL_TURN;
-  const threadWaveNumber = FULL_TURN / threadPitch;
-  const screwTighteningAngleTravel = -screwAxialTravel
+  const threadWaveNumber = FULL_TURN / threadLead;
+  // Right-hand: turning the rotor by +angle about +Y advances it by
+  // +lead * angle / 2pi, so tightening (screw rising) is a positive turn.
+  const screwTighteningAngleTravel = screwAxialTravel
     / threadLeadPerRadian;
   const screwTighteningTurns = screwTighteningAngleTravel / FULL_TURN;
-  const threadCoreRadius = 0.115;
-  const threadPitchRadius = 0.19;
-  const externalThreadTubeRadius = 0.034;
-  const internalThreadRadius = 0.235;
-  const internalThreadTubeRadius = 0.020;
+  const threadRootRadius = 0.15;
+  const threadCrestRadius = 0.18;
+  const threadCoreRadius = threadRootRadius - 0.002;
+  const threadPitchRadius = (threadRootRadius + threadCrestRadius) / 2;
+  const nutThreadClearance = 0.004;
   const threadLocalMinimumY = -0.61;
-  const screwCoreLocalMinimumY = -0.70;
+  // The screw ends in the thread's flat end face inside the arm's bore,
+  // 0.06 above the bench even when fully retracted (no bench bore).
+  const screwCoreLocalMinimumY = threadLocalMinimumY + 0.01;
   const handleLocalY = clampedHandleCenterY - clampedScrewOriginY;
   // The core stops 0.01 below the hub's top face (it ended flush in it and
   // the two caps z-fought).
@@ -1691,18 +1708,17 @@ function screwThrustLeverClamp() {
   const threadLocalMaximumY = handleLocalY - 0.14;
   const nutThreadMinimumY = nutCenterY - 0.17;
   const nutThreadMaximumY = nutCenterY + 0.17;
-  const internalThreadPhaseAtMinimum = (
-    nutThreadMinimumY - clampedScrewOriginY - threadLocalMinimumY
-  ) * threadWaveNumber;
-  const threadCrestRadius = threadPitchRadius + externalThreadTubeRadius;
-  const externalProfile = { inner: threadCoreRadius - 0.001, outer: threadCrestRadius,
-    low: threadLocalMinimumY, high: threadLocalMaximumY, width: threadPitch / 2,
-    lead: -threadLeadPerRadian, phase: threadLocalMinimumY };
-  const internalProfile = { ...externalProfile, inner: threadCoreRadius + 0.004,
-    outer: threadCrestRadius + 0.004, low: nutThreadMinimumY, high: nutThreadMaximumY,
-    width: threadPitch / 2 - 0.004,
-    phase: clampedScrewOriginY + threadLocalMinimumY + threadPitch / 2 };
-  const threadGeometry = profile => helicalThread(profile, threadAngles(profile, 96)).rotateX(-Math.PI / 2);
+  // The nut's internal V is the screw's world helix at the clamped pose
+  // (rotor angle 0), offset radially by the running clearance.
+  const internalThreadPhaseAtNut0 = (nutCenterY - clampedScrewOriginY) * threadWaveNumber;
+  const externalProfile = { low: threadLocalMinimumY, high: threadLocalMaximumY,
+    lead: threadLead, starts: threadStarts, phase: 0,
+    outer: { root: threadRootRadius, crest: threadCrestRadius } };
+  const internalProfile = { low: nutThreadMinimumY - nutCenterY, high: nutThreadMaximumY - nutCenterY,
+    lead: threadLead, starts: threadStarts, phase: clampedScrewOriginY - nutCenterY,
+    outer: { radius: threadCrestRadius + 0.016 },
+    inner: { root: threadRootRadius + nutThreadClearance, crest: threadCrestRadius + nutThreadClearance } };
+  const threadGeometry = profile => threadedTubeGeometry({ ...profile, segments: 128 });
   const shoePinRadius = shoePinLocal.length();
   const clampedScrewArm = thrustContactX - holderPivot.x;
   const clampedWorkArm = holderPivot.x
@@ -1713,8 +1729,8 @@ function screwThrustLeverClamp() {
 
   if (
     screwAxialTravel <= 0
-      || screwTighteningTurns >= -0.25
-      || screwTighteningTurns <= -160 / 360
+      || screwTighteningTurns <= 0.25
+      || screwTighteningTurns >= 160 / 360
       || clampedLeverForceRatio <= 0
   ) {
     throw new RangeError('Movement 190 source geometry cannot form a clamp.');
@@ -1815,11 +1831,11 @@ function screwThrustLeverClamp() {
     const screwAxialVelocity = bearingVelocityY;
     const screwAxialAcceleration = bearingAccelerationY;
     const screwAngle = (
-      screwAxialTravel - screwAxialDisplacement
+      screwAxialDisplacement - screwAxialTravel
     ) / threadLeadPerRadian;
-    const screwAngularVelocity = -screwAxialVelocity
+    const screwAngularVelocity = screwAxialVelocity
       / threadLeadPerRadian;
-    const screwAngularAcceleration = -screwAxialAcceleration
+    const screwAngularAcceleration = screwAxialAcceleration
       / threadLeadPerRadian;
     const shoePinVector = rotateVector2(shoePinLocal, holderAngle);
     const shoePinPoint = holderPivot.clone().add(shoePinVector);
@@ -1836,11 +1852,9 @@ function screwThrustLeverClamp() {
       .addScaledVector(shoePinVector, -(holderAngularVelocity ** 2));
     const shoeContactGap = shoeContactPoint.y - workpieceTopY;
     const externalThreadPhaseAtNut = (
-      nutCenterY - screwOriginY - threadLocalMinimumY
-    ) * threadWaveNumber - screwAngle;
-    const internalThreadPhaseAtNut = (
-      nutCenterY - nutThreadMinimumY
-    ) * threadWaveNumber + internalThreadPhaseAtMinimum;
+      nutCenterY - screwOriginY
+    ) * threadWaveNumber + screwAngle;
+    const internalThreadPhaseAtNut = internalThreadPhaseAtNut0;
     const dynamicWorkArm = holderPivot.x - shoeContactPoint.x;
     const leverForceRatio = derivatives.first / dynamicWorkArm;
     const thrustContacts = [-1, 1].map(side => ({
@@ -1872,7 +1886,7 @@ function screwThrustLeverClamp() {
         collarContactZ,
       ),
       idealThreadAdvanceError: screwAxialDisplacement
-        + threadLeadPerRadian * (screwAngle + screwTighteningAngleTravel),
+        - threadLeadPerRadian * (screwAngle + screwTighteningAngleTravel),
       internalThreadPhaseAtNut,
       leverForceRatio,
       normalizedEventProgress,
@@ -1979,32 +1993,14 @@ function screwThrustLeverClamp() {
     geometry.translate(0, 0, -depth / 2);
     return geometry;
   };
-  const verticalHelixCurve = ({
-    maximumY,
-    minimumY,
-    phase = 0,
-    pitch,
-    radius,
-  }) => {
-    const height = maximumY - minimumY;
-    return new class extends THREE.Curve {
-      getPoint(parameter, target = new THREE.Vector3()) {
-        const y = minimumY + height * parameter;
-        const angle = phase + (y - minimumY) / pitch * FULL_TURN;
-        return target.set(
-          radius * Math.cos(angle),
-          y,
-          radius * Math.sin(angle),
-        );
-      }
-    }();
-  };
+
 
   const holderMaterial = matte(PALETTE.driver, {
     metalness: 0.10,
     roughness: 0.61,
   });
-  const shoeMaterial = matte(PALETTE.accent, {
+  // Pass 104: steel grey, so the shoe does not merge with the brass work.
+  const shoeMaterial = matte(PALETTE.muted, {
     metalness: 0.09,
     roughness: 0.63,
   });
@@ -2015,10 +2011,6 @@ function screwThrustLeverClamp() {
   const screwMaterial = matte(PALETTE.driven, {
     metalness: 0.22,
     roughness: 0.46,
-  });
-  const threadMaterial = matte(0x244d63, {
-    metalness: 0.26,
-    roughness: 0.42,
   });
   const workpieceMaterial = matte(PALETTE.brass, {
     metalness: 0.02,
@@ -2135,7 +2127,6 @@ function screwThrustLeverClamp() {
   bench.geometry = plate(polygonClipping.difference(
     rectangle(-(benchMaximumX - benchMinimumX) / 2, -benchDepth / 2,
       (benchMaximumX - benchMinimumX) / 2, benchDepth / 2),
-    poly(circle([screwAxisX - bench.position.x, bench.position.z], threadCrestRadius + 0.008, 128)),
     rectangle(shankLeft - 0.006 - bench.position.x, bench.position.z - shankHalfDepth - 0.006,
       shankRight + 0.006 - bench.position.x, bench.position.z + shankHalfDepth + 0.006)),
     -(benchTopY - benchBottomY) / 2, (benchTopY - benchBottomY) / 2).rotateX(-Math.PI / 2);
@@ -2211,7 +2202,7 @@ function screwThrustLeverClamp() {
     forkParts.push(plate(polygonClipping.difference(standardRegion, sweptCheeks), fillLow, fillHigh));
   }
   const lowerArm = plate(polygonClipping.difference(rectangle(armLeft, -0.38, armRight, 0.38),
-    poly(circle([screwAxisX, 0], threadCrestRadius + 0.004, 128))), armLow, armHigh)
+    poly(circle([screwAxisX, 0], threadCrestRadius + 0.016, 128))), armLow, armHigh)
     .rotateX(-Math.PI / 2);
   // Both generators are non-indexed; omit UVs to merge consistent attributes.
   upright.deleteAttribute('uv'); lowerArm.deleteAttribute('uv'); shank.deleteAttribute('uv');
@@ -2317,7 +2308,7 @@ function screwThrustLeverClamp() {
   const nutBody = new THREE.Mesh(
     // The nut lies within the drilled arm; its bore stands just outside the
     // arm's (they shared one bore wall), so the arm's bore carries the thread.
-    chamferedHex({ radius: 0.34, bore: threadCrestRadius + 0.008,
+    chamferedHex({ radius: 0.34, bore: threadCrestRadius + 0.020,
       low: -0.17, high: 0.17, phase: 0, bottomBevel: 0.02, topBevel: 0.02 },
     Array.from({ length: 193 }, (_, i) => i * FULL_TURN / 192)).rotateX(-Math.PI / 2),
     darkMaterial,
@@ -2326,18 +2317,12 @@ function screwThrustLeverClamp() {
   nutBody.rotation.y = Math.PI / 6;
   nutBody.userData.fixed = true;
   nutBody.userData.role = 'one-fixed-hexagonal-nut-in-lower-frame-arm';
-  const internalThreadCurve = verticalHelixCurve({
-    maximumY: nutThreadMaximumY,
-    minimumY: nutThreadMinimumY,
-    phase: internalThreadPhaseAtMinimum,
-    pitch: threadPitch,
-    radius: internalThreadRadius,
-  });
+  // The arm's bore carries the nut's internal V (a sleeve filling the bore).
   const internalThread = new THREE.Mesh(
     threadGeometry(internalProfile),
-    shoeMaterial,
+    darkMaterial,
   );
-  internalThread.position.x = screwAxisX;
+  internalThread.position.set(screwAxisX, nutCenterY, 0);
   internalThread.userData.fixed = true;
   internalThread.userData.role = 'stationary-matching-internal-nut-thread';
   internalThread.userData.screwThread = true;
@@ -2364,18 +2349,15 @@ function screwThrustLeverClamp() {
     screwCoreLocalMinimumY + screwCoreLocalMaximumY
   ) / 2;
   screwCore.userData.role = 'continuous-core-of-vertical-power-screw';
-  const externalThreadCurve = verticalHelixCurve({
-    maximumY: threadLocalMaximumY,
-    minimumY: threadLocalMinimumY,
-    pitch: threadPitch,
-    radius: threadPitchRadius,
-  });
+  // One solid V-threaded rod of the screw's colour; the core only carries it
+  // on up into the handle hub.
   const externalThread = new THREE.Mesh(
     threadGeometry(externalProfile),
-    threadMaterial,
+    screwMaterial,
   );
   externalThread.userData.handedness = 'right';
-  externalThread.userData.role = 'single-start-right-hand-external-screw-thread';
+  externalThread.userData.starts = threadStarts;
+  externalThread.userData.role = 'fine-two-start-right-hand-v-screw-thread';
   externalThread.userData.screwThread = true;
   const thrustCollar = new THREE.Mesh(
     new THREE.CylinderGeometry(collarRadius, collarRadius, collarThickness, 512),
@@ -2477,9 +2459,8 @@ function screwThrustLeverClamp() {
     new THREE.SphereGeometry(0.066, 16, 10),
     whiteMaterial,
   );
-  const threadContactPhase = (
-    nutCenterY - nutThreadMinimumY
-  ) * threadWaveNumber + internalThreadPhaseAtMinimum;
+  // A flank point at mid-depth on the nut's helix level with the nut centre.
+  const threadContactPhase = (internalProfile.phase + threadPitch * 5 / 16) / threadLeadPerRadian;
   threadContactMarker.position.set(
     screwAxisX + threadPitchRadius * Math.cos(threadContactPhase),
     nutCenterY,
@@ -2568,7 +2549,10 @@ function screwThrustLeverClamp() {
     collarContactZ,
     thrustContactX,
     cyclePeriod,
-    externalThreadTubeRadius,
+    threadCrestRadius,
+    threadRootRadius,
+    threadStarts,
+    nutThreadClearance,
     frameDepth,
     handleLocalY,
     handleRadius,
@@ -2578,9 +2562,7 @@ function screwThrustLeverClamp() {
     holderPivot: holderPivot.clone(),
     holderPlateDepth,
     idealClampForcePerHandleForce,
-    internalThreadPhaseAtMinimum,
-    internalThreadRadius,
-    internalThreadTubeRadius,
+    internalThreadPhaseAtNut: internalThreadPhaseAtNut0,
     nutCenterY,
     nutThreadMaximumY,
     nutThreadMinimumY,
@@ -2695,7 +2677,7 @@ function screwThrustLeverClamp() {
   };
   root.userData.hideGround = true;
   root.userData.solidReview = { externalProfile, internalProfile, threadCrestRadius,
-    flankClearance: 0.002, qualification: 'Prescribed lead law and gravity-aligned shoe; inferred square threads and bored lower arm. Finite collar-rim/cheek-edge support is analytic; holder return, shoe gravity alignment, friction and load response remain prescribed.' };
+    radialClearance: nutThreadClearance, qualification: 'Prescribed lead law and gravity-aligned shoe; inferred fine two-start V-thread and bored lower arm. Finite collar-rim/cheek-edge support is analytic; holder return, shoe gravity alignment, friction and load response remain prescribed.' };
   root.traverse(object => { for (const material of object.material ? [].concat(object.material) : []) material.fog = false; });
   update(0);
   markShadows(root);

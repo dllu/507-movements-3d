@@ -11,14 +11,21 @@ export function makeBenchClampSolids(){
  const add=(name,geometry,color,family)=>{const mesh=new THREE.Mesh(geometry,matte(color));mesh.name=name;mesh.material.fog=false;parts[name]=mesh;families[name]=family;bodies[family].add(mesh);return mesh;};
  const round=r=>poly(circle([0,0],r,128));
  const source=(x,y)=>[(x-123)*.012,(264-y)*.012];
+ // Pass 104: the planks abut (0.012 slits showed the background from
+ // behind); each seam is a shallow V-groove chamfered into the two top edges
+ // that meet there. Section in (x, z), extruded along y over the bench.
+ const chamfer=.012,top=-.31,bottom=-.49,[,yTop]=source(0,79),[,yBottom]=source(0,444);
  for(const [i,a,b]of [[0,16,228],[1,228,331],[2,331,500]]){
-  const low=a+(i? .5:0),high=b-(i<2?.5:0);
-  add('bench'+i,plate(poly([source(low,79),source(high,79),source(high,444),source(low,444)]),-.49,-.31),PALETTE.frame,'fixed');
+  const [x0]=source(a,0),[x1]=source(b,0),l=i?chamfer:0,r=i<2?chamfer:0;
+  const section=[[x0,bottom],[x1,bottom],[x1,top-r],[x1-r,top],[x0+l,top],[x0,top-l]].filter((q,k,all)=>!k||q[0]!==all[k-1][0]||q[1]!==all[k-1][1]);
+  add('bench'+i,plate(poly(section),-yTop,-yBottom).rotateX(Math.PI/2),PALETTE.frame,'fixed');
  }
  for(let side=0;side<2;side++){
   const p=benchClampProfile(side),z=side===0?.12:-.12;
   bodies['jaw'+side].position.set(...p.pivot,z);
-  add('jaw'+side,plate(clip.difference(poly(p.points.map(p=>p.toArray())),round(.13)),-.08,.08),PALETTE.driven,'jaw'+side);
+  // Pass 104: the rear (lower) jaw is ochre, so the crossed tails do not
+  // read as one blue X; Brown dots its tail behind the upper one.
+  add('jaw'+side,plate(clip.difference(poly(p.points.map(p=>p.toArray())),round(.13)),-.08,.08),side===0?PALETTE.driven:PALETTE.accent,'jaw'+side);
   const place=(name,geometry)=>{const mesh=add(name+side,geometry,PALETTE.ink,'fixed');mesh.position.set(...p.pivot,0);return mesh;};
   place('shaft',plate(round(.125),-.35,z+.145));
   place('sleeve',plate(clip.difference(round(.155),round(.128)),-.31,z-.105));

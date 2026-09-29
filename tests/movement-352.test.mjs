@@ -559,3 +559,27 @@ test('movement 352 closes smoothly and leaves movement 507 authored', () => {
   disposeModel(model.root);
   disposeModel(model507.root);
 });
+
+test('movement 352 handspike is Brown\'s long bar, centred on the barrel axis, down to the frame feet', () => {
+  const model = createMovementModel(catalog.movements[351]);
+  model.root.updateMatrixWorld(true);
+  const box = (re) => {
+    const b = new THREE.Box3();
+    model.root.traverse((o) => {
+      if (!o.isMesh) return;
+      let role = '';
+      for (let p = o; p && !role; p = p.parent) role = p.userData?.role ?? '';
+      if (re.test(role)) b.expandByObject(o);
+    });
+    return b;
+  };
+  const spike = box(/^handspike-through-large-barrel$/);
+  const barrel = box(/^larger-winding-barrel$/);
+  const legs = box(/inclined-A-frame-leg/);
+  const barrelHeight = barrel.max.y - barrel.min.y;
+  const spikeLength = spike.max.y - spike.min.y;
+  assert.ok(spikeLength > 2.2 * barrelHeight, `spike ${spikeLength} vs barrel ${barrelHeight}`);
+  assert.ok(Math.abs((spike.max.y + spike.min.y) / 2 - (barrel.max.y + barrel.min.y) / 2) < 1e-3, 'centred on the axis');
+  assert.ok(spike.min.y >= legs.min.y - 1e-3, 'does not reach below the feet');
+  assert.ok(spike.max.z - spike.min.z >= 0.1, 'stout enough to read as a lever');
+});

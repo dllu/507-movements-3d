@@ -323,10 +323,20 @@ function barkerReactionMill(movement) {
   );
   // Brown draws the step as a plain square block with the cone point
   // seated in its top, not a turned pedestal or a floor plate.
+  // Pass 104: the seat is a conical recess matching the shaft's closed cone
+  // (same 25.9 degree half-angle) with a 0.002 normal running gap, so the
+  // cone point sits fully in its step instead of reaching it only at the tip
+  // through a round hole. The cone's apex is at y -1.21, the block top at
+  // -1.095 (local .12); the seat's apex lies 0.002/sin(25.9 deg) below it.
   {
     const stepSquare=[[-.44,-.44],[.44,-.44],[.44,.44],[-.44,.44]];
-    const seat=polygonClipping.difference(poly(stepSquare),poly(circle([0,0],.115,96)));
-    const parts=[horizontalPlate(seat,0,.12),horizontalPlate(poly(stepSquare),-.36,0)];
+    const coneSlope=.34/.70,seatApex=(-1.21-.002/Math.sin(Math.atan(coneSlope)))-(-1.215);
+    const seatDepth=.12-seatApex,seatRadius=seatDepth*coneSlope;
+    const seat=polygonClipping.difference(poly(stepSquare),poly(circle([0,0],seatRadius,96)));
+    const recess=new THREE.LatheGeometry(Array.from({length:9},(_,i)=>{const u=i/8;return new THREE.Vector2(Math.max(1e-4,seatRadius*(1-u)),.12-seatDepth*u);}),96);
+    recess.deleteAttribute('uv');
+    const parts=[horizontalPlate(seat,0,.12),horizontalPlate(poly(stepSquare),-.36,0)].map(part=>{part.deleteAttribute('uv');return part.index?part.toNonIndexed():part;});
+    parts.push(recess.toNonIndexed());recess.dispose();
     lowerBearing.geometry.dispose();lowerBearing.geometry=mergeGeometries(parts);parts.forEach(part=>part.dispose());
   }
   lowerBearing.position.y = -1.215;
@@ -344,8 +354,10 @@ function barkerReactionMill(movement) {
     new THREE.BoxGeometry(3.36, 0.18, 0.40),
     frameMaterial,
   );
-  bearingBracket.geometry.dispose();bearingBracket.geometry=horizontalPlate(polygonClipping.difference(poly([[-1.68,-.20],[1.68,-.20],[1.68,.20],[-1.68,.20]]),poly(circle([-1.76,-.32],shaftRadius+.004,128))),-.09,.09);
-  bearingBracket.position.set(1.76, 3.54, -0.32);
+  // Pass 104: the strap runs on the shaft's centre line into the collar (it
+  // stood 0.32 off it, so a 0.06 lip of it overhung the round collar).
+  bearingBracket.geometry.dispose();bearingBracket.geometry=horizontalPlate(polygonClipping.difference(poly([[-1.68,-.20],[1.68,-.20],[1.68,.20],[-1.68,.20]]),poly(circle([-1.76,0],shaftRadius+.004,128))),-.09,.09);
+  bearingBracket.position.set(1.76, 3.54, 0);
   bearingBracket.userData.role = 'fixed-horizontal-upper-bearing-bracket';
   root.add(bearingBracket);
   // Brown crops the flume at the plate edge. Pass 82: it runs on straight

@@ -1,6 +1,10 @@
 import { correctCompensationJournals } from './pendulum-journal-parts.js';
 import * as THREE from 'three';
 import {applyCutawayFor} from './cutaway-presentations.js';
+import {boredLatheGeometry} from './bored-lathe-geometry.js';
+import {trapezoidThread} from './differential-thread-solids.js';
+import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
+import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
 import {
   PALETTE,
   makeBeam,
@@ -61,6 +65,134 @@ function tubeThrough(points, radius, material, role) {
   );
   tube.userData.role = role;
   return tube;
+}
+
+// p104 (317): one bent lamina of compound bar C as a single solid strip.
+// The interface curve is sampled at fixed stations and the lamina is swept
+// on the side `sign` of it (+1 above, -1 below), ending at both tips in a
+// quarter round so the two laminae together end in a round knob. The
+// interface faces are shared with the other lamina and are omitted, so the
+// pair forms one closed bar with no coincident internal faces. The topology
+// is fixed; positions and normals are rewritten each frame.
+function makeBentLamina({ material, role, layer, sign, stations = 120,
+  capSegments = 10 }) {
+  const n = stations;
+  const k = capSegments;
+  const outlineCount = (n + 1) * 2 + (k + 1) * 2;
+  const wallCount = (k + 1) + (n - 1) + (k + 1);
+  const vertexCount = outlineCount * 2 + wallCount * 2;
+  const position = new THREE.BufferAttribute(new Float32Array(vertexCount * 3), 3);
+  const normal = new THREE.BufferAttribute(new Float32Array(vertexCount * 3), 3);
+  const indices = [];
+  // Face vertex indices: P[i] = i, O[i] = n+1+i, A[j] = 2(n+1)+j, B[j] = 2(n+1)+k+1+j.
+  const P = (i) => i;
+  const O = (i) => n + 1 + i;
+  const A = (j) => 2 * (n + 1) + j;
+  const B = (j) => 2 * (n + 1) + k + 1 + j;
+  for (const offset of [0, outlineCount]) {
+    for (let i = 0; i < n; i += 1) {
+      indices.push(offset + P(i), offset + P(i + 1), offset + O(i + 1),
+        offset + P(i), offset + O(i + 1), offset + O(i));
+    }
+    for (let j = 0; j < k; j += 1) {
+      indices.push(offset + P(n), offset + A(j), offset + A(j + 1));
+      indices.push(offset + P(0), offset + B(j), offset + B(j + 1));
+    }
+  }
+  const wallBase = outlineCount * 2;
+  for (let w = 0; w + 1 < wallCount; w += 1) {
+    const a = wallBase + w * 2;
+    indices.push(a, a + 2, a + 3, a, a + 3, a + 1);
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', position);
+  geometry.setAttribute('normal', normal);
+  geometry.setIndex(indices);
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.frustumCulled = false;
+  mesh.userData.role = role;
+  mesh.userData.layer = layer;
+  let oriented = false;
+  const set = ({ curve, tangent, xStart, xEnd, thickness, depth }) => {
+    const put = (index, x, y, z, nx, ny, nz) => {
+      position.setXYZ(index, x, y, z);
+      normal.setXYZ(index, nx, ny, nz);
+    };
+    const outline = [];
+    const unit = (x) => {
+      const [tx, ty] = tangent(x);
+      const length = Math.hypot(tx, ty);
+      return [tx / length, ty / length];
+    };
+    const points = [];
+    for (let i = 0; i <= n; i += 1) {
+      const x = xStart + (xEnd - xStart) * i / n;
+      const [tx, ty] = unit(x);
+      points.push({ p: [x, curve(x)], t: [tx, ty], nrm: [-ty, tx] });
+    }
+    for (let i = 0; i <= n; i += 1) outline[P(i)] = points[i].p;
+    for (let i = 0; i <= n; i += 1) {
+      const { p, nrm } = points[i];
+      outline[O(i)] = [p[0] + sign * thickness * nrm[0], p[1] + sign * thickness * nrm[1]];
+    }
+    const capPoint = (end, direction, j) => {
+      const phi = (Math.PI / 2) * j / k;
+      const rx = Math.cos(phi) * direction * end.t[0] + sign * Math.sin(phi) * end.nrm[0];
+      const ry = Math.cos(phi) * direction * end.t[1] + sign * Math.sin(phi) * end.nrm[1];
+      return { p: [end.p[0] + thickness * rx, end.p[1] + thickness * ry], r: [rx, ry] };
+    };
+    const capsA = [];
+    const capsB = [];
+    for (let j = 0; j <= k; j += 1) {
+      capsA.push(capPoint(points[n], 1, j));
+      capsB.push(capPoint(points[0], -1, j));
+      outline[A(j)] = capsA[j].p;
+      outline[B(j)] = capsB[j].p;
+    }
+    for (const [offset, z, nz] of [[0, depth / 2, 1], [outlineCount, -depth / 2, -1]]) {
+      outline.forEach(([x, y], index) => put(offset + index, x, y, z, 0, 0, nz));
+    }
+    const wall = [
+      ...capsB.map(({ p, r }) => ({ p, r })),
+      ...points.slice(1, n).map(({ p, nrm }) => ({
+        p: [p[0] + sign * thickness * nrm[0], p[1] + sign * thickness * nrm[1]],
+        r: [sign * nrm[0], sign * nrm[1]],
+      })),
+      ...capsA.slice().reverse(),
+    ];
+    wall.forEach(({ p, r }, w) => {
+      put(wallBase + w * 2, p[0], p[1], depth / 2, r[0], r[1], 0);
+      put(wallBase + w * 2 + 1, p[0], p[1], -depth / 2, r[0], r[1], 0);
+    });
+    position.needsUpdate = true;
+    normal.needsUpdate = true;
+    if (!oriented) {
+      // Fix each triangle's winding once so it faces along its normal.
+      const index = geometry.index.array;
+      const a = new THREE.Vector3();
+      const b = new THREE.Vector3();
+      const c = new THREE.Vector3();
+      const m = new THREE.Vector3();
+      for (let f = 0; f < index.length; f += 3) {
+        a.fromBufferAttribute(position, index[f]);
+        b.fromBufferAttribute(position, index[f + 1]).sub(a);
+        c.fromBufferAttribute(position, index[f + 2]).sub(a);
+        m.fromBufferAttribute(normal, index[f])
+          .add(new THREE.Vector3().fromBufferAttribute(normal, index[f + 1]))
+          .add(new THREE.Vector3().fromBufferAttribute(normal, index[f + 2]));
+        if (b.cross(c).dot(m) < 0) {
+          const swap = index[f + 1];
+          index[f + 1] = index[f + 2];
+          index[f + 2] = swap;
+        }
+      }
+      geometry.index.needsUpdate = true;
+      oriented = true;
+    }
+    geometry.computeBoundingBox();
+    geometry.computeBoundingSphere();
+  };
+  return { mesh, set };
 }
 
 function mercurialCompensationPendulum(movement) {
@@ -477,7 +609,9 @@ function mercurialCompensationPendulum(movement) {
 
   const movingPivotHub = cylinderAlongZ(0.30, 0.74, driverMaterial, 36);
   movingPivotHub.userData.role = 'moving-pendulum-pivot-hub';
-  const rod = cylinderAlongY(0.095, 1, darkMaterial, 32);
+  // p104: Brown's rod is about 20 px (0.39) wide; it was a 0.19 wire.
+  const rodRadius = 0.16;
+  const rod = cylinderAlongY(rodRadius, 1, darkMaterial, 40);
   rod.userData.role = 'thermally-expanding-steel-pendulum-rod';
   const rodIndex = new THREE.Mesh(
     new THREE.BoxGeometry(0.075, 0.62, 0.055),
@@ -486,55 +620,96 @@ function mercurialCompensationPendulum(movement) {
   rodIndex.position.set(0.10, -1.02, 0);
   rodIndex.userData.role = 'white-pendulum-swing-index';
 
-  // A clean helical ridge on the rod: 14 turns, finely sampled, its round
-  // section sunk 0.008 into the rod so it sits on it (it floated 0.013 off
-  // and 48 segments for 14 turns made lumpy blobs).
-  const threadTurns = 14;
-  const threadRidgeRadius = 0.024;
-  const threadHelixRadius = 0.095 + threadRidgeRadius - 0.008;
-  const threadPoints = Array.from({ length: threadTurns * 32 + 1 }, (_, index) => {
-    const progress = index / (threadTurns * 32);
-    const angle = progress * FULL_TURN * threadTurns;
-    return new THREE.Vector3(
-      threadHelixRadius * Math.cos(angle),
-      -(1.18 + progress * 2.05),
-      threadHelixRadius * Math.sin(angle),
-    );
-  });
+  // Jar-local heights read from the plate (y = 3.65 at the cap top, py 121).
+  const plateY = (py) => jarLength / 2 - (py - sourceRasterJarTop.y) * sourceScale;
+  const capTopY = jarLength / 2;
+  const neckTopY = plateY(138);
+  const capPlugBottomY = plateY(158);
+  const capSkirtBottomY = plateY(193);
+  const clampScrewY = plateY(sourceRasterLeftClamp.y);
+  const handleY = plateY(sourceRasterAdjusterCenter.y);
+  const handleBlockSize = 0.72;
+
+  // p104: a solid cut V thread (the shared trapezoid builder, root sunk in
+  // the rod) from the handle block down through the cap into the neck, as
+  // Brown hatches it; it was a loose wire coil standing off the rod. It is
+  // carried with the jar, so the cap's threaded boss never slides on it.
+  const threadProfile = {
+    inner: rodRadius - 0.006,
+    outer: rodRadius + 0.048,
+    low: plateY(222),
+    high: handleY - handleBlockSize / 2 + 0.03,
+    rootWidth: 0.082,
+    crestWidth: 0.022,
+    lead: 0.10 / FULL_TURN,
+    phase: 0,
+  };
   const threadHelix = new THREE.Mesh(
-    new THREE.TubeGeometry(new THREE.CatmullRomCurve3(threadPoints, false, 'centripetal'),
-      threadTurns * 40, threadRidgeRadius, 10, false),
-    brassMaterial,
+    trapezoidThread(threadProfile, 96).rotateX(-Math.PI / 2),
+    darkMaterial,
   );
   threadHelix.userData.role = 'visible-thread-on-pendulum-adjustment-rod';
+  threadHelix.userData.threadProfile = threadProfile;
 
   const jarAssembly = new THREE.Group();
   jarAssembly.userData.role = 'thermally-translated-mercury-jar-assembly';
-  const bottleProfile = [
-    [jarOuterRadius * 0.78, -jarLength / 2],
-    [jarOuterRadius * 0.91, -jarLength / 2 + 0.10],
-    [jarOuterRadius, -jarLength / 2 + 0.34],
-    [jarOuterRadius, jarLength / 2 - 1.15],
-    [jarOuterRadius * 0.94, jarLength / 2 - 0.78],
-    [jarOuterRadius * 0.76, jarLength / 2 - 0.37],
-    [jarOuterRadius * 0.58, jarLength / 2 - 0.20],
-    [jarOuterRadius * 0.58, jarLength / 2],
-  ].map(([radius, y]) => new THREE.Vector2(radius, y));
+
+  // p104: one closed glass solid of revolution: thick rounded bottom, body,
+  // an S-shoulder into a short neck, and a lip at the mouth (Brown's neck
+  // sits in the cap's groove). It was an open dome the rod passed through.
+  const neckOuterRadius = 1.18;
+  const neckInnerRadius = 0.90;
+  const lipRadius = 1.32;
+  const lipBottomY = neckTopY - 0.20;
+  const shoulderTopY = plateY(190);
+  const shoulderBottomY = plateY(232);
+  const glassInnerRadius = jarInnerRadius + 0.005;
+  const mercuryBottomLocal = referenceMercuryBottomDistance
+    - referenceJarCenterDistance;
+  const glassInnerBottomY = -mercuryBottomLocal - 0.005;
+  const bottomFillet = 0.30;
+  const smooth = (t) => t * t * (3 - 2 * t);
+  const glassProfile = [];
+  const arc = (cx, cy, r, a0, a1, n, out) => {
+    for (let i = 0; i <= n; i += 1) {
+      const a = a0 + (a1 - a0) * i / n;
+      out.push(new THREE.Vector2(cx + r * Math.cos(a), cy + r * Math.sin(a)));
+    }
+  };
+  const outerBottomY = -jarLength / 2;
+  glassProfile.push(new THREE.Vector2(0, outerBottomY));
+  arc(jarOuterRadius - 0.36, outerBottomY + 0.36, 0.36, -Math.PI / 2, 0, 12,
+    glassProfile);
+  for (let i = 0; i <= 24; i += 1) {
+    const t = i / 24;
+    glassProfile.push(new THREE.Vector2(
+      jarOuterRadius + (neckOuterRadius - jarOuterRadius) * smooth(t),
+      shoulderBottomY + (shoulderTopY - shoulderBottomY) * t,
+    ));
+  }
+  glassProfile.push(new THREE.Vector2(neckOuterRadius, lipBottomY));
+  arc(lipRadius - 0.07, lipBottomY + 0.07, 0.07, -Math.PI / 2, 0, 5,
+    glassProfile);
+  arc(lipRadius - 0.07, neckTopY - 0.07, 0.07, 0, Math.PI / 2, 5,
+    glassProfile);
+  arc(neckInnerRadius + 0.05, neckTopY - 0.05, 0.05, Math.PI / 2, Math.PI, 4,
+    glassProfile);
+  for (let i = 0; i <= 24; i += 1) {
+    const t = i / 24;
+    glassProfile.push(new THREE.Vector2(
+      neckInnerRadius + (glassInnerRadius - neckInnerRadius) * smooth(t),
+      shoulderTopY - 0.02 + (shoulderBottomY - 0.12 - shoulderTopY + 0.02) * t,
+    ));
+  }
+  arc(glassInnerRadius - bottomFillet, glassInnerBottomY + bottomFillet,
+    bottomFillet, 0, -Math.PI / 2, 12, glassProfile);
+  glassProfile.push(new THREE.Vector2(0, glassInnerBottomY));
   const glassJar = new THREE.Mesh(
-    new THREE.LatheGeometry(bottleProfile, 72),
+    new THREE.LatheGeometry(glassProfile, 96),
     glassMaterial,
   );
   glassJar.renderOrder = 3;
   glassJar.userData.role = 'transparent-glass-mercury-jar';
-  const glassBottom = cylinderAlongY(
-    jarOuterRadius * 0.88,
-    0.12,
-    glassMaterial,
-    64,
-  );
-  glassBottom.position.y = -jarLength / 2 + 0.10;
-  glassBottom.renderOrder = 3;
-  glassBottom.userData.role = 'thick-rounded-glass-jar-bottom';
   const jarRims = [
     { radius: jarOuterRadius * 0.59, y: jarLength / 2 - 0.05 },
     { radius: jarOuterRadius * 0.94, y: -jarLength / 2 + 0.22 },
@@ -548,14 +723,37 @@ function mercurialCompensationPendulum(movement) {
     return rim;
   });
 
-  const mercuryColumn = cylinderAlongY(
-    jarInnerRadius,
-    1,
-    mercuryMaterial,
-    64,
+  // p104: the mercury is one solid of revolution whose rounded bottom edge
+  // follows the glass's inner base fillet; only its top face moves as it
+  // expands (it was a flat-bottomed scaled cylinder, a dark disc from below).
+  const mercuryFillet = bottomFillet - 0.005;
+  const mercuryProfile = [new THREE.Vector2(0, 0)];
+  arc(jarInnerRadius - mercuryFillet, mercuryFillet, mercuryFillet,
+    -Math.PI / 2, 0, 12, mercuryProfile);
+  mercuryProfile.push(
+    new THREE.Vector2(jarInnerRadius, referenceFillHeight),
+    new THREE.Vector2(0, referenceFillHeight),
   );
+  const mercuryColumn = new THREE.Mesh(
+    new THREE.LatheGeometry(mercuryProfile, 96),
+    mercuryMaterial,
+  );
+  mercuryColumn.position.y = -mercuryBottomLocal;
+  mercuryColumn.frustumCulled = false;
   mercuryColumn.renderOrder = 1;
   mercuryColumn.userData.role = 'constant-mass-expanding-mercury-column';
+  let mercuryTopHeight = referenceFillHeight;
+  const setMercuryHeight = (height) => {
+    const position = mercuryColumn.geometry.attributes.position;
+    for (let i = 0; i < position.count; i += 1) {
+      if (Math.abs(position.getY(i) - mercuryTopHeight) < 1e-6) {
+        position.setY(i, height);
+      }
+    }
+    position.needsUpdate = true;
+    mercuryTopHeight = height;
+    mercuryColumn.userData.topHeight = height;
+  };
   const mercurySurface = cylinderAlongY(
     jarInnerRadius,
     0.055,
@@ -576,83 +774,179 @@ function mercurialCompensationPendulum(movement) {
   mercuryMeniscus.visible = false;
   mercuryMeniscus.userData.retiredInkOutline = true;
 
-  const hangerCrossbar = makeBeam(
-    new THREE.Vector3(-1.34, jarLength / 2 + 0.20, 0),
-    new THREE.Vector3(1.34, jarLength / 2 + 0.20, 0),
-    {
-      color: PALETTE.driver,
-      depth: 0.32,
-      thickness: 0.20,
-    },
-  );
-  hangerCrossbar.userData.role = 'jar-support-crossbar-on-adjustment-rod';
-  const adjusterBlock = new THREE.Mesh(
-    new THREE.BoxGeometry(0.58, 0.58, 0.58),
-    driverMaterial,
-  );
-  adjusterBlock.position.y = jarLength / 2 + 0.20;
-  adjusterBlock.userData.role = 'threaded-jar-height-adjuster-block';
-  const adjusterHandle = new THREE.Mesh(
-    new THREE.BoxGeometry(2.85, 0.17, 0.24),
-    driverMaterial,
-  );
-  adjusterHandle.position.y = jarLength / 2 + 0.20;
-  adjusterHandle.userData.role = 'jar-adjustment-cross-handle';
-  const handleEnds = [-1, 1].map((side) => {
-    const end = new THREE.Mesh(
-      new THREE.SphereGeometry(0.17, 24, 16),
-      driverMaterial,
-    );
-    end.position.set(side * 1.43, jarLength / 2 + 0.20, 0);
-    end.userData.role = 'jar-adjustment-handle-end';
-    return end;
-  });
-  const shoulderHangers = [-1, 1].map((side) => tubeThrough(
-    [
-      new THREE.Vector3(side * 0.90, jarLength / 2 + 0.12, 0),
-      new THREE.Vector3(side * 1.18, jarLength / 2 - 0.35, 0),
-      new THREE.Vector3(side * 1.43, jarLength / 2 - 0.92, 0),
-      new THREE.Vector3(side * 1.49, jarLength / 2 - 1.34, 0),
-    ],
-    0.070,
+  // p104: Brown's inverted-U cap: a flat stirrup (one 2D extrusion 0.60
+  // deep) whose chamfered top spans the mouth, with a plug into the neck and
+  // a leg outside it on each side, the neck's lip seated in the groove
+  // between them. A round boss through its middle carries the threaded
+  // bore for the rod. It replaces the curved straps and side-clamp boxes.
+  const capBore = threadProfile.outer + 0.008;
+  const capDepth = 0.60;
+  const capLegOuter = 1.68;
+  const capLegInner = lipRadius + 0.02;
+  const capPlugHalf = neckInnerRadius - 0.02;
+  const capGrooveRoof = neckTopY + 0.02;
+  const capTopHalf = 1.42;
+  const capChamferY = neckTopY + 0.03;
+  const capBossRadius = 0.45;
+  const capSlotHalf = 0.30;
+  const capShapes = [-1, 1].map((side) => new THREE.Shape([
+    [capSlotHalf, capTopY],
+    [capTopHalf, capTopY],
+    [capLegOuter, capChamferY],
+    [capLegOuter, capSkirtBottomY],
+    [capLegInner, capSkirtBottomY],
+    [capLegInner, capGrooveRoof],
+    [capPlugHalf, capGrooveRoof],
+    [capPlugHalf, capPlugBottomY],
+    [capSlotHalf, capPlugBottomY],
+  ].map(([x, y]) => new THREE.Vector2(side * x, y))));
+  const jarCap = new THREE.Mesh(
+    new THREE.ExtrudeGeometry(capShapes, {
+      bevelEnabled: false,
+      depth: capDepth,
+    }).translate(0, 0, -capDepth / 2),
     frameMaterial,
-    'curved-glass-jar-shoulder-hanger',
-  ));
+  );
+  jarCap.userData.role = 'inverted-u-jar-neck-cap-stirrup';
+  const capBoss = new THREE.Mesh(boredLatheGeometry([
+    { radial: capBossRadius, axial: capPlugBottomY - 0.05 },
+    { radial: capBossRadius, axial: capTopY + 0.05 },
+  ], capBore, 72), frameMaterial);
+  capBoss.userData.role = 'jar-cap-threaded-boss-on-adjusting-screw';
+  // Brown blacks in the cement packing between the neck and each leg.
+  const padAngle = Math.asin((capDepth / 2) / (capLegInner - 0.006));
+  const neckPacking = [-1, 1].map((side) => {
+    const inner = neckOuterRadius + 0.006;
+    const outer = capLegInner - 0.006;
+    const shape = new THREE.Shape();
+    shape.absarc(0, 0, outer, -padAngle, padAngle, false);
+    shape.absarc(0, 0, inner, padAngle, -padAngle, true);
+    shape.closePath();
+    const height = lipBottomY - 0.012 - (capSkirtBottomY + 0.10);
+    const pad = new THREE.Mesh(
+      new THREE.ExtrudeGeometry(shape, {
+        bevelEnabled: false,
+        curveSegments: 24,
+        depth: height,
+      }).rotateX(-Math.PI / 2).rotateY(side < 0 ? Math.PI : 0),
+      darkMaterial,
+    );
+    pad.position.y = capSkirtBottomY + 0.10;
+    pad.userData.role = 'cement-packing-between-jar-neck-and-cap-leg';
+    return pad;
+  });
+  const shoulderHangers = [];
+  // The two side screws through the legs that bear on the packing.
   const sideClamps = [-1, 1].map((side) => {
-    const clamp = new THREE.Mesh(
-      new THREE.BoxGeometry(0.26, 0.62, 0.58),
-      frameMaterial,
+    const nut = new THREE.Mesh(
+      new THREE.BoxGeometry(0.14, 0.34, 0.34),
+      darkMaterial,
     );
-    clamp.position.set(
-      side * 1.52,
-      jarLength / 2 - 1.35,
-      0,
-    );
-    clamp.userData.role = 'glass-jar-side-clamp';
-    return clamp;
+    nut.position.set(side * (capLegOuter - 0.005 + 0.07), clampScrewY, 0);
+    nut.userData.role = 'glass-jar-side-clamp';
+    return nut;
   });
   const clampPins = [-1, 1].map((side) => {
-    const pin = cylinderAlongX(0.11, 0.45, darkMaterial, 24);
-    pin.position.set(
-      side * 1.66,
-      jarLength / 2 - 1.35,
-      0,
-    );
-    pin.userData.role = 'jar-clamp-fastener';
-    return pin;
+    const shank = cylinderAlongX(0.075, 0.56, darkMaterial, 24);
+    shank.position.set(side * (capLegInner - 0.04 + 0.28), clampScrewY, 0);
+    shank.userData.role = 'jar-clamp-fastener';
+    return shank;
   });
+  // Brown's small screw in the cap top beside the rod.
+  const capScrewHead = cylinderAlongY(0.12, 0.09, frameMaterial, 32);
+  capScrewHead.position.set(-0.52, capTopY + 0.04, 0);
+  capScrewHead.userData.role = 'jar-cap-top-screw-head';
+
+  // p104: Brown's handle: a square block pinned to the rod, a tapered round
+  // arm ending in a ball on the left and, on the right, an arm carrying a
+  // vertical index plate (it was a symmetric bar with two balls).
+  const blockHalf = handleBlockSize / 2;
+  const blockShape = new THREE.Shape([
+    [-blockHalf, -blockHalf], [blockHalf, -blockHalf],
+    [blockHalf, blockHalf], [-blockHalf, blockHalf],
+  ].map(([x, y]) => new THREE.Vector2(x, y)));
+  const blockBore = new THREE.Path();
+  blockBore.absarc(0, 0, rodRadius + 0.002, 0, FULL_TURN, true);
+  blockShape.holes.push(blockBore);
+  const adjusterBlock = new THREE.Mesh(
+    new THREE.ExtrudeGeometry(blockShape, {
+      bevelEnabled: false,
+      curveSegments: 40,
+      depth: handleBlockSize,
+    }).translate(0, 0, -blockHalf).rotateX(-Math.PI / 2),
+    driverMaterial,
+  );
+  adjusterBlock.position.y = handleY;
+  adjusterBlock.userData.role = 'threaded-jar-height-adjuster-block';
+  // Brown's pin through the block into the rod: its two visible ends.
+  const pinLength = blockHalf + 0.02 - (rodRadius + 0.002);
+  const blockPin = new THREE.Mesh(
+    mergeGeometries([-1, 1].map((side) => new THREE.CylinderGeometry(
+      0.07, 0.07, pinLength, 24,
+    ).rotateX(Math.PI / 2).translate(0, 0,
+      side * (rodRadius + 0.002 + pinLength / 2)))),
+    darkMaterial,
+  );
+  blockPin.position.y = handleY;
+  blockPin.userData.role = 'adjuster-block-cross-pin';
+  const armStart = handleBlockSize / 2 - 0.06;
+  const leftArmProfile = [new THREE.Vector2(0, 0)];
+  for (let i = 0; i <= 16; i += 1) {
+    const a = 0.62 * i / 16;
+    leftArmProfile.push(new THREE.Vector2(
+      0.09 + 0.15 * (0.5 + 0.5 * Math.cos(Math.PI * a / 0.62)), a));
+  }
+  const ballRadius = 0.22;
+  const ballOffset = Math.sqrt(ballRadius ** 2 - 0.09 ** 2);
+  const ballStart = Math.asin(0.09 / ballRadius);
+  for (let i = 1; i <= 24; i += 1) {
+    const psi = ballStart + (Math.PI - ballStart) * i / 24;
+    leftArmProfile.push(new THREE.Vector2(
+      i === 24 ? 0 : ballRadius * Math.sin(psi),
+      0.62 + ballOffset - ballRadius * Math.cos(psi),
+    ));
+  }
+  const leftArm = new THREE.LatheGeometry(leftArmProfile, 40)
+    .rotateZ(Math.PI / 2).translate(-armStart, handleY, 0);
+  const indexPlateInner = 1.60;
+  const rightArmProfile = [new THREE.Vector2(0, 0)];
+  for (let i = 0; i <= 12; i += 1) {
+    const a = 0.55 * i / 12;
+    rightArmProfile.push(new THREE.Vector2(
+      0.12 + 0.11 * (0.5 + 0.5 * Math.cos(Math.PI * a / 0.55)), a));
+  }
+  const rightArmLength = indexPlateInner + 0.02 - armStart;
+  rightArmProfile.push(
+    new THREE.Vector2(0.12, rightArmLength),
+    new THREE.Vector2(0, rightArmLength),
+  );
+  const rightArm = new THREE.LatheGeometry(rightArmProfile, 40)
+    .rotateZ(-Math.PI / 2).translate(armStart, handleY, 0);
+  const indexPlateTop = handleY + 0.24;
+  const indexPlateBottom = plateY(128);
+  const indexPlate = new RoundedBoxGeometry(
+    0.07, indexPlateTop - indexPlateBottom, 0.56, 3, 0.025,
+  ).translate(indexPlateInner + 0.035, (indexPlateTop + indexPlateBottom) / 2, 0);
+  const adjusterHandle = new THREE.Mesh(
+    mergeGeometries([leftArm, rightArm, indexPlate]
+      .map((g) => (g.index ? g.toNonIndexed() : g))),
+    driverMaterial,
+  );
+  adjusterHandle.userData.role = 'jar-adjustment-cross-handle';
   jarAssembly.add(
     mercuryColumn,
     mercurySurface,
     mercuryMeniscus,
     glassJar,
-    glassBottom,
     ...jarRims,
-    hangerCrossbar,
+    jarCap,
+    capBoss,
+    ...neckPacking,
+    capScrewHead,
+    threadHelix,
     adjusterBlock,
+    blockPin,
     adjusterHandle,
-    ...handleEnds,
-    ...shoulderHangers,
     ...sideClamps,
     ...clampPins,
   );
@@ -684,7 +978,6 @@ function mercurialCompensationPendulum(movement) {
     movingPivotHub,
     rod,
     rodIndex,
-    threadHelix,
     jarAssembly,
     compensationDatumRing,
     centerOfOscillationMarker,
@@ -698,12 +991,8 @@ function mercurialCompensationPendulum(movement) {
     rod.position.y = -(state.massProperties.rodLength + 0.25) / 2;
     rodIndex.position.y = -1.02
       * state.massProperties.rodLength / referenceRodLength;
-    threadHelix.scale.y = state.massProperties.rodLength
-      / referenceRodLength;
     jarAssembly.position.y = -state.massProperties.jarCenterDistance;
-    mercuryColumn.scale.y = state.fillHeight;
-    mercuryColumn.position.y = state.massProperties.jarCenterDistance
-      - state.massProperties.mercuryCenterDistance;
+    setMercuryHeight(state.fillHeight);
     mercurySurface.position.y = state.massProperties.jarCenterDistance
       - state.mercuryTopDistance;
     mercuryMeniscus.position.y = mercurySurface.position.y;
@@ -728,21 +1017,24 @@ function mercurialCompensationPendulum(movement) {
   root.userData.blocks = {
     adjusterBlock,
     adjusterHandle,
+    blockPin,
+    capBoss,
+    capScrewHead,
     centerOfOscillationMarker,
     ceilingPlate,
     clampPins,
     compensationDatumRing,
     fixedFrame,
     fixedPivotShaft,
-    glassBottom,
     glassJar,
-    hangerCrossbar,
     jarAssembly,
+    jarCap,
     jarRims,
     mercuryColumn,
     mercuryMeniscus,
     mercurySurface,
     movingPivotHub,
+    neckPacking,
     pendulumCarrier,
     rod,
     rodIndex,
@@ -878,7 +1170,6 @@ function mercurialCompensationPendulum(movement) {
   for (const object of [
     compensationDatumRing,
     centerOfOscillationMarker,
-    glassBottom,
     glassJar,
     mercuryMeniscus,
     mercurySurface,
@@ -1368,8 +1659,51 @@ function compoundBarCompensationPendulum(movement) {
   pendulumCarrier.userData.role = 'compound-bar-compensated-pendulum';
   const movingPivotHub = cylinderAlongZ(0.28, 0.72, bobMaterial, 36);
   movingPivotHub.userData.role = 'moving-pendulum-pivot-hub';
-  const rod = cylinderAlongY(0.085, 1, steelMaterial, 28);
-  rod.position.z = -0.16;
+  // p104: Brown's broad flat rod flaring through two tangent concave arcs
+  // into C, brazed on the bar, as one flat extrusion on the mechanism plane
+  // (it was a thin wire off-plane at z = -0.16 meeting a small cube).
+  const layerThickness = 0.135;
+  const rodTopBelowPivot = 0.25;
+  const rodHalfWidth = 0.20;
+  const rodDepth = 0.30;
+  const collarHalfWidth = 0.29;
+  const collarHeight = 0.30;
+  const flareToe = 1.07;
+  const referenceBarTopDistance = referenceBarCenterDistance - layerThickness;
+  const rodShape = (() => {
+    const top = 0;
+    const barTop = rodTopBelowPivot - referenceBarTopDistance;
+    const liftAt = (x, lift) => lift * (x / barHalfSpan) ** 2;
+    const minimumLift = Math.min(
+      weightStateAtRodExtension(maximumRodExtension).barEndLift,
+      weightStateAtRodExtension(-maximumRodExtension).barEndLift,
+      referenceBarEndLift,
+    );
+    const collarTop = barTop + collarHeight;
+    const toeY = barTop + liftAt(flareToe, minimumLift) - 0.008;
+    const embed = barTop - 0.03;
+    const a = flareToe - collarHalfWidth;
+    const b = collarTop - toeY;
+    const right = [[rodHalfWidth, top], [rodHalfWidth, collarTop],
+      [collarHalfWidth, collarTop]];
+    for (let i = 1; i <= 40; i += 1) {
+      const theta = Math.PI + (Math.PI / 2) * i / 40;
+      right.push([collarHalfWidth + a + a * Math.cos(theta),
+        collarTop + b * Math.sin(theta)]);
+    }
+    right.push([flareToe, embed]);
+    const outline = [...right, ...right.slice().reverse().map(([x, y]) => [-x, y])];
+    return new THREE.Shape(outline.map(([x, y]) => new THREE.Vector2(x, y)));
+  })();
+  const rod = new THREE.Mesh(
+    new THREE.ExtrudeGeometry(rodShape, {
+      bevelEnabled: false,
+      curveSegments: 1,
+      depth: rodDepth,
+    }).translate(0, 0, -rodDepth / 2),
+    frameMaterial,
+  );
+  rod.position.y = -rodTopBelowPivot;
   rod.userData.role = 'thermally-expanding-steel-pendulum-rod';
 
   const mainBobShape = new THREE.Shape();
@@ -1415,53 +1749,63 @@ function compoundBarCompensationPendulum(movement) {
   mainBobWitness.userData.role = 'white-main-weight-motion-index';
   mainBob.add(mainBobWitness);
 
-  const threadPoints = Array.from({ length: 145 }, (_, index) => {
-    const progress = index / 144;
-    const angle = progress * FULL_TURN * 10;
-    return new THREE.Vector3(
-      0.12 * Math.cos(angle),
-      -progress * 0.78,
-      0.12 * Math.sin(angle),
-    );
-  });
-  const lowerThread = tubeThrough(
-    threadPoints,
-    0.022,
-    brassMaterial,
-    'visible-lower-bob-adjustment-thread',
+  // p104: the lower adjusting screw is a solid cut V thread from the shared
+  // builder on a round stub, with a bored nut, all centred on z = 0.
+  const lowerNutRadius = 0.40;
+  const lowerNutHeight = 0.50;
+  const lowerStubLength = (sourceRasterRodEnd.y
+    - sourceRasterMainBobBottomRight.y) * sourceScale;
+  const lowerStubRadius = 0.15;
+  const lowerThreadProfile = {
+    inner: lowerStubRadius - 0.005,
+    outer: lowerStubRadius + 0.04,
+    low: -lowerStubLength,
+    high: -0.02,
+    rootWidth: 0.075,
+    crestWidth: 0.02,
+    lead: 0.09 / FULL_TURN,
+    phase: 0,
+  };
+  const lowerThread = new THREE.Mesh(
+    mergeGeometries([
+      trapezoidThread(lowerThreadProfile, 96).rotateX(-Math.PI / 2),
+      new THREE.CylinderGeometry(lowerStubRadius, lowerStubRadius,
+        lowerStubLength + 0.01, 40).translate(0, -(lowerStubLength - 0.01) / 2, 0)
+        .toNonIndexed().deleteAttribute('uv'),
+    ]),
+    steelMaterial,
   );
-  const lowerAdjuster = cylinderAlongY(0.31, 0.34, bobMaterial, 36);
+  lowerThread.userData.role = 'visible-lower-bob-adjustment-thread';
+  lowerThread.userData.threadProfile = lowerThreadProfile;
+  const lowerAdjuster = new THREE.Mesh(boredLatheGeometry([
+    { radial: lowerNutRadius, axial: -lowerNutHeight },
+    { radial: lowerNutRadius, axial: 0.005 },
+  ], lowerThreadProfile.outer + 0.006, 72), bobMaterial);
   lowerAdjuster.userData.role = 'main-bob-lower-adjusting-nut';
 
   const compoundBar = new THREE.Group();
   compoundBar.userData.role = 'compound-bimetallic-bar-C';
-  const barSegmentCount = 40;
-  const segmentMeshes = [];
-  const layerThickness = 0.105;
+  // p104: each lamina is one bent strip running right through both W
+  // weights to Brown's rounded knob ends (it was 40 boxes per layer, ending
+  // inside W, with a separate stub beyond).
   const layerDepth = 1.02;
-  for (let index = 0; index < barSegmentCount; index += 1) {
-    const steel = new THREE.Mesh(
-      new THREE.BoxGeometry(1, layerThickness, layerDepth),
-      steelMaterial,
-    );
-    steel.userData.layer = 'iron-or-steel-upper';
-    steel.userData.role = 'upper-iron-or-steel-layer-of-compound-bar';
-    const brass = new THREE.Mesh(
-      new THREE.BoxGeometry(1, layerThickness, layerDepth),
-      brassMaterial,
-    );
-    brass.userData.layer = 'brass-lower';
-    brass.userData.role = 'lower-brass-layer-of-compound-bar';
-    segmentMeshes.push({ brass, steel });
-    compoundBar.add(brass, steel);
-  }
-  const centerClamp = new THREE.Mesh(
-    new THREE.BoxGeometry(0.55, 0.58, 1.12),
-    bobMaterial,
-  );
-  centerClamp.userData.role = 'center-clamp-C-brazed-to-pendulum-rod';
-  compoundBar.add(centerClamp);
-
+  const barTipOverhang = (sourceRasterLeftWeightCenter.x
+    - sourceRasterLeftBarTip.x) * sourceScale;
+  const barKnobCenter = barHalfSpan + barTipOverhang - layerThickness;
+  const steelLamina = makeBentLamina({
+    layer: 'iron-or-steel-upper',
+    material: steelMaterial,
+    role: 'upper-iron-or-steel-layer-of-compound-bar',
+    sign: 1,
+  });
+  const brassLamina = makeBentLamina({
+    layer: 'brass-lower',
+    material: brassMaterial,
+    role: 'lower-brass-layer-of-compound-bar',
+    sign: -1,
+  });
+  const segmentMeshes = [{ brass: brassLamina.mesh, steel: steelLamina.mesh }];
+  compoundBar.add(brassLamina.mesh, steelLamina.mesh);
   const makeEndWeight = (side) => {
     const group = new THREE.Group();
     group.userData.role = side < 0
@@ -1496,7 +1840,7 @@ function compoundBarCompensationPendulum(movement) {
     witness.position.set(0, 0, weightDepth / 2 + 0.08);
     witness.userData.role = 'white-end-weight-motion-index';
     group.add(block, bore, setScrew, screwHead, outerStem, witness);
-    return { block, bore, group, outerStem, setScrew, witness };
+    return { block, bore, group, outerStem, screwHead, setScrew, witness };
   };
   const leftEndWeight = makeEndWeight(-1);
   const rightEndWeight = makeEndWeight(1);
@@ -1541,56 +1885,27 @@ function compoundBarCompensationPendulum(movement) {
   );
   root.add(fixedFrame, pendulumCarrier);
 
-  const setBarLayerSegment = (mesh, start, end, normalOffset) => {
-    const delta = end.clone().sub(start);
-    const length = delta.length();
-    const tangentAngle = Math.atan2(delta.y, delta.x);
-    const normal = new THREE.Vector3(
-      -Math.sin(tangentAngle),
-      Math.cos(tangentAngle),
-      0,
-    );
-    mesh.position.copy(start).add(end).multiplyScalar(0.5)
-      .addScaledVector(normal, normalOffset);
-    mesh.rotation.z = tangentAngle;
-    mesh.scale.x = length;
-  };
-
   const update = (time) => {
     const state = stateAtTime(time);
     pendulumCarrier.rotation.z = state.swingAngle;
-    rod.scale.y = state.massProperties.rodLength - 0.25;
-    rod.position.y = -(state.massProperties.rodLength + 0.25) / 2;
+    // The flat rod and C stretch with the rod's thermal extension (at most
+    // 0.4%), so C stays brazed to the bar centre.
+    rod.scale.y = (state.barCenterDistance - rodTopBelowPivot)
+      / (referenceBarCenterDistance - rodTopBelowPivot);
     mainBob.position.y = -state.massProperties.mainBobCenterDistance;
     mainBobHub.position.y = mainBob.position.y;
     compoundBar.position.y = -state.barCenterDistance;
-    centerClamp.position.y = 0;
-    for (let index = 0; index < barSegmentCount; index += 1) {
-      const normalizedStart = -1 + 2 * index / barSegmentCount;
-      const normalizedEnd = -1 + 2 * (index + 1) / barSegmentCount;
-      const start = new THREE.Vector3(
-        normalizedStart * barHalfSpan,
-        state.barEndLift * normalizedStart ** 2,
-        0,
-      );
-      const end = new THREE.Vector3(
-        normalizedEnd * barHalfSpan,
-        state.barEndLift * normalizedEnd ** 2,
-        0,
-      );
-      setBarLayerSegment(
-        segmentMeshes[index].steel,
-        start,
-        end,
-        layerThickness / 2,
-      );
-      setBarLayerSegment(
-        segmentMeshes[index].brass,
-        start,
-        end,
-        -layerThickness / 2,
-      );
-    }
+    const lift = state.barEndLift;
+    const lamina = {
+      curve: (x) => lift * (x / barHalfSpan) ** 2,
+      depth: layerDepth,
+      tangent: (x) => [1, 2 * lift * x / barHalfSpan ** 2],
+      thickness: layerThickness,
+      xEnd: barKnobCenter,
+      xStart: -barKnobCenter,
+    };
+    steelLamina.set(lamina);
+    brassLamina.set(lamina);
     const leftBarPoint = state.barPointAtNormalizedX(-1);
     const rightBarPoint = state.barPointAtNormalizedX(1);
     leftEndWeight.group.position.set(
@@ -1607,8 +1922,8 @@ function compoundBarCompensationPendulum(movement) {
     rightEndWeight.group.rotation.z = rightBarPoint.tangentAngle;
     const bobBottomDistance = state.massProperties.mainBobCenterDistance
       + mainBobHeight / 2;
-    lowerAdjuster.position.y = -bobBottomDistance - 0.14;
-    lowerThread.position.y = -bobBottomDistance - 0.30;
+    lowerAdjuster.position.y = -bobBottomDistance;
+    lowerThread.position.y = -bobBottomDistance;
     root.userData.compensationState = {
       barEndLift: state.barEndLift,
       centerOfOscillationError: state.centerOfOscillationError,
@@ -1630,8 +1945,8 @@ function compoundBarCompensationPendulum(movement) {
   root.userData.archetype =
     'compound-bimetal-bar-constant-center-of-oscillation-pendulum';
   root.userData.blocks = {
+    brassLamina: brassLamina.mesh,
     ceilingPlate,
-    centerClamp,
     centerOfOscillationMarker,
     compensationDatum,
     compoundBar,
@@ -1649,6 +1964,7 @@ function compoundBarCompensationPendulum(movement) {
     rightEndWeight,
     rod,
     segmentMeshes,
+    steelLamina: steelLamina.mesh,
   };
   root.userData.cameraFitBounds = new THREE.Box3(
     new THREE.Vector3(-5.15, -7.55, -2.10),
@@ -1776,6 +2092,93 @@ function compoundBarCompensationPendulum(movement) {
   root.userData.weightStateAtRodExtension = weightStateAtRodExtension;
 
   correctCompensationJournals(root, movement.id);
+  // p104: rebuilt after the shared journal pass, which drilled M along the
+  // old off-plane rod and slotted W far taller than the bar.
+  {
+    // Brown's M: straight sides and flat top with large tangent shoulder
+    // arcs, one smooth extrusion whose top meets the bar's underside at C.
+    const bevel = 0.04;
+    const shoulder = 0.62;
+    const half = mainBobWidth / 2 - bevel;
+    const top = referenceMainBobCenterDistance - referenceBarCenterDistance
+      - layerThickness - 0.003 - bevel;
+    const bottom = -mainBobHeight / 2 + bevel;
+    const outline = new THREE.Shape();
+    outline.moveTo(-half, bottom);
+    outline.lineTo(half, bottom);
+    outline.lineTo(half, top - shoulder);
+    outline.absarc(half - shoulder, top - shoulder, shoulder, 0, Math.PI / 2, false);
+    outline.lineTo(-half + shoulder, top);
+    outline.absarc(-half + shoulder, top - shoulder, shoulder, Math.PI / 2, Math.PI, false);
+    outline.closePath();
+    mainBob.geometry.dispose();
+    mainBob.geometry = new THREE.ExtrudeGeometry(outline, {
+      bevelEnabled: true,
+      bevelSegments: 4,
+      bevelSize: bevel,
+      bevelThickness: bevel,
+      curveSegments: 48,
+      depth: mainBobDepth - 2 * bevel,
+      steps: 1,
+    }).translate(0, 0, -(mainBobDepth - 2 * bevel) / 2);
+    mainBob.position.z = 0;
+    // W: a block whose rectangular passage fits the two-layer bar section
+    // (0.004 all round, plus the bar's worst sag across W's width).
+    const maximumLift = Math.max(
+      weightStateAtRodExtension(maximumRodExtension).barEndLift,
+      weightStateAtRodExtension(-maximumRodExtension).barEndLift,
+    );
+    const sag = maximumLift / barHalfSpan ** 2 * (weightWidth / 2) ** 2;
+    const passage = {
+      bottom: -layerThickness - 0.004,
+      halfDepth: layerDepth / 2 + 0.004,
+      top: layerThickness + 0.004 + sag,
+    };
+    const blockHalfDepth = layerDepth / 2 + 0.09;
+    for (const weight of [leftEndWeight, rightEndWeight]) {
+      const shape = new THREE.Shape([
+        [-blockHalfDepth, -weightHeight / 2],
+        [blockHalfDepth, -weightHeight / 2],
+        [blockHalfDepth, weightHeight / 2],
+        [-blockHalfDepth, weightHeight / 2],
+      ].map(([x, y]) => new THREE.Vector2(x, y)));
+      shape.holes.push(new THREE.Path([
+        [-passage.halfDepth, passage.bottom],
+        [-passage.halfDepth, passage.top],
+        [passage.halfDepth, passage.top],
+        [passage.halfDepth, passage.bottom],
+      ].map(([x, y]) => new THREE.Vector2(x, y))));
+      weight.block.geometry.dispose();
+      weight.block.geometry = new THREE.ExtrudeGeometry(shape, {
+        bevelEnabled: false,
+        depth: weightWidth,
+      }).translate(0, 0, -weightWidth / 2).rotateY(Math.PI / 2);
+      weight.block.userData.passage = passage;
+      // The laminae now run through W to the knob; no separate stub.
+      weight.group.remove(weight.outerStem);
+      // Brown's set screw: a small countersunk head in W's top.
+      weight.setScrew.geometry.dispose();
+      weight.setScrew.geometry = new THREE.CylinderGeometry(0.07, 0.07, 0.07, 24)
+        .translate(0, 0.035 - 0.005, 0);
+      weight.setScrew.position.set(0, weightHeight / 2, 0);
+      weight.screwHead.geometry.dispose();
+      weight.screwHead.geometry = new THREE.CylinderGeometry(0.15, 0.08, 0.10, 32)
+        .translate(0, 0.05, 0);
+      weight.screwHead.position.set(0, weightHeight / 2 + 0.065, 0);
+    }
+    lowerAdjuster.geometry.dispose();
+    lowerAdjuster.geometry = boredLatheGeometry([
+      { radial: lowerNutRadius, axial: -lowerNutHeight },
+      { radial: lowerNutRadius, axial: 0.005 },
+    ], lowerThreadProfile.outer + 0.006, 72);
+    lowerAdjuster.position.z = 0;
+    lowerThread.position.z = 0;
+  }
+  root.userData.reconstructionNote = 'Swing and temperature are prescribed '
+    + 'and exaggerated. The bar curvature is chosen to preserve the ideal '
+    + 'compound-pendulum effective length I/Q; it is not calculated from real '
+    + 'steel/brass expansion or bending stiffness. The upper suspension beyond '
+    + 'the cropped engraving is inferred.';
   update(0);
   root.traverse((object) => {
     const materials = Array.isArray(object.material)

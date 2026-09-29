@@ -80,6 +80,10 @@ export function finishOpposedSpur239(model) {
   // (z -0.43 to -0.23).
   replace(b.gearHub, ring(0.108, 0.46, -0.225, g.gearDepth * 0.71, 96));
   b.gearHub.rotation.set(0, 0, 0);
+  // p104: a darker shade of the wheel metal, as on 212/235/241, so the boss
+  // reads as a boss rather than only as a crescent shadow round the arbor.
+  b.gearHub.material = b.gearHub.material.clone();
+  b.gearHub.material.color.multiplyScalar(0.68);
   // The fixed shafts terminate in bored journals attached to the rear rail.
   const journals = [], posts = [];
   const frameMaterial = matte(PALETTE.frame);

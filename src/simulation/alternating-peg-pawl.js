@@ -42,7 +42,10 @@ export function makeAlternatingPegPawlDrive(){
  leverOutline.push(local([1218,1109]));
  const leverShape=clip.difference(poly(leverOutline),poly(circle([0,0],.044)),...['upper','lower'].map(key=>poly(circle(p.arms[key],.037))));
  attach('leverBody',plate(leverShape,.21,.29),'lever',PALETTE.driver);
- attach('fixedPivotA',disk(.041,-.15,.34),'fixed',PALETTE.muted,[...p.A,0]);
+ // p104: Brown draws only the pin circle, so the fixed pin stops just behind
+ // the lever's back face (0.21) under a rear cap like the front one.
+ attach('fixedPivotA',disk(.041,.19,.34),'fixed',PALETTE.muted,[...p.A,0]);
+ attach('fixedPivotRearCap',disk(.061,.18,.19),'fixed',PALETTE.muted,[...p.A,0]);
  attach('fixedPivotCap',disk(.061,.34,.35),'fixed',PALETTE.muted,[...p.A,0]);
  // Each hook head is a plain C of true circular arcs: a round socket for the
  // peg, a concentric outer rim of constant thickness and round-ended lips,

@@ -91,11 +91,15 @@ function sourceSupports507(b){
  replace(b.outputBearing,boredLatheGeometry([{radial:.24,axial:-.14},{radial:.24,axial:.14}],.132,64));
  b.outputBearing.rotation.set(0,0,Math.PI/2);b.outputBearing.position.set(.86,0,0);
  remove(b.outputBearingArm);
+ // Pass 104: the post is narrower than the boss it carries both along the
+ // shaft (0.26 in the boss's 0.28) and across it (0.28 in the boss's 0.48),
+ // and its top (y -0.17) lies inside the boss below the bore, so no lip or
+ // ledge of it stands past the round boss (it was 0.34 wide along the shaft).
  const outline=new THREE.Shape();
- outline.moveTo(.42,-3.24);outline.quadraticCurveTo(.69,-3.08,.69,-2.75);
- outline.lineTo(.69,-.19);outline.lineTo(1.03,-.19);outline.lineTo(1.03,-2.75);
- outline.quadraticCurveTo(1.03,-3.08,1.30,-3.24);outline.closePath();
- replace(b.outputBearingPedestal,new THREE.ExtrudeGeometry(outline,{depth:.34,bevelEnabled:false,curveSegments:16}).translate(0,0,-.17));
+ outline.moveTo(.46,-3.24);outline.quadraticCurveTo(.73,-3.08,.73,-2.75);
+ outline.lineTo(.73,-.17);outline.lineTo(.99,-.17);outline.lineTo(.99,-2.75);
+ outline.quadraticCurveTo(.99,-3.08,1.26,-3.24);outline.closePath();
+ replace(b.outputBearingPedestal,new THREE.ExtrudeGeometry(outline,{depth:.28,bevelEnabled:false,curveSegments:16}).translate(0,0,-.14));
  b.outputBearingPedestal.position.set(0,0,0);
  replace(b.supportBase,new THREE.BoxGeometry(3.80,.22,1.20));b.supportBase.scale.set(1,1,1);b.supportBase.position.set(-.60,-3.35,-.1);
  replace(b.bottomMainBearing,boredLatheGeometry([{radial:.29,axial:-.225},{radial:.29,axial:.225}],.106,64));

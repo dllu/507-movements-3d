@@ -119,3 +119,15 @@ for(const id of [181,182])test(`${id} synchronous registry route plays the same 
   assert.ok(worst<3e-4,`compact keys follow the bake: ${worst}`);
  }finally{baked.dispose();live.dispose();}
 });
+
+for(const id of [181,182])test(`${id} (pass 104): the upper handle is ochre, the lower blue, so their crossing arms read as two parts`,()=>{
+ const model=makeBakedDiagonalCatchModel(bundle,id),colours={upper:new Set(),lower:new Set()};
+ try{
+  model.root.traverse(o=>{const r=o.name||'';if(o.isMesh&&/^(upper|lower)-handle/.test(r))colours[r.split('-')[0]].add(o.material.color.getHexString());});
+  assert.equal(colours.upper.size,1);assert.equal(colours.lower.size,1);
+  const [u]=colours.upper,[l]=colours.lower;
+  assert.notEqual(u,l);
+  const c=new THREE.Color('#'+u),hsl={};c.getHSL(hsl);
+  assert.ok(hsl.h>0.08&&hsl.h<0.16,'ochre upper handle');
+ }finally{model.dispose?.();}
+});

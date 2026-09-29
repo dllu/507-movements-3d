@@ -598,9 +598,10 @@ test('movement 199 fills a real 3D envelope as the reviewed queue advances throu
   const size = physicalBounds.getSize(new THREE.Vector3());
   assert.ok(size.x > 8.5);
   assert.ok(size.y > 4.2, 'the physical frame fills the vertical envelope without oversized pulley index blocks');
-  assert.ok(size.z > 1.5);
-  assert.ok(physicalBounds.min.z < -0.79);
-  assert.ok(physicalBounds.max.z > 0.71);
+  // p104: the pinion shaft runs from its rear bearing to 0.03 past the hub.
+  assert.ok(size.z > 0.95);
+  assert.ok(physicalBounds.min.z < -0.59);
+  assert.ok(physicalBounds.max.z > 0.31);
   let visibleMeshCount = 0;
   let installedPinCount = 0;
   let fixedGuideRollerCount = 0;
@@ -620,7 +621,8 @@ test('movement 199 fills a real 3D envelope as the reviewed queue advances throu
   });
   // The rollers are plain discs and the white indices are hidden, as drawn.
   // The ten tooth witnesses are hidden inside the merged rack extrusion.
-  assert.ok(visibleMeshCount >= 29);
+  // p104: the two black running strips along the rails are hidden too.
+  assert.ok(visibleMeshCount >= 27);
   assert.equal(installedPinCount, 4);
   assert.equal(fixedGuideRollerCount, 4);
   assert.equal(oversizedEntryToothCount, 2);

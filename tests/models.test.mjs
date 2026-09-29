@@ -3758,7 +3758,7 @@ test('movement 54 uses the rebuilt radial mangle and captured reversal guide', (
   assert.equal(model.root.userData.mechanism, 'radial-tooth-mangle-with-captured-crab-guide');
   assert.equal(model.root.userData.parts.teeth.length, 31);
   assert.equal(model.root.userData.parts.spokes.length, 4);
-  assert.equal(model.root.userData.parts.crabReturns.length, 2);
+  assert.equal(model.root.userData.parts.crabGuides.length, 4);
   assert.ok(model.root.userData.loadedMotion);
   assert.equal(model.root.userData.hideGround, true);
   disposeModel(model.root);

@@ -43,7 +43,10 @@ function forkedHorn209(b){
   const W=F.windowPath,last=W.length-1,band=[];
   for(let i=0;i<last;i+=2){
    const taper=j=>Math.min(j,last-j)/(last/2),a=W[i].point,b=W[Math.min(i+2,last)].point;
-   band.push(clip.union(poly(circle([a.x,a.y],F.slotRadius+.018+.075*taper(i)**.6,40)),poly(circle([b.x,b.y],F.slotRadius+.018+.075*taper(Math.min(i+2,last))**.6,40))));
+   // p104: the horns kept at least 0.058 of band outside the pin's path to
+   // their ends, which are then the band's round end arcs, not needle points.
+   const width=j=>Math.max(.058,.018+.075*taper(j)**.6);
+   band.push(clip.union(poly(circle([a.x,a.y],F.slotRadius+width(i),40)),poly(circle([b.x,b.y],F.slotRadius+width(Math.min(i+2,last)),40))));
   }
   const hull=pts=>{const p=[...pts].sort((a,b)=>a[0]-b[0]||a[1]-b[1]),cross=(o,a,b)=>(a[0]-o[0])*(b[1]-o[1])-(a[1]-o[1])*(b[0]-o[0]),lo=[],hi=[];for(const q of p){while(lo.length>1&&cross(lo.at(-2),lo.at(-1),q)<=0)lo.pop();lo.push(q);}for(const q of p.reverse()){while(hi.length>1&&cross(hi.at(-2),hi.at(-1),q)<=0)hi.pop();hi.push(q);}return poly([...lo.slice(0,-1),...hi.slice(0,-1)]);};
   // Each band step is the hull of two neighbouring discs (a tapered capsule).
@@ -97,7 +100,10 @@ export function correctVariableDrive(root,id){
   for(const floor of b.slotFloors)floor.visible=false;
   b.pinionWeb.userData.generationGeometry=b.pinionWeb.geometry;replace(b.pinionWeb,outlined(pinSlotOutline,pinion208Slab[1]-pinion208Slab[0],.078).translate(0,0,(pinion208Slab[0]+pinion208Slab[1])/2));for(const tooth of b.pinionTeeth)tooth.visible=false;
   for(const ring of b.pinionFaceRings)ring.visible=false;
-  replace(b.pinWheelDisk,ring(1.58,.072,.18));replace(b.pinWheelHub,ring(.19,.072,.56));
+  replace(b.pinWheelDisk,ring(1.58,.072,.18));
+  // p104: Brown's hub ring stands just proud of each face (0.06); at 0.24
+  // proud it threw a blob shadow on the face.
+  replace(b.pinWheelHub,ring(.19,.072,.30));b.pinWheelHub.position.z=0;
   // p101: the pins stop at z 0.46 (0.06 past the pitch line, r 0.94 from the
   // pinion axis). Reaching deeper (0.68, r 0.72) made the pins' sweep undercut
   // every tooth into a slender hook; now each tooth is a clean radial-flank,

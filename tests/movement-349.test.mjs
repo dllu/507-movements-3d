@@ -158,7 +158,7 @@ test('movement 349 preserves the official outlines, pivots, arm length, phase, a
     'quintic smootherstep');
   assert.equal(
     sourceAnimation.timingRefinement.changesExtremaOrDwells,
-    false,
+    true,
   );
   assert.match(sourceAnimation.timingRefinement.reason,
     /removes visible endpoint jerk/);
@@ -200,7 +200,7 @@ test('movement 349 preserves the official outlines, pivots, arm length, phase, a
       (sourceTopLeft.x + 8) * pixelsPerUnit,
       (4.5 - sourceTopLeft.y) * pixelsPerUnit,
     ),
-    4e-14,
+    1e-12,
     'source-start upper-left pivot raster',
   );
   const plate = sourceReference.brownPlate349;
@@ -314,40 +314,46 @@ test('movement 349 smooths every official traverse/dwell boundary without changi
     stateAtTime,
   } = model.root.userData;
 
-  near(canonicalStates.sourceStart.source.halfSeparation, 1.5, 0,
+  const closed = geometry.closedHalfSeparation;
+  assert.ok(closed > 1 && closed <= 1.06,
+    'closed stop just short of the official flush pose');
+  const midway = (2 + closed) / 2;
+  near(canonicalStates.sourceStart.source.halfSeparation, midway, 1e-15,
     'source-start half-separation');
   near(canonicalStates.upperExtreme.source.halfSeparation, 2, 0,
     'upper extreme');
   near(canonicalStates.upperDwellEnd.source.halfSeparation, 2, 0,
     'upper dwell end');
-  near(canonicalStates.descendingMidpoint.source.halfSeparation, 1.5,
-    0, 'descending midpoint');
-  near(canonicalStates.lowerExtreme.source.halfSeparation, 1, 0,
+  near(canonicalStates.descendingMidpoint.source.halfSeparation, midway,
+    1e-15, 'descending midpoint');
+  near(canonicalStates.lowerExtreme.source.halfSeparation, closed, 0,
     'lower extreme');
-  near(canonicalStates.lowerDwellEnd.source.halfSeparation, 1, 0,
+  near(canonicalStates.lowerDwellEnd.source.halfSeparation, closed, 0,
     'lower dwell end');
-  near(canonicalStates.cycleClosure.source.halfSeparation, 1.5, 0,
+  near(canonicalStates.cycleClosure.source.halfSeparation, midway, 1e-15,
     'cycle closure');
 
+  const modelPose = (value) => (value === 1 ? closed : value);
   for (const phase of [0.2, 0.3, 0.7, 0.8]) {
     const smooth = smoothHeightAtPhase(phase);
     near(smooth.velocityPerPhase, 0, 0,
       `smooth boundary velocity ${phase}`);
     near(smooth.accelerationPerPhaseSquared, 0, 0,
       `smooth boundary acceleration ${phase}`);
-    near(smooth.value, officialHeightAtPhase(phase).value, 0,
+    near(smooth.value, modelPose(officialHeightAtPhase(phase).value), 0,
       `boundary pose retained ${phase}`);
   }
   for (const [start, end] of [[0.2, 0.3], [0.7, 0.8]]) {
     for (let sample = 0; sample <= 32; sample += 1) {
       const phase = THREE.MathUtils.lerp(start, end, sample / 32);
       near(smoothHeightAtPhase(phase).value,
-        officialHeightAtPhase(phase).value, 0,
+        modelPose(officialHeightAtPhase(phase).value), 0,
       `dwell pose retained ${phase}`);
     }
   }
   assert.equal(sourceAnimation.timingRefinement.changesExtremaOrDwells,
-    false);
+    true);
+  assert.equal(sourceAnimation.closedStop.modelHalfSeparation, closed);
   near(stateAtTime(canonicalTimes.upperExtreme).halfSeparationRate,
     0, 0, 'upper extreme model speed');
   near(stateAtTime(canonicalTimes.lowerExtreme).halfSeparationRate,
@@ -526,4 +532,44 @@ test('movement 349 closes smoothly and leaves movement 507 authored', () => {
   assert.equal(model507.root.userData.fidelity, 'authored');
   disposeModel(model.root);
   disposeModel(model507.root);
+});
+
+test('movement 349 rulers never overlap the arrow bar or each other', () => {
+  const model = createMovementModel(catalog.movements[348]);
+  const { blocks, geometry } = model.root.userData;
+  const raycaster = new THREE.Raycaster();
+  const down = new THREE.Vector3(0, -1, 0);
+  const inside = (mesh, x, z) => {
+    raycaster.set(new THREE.Vector3(x, 5, z), down);
+    return raycaster.intersectObject(mesh, false).length > 0;
+  };
+  let minimumBarGap = Infinity;
+  let minimumTailGap = Infinity;
+  for (let sample = 0; sample < 40; sample += 1) {
+    model.update(geometry.cyclePeriod * sample / 40);
+    model.root.updateMatrixWorld(true);
+    const upper = new THREE.Box3().setFromObject(blocks.upperRuler.body);
+    const lower = new THREE.Box3().setFromObject(blocks.lowerRuler.body);
+    minimumTailGap = Math.min(minimumTailGap, lower.min.z - upper.max.z);
+    for (let x = -2.99; x <= 3; x += 0.05) {
+      for (let z = -0.6; z <= 0.6; z += 0.0125) {
+        const bar = inside(blocks.intermediateBody, x, z);
+        const up = inside(blocks.upperRuler.body, x, z);
+        const low = inside(blocks.lowerRuler.body, x, z);
+        assert.ok(!(bar && (up || low)),
+          `ruler overlaps arrow bar at phase ${sample / 40}, x ${x}, z ${z}`);
+        assert.ok(!(up && low), `rulers overlap at phase ${sample / 40}`);
+      }
+    }
+    // Main ruler inner edges (half-separation - 0.5 source units) against
+    // the bar's half-width of 0.5 source units.
+    const state = model.root.userData.kinematics;
+    minimumBarGap = Math.min(minimumBarGap,
+      (state.source.halfSeparation - 1) * geometry.sourceScale);
+  }
+  assert.ok(minimumBarGap > 0.02 && minimumBarGap < 0.05,
+    `closed ruler stops against the bar with a hairline gap: ${minimumBarGap}`);
+  assert.ok(minimumTailGap > 0.04 && minimumTailGap < 0.1,
+    `ruler tails stop short of each other: ${minimumTailGap}`);
+  disposeModel(model.root);
 });

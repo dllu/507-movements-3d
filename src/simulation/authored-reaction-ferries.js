@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {correctReactionFerry} from './reaction-ferry-parts.js';
 import {waterVolumeMaterial} from './water-volume.js';
+import {flowingStreamSurface} from './flowing-stream-surface.js';
 import {
   PALETTE,
   markShadows,
@@ -208,6 +209,19 @@ function reactionFerry(movement) {
   river.position.set(0, (waterY + bedY) / 2, 0);
   river.renderOrder = 1;
   root.add(river);
+  // Pass 104: the current the rudder reacts to, a streaked sheet just
+  // under the surface running downstream (+x, Brown's arrow) at the stream
+  // speed, between the banks.
+  const riverCurrent = flowingStreamSurface({
+    start: new THREE.Vector3(-4.94, waterY, 0),
+    end: new THREE.Vector3(4.94, waterY, 0),
+    halfWidth: riverHalfWidth - 0.08,
+    speed: streamSpeed,
+    cyclePeriod: cycleDuration,
+    depth: 0.03,
+    role: 'downstream-river-current-surface',
+  });
+  root.add(riverCurrent);
 
   const bankTopY = waterY + 0.10;
   const nearBank = addRole(new THREE.Mesh(
@@ -326,6 +340,7 @@ function reactionFerry(movement) {
 
   const update = (time) => {
     const state = stateAtTime(time);
+    riverCurrent.update(time);
     boat.position.copy(state.bowPoint);
     boat.rotation.y = -state.boatHeadingAngle;
     rudderPivot.rotation.y = state.rudderAngle;

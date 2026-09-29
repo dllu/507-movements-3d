@@ -490,7 +490,7 @@ export default {
     note: 'Great wheel G, the ratchets, click R, spring S-S\', detent T pivoted at its eye and the weight on barrel B; no frame beam, back bar, bearing or white indices are drawn.',
   },
   323: {
-    remove: ['(?:left|right)-equal-nicked-wheel-A-white-(?:face-rotation-index|rolling-index-nick)', 'visible-axle-C-identification-collar'],
+    remove: ['visible-axle-C-identification-collar'],
     note: 'Ruler B with its axle C and the two nicked wheels A; no white rotation or nick indices are drawn, and Brown\'s C is a letter on the axle, not a collar.',
   },
   329: {

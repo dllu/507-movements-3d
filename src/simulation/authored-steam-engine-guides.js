@@ -403,6 +403,9 @@ function makeConnectingRod({
   crankBore,
   wristBore,
   rodLength,
+  shankWidth = eyeRadius * 0.72,
+  wristEyeRadius = eyeRadius * 0.82,
+  wristRingRadius = eyeRadius * .78,
 }) {
   const rod = new THREE.Group();
   rod.userData.nominalLength = rodLength;
@@ -411,7 +414,7 @@ function makeConnectingRod({
 
   const bodyLength = rodLength - eyeRadius * 1.35;
   const body = new THREE.Mesh(
-    new THREE.BoxGeometry(bodyLength, eyeRadius * 0.72, depth),
+    new THREE.BoxGeometry(bodyLength, shankWidth, depth),
     drivenMaterial,
   );
   body.position.x = rodLength / 2;
@@ -425,7 +428,7 @@ function makeConnectingRod({
   );
   crankEyeBody.userData.role = 'connecting-rod-crank-eye-body';
   const wristEyeBody = boredCylinderAlongZ(
-    eyeRadius * 0.82, wristBore,
+    wristEyeRadius, wristBore,
     depth,
     drivenMaterial,
     36,
@@ -436,7 +439,7 @@ function makeConnectingRod({
   const crankEye = boredCylinderAlongZ(eyeRadius * .95, crankBore, .012, darkMaterial);
   crankEye.position.z = depth / 2 + .006;
   crankEye.userData.role = 'connecting-rod-crank-pin-eye';
-  const wristEye = boredCylinderAlongZ(eyeRadius * .78, wristBore, .012, darkMaterial);
+  const wristEye = boredCylinderAlongZ(wristRingRadius, wristBore, .012, darkMaterial);
   wristEye.position.set(rodLength, 0, depth / 2 + .006);
   wristEye.userData.role = 'connecting-rod-slide-A-eye';
 
@@ -716,41 +719,52 @@ function verticalPlanedSlotPistonGuide(movement) {
   rightPlanedFace.userData.fixed = true;
   rightPlanedFace.userData.role = 'right-planed-true-guide-surface';
 
-  const bearingHousing = boredCylinderAlongZ(
-    1.75 * sourceScale, 1.02 * sourceScale,
-    0.54,
-    frameMaterial,
-    48,
-  );
-  bearingHousing.position.z = 0.04;
+  // p104: the pillow block is one extrusion: a round housing concentric
+  // with the shaft whose sides run as straight tangents down to a flat foot
+  // on the standard's crown (was a round housing perched on a separate
+  // block foot). It spans from the frame's back face to 0.31 in front.
+  const housingRadius = 1.75 * sourceScale;
+  const housingBackZ = frameBackZ;
+  const housingFrontZ = 0.31;
+  const footHalfWidth = 2.1 * sourceScale;
+  const footBottomLocalY = -2.25 * sourceScale;
+  const footShoulderY = -1.72 * sourceScale;
+  const tangentPoint = (px, py) => {
+    // Upper tangent point from (px, py) to the housing circle.
+    const d = Math.hypot(px, py);
+    const base = Math.atan2(py, px);
+    const offset = Math.acos(housingRadius / d);
+    return base + Math.sign(px) * offset;
+  };
+  const rightTangent = tangentPoint(footHalfWidth, footShoulderY);
+  const leftTangent = Math.PI - rightTangent;
+  const pillowOutline = [
+    [-footHalfWidth, footBottomLocalY], [footHalfWidth, footBottomLocalY],
+    [footHalfWidth, footShoulderY],
+  ];
+  const arcSteps = 72;
+  for (let step = 0; step <= arcSteps; step += 1) {
+    const angle = rightTangent + (leftTangent - rightTangent) * step / arcSteps;
+    pillowOutline.push([housingRadius * Math.cos(angle),
+      housingRadius * Math.sin(angle)]);
+  }
+  pillowOutline.push([-footHalfWidth, footShoulderY]);
+  const bearingHousing = new THREE.Mesh(plate(polygonClipping.difference(
+    poly(pillowOutline), poly(circle([0, 0], 1.02 * sourceScale, 64)),
+  ), housingBackZ, housingFrontZ), frameMaterial);
   bearingHousing.userData.fixed = true;
-  bearingHousing.userData.role = 'fixed-crankshaft-bearing-housing';
+  bearingHousing.userData.role =
+    'fixed-crankshaft-pillow-block-housing-one-extrusion';
   const bearingBore = boredCylinderAlongZ(
     1.02 * sourceScale, .72 * sourceScale + .004,
-    0.565,
+    housingFrontZ - housingBackZ + 0.025,
     darkMaterial,
     42,
   );
-  bearingBore.position.z = 0.045;
+  bearingBore.position.z = (housingFrontZ + housingBackZ) / 2 + 0.005;
   bearingBore.userData.fixed = true;
   bearingBore.userData.role = 'fixed-bearing-bore-around-live-shaft';
-
-  const pillowBlockShape = new THREE.Shape();
-  pillowBlockShape.moveTo(-2.1 * sourceScale, -2.25 * sourceScale);
-  pillowBlockShape.lineTo(2.1 * sourceScale, -2.25 * sourceScale);
-  pillowBlockShape.lineTo(2.1 * sourceScale, -1.72 * sourceScale);
-  pillowBlockShape.lineTo(1.1 * sourceScale, -1.45 * sourceScale);
-  pillowBlockShape.lineTo(-1.1 * sourceScale, -1.45 * sourceScale);
-  pillowBlockShape.lineTo(-2.1 * sourceScale, -1.72 * sourceScale);
-  pillowBlockShape.closePath();
-  const pillowBlock = new THREE.Mesh(
-    centeredExtrusion(pillowBlockShape, frameDepth, 0),
-    frameMaterial,
-  );
-  pillowBlock.position.z = frameCenterZ;
-  pillowBlock.userData.fixed = true;
-  pillowBlock.userData.role = 'crankshaft-pillow-block-foot-on-frame-cap';
-  const bearingSupports = [pillowBlock];
+  const bearingSupports = [];
 
   const guideAxisTopAnchor = new THREE.Object3D();
   guideAxisTopAnchor.position.set(0, guideSlotUpperCenterY, 0);
@@ -1691,10 +1705,15 @@ function rollerGuidedFrenchEngineCrosshead(movement) {
     darkMaterial,
     depth: connectingRodDepth,
     drivenMaterial,
-    eyeRadius: 0.68 * sourceScale,
+    // p104: Brown's broad strap rod: a 0.22 shank (was 0.10) with eyes
+    // enlarged to match (crank 0.19, slide 0.16).
+    eyeRadius: 0.19,
     crankBore: crankPinRadius + .004,
     wristBore: wristPinRadius * .58 + .004,
     rodLength: connectingRodLength,
+    shankWidth: 0.22,
+    wristEyeRadius: 0.16,
+    wristRingRadius: 0.152,
   });
   rodParts.rod.userData.role =
     'single-rigid-nineteen-unit-connecting-rod-to-roller-crosshead';
@@ -1761,12 +1780,10 @@ function rollerGuidedFrenchEngineCrosshead(movement) {
   });
 
   const pistonRodLength = pistonRodTopLocalY - pistonRodBottomLocalY;
+  // p104: a round piston rod (r 0.10) filling the round gland bore
+  // (r 0.115), not a square bar dropped into it.
   const pistonRod = new THREE.Mesh(
-    new THREE.BoxGeometry(
-      0.75 * sourceScale,
-      pistonRodLength,
-      0.15,
-    ),
+    new THREE.CylinderGeometry(0.10, 0.10, pistonRodLength, 40),
     drivenMaterial,
   );
   pistonRod.position.set(

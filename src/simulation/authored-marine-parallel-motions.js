@@ -2316,6 +2316,17 @@ function doubleParallelMotion(movement) {
   const pinClearance = 0.012;
   const beamPlaneZ = 0.10;
   const beamHalfDepth = 0.09;
+  // p104: the moving layers sit directly on one another, 0.02 apart, so no
+  // bare pin shank shows between a link and the part it rides on. From the
+  // back: O's lug, the O-M bar, the beam; then the centre link M-N-Q and the
+  // rocker R-W share the first layer in front of the beam (they never come
+  // near each other), the lower radius bar R-Q lies in front of both, and
+  // R's lug stands directly behind the rocker. Pins end 0.02 proud.
+  const linkHalfDepth = 0.08;
+  const layerGap = 0.02;
+  const frontLayerZ = beamPlaneZ + beamHalfDepth + layerGap + linkHalfDepth;
+  const lowerBarPlaneZ = frontLayerZ + 2 * linkHalfDepth + layerGap;
+  const rightLugHigh = frontLayerZ - linkHalfDepth - layerGap;
   const linkWidth = 0.46 * s;
   const pinRadius = { M: 0.27 * s, N: 0.20 * s, P: 0.20 * s, Q: 0.23 * s,
     W: 0.23 * s, fixed: 0.25 * s };
@@ -2365,7 +2376,8 @@ function doubleParallelMotion(movement) {
   const leftPedestalO = makePedestal(leftPivotO, 'left-pivot-O',
     -0.62, -0.47, -0.62, -0.12, true);
   const rightPedestalR = makePedestal(rightPivotR, 'right-pivot-R',
-    0.18, 0.48, 0.18, 1.08);
+    rightLugHigh - 0.30, rightLugHigh, rightLugHigh - 0.30,
+    lowerBarPlaneZ + linkHalfDepth + layerGap);
   fixedFrame.add(leftPedestalO, rightPedestalR);
   root.add(fixedFrame);
 
@@ -2429,7 +2441,7 @@ function doubleParallelMotion(movement) {
     depth: 0.16,
     eyeMaterial: darkMaterial,
     length: rightUpperRockerLength,
-    planeZ: 0.58,
+    planeZ: frontLayerZ,
     role: 'right-upper-6.006189-unit-rocker-R-W',
     startBoreRadius: pinRadius.fixed + pinClearance,
     width: linkWidth,
@@ -2442,13 +2454,13 @@ function doubleParallelMotion(movement) {
     depth: 0.16,
     eyeMaterial: darkMaterial,
     length: centerLinkLength,
-    planeZ: 0.77,
+    planeZ: frontLayerZ,
     role: 'six-unit-center-ternary-link-M-N-Q',
     startBoreRadius: pinRadius.M + pinClearance,
     width: linkWidth,
   });
   const pointNAnchor = new THREE.Object3D();
-  pointNAnchor.position.set(centerLinkMidpointDistance, 0, 0.77);
+  pointNAnchor.position.set(centerLinkMidpointDistance, 0, frontLayerZ);
   pointNAnchor.userData.role = 'analytic-midpoint-N-on-center-link';
   centerLinkParts.rod.userData.addPinEye(centerLinkMidpointDistance,
     pinRadius.N + pinClearance);
@@ -2461,7 +2473,7 @@ function doubleParallelMotion(movement) {
     depth: 0.16,
     eyeMaterial: darkMaterial,
     length: rightLowerRadiusLength,
-    planeZ: 0.98,
+    planeZ: lowerBarPlaneZ,
     role: 'right-lower-eight-unit-radius-bar-R-Q',
     startBoreRadius: pinRadius.fixed + pinClearance,
     width: linkWidth,
@@ -2507,16 +2519,22 @@ function doubleParallelMotion(movement) {
   };
   const beamBack = beamPlaneZ - beamHalfDepth;
   const jointPins = {
-    M: pinOn(longLink, 'M', longLinkMidpointDistance, -0.32, 0.87),
-    N: pinOn(centerLinkParts.rod, 'N', centerLinkMidpointDistance, 0.67, 0.89),
+    M: pinOn(longLink, 'M', longLinkMidpointDistance, -0.32,
+      frontLayerZ + linkHalfDepth + layerGap),
+    N: pinOn(centerLinkParts.rod, 'N', centerLinkMidpointDistance,
+      frontLayerZ - linkHalfDepth - layerGap,
+      frontLayerZ + linkHalfDepth + layerGap),
     // p89: pin P's back end stops 0.01 inside the rod eye instead of lying
     // flush in its back face (the coplanar discs z-fought).
     // p95: pin P ends 0.01 inside the beam's back face and stands 0.02
     // proud of the rod's front face.
     P: pinOn(leftPiston, 'P', 0, beamBack + 0.01,
       leftPistonPlaneZ + 0.07),
-    Q: pinOn(centerLinkParts.rod, 'Q', centerLinkLength, 0.67, 1.08),
-    W: pinOn(longLink, 'W', longLinkLength, beamBack, 0.68),
+    Q: pinOn(centerLinkParts.rod, 'Q', centerLinkLength,
+      frontLayerZ - linkHalfDepth - layerGap,
+      lowerBarPlaneZ + linkHalfDepth + layerGap),
+    W: pinOn(longLink, 'W', longLinkLength, beamBack,
+      frontLayerZ + linkHalfDepth + layerGap),
   };
 
   const contacts = {
@@ -2545,13 +2563,13 @@ function doubleParallelMotion(movement) {
     rightUpperPivotR: {
       fixedMember: rightPedestalR,
       movingMember: rightUpperParts.rod,
-      point: new THREE.Vector3(rightPivotR.x, rightPivotR.y, 0.58),
+      point: new THREE.Vector3(rightPivotR.x, rightPivotR.y, frontLayerZ),
       type: 'fixed-revolute-pair-R-upper',
     },
     rightLowerPivotR: {
       fixedMember: rightPedestalR,
       movingMember: rightLowerParts.rod,
-      point: new THREE.Vector3(rightPivotR.x, rightPivotR.y, 0.98),
+      point: new THREE.Vector3(rightPivotR.x, rightPivotR.y, lowerBarPlaneZ),
       type: 'fixed-revolute-pair-R-lower',
     },
   };

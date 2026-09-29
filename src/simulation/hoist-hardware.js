@@ -108,7 +108,18 @@ export function makeHoistHook() {
   curve.add(new THREE.LineCurve3(p(0, 0.03), p(0, -0.14)));
   curve.add(new THREE.CubicBezierCurve3(p(0, -0.14), p(0, -0.20), p(-0.12, -0.22), p(-0.12, -0.31)));
   curve.add(new THREE.CubicBezierCurve3(p(-0.12, -0.31), p(-0.12, -0.46), p(0.13, -0.46), p(0.13, -0.25)));
-  return new THREE.Mesh(new THREE.TubeGeometry(curve, 64, 0.035, 12, false), matte(PALETTE.ink));
+  const hook = new THREE.Mesh(new THREE.TubeGeometry(curve, 64, 0.035, 12, false), matte(PALETTE.ink));
+  // p104: every hook's free tip is closed by a ball of the tube's radius on
+  // its end frame (as 019's pass-96 cap), so no open tube shows.
+  const { radius, radialSegments } = hook.geometry.parameters, { tangents, normals, binormals } = hook.geometry;
+  const last = tangents.length - 1;
+  const cap = new THREE.Mesh(new THREE.SphereGeometry(radius, radialSegments, 12), hook.material);
+  cap.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(
+    normals[last].clone(), tangents[last].clone(), binormals[last].clone().negate()));
+  cap.position.copy(curve.getPointAt(1));
+  cap.userData.role = 'hook-tip-cap';
+  hook.add(cap);
+  return hook;
 }
 
 export function makeHoistLoad({ radius = 0.42, height = 0.62, round = false, eyeBoss = false } = {}) {

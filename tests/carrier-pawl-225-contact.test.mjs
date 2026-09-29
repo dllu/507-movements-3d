@@ -94,7 +94,8 @@ test('225 separate pawl and carrier hinge bores clear their actual shafts', () =
     const s = at(model, phase), hinge = w.hinge.getWorldPosition(new THREE.Vector3());
     assert.ok(Math.hypot(hinge.x - s.pawlPivot.x, hinge.y - s.pawlPivot.y) < 1e-12);
     const carrier = new THREE.Box3().setFromObject(w.carrier), pawl = new THREE.Box3().setFromObject(b.pawlBody);
-    assert.ok(carrier.min.z - pawl.max.z > 0.0949);
+    // p104: flush as drawn, with a 0.005 running gap.
+    assert.ok(carrier.min.z - pawl.max.z > 0.004 && carrier.min.z - pawl.max.z < 0.006);
   }
 });
 

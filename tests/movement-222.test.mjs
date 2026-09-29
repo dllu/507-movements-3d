@@ -574,7 +574,8 @@ test('movement 222 runtime binds the eccentric and links while 262 stays authore
   const size = bounds.getSize(new THREE.Vector3());
   assert.ok(size.x > 6.9);
   assert.ok(size.y > 7.5);
-  assert.ok(size.z > 1.3);
+  // p104: the links drop 0.12 and the shafts end 0.03 past the A-B link.
+  assert.ok(size.z > 1.15);
   let meshCount = 0;
   model.root.traverse((object) => {
     if (object.isMesh) meshCount += 1;

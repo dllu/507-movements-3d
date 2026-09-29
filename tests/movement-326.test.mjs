@@ -578,3 +578,18 @@ test('movement 326 hides the connecting rod inside the capped hollow standard', 
   }
   disposeModel(model.root);
 });
+
+test('326 p104: the crankshaft pillow block is one extrusion seated on the crown', () => {
+  const model = createMovementModel(catalog.movements[325]);
+  model.update(0);
+  model.root.updateMatrixWorld(true);
+  const { blocks } = model.root.userData;
+  assert.equal(blocks.bearingSupports.length, 0, 'no separate block foot');
+  assert.equal(blocks.bearingHousing.userData.role,
+    'fixed-crankshaft-pillow-block-housing-one-extrusion');
+  const housing = new THREE.Box3().setFromObject(blocks.bearingHousing);
+  const frame = new THREE.Box3().setFromObject(blocks.fixedFrame.children
+    .find((part) => part.userData.role === 'source-proportioned-frame-solid-minus-real-guide-opening'));
+  assert.ok(Math.abs(housing.min.y - frame.max.y) < 1e-6, 'foot sits on the crown');
+  assert.ok(housing.min.z >= frame.min.z - 1e-9, 'no overhang behind the frame');
+});

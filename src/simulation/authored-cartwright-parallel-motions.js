@@ -172,9 +172,11 @@ function makeInputFlywheelPinion({
   hub.position.z = flywheelPlaneZ;
   hub.userData.role = 'input-flywheel-hub';
 
+  // p104: brass, so its teeth read against the orange flywheel behind it
+  // and the blue wheels C it drives.
   const pinion = makeGear({
     axis: Z_AXIS,
-    color: PALETTE.driver,
+    color: PALETTE.brass,
     depth: pinionDepth,
     radius: pinionRadius,
     teeth: pinionTeeth,
@@ -547,6 +549,16 @@ function CartwrightParallelMotion(movement) {
     (cylinderBodyTop + cylinderBodyBottom) / 2, crossheadPlaneZ);
   cylinderBody.userData.fixed = true;
   cylinderBody.userData.role = 'fixed-upright-cylinder-below-piston-rod-B';
+  // p104: the rod bore is closed at the bottom by a solid end plug, flush
+  // with the cylinder's bottom face and stopping below the rod's lowest
+  // reach, so from below the cylinder reads as closed.
+  const bottomPlugTop = -6.80;
+  const bottomPlug = new THREE.Mesh(new THREE.CylinderGeometry(.199, .199,
+    bottomPlugTop - cylinderBodyBottom, 40), frameMaterial);
+  bottomPlug.position.set(pistonAxisX, (bottomPlugTop + cylinderBodyBottom) / 2,
+    crossheadPlaneZ);
+  bottomPlug.userData.fixed = true;
+  bottomPlug.userData.role = 'fixed-cylinder-bottom-end-plug';
   const stuffingBox = new THREE.Mesh(
     boredCylinderGeometry(.95 * sourceScale, rodBore, .9 * sourceScale),
     frameMaterial,
@@ -577,6 +589,7 @@ function CartwrightParallelMotion(movement) {
     leftBearing,
     rightBearing,
     cylinderBody,
+    bottomPlug,
     cylinderTop,
     stuffingBox,
     pistonGland,
@@ -704,8 +717,10 @@ function CartwrightParallelMotion(movement) {
     return pin;
   });
   const pistonRodLength = pistonRodTopLocalY - pistonRodBottomLocalY;
+  // p104: a round rod (r 0.088) that fills the round gland bore (r 0.10),
+  // not a square bar showing a gap round it.
   const pistonRod = new THREE.Mesh(
-    new THREE.BoxGeometry(0.50 * sourceScale, pistonRodLength, 0.15),
+    new THREE.CylinderGeometry(0.088, 0.088, pistonRodLength, 40),
     drivenMaterial,
   );
   pistonRod.position.set(

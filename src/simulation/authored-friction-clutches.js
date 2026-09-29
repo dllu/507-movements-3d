@@ -373,9 +373,11 @@ function springBiasedOverrunningPulley(movement) {
   shaft.rotation.x = Math.PI / 2;
   shaft.position.z = 0.03;
   shaft.userData.role = 'driven-output-shaft-rigid-with-arm-carrier';
+  // A turned steel end face on the black shaft (it was the carrier's blue,
+  // so the shaft end read as an empty tube showing the carrier through it).
   const shaftFace = new THREE.Mesh(
     new THREE.CircleGeometry(shaftRadius * 0.82, 40),
-    drivenMaterial,
+    matte(PALETTE.muted, { metalness: 0.35, roughness: 0.42 }),
   );
   shaftFace.position.z = 0.625;
   shaftFace.userData.role = 'driven-output-shaft-front-face';

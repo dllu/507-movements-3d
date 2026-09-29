@@ -594,3 +594,22 @@ test('movement 247 curled leaf spring bears on the upper arm and loads the catch
   assert.ok(pivot.y + retracted.y - 0.03 > -0.89);
   disposeModel(model.root);
 });
+
+test('movement 247 (pass 104): the probe is a T, its stem centred on a symmetric foot near the rod axis', () => {
+  const model = createMovementModel(catalog.movements[246]);
+  const blocks = model.root.userData.blocks;
+  model.update(0);
+  model.root.updateMatrixWorld(true);
+  const rod = new THREE.Box3().setFromObject(blocks.housingTop);
+  const axisX = (rod.min.x + rod.max.x) / 2;
+  const foot = new THREE.Box3().setFromObject(blocks.probeFoot);
+  const stem = new THREE.Box3().setFromObject(blocks.probeShaft);
+  const stemX = (stem.min.x + stem.max.x) / 2;
+  assert.ok(Math.abs((foot.min.x + foot.max.x) / 2 - stemX) < 1e-6, 'foot symmetric about the stem');
+  const rodRadius = (rod.max.x - rod.min.x) / 2;
+  assert.ok(Math.abs(stemX - axisX) < 0.4 * rodRadius, 'stem near the rod axis (Brown: 0.10 left of it)');
+  // The pusher pad still reaches over the stem to the roller.
+  const pad = new THREE.Box3().setFromObject(blocks.probePusher);
+  assert.ok(pad.min.x < stem.min.x && pad.max.x > stem.max.x, 'pad caps the stem');
+  disposeModel(model.root);
+});

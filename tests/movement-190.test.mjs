@@ -265,16 +265,24 @@ test('movement 190 matches Brown\'s fixed nut, vertical screw, pivoted holder, a
   assert.ok(geometry.screwAxialTravel > 0.0708);
   assert.ok(geometry.screwAxialTravel < 0.0709);
   // A part turn: the plate-height handle must not swing over the crest.
-  assert.ok(geometry.screwTighteningTurns < -0.416);
-  assert.ok(geometry.screwTighteningTurns > -0.417);
-  near(geometry.threadLead, geometry.threadPitch, 1e-15,
-    'single-start lead equals pitch');
+  // Right-hand thread (pass 104): tightening is a positive turn.
+  assert.ok(geometry.screwTighteningTurns > 0.416);
+  assert.ok(geometry.screwTighteningTurns < 0.417);
+  // Pass 104: a fine two-start V-thread; the lead (0.17) is unchanged.
+  assert.equal(geometry.threadStarts, 2);
+  near(geometry.threadLead, geometry.threadPitch * 2, 1e-15,
+    'two-start lead is twice the pitch');
   near(
     geometry.threadLeadPerRadian * FULL_TURN,
-    geometry.threadPitch,
+    geometry.threadLead,
     1e-15,
     'lead per turn',
   );
+  assert.ok(geometry.threadPitch < 0.09, 'fine visible pitch');
+  assert.ok(geometry.threadCrestRadius - geometry.threadRootRadius <= 0.035,
+    'shallow V (about 0.3 of the old ribbon depth)');
+  assert.ok(geometry.threadRootRadius / geometry.threadCrestRadius > 0.8,
+    'full-diameter core');
   near(
     geometry.clampedLeverForceRatio,
     geometry.clampedScrewArm / geometry.clampedWorkArm,
@@ -374,7 +382,7 @@ test('movement 190 preserves thread lead, fixed-axis thrust contact, lever ratio
   const sampleCount = 32768;
   let previousDisplacement = -Infinity;
   let previousGap = Infinity;
-  let previousScrewAngle = Infinity;
+  let previousScrewAngle = -Infinity;
   let minimumGap = Infinity;
   let maximumGap = -Infinity;
   let maximumThreadError = 0;
@@ -408,20 +416,20 @@ test('movement 190 preserves thread lead, fixed-axis thrust contact, lever ratio
     assert.ok(state.clampForcePerHandleForce < 53);
     near(
       state.screwAngle,
-      (geometry.screwAxialTravel - state.screwAxialDisplacement)
+      (state.screwAxialDisplacement - geometry.screwAxialTravel)
         / geometry.threadLeadPerRadian,
       2e-13,
       `screw angle from lead ${index}`,
     );
     near(
       state.screwAngularVelocity,
-      -state.screwAxialVelocity / geometry.threadLeadPerRadian,
+      state.screwAxialVelocity / geometry.threadLeadPerRadian,
       2e-13,
       `screw angular speed from lead ${index}`,
     );
     near(
       state.screwAngularAcceleration,
-      -state.screwAxialAcceleration / geometry.threadLeadPerRadian,
+      state.screwAxialAcceleration / geometry.threadLeadPerRadian,
       5e-12,
       `screw angular acceleration from lead ${index}`,
     );
@@ -460,7 +468,7 @@ test('movement 190 preserves thread lead, fixed-axis thrust contact, lever ratio
     assert.equal(state.clamped, index === sampleCount);
     assert.ok(state.screwAxialDisplacement >= previousDisplacement - 1e-14);
     assert.ok(state.shoeContactGap <= previousGap + 1e-14);
-    assert.ok(state.screwAngle <= previousScrewAngle + 1e-13);
+    assert.ok(state.screwAngle >= previousScrewAngle - 1e-13);
     previousDisplacement = state.screwAxialDisplacement;
     previousGap = state.shoeContactGap;
     previousScrewAngle = state.screwAngle;
@@ -572,12 +580,12 @@ test('movement 190 loosens, dwells open, tightens, and returns across C2 event b
     if (state.stage === 'handle-reversing-screw-and-opening-holder') {
       assert.ok(state.closureVelocity <= 1e-15);
       assert.ok(state.screwAxialVelocity <= 1e-15);
-      assert.ok(state.screwAngularVelocity >= -1e-14);
+      assert.ok(state.screwAngularVelocity <= 1e-14);
     }
     if (state.stage === 'handle-turning-screw-up-under-holder-short-arm') {
       assert.ok(state.closureVelocity >= -1e-15);
       assert.ok(state.screwAxialVelocity >= -1e-15);
-      assert.ok(state.screwAngularVelocity <= 1e-14);
+      assert.ok(state.screwAngularVelocity >= -1e-14);
     }
     maximumAngularSpeed = Math.max(
       maximumAngularSpeed,

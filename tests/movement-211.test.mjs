@@ -606,7 +606,8 @@ test('movement 211 renders rigid indices and exact pin/guide/lock poses while 21
   const sweptSize = sweptBounds.getSize(new THREE.Vector3());
   assert.ok(sweptSize.x > 6, 'two wheels fill the width');
   assert.ok(sweptSize.y > 4.4, 'partial wheel profiles sweep real height');
-  assert.ok(sweptSize.z > 1.05, 'shafts, bodies, pin, and guide use real depth');
+  // p104: the shafts end just proud of the hub ring and the guide eye.
+  assert.ok(sweptSize.z > 0.6, 'shafts, bodies, pin, and guide use real depth');
   assert.ok(sweptBounds.min.x < -3.7);
   assert.ok(sweptBounds.max.x > 2.2);
   assert.ok(sweptBounds.min.y < -2.2);

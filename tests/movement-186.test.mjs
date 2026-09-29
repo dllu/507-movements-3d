@@ -85,7 +85,18 @@ test('186 t=0 places the parts on Brown\'s plate landmarks', () => {
     expectRaster(strap.at(-1), 484, d.geometry.tipRestY, 1e-6, 'free end under notch a');
     near(d.geometry.tipRestY, 320, 1, 'free end height');
     const leverBox = new THREE.Box3().setFromObject(b.leverBody);
-    near(d.sourceRasterFromPoint(leverBox.max.x, 0).x, 495.5, 1, 'drop outer edge');
+    // Pass 104: the head's cross-pin ends are now in the same casting, so
+    // measure the drop's outer edge below the head.
+    let dropMaxX = -Infinity;
+    {
+      const position = b.leverBody.geometry.attributes.position;
+      for (let i = 0; i < position.count; i += 1) {
+        const p = new THREE.Vector3().fromBufferAttribute(position, i).applyMatrix4(b.leverBody.matrixWorld);
+        if (d.sourceRasterFromPoint(p.x, p.y).y > 245) dropMaxX = Math.max(dropMaxX, p.x);
+      }
+    }
+    near(d.sourceRasterFromPoint(dropMaxX, 0).x, 495.5, 1, 'drop outer edge');
+    assert.equal(b.leverNubs, null, 'the fork head is one casting with the lever');
     near(d.sourceRasterFromPoint(0, leverBox.max.y).y, 145, 1.5, 'claw knuckle');
   } finally { disposeObject3D(model.root); }
 });

@@ -24,6 +24,17 @@ test('050 and 051 have closed, outward rigid solids and genuinely open pivot pas
       }
       assert.ok(volume > 0); assert.ok([...edges.values()].every((count) => count === 2), `${id} ${geometry.type} closed edges`);
     });
+    // Each strap is one solid with its eyes (no separate boss meshes), and
+    // every cross arm ends in a round trunnion concentric with its pin.
+    const b = model.root.userData.blocks;
+    for (const member of [b.inputYoke, b.outputYoke, b.middle].filter(Boolean)) {
+      for (const eye of member.userData.parts.eyes) assert.equal(eye.isMesh, undefined);
+      let meshes = 0; member.traverse((part) => { if (part.isMesh && !part.userData.shaft) meshes += 1; }); assert.equal(meshes, 1);
+    }
+    for (const cross of [b.leftCross, b.rightCross].filter(Boolean)) {
+      const { trunnions, pins } = cross.userData.parts; assert.equal(trunnions.length, 4);
+      trunnions.forEach((trunnion, i) => assert.ok(trunnion.quaternion.equals(pins[i].quaternion)));
+    }
     assert.equal(Boolean(model.root.userData.blocks.middle), id === 50);
     assert.equal(Boolean(model.root.userData.blocks.rightCross), id === 50);
   }
@@ -88,7 +99,8 @@ test('050 and 051 keep every real pin centered in a clear bore and every retaini
           const direction = new THREE.Vector3(Math.cos(theta), Math.sin(theta), 0).transformDirection(eye.matrixWorld);
           ray.set(center, direction);
           const boreHit = ray.intersectObject(member, true)[0], pinHit = ray.intersectObject(cross, true)[0];
-          assert.ok(boreHit && pinHit); assert.equal(boreHit.object, eye, 'the curved strap does not fill the pivot bore');
+          assert.ok(boreHit && pinHit);
+          assert.equal(boreHit.object, member.userData.parts.body, 'the eye is part of the one-piece strap and its bore is open');
           assert.equal(pinHit.object, pin);
           const gap = boreHit.distance - pinHit.distance;
           minimumGap = Math.min(minimumGap, gap); maximumGap = Math.max(maximumGap, gap); rays += 1;
@@ -97,10 +109,12 @@ test('050 and 051 keep every real pin centered in a clear bore and every retaini
         const origin = new THREE.Vector3(0.049, 0, 0.76).applyMatrix4(eye.matrixWorld);
         const direction = new THREE.Vector3(0, 0, 1).transformDirection(eye.matrixWorld);
         ray.set(origin, direction);
-        const forkHit = ray.intersectObject(eye, false)[0], capHit = ray.intersectObjects(cross.userData.parts.caps, false)[0];
+        const forkHit = ray.intersectObject(member.userData.parts.body, false)[0], capHit = ray.intersectObjects(cross.userData.parts.caps, false)[0];
         assert.ok(forkHit && capHit);
         const capGap = capHit.distance - forkHit.distance;
-        minimumCapGap = Math.min(minimumCapGap, capGap); assert.ok(capGap > 0.00399 && capGap < 0.00401);
+        minimumCapGap = Math.min(minimumCapGap, capGap); // The one-piece eye follows the band's elliptical faces, so under the cap edge
+        // its outer face dips by at most 0.0006 below the flat 0.004 seat.
+        assert.ok(capGap > 0.00399 && capGap < 0.0047, String(capGap));
       }
     }
     console.log(JSON.stringify({ movement: id, boreRays: rays, minimumGap, maximumGap, minimumCapGap }));

@@ -9497,6 +9497,49 @@ function pinGuidedHalfToothIntermittentLockingDrive() {
   const driverRadiusSamples = Array.from({ length: raySteps }, (_, index) => (
     Math.min(driverTargetRadius(index * rayStep), sweptLimit[index])
   ));
+  // p104: the relief swept after the last tooth was the raw envelope of the
+  // pinion tips, a wavy band (8.886-8.906) with a stepped entry. It is now
+  // one arc concentric with the wheel at the tooth-tip radius, entered from
+  // the plain rim by a single smoothstep ramp tangent to both arcs; both lie
+  // inside the swept envelope, so every clearance is kept or grown.
+  {
+    const count = raySteps;
+    const at = (index) => THREE.MathUtils.euclideanModulo(index, count);
+    const plainLimit = rawPlainRadius - 1e-9;
+    const tipRadius = rawDriverToothOuterRadius;
+    let runEnd = Math.floor(driverToothedEndAngle / rayStep);
+    while (angleWithin(runEnd * rayStep, driverToothedEndAngle, driverToothedStartAngle)) runEnd -= 1;
+    let runStart = runEnd;
+    while (driverRadiusSamples[at(runStart - 1)] < plainLimit) runStart -= 1;
+    let bandEnd = runStart;
+    while (bandEnd < runEnd && driverRadiusSamples[at(bandEnd + 1)] > tipRadius) bandEnd += 1;
+    const rampWidth = Math.round(degreesToRadians(9) / rayStep);
+    const ramp = (index, start) => {
+      const t = THREE.MathUtils.clamp((index - start) / rampWidth, 0, 1);
+      return tipRadius + (rawPlainRadius - tipRadius) * (1 - t * t * (3 - 2 * t));
+    };
+    let rampStart = bandEnd - rampWidth;
+    const fits = (start) => {
+      for (let index = start; index <= bandEnd; index += 1) {
+        if (ramp(index, start) > driverRadiusSamples[at(index)] + 1e-9) return false;
+      }
+      return true;
+    };
+    while (!fits(rampStart)) rampStart -= 1;
+    for (let index = rampStart; index <= bandEnd; index += 1) {
+      driverRadiusSamples[at(index)] = Math.min(driverRadiusSamples[at(index)], ramp(index, rampStart));
+    }
+    // Each root floor is the envelope of the pinion tips too, with 0.004
+    // steps; it becomes one arc at its run's lowest radius.
+    const floorLimit = rawDriverRootRadius + 0.02;
+    for (let index = 0; index < count; index += 1) {
+      if (driverRadiusSamples[index] >= floorLimit || driverRadiusSamples[at(index - 1)] < floorLimit) continue;
+      let end = index;
+      let lowest = Infinity;
+      while (driverRadiusSamples[at(end)] < floorLimit) { lowest = Math.min(lowest, driverRadiusSamples[at(end)]); end += 1; }
+      for (let fill = index; fill < end; fill += 1) driverRadiusSamples[at(fill)] = lowest;
+    }
+  }
   // Douglas-Peucker thinning keeps the rim and flanks within 0.002 units.
   const simplifyClosed = (points, tolerance) => {
     const keep = new Uint8Array(points.length);
@@ -9745,19 +9788,21 @@ function pinGuidedHalfToothIntermittentLockingDrive() {
     guidePiece,
   );
 
+  // p104: the stubs end 0.03 proud of the wheel's hub ring (0.241) and of
+  // the guide's eye (0.315); at 0.55 they threw stripes across the faces.
   const driverShaft = makeShaft({
     axis: Z_AXIS,
-    length: 1.1,
+    length: 0.54,
     radius: 0.21,
   });
   driverShaft.position.set(driverCenter.x, driverCenter.y, 0);
   driverShaft.userData.role = 'continuous-input-shaft';
   const pinionShaft = makeShaft({
     axis: Z_AXIS,
-    length: 1.1,
+    length: 0.615,
     radius: 0.21,
   });
-  pinionShaft.position.set(pinionCenter.x, pinionCenter.y, 0);
+  pinionShaft.position.set(pinionCenter.x, pinionCenter.y, 0.0375);
   pinionShaft.userData.role = 'intermittent-output-shaft';
 
   // Brown draws the two wheels, the pin and the guide only: no stand,
@@ -11965,12 +12010,15 @@ function splitRimFacePinWindingStop() {
     stopWheelIndexTip,
   );
 
+  // p104: 0.02 proud of the square's front face (0.12 after the contact
+  // pass sets the ratchet plane) and 0.03 behind its back; at 0.78 the arbor
+  // threw a clock-hand shadow across the ratchet. Brown draws only the hole.
   const driverShaft = makeShaft({
     axis: Z_AXIS,
-    length: 1.72,
+    length: 0.53,
     radius: 0.105,
   });
-  driverShaft.position.set(driverCenter.x, driverCenter.y, -0.08);
+  driverShaft.position.set(driverCenter.x, driverCenter.y, -0.125);
   driverShaft.userData.role = 'square-arbor-winding-input-shaft';
   // The arbor square fills Brown's square bore with a 0.01 side clearance.
   const driverSquareSide = 2 * squareBoreHalfSize - 0.02;
@@ -12001,15 +12049,17 @@ function splitRimFacePinWindingStop() {
   );
   frictionDrum.userData.fixed = true;
   frictionDrum.userData.role = 'fixed-friction-stud-drum-gripped-by-split-ring';
+  // p104: the stud's head stands 0.02 proud of the drum face (0.24) and its
+  // tail 0.03 behind it; at 0.69 it threw a hand-like shadow on the drum.
   const stopWheelStud = makeShaft({
     axis: Z_AXIS,
-    length: 1.42,
+    length: 0.29,
     radius: 0.095,
   });
   stopWheelStud.position.set(
     stopWheelCenter.x,
     stopWheelCenter.y,
-    -0.02,
+    0.115,
   );
   stopWheelStud.userData.role = 'fixed-split-ring-center-stud';
   stopWheelStud.userData.fixed = true;
@@ -21185,8 +21235,10 @@ function threeAlternativeRatchetStops(movement) {
   wheel.position.z = wheelPlaneZ;
   root.add(wheel);
 
-  const wheelShaft = makeShaft({ length: 1.1, radius: 0.12 });
-  wheelShaft.position.z = wheelPlaneZ - 0.01;
+  // p104: 0.03 proud of each hub face (0.093..0.547); the 0.86 stub threw a
+  // stripe across the wheel.
+  const wheelShaft = makeShaft({ length: 0.514, radius: 0.12 });
+  wheelShaft.position.z = 0.32;
   wheelShaft.userData.role = 'shared-ratchet-wheel-shaft';
   root.add(wheelShaft);
 

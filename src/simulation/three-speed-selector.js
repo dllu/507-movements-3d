@@ -23,7 +23,9 @@ export function makeThreeSpeedSelector() {
   add('driverShaft', cylinder(0.1525, -2.45, 1.72, PALETTE.muted), driver);
   add('loosePulley', turned(p.pulleyRadius, 0.181, p.laneZs[0] - p.pulleyWidth / 2,
     p.laneZs[0] + p.pulleyWidth / 2, PALETTE.muted), loose);
-  const colors = [PALETTE.brass, PALETTE.accent, 0xb36c44];
+  // p104: the third pulley is steel grey; its former copper merged with the
+  // brown belt.
+  const colors = [PALETTE.brass, PALETTE.accent, PALETTE.muted];
   for (let i = 0; i < 3; i += 1) {
     const low = p.gearZs[i] - p.gearDepths[i] / 2, high = i === 0 ? 1.15 : p.laneZs[i + 1] + p.pulleyWidth / 2;
     add(`inputShaft${i}`, i === 0 ? cylinder(p.shaftRadii[i], low, high, PALETTE.muted)

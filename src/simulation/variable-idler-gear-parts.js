@@ -30,7 +30,15 @@ export function correctVariableIdler(root,id,update){
  }else{
   circular(b.driverGear,g.driverPitchRadius,g.driverTeeth,g.gearDepth,.092);circular(b.outputGear,g.outputPitchRadius,g.outputTeeth,g.gearDepth,.097);circular(b.idlerGear,g.idlerPitchRadius,g.idlerTeeth,g.gearDepth,.092);
   const body=b.driverGear.userData.rotor.children[0],u=body.geometry.userData,shape=new THREE.Shape(u.outline),hole=(x,y,r)=>{const h=new THREE.Path();h.absarc(x,y,r,0,2*Math.PI,false);shape.holes.push(h);};hole(0,0,.092);const eccentricBore=g.eccentricCenterVector.clone().negate().rotateAround(new THREE.Vector2(),-g.driverGearLocalPhase);hole(eccentricBore.x,eccentricBore.y,.107);const geometry=new THREE.ExtrudeGeometry(shape,{depth:g.gearDepth,bevelEnabled:false,curveSegments:64}).translate(0,0,-g.gearDepth/2);geometry.userData={...u,eccentricBore:eccentricBore.toArray()};replace(body,geometry);
-  replace(b.driverCenterJoint,new THREE.CylinderGeometry(.09,.09,.55,48));b.driverCenterJoint.position.z=.30;
+  // p104: the pin at C's centre runs from its boss to 0.02 past the C-B link.
+  const linkHalf=.045,jointBack=-.2,jointFront=g.driverLinkZ+linkHalf+.02;
+  replace(b.driverCenterJoint,new THREE.CylinderGeometry(.09,.09,jointFront-jointBack,48));b.driverCenterJoint.position.z=(jointFront+jointBack)/2;
+  // A sits a gear depth behind C, so its link stood 0.6 off A's face on a
+  // bare shaft. A turned boss in A's metal now rises from A's hub to 0.005
+  // behind the link's eye, and the A and B shafts end 0.03 past the link.
+  // (The boss itself is added by the factory once A takes its rear plane.)
+  {const shaftTo=(shaft,rear,radius)=>{const front=g.outputLinkZ+linkHalf+.03;replace(shaft.userData.rotor.children[0],new THREE.CylinderGeometry(radius,radius,front-rear,48));shaft.position.z=(front+rear)/2;};
+   shaftTo(b.outputShaft,-.553,.095);shaftTo(b.idlerShaft,-.5,.09);}
   replace(b.driverShaft.userData.rotor.children[0],new THREE.CylinderGeometry(.105,.105,1.025,48));b.driverShaft.position.z=-.2625;
   link(b.outputLink,g.carrierLength,.097,g.outputPitchRadius);link(b.driverLink,g.carrierLength,.092,g.outputPitchRadius);b.outputLinkCollar.visible=false;for(const collar of b.idlerLinkCollars)collar.visible=false;
   root.userData.reconstructionNote='A circular gear turns about an eccentric shaft. Two fixed-length links keep the moving idler correctly spaced from the driver center and output shaft, producing variable output speed. Dimensions, tooth profiles and bearing fits are inferred.';

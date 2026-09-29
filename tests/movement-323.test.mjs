@@ -82,8 +82,18 @@ test('movement 323 is one rolling parallel ruler with a common axle and two nick
   for (const housing of blocks.bearingHousings) {
     assert.equal(housing.parent, blocks.carrier);
   }
-  assert.equal(blocks.wheelALeft.userData.nickCount, 16);
-  assert.equal(blocks.wheelARight.userData.nickCount, 16);
+  // p104: each wheel is one flat body with 36 shallow V nicks cut in its
+  // rim; no loose nick blocks or face spokes.
+  for (const wheel of [blocks.wheelALeft, blocks.wheelARight]) {
+    assert.equal(wheel.userData.nickCount, 36);
+    assert.equal(wheel.userData.nicks.length, 0);
+    assert.equal(wheel.userData.spokes.length, 0);
+    const body = wheel.userData.body;
+    body.geometry.computeBoundingBox();
+    const box = body.geometry.boundingBox;
+    near(box.max.y, wheel.userData.pitchRadius, 1e-3, 'nicked rim radius');
+    near(box.max.x - box.min.x, wheel.userData.width, 1e-6, 'wheel width');
+  }
 
   const roles = [];
   model.root.traverse((object) => roles.push(object.userData.role ?? ''));
@@ -94,7 +104,13 @@ test('movement 323 is one rolling parallel ruler with a common axle and two nick
   assert.equal(roles.filter((role) =>
     role.endsWith('equal-nicked-wheel-A')).length, 2);
   assert.equal(roles.filter((role) =>
-    role.endsWith('paper-gripping-edge-nick')).length, 30);
+    role.endsWith('paper-gripping-edge-nick')).length, 0);
+  assert.equal(roles.filter((role) =>
+    role.endsWith('nicked-wheel-body')).length, 2);
+  assert.equal(roles.filter((role) =>
+    role === 'wheel-aperture-bearing-frame').length, 2);
+  assert.equal(roles.filter((role) =>
+    role === 'wheel-aperture-bearing-cross-rail').length, 0);
   // Brown draws no white nick or face rotation indices.
   assert.equal(roles.filter((role) =>
     role.endsWith('white-rolling-index-nick')).length, 0);

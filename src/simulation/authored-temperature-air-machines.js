@@ -1,5 +1,5 @@
 import {makeTemperatureBevel,mitreBevelPhases} from './temperature-bevel-pair.js';
-import {crownToothGeometry} from './face-gear-geometry.js';
+import {conformingCrownToothGeometry} from './face-gear-conforming.js';
 import {plate, poly, circle, polygonClipping, ring} from './finite-plate-geometry.js';
 import {mergePassageParts} from './finite-fluid-passages.js';
 import { correctTemperatureAirMachine } from './thermal-steam-working-parts.js';
@@ -525,7 +525,10 @@ function temperatureAirMachine(movement) {
     if (part.isMesh && part !== pinionExtrusion) part.geometry.dispose();
     if (part.isMesh) part.material.dispose();
   });
-  const faceToothGeometry = crownToothGeometry({
+  // Pass 104: the tooth mesh follows the flanks (rows cut on a fine line and
+  // resampled along each flank), not a coarse polar height field, so the
+  // flanks shade smoothly and the tip corners are clean.
+  const faceToothGeometry = conformingCrownToothGeometry({
     profile: pinionExtrusion.geometry.parameters.shapes.getPoints(),
     pinionTeeth: facePinionTeeth,
     pinionCenterX: 0,
@@ -534,7 +537,12 @@ function temperatureAirMachine(movement) {
     outerRadius: faceGearOuterRadius,
     baseFace: faceGearBaseFace,
     tipFace: faceGearTipFace,
-  }, {radialSteps: 10, angularSteps: 48, rotationSteps: 480});
+  }, {
+    // A true normal running clearance: the cutter is the pinion grown by
+    // 0.0016 normal to its profile (plus 0.0002 along the face axis).
+    radialSteps: 20, lineSamples: 480, rotationSteps: 400,
+    cuttingClearance: 0.0002, profileClearance: 0.0016,
+  });
   const faceGearMaterial = matte(PALETTE.driver, {metalness: 0.24, roughness: 0.48});
   const faceGearTeethMeshes = Array.from({length: faceGearTeeth}, (_, index) => {
     const tooth = addRole(new THREE.Mesh(faceToothGeometry, faceGearMaterial),

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {circle, disk as solidDisk, plate, poly, polygonClipping} from './finite-plate-geometry.js';
+import {standardWithEye} from './ratchet-bar-working-parts.js';
 import {
   PALETTE,
   makeBeam,
@@ -518,10 +519,11 @@ function groovedDiskFollower(movement) {
   );
   rightDiskBrace.userData.role = 'fixed-right-disk-bearing-brace';
   // Hidden rear bearing: the revolving shaft runs in its bore and the A-frame
-  // legs and the fulcrum brace meet on it, all behind the disk.
+  // legs and the fulcrum brace meet on it, all behind the disk. p104: 0.005
+  // deeper than the leg braces each side so their end faces do not z-fight.
   const rearBearing = new THREE.Mesh(
     plate(polygonClipping.difference(poly(circle([0, 0], 0.42, 64)),
-      poly(circle([0, 0], diskHubRadius + 0.012, 48))), -1.10, -0.78),
+      poly(circle([0, 0], diskHubRadius + 0.012, 48))), -1.105, -0.775),
     frameMaterial,
   );
   rearBearing.userData.role = 'fixed-rear-disk-shaft-bearing';
@@ -529,13 +531,25 @@ function groovedDiskFollower(movement) {
   // is the lever itself, and its dashed twin is the lever's other extreme.
   // The fulcrum is carried by one brace behind the disk, whose visible upper
   // end matches the bar leaving the fulcrum down-left in the plate.
+  // p104: the brace is one extrusion whose upper end is a round eye
+  // concentric with the fulcrum pin, joined to the bar by tangent fillets
+  // (the shared standard-with-eye outline); the pin is pressed through it.
   const leverPivotDirection = leverPivot.clone().normalize();
-  const upperCrossBrace = makeBeam(
-    new THREE.Vector3(leverPivotDirection.x * 0.30,
-      leverPivotDirection.y * 0.30, -1.00),
-    new THREE.Vector3(leverPivot.x, leverPivot.y, -1.00),
-    { color: PALETTE.frame, depth: 0.30, thickness: 0.22 },
-  );
+  const braceEyeRadius = leverPivotPinRadius + 0.12;
+  const braceOutline = standardWithEye({
+    half: 0.11,
+    bottom: -(leverPivot.length() - 0.30),
+    eyeRadius: braceEyeRadius,
+    boreRadius: leverPivotPinRadius - 0.004,
+    fillet: 0.10,
+  });
+  const upperCrossBrace = new THREE.Mesh(plate(braceOutline, -1.15, -0.85),
+    frameMaterial);
+  upperCrossBrace.position.set(leverPivot.x, leverPivot.y, 0);
+  // The outline's post runs down -y from the eye; turn it to the hub.
+  upperCrossBrace.rotation.z = Math.atan2(leverPivotDirection.y,
+    leverPivotDirection.x) - Math.PI / 2;
+  upperCrossBrace.userData.eyeRadius = braceEyeRadius;
   upperCrossBrace.userData.role = 'fixed-upper-fulcrum-brace-behind-disk';
   root.add(base, leftDiskBrace, rightDiskBrace, rearBearing,
     upperCrossBrace);

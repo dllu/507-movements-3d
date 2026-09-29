@@ -756,7 +756,8 @@ test('movement 213 renders the separated planes, pin contacts, rigid indices, an
   const sweptSize = sweptBounds.getSize(new THREE.Vector3());
   assert.ok(sweptSize.x > 5.6);
   assert.ok(sweptSize.y > 7.2);
-  assert.ok(sweptSize.z > 1.7, 'the separated planes use depth without the undrawn frame');
+  // p104: the arbor and stud end just proud of the square and the drum.
+  assert.ok(sweptSize.z > 0.85, 'the separated planes use depth without the undrawn frame');
   // Pass 54 removed the two orphaned rear bearing tori too, so a mesh-count
   // floor no longer describes the design. Check the parts themselves: the
   // undrawn frame, bearings, white indices and contact markers are out of

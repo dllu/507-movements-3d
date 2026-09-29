@@ -483,3 +483,23 @@ test('movement 384 closes every pose exactly before movement 507 remains the nex
   disposeModel(model.root);
   disposeModel(model507.root);
 });
+
+test('movement 384 (pass 104): the opening view fits the arm\'s whole swept disc', () => {
+  const model = createMovementModel(catalog.movements[383]);
+  const data = model.root.userData;
+  const fit = data.cameraFitBounds;
+  const period = data.animationTiming.authoredCyclePeriod;
+  for (let i = 0; i < 48; i += 1) {
+    model.update(period * i / 48, 0);
+    model.root.updateMatrixWorld(true);
+    const pose = new THREE.Box3();
+    model.root.traverseVisible((o) => {
+      if (o.isMesh && !/paper-sheet|transferred|trace/.test(o.userData.role ?? '')) pose.expandByObject(o, true);
+    });
+    assert.ok(pose.min.x >= fit.min.x - 1e-6 && pose.max.x <= fit.max.x + 1e-6,
+      `arm sweep in view across at ${i}: ${pose.min.x}..${pose.max.x}`);
+    assert.ok(pose.min.y >= fit.min.y - 1e-6 && pose.max.y <= fit.max.y + 1e-6,
+      `arm sweep in view vertically at ${i}`);
+  }
+  disposeModel(model.root);
+});

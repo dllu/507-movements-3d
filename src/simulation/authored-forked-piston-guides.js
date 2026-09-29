@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {boredCylinderGeometry,boredJournal,fitPistonGuide} from './piston-guide-parts.js';
 import {plate,poly,circle,polygonClipping as clip} from './finite-plate-geometry.js';
+import {spokedWebGeometry} from './spoked-wheel.js';
 import {
   PALETTE,
   markShadows,
@@ -383,9 +384,17 @@ function ForkedPistonRodGuide(movement) {
   guideCollar.userData.innerRadius = guideInnerRadius;
   guideCollar.userData.role =
     'real-annular-guide-A-collar-around-prolonged-piston-rod';
+  // p104: guide A's bearing is one round-bored boss (r 0.25) enclosing the
+  // dark bush ring (outer r guideInnerRadius + 2 guideTubeRadius, 0.22), with a
+  // neck of the arm's own section running into it (was a square block
+  // smaller than the ring, which poked through as black crescents).
+  const guideBossRadius = 0.25;
   const guideShoe = new THREE.Mesh(
-    plate(clip.difference(poly([[-.34,-.18],[.19,-.18],[.19,.18],[-.34,.18]]),
-      poly(circle([0,0],guideInnerRadius,64))),-.14,.14).rotateX(Math.PI/2),
+    plate(clip.difference(clip.union(
+      poly(circle([0,0],guideBossRadius,72)),
+      poly([[-.40,-.12],[0,-.12],[0,.12],[-.40,.12]]),
+    ), poly(circle([0,0],guideInnerRadius,64))),
+    -guideArmHalfHeight,guideArmHalfHeight).rotateX(Math.PI/2),
     frameMaterial,
   );
   guideShoe.position.set(0, 0, connectingRodPlaneZ);
@@ -525,19 +534,23 @@ function ForkedPistonRodGuide(movement) {
     (434 - 392) * engravingScale, driverMaterial, 40);
   flywheelHub.position.z = flywheelPlaneZ;
   flywheelHub.userData.role = 'flywheel-hub-on-crankshaft';
-  const flywheelArms = Array.from({ length: 6 }, (_, index) => {
-    const angle = index * Math.PI / 3;
-    const armLength = flywheelInnerRadius - .15;
-    const arm = new THREE.Mesh(
-      new THREE.BoxGeometry(armLength, .30, (422 - 410) * engravingScale),
-      driverMaterial,
-    );
-    arm.position.set(Math.cos(angle) * (.2 + armLength / 2),
-      Math.sin(angle) * (.2 + armLength / 2), flywheelPlaneZ);
-    arm.rotation.z = angle;
-    arm.userData.role = `flywheel-arm-${index + 1}`;
-    return arm;
-  });
+  // p104: the six arms and their hub web are one shared spoked-web
+  // extrusion whose spokes flare into the hub and run into the rim's bore
+  // with filleted joins (were loose boxes butted against the rim).
+  const flywheelWeb = new THREE.Mesh(spokedWebGeometry({
+    rimBoreRadius: flywheelInnerRadius,
+    embed: 0.05,
+    spokes: 6,
+    phase: 0,
+    spokeWidth: .30,
+    hubRadius: (434 - 392) / 2 * engravingScale,
+    rimFillet: .08,
+    boreRadius: 0,
+    thickness: (422 - 410) * engravingScale,
+  }), driverMaterial);
+  flywheelWeb.position.z = flywheelPlaneZ;
+  flywheelWeb.userData.role = 'flywheel-six-arm-web-filleted-into-hub-and-rim';
+  const flywheelArms = [flywheelWeb];
   crankRotor.add(
     crankHub,
     crankArm,
@@ -564,12 +577,13 @@ function ForkedPistonRodGuide(movement) {
   pistonAssembly.userData.role =
     'rigid-prolonged-piston-rod-crosshead-and-piston';
   pistonAssembly.userData.rotationDegreesOfFreedom = 0;
+  // p104: the prolonged rod is round (radius = the old square section's
+  // circumradius, so every bore keeps its 0.027 radial clearance), not a
+  // square bar running through round bores.
+  const pistonRodRadius = Math.hypot(pistonRodHalfWidth, pistonRodDepth / 2);
   const pistonRod = new THREE.Mesh(
-    new THREE.BoxGeometry(
-      pistonRodHalfWidth * 2,
-      pistonRodTopLocalY - pistonRodBottomLocalY,
-      pistonRodDepth,
-    ),
+    new THREE.CylinderGeometry(pistonRodRadius, pistonRodRadius,
+      pistonRodTopLocalY - pistonRodBottomLocalY, 40),
     pistonMaterial,
   );
   pistonRod.position.set(

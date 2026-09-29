@@ -87,8 +87,9 @@ function finish197(root) {
   {
     const shaftMesh = b.pinionShaft.userData.rotor.children[0];
     const radius = shaftMesh.geometry.parameters.radiusTop;
-    // Shaft runs from the pinion hub's back face (z = -0.11) forward past the collar.
-    replace(shaftMesh, new THREE.CylinderGeometry(radius, radius, 0.73, 22).translate(0, 0.335, 0));
+    // Shaft runs from the pinion hub's back face (z = -0.11) to 0.02 past the
+    // collar's front face (0.545); a longer stub threw a stripe on the face.
+    replace(shaftMesh, new THREE.CylinderGeometry(radius, radius, 0.675, 22).translate(0, 0.3075, 0));
   }
   replace(b.shaftGuideFollower, ring(0.075, g.guideFollowerOuterRadius, -0.065, 0.065, 128));
   addFrameAndShaftSupports(root);

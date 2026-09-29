@@ -104,7 +104,10 @@ function bailingScoop(movement) {
   const cycleDuration = 7.6;
   const inputAngularSpeed = FULL_TURN / cycleDuration;
   const liftEndPhase = 0.40;
-  const dischargeEndPhase = 0.50;
+  // Pass 104: the high dwell, when the raised scoop pours into the channel,
+  // lasts 0.16 of the cycle (it was 0.10, so the pour only flashed); the
+  // empty scoop's lowering takes the difference.
+  const dischargeEndPhase = 0.56;
   const loweringEndPhase = 0.90;
   const scoopPivot = new THREE.Vector3(-2.40, 0.15, 0);
   const beamPivot = new THREE.Vector3(1.30, 1.25, 0);

@@ -20,7 +20,7 @@ function spurBore(gear,bore,depth=null){
 // boundary has one kink where it meets an end plane. So the ends close on
 // the planes with no overlapping or coincident faces.
 const widthAt=(p,r)=>p.rootWidth+(p.crestWidth-p.rootWidth)*(r-p.inner)/(p.outer-p.inner);
-function trapezoidThread(p,segments=128){
+export function trapezoidThread(p,segments=128){
  const tau=2*Math.PI,mod=a=>((a%tau)+tau)%tau,wi=p.rootWidth,wo=p.crestWidth,maxW=Math.max(wi,wo);
  const dw=(wo-wi)/(p.outer-p.inner),clampR=r=>Math.min(p.outer,Math.max(p.inner,r)),rAtWidth=w=>p.inner+(w-wi)/dw;
  const range=[(p.low-maxW/2-p.phase)/p.lead,(p.high+maxW/2-p.phase)/p.lead].sort((a,b)=>a-b),angles=[];

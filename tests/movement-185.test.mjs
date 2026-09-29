@@ -728,7 +728,19 @@ test('movement 185 rendered transforms keep every analytical joint visibly attac
   // The pin spans the link and rocker planes, while the two eccentric rods,
   // selector, output gear, and rear frame occupy intentionally distinct z
   // layers. This is an assembled 3D mechanism, not coplanar line art.
-  assert.ok(diePin.geometry.parameters.height > 1.49);
+  // Pass 104: the die pin spans exactly its stack, 0.03 proud of the die's
+  // back face and of the rocker arm's front face.
+  {
+    const pinBox = new THREE.Box3().setFromObject(diePin);
+    const dieBox = new THREE.Box3().setFromObject(dieBlock.children[0]);
+    const armBox = new THREE.Box3().setFromObject(
+      outputRocker.children.find((child) => child.userData.role === 'rocker-lower-arm-to-link-die'),
+    );
+    const back = dieBox.min.z - pinBox.min.z;
+    const front = pinBox.max.z - armBox.max.z;
+    assert.ok(back > 0.01 && back < 0.06, `pin proud behind the die: ${back}`);
+    assert.ok(front > 0.01 && front < 0.06, `pin proud of the rocker arm: ${front}`);
+  }
   assert.ok(geometry.forwardLayerZ > geometry.backwardLayerZ);
   assert.ok(outputRocker.position.z > reversingHandle.position.z);
   assert.ok(reversingHandle.position.z > expansionLink.position.z);
@@ -928,4 +940,22 @@ test('185 (pass 92): every bar that ends in a link ball has its end corners insi
   }
   assert.ok(checked >= 9, `bar ends checked: ${checked}`);
   disposeModel(model.root);
+});
+
+test('185 (pass 104): the notched quadrant stands on the wall as one casting, its foot bedded in the wall face', () => {
+  const model = createMovementModel(catalog.movements[184]);
+  model.update(0);
+  model.root.updateMatrixWorld(true);
+  let band = null;
+  let wall = null;
+  model.root.traverse((object) => {
+    if (object.userData.role === 'curved-reversing-sector-band') band = object;
+    if (object.userData.role === 'solid-sectioned-wall-block') wall = object;
+  });
+  const bandBox = new THREE.Box3().setFromObject(band);
+  const wallBox = new THREE.Box3().setFromObject(wall);
+  assert.ok(bandBox.max.x > wallBox.min.x + 0.1, 'foot runs onto the wall face');
+  assert.ok(bandBox.min.y < wallBox.max.y - 0.3, 'foot below the wall top');
+  assert.ok(bandBox.min.z < wallBox.max.z && bandBox.min.z > wallBox.max.z - 0.05, 'back face bedded just inside the wall');
+  assert.equal(band.geometry.userData.plate.polygons.length, 1, 'one casting');
 });

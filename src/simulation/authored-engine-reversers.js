@@ -1040,16 +1040,31 @@ function sourceScaledSingleEngineReverser() {
   // a plain cylinder whose radius its corners overhung.
   const leverKnobHalfLength = 0.31;
   const leverBarLength = manualLeverLength - leverKnobHalfLength + 0.004;
-  // Pass 101: the bar's foot is a half-round concentric with the base pin,
-  // so the lever needs no oversized eye to hide square corners at the pivot.
+  // Pass 104: the bar ends in a round eye concentric with the base pin
+  // (radius 0.22, 1.8 x the 0.12 pin), one extrusion with the bar and joined
+  // to it by tangent fillets; the pin no longer sits on the bar's edge.
+  const leverHalfWidth = 0.09;
+  const leverEyeRadius = 0.22;
+  const leverEyeFillet = 0.12;
   const leverFoot = new THREE.Shape();
-  leverFoot.moveTo(0, -0.09);
-  leverFoot.lineTo(leverBarLength, -0.09);
-  leverFoot.lineTo(leverBarLength, 0.09);
-  leverFoot.lineTo(0, 0.09);
-  leverFoot.absarc(0, 0, 0.09, Math.PI / 2, 3 * Math.PI / 2, false);
+  {
+    const h = leverHalfWidth, R = leverEyeRadius, f = leverEyeFillet;
+    const cx = Math.sqrt((R + f) ** 2 - (h + f) ** 2);
+    // Fillet centres (cx, +-(h + f)); each touches the eye along the line
+    // from the pin to its centre and the bar edge directly below/above it.
+    const eyeAngle = Math.atan2(h + f, cx);
+    leverFoot.moveTo(leverBarLength, -h);
+    leverFoot.lineTo(cx, -h);
+    leverFoot.absarc(cx, -(h + f), f, Math.PI / 2, Math.PI / 2 + (Math.PI / 2 - eyeAngle), false);
+    leverFoot.absarc(0, 0, R, -eyeAngle, -2 * Math.PI + eyeAngle, true);
+    leverFoot.absarc(cx, h + f, f, -Math.PI / 2 - (Math.PI / 2 - eyeAngle), -Math.PI / 2, false);
+    leverFoot.lineTo(leverBarLength, h);
+    leverFoot.closePath();
+  }
+  // 0.30 deep: its rear face stays 0.008 in front of the foundation, which
+  // the eye now overhangs.
   const manualLeverBar = new THREE.Mesh(
-    centeredExtrusion(leverFoot, 0.32, 0),
+    centeredExtrusion(leverFoot, 0.30, 0),
     brassMaterial,
   );
   manualLeverBar.userData.role = 'long-upright-reversing-lever';
@@ -1154,13 +1169,17 @@ function sourceScaledSingleEngineReverser() {
   leverPedestal.position.set(leverBasePivot.x, leverBasePivot.y, -.52);
   leverPedestal.userData.role = 'fixed-pedestal-under-upright-lever';
   {
-    // Deepen the foundation forward (z -1.15 .. -0.30) so the lug's foot
-    // (z -0.64 .. -0.40) stands wholly on it.
-    const front = -0.30, back = baseZ - 0.25;
+    // Deepen the foundation forward (z -1.15 .. -0.39) so the lug's foot
+    // (z -0.64 .. -0.40) stands wholly on it. Pass 104: its front stops
+    // behind the lever, whose round eye hangs below the foundation top.
+    const front = -0.39, back = baseZ - 0.25;
+    // Pass 104: stone grey, as 185's wall (the pale beige read as paper).
+    const stone = {plain: matte(0x8a8276, {roughness: 0.9}), side: matte(0x776f64, {roughness: 0.9})};
     const block = groundBlock(170 * sourceScale, 21 * sourceScale, front - back,
-      {name: 'engraved-foundation-under-hand-lever'});
+      {name: 'engraved-foundation-under-hand-lever', materials: stone});
     baseRail.geometry.dispose();
     baseRail.geometry = block.geometry;
+    baseRail.material = block.material;
     baseRail.position.z = (front + back) / 2;
   }
 

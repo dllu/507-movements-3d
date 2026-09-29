@@ -527,8 +527,11 @@ function robertsonJack(movement) {
   const plunger = addRole(new THREE.Group(),
     'plunger-and-upper-eye-on-straight-oblique-axis');
   root.add(plunger);
+  // Pass 104: the eye is 0.20 deep, deeper than the plunger's 0.18
+  // diameter, so the plunger no longer stands 0.03 proud of its faces; the
+  // pin still stands 0.015 proud of the front face, as before.
   const plungerEye = mesh(plunger,
-    new THREE.CylinderGeometry(0.18, 0.18, 0.12, 64).rotateX(Math.PI / 2),
+    new THREE.CylinderGeometry(0.18, 0.18, 0.20, 64).rotateX(Math.PI / 2),
     brassMaterial, 'upper-eye-crosshead-on-plunger');
   const pumpPiston = mesh(plunger, new THREE.CylinderGeometry(
     pumpPlungerRadius, pumpPlungerRadius, plungerTipDistance - 0.07, 48)
@@ -539,8 +542,8 @@ function robertsonJack(movement) {
       new THREE.Vector3(0, 0, -1),
     )), darkMaterial, 'small-hand-pump-plunger');
   const plungerPin = mesh(plunger,
-    new THREE.CylinderGeometry(0.06, 0.06, 0.90, 32).rotateX(Math.PI / 2)
-      .translate(0, 0, -0.37),
+    new THREE.CylinderGeometry(0.06, 0.06, 0.935, 32).rotateX(Math.PI / 2)
+      .translate(0, 0, -0.3525),
     darkMaterial, 'upper-eye-pin-joining-lever-and-plunger');
 
   // Swing link carrying the lever's fulcrum (Brown's lower eye).
@@ -714,7 +717,12 @@ function robertsonJack(movement) {
   );
   const screwWing = mesh(thumbScrew, plate(wingOutline, -0.035, 0.035),
     fixedRamMaterial, 'thumb-screw-butterfly-wing');
-  const screwWings = [screwWing];
+  // Pass 104: the wing's hub, a round boss on the screw axis (r 0.10) that
+  // takes the shaft's end, which stood 0.02-0.04 past the thin wing.
+  const screwWingHub = mesh(thumbScrew, new THREE.CylinderGeometry(0.10, 0.10,
+    0.10, 48).rotateZ(Math.PI / 2).translate(-0.43, 0, 0),
+  fixedRamMaterial, 'thumb-screw-butterfly-wing-hub');
+  const screwWings = [screwWing, screwWingHub];
   const returnSeat = mesh(root, horizontalTurned([[-0.20, 0.074375],
     [-0.20, 0.16], [-0.10, 0.16], [-0.10, 0.030625]]).rotateZ(-Math.PI / 2)
     .translate(0, returnSeatY, 0),

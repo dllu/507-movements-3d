@@ -587,7 +587,8 @@ test('movement 209 renders rigid indices while 210–213 are distinct and author
   const size = bodyBounds.getSize(new THREE.Vector3());
   assert.ok(size.x > 6.1, 'two noncircular bodies and base fill the width');
   assert.ok(size.y > 4, 'source-oriented profiles and lower frame fill height');
-  assert.ok(size.z > 1.8, 'shafts, bodies, and front guide occupy real depth');
+  // p104: the shafts end just proud of their hubs and the horn.
+  assert.ok(size.z > 1.4, 'shafts, bodies, and front guide occupy real depth');
   assert.ok(bodyBounds.min.y < -2.7, 'fixed frame clears the moving profiles');
   assert.ok(model.cameraDirection.x > 0);
   assert.ok(model.cameraDirection.y < 0);

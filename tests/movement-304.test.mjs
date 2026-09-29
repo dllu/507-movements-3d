@@ -710,6 +710,16 @@ test('movement 304 closes one pin pitch, remains distinct from 292, and leaves m
   assert.equal(studRoles.filter((role) => role === 'back-stud').length, 24);
   assert.equal(model.root.userData.blocks.pinMeshes.some((pin) =>
     'axialPlane' in pin.userData), false);
+  // No loose rear bearing discs (Brown draws no frame); the arbors end just
+  // proud of the wheel hub and pallet plate.
+  const roles304 = [];
+  model.root.traverse((object) => { if (object.userData.role) roles304.push(object.userData.role); });
+  assert.equal(roles304.some((role) => /rear-bearing/.test(role)), false);
+  model.root.updateMatrixWorld(true);
+  const zMin = (object) => new THREE.Box3().setFromObject(object).min.z;
+  const { wheelShaft, wheelHub, palletPivotHub, broadPlate } = model.root.userData.blocks;
+  assert.ok(zMin(wheelShaft) < zMin(wheelHub) && zMin(wheelShaft) > zMin(wheelHub) - 0.06, 'wheel arbor just proud of the hub');
+  assert.ok(zMin(palletPivotHub) < zMin(broadPlate) && zMin(palletPivotHub) > zMin(broadPlate) - 0.06, 'pallet arbor just proud of the plate');
 
   const movement507 = catalog.movements[506];
   const model507 = createMovementModel(movement507);

@@ -569,11 +569,23 @@ function combinationWeightDrive(movement) {
   // Overhung crank arm on the shaft end, in front of the drum and cord.
   const crankArmHalfWidth = 0.13;
   const crankArmShape = new THREE.Shape();
-  crankArmShape.moveTo(0, -crankArmHalfWidth);
+  // The shaft end is a bored eye a little larger than the bar, so the arm
+  // clasps B's hub instead of sharing the hub's cylinder face (that
+  // coincident face z-fought as dark stripes).
+  const crankArmEyeRadius = 0.175;
+  const crankArmEyeJoinAngle = Math.asin(crankArmHalfWidth / crankArmEyeRadius);
+  const crankArmEyeJoinX = Math.sqrt(crankArmEyeRadius ** 2 - crankArmHalfWidth ** 2);
+  crankArmShape.moveTo(crankArmEyeJoinX, -crankArmHalfWidth);
   crankArmShape.lineTo(crankRadius, -crankArmHalfWidth);
   crankArmShape.absarc(crankRadius, 0, crankArmHalfWidth, -Math.PI / 2, Math.PI / 2, false);
-  crankArmShape.lineTo(0, crankArmHalfWidth);
-  crankArmShape.absarc(0, 0, crankArmHalfWidth, Math.PI / 2, Math.PI * 1.5, false);
+  crankArmShape.lineTo(crankArmEyeJoinX, crankArmHalfWidth);
+  crankArmShape.absarc(
+    0, 0, crankArmEyeRadius,
+    crankArmEyeJoinAngle, 2 * Math.PI - crankArmEyeJoinAngle, false,
+  );
+  crankArmShape.holes.push(new THREE.Path().absarc(
+    0, 0, diskHubRadius + 0.004, 0, 2 * Math.PI, true,
+  ));
   const crankArm = new THREE.Mesh(
     new THREE.ExtrudeGeometry(crankArmShape, {
       bevelEnabled: false,

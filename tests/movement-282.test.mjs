@@ -512,3 +512,31 @@ test('movement 282 renderer follows all constraints and closes before 283', () =
   disposeModel(model289.root);
   disposeModel(model.root);
 });
+
+test('movement 282 pulley is carried by a bracket boss and the rack contrasts with the sector', () => {
+  const model = createMovementModel(catalog.movements[281]);
+  model.update(0);
+  model.root.updateMatrixWorld(true);
+  const byRole = (role) => {
+    let found = null;
+    model.root.traverse((object) => { if (!found && object.userData.role === role) found = object; });
+    return found;
+  };
+  const boss = new THREE.Box3().setFromObject(byRole('fixed-pulley-bracket-boss'));
+  const hub = new THREE.Box3().setFromObject(byRole('pulley-hub'));
+  const axle = new THREE.Box3().setFromObject(byRole('fixed-pulley-axle-reaching-frame'));
+  const bossCenter = boss.getCenter(new THREE.Vector3());
+  const hubCenter = hub.getCenter(new THREE.Vector3());
+  assert.ok(Math.hypot(bossCenter.x - hubCenter.x, bossCenter.y - hubCenter.y) < 1e-6, 'boss concentric with the pulley axle');
+  const gap = hub.min.z - boss.max.z;
+  assert.ok(gap > 0 && gap < 0.01, `boss reaches the hub's rear face (gap ${gap})`);
+  assert.ok(axle.min.z > boss.min.z && axle.min.z < boss.max.z, 'axle seated in the boss');
+  const proud = axle.max.z - hub.max.z;
+  assert.ok(proud > 0 && proud < 0.03, `axle just through the hub (${proud})`);
+  const rack = byRole('guided-horizontal-rack-body');
+  const sector = byRole('upright-slotted-vibrating-bar');
+  assert.notEqual(rack.material.color.getHex(), sector.material.color.getHex());
+  const hsl = [rack, sector].map((mesh) => mesh.material.color.getHSL({}));
+  assert.ok(hsl[0].s < 0.15, 'rack is steel grey, not a shade of the lever blue');
+  disposeModel(model.root);
+});

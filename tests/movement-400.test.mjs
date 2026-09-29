@@ -331,3 +331,26 @@ test('movement 400 update binds the cam, fork pivot, feed bar, and stretched ret
   }
   disposeModel(model.root);
 });
+
+test('movement 400 (pass 104): the spring cup is carried by a strap to a camshaft bearing boss', () => {
+  const model = createMovementModel(catalog.movements[399]);
+  model.update(0);
+  model.root.updateMatrixWorld(true);
+  const byRole = (role) => {
+    let found = null;
+    model.root.traverse((o) => { if (o.isMesh && o.userData.role === role) found = o; });
+    assert.ok(found, role);
+    return new THREE.Box3().setFromObject(found, true);
+  };
+  const cup = byRole('fixed-cup-socket-holding-return-spring');
+  const strap = byRole('fixed-strap-carrying-return-spring-cup-to-camshaft-bearing');
+  const boss = byRole('fixed-bored-camshaft-bearing-boss-on-cup-strap');
+  const shaft = byRole('constant-speed-camshaft');
+  // The strap is buried in the cup's lower wall and in the boss's wall.
+  assert.ok(strap.max.y > cup.min.y && strap.min.x < cup.max.x, 'strap enters the cup wall');
+  assert.ok(strap.max.x > boss.min.x && strap.max.y <= boss.max.y + 1e-3, 'strap ends in the boss');
+  // The boss is bored round the camshaft, which runs just proud of it.
+  assert.ok(boss.min.x > shaft.min.x && boss.max.x < shaft.max.x, 'boss on the shaft');
+  near((boss.min.y + boss.max.y) / 2, (shaft.min.y + shaft.max.y) / 2, 1e-6, 'boss concentric with the shaft');
+  disposeModel(model.root);
+});

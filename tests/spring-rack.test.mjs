@@ -16,14 +16,22 @@ test('081 follows the measured six-tooth wheel, seven-tooth rack and bored guide
  assert.equal(u.fidelity,'authored');assert.equal(u.hideGround,true);
  near(u.parts.fixedAxle.position.length(),0);
  const mandrel=u.parts.fixedSlidingMandrel,seat=u.parts.movingSpringSeat,
-  guide=u.parts.lowerRackGuide,slot=u.parts.slottedRackRearWall,
+  guide=u.parts.lowerRackGuide,rod=u.parts.rackRod,
   centerX=(p.guide.stemX[0]+p.guide.stemX[1])/2,
   x=u.source([centerX,0])[0];
  for(const mesh of [seat,guide]){
   mesh.geometry.computeBoundingBox();const y=mesh.geometry.boundingBox.getCenter(new THREE.Vector3()).y;
   assert.equal(solidSurface(mesh.geometry).inside(new THREE.Vector3(x,y,.1)),false,'The guide must have a real passage');
  }
- assert.equal(solidSurface(slot.geometry).inside(new THREE.Vector3(...u.source([p.stop.sourceX,p.stop.sourceY]),p.layers.rack[0]+.001)),false);
+ // One closed rack-rod: solid behind the old slot line, bored only above
+ // its floor, which stays below the mandrel through the whole stroke; no
+ // travel-stop pin or cap remains.
+ const rodSolid=solidSurface(rod.geometry),[sx,sy]=u.source([p.stop.sourceX,p.stop.sourceY]);
+ assert.equal(rodSolid.inside(new THREE.Vector3(sx,sy,p.layers.rack[0]+.004)),true);
+ assert.equal(rodSolid.inside(new THREE.Vector3(x,p.boreFloor+.05,.1)),false);
+ assert.equal(rodSolid.inside(new THREE.Vector3(x,p.boreFloor-.05,.1)),true);
+ mandrel.geometry.computeBoundingBox();assert.ok(p.boreFloor+u.profile.range[1]<mandrel.geometry.boundingBox.min.y);
+ for(const name of ['fixedTravelStopPin','travelStopRearCap','slottedRackRearWall','rackLeftWall'])assert.equal(u.parts[name],undefined);
  assert.ok(mandrel.geometry.attributes.position.count>0);dispose(m);
 });
 

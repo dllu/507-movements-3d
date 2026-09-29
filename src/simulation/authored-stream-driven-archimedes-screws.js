@@ -5,6 +5,7 @@ import { helicalThread, threadAngles } from './mujoco-screw/thread-geometry.js';
 import { horizontalRing } from './horizontal-turbine-solids.js';
 import { ring, plate, sector } from './finite-plate-geometry.js';
 import { waterVolume, waterVolumeMaterial } from './water-volume.js';
+import { flowingStreamSurface } from './flowing-stream-surface.js';
 import {WaterStream,collectWaterStreams,ballisticPath,solveBallisticSpeed} from './water-stream.js';
 import { makeSeeThrough } from './see-through-part.js';
 import {
@@ -554,6 +555,21 @@ function streamDrivenArchimedesScrew(movement) {
   streamWater.userData.role =
     'stream-immersing-lower-screw-inlet-and-driving-wheel';
   root.add(streamWater);
+  // Pass 104: the current itself, a streaked sheet just under the surface
+  // running along +z past the dipping paddles at the stream speed (about
+  // 1.5 times the paddle-tip speed).
+  root.add(flowingStreamSurface({
+    start: new THREE.Vector3(lowerEnd.x + 0.20 - 1.9, streamSurfaceY, -3.05),
+    end: new THREE.Vector3(lowerEnd.x + 0.20 - 1.9, streamSurfaceY, 3.25),
+    halfWidth: 5.4,
+    depth: 0.75,
+    thickness: 0.68,
+    opacity: 0.5,
+    normalScale: 1.0,
+    speed: streamVelocityZ,
+    cyclePeriod: shaftRevolutionDuration,
+    role: 'axial-stream-current-surface-driving-paddles',
+  }));
   const streamMarkers = [];
   for (let index = 0; index < 12; index += 1) {
     const marker = new THREE.Mesh(

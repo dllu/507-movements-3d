@@ -1,5 +1,6 @@
 import {correctVariableIdler, idlerCircularGeometry} from './variable-idler-gear-parts.js';
 import * as THREE from 'three';
+import { boredLatheGeometry } from './bored-lathe-geometry.js';
 import {
   PALETTE,
   makeBeam,
@@ -775,8 +776,10 @@ function ellipticalDriverCompoundIdler(movement) {
   setSpin(compoundOuterGear, compoundOuterLocalPhase);
   compoundOuterGear.userData.role = 'thirty-two-tooth-outer-wheel-b';
   compoundRotor.add(compoundOuterGear);
+  // p104: ochre, so the pinion reads against wheel B directly behind it
+  // (both were the same blue) and its mesh with C shows.
   const compoundPinion = makeGear({
-    color: PALETTE.driven,
+    color: PALETTE.accent,
     depth: driverGearDepth,
     radius: compoundPinionPitchRadius,
     teeth: compoundPinionTeeth,
@@ -1393,8 +1396,10 @@ function eccentricSpurDriverLinkedIdler(movement) {
 
   const gearZ = 0;
   const gearDepth = 0.3;
-  const outputLinkZ = 0.48;
-  const driverLinkZ = 0.38;
+  // p104: both links drop 0.12. C-B clears C's link boss (0.203) by 0.012
+  // and A-B runs 0.01 in front of it; A carries a boss up to its link.
+  const outputLinkZ = 0.36;
+  const driverLinkZ = 0.26;
   const driverMaterial = matte(PALETTE.driver, {
     metalness: 0.12,
     roughness: 0.61,
@@ -1785,6 +1790,22 @@ function eccentricSpurDriverLinkedIdler(movement) {
   );
   idlerGear.position.z = gearZ - gearDepth / 2 - 0.01;
   outputGear.position.z = gearZ - gearDepth - 0.02;
+  // p104: a boss in A's metal rises from A's hub (front -0.117) to 0.005
+  // behind the A-B link's eye, so the link no longer stands 0.6 off A's face
+  // on a bare shaft.
+  {
+    const rotor = outputGear.userData.rotor;
+    const back = -0.12 - outputGear.position.z;
+    const front = outputLinkZ - 0.045 - 0.005 - outputGear.position.z;
+    const boss = new THREE.Mesh(
+      boredLatheGeometry([{ radial: 0.3, axial: back }, { radial: 0.3, axial: front }], 0.097, 96),
+      rotor.children[0].material,
+    );
+    boss.rotation.x = Math.PI / 2;
+    boss.userData.role = 'output-a-boss-up-to-a-b-link';
+    rotor.add(boss);
+    root.userData.blocks.outputBoss = boss;
+  }
   // Plate 222 draws no face index stripes or pitch markers, and D is a plain
   // dark stud in the face of C rather than a white ring.
   for (const gear of [driverGear, idlerGear, outputGear]) {

@@ -38,7 +38,7 @@ test('054 radial teeth, both guide faces and rims form closed solids with outwar
     assert.ok([...edges.values()].every(n => n === 2), 'closed edges');
     assert.ok([...directions.values()].every(n => n === 0), 'consistent winding');
   });
-  assert.equal(seen.size, 21);
+  assert.equal(seen.size, 17);
   assert.ok(parts.crabBlock.isMesh && !parts.bridge && !parts.stem, "A is one solid block, not a bridge and stem");
 });
 
@@ -103,27 +103,32 @@ test('054 constant input rotation produces continuous, repeatable wheel and bear
   }
 });
 
-test('054 each crossover has two physical collar-retaining faces', () => {
-  const zAxis = new THREE.Vector3(0, 0, 1); parts.collar.material.side = THREE.DoubleSide;
-  for (const [index, start] of [p.runTravel, p.returnStart].entries()) for (const fraction of [0.031, 0.125, 0.25, 0.375, 0.4999, 0.5001, 0.625, 0.75, 0.875, 0.969]) {
-    const a = Math.PI * fraction; setPath(start + a); const state = model.root.userData.kinematics;
-    for (const guide of [parts.crabEnds[index], parts.crabReturns[index]]) {
-      const { centerAt, guideSide, terminal } = guide.geometry.userData;
-      const derivative = centerAt(a + 1e-5).sub(centerAt(a - 1e-5));
-      const normal = new THREE.Vector3(0, -derivative.z, derivative.y).normalize().multiplyScalar(guideSide).applyAxisAngle(zAxis, state.wheelAngle + terminal);
-      const ray = new THREE.Raycaster(new THREE.Vector3(0, state.centerY - 0.265, state.centerZ), normal);
-      const hit = ray.intersectObject(guide, false)[0], collarHit = ray.intersectObject(parts.collar, false).at(-1);
+test('054 each crossover has two physical collar-retaining faces on the one-piece block A', () => {
+  // A's channel is a prism along the wheel-frame radial axis through the gap,
+  // so the collar's retaining gap is measured perpendicular to that axis.
+  parts.collar.material.side = THREE.DoubleSide;
+  const { clearance } = parts.crabBlock.geometry.userData; let minimum = Infinity, maximum = 0, rays = 0;
+  const wheel = model.root.userData.blocks.wheel, local = () => {
+    const inverse = wheel.matrixWorld.clone().invert(); return new THREE.Vector3().setFromMatrixPosition(parts.collar.matrixWorld).applyMatrix4(inverse);
+  };
+  for (const start of [p.runTravel, p.returnStart]) for (const fraction of [0.031, 0.125, 0.25, 0.375, 0.4999, 0.5001, 0.625, 0.75, 0.875, 0.969]) {
+    const a = Math.PI * fraction; setPath(start + a - 1e-4); const before = local(); setPath(start + a + 1e-4); const after = local();
+    setPath(start + a); const centre = local(), tangent = after.sub(before); tangent.x = 0; tangent.normalize();
+    for (const side of [1, -1]) {
+      const normal = new THREE.Vector3(0, -tangent.z, tangent.y).multiplyScalar(side).transformDirection(wheel.matrixWorld);
+      const ray = new THREE.Raycaster(centre.clone().applyMatrix4(wheel.matrixWorld), normal);
+      const hit = ray.intersectObject(parts.crabBlock, false)[0], collarHit = ray.intersectObject(parts.collar, false).at(-1);
       assert.ok(hit && collarHit, 'both real surfaces intersect the contact ray');
-      assert.ok(hit.distance - collarHit.distance > 0.00007 && hit.distance - collarHit.distance < 0.00014, 'the collar fits the captured slot');
+      const gap = hit.distance - collarHit.distance; minimum = Math.min(minimum, gap); maximum = Math.max(maximum, gap); rays += 1;
+      assert.ok(gap > 0.9 * clearance && gap < 1.1 * clearance, `the collar fits the captured channel (${gap})`);
     }
   }
+  assert.equal(rays, 40); console.log(JSON.stringify({ channelGap: { minimum, maximum } }));
 });
 
-test('054 p93: the running rim stands off the crab-end linings, so no faces coincide', () => {
-  const { root } = makeStarMangle(), parts = root.userData.parts, rim = parts.outerRim.geometry.userData;
-  for (const end of [...parts.crabEnds, ...parts.crabReturns]) {
-    const crab = end.geometry.userData;
-    assert.ok(crab.radialEnd - rim.radialEnd >= 0.003 - 1e-12);
-    assert.ok(rim.clearance - crab.guideClearance >= 0.0014 - 1e-12);
-  }
+test('054 p104: block A is one radial extrusion with no separate lining pieces', () => {
+  const { root } = makeStarMangle(), parts = root.userData.parts; let brass = 0;
+  parts.crab.traverse((part) => { if (part.isMesh) brass += 1; });
+  assert.equal(brass, 1); assert.equal(parts.crabEnds, undefined); assert.equal(parts.crabGuides.length, 4);
+  assert.equal(parts.crabBlock.geometry.userData.sectionPieces, 3);
 });

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { finishHookFamily } from './lifting-check-hook-parts.js';
+import { groundBlock } from './ground-block.js';
 import { circle, plate, poly, polygonClipping, capsule } from './finite-plate-geometry.js';
 import {
   PALETTE,
@@ -430,15 +431,19 @@ function pileDriverReleasingHooks(movement) {
     restY + W_BOTTOM - 8, BEAM_BOTTOM, ...FRAME_Z, frameMaterial, `${side < 0 ? 'left' : 'right'}-guide-post`));
   const ribs = [-1, 1].map((side) => box(side < 0 ? -POST_INNER : RIB_INNER, side < 0 ? -RIB_INNER : POST_INNER,
     restY + W_BOTTOM - 8, BEAM_BOTTOM, ...RIB_Z, frameMaterial, `${side < 0 ? 'left' : 'right'}-weight-guide-batten`));
-  const postFeet = [-1, 1].map((side) => box(side < 0 ? -POST_OUTER - 10 : POST_INNER, side < 0 ? -POST_INNER : POST_OUTER + 10,
-    groundY, restY + W_BOTTOM - 8, ...FRAME_Z, frameMaterial, `${side < 0 ? 'left' : 'right'}-post-and-foot-below-plate-crop`));
-  frame.add(...beamHalves, ...posts, ...ribs, ...postFeet);
-  // Pile head and pile beneath the plate's crop, where W lands.
-  const anvil = box(-60, 60, restY + W_BOTTOM - 9, restY + W_BOTTOM, -1.0, 1.0, darkMaterial, 'pile-head-impact-anvil');
-  const pile = box(-40, 40, groundY, restY + W_BOTTOM - 9, -0.8, 0.8, frameMaterial, 'pile-below-impact-head');
-  const belowCrop = [anvil, pile, ...postFeet];
+  frame.add(...beamHalves, ...posts, ...ribs);
+  // Pass 104: Brown draws neither pile nor anvil (the black anvil stood alone
+  // below the frame while W was up). W now drops onto a plain ground block,
+  // in the shared ground style, whose top is its landing plane; the posts
+  // stand 8 px into it.
+  const groundTop = restY + W_BOTTOM;
+  const ground = groundBlock((2 * POST_OUTER + 60) * S, (groundTop - groundY) * S, FRAME_Z[1] - FRAME_Z[0] + 0.4,
+    {name: 'plain-ground-block-where-w-lands'});
+  ground.position.set(0, (groundTop + groundY) / 2 * S, 0);
+  ground.userData.fixed = true;
+  const belowCrop = [ground];
   for (const part of belowCrop) part.userData.beyondPlateCrop = true;
-  frame.add(anvil, pile);
+  frame.add(ground);
   root.add(frame);
 
   // ------------------------------------------------------ rope block (monkey)
@@ -710,7 +715,7 @@ function pileDriverReleasingHooks(movement) {
   root.userData.mechanism =
     'rope-block-carries-pliers-jaws-gripping-the-t-head-of-w-until-slot-b-squeezes-the-horns-and-opens-the-jaws-then-the-jaws-cam-over-and-regrip-the-t-head';
   root.userData.blocks = {
-    anvil, beamHalves, block, casting, frame, jaws, lugs, pile, pins, posts, ribs, ring, rope, spring, stemWeb, stopLug, tee, weight, weightBody,
+    beamHalves, block, casting, frame, ground, jaws, lugs, pins, posts, ribs, ring, rope, spring, stemWeb, stopLug, tee, weight, weightBody,
     jawBodies: jaws.map((jaw) => jaw.children[0]),
   };
   root.userData.displayTimeOffset = displayTimeOffset;
@@ -805,8 +810,8 @@ function pileDriverReleasingHooks(movement) {
   };
 
   finishHookFamily(root, period);
-  // Fit the drawn parts over the whole cycle; the pile, anvil and post feet
-  // below the plate's crop and the rope running up out of it are excluded.
+  // Fit the drawn parts over the whole cycle; the ground block below the
+  // plate's crop and the rope running up out of it are excluded.
   for (const part of [...belowCrop, rope]) part.visible = false;
   const fitBounds = new THREE.Box3();
   for (let sample = 0; sample <= 64; sample += 1) {

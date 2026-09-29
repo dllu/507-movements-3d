@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import polygonClipping from 'polygon-clipping';
-import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { mergeGeometries, toCreasedNormals } from 'three/addons/utils/BufferGeometryUtils.js';
 
 function meshWithSurfaceNormals(vertices, indices, groups) {
   const positions = [], faces = [], seen = new Map();
@@ -107,31 +107,39 @@ export function starMangleCrabEnd(motion, firstCrossover, { collarOffset = 0.265
 }
 
 // Brown draws A as one hatched block across the rim gap with a radial bar to
-// the inner rim. This solid block is cut by the swept collar silhouette of
-// both crossovers (runs of wheel-frame collar centres in (-y, z)); the thin crab
-// shells above remain inside it as the exact collar-retaining linings. The
-// two radial bars pass over the pinion's swept faces to feet on the inner rim.
-// Its walls and bars are as thin and close as the pinion's swept volume allows
-// (moving parts reach |z| = 0.424 over the bars), to keep A compact.
-export function starMangleCrabBlock(collarRuns, { collarRadius = 0.10, clearance = 0.003,
+// the inner rim. The block is ONE radial extrusion whose section is the
+// rectangle minus the collar's swept channel at both crossovers (runs of
+// wheel-frame collar centres in (-y, z)). The channel walls are the exact
+// offset curves of the densely sampled collar path, so each seat is one
+// smooth arc concentric with the crossover and the block itself retains the
+// collar (no separate linings, lips or steps). The two radial bars pass over
+// the pinion's swept faces to feet on the inner rim. Walls and bars are as
+// thin and close as the pinion's swept volume allows (moving parts reach
+// |z| = 0.424 over the bars), to keep A compact.
+function channelOutline(centers, radius) {
+  const n = centers.length, left = [], right = [], normals = [];
+  for (let i = 0; i < n; i += 1) {
+    const [s0, z0] = centers[Math.max(0, i - 1)], [s1, z1] = centers[Math.min(n - 1, i + 1)];
+    const length = Math.hypot(s1 - s0, z1 - z0);
+    normals.push([-(z1 - z0) / length, (s1 - s0) / length]);
+  }
+  for (let i = 0; i < n; i += 1) {
+    const [s, z] = centers[i], [nx, nz] = normals[i];
+    left.push([s + radius * nx, z + radius * nz]); right.push([s - radius * nx, z - radius * nz]);
+  }
+  const cap = ([s, z], [nx, nz], forward) => Array.from({ length: 31 }, (_, k) => {
+    const a = Math.PI * (k + 1) / 32, c = Math.cos(a), t = Math.sin(a) * forward;
+    // Rotate the normal from +n through the travel direction to -n.
+    return [s + radius * (nx * c + nz * t), z + radius * (nz * c - nx * t)];
+  });
+  const ring = [...left, ...cap(centers[n - 1], normals[n - 1], 1), ...right.reverse(), ...cap(centers[0], normals[0], -1).reverse()];
+  return [[...ring, ring[0]]];
+}
+export function starMangleCrabBlock(collarRuns, { collarRadius = 0.10, clearance = 0.0005,
   halfWidth = 0.38, halfHeight = 0.52, radialStart = 1.76, radialEnd = 1.90,
   barWidth = 0.14, barInner = 1.27, barOuter = 1.82, barLow = 0.455, barHigh = 0.51, footOuter = 1.36, footLow = 0.10 } = {}) {
-  const radius = collarRadius + clearance, capsules = [];
-  const circle = (s, z) => Array.from({ length: 40 }, (_, i) => {
-    const a = 2 * Math.PI * i / 40; return [s + radius * Math.cos(a), z + radius * Math.sin(a)];
-  });
-  for (const collarCenters of collarRuns) for (let i = 0; i < collarCenters.length; i += 1) {
-    const [s, z] = collarCenters[i], ring = circle(s, z);
-    if (i + 1 < collarCenters.length) {
-      const [s2, z2] = collarCenters[i + 1], length = Math.hypot(s2 - s, z2 - z);
-      if (length > 1e-9) {
-        const nx = -(z2 - z) / length * radius, ny = (s2 - s) / length * radius;
-        capsules.push([[[s + nx, z + ny], [s2 + nx, z2 + ny], [s2 - nx, z2 - ny], [s - nx, z - ny], [s + nx, z + ny]]]);
-      }
-    }
-    capsules.push([[...ring, ring[0]]]);
-  }
-  const sweep = polygonClipping.union(...capsules);
+  const radius = collarRadius + clearance;
+  const sweep = polygonClipping.union(...collarRuns.map((run) => channelOutline(run, radius)));
   const rect = [[[-halfWidth, -halfHeight], [halfWidth, -halfHeight], [halfWidth, halfHeight], [-halfWidth, halfHeight], [-halfWidth, -halfHeight]]];
   const section = polygonClipping.difference(rect, sweep);
   const toShape = (polygon) => {
@@ -155,7 +163,9 @@ export function starMangleCrabBlock(collarRuns, { collarRadius = 0.10, clearance
     parts.push(bar.toNonIndexed(), foot.toNonIndexed());
   }
   const merged = mergeGeometries(parts.map((g) => { const n = g.index ? g.toNonIndexed() : g; n.deleteAttribute('uv'); return n; }));
-  merged.computeVertexNormals(); merged.computeBoundingBox(); merged.computeBoundingSphere();
-  merged.userData = { collarRadius, clearance, halfWidth, halfHeight, radialStart, radialEnd, barLow, barHigh, sectionPieces: section.length };
-  return merged;
+  // Smooth along the channel arcs, sharp at the block's edges.
+  const shaded = toCreasedNormals(merged, Math.PI / 6);
+  shaded.computeBoundingBox(); shaded.computeBoundingSphere();
+  shaded.userData = { collarRadius, clearance, halfWidth, halfHeight, radialStart, radialEnd, barLow, barHigh, sectionPieces: section.length };
+  return shaded;
 }

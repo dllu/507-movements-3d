@@ -94,9 +94,14 @@ export function makeJawClutch() {
   // shoulder (the plate draws it over them); pins and rod follow it forward.
   const handleLength = 1.09, leverBackZ = 0.385 + LEVER_STANDOFF, leverDepth = 0.055;
   const shape = new THREE.Shape();
-  shape.moveTo(0.055, p.leverLength); shape.lineTo(0.053, 0.046);
-  shape.lineTo(handleLength, 0.032); shape.absarc(handleLength, 0, 0.068, Math.PI / 2, -Math.PI / 2, true);
-  shape.lineTo(0.074, -0.046); shape.absarc(0, 0, 0.09, -Math.PI / 4, -Math.PI, true);
+  // The horizontal arm is one constant-width bar ending in a full half-round
+  // concentric with the rod pin, the same radius as the rod's rounded top.
+  const armEndRadius = 0.044;
+  shape.moveTo(0.055, p.leverLength); shape.lineTo(0.053, armEndRadius);
+  shape.lineTo(handleLength, armEndRadius); shape.absarc(handleLength, 0, armEndRadius, Math.PI / 2, -Math.PI / 2, true);
+  // The arm's lower edge runs straight into the elbow eye (no jog).
+  const elbowStart = -Math.asin(armEndRadius / 0.09);
+  shape.lineTo(0.09 * Math.cos(elbowStart), -armEndRadius); shape.absarc(0, 0, 0.09, elbowStart, -Math.PI, true);
   shape.lineTo(-0.055, p.leverLength); shape.absarc(0, p.leverLength, 0.055, Math.PI, 0, true); shape.closePath();
   for (const [x, y, r] of [[0, 0, 0.034], [0, p.leverLength, 0.022], [handleLength, 0, 0.022]]) {
     const hole = new THREE.Path(); hole.absarc(x, y, r, 0, 2 * Math.PI, true); shape.holes.push(hole);
@@ -148,7 +153,7 @@ export function makeJawClutch() {
       lever, leverBody, follower, followerPin, pivotPin, rod, rodBody, handlePin },
     geometry: { ...p, sourcePhase, jawPhase, inputProfile, outputProfile, shaftRadius, boreRadius, keyHalfWidth, keywayTop,
       keyLeft, keyRight, keyBottom, keyTop, featherHalfWidth, pinionTeeth, gearTeeth, module, gearDepth,
-      gearPitchRadius, pinionPitchRadius, pinionY, pinionZ, pinionTilt, pinionMeshPhase, handleLength, leverBackZ, leverDepth,
+      gearPitchRadius, pinionPitchRadius, pinionY, pinionZ, pinionTilt, pinionMeshPhase, handleLength, armEndRadius, leverBackZ, leverDepth,
       cycleMeaning: 'align-insert-positive-drive-withdraw-and-coast' } };
   // Frame Brown's plate: the measured swept box of the mechanism with the
   // rod to his crop. The rod's short run past it stays out of the fit.

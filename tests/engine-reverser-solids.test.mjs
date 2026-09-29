@@ -79,3 +79,18 @@ test('p101: 179 lever pedestal is one cast lug standing on the foundation, with 
   assert.ok(pin.min.z<ped.min.z&&pin.min.z>ped.min.z-.03,'pin passes through the lug');
  }finally{disposeObject3D(m.root);}
 });
+
+test('p104: 179 lever ends in a round eye concentric with the base pin, clear of the foundation',()=>{
+ const m=createAuthoredEngineReverserMovement({id:179}),b=m.root.userData.blocks;
+ try{
+  const pos=b.manualLeverBar.geometry.attributes.position,pinRadius=b.leverBaseHub.geometry.parameters.radiusTop;
+  let eye=0;
+  for(let i=0;i<pos.count;i++){const x=pos.getX(i),y=pos.getY(i);if(x<0)eye=Math.max(eye,Math.hypot(x,y));}
+  assert.ok(Math.abs(eye-.22)<1e-6,'eye radius 0.22 behind the pin: '+eye);
+  assert.ok(eye/pinRadius>1.7,'eye about 1.8x the pin radius');
+  for(let i=0;i<pos.count;i++){const x=pos.getX(i),y=pos.getY(i);if(x<=0)assert.ok(Math.hypot(x,y)<=.22+1e-6,'round, concentric end');}
+  for(let k=0;k<=12;k++){m.update(k);m.root.updateMatrixWorld(true);
+   const lever=new THREE.Box3().setFromObject(b.manualLeverBar),base=new THREE.Box3().setFromObject(b.baseRail);
+   assert.ok(lever.min.z>base.max.z,'eye passes in front of the foundation');}
+ }finally{disposeObject3D(m.root);}
+});

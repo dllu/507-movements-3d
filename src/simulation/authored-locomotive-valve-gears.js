@@ -946,7 +946,10 @@ function locomotiveStephensonExpansionLinkValveGear() {
   );
   suspensionLug.userData.role = 'central-link-lifting-lug';
   const suspensionLugEye = makeEye(0.14, 0.054, driverMaterial);
-  const suspensionLugPin = cylinderAlongZ(0.075, 1.30, darkMaterial, 24);
+  // Pass 104: the pin spans only its stack, from 0.03 behind the link to
+  // 0.03 in front of the lifting link (world z -0.13 .. 0.77), not 1.3.
+  const suspensionLugPin = cylinderAlongZ(0.075, 0.90, darkMaterial, 24);
+  suspensionLugPin.position.z = -0.23;
   suspensionLug.add(suspensionLugEye, suspensionLugPin);
   expansionLink.add(suspensionLug);
   root.add(expansionLink);
@@ -1079,10 +1082,22 @@ function locomotiveStephensonExpansionLinkValveGear() {
       ]);
       bandOutline = clip.difference(bandOutline, poly(cut));
     }
+    // Pass 104: Brown stands the quadrant on the wall's top-left corner. Its
+    // lower third carries a foot web cast with it, running right onto the
+    // wall's front face (x to 0.22 inside the wall's left edge, top 0.11
+    // below the wall's top), so the sector no longer floats 0.03 clear.
+    const wallLeftLocalX = -4.482 - reversingPivot.x;
+    const wallTopLocalY = 2.006 - reversingPivot.y;
+    // Level with the inner corner of the band's lower end.
+    const footLowY = -bandInner * Math.sin(quadrantHalfAngle);
+    bandOutline = clip.union(bandOutline, poly([
+      [-bandInner - 0.05, footLowY], [wallLeftLocalX + 0.22, footLowY],
+      [wallLeftLocalX + 0.22, wallTopLocalY - 0.11], [-bandInner - 0.05, wallTopLocalY - 0.11],
+    ]));
     quadrantBand.geometry.dispose();
-    // The plate is carried by the engine wall: it runs back to seat on the
-    // wall's front face (z = -0.5), which it overlaps across the top band.
-    quadrantBand.geometry = plate(bandOutline, -0.16, 0.07);
+    // The plate is carried by the engine wall: its back face lies 0.02
+    // inside the wall's front face (z = -0.5), so the foot beds in.
+    quadrantBand.geometry = plate(bandOutline, -0.18, 0.07);
     for (const notch of quadrantNotches) {
       notch.removeFromParent();
       notch.userData.role += '-cut-into-quadrant-plate';
@@ -1199,7 +1214,10 @@ function locomotiveStephensonExpansionLinkValveGear() {
   );
   dieBody.position.z = -0.44;
   dieBody.userData.role = 'working-link-die-body';
-  const diePin = cylinderAlongZ(0.085, 1.50, brassMaterial, 28);
+  // Pass 104: trimmed to its stack, 0.03 proud behind the die and in front
+  // of the rocker's lower arm (world z -0.13 .. 1.07; it was -0.31 .. 1.19).
+  const diePin = cylinderAlongZ(0.085, 1.20, brassMaterial, 28);
+  diePin.position.z = 0.03;
   diePin.userData.role = 'die-pin-through-link-and-output-rocker';
   dieBlock.add(dieBody, diePin);
   root.add(dieBlock);

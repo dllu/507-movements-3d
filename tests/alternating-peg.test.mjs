@@ -16,7 +16,7 @@ test('077 matches the source wheel, high fulcrum and two-pitch engaged pair',()=
   const expected=source(pixel);near(u.blocks[name].position.x,expected[0]);near(u.blocks[name].position.y,expected[1]);
  }
  near(p.A[1],.5020777615932099,1e-10);near(p.innerRadius,323.5218298952886/433.5789672975984);
- assert.equal(p.pinCenters.length,24);assert.equal(Object.keys(u.parts).length,62);
+ assert.equal(p.pinCenters.length,24);assert.equal(Object.keys(u.parts).length,63);
  near(p.phases.upper-p.phases.lower,2*Math.PI/12);
  for(const [index,pixel]of [[0,[670,524]],[22,[799,669]]]){
   const expected=source(pixel),actual=p.pinCenters[index];assert.ok(Math.hypot(actual[0]-expected[0],actual[1]-expected[1])*p.scale<2.5);

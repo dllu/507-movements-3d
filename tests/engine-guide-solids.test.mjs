@@ -85,7 +85,10 @@ test('327: cylinder and gland have a passage aligned to the moving piston rod',(
  try {
   const {blocks:b}=m.root.userData;m.root.updateMatrixWorld(true);
   const p=b.pistonRod.getWorldPosition(new THREE.Vector3()),box=bounds(b.pistonRod);
-  const radius=Math.hypot((box.max.x-box.min.x)/2,(box.max.z-box.min.z)/2);
+  // p104: the rod is round; probe its true radius (the half-diagonal of its
+  // box would overstate it by sqrt 2).
+  const radius=b.pistonRod.geometry.parameters.radiusTop??Math.hypot((box.max.x-box.min.x)/2,(box.max.z-box.min.z)/2);
+  assert.ok(b.pistonRod.geometry.type==='CylinderGeometry','327 piston rod is round');
   for(const part of [b.cylinderBody,b.cylinderTopCap,b.gland])clearBore(part,p,radius,new THREE.Vector3(0,1,0));
  }finally{disposeMovementModel(m);}
 });

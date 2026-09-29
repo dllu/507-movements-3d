@@ -370,7 +370,7 @@
     },
     {
       "file": "src/simulation/authored-clamps.js",
-      "sha256": "b121d424f9d3d9f3dafd5759ff71862e8ea35491a49628ac80826c4b31eaffc2"
+      "sha256": "74afb526d287a58967d1efbce5e1e0d834622d05f0866fcb22113f4c1ad1fb40"
     },
     {
       "file": "src/simulation/mujoco-bench-clamp/profile.js",

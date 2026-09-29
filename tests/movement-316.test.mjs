@@ -77,13 +77,32 @@ test('movement 316 is the complete glass-jar mercurial compensation pendulum', (
   assert.equal(blocks.pendulumCarrier.parent, model.root);
   assert.equal(blocks.jarAssembly.parent, blocks.pendulumCarrier);
   assert.equal(blocks.rod.parent, blocks.pendulumCarrier);
-  assert.equal(blocks.threadHelix.parent, blocks.pendulumCarrier);
+  // p104: the solid cut thread is carried with the jar and its cap.
+  assert.equal(blocks.threadHelix.parent, blocks.jarAssembly);
+  assert.equal(blocks.threadHelix.geometry.userData.thread.rootWidth
+    > blocks.threadHelix.geometry.userData.thread.crestWidth, true);
+  assert.ok(blocks.threadHelix.geometry.userData.thread.inner
+    < blocks.rod.geometry.parameters.radiusTop);
+  assert.equal(blocks.jarCap.parent, blocks.jarAssembly);
+  assert.equal(blocks.capBoss.parent, blocks.jarAssembly);
   assert.equal(blocks.glassJar.parent, blocks.jarAssembly);
   assert.equal(blocks.mercuryColumn.parent, blocks.jarAssembly);
   // The white level disc is an index Brown does not draw.
   assert.equal(blocks.mercurySurface.parent, null);
   assert.equal(blocks.adjusterHandle.parent, blocks.jarAssembly);
-  assert.equal(blocks.shoulderHangers.length, 2);
+  // Brown's inverted-U cap replaces the curved straps; the two side
+  // screws are its nuts and shanks.
+  assert.equal(blocks.shoulderHangers.length, 0);
+  assert.equal(blocks.neckPacking.length, 2);
+  // Ball on the left, index plate on the right: not a symmetric bar.
+  blocks.adjusterHandle.geometry.computeBoundingBox();
+  const handleBox = blocks.adjusterHandle.geometry.boundingBox;
+  assert.ok(handleBox.max.x > -handleBox.min.x + 0.2);
+  assert.ok(handleBox.max.y - handleBox.min.y > 1.0);
+  // The mercury's bottom edge is rounded like the glass's inner base.
+  const mercuryPoints = blocks.mercuryColumn.geometry.parameters.points;
+  assert.ok(mercuryPoints.filter((point) => point.y > 1e-6
+    && point.y < 0.3 && point.x > 1).length >= 5);
   assert.equal(blocks.sideClamps.length, 2);
   assert.equal(blocks.clampPins.length, 2);
   assert.deepEqual(blocks.pendulumCarrier.userData.axis,
@@ -98,7 +117,9 @@ test('movement 316 is the complete glass-jar mercurial compensation pendulum', (
   assert.equal(roles.filter((role) =>
     role === 'constant-mass-expanding-mercury-column').length, 1);
   assert.equal(roles.filter((role) =>
-    role === 'curved-glass-jar-shoulder-hanger').length, 2);
+    role === 'curved-glass-jar-shoulder-hanger').length, 0);
+  assert.equal(roles.filter((role) =>
+    role === 'inverted-u-jar-neck-cap-stirrup').length, 1);
   assert.equal(roles.some((role) => /generic|procedural/.test(role)), false);
   disposeModel(model.root);
 });
@@ -439,18 +460,29 @@ test('movement 316 renderer exposes the moving level and fixed effective-length 
     near(blocks.jarAssembly.position.y,
       -expected.massProperties.jarCenterDistance, 0,
     `rendered jar travel at ${time}`);
-    near(blocks.mercuryColumn.scale.y, expected.fillHeight, 0,
+    // p104: the mercury is one rounded-bottom solid whose top face moves;
+    // its origin is the fixed bottom of the charge.
+    const position = blocks.mercuryColumn.geometry.attributes.position;
+    let top = -Infinity;
+    let bottom = Infinity;
+    for (let i = 0; i < position.count; i += 1) {
+      top = Math.max(top, position.getY(i));
+      bottom = Math.min(bottom, position.getY(i));
+    }
+    near(top, expected.fillHeight, 1e-6,
       `rendered mercury height at ${time}`);
+    near(bottom, 0, 0, `rendered mercury bottom at ${time}`);
     blocks.glassJar.getWorldPosition(jarWorld);
-    blocks.mercuryColumn.getWorldPosition(mercuryWorld);
+    mercuryWorld.set(0, expected.fillHeight / 2, 0);
+    blocks.mercuryColumn.localToWorld(mercuryWorld);
     // The live mercury top is the upper face of the rendered column.
-    surfaceWorld.set(0, 0.5, 0);
+    surfaceWorld.set(0, expected.fillHeight, 0);
     blocks.mercuryColumn.localToWorld(surfaceWorld);
     vectorNear(jarWorld, expected.glassJarCenter.position, 2e-15,
       `rendered jar center at ${time}`);
-    vectorNear(mercuryWorld, expected.mercuryCenter.position, 2e-15,
+    vectorNear(mercuryWorld, expected.mercuryCenter.position, 1e-14,
       `rendered mercury center at ${time}`);
-    vectorNear(surfaceWorld, expected.mercuryTop.position, 2e-15,
+    vectorNear(surfaceWorld, expected.mercuryTop.position, 1e-14,
       `rendered mercury top at ${time}`);
     near(model.root.userData.compensationState
       .centerOfOscillationError, 0, 3e-15,

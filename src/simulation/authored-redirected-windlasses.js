@@ -715,13 +715,16 @@ function redirectedChineseWindlass(movement) {
   );
   shaftIndicator.userData.role = 'white-common-shaft-spin-index';
   // Brown turns the windlass by a handspike through the large barrel.
-  const crankRadius = 0.84;
+  // Brown's spike is about 2.3 barrel heights long, reaching down to the
+  // feet of the A-frame; it is a slender bar, a little stouter here so it
+  // reads as a lever.
+  const crankRadius = 0.94;
   const handspikeX = largeRopeExit.x - largeBarrelWidth / 2
     - largeBarrelExtension + 0.2;
   const crankArm = makeBeam(
     new THREE.Vector3(handspikeX, -crankRadius, 0),
     new THREE.Vector3(handspikeX, crankRadius, 0),
-    { color: PALETTE.frame, depth: 0.075, thickness: 0.075 },
+    { color: PALETTE.frame, depth: 0.11, thickness: 0.11 },
   );
   crankArm.userData.role = 'handspike-through-large-barrel';
   windlassRotor.add(

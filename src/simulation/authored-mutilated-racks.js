@@ -860,13 +860,11 @@ function mutilatedRackFrameAlternatingSpurGear(movement) {
     upperRackTeeth,
   };
   root.userData.cameraDistanceScale = 0.92;
-  // Fit the racked frame and gear over the whole stroke, but not the rod and
-  // collar at the far stroke limit: they leave the view briefly there, so the
-  // subject is not shrunk to a strip as it was when every part was fitted.
-  // The box is the frame's swept silhouette (root scale 0.92): open end at
-  // the right stroke limit to closed end at the left one.
+  // Pass 104: fit the frame, rod and collar over the whole stroke (root
+  // scale 0.92): the closed end at the left stroke limit to the rod's end
+  // at the right one, so the input rod and collar never leave the view.
   const frameSweepMinimumX = 0.92 * (frameLeft - contactCoordinateMaximum) - 0.01;
-  const frameSweepMaximumX = 0.92 * (frameRight - contactCoordinateMinimum) + 0.01;
+  const frameSweepMaximumX = 0.92 * (driveRodEnd - contactCoordinateMinimum) + 0.01;
   root.userData.cameraFitBounds = new THREE.Box3(
     new THREE.Vector3(frameSweepMinimumX, -1.7, -0.82),
     new THREE.Vector3(frameSweepMaximumX, 1.7, 0.82),

@@ -77,8 +77,9 @@ test('455: each segment valve turns on a pin fast in the rotor web', () => {
     const r = pin.geometry.parameters.radiusTop;
     const holeRadius = Math.min(...pointsIn(blade, blade).map((p) => Math.hypot(p.x, p.y)));
     assert.ok(holeRadius > r && holeRadius < r + 0.01, `knuckle bored round the pin (${holeRadius})`);
-    assert.ok(pin.position.distanceTo(hinge.position) < 1e-9, 'pin on the hinge axis');
-    assert.ok(pin.geometry.parameters.height / 2 >= -web.min.z - 1e-6, 'pin runs into the web');
+    assert.ok(Math.hypot(pin.position.x - hinge.position.x, pin.position.y - hinge.position.y) < 1e-9, 'pin on the hinge axis');
+    const pinLow = pin.position.z - pin.geometry.parameters.height / 2;
+    assert.ok(pinLow < web.max.z && pinLow >= web.min.z - 1e-6, 'pin runs into the web');
     assert.ok(Math.hypot(pin.position.x, pin.position.y) < web.max.x + 1e-6, 'web reaches the pin');
   }
 });

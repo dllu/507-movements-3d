@@ -305,3 +305,15 @@ test('048 rack-generated working flanks agree with the independent involute equa
   assert.ok(checks > 1000);
   console.log(JSON.stringify({ mechanism: 48, independentInvoluteChecks: checks, maximumTangentialError: worst }));
 });
+
+test('048 bell-crank arm ends in one full half-round concentric with the rod pin', () => {
+  const model = makeJawClutch(), g = model.root.userData.geometry, b = model.root.userData.blocks;
+  const position = b.leverBody.geometry.attributes.position; let outside = 0, maximum = 0;
+  for (let i = 0; i < position.count; i += 1) {
+    const x = position.getX(i), y = position.getY(i);
+    if (x < g.handleLength) { if (x > 0.2) assert.ok(Math.abs(Math.abs(y) - g.armEndRadius) < 1e-6 || Math.hypot(x - g.handleLength, y) < 0.023); continue; }
+    const r = Math.hypot(x - g.handleLength, y); maximum = Math.max(maximum, r);
+    if (r > 0.023) { outside += 1; assert.ok(Math.abs(r - g.armEndRadius) < 1e-6, 'every end vertex lies on the one pin-centred arc'); }
+  }
+  assert.ok(outside > 20); assert.ok(Math.abs(maximum - g.armEndRadius) < 1e-6);
+});

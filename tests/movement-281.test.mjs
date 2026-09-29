@@ -412,5 +412,13 @@ test('movement 281 carries its fulcrum on a brace behind the disk, not an undraw
     'brace and bearing stay behind the disk');
   const hub = new THREE.Box3().setFromObject(blocks.diskHub);
   assert.ok(hub.min.z < bearing.max.z, 'disk shaft runs in the rear bearing');
+  // p104: the brace ends in a round eye concentric with the fulcrum pin.
+  const pinCenter = new THREE.Vector3();
+  pin.getCenter(pinCenter);
+  const eyeCenter = new THREE.Vector3().setFromMatrixPosition(blocks.upperCrossBrace.matrixWorld);
+  assert.ok(Math.hypot(eyeCenter.x - pinCenter.x, eyeCenter.y - pinCenter.y) < 1e-9, 'brace eye concentric with the fulcrum');
+  const pinRadius = (pin.max.x - pin.min.x) / 2;
+  assert.ok(blocks.upperCrossBrace.userData.eyeRadius > pinRadius + 0.08, 'eye surrounds the pin');
+  assert.equal(blocks.upperCrossBrace.geometry.type, 'ExtrudeGeometry');
   disposeModel(model.root);
 });

@@ -721,6 +721,23 @@ function fourMotionFeed(movement) {
   rearSpringAnchor.position.set(springFixedX, springY, 0);
   rearSpringAnchor.userData.role = 'fixed-cup-socket-holding-return-spring';
   root.add(markShadows(rearSpringAnchor));
+  // Pass 104: Brown hatches the socket as part of the fixed frame. It is
+  // carried by one short flat strap (a single extrusion in the plane of the
+  // mechanism) running under the cup to a bored bearing boss round the left
+  // end of the camshaft, so neither hangs in mid-air.
+  const bracketBossX = -0.45, bracketBossRadius = 0.22, bracketBore = 0.1205;
+  const bracketBottom = 0.18, bracketTop = 0.27, bracketLeftX = -1.45;
+  const cupBracket = new THREE.Mesh(plate(polygonClipping.union(
+    poly([[bracketLeftX, bracketBottom], [bracketBossX, bracketBottom],
+      [bracketBossX, bracketTop], [bracketLeftX, bracketTop]]),
+    poly(circle([bracketLeftX, (bracketBottom + bracketTop) / 2], (bracketTop - bracketBottom) / 2, 32)),
+  ), -0.08, 0.08), frameMaterial);
+  cupBracket.userData.role = 'fixed-strap-carrying-return-spring-cup-to-camshaft-bearing';
+  const cupBracketBoss = new THREE.Mesh(ring(bracketBore, bracketBossRadius, -0.12, 0.12, 64), frameMaterial);
+  cupBracketBoss.rotation.y = Math.PI / 2;
+  cupBracketBoss.position.set(bracketBossX, camCenterY, 0);
+  cupBracketBoss.userData.role = 'fixed-bored-camshaft-bearing-boss-on-cup-strap';
+  root.add(markShadows(cupBracket), markShadows(cupBracketBoss));
 
   const guideRails = [-0.39, 0.39].map((z) => {
     const guide = new THREE.Mesh(

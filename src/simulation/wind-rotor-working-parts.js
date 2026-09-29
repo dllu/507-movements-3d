@@ -38,11 +38,21 @@ export function correctWindRotorWorkingParts(root,id) {
   const cap=new THREE.BufferGeometry();cap.setAttribute('position',new THREE.Float32BufferAttribute(capData.positions,3));cap.setIndex(capData.indices);
   replace(b.dome,toCreasedNormals(cap,Math.PI/5));cap.dispose();
   p.bearingSupports=[];
-  for(const bearing of b.bearings) {
+  // Pass 104: Brown's shaft comes straight out of the dome. The outer bearing
+  // is a round collar concentric with the shaft, running back 0.03 inside
+  // the dome's surface at its highest point, with no square pedestal butted
+  // against the dome (it read as a box perched on it). The inner bearing's
+  // pedestal stays, hidden inside the dome.
+  b.bearings.forEach((bearing,i)=>{
+   if(i===b.bearings.length-1&&bearing.position.z>.7) {
+    const front=bearing.position.z+.06,back=.63;
+    replace(bearing,tube(.215,.119,front-back));bearing.rotation.x=Math.PI/2;bearing.position.z=(front+back)/2;
+    return;
+   }
    replace(bearing,tube(.215,.119,.12));bearing.rotation.x=Math.PI/2;
    p.bearingSupports.push(add(root,boredBlock(-.25,-.34,.25,.22,.122,.16),b.tower.material,
     'windshaft-bearing-pedestal',bearing.position));
-  }
+  });
   replace(b.hub,tube(.27,.117,.36));
   root.userData.cameraDirection=new THREE.Vector3(7.6,3.2,13);
   root.userData.minimumDisplayCycleSeconds=3;

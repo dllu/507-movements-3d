@@ -618,10 +618,10 @@ test('movement 269 renderer binds translation, contacts, handoffs, and output sp
     const time = transmission.timeForContactCoordinate(q, 'increasing');
     model.update(time, 0.016);
     model.root.updateMatrixWorld(true);
-    // The racked frame and gear stay in view over the whole stroke; the rod
-    // and collar may leave it briefly at the far limit (see cameraFitBounds).
+    // The racked frame, gear, rod and collar stay in view over the whole
+    // stroke (pass 104).
     const renderedBounds = new THREE.Box3();
-    for (const part of [blocks.topRail, blocks.bottomRail, blocks.rightBridge, ...blocks.rackTeeth, blocks.pinion]) {
+    for (const part of [blocks.topRail, blocks.bottomRail, blocks.rightBridge, ...blocks.rackTeeth, blocks.pinion, blocks.driveRod, blocks.driveCollar]) {
       renderedBounds.union(new THREE.Box3().setFromObject(part, true));
     }
     const fitBounds = model.root.userData.cameraFitBounds;

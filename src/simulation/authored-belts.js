@@ -1283,7 +1283,8 @@ function reversingBevelDrive() {
     pitchConeAngle: Math.PI / 2 - sideConeAngle,
     toothHeight: 0.12,
     teeth: 22,
-    color: PALETTE.brass,
+    // p104: steel grey, so C no longer merges with ochre A where they mesh.
+    color: PALETTE.muted,
     axis: Y_AXIS,
   });
   for (const gear of [gearA, gearB, outputGear]) gear.position.copy(gearIntersection);

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { toCreasedNormals } from 'three/addons/utils/BufferGeometryUtils.js';
 import { PALETTE, markShadows, matte } from './primitives.js';
 import { turnedClutchGeometry } from './clutch-section-geometry.js';
 
@@ -11,7 +12,8 @@ const dimensions = { forkInnerRadius: 0.66, forkOuterRadius: 0.84, forkWidth: 0.
   pinRadius: 0.045, pinStart: 0.56, pinEnd: 0.855, pinCapRadius: 0.052,
   pinCapStart: 0.844, pinCapEnd: 0.867, armEnd: 0.075, shaftRadius: 0.13, neckRadius: 0.15, neckLength: 0.30,
   shaftInnerDistance: 1.20, forkAxialScale: 1.6, middleAxialScale: 1.12,
-  crossEnd: 0.648, crossHalfWidth: 0.063, crossDepth: 0.10 };
+  crossEnd: 0.648, crossHalfWidth: 0.063, crossDepth: 0.10, eyeLength: 0.15,
+  trunnionStart: 0.50, crossTrunnionRadius: 0.085 };
 
 function frame(axis, bearingReference) {
   const group = new THREE.Group(), rotor = new THREE.Group(); group.add(rotor);
@@ -27,33 +29,84 @@ function turned(profile, color, options = {}) {
   return new THREE.Mesh(turnedClutchGeometry(profile, { angularSegments: 96, color, ...options }),
     new THREE.MeshStandardMaterial({ vertexColors: true, metalness: 0.2, roughness: 0.57 }));
 }
-function forkShape(p) {
-  const shape = new THREE.Shape(), outer = Math.acos(p.armEnd / p.forkOuterRadius), inner = Math.acos(p.armEnd / p.forkInnerRadius);
-  shape.absarc(0, 0, p.forkOuterRadius, -outer, outer, false);
-  shape.lineTo(p.armEnd, Math.sqrt(p.forkInnerRadius ** 2 - p.armEnd ** 2));
-  shape.absarc(0, 0, p.forkInnerRadius, inner, -inner, true); shape.closePath();
+// Each strap is ONE solid: the curved band runs straight into a D-shaped
+// eye whose outer end is a semicircle concentric with its pin. The band is
+// cut at axial distance eyeLength from the pin, where the eye piece takes
+// over with the band's exact section; the shared junction faces are removed,
+// so there is no boss, step or square corner at the eye.
+function bandShape(p, scale) {
+  const shape = new THREE.Shape(), R = p.forkOuterRadius, r = p.forkInnerRadius, L = p.eyeLength;
+  const outer = Math.acos(L / (scale * R)), inner = Math.acos(L / (scale * r));
+  shape.absellipse(0, 0, scale * R, R, -outer, outer, false, 0);
+  shape.lineTo(L, r * Math.sin(inner));
+  shape.absellipse(0, 0, scale * r, r, inner, -inner, true, 0); shape.closePath();
   return shape;
 }
-function eye(p, color, side) {
-  const inner = p.trunnionRadius - p.eyeDepth / 2, outer = inner + p.eyeDepth;
-  const part = turned([[inner, p.boreRadius], [inner, p.eyeRadius], [outer, p.eyeRadius], [outer, p.boreRadius]], color);
-  part.quaternion.setFromUnitVectors(Z, new THREE.Vector3(0, side, 0));
-  part.userData.bearingEye = true; part.userData.side = side;
-  return part;
+// Eye piece in its own coordinates: a (axial, measured from the pin toward
+// the band), z (across the strap), extruded radially between the band's
+// inner and outer faces. sigma/x0 place it along the member's axis; side
+// picks the pin (+y or -y).
+function eyeGeometry(p, { x0, sigma, side, inner, outer }) {
+  const half = p.forkWidth / 2, L = p.eyeLength, shape = new THREE.Shape();
+  shape.moveTo(L, -half); shape.lineTo(L, half); shape.lineTo(0, half);
+  shape.absarc(0, 0, half, Math.PI / 2, 3 * Math.PI / 2, false); shape.lineTo(L, -half);
+  const bore = new THREE.Path(); bore.absarc(0, 0, p.boreRadius, 0, 2 * Math.PI, true); shape.holes.push(bore);
+  const geometry = new THREE.ExtrudeGeometry(shape, { depth: 1, bevelEnabled: false, curveSegments: 48 });
+  const position = geometry.attributes.position, zeta = -sigma * side;
+  for (let i = 0; i < position.count; i += 1) {
+    const a = position.getX(i), v = position.getY(i), w = position.getZ(i), t = Math.max(a, 0);
+    const radial = inner(t) + (outer(t) - inner(t)) * w;
+    position.setXYZ(i, x0 + sigma * a, side * radial, zeta * v);
+  }
+  return geometry;
 }
+function joinedStrap(bandGeometry, eyes, joins) {
+  // Drop the band's end faces and the eyes' flat faces: every triangle whose
+  // three corners lie on a junction plane x = join.
+  const parts = [bandGeometry, ...eyes].map((g) => (g.index ? g.toNonIndexed() : g));
+  const onJoin = (x) => joins.some((join) => Math.abs(x - join) < 1e-6);
+  const snap = new Map(), key = (x, y, z) => [x, y, z].map((c) => Math.round(c * 1e5)).join(',');
+  const source = parts[0].attributes.position;
+  for (let i = 0; i < source.count; i += 1) if (onJoin(source.getX(i))) snap.set(key(source.getX(i), source.getY(i), source.getZ(i)), [source.getX(i), source.getY(i), source.getZ(i)]);
+  const positions = [], uvs = [];
+  for (const [index, part] of parts.entries()) {
+    const position = part.attributes.position, uv = part.attributes.uv;
+    for (let i = 0; i < position.count; i += 3) {
+      if ([0, 1, 2].every((k) => onJoin(position.getX(i + k)))) continue;
+      for (let k = 0; k < 3; k += 1) {
+        let xyz = [position.getX(i + k), position.getY(i + k), position.getZ(i + k)];
+        if (index > 0 && onJoin(xyz[0])) xyz = snap.get(key(...xyz)) ?? xyz;
+        positions.push(...xyz); uvs.push(uv.getX(i + k), uv.getY(i + k));
+      }
+    }
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+  return toCreasedNormals(geometry, Math.PI / 6);
+}
+function eyeFrame(p, side) {
+  // Frame marker for the bearing (its local z is the pin axis); the eye
+  // material itself belongs to the strap body.
+  const marker = new THREE.Object3D();
+  marker.quaternion.setFromUnitVectors(Z, new THREE.Vector3(0, side, 0));
+  marker.userData.bearingEye = true; marker.userData.side = side;
+  return marker;
+}
+function ellipseHeight(radius, scale) { return (a) => radius * Math.sqrt(Math.max(0, 1 - (a / (scale * radius)) ** 2)); }
 function makeFork(axis, reference, direction, length, color, p) {
-  const group = frame(axis, reference), rotor = group.userData.rotor;
-  // The curved strap terminates before the bore. The cylindrical end lugs
-  // overlap only the fixed strap, leaving the complete pivot passage open.
-  const bodyGeometry = extruded(forkShape({ ...p, armEnd: p.armEnd / p.forkAxialScale }), p.forkWidth)
-    .scale(p.forkAxialScale, 1, 1).rotateY(-direction * Math.PI / 2);
+  const group = frame(axis, reference), rotor = group.userData.rotor, s = p.forkAxialScale;
+  const inner = ellipseHeight(p.forkInnerRadius, s), outer = ellipseHeight(p.forkOuterRadius, s);
+  const band = extruded(bandShape(p, s), p.forkWidth);
+  const eyeParts = [-1, 1].map((side) => eyeGeometry(p, { x0: 0, sigma: 1, side, inner, outer }));
+  const bodyGeometry = joinedStrap(band, eyeParts, [p.eyeLength]).rotateY(-direction * Math.PI / 2);
   const body = new THREE.Mesh(bodyGeometry, matte(color, { metalness: 0.18, roughness: 0.57 }));
   body.userData.curvedFork = true;
-  const eyes = [-1, 1].map((side) => eye(p, color, side));
+  const eyes = [-1, 1].map((side) => eyeFrame(p, side));
   // The shaft swells into a neck as broad as the band where it joins the
   // bottom of the strap (kept outside the strap's inner face).
-  const neckStart = p.forkInnerRadius * p.forkAxialScale + 0.03, neckEnd = p.forkOuterRadius * p.forkAxialScale + p.neckLength;
-  const shaft = turned([[neckStart, 0], [neckStart, p.neckRadius], [p.forkOuterRadius * p.forkAxialScale, p.neckRadius],
+  const neckStart = p.forkInnerRadius * s + 0.03, neckEnd = p.forkOuterRadius * s + p.neckLength;
+  const shaft = turned([[neckStart, 0], [neckStart, p.neckRadius], [p.forkOuterRadius * s, p.neckRadius],
     [neckEnd, p.shaftRadius], [length, p.shaftRadius], [length, 0]], color);
   if (direction < 0) shaft.rotation.y = Math.PI;
   shaft.userData.shaft = true;
@@ -63,54 +116,58 @@ function makeFork(axis, reference, direction, length, color, p) {
   return group;
 }
 function doubleForkShape(p, spacing) {
-  const shape = new THREE.Shape(), h = spacing / 2, R = p.forkOuterRadius, r = p.forkInnerRadius;
-  const end = h - p.armEnd, outerY = Math.sqrt(R ** 2 - (p.armEnd / p.middleAxialScale) ** 2);
-  const innerY = Math.sqrt(r ** 2 - (p.armEnd / p.middleAxialScale) ** 2), inner = Math.acos(p.armEnd / (r * p.middleAxialScale));
-  shape.moveTo(-end, outerY);
-  shape.bezierCurveTo(-0.45, outerY, -0.22, 0.42, 0, 0.42);
-  shape.bezierCurveTo(0.22, 0.42, 0.45, outerY, end, outerY);
+  const shape = new THREE.Shape(), h = spacing / 2, R = p.forkOuterRadius, r = p.forkInnerRadius, k = p.middleAxialScale;
+  const end = h - p.eyeLength, inner = Math.acos(p.eyeLength / (r * k)), innerY = r * Math.sin(inner);
+  shape.moveTo(-end, R);
+  shape.bezierCurveTo(-0.45, R, -0.22, 0.42, 0, 0.42);
+  shape.bezierCurveTo(0.22, 0.42, 0.45, R, end, R);
   shape.lineTo(end, innerY);
-  shape.absellipse(h, 0, r * p.middleAxialScale, r, Math.PI - inner, Math.PI + inner, false, 0);
-  shape.lineTo(end, -outerY);
-  shape.bezierCurveTo(0.45, -outerY, 0.22, -0.42, 0, -0.42);
-  shape.bezierCurveTo(-0.22, -0.42, -0.45, -outerY, -end, -outerY);
+  shape.absellipse(h, 0, r * k, r, Math.PI - inner, Math.PI + inner, false, 0);
+  shape.lineTo(end, -R);
+  shape.bezierCurveTo(0.45, -R, 0.22, -0.42, 0, -0.42);
+  shape.bezierCurveTo(-0.22, -0.42, -0.45, -R, -end, -R);
   shape.lineTo(-end, -innerY);
-  shape.absellipse(-h, 0, r * p.middleAxialScale, r, -inner, inner, false, 0); shape.closePath();
+  shape.absellipse(-h, 0, r * k, r, -inner, inner, false, 0); shape.closePath();
   return shape;
 }
 function makeDoubleFork(reference, spacing, p) {
-  const group = frame(X, reference), rotor = group.userData.rotor;
-  // One compact, continuous middle member replaces the two bulky hubs and
-  // the exposed intermediate shaft. Its paired bearing axes stay parallel.
-  const bodyGeometry = extruded(doubleForkShape(p, spacing), p.forkWidth).rotateY(-Math.PI / 2);
+  const group = frame(X, reference), rotor = group.userData.rotor, h = spacing / 2;
+  // One compact, continuous middle member whose four eyes are part of the
+  // same solid. Its paired bearing axes stay parallel.
+  const inner = ellipseHeight(p.forkInnerRadius, p.middleAxialScale), outer = () => p.forkOuterRadius;
+  const eyeParts = [];
+  for (const end of [-1, 1]) for (const side of [-1, 1]) eyeParts.push(eyeGeometry(p, { x0: end * h, sigma: -end, side, inner, outer }));
+  const bodyGeometry = joinedStrap(extruded(doubleForkShape(p, spacing), p.forkWidth), eyeParts,
+    [-(h - p.eyeLength), h - p.eyeLength]).rotateY(-Math.PI / 2);
   const body = new THREE.Mesh(bodyGeometry, matte(PALETTE.accent, { metalness: 0.18, roughness: 0.57 }));
   const eyes = [];
   for (const end of [-1, 1]) for (const side of [-1, 1]) {
-    const part = eye(p, PALETTE.accent, side); part.position.z = end * spacing / 2; eyes.push(part);
+    const part = eyeFrame(p, side); part.position.z = end * h; eyes.push(part);
   }
   rotor.add(body, ...eyes); group.userData.parts = { body, eyes };
   return group;
 }
 function makeCross(p) {
-  const group = new THREE.Group(), shape = new THREE.Shape(), e = p.crossEnd, w = p.crossHalfWidth, tip = 0.10;
-  shape.moveTo(e, tip); shape.quadraticCurveTo(0.30, w, 0.16, w); shape.quadraticCurveTo(w, w, w, 0.16);
-  shape.quadraticCurveTo(w, 0.30, tip, e); shape.lineTo(-tip, e);
-  shape.quadraticCurveTo(-w, 0.30, -w, 0.16); shape.quadraticCurveTo(-w, w, -0.16, w);
-  shape.quadraticCurveTo(-0.30, w, -e, tip); shape.lineTo(-e, -tip);
-  shape.quadraticCurveTo(-0.30, -w, -0.16, -w); shape.quadraticCurveTo(-w, -w, -w, -0.16);
-  shape.quadraticCurveTo(-w, -0.30, -tip, -e); shape.lineTo(tip, -e);
-  shape.quadraticCurveTo(w, -0.30, w, -0.16); shape.quadraticCurveTo(w, -w, 0.16, -w);
-  shape.quadraticCurveTo(0.30, -w, e, -tip); shape.closePath();
+  // Straight arms of constant width, each ending in a round trunnion
+  // concentric with its pin.
+  const group = new THREE.Group(), shape = new THREE.Shape(), e = p.trunnionStart + 0.03, w = p.crossHalfWidth, f = 0.16;
+  shape.moveTo(e, w); shape.lineTo(f, w); shape.quadraticCurveTo(w, w, w, f); shape.lineTo(w, e); shape.lineTo(-w, e);
+  shape.lineTo(-w, f); shape.quadraticCurveTo(-w, w, -f, w); shape.lineTo(-e, w); shape.lineTo(-e, -w);
+  shape.lineTo(-f, -w); shape.quadraticCurveTo(-w, -w, -w, -f); shape.lineTo(-w, -e); shape.lineTo(w, -e);
+  shape.lineTo(w, -f); shape.quadraticCurveTo(w, -w, f, -w); shape.lineTo(e, -w); shape.closePath();
   const body = new THREE.Mesh(extruded(shape, p.crossDepth), matte(PALETTE.ink));
-  const pins = [], caps = [];
+  const pins = [], caps = [], trunnions = [], t = p.crossTrunnionRadius, c = 0.012;
   for (const axis of [new THREE.Vector3(1, 0, 0), new THREE.Vector3(0, 1, 0)]) for (const side of [-1, 1]) {
     const direction = axis.clone().multiplyScalar(side);
+    const trunnion = turned([[p.trunnionStart, 0], [p.trunnionStart, t], [p.crossEnd - c, t],
+      [p.crossEnd, t - c], [p.crossEnd, 0]], PALETTE.ink);
     const pin = turned([[p.pinStart, 0], [p.pinStart, p.pinRadius], [p.pinEnd, p.pinRadius], [p.pinEnd, 0]], PALETTE.brass);
     const cap = turned([[p.pinCapStart, 0], [p.pinCapStart, p.pinCapRadius], [p.pinCapEnd, p.pinCapRadius], [p.pinCapEnd, 0]], PALETTE.brass);
-    pin.quaternion.setFromUnitVectors(Z, direction); cap.quaternion.copy(pin.quaternion);
-    pin.userData.pinAxis = direction.clone(); pins.push(pin); caps.push(cap);
+    pin.quaternion.setFromUnitVectors(Z, direction); cap.quaternion.copy(pin.quaternion); trunnion.quaternion.copy(pin.quaternion);
+    trunnion.userData.trunnion = true;
+    pin.userData.pinAxis = direction.clone(); pins.push(pin); caps.push(cap); trunnions.push(trunnion);
   }
-  group.add(body, ...pins, ...caps); group.userData.parts = { body, pins, caps };
+  group.add(body, ...trunnions, ...pins, ...caps); group.userData.parts = { body, pins, caps, trunnions };
   return group;
 }
 function unwrap(angle, reference) { return angle + 2 * Math.PI * Math.round((reference - angle) / (2 * Math.PI)); }

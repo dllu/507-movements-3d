@@ -2302,9 +2302,12 @@ function fit505SourceArm(root) {
     poly(circle([g.planetCenterRadius, 0], 0.23, 64)),
     poly(circle([armEnd, 0], 0.145, 48)),
   );
+  // Pass 104: the eye is bored to the pivot hub's outer radius (less 0.0015,
+  // so each hides the other's face) rather than to the hub's own bore,
+  // whose face it duplicated in one cylinder (flicker at grazing angles).
   replace(b.carrierBar, plate(polygonClipping.difference(
     outline,
-    poly(circle([0, 0], 0.171, 96)),
+    poly(circle([0, 0], 0.2785, 96)),
     poly(circle([g.planetCenterRadius, 0], 0.091, 64)),
   ), 0.45, 0.61));
   b.carrierBar.position.set(0, 0, 0);

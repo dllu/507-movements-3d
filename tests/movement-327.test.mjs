@@ -519,3 +519,16 @@ test('movement 327 closes exactly and leaves movement 339 as the next authored d
   disposeModel(model507.root);
   disposeModel(model.root);
 });
+
+test('327 p104: broad strap connecting rod and round piston rod', () => {
+  const model = createMovementModel(catalog.movements[326]);
+  const { blocks } = model.root.userData;
+  assert.ok(blocks.connectingRodBody === undefined
+    || blocks.connectingRodBody.geometry.parameters.height >= 0.2);
+  let shank;
+  blocks.connectingRod.traverse((o) => {
+    if (o.userData.role === 'constant-length-connecting-rod-shank') shank = o;
+  });
+  assert.ok(shank.geometry.parameters.height >= 0.2, 'shank about 2.5x the old wire');
+  assert.equal(blocks.pistonRod.geometry.type, 'CylinderGeometry');
+});

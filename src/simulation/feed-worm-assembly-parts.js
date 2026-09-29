@@ -48,7 +48,10 @@ export function correctFeedWormAssembly(root,id){
    // metal instead of coinciding with the wheel's bore wall (a flickering
    // double surface).
    bored(b[side+'WheelHub'],.22,.096,.70,replaced);journals.push({shaft:b[side+'WheelShaft'],part:b[side+'WheelHub'],radius:.092,bore:.096});
-   mark(b[side+'WheelIndex'],.1915,replaced,.36);b[side+'WheelShaft'].scale.z=.4;b[side+'WheelShaft'].position.z=0;
+   mark(b[side+'WheelIndex'],.1915,replaced,.36);
+   // p104: 0.03 proud of the hub faces (+-0.35); the longer stub threw a
+   // stripe across the wheel face.
+   b[side+'WheelShaft'].scale.z=.76/2.45;b[side+'WheelShaft'].position.z=0;
   }
   for(const x of[b.baseRail,...b.baseFeet,...b.wheelBearingPosts,...b.wheelBearings,...b.inputBearingPosts,...b.inputBearings])x.visible=false;
   b.shaftIndex.visible=false;

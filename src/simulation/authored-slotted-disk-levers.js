@@ -738,9 +738,10 @@ function slottedDiskLeverRackAndWeight(movement) {
   const rack = new THREE.Group();
   rack.userData.role = 'horizontal-reciprocating-rack';
   root.add(rack);
-  // A deeper blue than the lever's sector, so the mesh at the base reads.
-  const rackMaterial = drivenMaterial.clone();
-  rackMaterial.color.multiplyScalar(0.62);
+  // p104: a light steel grey, not a darker shade of the lever's blue, so the
+  // sector teeth read against the rack teeth (and the rack against its
+  // darker frame-grey guides).
+  const rackMaterial = matte(PALETTE.muted, { metalness: 0.25, roughness: 0.5 });
   const rackBody = new THREE.Mesh(
     new THREE.BoxGeometry(rackLength, rackBodyHeight, rackDepth),
     rackMaterial,
@@ -821,8 +822,21 @@ function slottedDiskLeverRackAndWeight(movement) {
   const pulleyHub = boredJournal(0.075,.048,.48,darkMaterial);
   pulleyHub.userData.role = 'pulley-hub';
   pulleyRotor.add(pulleyHub);
-  const pulleyAxle=cylinderAlongZ(.045,1.20,darkMaterial);
-  pulleyAxle.position.set(pulleyCenter.x,pulleyCenter.y,.05);
+  // p104: the bracket ends in a round boss concentric with the axle that
+  // runs forward to 0.005 behind the pulley hub's rear face; the axle is
+  // seated in the boss and stops just through the hub's front face (it was
+  // a long bare rod cantilevered behind the pulley).
+  const pulleyHubRearZ = 0.59 - 0.24;
+  const pulleyBoss = cylinderAlongZ(0.13, pulleyHubRearZ - 0.005 - (-0.50),
+    frameMaterial, 48);
+  pulleyBoss.position.set(pulleyCenter.x, pulleyCenter.y,
+    (pulleyHubRearZ - 0.005 + -0.50) / 2);
+  pulleyBoss.userData.role = 'fixed-pulley-bracket-boss';
+  frame.add(pulleyBoss);
+  const pulleyAxleBackZ = -0.20;
+  const pulleyAxleFrontZ = 0.59 + 0.24 + 0.015;
+  const pulleyAxle=cylinderAlongZ(.045,pulleyAxleFrontZ-pulleyAxleBackZ,darkMaterial);
+  pulleyAxle.position.set(pulleyCenter.x,pulleyCenter.y,(pulleyAxleFrontZ+pulleyAxleBackZ)/2);
   pulleyAxle.userData.role='fixed-pulley-axle-reaching-frame';
   root.add(pulleyAxle);
   const pulleyIndex = new THREE.Mesh(

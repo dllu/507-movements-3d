@@ -236,6 +236,7 @@ test('movement 305 advances clockwise by exactly one half-turn per beat and one 
 });
 
 const FULL_TURN = Math.PI * 2;
+const THREE_DEG = Math.PI / 180;
 
 test('movement 305 dead faces are concentric with the pendulum pivot and produce exactly zero recoil', () => {
   const model = createMovementModel(catalog.movements[304]);
@@ -330,9 +331,15 @@ test('movement 305 pin rolls round the neck corner and drives the upright face, 
     assert.ok(counts[mode] > 20, `${mode} sampled (${counts[mode]})`);
   }
   assert.ok(worstClearance > -1e-9, `the pin never enters the plate (${worstClearance})`);
-  const upright = stateAtTime(0);
-  assert.equal(upright.mode, 'upper-upright-impulse', 'Brown\'s upright pendulum is mid-impulse');
-  near(upright.pendulumAngle, 0, 1e-12, 'upright pendulum at time zero');
+  // Brown's pose: the pin at 3 o'clock in the neck corner, impulse begun.
+  const start = stateAtTime(0);
+  assert.equal(start.mode, 'lower-corner-impulse', 'the loop opens on Brown\'s pin pose');
+  const pinBearing = Math.atan2(Math.sin(start.wheelAngle), Math.cos(start.wheelAngle));
+  assert.ok(Math.abs(pinBearing) < THREE_DEG * 4, `pin near 3 o'clock (${pinBearing})`);
+  assert.ok(Math.abs(start.pendulumAngle) < THREE_DEG * 4, 'pendulum close to upright');
+  const upright = stateAtTime(-0.39 * geometry.pendulumPeriod);
+  assert.equal(upright.mode, 'upper-upright-impulse', 'the upright pendulum is mid-impulse');
+  near(upright.pendulumAngle, 0, 1e-12, 'upright pendulum mid upper impulse');
   disposeModel(model.root);
 });
 

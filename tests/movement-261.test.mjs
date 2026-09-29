@@ -554,3 +554,24 @@ test('movement 261 carries G on a short wall eye bracket, not a long stand-off p
   });
   disposeModel(root);
 });
+
+test('movement 261 crank arm clasps B\'s hub with a bored eye (no shared hub face)', () => {
+  const model = createMovementModel(catalog.movements[260]);
+  const { root } = model;
+  let hub;
+  let arm;
+  root.traverse((object) => {
+    if (object.userData.role === 'fixed-axis-disk-B-hub') hub = object;
+    if (object.userData.role === 'disk-B-shaft-crank-arm-in-front-of-drum') arm = object;
+  });
+  const hubRadius = hub.geometry.parameters.radiusTop;
+  const shape = arm.geometry.parameters.shapes;
+  assert.equal(shape.holes.length, 1, 'the arm is bored for the hub');
+  const bore = shape.holes[0].getPoints(64);
+  const boreRadius = Math.min(...bore.map((p) => Math.hypot(p.x, p.y)));
+  assert.ok(boreRadius > hubRadius + 0.002, `running clearance round the hub (${boreRadius})`);
+  const outer = shape.getPoints(64);
+  const eyeRadius = Math.max(...outer.filter((p) => p.x <= 0.01).map((p) => Math.hypot(p.x, p.y)));
+  assert.ok(eyeRadius > hubRadius + 0.03, `the eye wall is clearly proud of the hub (${eyeRadius})`);
+  root.traverse((object) => { object.geometry?.dispose(); });
+});

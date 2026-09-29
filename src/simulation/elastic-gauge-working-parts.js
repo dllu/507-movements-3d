@@ -52,7 +52,11 @@ export function correctElasticGaugeParts(root,id,update){
  const outline=full.userData.outline.map(p=>[p.x*Math.cos(phase)-p.y*Math.sin(phase),p.x*Math.sin(phase)+p.y*Math.cos(phase)]);
  const maximum=d.stateAtTime(g.cycleDuration/2).sectorAngle;
  const pins=bourdon?[d.linkage.leftSectorPinLocal,d.linkage.rightSectorPinLocal]:[d.linkage.sectorInputPinLocal];
- const profile=clip.difference(clip.union(clip.intersection(poly(outline),wedge(g.sectorPitchRadius-.13,g.sectorPitchRadius*1.2,Math.PI/2-maximum-.30,Math.PI/2+.30,96)),capsule([0,0],[(g.sectorPitchRadius-.13)*Math.cos(Math.PI/2-maximum-.20),(g.sectorPitchRadius-.13)*Math.sin(Math.PI/2-maximum-.20)],.075,24),...pins.map(p=>capsule([0,0],[p.x,p.y],.095,24)),poly(circle([0,0],.16,64))),poly(circle([0,0],.084,64)),...pins.map(p=>poly(circle([p.x,p.y],.039,48))));
+ // Pass 104 (499): the toothed arc ends at gap centres (teeth sit at pi/2 +
+ // k pitch), so both end teeth are whole rather than cut to stubs by the arc.
+ const toothPitch=2*Math.PI/teeth,atGap=a=>Math.PI/2+(Math.round((a-Math.PI/2)/toothPitch-.5)+.5)*toothPitch;
+ const arcFrom=bourdon?atGap(Math.PI/2-maximum-.30):Math.PI/2-maximum-.30,arcTo=bourdon?atGap(Math.PI/2+.30):Math.PI/2+.30;
+ const profile=clip.difference(clip.union(clip.intersection(poly(outline),wedge(g.sectorPitchRadius-.13,g.sectorPitchRadius*1.2,arcFrom,arcTo,96)),capsule([0,0],[(g.sectorPitchRadius-.13)*Math.cos(Math.PI/2-maximum-.20),(g.sectorPitchRadius-.13)*Math.sin(Math.PI/2-maximum-.20)],.075,24),...pins.map(p=>capsule([0,0],[p.x,p.y],.095,24)),poly(circle([0,0],.16,64))),poly(circle([0,0],.084,64)),...pins.map(p=>poly(circle([p.x,p.y],.039,48))));
  replace(b.sectorRim,plate(profile,z-depth/2,z+depth/2));b.sectorRim.rotation.set(0,0,0);full.dispose();for(const o of b.sectorTeeth)o.visible=false;
  for(const o of bourdon?[b.leftSectorArm,b.rightSectorArm]:[b.sectorInputArm])o.visible=false;
  replace(b.sectorHub,new THREE.CylinderGeometry(.08,.08,.65,48));b.sectorHub.position.z=z;

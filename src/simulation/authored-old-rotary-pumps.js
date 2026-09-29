@@ -333,10 +333,13 @@ function oldRotaryPump(movement) {
     const blade = named(new THREE.Mesh(valveGeometry, valveMaterial),
       `segment-valve-${index + 1}-with-drum-radius-arc-back`);
     hinge.add(blade);
-    const pin = named(new THREE.Mesh(new THREE.CylinderGeometry(HINGE_PIN, HINGE_PIN, 2 * ROTOR_HALF_DEPTH, 32), darkMaterial),
+    // Pass 104: the pin's back end stops 0.005 inside the web, so its end
+    // face no longer lies on the web's rear face (they flickered).
+    const pinSink = 0.005;
+    const pin = named(new THREE.Mesh(new THREE.CylinderGeometry(HINGE_PIN, HINGE_PIN, 2 * ROTOR_HALF_DEPTH - pinSink, 32), darkMaterial),
       `hinge-pin-${index + 1}-fast-in-rotor-web`);
     pin.rotation.x = Math.PI / 2;
-    pin.position.set(pivot[0], pivot[1], 0);
+    pin.position.set(pivot[0], pivot[1], pinSink / 2);
     carrier.add(pin);
     const water = new PocketWater(sections.recessInDrum[0][0], waterMaterial);
     water.userData.role = `water-in-drum-recess-${index + 1}-behind-open-valve`;

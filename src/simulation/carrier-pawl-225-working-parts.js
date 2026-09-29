@@ -202,20 +202,25 @@ export function installCarrierPawl225(root) {
   b.pawlIndex.position.y = -0.12;
   b.pawlIndex.position.z = 0.08;
   for (const child of [...b.carrier.children]) { child.geometry?.dispose(); b.carrier.remove(child); }
-  const carrier = new THREE.Mesh(boredPlanarLinkGeometry({ length: g.carrierLength, width: 0.17, eyeRadius: 0.14, boreRadius: 0.074, depth: 0.14 }), material);
+  // p104: flush against the orange pawl, the carrier takes the ochre accent
+  // so the two parts do not merge into one.
+  const carrier = new THREE.Mesh(boredPlanarLinkGeometry({ length: g.carrierLength, width: 0.17, eyeRadius: 0.14, boreRadius: 0.074, depth: 0.14 }), matte(PALETTE.accent, { metalness: 0.1, roughness: 0.62 }));
   carrier.userData.role = 'bored-vibrating-carrier';
   const startCenter = new THREE.Object3D(), endCenter = new THREE.Object3D();
   b.carrier.add(carrier, startCenter, endCenter);
   b.carrier.userData.setEndpoints = (start, end) => {
-    carrier.position.set(start.x, start.y, 0.46);
+    // p104: the carrier's eyes sit 0.005 in front of the pawl's eye (front
+    // 0.295), as Brown draws them flush, not 0.1 off on a bare pin.
+    carrier.position.set(start.x, start.y, 0.37);
     carrier.rotation.z = Math.atan2(end.y - start.y, end.x - start.x);
-    startCenter.position.set(start.x, start.y, 0.46);
-    endCenter.position.set(end.x, end.y, 0.46);
+    startCenter.position.set(start.x, start.y, 0.37);
+    endCenter.position.set(end.x, end.y, 0.37);
   };
-  const hinge = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.52, 64), dark);
+  // Hinge and floor pins end 0.03 past the parts they join.
+  const hinge = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.335, 64), dark);
   hinge.rotation.x = Math.PI / 2; hinge.userData.role = 'actual-carrier-pawl-hinge-shaft'; root.add(hinge);
-  const floorPin = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.70, 64), dark);
-  floorPin.rotation.x = Math.PI / 2; floorPin.position.set(g.carrierPivot.x, g.carrierPivot.y, 0.30);
+  const floorPin = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.62, 64), dark);
+  floorPin.rotation.x = Math.PI / 2; floorPin.position.set(g.carrierPivot.x, g.carrierPivot.y, 0.16);
   floorPin.userData.role = 'actual-fixed-carrier-floor-shaft'; root.add(floorPin);
   // Brown's bell-shaped lug: a rounded head about the floor pin flaring down
   // in concave sides to a broad foot on the hatched ground, which is modelled
@@ -227,7 +232,8 @@ export function installCarrierPawl225(root) {
   for (let i = 1; i <= 16; i++) { const t = i / 16, u = t * t; bearing.push([lx + (-foot - lx) * u, ly + (-groundDrop - ly) * t]); }
   const [rx, ry] = bearing[0];
   for (let i = 0; i <= 15; i++) { const t = 1 - i / 16, u = t * t; bearing.push([rx + (foot - rx) * u, ry + (-groundDrop - ry) * t]); }
-  replace(b.bottomBearing, plate([[bearing.reverse(), circle([0, 0], 0.074, 64)]], -0.12, 0.18));
+  // p104: the lug runs forward to 0.005 behind the carrier's lower eye.
+  replace(b.bottomBearing, plate([[bearing.reverse(), circle([0, 0], 0.074, 64)]], -0.12, 0.295));
   b.bottomBearing.position.z = 0;
   b.bottomBearing.material = matte(PALETTE.frame);
   // Kept inside the framed view (right edge x 2.85, bottom y -2.65).
@@ -244,7 +250,7 @@ export function installCarrierPawl225(root) {
   const journal = new THREE.Mesh(ring(0.108, 0.24, g.pawlPlaneZ - 0.44, g.pawlPlaneZ - 0.24, 96), matte(PALETTE.frame));
   journal.userData.role = 'bored-fixed-output-shaft-journal'; root.add(journal);
   root.userData.workingParts225 = { carrier, hinge, floorPin, journal };
-  root.userData.updateWorkingParts225 = state => hinge.position.set(state.pawlPivot.x, state.pawlPivot.y, 0.34);
+  root.userData.updateWorkingParts225 = state => hinge.position.set(state.pawlPivot.x, state.pawlPivot.y, 0.3025);
   root.userData.minimumDisplayCycleSeconds = g.cyclePeriod;
   root.userData.hideGround = true;
   root.userData.reconstructionNote = 'The separately hinged pawl, a shallow arched bar as drawn, drives from its nose seated in the root. The carrier swings about 2 degrees right of plumb and the pawl is 2.3 long (Brown draws 2.6), so the bar clears the tooth behind the nose. On the return the pawl is tracked on the wheel outline (baked table): it slides up the tooth back, falls under a prescribed bias off the crest, and the carrier runs 1.5 degrees past the drive start so the nose passes the next tip; the drive stroke then begins with the wheel standing while the nose slides down into its root. The wheel is held during return; gravity or spring bias, holding friction, impact and load capacity are not dynamically solved. No animation is registered on the official page.';

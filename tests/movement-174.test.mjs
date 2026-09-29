@@ -27,3 +27,18 @@ test('174 turns both jaws open on withdrawal and shut on the pushed board each c
   const s=stateAtTime(0);assert.ok(Math.abs(s.upper)<.01&&Math.abs(s.lower)<.01,'both jaws clamp the board at the source pose');
  }finally{m.dispose();}
 });
+
+test('174 (pass 104): the rear jaw contrasts with the front jaw, and the bench planks abut with grooved seams',()=>{
+ const model=makeBakedBenchClampModel(bundle),parts=model.root.userData.parts;
+ try{
+  assert.notEqual(parts.jaw0.material.color.getHex(),parts.jaw1.material.color.getHex(),'jaws differ in colour');
+  model.root.updateMatrixWorld(true);
+  const boxes=[0,1,2].map(i=>new THREE.Box3().setFromObject(parts['bench'+i]));
+  for(let i=0;i<2;i++)assert.ok(Math.abs(boxes[i].max.x-boxes[i+1].min.x)<1e-6,'planks abut: no see-through slit');
+  const top=Math.max(...boxes.map(b=>b.max.z));
+  const pos=parts.bench1.geometry.attributes.position;let seamTop=-Infinity;
+  for(let i=0;i<pos.count;i++){const p=new THREE.Vector3().fromBufferAttribute(pos,i).applyMatrix4(parts.bench1.matrixWorld);
+   if(Math.abs(p.x-boxes[1].min.x)<1e-6)seamTop=Math.max(seamTop,p.z);}
+  assert.ok(seamTop<top-0.005&&seamTop>top-0.03,'seam edge chamfered into a shallow groove');
+ }finally{model.dispose();}
+});

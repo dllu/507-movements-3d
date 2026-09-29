@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { ring, plate, poly } from './finite-plate-geometry.js';
 import { makeCellWaterGeometry, updateClippedCell } from './clipped-fluid-cell.js';
 import { waterVolume } from './water-volume.js';
+import { flowingStreamSurface } from './flowing-stream-surface.js';
 import { WaterStream, collectWaterStreams, guidedPath } from './water-stream.js';
 import {
   PALETTE,
@@ -146,7 +147,9 @@ function eisachPotWheel(movement) {
     FULL_TURN,
   ) / FULL_TURN;
   const streamSurfaceY = -1.37;
-  const streamVelocityX = 1.30;
+  // Pass 104: the current runs 1.5 times as fast as the pots it drives
+  // (it was barely faster, 1.30 against 1.27).
+  const streamVelocityX = 1.5 * inputAngularSpeed * wheelRadius;
   const representativeCurrentForce = 6.20;
   const currentDriveTorque = wheelRadius * representativeCurrentForce;
   // Pass 70: Brown's trough lies about halfway between the wheel top and the
@@ -462,6 +465,20 @@ function eisachPotWheel(movement) {
   streamWater.userData.role =
     'rightward-stream-partly-immersing-peripheral-pots';
   root.add(streamWater);
+  // Pass 104: the current itself, a streaked sheet just under the surface
+  // running rightward under the wheel at the stream speed.
+  root.add(flowingStreamSurface({
+    start: new THREE.Vector3(-3.8, streamSurfaceY, 0),
+    end: new THREE.Vector3(3.8, streamSurfaceY, 0),
+    halfWidth: 1.24,
+    depth: 0.48,
+    thickness: 0.42,
+    opacity: 0.5,
+    normalScale: 1.0,
+    speed: streamVelocityX,
+    cyclePeriod: cycleDuration,
+    role: 'rightward-river-current-surface-driving-pots',
+  }));
   const currentMarkers = [];
   for (let index = 0; index < 15; index += 1) {
     const marker = new THREE.Mesh(

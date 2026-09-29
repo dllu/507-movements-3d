@@ -3,6 +3,7 @@ import {createDiagonalCatchScaffold} from '../authored-diagonal-catches.js';
 import {diagonalCatchProfile,diagonalLatchFinger} from './catch-profile.js';
 import {plate,poly,circle,ring,polygonClipping as clip} from '../finite-plate-geometry.js';
 import {disposeObject3D} from '../dispose-model.js';
+import {PALETTE} from '../primitives.js';
 import {makeDiagonalCatchUpdater,DIAGONAL_CATCH_ROD_EDGE_Y} from './update-solids.js';
 
 // Brown 181/182: the visible assembly around the qualified planar contact
@@ -103,7 +104,10 @@ export function createDiagonalCatchAssembly(){
  const scaffold=createDiagonalCatchScaffold({id:181}),sb=scaffold.root.userData.blocks,g=scaffold.root.userData.geometry;
  const outlines=castingOutlines(scaffold);
  const shoe={left:g.tappetShoeLeftX,right:g.tappetShoeRightX},pistonRodX=(177-271)*.0125,source181PistonY=g.source181PistonY;
- const catchMaterial=sb.catchHub.material.clone(),handleMaterial=sb.upperHandleHub.material.clone();
+ const catchMaterial=sb.catchHub.material.clone(),lowerHandleMaterial=sb.upperHandleHub.material.clone();
+ // Pass 104: the upper handle is ochre, as in 183/184, so where its tappet arm
+ // crosses the blue lower handle the two do not read as one blue X.
+ const upperHandleMaterial=lowerHandleMaterial.clone();upperHandleMaterial.color.set(PALETTE.accent);
  disposeObject3D(scaffold.root);
  const steel=new THREE.MeshStandardMaterial({color:'#9aa19d',roughness:.45,metalness:.3});
  const rodSteel=new THREE.MeshStandardMaterial({color:'#6f7773',roughness:.5,metalness:.2});
@@ -129,6 +133,7 @@ export function createDiagonalCatchAssembly(){
  const anchors={};
  for(const side of ['upper','lower']){
   const o=outlines[side],b=body(side,...o.pivot),planes=handles[side].planes;
+  const handleMaterial=side==='upper'?upperHandleMaterial:lowerHandleMaterial;
   const [low,high]=span(...Object.values(planes));
   mesh(ring(BORE,HUB,low,high,128),handleMaterial,`${side}-handle-bored-boss`,b);
   const face=side==='upper'&&planes.weightArm===planes.face?clip.union(o.face,o.weightArm):o.face;

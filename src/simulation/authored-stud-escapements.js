@@ -1093,8 +1093,11 @@ function lePautePinWheelEscapement(movement) {
   const colletRing = boredCylinderAlongZ(0.40, 0.06, 0.13, palletMaterial, 48);
   colletRing.position.z = colletZ + 0.07;
   colletRing.userData.role = 'source-collet-center-ring';
-  const palletPivotHub = cylinderAlongZ(0.10, colletZ + 0.06 + 0.72, darkMaterial, 30);
-  palletPivotHub.position.z = (colletZ + 0.06 - 0.72) / 2;
+  // The arbor ends just proud of the plate's back face; Brown draws no
+  // frame behind, so no rear bearing or long stub is modelled.
+  const palletArborRearZ = plateBackZ - 0.04;
+  const palletPivotHub = cylinderAlongZ(0.10, colletZ + 0.06 - palletArborRearZ, darkMaterial, 30);
+  palletPivotHub.position.z = (colletZ + 0.06 + palletArborRearZ) / 2;
   palletPivotHub.userData.role = 'common-pin-wheel-pallet-arbor';
   const colletScrews = [];
   for (const [index, sourceX, slot] of [[0, 313, 1.05], [1, 405, 1.45]]) {
@@ -1144,16 +1147,13 @@ function lePautePinWheelEscapement(movement) {
   const fixedFrame = new THREE.Group();
   fixedFrame.userData.fixed = true;
   fixedFrame.userData.role = 'fixed-pin-wheel-and-pallet-arbor-bearings';
-  const wheelShaft = cylinderAlongZ(wheelArborRadius, 0.33 + 0.70, darkMaterial, 30);
-  wheelShaft.position.z = (0.30 - 0.73) / 2;
+  // The wheel arbor ends just proud of the hub's back face (hub z -0.22).
+  // The loose rear bearing discs are gone: Brown draws no frame for them.
+  const wheelShaftRearZ = -0.26;
+  const wheelShaft = cylinderAlongZ(wheelArborRadius, 0.30 - wheelShaftRearZ, darkMaterial, 30);
+  wheelShaft.position.z = (0.30 + wheelShaftRearZ) / 2;
   wheelShaft.userData.role = 'fixed-pin-wheel-arbor';
-  const wheelBearing = cylinderAlongZ(0.30, 0.16, frameMaterial, 36);
-  wheelBearing.position.z = -0.58;
-  wheelBearing.userData.role = 'fixed-pin-wheel-arbor-rear-bearing';
-  const palletBearing = boredCylinderAlongZ(0.30, 0.16, 0.115, frameMaterial, 36);
-  palletBearing.position.set(palletPivot.x, palletPivot.y, -0.58);
-  palletBearing.userData.role = 'fixed-pallet-arbor-rear-bearing';
-  fixedFrame.add(wheelShaft, wheelBearing, palletBearing);
+  fixedFrame.add(wheelShaft);
   root.add(fixedFrame, escapeWheel, palletAssembly);
 
   const stateAtTime = (time) => {
@@ -1279,14 +1279,12 @@ function lePautePinWheelEscapement(movement) {
     outerPallet: outerPallet.group,
     outerPalletBody: outerPallet.body,
     palletAssembly,
-    palletBearing,
     palletPivotHub,
     pinMeshes,
     preferredPins,
     sidePlate,
     sidePlateScrews,
     spokeMeshes,
-    wheelBearing,
     wheelHub,
     wheelRim,
     wheelRotor,

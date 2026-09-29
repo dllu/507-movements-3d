@@ -148,7 +148,8 @@ export const loadAnchoredThreeToOneCascade = () => loadAnchoredCascade(21);
 function capHoistHook(block) {
   let hook = null;
   block.userData.frame.traverse((part) => { if (part.geometry?.type === 'TubeGeometry') hook = part; });
-  if (!hook) return;
+  // p104: the shared hook now carries this cap itself.
+  if (!hook || hook.children.some((child) => child.userData.role === 'hook-tip-cap')) return;
   const { path, radius, radialSegments } = hook.geometry.parameters;
   const { tangents, normals, binormals } = hook.geometry;
   const last = tangents.length - 1;

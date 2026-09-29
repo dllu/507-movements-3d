@@ -621,3 +621,23 @@ test('movement 328 p96: forward end bosses carry the rod-joint pins to the rod p
     assert.ok(gap > 0 && gap < 0.02, `${side} boss ends a running clearance behind the rod eye (${gap})`);
   }
 });
+
+test('328 p104: round piston rod, closed cylinder bottom, brass input pinion', () => {
+  const model = createMovementModel(catalog.movements[327]);
+  const find = (role) => {
+    let found;
+    model.root.traverse((o) => { if (o.userData.role === role) found = o; });
+    return found;
+  };
+  assert.equal(find('vertical-piston-rod-B-rigid-with-crosshead').geometry.type, 'CylinderGeometry');
+  const plug = find('fixed-cylinder-bottom-end-plug');
+  const body = find('fixed-upright-cylinder-below-piston-rod-B');
+  model.root.updateMatrixWorld(true);
+  assert.ok(Math.abs(new THREE.Box3().setFromObject(plug).min.y
+    - new THREE.Box3().setFromObject(body).min.y) < 1e-6, 'plug flush with the bottom');
+  let pinionColor;
+  find('twelve-tooth-input-pinion-rigid-on-flywheel').traverse((o) => {
+    if (o.isMesh && !pinionColor) pinionColor = o.material.color.getHex();
+  });
+  assert.equal(pinionColor, 0xb7863f, 'brass pinion');
+});
