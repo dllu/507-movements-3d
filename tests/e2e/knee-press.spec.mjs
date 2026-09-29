@@ -1,8 +1,9 @@
 import {expect,test} from '@playwright/test';
+import {expectReconstructionNote,settleCanvas} from '../helpers/viewer.mjs';
 test('164 plays its analytic knee press and restarts on desktop and mobile',async({page})=>{
  const errors=[];page.on('pageerror',e=>errors.push(e.message));await page.emulateMedia({reducedMotion:'reduce'});
- await page.goto('/portable/#/movement/164');const canvas=page.locator('.simulation-canvas');await expect(canvas).toBeVisible();await page.waitForTimeout(300);
- await expect(page.getByText('The curved lever straightens the knee to raise the upper pressure plate.',{exact:false})).toBeVisible();
+ await page.goto('/portable/#/movement/164');const canvas=page.locator('.simulation-canvas');await expect(canvas).toBeVisible();await settleCanvas(canvas);await page.waitForTimeout(300);
+ await expectReconstructionNote(page,'The curved lever straightens the knee to raise the upper pressure plate.');
  const initial=await canvas.screenshot();await page.screenshot({path:'/dev/shm/164-packaged-source.png'});
  await page.locator('.play-control').click();await page.waitForTimeout(1800);await page.locator('.play-control').click();
  expect((await canvas.screenshot()).equals(initial)).toBe(false);await page.screenshot({path:'/dev/shm/164-packaged-moving.png'});
@@ -10,5 +11,5 @@ test('164 plays its analytic knee press and restarts on desktop and mobile',asyn
  expect(await page.evaluate(()=>performance.getEntriesByType('resource').some(r=>/\.wasm(?:\?|$)/.test(r.name)))).toBe(false);
  const box=await canvas.boundingBox();await page.mouse.move(box.x+box.width*.5,box.y+box.height*.5);await page.mouse.down();await page.mouse.move(box.x+box.width*.5+100,box.y+box.height*.5+10,{steps:12});await page.mouse.up();await page.screenshot({path:'/dev/shm/164-packaged-oblique.png'});
  await page.getByRole('button',{name:'Reset view',exact:true}).click();
- await page.setViewportSize({width:390,height:844});await expect(canvas).toBeVisible();await page.screenshot({path:'/dev/shm/164-packaged-mobile.png'});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);expect(errors).toEqual([]);
+ await page.setViewportSize({width:390,height:844});await expect(canvas).toBeVisible();await settleCanvas(canvas);await page.screenshot({path:'/dev/shm/164-packaged-mobile.png'});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);expect(errors).toEqual([]);
 });

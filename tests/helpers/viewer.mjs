@@ -1,18 +1,30 @@
 import {expect} from '@playwright/test';
 
-// The viewer lowers its drawing-buffer resolution while frames stay slow
-// (async-engine.js trackResolution). Headless software WebGL usually takes
-// one such step about a second after loading, which changes every pixel of a
-// paused frame. Wait for the buffer size to hold before comparing screenshots.
-export async function settleCanvas(canvas, {quiet = 2000, timeout = 15000} = {}) {
+// The viewer lowers its drawing-buffer resolution while frames stay slower
+// than 1/32 s (async-engine.js trackResolution), and never raises it again.
+// Headless software WebGL on a busy host takes such steps during loading and
+// playback, changing every pixel of an otherwise identical frame. Before
+// comparing screenshots, wait until the buffer is at its one-pixel-per-CSS-
+// pixel floor, or until frames are fast enough that no further step follows.
+export async function settleCanvas(canvas, {quiet = 2000, timeout = 20000} = {}) {
   const page = canvas.page();
-  const size = () => canvas.evaluate(element => `${element.width}x${element.height}`);
+  const sample = () => canvas.evaluate(element => new Promise(resolve => {
+    const times = [];
+    const tick = time => {
+      times.push(time);
+      if (times.length < 6) requestAnimationFrame(tick);
+      else resolve({size: `${element.width}x${element.height}`, floor: element.width <= element.clientWidth,
+        frame: (times[5] - times[0]) / 5 / 1000});
+    };
+    requestAnimationFrame(tick);
+  }));
   const start = Date.now();
-  let last = await size(), since = Date.now();
-  while (Date.now() - since < quiet && Date.now() - start < timeout) {
-    await page.waitForTimeout(150);
-    const current = await size();
-    if (current !== last) { last = current; since = Date.now(); }
+  let state = await sample(), since = Date.now();
+  while (!state.floor && Date.now() - start < timeout) {
+    if (Date.now() - since >= quiet && state.frame < 1 / 40) break;
+    const next = await sample();
+    if (next.size !== state.size) since = Date.now();
+    state = next;
   }
   // Let the renderer draw at least one frame at the settled size.
   await page.waitForTimeout(100);

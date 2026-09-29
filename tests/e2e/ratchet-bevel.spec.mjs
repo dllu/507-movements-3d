@@ -1,12 +1,13 @@
 import { expect, test } from '@playwright/test';
+import {expectReconstructionNote,settleCanvas} from '../helpers/viewer.mjs';
 
 test('049 plays both ratchet strokes, pauses cleanly and supports orbit and mobile controls', async ({ page }) => {
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('/#/movement/049');
   const canvas = page.locator('.simulation-canvas'), play = page.locator('.play-control');
-  await expect(canvas).toBeVisible();
-  await expect(page.getByText('Four ratchet teeth per half-stroke avoid lost motion', { exact: false })).toBeVisible();
+  await expect(canvas).toBeVisible();await settleCanvas(canvas);
+  await expectReconstructionNote(page,'Four ratchet teeth per half-stroke avoid lost motion');
   await play.click();
   await expect(play).toHaveAttribute('aria-pressed', 'false');
   const before = await canvas.screenshot();

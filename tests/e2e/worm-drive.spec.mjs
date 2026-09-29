@@ -1,12 +1,13 @@
 import { test, expect } from '@playwright/test';
 import { visibleForegroundBounds, hasFrameMargin } from '../helpers/rendered-frame.mjs';
+import {expectReconstructionNote,settleCanvas} from '../helpers/viewer.mjs';
 
 test('031 loads its generated 29-tooth wheel, plays and stays framed on mobile', async ({ page }) => {
   const errors = []; page.on('pageerror', error => errors.push(error.message));
   await page.goto('/#/movement/031');
   const canvas = page.locator('canvas');
-  await expect(canvas).toBeVisible();
-  await expect(page.getByText('A single-start cylindrical worm advances the 29-tooth wheel', { exact: false })).toBeVisible();
+  await expect(canvas).toBeVisible();await settleCanvas(canvas);
+  await expectReconstructionNote(page,'A single-start cylindrical worm advances the 29-tooth wheel');
   const pause = page.getByRole('button', { name: 'Pause', exact: true });
   await pause.click();
   const stopped = await canvas.screenshot();

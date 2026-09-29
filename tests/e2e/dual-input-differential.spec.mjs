@@ -1,11 +1,12 @@
 import { test, expect } from '@playwright/test';
+import {settleCanvas} from '../helpers/viewer.mjs';
 
 test('062 switches installed auxiliary belts, plays both speeds and keeps section and mobile controls usable', async ({ page }) => {
   test.setTimeout(60_000);
   const errors = []; page.on('pageerror', error => errors.push(error.message));
   await page.goto('/#/movement/062');
   const canvas = page.locator('canvas'), configuration = page.getByRole('combobox', { name: 'Auxiliary belt', exact: true });
-  await expect(canvas).toBeVisible(); await expect(configuration).toHaveValue('open');
+  await expect(canvas).toBeVisible();await settleCanvas(canvas); await expect(configuration).toHaveValue('open');
   await expect(configuration.locator('option')).toHaveText(['Open', 'Crossed']);
   const pause = page.getByRole('button', { name: 'Pause', exact: true });
   await pause.click();
@@ -21,14 +22,15 @@ test('062 switches installed auxiliary belts, plays both speeds and keeps sectio
     await pause.click();
   }
   expect(starts[0]).not.toEqual(starts[1]);
+  // The section view starts off: the housing is shown whole, as engraved.
   const section = page.getByRole('button', { name: 'Section view', exact: true });
-  await expect(section).toHaveAttribute('aria-pressed', 'true');
-  const sectionImage = await canvas.screenshot(); await section.click();
   await expect(section).toHaveAttribute('aria-pressed', 'false');
+  const sectionImage = await canvas.screenshot(); await section.click();
+  await expect(section).toHaveAttribute('aria-pressed', 'true');
   expect(await canvas.screenshot()).not.toEqual(sectionImage);
   await configuration.selectOption('crossed');
-  await expect(section).toHaveAttribute('aria-pressed', 'false');
-  await section.click(); await expect(section).toHaveAttribute('aria-pressed', 'true');
+  await expect(section).toHaveAttribute('aria-pressed', 'true');
+  await section.click(); await expect(section).toHaveAttribute('aria-pressed', 'false');
   const box = await canvas.boundingBox();
   await page.mouse.move(box.x + box.width * 0.6, box.y + box.height * 0.45);
   await page.mouse.down(); await page.mouse.move(box.x + box.width * 0.35, box.y + box.height * 0.6, { steps: 8 }); await page.mouse.up();

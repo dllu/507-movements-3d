@@ -1,11 +1,15 @@
 import { expect, test } from '@playwright/test';
+import {expectReconstructionNote,settleCanvas} from '../helpers/viewer.mjs';
 
 test('054 plays its rebuilt mangle wheel and preserves pause, orbit and mobile controls', async ({ page }) => {
+  // The full-shadow mangle wheel draws at roughly 140 ms per frame in headless
+  // software WebGL, and each screenshot waits for stable frames.
+  test.setTimeout(90_000);
   const errors = []; page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('/#/movement/054');
   const canvas = page.locator('.simulation-canvas'), play = page.locator('.play-control');
-  await expect(canvas).toBeVisible();
-  await expect(page.getByText('The radial pinion turns continuously while the crab transfers it between the wheel’s two faces.', { exact: false })).toBeVisible();
+  await expect(canvas).toBeVisible();await settleCanvas(canvas);
+  await expectReconstructionNote(page,'The radial pinion turns continuously while the crab transfers it between the wheel’s two faces.');
   await play.click(); const before = await canvas.screenshot();
   await play.click(); await page.waitForTimeout(1250); await play.click();
   const after = await canvas.screenshot(); expect(after.equals(before)).toBe(false);

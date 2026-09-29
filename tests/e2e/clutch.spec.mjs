@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import {expectReconstructionNote,settleCanvas} from '../helpers/viewer.mjs';
 
 test('047 switches between its fixed section and complete clutch on desktop and mobile', async ({ page }) => {
   const errors = [];
@@ -7,7 +8,7 @@ test('047 switches between its fixed section and complete clutch on desktop and 
   const canvas = page.locator('.simulation-canvas');
   const section = page.getByRole('button', { name: 'Section view', exact: true });
   const play = page.locator('.play-control');
-  await expect(canvas).toBeVisible();
+  await expect(canvas).toBeVisible();await settleCanvas(canvas);
   await expect(section).toHaveAttribute('aria-pressed', 'true');
   await play.click();
   await expect(play).toHaveAttribute('aria-pressed', 'false');
@@ -41,8 +42,8 @@ test('048 plays its rebuilt jaw clutch and keeps its controls usable on mobile',
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('/#/movement/048');
   const canvas = page.locator('.simulation-canvas'), play = page.locator('.play-control');
-  await expect(canvas).toBeVisible();
-  await expect(page.getByText('Six tapered jaws, an 18:32 gear ratio', { exact: false })).toBeVisible();
+  await expect(canvas).toBeVisible();await settleCanvas(canvas);
+  await expectReconstructionNote(page,'Six tapered jaws, a fine 16:64 gear pair');
   await play.click();
   const stopped = await canvas.screenshot();
   await play.click(); await page.waitForTimeout(650); await play.click();

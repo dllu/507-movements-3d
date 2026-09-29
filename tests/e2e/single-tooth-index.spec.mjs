@@ -1,11 +1,12 @@
 import { test, expect } from '@playwright/test';
 import { visibleForegroundBounds, hasFrameMargin } from '../helpers/rendered-frame.mjs';
+import {expectReconstructionNote,settleCanvas} from '../helpers/viewer.mjs';
 
 test('068 plays its ten-notch index and stays framed on mobile', async ({ page }) => {
   const errors = []; page.on('pageerror', error => errors.push(error.message));
   await page.goto('/#/movement/068');
-  const canvas = page.locator('canvas'); await expect(canvas).toBeVisible();
-  await expect(page.getByText('A shaped tooth advances the ten-notch wheel.', { exact: false })).toBeVisible();
+  const canvas = page.locator('canvas'); await expect(canvas).toBeVisible();await settleCanvas(canvas);
+  await expectReconstructionNote(page,'A shaped tooth advances the ten-notch wheel.');
   const pause = page.getByRole('button', { name: 'Pause', exact: true }); await pause.click();
   const stopped = await canvas.screenshot();
   await page.getByRole('button', { name: 'Play', exact: true }).click();

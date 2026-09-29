@@ -39,3 +39,13 @@ export function hasFrameMargin(bounds) {
   return bounds.count > 2000 && bounds.minX > 0.015 && bounds.minY > 0.015
     && bounds.maxX < 0.985 && bounds.maxY < 0.985;
 }
+
+// Some models deliberately continue a long member past the view, as Brown's
+// plate does (a rope or rack running off the drawing). Require the margin
+// only on the edges that nothing is meant to cross.
+export function hasFrameMarginExcept(bounds, openEdges = []) {
+  const open = new Set(openEdges);
+  return bounds.count > 2000
+    && (open.has('left') || bounds.minX > 0.015) && (open.has('top') || bounds.minY > 0.015)
+    && (open.has('right') || bounds.maxX < 0.985) && (open.has('bottom') || bounds.maxY < 0.985);
+}

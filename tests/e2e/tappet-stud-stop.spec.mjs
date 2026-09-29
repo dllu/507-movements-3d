@@ -1,12 +1,13 @@
 import { test, expect } from '@playwright/test';
 import { visibleForegroundBounds, hasFrameMargin } from '../helpers/rendered-frame.mjs';
+import {expectReconstructionNote,settleCanvas} from '../helpers/viewer.mjs';
 
 test('065 loads its finite tappet and two-ended stop, plays and stays framed on mobile', async ({ page }) => {
   const errors = []; page.on('pageerror', error => errors.push(error.message));
   await page.goto('/#/movement/065');
   const canvas = page.locator('canvas');
-  await expect(canvas).toBeVisible();
-  await expect(page.getByText('The clockwise tappet advances the ten-stud wheel', { exact: false })).toBeVisible();
+  await expect(canvas).toBeVisible();await settleCanvas(canvas);
+  await expectReconstructionNote(page,'The clockwise tappet advances the ten-stud wheel');
   const pause = page.getByRole('button', { name: 'Pause', exact: true });
   await pause.click();
   const stopped = await canvas.screenshot();

@@ -1,11 +1,12 @@
 import { test, expect } from '@playwright/test';
 import { visibleForegroundBounds, hasFrameMargin } from '../helpers/rendered-frame.mjs';
+import {expectReconstructionNote,settleCanvas} from '../helpers/viewer.mjs';
 
 test('066 loads its gravity weight, plays and stays framed on mobile', async ({ page }) => {
   const errors = []; page.on('pageerror', error => errors.push(error.message));
   await page.goto('/#/movement/066');
-  const canvas = page.locator('canvas'); await expect(canvas).toBeVisible();
-  await expect(page.getByText('The worm lifts the weight through a pin', { exact: false })).toBeVisible();
+  const canvas = page.locator('canvas'); await expect(canvas).toBeVisible();await settleCanvas(canvas);
+  await expectReconstructionNote(page,'The worm lifts the weight through a pin');
   const pause = page.getByRole('button', { name: 'Pause', exact: true }); await pause.click();
   const stopped = await canvas.screenshot();
   await page.getByRole('button', { name: 'Play', exact: true }).click();

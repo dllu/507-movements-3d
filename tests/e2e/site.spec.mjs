@@ -94,7 +94,9 @@ test('every 3D family reaches a rendered canvas without runtime errors', async (
   // coverage it provides. Assertions and per-model animation time stay fixed.
   // The supersampled framebuffer also renders the interior fragments that
   // MSAA previously shaded only once. Leave headroom for all 507 contexts.
-  test.setTimeout(Math.max(120_000, 60_000 + representatives.size * 1000));
+  // Heavy models now take one to two seconds each to build and draw in
+  // headless software WebGL, so allow two seconds per model.
+  test.setTimeout(Math.max(120_000, 60_000 + representatives.size * 2000));
   const authoredCount = catalog.movements.filter(({ fidelity }) => fidelity === 'authored').length;
   const proceduralFamilyCount = new Set(catalog.movements.filter(({ fidelity }) => fidelity === 'procedural').map(({ archetype }) => archetype)).size;
   expect(representatives.size).toBe(authoredCount + proceduralFamilyCount);
@@ -105,7 +107,7 @@ test('every 3D family reaches a rendered canvas without runtime errors', async (
   for (const movement of representatives.values()) {
     await page.evaluate((number) => { location.hash = `/movement/${number}`; }, movement.number);
     const canvas = page.locator(`canvas[aria-label*="movement ${movement.id}:"]`);
-    await expect(canvas, `movement ${movement.id} (${movement.archetype})`).toBeVisible();
+    await expect(canvas, `movement ${movement.id} (${movement.archetype})`).toBeVisible({timeout: 30_000});
     const box = await canvas.boundingBox();
     expect(box?.width, `movement ${movement.id} canvas width`).toBeGreaterThan(300);
     expect(box?.height, `movement ${movement.id} canvas height`).toBeGreaterThan(300);

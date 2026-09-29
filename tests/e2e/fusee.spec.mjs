@@ -1,13 +1,14 @@
 import { expect, test } from '@playwright/test';
+import {expectReconstructionNote,settleCanvas} from '../helpers/viewer.mjs';
 
 test('046 renders its rebuilt chain through playback, pause and a mobile view', async ({ page }) => {
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('/#/movement/046');
   const canvas = page.locator('.simulation-canvas');
-  await expect(canvas).toBeVisible();
+  await expect(canvas).toBeVisible();await settleCanvas(canvas);
   await expect(canvas).toHaveAttribute('aria-label', /movement 46:/);
-  await expect(page.getByText(/one reserve wrap left on the barrel/)).toBeVisible();
+  await expectReconstructionNote(page,/one reserve wrap left on the barrel/);
   const play = page.locator('.play-control');
   await play.click();
   await expect(play).toHaveAttribute('aria-pressed', 'false');

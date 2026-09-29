@@ -1,11 +1,12 @@
 import { expect, test } from '@playwright/test';
+import {expectReconstructionNote,settleCanvas} from '../helpers/viewer.mjs';
 
 test('053 plays its rebuilt reversing clutch and preserves pause, orbit and mobile controls', async ({ page }) => {
   const errors = []; page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('/#/movement/053');
   const canvas = page.locator('.simulation-canvas'), play = page.locator('.play-control');
-  await expect(canvas).toBeVisible();
-  await expect(page.getByText('The vertical input turns two loose bevel gears in opposite directions.', { exact: false })).toBeVisible();
+  await expect(canvas).toBeVisible();await settleCanvas(canvas);
+  await expectReconstructionNote(page,'The vertical input turns two loose bevel gears in opposite directions.');
   await play.click(); const before = await canvas.screenshot();
   await play.click(); await page.waitForTimeout(1250); await play.click();
   const after = await canvas.screenshot(); expect(after.equals(before)).toBe(false);

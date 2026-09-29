@@ -1,12 +1,13 @@
 import { expect, test } from '@playwright/test';
+import {expectReconstructionNote,settleCanvas} from '../helpers/viewer.mjs';
 
 for (const number of ['050', '051']) test(`${number} plays its rebuilt universal joint and preserves pause, orbit and mobile controls`, async ({ page }) => {
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto(`/#/movement/${number}`);
   const canvas = page.locator('.simulation-canvas'), play = page.locator('.play-control');
-  await expect(canvas).toBeVisible();
-  await expect(page.getByText(number === '050' ? 'A compact middle fork couples two universal joints.' : 'A solid cross connects two curved, bored forks.', { exact: false })).toBeVisible();
+  await expect(canvas).toBeVisible();await settleCanvas(canvas);
+  await expectReconstructionNote(page,number === '050' ? 'A compact middle fork couples two universal joints.' : 'A solid cross connects two curved, bored forks.');
   await play.click();
   const before = await canvas.screenshot();
   await play.click(); await page.waitForTimeout(1350); await play.click();

@@ -1,9 +1,10 @@
 import { test,expect } from '@playwright/test';
 import { visibleForegroundBounds,hasFrameMargin } from '../helpers/rendered-frame.mjs';
+import {expectReconstructionNote,settleCanvas} from '../helpers/viewer.mjs';
 test('070 reveals its hidden tappet, plays and stays framed on mobile',async({page})=>{
   const errors=[];page.on('pageerror',error=>errors.push(error.message));
-  await page.goto('/#/movement/070');const canvas=page.locator('canvas');await expect(canvas).toBeVisible();
-  await expect(page.getByText('The tappet advances one of ten studs per turn.',{exact:false})).toBeVisible();
+  await page.goto('/#/movement/070');const canvas=page.locator('canvas');await expect(canvas).toBeVisible();await settleCanvas(canvas);
+  await expectReconstructionNote(page,'The tappet advances one of ten studs per turn.');
   const pause=page.getByRole('button',{name:'Pause',exact:true});await pause.click();
   const section=page.getByRole('button',{name:'Section view',exact:true});await expect(section).toHaveAttribute('aria-pressed','false');
   const covered=await canvas.screenshot();await section.click();await expect(section).toHaveAttribute('aria-pressed','true');

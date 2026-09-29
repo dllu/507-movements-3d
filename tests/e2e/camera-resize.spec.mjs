@@ -1,11 +1,12 @@
 import { test, expect } from '@playwright/test';
 import { visibleForegroundBounds, hasFrameMargin } from '../helpers/rendered-frame.mjs';
+import {settleCanvas} from '../helpers/viewer.mjs';
 
 test('064 remains fully framed after mobile resizing and reset stops a recent drag', async ({ page }) => {
   const errors = []; page.on('pageerror', error => errors.push(error.message));
   await page.goto('/#/movement/064');
   const canvas = page.locator('canvas');
-  await expect(canvas).toBeVisible();
+  await expect(canvas).toBeVisible();await settleCanvas(canvas);
   await page.getByRole('button', { name: 'Pause', exact: true }).click();
   expect(hasFrameMargin(await visibleForegroundBounds(canvas))).toBe(true);
   await page.setViewportSize({ width: 390, height: 844 });

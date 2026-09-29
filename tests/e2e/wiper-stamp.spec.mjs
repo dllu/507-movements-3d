@@ -1,11 +1,12 @@
 import {test,expect} from '@playwright/test';
 import {visibleForegroundBounds,hasFrameMargin} from '../helpers/rendered-frame.mjs';
+import {settleCanvas} from '../helpers/viewer.mjs';
 
 test('085 starts, pauses and keeps repeating the stamp on desktop and mobile',async({page})=>{
   test.setTimeout(90000);const errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.emulateMedia({reducedMotion:'reduce'});await page.goto('/#/movement/085');
   const canvas=page.locator('canvas'),play=page.getByRole('button',{name:'Play',exact:true}),pause=page.getByRole('button',{name:'Pause',exact:true});
-  await expect(canvas).toBeVisible();await expect(play).toBeVisible();const first=await canvas.screenshot();
+  await expect(canvas).toBeVisible();await settleCanvas(canvas);await expect(play).toBeVisible();const first=await canvas.screenshot();
   await page.waitForTimeout(200);expect(await canvas.screenshot()).toEqual(first);
   await play.click();await page.waitForTimeout(650);await pause.click();const stopped=await canvas.screenshot();expect(stopped.equals(first)).toBe(false);
   await page.waitForTimeout(200);expect(await canvas.screenshot()).toEqual(stopped);
