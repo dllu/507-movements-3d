@@ -484,8 +484,11 @@ function pileDriverReleasingHooks(movement) {
   const stemWeb = slab(poly(scaled([[-7, 16], [7, 16], [7, 58], [-7, 58]])), -0.69, SPRING_Z[0] - 0.02,
     blockMaterial, 'rope-block-stem-web-behind-the-spring-slot');
   block.add(stemWeb);
-  const SPRING_HALF = 1.6;
-  const springRightArm = [[0, 22.6], [11, 31.3], [25, 42.5], [41, 52], [55, 62], [63.5, 73], [67, 84], [66.6, 90]];
+  // Pass 109: the leaf is 1.5x thicker (was 1.6 px half-thickness) so it
+  // reads as a steel part, not an ink line; the centreline is raised by the
+  // added half-thickness so it still seats on the V.
+  const SPRING_HALF = 2.4;
+  const springRightArm = [[0, 23.4], [11, 32.1], [25, 43.3], [41, 52.8], [55, 62.8], [63.5, 73.8], [67, 84.8], [66.6, 90.8]];
   const springRest = (() => {
     const pts = [...springRightArm.slice(1).map(([x, y]) => [-x, y]).reverse(), ...springRightArm];
     const curve = new THREE.CatmullRomCurve3(pts.map(([x, y]) => new THREE.Vector3(x, y, 0)), false, 'centripetal');
@@ -561,7 +564,7 @@ function pileDriverReleasingHooks(movement) {
     }
     return low;
   };
-  const springMaterial = matte(PALETTE.ink, { metalness: 0.35, roughness: 0.45 });
+  const springMaterial = matte(PALETTE.muted, { metalness: 0.35, roughness: 0.45 });
   // A closed strip: each of its four long faces has its own vertices (sharp
   // edges, smooth along the leaf), and both ends are capped.
   const springGeometry = new THREE.BufferGeometry();

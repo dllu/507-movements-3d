@@ -169,13 +169,13 @@
     "max": [
       2.7059999084472657,
       2.9492486095428467,
-      0.9000000333786011
+      0.4599999761581421
     ]
   },
   "focus": [
     -1.4040000438690183,
     -0.472375750541687,
-    0.11000001430511475
+    -0.11000001430511477
   ],
   "cameraDirection": [
     0.01,
@@ -205,11 +205,11 @@
     },
     {
       "file": "src/simulation/mujoco-spring-return-treadle/solids.js",
-      "sha256": "06347b697e40c2cb48ec8bdf91b1b8e1189c30ff02a407c90f58f932154b0bd9"
+      "sha256": "ba9acbb8b327f163bc7dcb71de584de076611cb3fcdae56b23b8443f75c9785e"
     },
     {
       "file": "src/simulation/mujoco-spring-return-treadle/update-solids.js",
-      "sha256": "4b40db513d6d579a1626b5d81f5d08c5dc15a6164292f69549b4f00d2571d1c9"
+      "sha256": "1f752c91c9230557aad5879e77f87cb0b4d58f40c860a468acca81c2891fe0bd"
     },
     {
       "file": "src/simulation/mujoco-spring-return-treadle/kinematics.js",
@@ -238,6 +238,6 @@
   "velocityClosure": 1.5124728726390035e-14,
   "maxFKError": 3.0810435484902763e-7,
   "samples": 2001,
-  "bytes": 882748,
-  "sha256": "979aa03d48f71c5176d612155bb607afc04524540b733eb8480351872eb0e8b0"
+  "bytes": 930461,
+  "sha256": "124e1c5a99407c549a594bb95aaa0f4231c7bbe51092a4f084f9280a6322b4a0"
 }

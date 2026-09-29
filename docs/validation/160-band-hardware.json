@@ -1,25 +1,40 @@
 {
   "movement": 160,
   "poses": 101,
-  "queries": 67982,
+  "queries": 70475,
   "method": "Signed distances from band centerline points at <=0.01 world spacing to actual visible triangle meshes, minus band radius. Only terminal 0.15 units at each own fastening excluded. Pulley contact recorded separately and limited to 0.001 penetration. Expanded-box rejection certifies >0.01 clearance at rejected sample points. Sampled clearance, not continuous-time or full rigid-pair qualification.",
-  "minimum": {},
+  "minimum": {
+    "treadle": {
+      "clearance": 0.0645000104904559,
+      "time": 12.480000000014083,
+      "materialDistance": 9.380271278016824
+    }
+  },
   "pulleyContact": {
     "pulleyCore": {
-      "clearance": -1.1068234467837001e-8,
-      "time": 13.600000000019431,
-      "materialDistance": 3.1572151917497133
+      "clearance": -3.0573476597628435e-8,
+      "time": 13.280000000017903,
+      "materialDistance": 4.256663439690326
+    },
+    "pulleyRearFlange": {
+      "clearance": 0.24403311006687717,
+      "time": 14.120000000021914,
+      "materialDistance": 8.291305437335852
     }
   },
   "failures": [],
   "sources": [
     {
       "file": "scripts/review-spring-treadle-hardware.mjs",
-      "sha256": "b9b2c5bee39374abb926d6e02e79d84e4f16c5bf14a363bbce1d70bd6218a0e2"
+      "sha256": "5d289eac802ae58c26e45be1501ba284196514977e2610e9a78426e5c84ab775"
     },
     {
       "file": "src/simulation/mujoco-spring-return-treadle/solids.js",
-      "sha256": "239506741b6b73698eb26df0ba33d3a6e8494cb88b99be0a279044163da16443"
+      "sha256": "ba9acbb8b327f163bc7dcb71de584de076611cb3fcdae56b23b8443f75c9785e"
+    },
+    {
+      "file": "src/simulation/curve-tube-buffer.js",
+      "sha256": "85c6fe8c2a2fdd0cee88f93014946e9eb178631c6b3c55471bd542fd9e6cee1a"
     },
     {
       "file": "src/simulation/mujoco-spring-return-treadle/band-route.js",
@@ -30,8 +45,8 @@
       "sha256": "b999fb71cd4c5af87e0d83663abc4999f1472aebf6271a202f70bba4e051b2ef"
     },
     {
-      "file": "docs/validation/160-coupled.json",
-      "sha256": "2394652a65fdece0973c28604bc650bb2c6a7a3047dcbbeaccd6e604dea02230"
+      "file": "/dev/shm/160-coupled-0.000125.json",
+      "sha256": "871fc5fe828326e7f36df0ec923b7e569632dcc0f80557248d0cd8170e3e00ab"
     }
   ]
 }

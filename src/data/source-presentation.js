@@ -209,12 +209,10 @@ export default {
     note: 'Face view of the two notched wheels; no standard, foot, seam outline or index marks are drawn.',
   },
   192: {
-    remove: ['fixed-plain-frame-for-wheel-and-input-shaft'],
-    note: 'Face view of the hooked toothed land, its parallel groove b, d and the hub. Brown omits the pinion; it is kept as the working drive on the captioned jointed shaft: Hooke joints at the input shaft end and on the pinion shaft join a telescopic slip shaft standing end-on in front of the wheel. Brown draws no frame, and the reconstructed input-bearing column, wheel standard and feet are not shown (p60 support policy).',
+    note: 'Face view of the hooked toothed land, its parallel groove b, d and the hub. Brown omits the pinion; it is kept as the working drive, its shaft ending in its hub (mangle wheels need no universal-joint drive). Brown draws no frame, so none is shown.',
   },
   193: {
-    remove: ['fixed-plain-frame-for-wheel-and-input-shaft'],
-    note: 'Face view of the concentric mangle wheel and its pinion on its jointed shaft (Hooke joints and a telescopic slip shaft to the input shaft end in front of the wheel). Brown draws no frame, and the reconstructed input-bearing column, wheel standard and feet are not shown (p60 support policy).',
+    note: 'Face view of the concentric mangle wheel and its pinion, the pinion shaft ending in its hub (mangle wheels need no universal-joint drive). Brown draws no frame, so none is shown.',
   },
   194: {
     remove: ['white-index-showing-equal-opposite-wheel-speeds', 'single-coincident-inner-outer-pitch-arc'],

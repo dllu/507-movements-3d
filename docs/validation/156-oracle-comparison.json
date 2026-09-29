@@ -217,7 +217,7 @@
     },
     {
       "file": "src/simulation/authored-cranks.js",
-      "sha256": "cc2ab0bb231c608a8b4a55c659f963623074d594d9a943e3b9adddbbdb282086"
+      "sha256": "9dffb5662f81c96435fb6faa8306c2cf217635a04cda6d0a9d0f70f26227713e"
     },
     {
       "file": "src/simulation/slotted-elbow-motion.js",

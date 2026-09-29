@@ -133,7 +133,104 @@ export function makeRatchetBevelMotion({ amplitude, frequency = 0.8 } = {}) {
   const halfStrokeAdvance = teethPerHalfStroke * pitch;
   const backlashTravel = 2 * inputAmplitude - halfStrokeAdvance;
   const cycleDuration = 2 * Math.PI / frequency, inertia = 0.1;
+  // p109: an idle pawl leaving a crest used to snap into the root within one
+  // sample (0.3 rad in under a millisecond), and the minimum-lift follower
+  // put it there through the tooth: once the tip passes the crest's edge,
+  // the pawl's underside still rests on the crest, and no intermediate lift
+  // clears until the relative travel reaches releaseTravel past the edge
+  // (just inside the 0.15-pitch overtravel). So the pawl now holds its crest
+  // lift through that overhang and then falls under gravity along a
+  // parabola over dropDuration (it can only be lifted more than the teeth
+  // require, never less). The edge, the lift and the release are found once
+  // from the real tooth outline.
+  const dropDuration = 0.06;
+  const wrapPhase = (relative) => THREE.MathUtils.euclideanModulo(relative + pitch / 2, pitch) - pitch / 2;
+  let crestPhase, crestAngle, liftedAbove;
+  {
+    const count = 48, lifts = Array.from({ length: count }, (_, i) => follower.angleAt(-pitch / 2 + pitch * i / count));
+    let best = 0;
+    for (let i = 0; i < count; i += 1) {
+      if (Math.abs(lifts[(i + 1) % count] - lifts[i]) > Math.abs(lifts[(best + 1) % count] - lifts[best])) best = i;
+    }
+    // Which side of the edge (in relative phase) is the lifted crest.
+    liftedAbove = lifts[(best + 1) % count] < lifts[best];
+    let low = -pitch / 2 + pitch * best / count, high = low + pitch / count;
+    const lowAngle = lifts[best], highAngle = lifts[(best + 1) % count];
+    for (let i = 0; i < 40; i += 1) {
+      const middle = (low + high) / 2;
+      if (Math.abs(follower.angleAt(middle) - lowAngle) < Math.abs(follower.angleAt(middle) - highAngle)) low = middle; else high = middle;
+    }
+    crestPhase = (low + high) / 2;
+    crestAngle = follower.angleAt(liftedAbove ? high : low);
+  }
+  // Travel past the edge (towards the seated side) at which the whole fall
+  // from the crest lift to the teeth first clears them.
+  const past = (travel) => crestPhase + (liftedAbove ? -travel : travel);
+  const fallClear = (travel) => {
+    const from = crestAngle, to = follower.angleAt(past(travel));
+    for (let k = 0; k <= 60; k += 1) if (follower.clearanceAt(from + (to - from) * k / 60, past(travel)) < 0) return false;
+    return true;
+  };
+  let releaseTravel = 0;
+  if (!fallClear(1e-5)) {
+    let low = 0, high = pitch / 4;
+    for (let i = 0; i < 16; i += 1) { const middle = (low + high) / 2; if (fallClear(middle)) high = middle; else low = middle; }
+    releaseTravel = high;
+  }
+  const releasePhase = past(releaseTravel);
+  // Signed travel of a pawl past the edge (positive towards the seat).
+  const overhang = (relative) => (liftedAbove ? -1 : 1) * wrapPhase(relative - crestPhase);
+  // Time since the pawl's relative angle last crossed a line (crest edge or
+  // release) from its lifted side, looking back at most window, or Infinity.
+  const sinceCrossing = (line, relativeAt, time, window) => {
+    const band = (t) => Math.floor((relativeAt(t) - line) / pitch);
+    const now = band(time), samples = Math.max(12, Math.ceil(window / 0.01));
+    let previous = 0;
+    for (let i = 1; i <= samples; i += 1) {
+      const lag = window * i / samples, then = band(time - lag);
+      if (then !== now) {
+        if ((then > now) !== liftedAbove) return Infinity;
+        let low = previous, high = lag;
+        for (let k = 0; k < 24; k += 1) { const middle = (low + high) / 2; if (band(time - middle) !== now) high = middle; else low = middle; }
+        return (low + high) / 2;
+      }
+      previous = lag;
+    }
+    return Infinity;
+  };
+  // In the first hair (3e-4 rad) of the back slope, just off its seat, the
+  // follower's search lifted the pawl clean over the crest (a one-frame
+  // 0.3 rad pop as each driving pawl turned idle). There the lift is the
+  // back slope's own, which grows linearly from the seat.
+  const slopeRate = follower.angleAt(-0.002) / -0.002;
+  const seatedAngleAt = (relative) => {
+    const phase = wrapPhase(relative);
+    return phase < 0 && phase > -3e-4 ? follower.restAngle + 1.05 * slopeRate * phase : follower.angleAt(relative);
+  };
+  // Pawl angle and state: 'teeth' (on the teeth), 'overhang' (held at the
+  // crest lift past the edge while travelling towards the seat), 'falling'.
+  const pawlAngleAt = (relativeAt, time) => {
+    const relative = relativeAt(time), required = seatedAngleAt(relative), travel = overhang(relative);
+    const towardsSeat = (liftedAbove ? -1 : 1) * (relativeAt(time + 1e-4) - relativeAt(time - 1e-4)) > 1e-9;
+    // Held only after crossing the edge from the crest (a pawl leaving its
+    // seat on the idle stroke starts at the edge but on the teeth).
+    if (travel > 0 && travel < releaseTravel && towardsSeat
+      && sinceCrossing(crestPhase, relativeAt, time, 1.5) < Infinity) return { angle: Math.min(required, crestAngle), mode: 'overhang' };
+    const lag = sinceCrossing(releasePhase, relativeAt, time, dropDuration);
+    if (lag < dropDuration && sinceCrossing(crestPhase, relativeAt, time, 1.5) < Infinity) return { angle: Math.min(required, crestAngle * (1 - (lag / dropDuration) ** 2)), mode: 'falling' };
+    const phase = wrapPhase(relative);
+    return { angle: required, mode: phase < 0 && phase > -3e-4 ? 'leaving-seat' : 'teeth' };
+  };
   const resistingTorque = inertia * inputAmplitude * frequency ** 2 * 1.4;
+  const relativeAngles = (time) => {
+    const phase = frequency * time, inputAngle = inputAmplitude * Math.sin(phase);
+    const stroke = Math.floor((phase - Math.PI / 2) / Math.PI + 1e-12);
+    const sign = THREE.MathUtils.euclideanModulo(stroke, 2) === 0 ? -1 : 1;
+    const travelled = sign * inputAngle + inputAmplitude;
+    const advance = inputAmplitude + stroke * halfStrokeAdvance + Math.max(0, travelled - backlashTravel);
+    return [inputAngle - advance, -inputAngle - advance];
+  };
+  const rightRelativeAt = (time) => relativeAngles(time)[0], leftRelativeAt = (time) => relativeAngles(time)[1];
   const stateAt = (time) => {
     const phase = frequency * time, inputAngle = inputAmplitude * Math.sin(phase);
     const inputAngularSpeed = inputAmplitude * frequency * Math.cos(phase);
@@ -147,14 +244,15 @@ export function makeRatchetBevelMotion({ amplitude, frequency = 0.8 } = {}) {
     const speed = driving ? Math.max(0, sign * inputAngularSpeed) : 0;
     const acceleration = driving ? sign * inputAcceleration : 0;
     const rightRelativeAngle = inputAngle - advance, leftRelativeAngle = -inputAngle - advance;
+    const rightPawl = pawlAngleAt(rightRelativeAt, time), leftPawl = pawlAngleAt(leftRelativeAt, time);
     return { time, phase, stroke, inputAngle, inputAngularSpeed, inputAcceleration, advance,
       outputAngle: -advance, outputAngularSpeed: -speed, outputAcceleration: -acceleration,
       activeSide: driving && Math.abs(inputAngularSpeed) > 1e-10 ? side : 'none', driving,
       rightRelativeAngle, leftRelativeAngle,
-      rightPawlAngle: follower.angleAt(rightRelativeAngle), leftPawlAngle: follower.angleAt(leftRelativeAngle),
+      rightPawlAngle: rightPawl.angle, leftPawlAngle: leftPawl.angle, rightPawlMode: rightPawl.mode, leftPawlMode: leftPawl.mode,
       resistingTorque: driving ? resistingTorque : 0,
       driveTorque: driving ? resistingTorque + inertia * acceleration : 0 };
   };
   return { follower, parameters: { inputAmplitude, frequency, cycleDuration, teethPerHalfStroke,
-    halfStrokeAdvance, backlashTravel, inertia, resistingTorque }, stateAt };
+    halfStrokeAdvance, backlashTravel, inertia, resistingTorque, dropDuration, crestPhase, crestAngle, releaseTravel }, stateAt };
 }

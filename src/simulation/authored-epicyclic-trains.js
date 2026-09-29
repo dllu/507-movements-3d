@@ -2328,15 +2328,29 @@ function fit505SourceArm(root) {
 
 function dualEndDrivenCompoundBevelDifferential(movement) {
   const root = new THREE.Group();
+  // Pass 109: Brown's arrangement. On A, h is the OUTER (larger) wheel,
+  // meshing the upper wheel g, and a the INNER wheel, meshing the lower wheel
+  // b; so g's pitch radius must exceed b's (h stands at x = -r_g, a at
+  // x = -r_b) by enough for h's lower half to pass outside b's rim, and a
+  // must be smaller than h. The earlier counts (b 40 > g 32) put a outside h
+  // and drove h's teeth through b. On the carrier, d (outer, larger) meshes
+  // c below and e (inner, smaller) meshes f above; c stays inside a's toe,
+  // d's top stays under g, and d stays outside f's rim. Counts are fitted to
+  // the plate's proportions (Brown gives none): a 20, b 36, c 21, d 16,
+  // e 10, f 13, g 43, h 34. The carried compound sweeps a cylinder of radius
+  // sqrt(r_c^2 + r_d^2) = 1.32 round m-n (d's disc stands across the arm),
+  // which must pass inside a's toe (0.8 r_b = 1.44); Brown's drawing, where l
+  // reaches farther out than a's face, would collide when the arm swings
+  // round to A's side.
   const teeth = Object.freeze({
     a: 20,
-    b: 40,
-    c: 24,
+    b: 36,
+    c: 21,
     d: 16,
-    e: 12,
-    f: 20,
-    g: 32,
-    h: 24,
+    e: 10,
+    f: 13,
+    g: 43,
+    h: 34,
   });
   const module = 0.10;
   const pitchRadii = Object.freeze(Object.fromEntries(
@@ -2347,7 +2361,7 @@ function dualEndDrivenCompoundBevelDifferential(movement) {
   ));
   const bevelDepth = 0.24;
   const representativeConeDistance = 1.08;
-  const differentialApex = new THREE.Vector3(0, 0.10, 0);
+  const differentialApex = new THREE.Vector3(0, 0.35, 0);
   const driverAngularSpeed = 1.35;
   const lowerBCSignedRatio = -teeth.a / teeth.b;
   const upperFGSignedRatio = teeth.h / teeth.g;
@@ -2514,7 +2528,7 @@ function dualEndDrivenCompoundBevelDifferential(movement) {
   gearA.userData.isGear = true;
   gearA.userData.rigidAssembly = 'A-a-h';
   gearA.userData.sourceLabel = 'a';
-  gearA.userData.role = 'twenty-tooth-lower-driver-bevel-a';
+  gearA.userData.role = 'twenty-tooth-inner-lower-driver-bevel-a';
   const gearH = makeBevelGear({
     axis: X_AXIS,
     color: PALETTE.brass,
@@ -2526,7 +2540,7 @@ function dualEndDrivenCompoundBevelDifferential(movement) {
   gearH.userData.isGear = true;
   gearH.userData.rigidAssembly = 'A-a-h';
   gearH.userData.sourceLabel = 'h';
-  gearH.userData.role = 'twenty-four-tooth-upper-driver-bevel-h';
+  gearH.userData.role = 'thirty-four-tooth-outer-upper-driver-bevel-h';
   driverAH.add(
     driverShaftA,
     crankArm,
@@ -2552,7 +2566,7 @@ function dualEndDrivenCompoundBevelDifferential(movement) {
   gearB.userData.looseOnShaft = 'm-n';
   gearB.userData.rigidAssembly = 'b-c';
   gearB.userData.sourceLabel = 'b';
-  gearB.userData.role = 'forty-tooth-lower-loose-bevel-b';
+  gearB.userData.role = 'thirty-six-tooth-lower-loose-bevel-b';
   const gearC = makeBevelGear({
     axis: Y_AXIS,
     color: PALETTE.driven,
@@ -2566,12 +2580,12 @@ function dualEndDrivenCompoundBevelDifferential(movement) {
   gearC.userData.looseOnShaft = 'm-n';
   gearC.userData.rigidAssembly = 'b-c';
   gearC.userData.sourceLabel = 'c';
-  gearC.userData.role = 'twenty-four-tooth-first-epicyclic-wheel-c';
+  gearC.userData.role = 'twenty-one-tooth-first-epicyclic-wheel-c';
   const lowerSleeve = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(0.27, 0.27, 0.82, 30),
+    new THREE.CylinderGeometry(0.27, 0.27, 0.66, 30),
     matte(PALETTE.driven, { metalness: 0.18, roughness: 0.50 }),
   ), 'loose-sleeve-rigidly-uniting-b-and-c');
-  lowerSleeve.position.y = -1.05;
+  lowerSleeve.position.y = -0.72;
   lowerSleeve.userData.rigidAssembly = 'b-c';
   const lowerIndex = addRole(new THREE.Mesh(
     new THREE.BoxGeometry(0.72, 0.055, 0.055),
@@ -2597,7 +2611,7 @@ function dualEndDrivenCompoundBevelDifferential(movement) {
   gearF.userData.looseOnShaft = 'm-n';
   gearF.userData.rigidAssembly = 'f-g';
   gearF.userData.sourceLabel = 'f';
-  gearF.userData.role = 'twenty-tooth-last-epicyclic-wheel-f';
+  gearF.userData.role = 'thirteen-tooth-last-epicyclic-wheel-f';
   const gearG = makeBevelGear({
     axis: Y_AXIS.clone().negate(),
     color: PALETTE.muted,
@@ -2610,12 +2624,12 @@ function dualEndDrivenCompoundBevelDifferential(movement) {
   gearG.userData.looseOnShaft = 'm-n';
   gearG.userData.rigidAssembly = 'f-g';
   gearG.userData.sourceLabel = 'g';
-  gearG.userData.role = 'thirty-two-tooth-upper-loose-bevel-g';
+  gearG.userData.role = 'forty-three-tooth-upper-loose-bevel-g';
   const upperSleeve = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(0.25, 0.25, 0.88, 30),
+    new THREE.CylinderGeometry(0.25, 0.25, 0.96, 30),
     matte(PALETTE.muted, { metalness: 0.18, roughness: 0.50 }),
   ), 'loose-sleeve-rigidly-uniting-f-and-g');
-  upperSleeve.position.y = 0.98;
+  upperSleeve.position.y = 1.27;
   upperSleeve.userData.rigidAssembly = 'f-g';
   const upperIndex = addRole(new THREE.Mesh(
     new THREE.BoxGeometry(0.68, 0.055, 0.055),
@@ -2635,10 +2649,10 @@ function dualEndDrivenCompoundBevelDifferential(movement) {
   ), 'carrier-shaft-m-n');
   carrierShaftMN.userData.rigidAssembly = 'k-l-m-n';
   const carrierSleeve = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(0.34, 0.34, 0.72, 30),
+    new THREE.CylinderGeometry(0.34, 0.34, 0.60, 30),
     carrierMaterial,
   ), 'central-carrier-hub-k');
-  carrierSleeve.position.y = differentialApex.y;
+  carrierSleeve.position.y = differentialApex.y - 0.02;
   const radialAxle = addRole(new THREE.Mesh(
     new THREE.CylinderGeometry(0.105, 0.105, 2.72, 26),
     darkMaterial,
@@ -2687,7 +2701,7 @@ function dualEndDrivenCompoundBevelDifferential(movement) {
   gearD.userData.isGear = true;
   gearD.userData.rigidAssembly = 'd-e';
   gearD.userData.sourceLabel = 'd';
-  gearD.userData.role = 'twenty-four-tooth-carried-compound-wheel-d';
+  gearD.userData.role = 'sixteen-tooth-outer-carried-compound-wheel-d';
   const gearE = makeBevelGear({
     axis: X_AXIS.clone().negate(),
     color: PALETTE.brass,
@@ -2700,13 +2714,13 @@ function dualEndDrivenCompoundBevelDifferential(movement) {
   gearE.userData.isGear = true;
   gearE.userData.rigidAssembly = 'd-e';
   gearE.userData.sourceLabel = 'e';
-  gearE.userData.role = 'sixteen-tooth-carried-compound-wheel-e';
+  gearE.userData.role = 'ten-tooth-inner-carried-compound-wheel-e';
   const compoundSleeve = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(0.20, 0.20, 0.74, 26),
+    new THREE.CylinderGeometry(0.20, 0.20, 0.50, 26),
     matte(PALETTE.accent, { metalness: 0.16, roughness: 0.52 }),
   ), 'sleeve-rigidly-uniting-d-and-e');
   compoundSleeve.rotation.z = Math.PI / 2;
-  compoundSleeve.position.x = 1.11;
+  compoundSleeve.position.x = 0.78;
   compoundSleeve.userData.rigidAssembly = 'd-e';
   const planetIndex = addRole(new THREE.Mesh(
     new THREE.BoxGeometry(0.05, 0.64, 0.05),
@@ -3036,7 +3050,7 @@ function dualEndDrivenCompoundBevelDifferential(movement) {
     officialEngraving: './engravings/mm_506.png',
     officialInlineModelUrl: movement.sourceUrl,
     reconstructionDisclosure:
-      'The official page marks Animated unavailable. Brown fixes input shaft A with rigid a/h, loose rigid compounds b/c and f/g, carrier k/l rigid with shaft m/n, and carried rigid compound d/e, but supplies no tooth counts, pitch geometry, speed, or timing. This model instantiates Brown’s original configuration only, using disclosed reconstructed counts a=20, b=40, c=24, d=16, e=12, f=20, g=32, h=24 and a 1.35-rad/s driver. Brown’s later modified configuration, in which f/g are disunited and g is fixed to the carrier shaft, is documented but not superimposed. All four common-apex pitch constraints, signed speed ratios, and zero-slip contacts are exact; dimensions, supports, colors, and timing are reconstruction choices.',
+      'The official page marks Animated unavailable. Brown fixes input shaft A with rigid a/h, loose rigid compounds b/c and f/g, carrier k/l rigid with shaft m/n, and carried rigid compound d/e, but supplies no tooth counts, pitch geometry, speed, or timing. This model instantiates Brown’s original configuration only, using disclosed reconstructed counts a=20, b=36, c=21, d=16, e=10, f=13, g=43, h=34 (pass 109: h outer on g, a inner on b, d outer on c, e inner on f, as drawn) and a 1.35-rad/s driver. Brown’s later modified configuration, in which f/g are disunited and g is fixed to the carrier shaft, is documented but not superimposed. All four common-apex pitch constraints, signed speed ratios, and zero-slip contacts are exact; dimensions, supports, colors, and timing are reconstruction choices.',
     sourceUrl: movement.sourceUrl,
   };
   root.userData.stateAtTime = stateAtTime;

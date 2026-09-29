@@ -372,18 +372,27 @@ function harrisonGoingBarrel(movement) {
   // teeth), so the plate pose must be close to the wound top of travel. The
   // plate pose (t = 0) is the moment R has re-engaged after winding. Between
   // the end of winding and then, B turns only the winding lag plus G's
-  // recovery advance (5/24 of a turn), so the small drum (0.2, just
-  // outside the bored barrel arbor) lifts the weight 0.26 above its plate
-  // height. The weight's top hangs 0.47 below G's tips at the plate pose
-  // (Brown: 0.19 below his slightly smaller G) and stays 0.20 clear of them
-  // at the top of its travel, so G's teeth never seem to touch it.
-  const ropeDrumPitchRadius = 0.20;
+  // recovery advance (5/24 of a turn). Brown's cord drops from the left
+  // tangent of barrel B's own circle (raster radius about 55 px, 0.80;
+  // the cord hangs 62 px left of B's centre), so the drum is B's radius,
+  // not a small stub on the arbor. It lifts the weight 1.05 above its
+  // plate height over those 5/24, so the plate-pose weight hangs about
+  // 1.1 lower than Brown's box; at the top of its travel the weight stays
+  // 0.11 clear of G's tips, so G's teeth never seem to touch it.
+  const ropeDrumPitchRadius = 0.80;
   // The drum is on B's arbor behind the wheels, as Brown's cord leaves B
   // behind them; the cord hangs from its tangent in that plane (it used to
   // loop round the arbor in front of ratchet B and hang across its face).
   const ropePlaneZ = -1.0;
   const weightHalfHeight = 0.45;
-  const greatWheelTipClearanceY = -3.24;
+  // Brown's cord ends at a small ring eye on top of the weight: one flat
+  // bored tab in the rope's plane, its hole concentric with its round top.
+  const weightEyeHoleY = 0.10;
+  const weightEyeOuterRadius = 0.10;
+  const weightEyeHoleRadius = 0.052;
+  const weightEyeTop = weightEyeHoleY + weightEyeOuterRadius;
+  // The eye's top (not the box's) keeps clear of G's tips.
+  const greatWheelTipClearanceY = -3.12 - weightEyeTop;
   // B is wound back past the plate pose by the recoil of the larger ratchet
   // and the overrun that lets R drop behind its tooth (see the backlash).
   const windingOvershootAngle = FULL_TURN * (1 - windingStartPhase)
@@ -1011,6 +1020,26 @@ function harrisonGoingBarrel(movement) {
     matte(PALETTE.driver, { metalness: 0.08, roughness: 0.74 }),
   );
   weight.userData.role = 'driving-weight-on-barrel-B';
+  {
+    const eyeShape = new THREE.Shape();
+    const r = weightEyeOuterRadius;
+    const cy = weightHalfHeight + weightEyeHoleY;
+    eyeShape.moveTo(-r, weightHalfHeight - 0.06);
+    eyeShape.lineTo(r, weightHalfHeight - 0.06);
+    eyeShape.lineTo(r, cy);
+    eyeShape.absarc(0, cy, r, 0, Math.PI, false);
+    eyeShape.lineTo(-r, weightHalfHeight - 0.06);
+    const hole = new THREE.Path();
+    hole.absarc(0, cy, weightEyeHoleRadius, 0, FULL_TURN, true);
+    eyeShape.holes.push(hole);
+    const eyeGeometry = new THREE.ExtrudeGeometry(eyeShape, {
+      depth: 0.07, bevelEnabled: false, curveSegments: 40,
+    });
+    eyeGeometry.translate(0, 0, -0.035);
+    const eye = new THREE.Mesh(eyeGeometry, weight.material);
+    eye.userData.role = 'weight-top-ring-eye-for-rope';
+    weight.add(eye);
+  }
   // Brown's weight cord is one laid rope: wound 1.7 turns-worth of arc on
   // the drum behind the wheels, then hanging straight to the weight.
   const rope = new THREE.Mesh(
@@ -1096,19 +1125,45 @@ function harrisonGoingBarrel(movement) {
       },
       rope: {
         freeLength: ropeContact.y
-          - (state.weightPosition.y + 0.45),
+          - (state.weightPosition.y + weightHalfHeight + ropeLoopApexY),
         pitchRadius: ropeDrumPitchRadius,
         slipError: state.weightPosition.y - referenceWeightY
           + ropeDrumPitchRadius * state.barrelAngle,
         topContact: ropeContact.clone(),
         weightAttachment: state.weightPosition.clone().add(
-          new THREE.Vector3(0, 0.45, 0),
+          new THREE.Vector3(0, weightHalfHeight + ropeLoopApexY, 0),
         ),
       },
     };
   };
 
   const ropeRadius = 0.035;
+  // The cord's end is spliced into a small loop, lying across the eye's
+  // plane, that bears on the bottom of the eye's hole.
+  const ropeLoopRadius = 0.085;
+  const ropeLoopBottomY = weightEyeHoleY
+    - (weightEyeHoleRadius - ropeRadius);
+  const ropeLoopApexY = ropeLoopBottomY + ropeLoopRadius + 0.24;
+  const ropeLoopPoints = (() => {
+    const points = [];
+    const centreY = ropeLoopBottomY + ropeLoopRadius;
+    points.push(new THREE.Vector3(0, ropeLoopApexY, 0));
+    points.push(new THREE.Vector3(0, ropeLoopApexY - 0.05, 0.012));
+    points.push(new THREE.Vector3(0, centreY + 0.10, ropeLoopRadius * 0.82));
+    for (let i = 0; i <= 16; i += 1) {
+      const angle = Math.PI * i / 16;
+      points.push(new THREE.Vector3(
+        0,
+        centreY - ropeLoopRadius * Math.sin(angle),
+        ropeLoopRadius * Math.cos(angle),
+      ));
+    }
+    points.push(new THREE.Vector3(0, centreY + 0.10, -ropeLoopRadius * 0.82));
+    // The end is spliced back into the standing part at the apex.
+    points.push(new THREE.Vector3(0, ropeLoopApexY - 0.06, -0.035));
+    points.push(new THREE.Vector3(0, ropeLoopApexY + 0.04, -0.012));
+    return points;
+  })();
   const ropeWrapPoints = Array.from({ length: 65 }, (_, i) => {
     const angle = Math.PI - 1.7 * Math.PI * (64 - i) / 64;
     return new THREE.Vector3(
@@ -1125,6 +1180,9 @@ function harrisonGoingBarrel(movement) {
       state.rope.topContact.clone(),
       state.rope.weightAttachment.clone(),
     ));
+    path.add(new THREE.CatmullRomCurve3(ropeLoopPoints.map((point) => point
+      .clone().add(state.weightPosition).setY(point.y + weightHalfHeight
+        + state.weightPosition.y)), false, 'centripetal'));
     // The lay moves with the rope as the barrel pays it out.
     replaceWithLaidRope(rope, path, {
       radius: ropeRadius,

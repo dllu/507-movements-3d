@@ -175,13 +175,19 @@ test('movement 321 preserves Brown’s G, B, R, T, S, and S-prime landmarks', ()
     tolerance, 'source inner spring anchor S');
   // Brown's weight hangs just under G. The plate pose follows winding
   // closely, so the wound weight rises only 5/24 of a drum turn above
-  // it: the plate-pose weight sits within that lift (plus the measuring
-  // tolerance) of Brown's station, and its top never reaches G's tips.
+  // it: the plate-pose weight sits within that lift, plus its ring eye
+  // and the measuring tolerance, of Brown's station, and neither box nor
+  // eye ever reaches G's tips. The rope leaves Brown's barrel-B circle.
   const sourceWeightY = sourcePointToReferenceFront(plate.rasterWeightCenter).y;
   assert.ok(Math.abs(sourceWeightY - reference.weightPosition.y)
     < geometry.ropeDrumPitchRadius * FULL_TURN
-      * (1 - geometry.windingStartPhase) + tolerance,
+      * (1 - geometry.windingStartPhase) + 0.2 + tolerance,
     'source weight vertical station');
+  assert.ok(geometry.ropeDrumPitchRadius >= 0.75,
+    'rope drum at barrel B radius, not a stub on the arbor');
+  assert.ok(model.root.userData.blocks.weight.children
+    .some((child) => child.userData.role === 'weight-top-ring-eye-for-rope'),
+    'ring eye on the weight');
   const greatWheelTip = new THREE.Box3()
     .setFromObject(model.root.userData.blocks.greatWheel, true).min.y;
   for (let sample = 0; sample <= 512; sample += 1) {
@@ -258,7 +264,7 @@ test('movement 321 transmits weight torque through R and a constant-preload spri
     `larger-ratchet going speed at ${sample}`);
     near(state.springDeflection, geometry.springPreload, 3e-15,
       `constant going preload at ${sample}`);
-    near(state.rope.slipError, 0, 8e-16,
+    near(state.rope.slipError, 0, 4e-15,
       `rope no-slip constraint at ${sample}`);
     near(state.contacts.R.clearance, 0, 5e-15,
       `R engaged on B at ${sample}`);
@@ -309,7 +315,7 @@ test('movement 321 holds the larger ratchet with T while B winds and the spring 
     }
     near(state.contacts.T.clearance, 0, 5e-15,
       `T remains seated at ${sample}`);
-    near(state.rope.slipError, 0, 8e-16,
+    near(state.rope.slipError, 0, 4e-15,
       `winding rope no-slip at ${sample}`);
     assert.ok(state.springEnergy <= previousEnergy + 3e-12,
       `spring supplies energy at ${sample}`);

@@ -70,8 +70,10 @@ export function makeSelectorRackBaseGeometry() {
   const lobe = sourcePoly([[...measured.center], ...measured.cam.lobe]);
   profiles.camOuter = clip.union(roundCam, lobe);
   profiles.cam = clip.difference(profiles.camOuter, poly(circle([0, 0], bore, 128)));
-  attach('singleWorkingCam', plate(profiles.cam, ...layers.cam), 'cam', PALETTE.driver);
-  attach('camHub', ring(bore, px(measured.cam.hubRadius), layers.cam[1], .092, 128), 'cam', PALETTE.driver);
+  // p109: D in brass, so it reads as its own working cam against the red
+  // spoked wheel behind it (not as a bent extra spoke).
+  attach('singleWorkingCam', plate(profiles.cam, ...layers.cam), 'cam', PALETTE.brass);
+  attach('camHub', ring(bore, px(measured.cam.hubRadius), layers.cam[1], .092, 128), 'cam', PALETTE.brass);
 
   // One curved quadrant opening, repeated around the complete rear wheel.
   // The upper opening is occluded in the engraving, so this repetition is an

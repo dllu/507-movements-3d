@@ -59,6 +59,8 @@ const rect = (x0, y0, x1, y1) => poly([[X(x0), Y(y1)], [X(x1), Y(y1)], [X(x1), Y
 
 // Back-half lathe split into horizontal bands; a band may leave a port open
 // towards +x (side 1) or -x (side -1) by trimming its sweep by `delta`.
+// Pass 109: 160 segments per turn (80 over the half), so the large flanged
+// ram casting reads round in rear and oblique views (32 steps faceted).
 function sectionedLathe(profile, material, cutMaterial, bands = []) {
   const group = new THREE.Group();
   const polygon = poly(lathe(profile));
@@ -72,9 +74,9 @@ function sectionedLathe(profile, material, cutMaterial, bands = []) {
       if (ring.length < 3) continue;
       const options = band
         ? band.side > 0
-          ? {phiStart: Math.PI / 2 + band.delta, phiLength: Math.PI - band.delta, segments: 64}
-          : {phiStart: Math.PI / 2, phiLength: Math.PI - band.delta, segments: 64}
-        : {segments: 64};
+          ? {phiStart: Math.PI / 2 + band.delta, phiLength: Math.PI - band.delta, segments: 160}
+          : {phiStart: Math.PI / 2, phiLength: Math.PI - band.delta, segments: 160}
+        : {segments: 160};
       const mesh = new THREE.Mesh(latheSectionGeometry(ring, options), [material, cutMaterial]);
       group.add(mesh);
     }
@@ -359,8 +361,11 @@ function hydrostaticPress(movement) {
   const ramCylinderProfile = [
     // p93: the two round fillets take 24 steps (3.75 degrees) instead of 6,
     // so they read as arcs, not 15-degree bands.
+    // p109: Brown's flange underside is one straight chamfer from the wall
+    // to the flange's lower corner (the old 3-facet polyline shaded as
+    // 20-degree facets round the casting).
     [0, 502], [43, 502], ...arc(43, 494, 8, -Math.PI / 2, 0, 24).slice(1), [51, 385],
-    [64, 372], [90, 360], [112, 350], [112, 312], [63, 312], [63, 292], [25, 292],
+    [112, 350], [112, 312], [63, 312], [63, 292], [25, 292],
     [25, 335], [32.5, 335], [32.5, 474], ...arc(24.5, 474, 8, 0, -Math.PI / 2, 24).slice(1), [0, 482],
   ];
   const ramCylinder = addRole(sectionedLathe(ramCylinderProfile, ironMaterial, ironCut,
@@ -376,11 +381,11 @@ function hydrostaticPress(movement) {
     [11.25, 287], [24, 287], [24, 451], ...arc(0, 451, 24, 0, -Math.PI / 2, 48).slice(1),
     [0, 460], ...arc(0, 449, 11, -Math.PI / 2, 0, 30).slice(1), [11.25, 449],
   ];
-  const ramBody = addRole(new THREE.Mesh(latheSectionGeometry(lathe(ramProfile), {segments: 64}), [ramMaterial, ramCut]), 'large-solid-ram-body');
+  const ramBody = addRole(new THREE.Mesh(latheSectionGeometry(lathe(ramProfile), {segments: 160}), [ramMaterial, ramCut]), 'large-solid-ram-body');
   ramBody.position.x = ramAxisX;
   ramAssembly.add(ramBody);
   const bowl = addRole(new THREE.Mesh(new THREE.LatheGeometry(
-    lathe([[0, 286.7], [24, 286.7], [38, 281], [50, 272], [55, 262], [55, 256.3], [0, 256.3]]).map(([r, y]) => new THREE.Vector2(r, y)), 64), ramMaterial), 'large-solid-ram-piston');
+    lathe([[0, 286.7], [24, 286.7], [38, 281], [50, 272], [55, 262], [55, 256.3], [0, 256.3]]).map(([r, y]) => new THREE.Vector2(r, y)), 128), ramMaterial), 'large-solid-ram-piston');
   bowl.position.x = ramAxisX;
   ramAssembly.add(bowl);
   const movingPlaten = addRole(box(70.75, 244, 206.75, 256, -0.55, 0.55, ramMaterial), 'moving-lower-press-platen');
@@ -537,11 +542,14 @@ function hydrostaticPress(movement) {
   };
 
   // --- Plunger, crosshead (with a mortise the lever passes through) and pin. ---
+  // Pass 109: the plunger and its crosshead are turned steel, so the
+  // orange hand lever reads against the crosshead it passes through.
+  const steelMaterial = matte(PALETTE.muted, {metalness: 0.32, roughness: 0.42});
   const pumpCrosshead = addRole(new THREE.Group(), 'small-pump-vertical-crosshead');
   root.add(pumpCrosshead);
   const half = 13 * S, slot = 12 * S, slotZ = 0.07;
   for (const [y0, y1, z0, z1] of [[slot, 105 * S, -half, half], [-42 * S, -slot, -half, half], [-slot, slot, slotZ, half], [-slot, slot, -half, -slotZ]]) {
-    const piece = new THREE.Mesh(new THREE.BoxGeometry(2 * half, y1 - y0, z1 - z0), pumpMaterial);
+    const piece = new THREE.Mesh(new THREE.BoxGeometry(2 * half, y1 - y0, z1 - z0), steelMaterial);
     piece.position.set(0, (y0 + y1) / 2, (z0 + z1) / 2);
     piece.userData.role = 'crosshead-block';
     pumpCrosshead.add(piece);
@@ -551,7 +559,7 @@ function hydrostaticPress(movement) {
   const pumpPiston = addRole(new THREE.Group(), 'small-pump-plunger');
   root.add(pumpPiston);
   const plungerLength = pumpPistonRodOffset - 42 * S;
-  const plunger = new THREE.Mesh(new THREE.CapsuleGeometry(pumpPlungerRadius, plungerLength - pumpPlungerRadius, 8, 32), pumpMaterial);
+  const plunger = new THREE.Mesh(new THREE.CapsuleGeometry(pumpPlungerRadius, plungerLength - pumpPlungerRadius, 8, 32), steelMaterial);
   plunger.position.y = (plungerLength - pumpPlungerRadius) / 2 + pumpPlungerRadius;
   plunger.userData.role = 'plunger-rod';
   pumpPiston.add(plunger);

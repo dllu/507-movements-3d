@@ -44,7 +44,13 @@ export function makeSilkTraverseAssembly(bundle) {
  for(const [name,mesh]of Object.entries(contact.parts)){parts[name]=mesh;families[name]=name==='tappet'?'fixed':'screw';}
  // The screw frame is secured on the face of the disk: rails and bearing
  // blocks bed on the disk's front face at z -0.19.
- add('disk',plate(round(155*scale),-.4,-.19),PALETTE.driver,'carrier',carrier);
+ const disk=add('disk',plate(round(155*scale),-.4,-.19),PALETTE.driver,'carrier',carrier);
+ // p109: Brown's disc is a clean face. The yoke, rod, screw frame and the
+ // fixed guide stand up to 1.3 in front of it, so their shadows lay large
+ // dark U, band and blob shapes on it that read as painted marks. The disc
+ // is the rearmost part (no ground), so it neither receives shadows nor has
+ // anything behind it to shadow; every other part keeps casting.
+ disk.userData.noShadow=true;
  for(const side of [-1,1]){
   const rail=add('channelRail'+side,new THREE.BoxGeometry(4.02,.10,.37),PALETTE.frame,'carrier',carrier);
   rail.position.set(-.04,side*.21,-.005);
@@ -133,6 +139,6 @@ export function makeSilkTraverseAssembly(bundle) {
  root.userData.cameraFitBounds=bounds.clone().expandByScalar(.08);
  // Ask the renderer to fit the complete adjustment, not just its source pose.
  root.userData.sampledMotionBounds={min:bounds.min.toArray(),max:bounds.max.toArray()};
- markShadows(root);
+ markShadows(root);disk.castShadow=false;disk.receiveShadow=false;
  return {root,update,reset:()=>update(0),cameraDirection:new THREE.Vector3(0,0,1),dispose:()=>disposeObject3D(root)};
 }

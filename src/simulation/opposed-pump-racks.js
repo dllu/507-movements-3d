@@ -6,7 +6,7 @@ import {glandCylinder} from './beyond-crop-hardware.js';
 // One world unit is 100 engraving pixels. The irregular drawing is regularized
 // to an 18-tooth, 20-degree involute pinion and its conjugate straight racks.
 export const pumpRackDimensions=Object.freeze({radius:.855,teeth:18,addendum:.095,dedendum:.12,
- rackLength:3.56,rightRackLength:3.72,rackWidth:.34,depth:.18,period:4,amplitude:Math.PI/3,
+ rackLength:3.56,rightRackLength:3.72,rackWidth:.34,depth:.18,period:4,amplitude:THREE.MathUtils.degToRad(49.5),
  leftY:.34,rightY:-.66,leverAngle:Math.atan2(-211,470),leverHalfLength:2.576,leverTipZ:-.235,knobRadius:.13});
 
 export function makeOpposedPumpRacks(){
@@ -38,8 +38,10 @@ export function makeOpposedPumpRacks(){
   // degrees in depth (unseen from the front) so the ball clears the racks when
   // the lever swings up behind them.
   const tip=new THREE.Vector3(sign*d.leverHalfLength,0,d.leverTipZ);
+  // p109: steel, not the pinion's orange, so the lever reads as its own
+  // part where it passes behind the pinion.
   const arm=makeBeam(new THREE.Vector3(sign*.6,0,-.145),tip,
-   {color:PALETTE.driver,depth:.10,thickness:.12});
+   {color:PALETTE.muted,depth:.10,thickness:.12});
   const knob=new THREE.Mesh(new THREE.SphereGeometry(d.knobRadius,32,20),matte(PALETTE.ink));
   knob.name='leverKnob';knob.position.copy(tip);leverGroup.add(arm,knob);
  }
@@ -86,6 +88,9 @@ export function makeOpposedPumpRacks(){
   barrelTops.push(barrelTop);
  }
  for(const o of fixedParts.children)o.userData.beyondPlateCrop=true;
+ // p109: the swing (A = 49.5 deg, from -A/2 to 1.5 A about Brown's pose) keeps
+ // the handles within 50 deg of horizontal, outboard of the racks as drawn,
+ // instead of swinging up to vertical across the pinion.
  const stateAtTime=time=>{
   const angle=d.amplitude*(Math.sin(2*Math.PI*time/d.period-Math.PI/6)+.5);
   return {angle,leftY:d.leftY-d.radius*angle,rightY:d.rightY+d.radius*angle};

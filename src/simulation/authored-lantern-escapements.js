@@ -1047,6 +1047,17 @@ function lanternWheelEscapement(movement) {
   blocks.wheelShaft.geometry = new THREE.CylinderGeometry(0.168, 0.168, shaftFront - shaftRear, 64);
   blocks.wheelShaft.position.z = (shaftFront + shaftRear) / 2;
   makeSeeThrough(blocks.armA);
+  // Pass 109: pallets B and C stand 0.8 out from the disc face (from just
+  // in front of it up to the arm, above the pin ends) and their shadows lay
+  // on the disc as a dark painted square in every frame. They still receive
+  // shadows but cast none; they must reach the arm, so they cannot be
+  // lowered to the pin ends.
+  root.traverse((object) => {
+    if (!object.isMesh || !/^angled-pallet-[BC]-on-arm-A$/.test(object.userData.role ?? '')) return;
+    object.userData.noShadow = true;
+    object.castShadow = false;
+    object.receiveShadow = true;
+  });
   const workingPairs = root.userData.lanternWorkingParts.pairs;
   // Keep only pairs that move relative to each other; the arbors are fixed in
   // their own hubs.

@@ -592,7 +592,8 @@ function combinationWeightDrive(movement) {
       curveSegments: 24,
       depth: 0.1,
     }).translate(0, 0, crankArmFrontZ - 0.1),
-    inputMaterial,
+    // Pass 109: steel grey, so the arm reads against orange disk B and drum.
+    matte(PALETTE.muted, { metalness: 0.2, roughness: 0.5 }),
   );
   crankArm.userData.role = 'disk-B-shaft-crank-arm-in-front-of-drum';
   diskAssembly.add(diskBody, diskHub, drum, crankArm, diskIndex);

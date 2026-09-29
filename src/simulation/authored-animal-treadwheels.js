@@ -775,30 +775,47 @@ export function createAuthoredAnimalTreadwheelMovement(movement) {
   // Shape x is the axial coordinate, shape y the board's local y, which
   // points toward the axis (local y = innerTreadRadius - r).
   const yAt = (radius) => innerTreadRadius - radius;
+  // p109: the sixteen square cheeks read as gear teeth inside the rim in
+  // every view. Each face now carries one continuous flange ring (the
+  // cheeks' section swept all round: r from the boards' underside to the
+  // cheek top, z over the cheek depth), and each board is a plain board
+  // whose ends run 0.005 into the two flanges.
+  const flangeInnerRadius = innerTreadRadius - boardHalfThickness;
+  const boardEndZ = cheekInnerZ + 0.005;
   const channel = new THREE.Shape([
-    [-cheekOuterZ, yAt(innerTreadRadius - boardHalfThickness)],
-    [cheekOuterZ, yAt(innerTreadRadius - boardHalfThickness)],
-    [cheekOuterZ, yAt(cheekTopRadius)],
-    [cheekInnerZ, yAt(cheekTopRadius)],
-    [cheekInnerZ, yAt(innerTreadRadius + boardHalfThickness)],
-    [-cheekInnerZ, yAt(innerTreadRadius + boardHalfThickness)],
-    [-cheekInnerZ, yAt(cheekTopRadius)],
-    [-cheekOuterZ, yAt(cheekTopRadius)],
+    [-boardEndZ, yAt(innerTreadRadius - boardHalfThickness)],
+    [boardEndZ, yAt(innerTreadRadius - boardHalfThickness)],
+    [boardEndZ, yAt(innerTreadRadius + boardHalfThickness)],
+    [-boardEndZ, yAt(innerTreadRadius + boardHalfThickness)],
   ].map(([x, y]) => new THREE.Vector2(x, y)));
+  blocks.treadFlanges = [-1, 1].map((side) => {
+    const ring = new THREE.Shape();
+    ring.absarc(0, 0, cheekTopRadius, 0, 2 * Math.PI, false);
+    const hole = new THREE.Path();
+    hole.absarc(0, 0, flangeInnerRadius, 0, 2 * Math.PI, true);
+    ring.holes.push(hole);
+    const geometry = new THREE.ExtrudeGeometry(ring, { depth: cheekOuterZ - cheekInnerZ, bevelEnabled: false, curveSegments: 192 })
+      .translate(0, 0, side > 0 ? cheekInnerZ : -cheekOuterZ);
+    const flange = new THREE.Mesh(geometry, blocks.faceRims[0].material);
+    flange.userData.role = 'continuous-inner-tread-flange-ring-joining-boards-to-riveted-band';
+    flange.userData.side = side;
+    blocks.wheelRotor.add(flange);
+    return flange;
+  });
   const channelGeometry = new THREE.ExtrudeGeometry(channel, { depth: boardWidth, bevelEnabled: false })
     .translate(0, 0, -boardWidth / 2)
     .rotateY(Math.PI / 2);
   for (const tread of blocks.treadBoards) {
     tread.geometry.dispose();
     tread.geometry = channelGeometry;
-    tread.userData.role = 'internal-tread-board-with-end-cheeks-to-riveted-bands';
+    tread.userData.role = 'internal-tread-board-between-continuous-flange-rings';
   }
   for (const mount of blocks.treadMounts) {
     mount.removeFromParent();
     mount.geometry.dispose();
   }
   blocks.treadMounts = [];
-  model.root.userData.treadChannel = { cheekInnerZ, cheekOuterZ, cheekTopRadius, boardWidth };
+  model.root.userData.treadChannel = { cheekInnerZ, cheekOuterZ, cheekTopRadius, boardWidth, boardEndZ, flangeInnerRadius };
   const rimMaterial = blocks.faceRims[0].material;
   for (const part of blocks.treadBoards) {
     part.material = rimMaterial;

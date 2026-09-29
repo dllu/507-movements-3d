@@ -196,9 +196,14 @@ function counterbalancedWellSweep(movement) {
     ropeBottom.y -= ropeLength * Math.cos(ropeSwing);
     const bucketCenter = ropeBottom.clone();
     bucketCenter.y -= bucketHeight / 2 + bucketHandleRise;
+    // Pass 109 (as 458 in p107): while the operator draws the bucket aside he
+    // turns it a quarter turn on the rope, so it tips outward in the view
+    // plane (away from the well, toward +x) and the pour shows in profile,
+    // instead of tipping toward the viewer as a black disc.
+    const bucketYaw = Math.PI / 2 * bucketAside;
     // Tipped far over, the bail falls to the pour side on its ears and the
-    // bucket hangs back from the rope by that much.
-    bucketCenter.add(bailHang(bucketTilt, bucketHandleRise));
+    // bucket hangs back from the rope by that much (turned with the bucket).
+    bucketCenter.add(bailHang(bucketTilt, bucketHandleRise).applyAxisAngle(new THREE.Vector3(0, 1, 0), bucketYaw));
     const counterweightCenter = new THREE.Vector3(
       beamPivot.x + counterweightMomentArm * Math.cos(beamAngle),
       beamPivot.y + counterweightMomentArm * Math.sin(beamAngle),
@@ -225,6 +230,7 @@ function counterbalancedWellSweep(movement) {
       bucketGravityTorque,
       bucketAside,
       bucketTilt,
+      bucketYaw,
       bucketWaterFraction,
       bucketWaterFractionRate,
       bucketWeight,
@@ -461,6 +467,7 @@ function counterbalancedWellSweep(movement) {
     rope.position.copy(state.leftTip);
     rope.rotation.z = state.ropeSwing;
     bucket.position.copy(state.bucketCenter);
+    bucket.rotation.y = state.bucketYaw;
     const waterHeight = 0.60 * state.bucketWaterFraction;
     bucketWater.visible = waterHeight > 1e-5;
     bucketWater.scale.y = Math.max(0.001, waterHeight);

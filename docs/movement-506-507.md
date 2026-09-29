@@ -79,3 +79,44 @@ box-built support frame differs from the curved engraving; 507's planet starts
 to the right rather than the left, its output shaft is longer, and the visible
 spokes in wheel C reconstruct a region shown edge-on in the source. These are
 bounded corrections, not a claim of complete source reconstruction.
+
+## Pass 109: 506 arrangement rebuilt to the plate
+
+The user saw 506's bevels interpenetrating (orange and gold wheels through the
+blue ring) and a gold tooth fragment showing through the grey disc. Checked
+against the plate and caption:
+
+- **Topology is Brown's**, and it was already wired so: A carries a and h;
+  a drives b, and b is united with c; h drives g, and g is united with f; the
+  arm k-l is fast on m-n and carries the united d and e; c drives d and e
+  drives f. Every mesh is between perpendicular axes with a common apex.
+- **The arrangement was not.** Brown draws h as the *outer*, larger wheel on
+  A (meshing the upper wheel g) and a as the *inner* one (meshing the lower
+  wheel b). The old counts (b 40 > g 32) put a at x = -r_b = -2.0, outside h at
+  -1.6, so h's lower half ran through b's teeth, and its teeth broke through
+  g's back (the stray fragment). On the carrier, d is outer (on c) and e inner
+  (on f), which the old counts did satisfy.
+- **New counts** (Brown gives none): a 20, b 36, c 21, d 16, e 10, f 13,
+  g 43, h 34, module 0.10, apex of the carried train at y 0.35. They satisfy:
+  r_g - r_b = 0.35, so h passes outside b's rim; r_a < r_h; h's face is the
+  outer 14% of its cone so its toe clears a's heel by 0.05; c's rim stays
+  inside a's toe; d's top stays under g's toe; d stays outside f's rim; and the
+  carried compound's swept radius sqrt(r_c^2 + r_d^2) = 1.32, plus head l
+  (x 1.23–1.35), stays inside a's toe radius (1.44) when the arm swings round to
+  A's side. Brown's drawing, where l reaches farther out than a's face, would
+  collide there; that is the one deliberate departure from his proportions.
+- Frame: the standard's top arm and upper bearing stand 0.40 higher over the
+  larger g; shaft A ends inside a (x -1.50); the arm's head is shortened.
+- Teeth: the shared back-cone tooth (bevel-geometry.js, as 025 and 495) with
+  creased-smooth normals (24 flank and 12 tip samples) and 192-sided bodies.
+  Mesh phases were fitted by `scripts/fit-506-bevel-phases.mjs` (widest least
+  flank gap, no penetration) and are held by the exact rate equations.
+- Ratios: b-c -5/9, f-g 34/43, carrier 3083/26961, d-e spin -47411/53922 of
+  the driver.
+
+Validation: `IDS=506 node scripts/review-compound-epicyclic-teeth.mjs` (33
+poses, 1,142,765 queries, 0 penetrations; flank gaps 0.0083–0.0089). A
+full-assembly sweep of every rigid body against every other over one whole
+carrier turn (193 poses, rendered surfaces, BVH containment) finds no
+interpenetration between moving bodies; `screen-body-intersections` (257
+samples) is clear. The phase-fitting script is the reproduction path.

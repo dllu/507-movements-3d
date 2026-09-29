@@ -1382,6 +1382,17 @@ function cylinderEscapement(movement) {
       new THREE.Vector3(axis[0] - 7.9, axis[1] - 3.4, webZ[0] - 0.05),
       new THREE.Vector3(axis[0] + 2.2, axis[1] + 0.8, headZ[1] + 0.05));
     model.root.userData.cameraFov = 12;
+    // Pass 109: in Brown's plan the cut cylinder (passage C with lips A, B)
+    // stands 2.4 straight out toward the viewer, and its long shadow lay on
+    // the wheel face as a painted mushroom mark in every frame. It still
+    // receives shadows but casts none; the rest of the cylinder lies behind
+    // the wheel face (or is not shown in the plan) and keeps casting.
+    model.root.traverse((object) => {
+      if (!object.isMesh || object.userData.role !== 'cylinder-passage-C-with-lips-A-B') return;
+      object.userData.noShadow = true;
+      object.castShadow = false;
+      object.receiveShadow = true;
+    });
   }
   return model;
 }

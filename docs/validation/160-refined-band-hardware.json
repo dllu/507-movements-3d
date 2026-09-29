@@ -1,25 +1,36 @@
 {
   "movement": 160,
   "poses": 101,
-  "queries": 68000,
+  "queries": 70512,
   "method": "Signed distances from band centerline points at <=0.01 world spacing to actual visible triangle meshes, minus band radius. Only terminal 0.15 units at each own fastening excluded. Pulley contact recorded separately and limited to 0.001 penetration. Expanded-box rejection certifies >0.01 clearance at rejected sample points. Sampled clearance, not continuous-time or full rigid-pair qualification.",
-  "minimum": {},
+  "minimum": {
+    "treadle": {
+      "clearance": 0.06450001049045634,
+      "time": 13.080000000039702,
+      "materialDistance": 9.38301314125039
+    }
+  },
   "pulleyContact": {
     "pulleyCore": {
-      "clearance": -1.1059190535567254e-8,
-      "time": 13.40000000004123,
-      "materialDistance": 3.157215577444717
+      "clearance": -3.301296902513684e-8,
+      "time": 12.960000000039129,
+      "materialDistance": 4.256685072101263
+    },
+    "pulleyRearFlange": {
+      "clearance": 0.2431895604105847,
+      "time": 14.120000000044667,
+      "materialDistance": 8.291319870470337
     }
   },
   "failures": [],
   "sources": [
     {
       "file": "scripts/review-spring-treadle-hardware.mjs",
-      "sha256": "768d32200a92529b11e7a87ba1203bde6a9e2319fdecc08ce1e6415ff34a7af6"
+      "sha256": "5d289eac802ae58c26e45be1501ba284196514977e2610e9a78426e5c84ab775"
     },
     {
       "file": "src/simulation/mujoco-spring-return-treadle/solids.js",
-      "sha256": "f48249b399d6dc6faa98d8689cd3444df9f404affddf11806577ba52fc42135c"
+      "sha256": "ba9acbb8b327f163bc7dcb71de584de076611cb3fcdae56b23b8443f75c9785e"
     },
     {
       "file": "src/simulation/curve-tube-buffer.js",

@@ -143,3 +143,12 @@ test('109 keeps Brown\'s part-cut look: it cuts one turn below the drawn tool, t
   assert(Math.abs(volume(b.parts.workpiece.geometry)-a)<blank*1e-6);
  }finally{v.dispose();baked.dispose();}
 });
+
+test('p109: 109 lead and cut threads are square (land = groove) on a core of 0.6 OD', async () => {
+  const {makeThreadCuttingProfile} = await import('../src/simulation/mujoco-thread-cutting/profile.js');
+  const f = makeThreadCuttingProfile();
+  assert.ok(Math.abs(f.width - f.pitch / 2) < 1e-12);
+  assert.ok(f.coreRadius >= 0.6 * f.crestRadius - 1e-12);
+  assert.ok(f.workCoreRadius >= 0.6 * f.workRadius - 1e-12);
+  assert.ok(Math.abs(f.workWidth - f.grooveWidth) < 1e-12);
+});

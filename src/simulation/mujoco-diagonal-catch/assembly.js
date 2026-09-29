@@ -109,7 +109,9 @@ export function createDiagonalCatchAssembly(){
  // crosses the blue lower handle the two do not read as one blue X.
  const upperHandleMaterial=lowerHandleMaterial.clone();upperHandleMaterial.color.set(PALETTE.accent);
  disposeObject3D(scaffold.root);
- const steel=new THREE.MeshStandardMaterial({color:'#9aa19d',roughness:.45,metalness:.3});
+ // p109: pivot shafts and pins are mid steel grey; the pale #9aa19d read as
+ // holes in the gold bosses.
+ const steel=new THREE.MeshStandardMaterial({color:'#7e8584',roughness:.45,metalness:.3});
  const rodSteel=new THREE.MeshStandardMaterial({color:'#6f7773',roughness:.5,metalness:.2});
  // Pass 99: the piston rod is steel grey so the orange tappet on its face
  // reads as a separate part.

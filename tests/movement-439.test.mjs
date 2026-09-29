@@ -403,3 +403,17 @@ test('movement 507 remains the next authored frontier and does not reuse movemen
   disposeModel(model439.root);
   disposeModel(model507.root);
 });
+
+test('movement 439 valve stem stays in its guide bar over the whole lift (p109)', () => {
+  const model = createMovementModel(catalog.movements[438]);
+  const find = (role) => { let found = null; model.root.traverse((o) => { if (!found && o.userData.role === role) found = o; }); return found; };
+  const stem = find('ground-striking-valve-stem'), guide = find('valve-stem-guide-bar-across-bucket');
+  assert.ok(stem && guide, 'stem and guide bar exist');
+  const period = model.root.userData.geometry.cycleDuration;
+  for (let i = 0; i <= 200; i += 1) {
+    model.update(period * i / 200);
+    model.root.updateMatrixWorld(true);
+    const s = new THREE.Box3().setFromObject(stem), g = new THREE.Box3().setFromObject(guide);
+    assert.ok(s.max.y > g.max.y + 0.02 && s.min.y < g.min.y, `stem passes through the guide at ${i}`);
+  }
+});

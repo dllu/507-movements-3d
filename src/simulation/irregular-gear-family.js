@@ -61,7 +61,10 @@ export function correctIrregularGearFamily(root,id,update){
   // p102: Brown's strap is tangent to its two small eyes (about 0.11 at A
   // and 0.18 at the stand), so it is proportioned from those eyes; A's pin
   // is slimmed so the A eye keeps a sound wall round its bore.
-  const arm=b.carrierArm,link=new THREE.Mesh(taperedStrapGeometry(g.carrierLength,.18,.115,[.076,A_BORE],.15),arm.children[0].material);link.userData.role='flat-tapered-strap-arm-A-to-stand';
+  // p109: the strap is steel, not ink: in ink its large shadow wedge on wheel A
+  // read as a dark lobe. The fixed pin keeps the ink.
+  const strapMaterial=b.carrierArm.children[0].material.clone();strapMaterial.color.set(0x7e8584);
+  const arm=b.carrierArm,link=new THREE.Mesh(taperedStrapGeometry(g.carrierLength,.18,.115,[.076,A_BORE],.15),strapMaterial);link.userData.role='flat-tapered-strap-arm-A-to-stand';
   for(const child of arm.children)child.visible=false;arm.add(link);
   arm.userData.setEndpoints=(start,end)=>{link.position.copy(start);link.rotation.z=Math.atan2(end.y-start.y,end.x-start.x);};
   const state=root.userData.kinematics;arm.userData.setEndpoints(new THREE.Vector3(g.carrierPivot.x,g.carrierPivot.y,.405),new THREE.Vector3(state.wheelCenter.x,state.wheelCenter.y,.405));
@@ -69,7 +72,7 @@ export function correctIrregularGearFamily(root,id,update){
   // A plain pin from the stand's eye (in the pedestal's plane, z 0.085..0.325,
   // just behind the strap) to just proud of the strap's front face; no barrel.
   const pinLow=.085,pinHigh=.405+.075+.02;
-  const pivot=new THREE.Mesh(new THREE.CylinderGeometry(.073,.073,pinHigh-pinLow,48),link.material);pivot.rotation.x=Math.PI/2;pivot.position.set(g.carrierPivot.x,g.carrierPivot.y,(pinLow+pinHigh)/2);pivot.userData.role='fixed-pin-through-bored-carrier-eye';root.add(pivot);b.carrierPivotPin=pivot;
+  const pivot=new THREE.Mesh(new THREE.CylinderGeometry(.073,.073,pinHigh-pinLow,48),arm.children[0].material);pivot.rotation.x=Math.PI/2;pivot.position.set(g.carrierPivot.x,g.carrierPivot.y,(pinLow+pinHigh)/2);pivot.userData.role='fixed-pin-through-bored-carrier-eye';root.add(pivot);b.carrierPivotPin=pivot;
   replace(b.carrierBearing,boredLatheGeometry([{radial:.23,axial:-.12},{radial:.23,axial:.12}],.075,64).rotateX(Math.PI/2));b.carrierBearing.position.z=.205;b.carrierBearing.userData.role='fixed-stand-eye-at-carrier-arm-pivot';
   b.carrierStandard.userData.setEndpoints(new THREE.Vector3(g.carrierPivot.x,-1.7,.205),new THREE.Vector3(g.carrierPivot.x,g.carrierPivot.y-.20,.205));
   // p96: Brown draws no bearing, stay or wall behind pinion B (the old ones

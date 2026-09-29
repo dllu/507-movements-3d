@@ -705,10 +705,22 @@ test('movement 179 performs a source-scaled gab release and exact half-turn loos
     'complete mechanism spans the engraving without an extra full-width bed');
   assert.ok(size.y > 7.9,
     'source-length upright lever and foundation span full height');
-  assert.ok(size.z > 2.54,
+  // p109: the crankshaft ends just past the front face and the strap's back,
+  // so the foundation and the pins set the depth.
+  assert.ok(size.z > 1.9,
     'strap, stop, shaft, pins, and links occupy real depth');
-  assert.ok(bounds.min.z < -1.27);
-  assert.ok(bounds.max.z > 1.27);
+  assert.ok(bounds.min.z < -1.1);
+  assert.ok(bounds.max.z > 0.79);
+  {
+    const shaftBox = new THREE.Box3().setFromObject(model.root.userData.blocks.inputShaft);
+    const faceBox = new THREE.Box3().setFromObject(model.root.userData.blocks.shaftFace);
+    let strap = null;
+    model.root.traverse(o => { if (o.userData.role === 'split-eccentric-strap-body') strap = o; });
+    const strapBox = new THREE.Box3().setFromObject(strap);
+    const front = shaftBox.max.z - faceBox.max.z, back = strapBox.min.z - shaftBox.min.z;
+    assert.ok(front > 0.01 && front < 0.04, `crankshaft proud of the front face: ${front}`);
+    assert.ok(back > 0.01 && back < 0.04, `crankshaft proud of the strap back: ${back}`);
+  }
   near(model.root.userData.cameraDistanceScale, 0.96, 0,
     'source-complete camera scale');
   assert.equal(model.cameraDirection.x, 0);

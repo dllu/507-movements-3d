@@ -26,7 +26,7 @@ test('127 keeps the engraved proportions and equal opposite rack travel through 
    // (their run-ons, piston rods and guides continue past Brown's crop).
    for(const rack of u.blocks.racks){const box=new THREE.Box3().setFromObject(rack.children[0]);assert(u.cameraFitBounds.containsBox(box));}
   }
-  assert(Math.abs(max-min-2*d.radius*Math.PI/3)<1e-10);
+  assert(Math.abs(max-min-2*d.radius*d.amplitude)<1e-10);
   assert.equal(u.hideGround,true);assert.equal(u.simulationBackend,'analytical');
  }finally{disposeObject3D(v.root);}
 });
@@ -80,5 +80,21 @@ test('127 lever balls are centred on the rod axis at the rod ends',()=>{
   // The balls clear the racks and gear at every pose (they swing up behind the racks).
   for(let i=0;i<=240;i++){v.update(i*d.period/240);v.root.updateMatrixWorld(true);
    for(const knob of knobs)assert(knob.getWorldPosition(new THREE.Vector3()).z+d.knobRadius< -d.depth/2);}
+ }finally{disposeObject3D(v.root);}
+});
+
+// p109: steel handle arms, and a swing that keeps them within 50 degrees of
+// horizontal (outboard of the racks, as drawn), never up across the pinion.
+test('127 handle arms contrast with the pinion and stay near horizontal',()=>{
+ const v=makeOpposedPumpRacks(),u=v.root.userData,d=u.geometry;
+ try{
+  const pinionColor=u.blocks.body.material.color.getHex();
+  const beams=u.blocks.leverGroup.children.filter(o=>o.name!=='leverKnob');
+  assert.equal(beams.length,2);
+  for(const b of beams)b.traverse(o=>{if(o.isMesh)assert.notEqual(o.material.color.getHex(),pinionColor);});
+  for(let i=0;i<=240;i++){
+   const s=u.stateAtTime(i*d.period/240),a=Math.abs(d.leverAngle+s.angle);
+   assert(Math.min(a,Math.PI-a)<THREE.MathUtils.degToRad(50.5),'handle angle from horizontal');
+  }
  }finally{disposeObject3D(v.root);}
 });

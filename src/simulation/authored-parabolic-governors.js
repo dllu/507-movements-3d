@@ -236,7 +236,11 @@ function parabolicGovernor(movement) {
   const guideEnd = new THREE.Vector2(0.2261, 0.5028);
   const guideRadius = 0.085;
   const rollerRadius = 0.235;
-  const rollerWidth = 0.36;
+  // Pass 109: the wheel is as wide as the guide's round inner rail
+  // (2 x guideRadius), so its tread lies on the rail across its whole face
+  // at every rotor angle; a 0.36 wheel overhung the 0.17 rail and read as
+  // floating clear of B whenever the rotor turned the arm obliquely.
+  const rollerWidth = 2 * guideRadius;
   const guideToRollerCenter = guideRadius + rollerRadius;
   const minimumGuideParameter = 0.59;
   const maximumGuideParameter = 0.868;

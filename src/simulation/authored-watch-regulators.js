@@ -676,8 +676,11 @@ function watchRegulator(movement) {
   const dialEndAngle = -Math.PI / 2 + 0.79;
   const dialInnerRadius = pointerRadius - 0.98;
   const dialRadius = pointerRadius + 0.10;
-  const dialPlateBack = backPlate.position.z;
-  const dialPlateFront = -balanceRimTubeRadius - 0.025;
+  // The scale lies just behind pointer T (a 0.02 gap), wholly outside the
+  // rim, so T reads against what it indicates from every side (it used to
+  // stand 1.2 behind, behind the balance).
+  const dialPlateFront = 0.88;
+  const dialPlateBack = dialPlateFront - 0.10;
   const dialLineHeight = 0.012;
   const sectorGeometry = (inner, outer, start, end, low, high) => {
     const shape = new THREE.Shape();
@@ -700,8 +703,8 @@ function watchRegulator(movement) {
     sectorGeometry(dialInnerRadius - 0.06, dialRadius + 0.06,
       dialStartAngle - 0.03, dialEndAngle + 0.03,
       dialPlateBack, dialPlateFront),
-    // A silvered scale plate so the engraved lines read.
-    matte(0xc8c4ba, { metalness: 0.25, roughness: 0.55 }),
+    // A mid-tone silvered plate (near-white read as a hole on the page).
+    matte(0x979287, { metalness: 0.25, roughness: 0.55 }),
   );
   dialPlate.userData.role = 'fixed-slow-fast-regulator-scale-plate';
   const dialArcRadii = [dialInnerRadius, pointerRadius - 0.48, dialRadius];

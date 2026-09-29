@@ -65,3 +65,17 @@ test('movements 183 and 184 back-weight rods run out of the view and end below i
     }
   }
 });
+
+test('183/184 (p109): pivot shafts and pins are mid steel grey, not pale', () => {
+  for (const index of [182, 183]) {
+    const model = createMovementModel(catalog.movements[index]);
+    let pins = 0;
+    model.root.traverse((o) => {
+      if (o.isMesh && /pivot-shaft|pin/.test(o.userData.role ?? '') && o.material?.color) {
+        assert.notEqual(o.material.color.getHex(), 0x9aa19d, o.userData.role);
+        if (o.material.color.getHex() === 0x7e8584) pins += 1;
+      }
+    });
+    assert.ok(pins > 0);
+  }
+});

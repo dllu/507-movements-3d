@@ -31,7 +31,7 @@ import { makeFuseeMotion, fuseeParameters } from './fusee-motion.js';
 import { steppedFuseeGeometry } from './fusee-geometry.js';
 import { makeArticulatedFuseeChain } from './fusee-chain.js';
 import { fuseeSpringGeometry } from './fusee-spring.js';
-import { makeFuseeChainAnchor, makeFuseeSpringClamp } from './fusee-attachments.js';
+import { makeFuseeChainAnchor, makeFuseeChainEndBlock, makeFuseeSpringClamp } from './fusee-attachments.js';
 import { groovedFrictionGeometry } from './grooved-friction-geometry.js';
 import { involuteHelicalGeometry } from './helical-gear-geometry.js';
 import { bevelBodyGeometry, bevelToothGeometry } from './bevel-geometry.js';
@@ -786,6 +786,22 @@ function makeRadialSlotWheel({ radius = 1.78, slotCount = 6, slotEndRadius = 1.5
   const wall = new THREE.Mesh(wallGeometry, matte(PALETTE.driven, { metalness: 0.12 }));
   wall.userData.role = 'raised-sector-frames-and-groove-walls';
   rotor.add(wall);
+  // p109: Brown's domed central hub with its small knob, standing on the
+  // floor where the six sector frames meet (it clears the rollers' closest
+  // approach, 0.18 from the axis, and the carrier above).
+  {
+    const profile = [new THREE.Vector2(0, floorZ - 0.01), new THREE.Vector2(0.14, floorZ - 0.01), new THREE.Vector2(0.14, 0.1)];
+    for (let i = 1; i <= 16; i += 1) {
+      const a = (Math.PI / 2) * i / 16;
+      profile.push(new THREE.Vector2(0.14 * Math.cos(a) + (i === 16 ? 0 : 0), 0.1 + 0.12 * Math.sin(a)));
+    }
+    const dome = profile.filter((p) => p.x >= 0.045 || p.y <= 0.1);
+    dome.push(new THREE.Vector2(0.045, 0.1 + 0.12 * Math.sqrt(1 - (0.045 / 0.14) ** 2)), new THREE.Vector2(0.045, 0.27));
+    for (let i = 1; i <= 8; i += 1) { const a = (Math.PI / 2) * i / 8; dome.push(new THREE.Vector2(0.045 * Math.cos(a), 0.27 + 0.02 * Math.sin(a))); }
+    const hub = new THREE.Mesh(new THREE.LatheGeometry(dome, 64).rotateX(Math.PI / 2), wall.material);
+    hub.userData.role = 'domed-central-hub-with-knob';
+    rotor.add(hub);
+  }
   const sectors = [wall];
   for (let index = 0; index < slotCount; index += 1) {
     const angle = index * sectorAngle;
@@ -2310,6 +2326,20 @@ function frictionWheels() {
   });
   driver.position.copy(driverCenter);
   driven.position.copy(drivenCenter);
+  // p109: Brown draws a double outer circle on the large wheel too: a
+  // shallow raised rim band (0.95 R to just inside the rim) on both faces.
+  {
+    const body = driven.userData.rotor.children.find((child) => child.isMesh);
+    const inner = 0.95 * drivenRadius, outer = drivenRadius - 0.0015, low = 0.125, high = 0.15;
+    for (const side of [1, -1]) {
+      const profile = [[inner, low], [outer, low], [outer, high], [inner, high], [inner, low]]
+        .map(([r, z]) => new THREE.Vector2(r, side * z));
+      if (side < 0) profile.reverse();
+      const band = new THREE.Mesh(new THREE.LatheGeometry(profile, 192).rotateX(Math.PI / 2), body.material);
+      band.userData.role = 'raised-rim-band-on-large-friction-wheel';
+      driven.userData.rotor.add(band);
+    }
+  }
   root.add(driver, driven);
   // Plain friction wheels carry the shared quadrant rotation cue.
   for (const wheel of [driver, driven]) applyRotationIndicator(wheel.userData.rotor, { axis: 'auto' });
@@ -2768,6 +2798,33 @@ function ellipticalSlidingPinion() {
     toothAtContact: true,
     toothHeight: module * 2.2,
   });
+  // p109: Brown draws an inner ellipse well inside the teeth, as on 033: a
+  // full-depth toothed rim round a recessed web (the same treatment as 033),
+  // the inner edge offset 0.16 inside the pitch curve (Brown's inner line).
+  {
+    const rotor = ellipse.userData.rotor;
+    const toothed = rotor.children.find((part) => part.userData.rackGeneratedGear);
+    const rimInset = 0.16, webDepth = 0.14, gearDepth = 0.22;
+    const insetCurve = ellipsePitchPoints.map((point, index, points) => {
+      const tangent = points[(index + 1) % points.length].clone()
+        .sub(points[(index - 1 + points.length) % points.length]).normalize();
+      return point.clone().addScaledVector(new THREE.Vector2(tangent.y, -tangent.x), -rimInset);
+    });
+    const rimShape = new THREE.Shape(ellipse.userData.generatedCut.points);
+    rimShape.closePath();
+    rimShape.holes.push(new THREE.Path([...insetCurve].reverse()));
+    const extrude = (shape, depth) => {
+      const geometry = new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: false, curveSegments: 1 });
+      geometry.translate(0, 0, -depth / 2);
+      return geometry;
+    };
+    toothed.geometry.dispose();
+    toothed.geometry = extrude(rimShape, gearDepth);
+    const web = new THREE.Mesh(extrude(new THREE.Shape(insetCurve), webDepth), toothed.material);
+    web.userData.role = 'recessed-web';
+    rotor.add(web);
+    ellipse.userData.rimInset = rimInset;
+  }
   const pinion = makeProfiledNoncircularGear({
     color: PALETTE.driver,
     generatedTeeth: true,
@@ -4583,10 +4640,11 @@ function fuseeDrive() {
   const chain = makeArticulatedFuseeChain(motion.linkCount, motion.linkPitch);
   const barrelAnchor = makeFuseeChainAnchor({ pinRadius: p.barrelRadius, seatRadius: barrelOuterRadius,
     height: p.barrelChainZTop, offsets: [-0.013, 0.013] });
-  // The chain's end is pinned on the ledge's last turn, against its riser.
-  const fuseeAnchor = makeFuseeChainAnchor({ pinRadius: p.fuseeBottomRadius,
-    seatRadius: p.fuseeBottomRadius - p.riserGap,
-    angle: 2 * Math.PI * p.grooveTurns, height: p.fuseeZBottom,
+  // The chain's end is pinned on the ledge's last turn, into a block seated
+  // on the base-flange tread against the riser (p109).
+  const fuseeAnchor = makeFuseeChainEndBlock({ pinRadius: p.fuseeBottomRadius,
+    riserRadius: p.fuseeBottomRadius - p.riserGap, radialSlope: p.radialPitch / (2 * Math.PI),
+    angle: 2 * Math.PI * p.grooveTurns, height: p.fuseeZBottom, treadDepth: p.chainSeat,
     offsets: motion.linkCount % 2 === 0 ? [-0.026, 0, 0.026] : [-0.013, 0.013] });
   barrelAnchor.userData.chainEndAnchor = true;
   barrelRotor.add(barrelAnchor);
@@ -20363,7 +20421,9 @@ function concentricUnequalSpeedMangleWheel() {
   pinion.userData.role = 'uniformly-rotating-single-mangle-pinion';
   pinion.userData.circularPitch = circularPitch;
   pinion.userData.module = module;
-  const wheelShaft = addAxle(root, new THREE.Vector3(0, 0, 0), 1.6, Z_AXIS);
+  // p109: cut off just proud of the hub in front (0.45) and of the backing
+  // behind (-0.14), as 192, not a bare 0.66 post behind the wheel.
+  const wheelShaft = addAxle(root, new THREE.Vector3(0, 0, 0.15), 0.64, Z_AXIS);
   wheelShaft.userData.role = 'fixed-axis-oscillating-mangle-wheel-shaft';
   const pinionShaft = makeShaft({
     length: .8,

@@ -37,3 +37,11 @@ test('180 plays a continuous contact-driven six-second cycle and restarts exactl
   m.update(2);m.reset();for(const[n,p]of Object.entries(u.parts))assert.deepEqual(p.matrixWorld.elements,initial[n]);
  }finally{m.dispose();}
 });
+test('180 (p109): the jaw tip stays inside the side-piece outline over the whole swing',()=>{
+ const m=makeBakedSingleClampModel(bundle),p=m.root.userData.parts;
+ try{
+  p['fixed-side'].geometry.computeBoundingBox();const face=p['fixed-side'].geometry.boundingBox.min.x;let least=Infinity;
+  for(let i=0;i<=240;i++){m.update(6*i/240);least=Math.min(least,new THREE.Box3().setFromObject(p.jaw).min.x);}
+  assert.ok(least>face+0.02&&least<face+0.08,`jaw tip ${least} against face ${face}`);
+ }finally{m.dispose();}
+});

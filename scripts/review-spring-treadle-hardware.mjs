@@ -14,7 +14,7 @@ try{
    const surface=fixedSurfaces.get(name),inverse=mesh.matrixWorld.clone().invert(),box=new THREE.Box3().setFromObject(mesh).expandByScalar(radius+.01);
    for(let i=0;i<=count;i++){
     const distance=length*i/count;
-    if(name.startsWith('springAnchor')&&distance<.15||name.startsWith('treadleAnchor')&&length-distance<.15)continue;
+    if(name.startsWith('springAnchor')&&distance<.15||(name.startsWith('treadleAnchor')||name==='treadleCordLoop')&&length-distance<.15)continue;
     const p=curve.getPoint(i/count);if(!box.containsPoint(p))continue;
     const clearance=surface.signedDistance(p.applyMatrix4(inverse))-radius;queries++;assert.ok(Number.isFinite(clearance),name);
     const target=name.startsWith('pulley')&&['pulleyCore','pulleyRearFlange','pulleyFrontFlange'].includes(name)?contact:minimum;

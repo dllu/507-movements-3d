@@ -362,10 +362,18 @@ export function loopHandlePinCamGabDisengager() {
   // The limb's head below step a (Brown's band): notch a's ledge runs in from
   // the inner edge at y 177.5, the head widens below it and closes on the
   // diagonal's centreline, so limb, notch and diagonal are one extrusion.
+  // p109: the head's outer edge now leaves the bar's own outer edge (traced
+  // from its offset curve at y 154-182) and runs on as one smooth curve, so
+  // there is no jog opposite the notch. The riser under ledge a falls nearly
+  // square (Brown's ~78 deg corner, with a small rounded root) before the
+  // inner edge bows out to the diagonal, instead of a 62 deg barb point.
   const head = poly([
-    [204, 177.5], [222, 177.5], [222, 170],
-    ...smoothRun([[238, 170], [237.6, 185], [236, 200], [233.5, 215], [231, 229], [231, 246]], 80),
-    ...smoothRun([[215, 230], [214.5, 220], [214.5, 208], [213.5, 199], [211, 191], [207.5, 184]], 60),
+    [206, 177.5], [226, 177.5], [226, 154.5],
+    ...smoothRun([[230.69, 154.22], [233.7, 167.07], [235.16, 181.88], [235.8, 192], [235.2, 202],
+      [233.5, 215], [231, 229], [231, 246]], 100),
+    ...smoothRun([[215, 230], [214.5, 220], [214.3, 208], [212.8, 199], [210, 192], [207, 186],
+      [205.2, 181.5], [204.6, 179]], 70),
+    [204.9, 178.1], [205.4, 177.6],
   ].map((p) => H(p).toArray()));
   const handleShape = polygonClipping.difference(
     polygonClipping.union(bar, head, poly(hub), arch, leg, poly(circle(toeCenter.toArray(), toeRadius, 96))),

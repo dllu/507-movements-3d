@@ -5,6 +5,7 @@ import {smoothShadeExtrusion} from './smooth-extrusion.js';
 import {curvedPipeWall} from './finite-fluid-passages.js';
 import {mirroredForkWall} from './mirrored-fork-pipe.js';
 import {waterFountainGeometry,waterJetMaterial,waterVolumeMaterial} from './water-volume.js';
+import {waterStreamMaterial} from './water-stream.js';
 import {fitPistonGuide} from './piston-guide-parts.js';
 import {helicalThread,threadAngles} from './mujoco-screw/thread-geometry.js';
 const replace=(o,g)=>{o.geometry.dispose();o.geometry=g;};
@@ -84,6 +85,32 @@ export function ejectorOperatingStage(phase) {
   return {stage,steamSupplyOpen:running,levelFraction:running?s(phase,.08,.40):1-s(phase,.85,1),
     dischargeFraction:running?s(phase,.40,.48):1-s(phase,.85,.89)};
 }
+// Pass 109: the running ejector's water moves. B, D and C wear the shared
+// WaterStream streak look (in the water's own light tint) and the discharge
+// over C is a streaked spill sheet. Streaks run with the flow: their scroll
+// is the cumulative discharge (whole tiles per loop, so the loop is
+// seamless), so they stand while the steam purges, creep up as the water is
+// drawn up, run steadily while the ejector discharges and stop at shut-off.
+const EJECTOR_FLOW=(()=>{
+  const n=1024,table=new Float64Array(n+1);
+  for(let i=1;i<=n;i++){const a=ejectorOperatingStage((i-.5)/n);table[i]=table[i-1]+a.dischargeFraction+.25*Math.max(0,ejectorOperatingStage(i/n).levelFraction-ejectorOperatingStage((i-1)/n).levelFraction)*n;}
+  for(let i=0;i<=n;i++)table[i]/=table[n];
+  return phase=>{const f=THREE.MathUtils.euclideanModulo(phase,1)*n,i=Math.min(n-1,Math.floor(f));return table[i]+(table[i+1]-table[i])*(f-i);};
+})();
+function ejectorWaterMaterial(){
+  const m=waterStreamMaterial({color:0x8fd3ee,opacity:.62,normalScale:.5});
+  m.vertexColors=false;m.color.copy(m.userData.tint);m.side=THREE.FrontSide;m.roughness=.18;return m;
+}
+// u across the flow (round the bore), v the flow coordinate `flowAt(p)`.
+function streakUVs(geometry,flowAt,across=3){
+  const position=geometry.getAttribute('position'),uv=geometry.getAttribute('uv')??new THREE.BufferAttribute(new Float32Array(position.count*2),2),p=new THREE.Vector3();
+  for(let i=0;i<position.count;i++){p.fromBufferAttribute(position,i);uv.setXY(i,across*(Math.atan2(p.z,p.x)/(2*Math.PI)+.5),flowAt(p));}
+  geometry.setAttribute('uv',uv);uv.needsUpdate=true;
+}
+function scrollEjectorStreaks(meshes,phase,tilesPerCycle){
+  const offset=-THREE.MathUtils.euclideanModulo(tilesPerCycle*EJECTOR_FLOW(phase),1);
+  for(const mesh of meshes)for(const m of[].concat(mesh.material)){if(m.map)m.map.offset.y=offset;if(m.normalMap)m.normalMap.offset.y=offset;}
+}
 // The free discharge issuing from the open mouth of C: a translucent water
 // column the width of the bore, slightly swelling as it slows, with a rounded
 // crown. Its height follows the discharge fraction of the state.
@@ -96,7 +123,17 @@ function dischargeJet(root,mouthY,bore,outer,role,sector={}) {
   // Fraction of the crown where its inner skin passes the mouth plane.
   const s0=Math.sqrt(apex/(apex+thickness-fallY));
   const crownRadius=r0+(outer+.05+thickness-r0)/s0;
-  const jet=add(root,waterFountainGeometry({nozzleY:-.04,apexY:apex,columnRadius,crownRadius,fallY,crownThickness:thickness,fadeStart:.5,crownAlpha:.8,...sector}),waterJetMaterial({opacity:.42}),role);
+  const geometry=waterFountainGeometry({nozzleY:-.04,apexY:apex,columnRadius,crownRadius,fallY,crownThickness:thickness,fadeStart:.5,crownAlpha:.8,...sector});
+  // Pass 109: a streaked spill sheet. v runs with the water: up the column
+  // (uv.x = fraction of its 0.24 rise), then out and down the crown
+  // (uv.x = fraction of its path); the crown is the last 2 x 29 x 33 vertices.
+  {
+    const uv=geometry.getAttribute('uv'),count=uv.count,crownStart=count-2*29*33,crownLength=Math.hypot(crownRadius-r0,apex+thickness-fallY);
+    for(let i=0;i<count;i++){const along=uv.getX(i),around=uv.getY(i);uv.setXY(i,4*around,(i<crownStart?.24*along:.24+crownLength*along)*1.6);}
+    uv.needsUpdate=true;
+  }
+  const material=waterStreamMaterial({color:0x8fd3ee,opacity:.5,normalScale:.5});material.color.copy(material.userData.tint);
+  const jet=add(root,geometry,material,role);
   jet.renderOrder=2;jet.position.y=mouthY;
   // A trickle is faint as well as short, so the sheet fades in and out
   // with the discharge rather than switching on at the lip.
@@ -137,7 +174,7 @@ export function correctEjectorTrapParts(root,id,update) {
       // rim and the rear wall) reads through the water filling the rear half.
       // Pass 62: a light, clearly watery blue, so the filled rear half reads
       // as water over the dark wall rather than as a teal body.
-      const water=waterVolumeMaterial({color:0x8fd3ee,opacity:.62}),bilge=-2.91,dBottom=-1.16,dTop=1.56,outlet=3.40,rD=y=>radius(y)-.065-.006*Math.hypot(1,(radius(y+1e-3)-radius(y-1e-3))/2e-3),rB=rD(dBottom),rC=rD(dTop);
+      const plainWater=waterVolumeMaterial({color:0x8fd3ee,opacity:.62}),water=ejectorWaterMaterial(),bilge=-2.91,dBottom=-1.16,dTop=1.56,outlet=3.40,rD=y=>radius(y)-.065-.006*Math.hypot(1,(radius(y+1e-3)-radius(y-1e-3))/2e-3),rB=rD(dBottom),rC=rD(dTop);
       // (Pass 106: D's water keeps 0.006 off the inner wall measured along
       // the wall's normal, not across: at the flat shoulders a 0.005 radial
       // gap was under 0.002 thick and the water z-fought the wall. B and C's
@@ -145,23 +182,33 @@ export function correctEjectorTrapParts(root,id,update) {
       const column=(r,role)=>{const o=add(root,new THREE.CylinderGeometry(r,r,1,64,1,true).translate(0,.5,0),water,role);o.renderOrder=1;return o;};
       const inB=column(rB,'water-rising-in-suction-pipe-B'),inC=column(rC,'water-rising-in-discharge-pipe-C');
       inB.position.y=bilge;inC.position.y=dTop;
+      // Flow coordinate: the streaks slow in D's belly and quicken in C (per
+      // unit rise, radius over B's: gentler than the area ratio, which
+      // crowded D's streaks into ripples).
+      const flightSteps=400,flight=new Float64Array(flightSteps+1),flightAt=y=>{const f=THREE.MathUtils.clamp((y-bilge)/(outlet-bilge),0,1)*flightSteps,i=Math.min(flightSteps-1,Math.floor(f));return flight[i]+(flight[i+1]-flight[i])*(f-i);};
+      for(let i=1;i<=flightSteps;i++){const y=bilge+(outlet-bilge)*(i-.5)/flightSteps,r=y<dBottom?rB:y<dTop?rD(y):rC;flight[i]=flight[i-1]+(outlet-bilge)/flightSteps*(r/rB);}
+      const STREAK_PER_UNIT=1.1;
+      streakUVs(inB.geometry,p=>STREAK_PER_UNIT*flightAt(bilge+p.y*(dBottom-bilge)));
+      streakUVs(inC.geometry,p=>STREAK_PER_UNIT*flightAt(dTop+p.y*(outlet-dTop)));
       // D's pear-shaped body is re-swept in place up to the level, with a
       // fixed vertex topology so no geometry is reallocated per frame.
       const rows=49,segments=64,lathe=new THREE.LatheGeometry(Array.from({length:rows},(_,j)=>new THREE.Vector2(rD(dBottom),dBottom+j*(dTop-dBottom)/(rows-1))),segments);
       const inD=add(root,lathe,water,'water-filling-mixing-chamber-D');inD.renderOrder=1;
       // B, D and C are cut on z = 0 (cutaway presentation): the free surface and
       // the discharge keep only the half behind the cut, like the walls.
-      const surface=add(root,new THREE.CircleGeometry(1,64,0,Math.PI).rotateX(-Math.PI/2),water,'free-water-surface-in-B-D-C');surface.renderOrder=1;
+      const surface=add(root,new THREE.CircleGeometry(1,64,0,Math.PI).rotateX(-Math.PI/2),plainWater,'free-water-surface-in-B-D-C');surface.renderOrder=1;
       const sweepD=level=>{
         const position=lathe.getAttribute('position'),top=Math.min(level,dTop);
         for(let i=0;i<=segments;i++){const a=i/segments*2*Math.PI,c=Math.sin(a),e=Math.cos(a);
           for(let j=0;j<rows;j++){const y=dBottom+j*(top-dBottom)/(rows-1),r=rD(y);position.setXYZ(i*rows+j,r*c,y,r*e);}}
         position.needsUpdate=true;lathe.computeVertexNormals();lathe.computeBoundingSphere();lathe.computeBoundingBox();
+        streakUVs(lathe,p=>STREAK_PER_UNIT*flightAt(p.y),8);
       };
       b.waterFill=[inD,inB,inC];b.waterSurface=surface;
       const jet=dischargeJet(root,outlet,rC,.54,'free-discharge-issuing-from-mouth-of-C',{thetaStart:Math.PI,thetaLength:Math.PI});b.dischargeJet=root.children.at(-1);
       d.updateWorkingParts=(time,state)=>{
         jet(state.dischargeFraction);
+        scrollEjectorStreaks([inB,inD,inC],state.phase,5);scrollEjectorStreaks([b.dischargeJet],state.phase,6);
         const level=state.waterLevelY;
         // The columns never switch on: empty, each collapses to a flat
         // ring at its foot, and it grows from there as the level rises.
@@ -210,13 +257,19 @@ export function correctEjectorTrapParts(root,id,update) {
     // mouth of C, fills the fork while the siphon discharges, and falls
     // back at shut-off.
     const footY=-2.86,mouthY=3.42;
-    const water=add(root,mirroredForkWall(halfCurve,.004,.372,{segments:220,sides:48}),waterVolumeMaterial({color:0x8fd3ee,opacity:.62}),'water-rising-in-B-fork-and-C');
+    const water=add(root,mirroredForkWall(halfCurve,.004,.372,{segments:220,sides:48}),ejectorWaterMaterial(),'water-rising-in-B-fork-and-C');
+    b.plainWaterMaterial=waterVolumeMaterial({color:0x8fd3ee,opacity:.62});
+    // Flow coordinate up the fork: rise, at half rate in the stem (it carries
+    // both legs' water, so it runs twice as fast per unit rise).
+    const forkFlowAt=y=>{const d=THREE.MathUtils.clamp(y-1.3,0,.45);return 1.1*(Math.min(y,1.3)+d-.5*d*d/.9+.5*Math.max(0,y-1.75));};
+    b.forkFlowAt=forkFlowAt;streakUVs(water.geometry,p=>forkFlowAt(p.y),2);
     water.renderOrder=1;b.waterFill=[water];
     const levelPlane=new THREE.Plane(new THREE.Vector3(0,-1,0),footY);
     const jet=dischargeJet(root,mouthY,.38,.46,'free-discharge-issuing-from-mouth-of-C',{thetaStart:Math.PI,thetaLength:Math.PI});b.dischargeJet=root.children.at(-1);
     d.localClippingEnabled=true;
     d.updateWorkingParts=(time,state)=>{
       jet(state.dischargeFraction);
+      scrollEjectorStreaks([water],state.phase,5);scrollEjectorStreaks([b.dischargeJet],state.phase,6);
       const level=footY+(mouthY-footY)*state.levelFraction;
       levelPlane.constant=level;
       for(const m of[].concat(water.material))if(!m.clippingPlanes?.includes(levelPlane))m.clippingPlanes=[...(m.clippingPlanes??[]),levelPlane];

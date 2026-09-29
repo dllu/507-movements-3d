@@ -3,7 +3,7 @@ import {horizontalRing, horizontalTurned, horizontalPlate} from './horizontal-tu
 import {curvedPipeWall, mergePassageParts} from './finite-fluid-passages.js';
 import {boredPlanarLinkGeometry} from './bored-planar-link.js';
 import {circle, poly, plate, polygonClipping} from './finite-plate-geometry.js';
-import {creaseIndexedNormals} from './crease-normals.js';
+import {creaseIndexedNormals, creaseLatheNormals} from './crease-normals.js';
 import {saddleEndPipeWall} from './force-pump-working-parts.js';
 
 const replace=(mesh,geometry)=>{mesh.geometry.dispose();mesh.geometry=geometry;};
@@ -80,12 +80,28 @@ function normalizedLink(mesh,length,bore=.134) {
   replace(mesh,geometry);
 }
 
-function plateJoint(plateMesh,material,pinRadius=.13,height=.20,base=0) {
-  const outline=polygonClipping.difference(polygonClipping.union(poly([[-.10,base],[.10,base],[.10,height],[-.10,height]]),poly(circle([0,height],pinRadius+.07,64))),poly(circle([0,height],pinRadius+.004,64)));
-  const mount=new THREE.Mesh(plate(outline,.05,.24),material);
+// Pass 109: a pin along z from `back` to `front` (world z of the carrying
+// part), with a short head of radius r+head at the front so the link it
+// retains shows a deliberate end instead of a bare stub. Built along y for a
+// mesh rotated x = pi/2 about z = 0 (local y maps to world z).
+function headedPinGeometry(radius,back,front,head=.035,headLength=.025) {
+  const profile=[[0,back],[radius,back],[radius,front-headLength],[radius+head,front-headLength],[radius+head,front],[0,front]].map(([x,y])=>new THREE.Vector2(x,y));
+  return creaseLatheNormals(new THREE.LatheGeometry(profile,48));
+}
+
+// Pass 109: the lug on the moving plate is cast with the plate (its colour),
+// its eye the same radius as the link's eye and standing 0.01 behind it, and
+// the pin runs through the lug's full depth (flush + 0.01 behind it) and the
+// link, ending in a small head in front. The link and lug read as one clean
+// joint instead of a stack of black discs with an empty eye.
+function plateJoint(plateMesh,link,pinRadius=.13,height=.20,base=0,eyeRadius=.199) {
+  const lugBack=.05,linkBack=.29,lugFront=linkBack-.01,linkFront=.39;
+  const outline=polygonClipping.difference(polygonClipping.union(poly([[-.10,base],[.10,base],[.10,height],[-.10,height]]),poly(circle([0,height],eyeRadius,64))),poly(circle([0,height],pinRadius+.004,64)));
+  const lugMaterial=plateMesh.material??plateMesh.children.find(o=>o.isMesh)?.material;
+  const mount=new THREE.Mesh(plate(outline,lugBack,lugFront),lugMaterial);
   mount.position.set(0,0,0);mount.userData.role='moving-plate-link-clevis';plateMesh.add(mount);
-  const pin=new THREE.Mesh(new THREE.CylinderGeometry(pinRadius,pinRadius,.30,32),material);
-  pin.rotation.x=Math.PI/2;pin.position.set(0,height,.34);pin.userData.role='moving-plate-link-pin';plateMesh.add(pin);
+  const pin=new THREE.Mesh(headedPinGeometry(pinRadius,lugBack-.01,linkFront+.03),link.material);
+  pin.rotation.x=Math.PI/2;pin.position.set(0,height,0);pin.userData.role='moving-plate-link-pin';plateMesh.add(pin);
   return pin;
 }
 
@@ -131,8 +147,10 @@ export function correctFlexiblePumpParts(root,id) {
     replace(b.pivotAxle,new THREE.CylinderGeometry(.22,.22,1.26,48));
     const outline=poly([[-2.955,-.11],[3.595,-.11],[3.595,.11],[-2.955,.11]]);
     planarLever(body,outline,[{x:0,y:0,inner:.224,outer:.32}],.38);body.position.x=0;
-    for(const [rod,top]of[[b.leftConnectingRod,b.leftTopPlate],[b.rightConnectingRod,b.rightTopPlate]]){normalizedLink(rod,g.connectingRodLength);plateJoint(top,rod.material,.13,g.linkEyeHeight);}
-    for(const mesh of lever.children)if(mesh.geometry?.type==='CylinderGeometry'&&Math.abs(mesh.position.x)===g.beamPinHalfSpan)replace(mesh,new THREE.CylinderGeometry(.13,.13,.96,32));
+    for(const [rod,top]of[[b.leftConnectingRod,b.leftTopPlate],[b.rightConnectingRod,b.rightTopPlate]]){normalizedLink(rod,g.connectingRodLength);plateJoint(top,rod,.13,g.linkEyeHeight);}
+    // Pass 109: each beam pin spans the beam (0.38) and its link (z 0.29-0.39)
+    // only: 0.02 proud of the beam's back face, headed in front of the link.
+    for(const mesh of lever.children)if(mesh.geometry?.type==='CylinderGeometry'&&Math.abs(mesh.position.x)===g.beamPinHalfSpan){replace(mesh,headedPinGeometry(.13,-.21,.42));mesh.position.z=0;}
     // Pass 70: the chest, channel, riser, post and flap checks are built in
     // authored-lantern-bellows-pumps.js to Brown's section.
     d.updateSolids=()=>{b.leftConnectingRod.position.z=.34;b.rightConnectingRod.position.z=.34;};
@@ -146,10 +164,11 @@ export function correctFlexiblePumpParts(root,id) {
     planarLever(body,polygonClipping.union(poly([...left,...right.reverse()]),poly(circle([tip.x,tip.y],tipWidth,48))),[{x:0,y:0,inner:.214,outer:.30}],.23);
     lever.children[1].visible=false;
     normalizedLink(b.connectingRod,g.connectingRodLength,.144);
-    replace(lever.children[2],new THREE.CylinderGeometry(.14,.14,.96,32));
+    // Pass 109: the lever pin spans the lever (0.23) and the link only.
+    replace(lever.children[2],headedPinGeometry(.14,-.135,.42));lever.children[2].position.z=0;
     // Pass 88: the clevis foot stands 0.006 up inside the clamp's upper
     // disk, off the plane of the disk's underside.
-    const lowerPin=plateJoint(b.centerClamp,b.connectingRod.material,.14,g.linkEyeHeight,.006);replace(lowerPin,new THREE.CylinderGeometry(.14,.14,.30,32));
+    plateJoint(b.centerClamp,b.connectingRod,.14,g.linkEyeHeight,.006,.209);
     // Pass 56: the rim and floor stand proud of the wall as plain flanges in
     // the casing's own colour, so no coincident faces z-fight at the wall.
     const rim=polygonClipping.difference(poly(circle([0,0],1.34,128)),poly(circle([0,0],g.diaphragmRadius,128)));

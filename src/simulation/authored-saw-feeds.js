@@ -267,9 +267,27 @@ function arcThrough(a, b, c, count) {
 function clickOutlineRaster(tip = PLATE.clickTip) {
   // Pass 93: Brown's click is a round eye (about 12 px) and a finger bowed
   // out to the left, concave on the wheel side.
-  const leftEdge = arcThrough([62.5, 238], [55.6, 264], tip, 48);
-  const rightEdge = arcThrough(tip, [66.8, 265], [82, 238], 48);
-  const finger = poly([...leftEdge, ...rightEdge.slice(1), [73, 228]]);
+  // Pass 109: the finger no longer meets in a knife point. Each edge stops
+  // 4.4 px short of the old point and a smooth round closes the blunt tip
+  // that nestles in the root.
+  const leftEdge = arcThrough([62.5, 238], [55.6, 264], tip, 96);
+  const rightEdge = arcThrough(tip, [66.8, 265], [82, 238], 96);
+  const tipCut = 4.4;
+  const leftKeep = leftEdge.filter((q) => len(sub(q, tip)) >= tipCut);
+  const rightKeep = rightEdge.filter((q) => len(sub(q, tip)) >= tipCut);
+  const a = leftKeep.at(-1);
+  const b = rightKeep[0];
+  // The control point is placed so the round's apex stays on the old
+  // point, keeping the click's reach (and so its seat) unchanged.
+  const control = [2 * tip[0] - (a[0] + b[0]) / 2, 2 * tip[1] - (a[1] + b[1]) / 2];
+  const round = Array.from({ length: 15 }, (_, i) => {
+    const t = (i + 1) / 16;
+    return [
+      (1 - t) ** 2 * a[0] + 2 * t * (1 - t) * control[0] + t * t * b[0],
+      (1 - t) ** 2 * a[1] + 2 * t * (1 - t) * control[1] + t * t * b[1],
+    ];
+  });
+  const finger = poly([...leftKeep, ...round, ...rightKeep, [73, 228]]);
   const eye = poly(circle(PLATE.clickPivot, 12, 96));
   return clip.difference(clip.union(finger, eye), poly(circle(PLATE.clickPivot, 4, 48)));
 }
@@ -815,7 +833,7 @@ function crankRockerPullCatchSawFeed(movement) {
   ratchetBody.position.z = (Z.wheel[0] + Z.wheel[1]) / 2;
   ratchetBody.userData.noRotationIndicator = true;
   const pinion = named(new THREE.Mesh(smoothPlate(generatedPinionOutline(shaftRadius + 0.004),
-    Z.pinion[0], Z.pinion[1]), wheelMaterial), 'eight-tooth-feed-pinion');
+    Z.pinion[0], Z.pinion[1]), mat(PALETTE.brass, 0.5)), 'eight-tooth-feed-pinion');
   pinion.position.z = 0;
   const shaft = named(cylinderZ(shaftRadius, Z.pinion[0] - 0.01, Z.wheel[1] + 0.06, inkMaterial),
     'ratchet-and-pinion-shaft');

@@ -111,11 +111,21 @@ test('movement 192 matches Brown\'s eccentric toothed path, shaft groove, and om
   assert.equal(blocks.pitchGroove.parent, blocks.wheelRotor);
   assert.equal(blocks.guideGrooveOuter.parent, blocks.wheelRotor);
   assert.equal(blocks.guideGrooveRecess.parent, blocks.wheelRotor);
-  assert.equal(blocks.fixedUniversalCross.userData.fixed, true);
-  assert.equal(
-    blocks.universalSlipShaft.userData.role,
-    'vibrating-telescopic-shaft-through-universal-joint',
-  );
+  // p109: mangle wheels need no universal-joint drive (as 194). The
+  // jointed drive and its standard are left out, and the pinion shaft ends
+  // just proud of the pinion's hub.
+  for (const key of ['fixedUniversalCross', 'universalSlipShaft', 'rearInputShaft', 'movingUniversalJoint', 'framePost', 'frameFoot']) {
+    assert.equal(blocks[key].parent, null, key);
+  }
+  assert.equal(blocks.universalDrive, undefined);
+  model.root.traverse((object) => assert.ok(!/universal|slip-shaft|input-shaft/.test(object.userData.role ?? ''), object.userData.role));
+  {
+    model.root.updateMatrixWorld(true);
+    const shaft = new THREE.Box3().setFromObject(blocks.pinionShaft);
+    const pinion = new THREE.Box3().setFromObject(blocks.pinion);
+    assert.ok(shaft.max.z > pinion.max.z && shaft.max.z < pinion.max.z + 0.05, `shaft end ${shaft.max.z}`);
+  }
+  assert.ok(Math.abs(model.cameraDirection.y / model.cameraDirection.z) < 0.06, 'face-on default camera');
   blocks.mangleToothObjects.forEach((tooth, index) => {
     assert.equal(tooth.parent, blocks.wheelRotor);
     assert.equal(tooth.userData.index, index);
@@ -644,19 +654,14 @@ test('movement 192 is fully three-dimensional and remains distinct as the review
       blocks.wheelShaft,
       blocks.pinion,
       blocks.pinionShaft,
-      blocks.fixedUniversalCross,
-      blocks.universalSlipShaft,
-      blocks.rearInputShaft,
-      blocks.framePost,
-      blocks.frameFoot,
     ]) physicalBounds.expandByObject(object);
   }
   const size = physicalBounds.getSize(new THREE.Vector3());
   assert.ok(size.x > 3.8);
   assert.ok(size.y > 3.8);
-  assert.ok(size.z > 2.25);
-  assert.ok(physicalBounds.min.z < -0.70);
-  assert.ok(physicalBounds.max.z > 0.77);
+  assert.ok(size.z > 1.1);
+  assert.ok(physicalBounds.min.z < -0.50);
+  assert.ok(physicalBounds.max.z > 0.59 && physicalBounds.max.z < 0.61);
   let meshCount = 0;
   let mangleToothCount = 0;
   model.root.traverse((object) => {

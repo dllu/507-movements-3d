@@ -89,6 +89,17 @@ test('327: cylinder and gland have a passage aligned to the moving piston rod',(
   // box would overstate it by sqrt 2).
   const radius=b.pistonRod.geometry.parameters.radiusTop??Math.hypot((box.max.x-box.min.x)/2,(box.max.z-box.min.z)/2);
   assert.ok(b.pistonRod.geometry.type==='CylinderGeometry','327 piston rod is round');
+  // p109: the bore is closed below the rod's reach by a bottom end plug;
+  // the passage above it must stay clear.
+  const plug=b.cylinderBody.children.find(o=>o.userData.role==='fixed-engine-cylinder-bottom-end-plug');
+  assert.ok(plug,'cylinder bottom closed by an end plug');
+  plug.removeFromParent();
   for(const part of [b.cylinderBody,b.cylinderTopCap,b.gland])clearBore(part,p,radius,new THREE.Vector3(0,1,0));
+  b.cylinderBody.add(plug);m.root.updateMatrixWorld(true);
+  const period=m.root.userData.animationTiming.authoredCyclePeriod;let rodLow=Infinity;
+  for(let i=0;i<=64;i++){m.update(period*i/64);m.root.updateMatrixWorld(true);rodLow=Math.min(rodLow,bounds(b.pistonRod).min.y);}
+  const plugBox=bounds(plug);
+  assert.ok(plugBox.max.y<rodLow-0.02,`rod stops clear above the plug (${plugBox.max.y} < ${rodLow})`);
+  assert.ok(Math.abs(plugBox.min.y-bounds(b.cylinderBody).min.y)<1e-6,`plug flush with the cylinder bottom (${plugBox.min.y}, ${bounds(b.cylinderBody).min.y})`);
  }finally{disposeMovementModel(m);}
 });

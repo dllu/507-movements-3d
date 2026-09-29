@@ -1,8 +1,7 @@
 import * as THREE from 'three';
 import {ring,plate,poly,sector,polygonClipping} from './finite-plate-geometry.js';
 import {wheelBearings,makeCellWaterGeometry,updateCellWater} from './water-wheel-solids.js';
-import {waterVolumeMaterial} from './water-volume.js';
-import {WaterStream,collectWaterStreams,guidedPath} from './water-stream.js';
+import {WaterStream,collectWaterStreams,guidedPath,waterStreamMaterial} from './water-stream.js';
 import {
   PALETTE,
   markShadows,
@@ -341,10 +340,58 @@ function undershotWaterWheel(movement) {
     [gateX - gateHalfThickness, headSurfaceY],
     [raceLeftX, headSurfaceY],
   ];
+  // Pass 109: the whole body wears the shared WaterStream streak look, its
+  // streaks running left to right at the local speed of the water: slow in
+  // the head pond, fastest through the opening under the leaf and down the
+  // apron, easing along the tail race past the floats. v is the time of
+  // flight from the head pond (as in water-stream.js), so one scroll rate
+  // moves every streak at its own local speed; u runs across the flow.
+  const channelMaterial = waterStreamMaterial({opacity: 0.44, normalScale: 0.55});
+  channelMaterial.vertexColors = false;
+  channelMaterial.color.copy(channelMaterial.userData.tint);
+  // One-sided like the volume it replaces: its faces against the leaf and
+  // jambs face into them and are culled, so they cannot fight those faces.
+  channelMaterial.side = THREE.FrontSide;
   const channelWater = new THREE.Mesh(
     plate([[waterOutline]], -channelHalfWidth, channelHalfWidth),
-    waterVolumeMaterial({opacity: 0.42}),
+    channelMaterial,
   );
+  {
+    const flowSpeedAt = (x) => {
+      const ramp = (a, b, t) => a + (b - a) * THREE.MathUtils.smootherstep(t, 0, 1);
+      if (x < gateX - 1.2) return 0.35;
+      if (x < gateX) return ramp(0.35, 3.4, (x - gateX + 1.2) / 1.2);
+      if (x < apronEndX) return 3.4;
+      if (x < 0.8) return ramp(3.4, 1.9, (x - apronEndX) / (0.8 - apronEndX));
+      return 1.9;
+    };
+    const STEPS = 400, flightTable = new Float32Array(STEPS + 1);
+    for (let i = 1; i <= STEPS; i += 1) {
+      const x0 = raceLeftX + (raceRightX - raceLeftX) * (i - 1) / STEPS;
+      const x1 = raceLeftX + (raceRightX - raceLeftX) * i / STEPS;
+      flightTable[i] = flightTable[i - 1] + (x1 - x0) / flowSpeedAt((x0 + x1) / 2);
+    }
+    const flightAt = (x) => {
+      const f = THREE.MathUtils.clamp((x - raceLeftX) / (raceRightX - raceLeftX), 0, 1) * STEPS;
+      const i = Math.min(STEPS - 1, Math.floor(f));
+      return flightTable[i] + (flightTable[i + 1] - flightTable[i]) * (f - i);
+    };
+    // Streak tiles per second of flight; whole tiles per cycle, so the loop
+    // is seamless.
+    const tilesPerSecond = Math.round(0.9 * cycleDuration) / cycleDuration;
+    const position = channelWater.geometry.attributes.position, uv = channelWater.geometry.attributes.uv;
+    for (let i = 0; i < position.count; i += 1) {
+      uv.setXY(i, 1.1 * (position.getY(i) + position.getZ(i)), flightAt(position.getX(i)) * tilesPerSecond);
+    }
+    uv.needsUpdate = true;
+    channelWater.userData.waterStream = true;
+    channelWater.update = (time) => {
+      const offset = -THREE.MathUtils.euclideanModulo(time * tilesPerSecond, 1);
+      const material = channelWater.material;
+      if (material.map) material.map.offset.y = offset;
+      if (material.normalMap) material.normalMap.offset.y = offset;
+    };
+  }
   channelWater.renderOrder = 1;
   channelWater.userData.role =
     'left-to-right-lower-stream-driving-paddle-bottoms';

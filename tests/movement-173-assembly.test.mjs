@@ -41,3 +41,11 @@ test('173 striker is one stout horizontal stud with nut and collar seated on a p
  assert.ok(support.min.y>1,'striker box is a plain block, not a C-frame');
  }finally{m.dispose();}
 });
+test('173 (p109): the disc is a clean face with no painted-mark shadows; every other part casts',async()=>{
+ const {applyShadowPolicy}=await import('../src/simulation/shadow-policy.js');
+ const m=makeSilkTraverseAssembly(bundle);try{
+  applyShadowPolicy(m.root);const {parts}=m.root.userData;
+  assert.equal(parts.disk.castShadow,false);assert.equal(parts.disk.receiveShadow,false);
+  for(const name of ['yoke','guideRod','guideBearing','guideBracket','guideFoot','footNeck'])assert.equal(parts[name].castShadow,true,name);
+ }finally{m.dispose();}
+});

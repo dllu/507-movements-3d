@@ -11,7 +11,13 @@ test('160 visible assembly follows native attachments and keeps the treadle abov
   assert.equal(u.parts.treadle.geometry.userData.plate.polygons.length,1,'Treadle must be one connected casting');
   for(let tick=0;tick<=32000;tick++){
    if(tick%250===0){const s=p.state();v.update(s);
-    for(const [name,point,z] of [['springAnchorHead',s.upper,.24],['treadleAnchorHead',s.lower,.72]])assert.ok(u.parts[name].getWorldPosition(new THREE.Vector3()).distanceTo(new THREE.Vector3(point[0],point[1],z))<1e-12);
+    assert.ok(u.parts.springAnchorHead.getWorldPosition(new THREE.Vector3()).distanceTo(new THREE.Vector3(s.upper[0],s.upper[1],.24))<1e-12);
+    // p109: no peg at the treadle; the cord ends in a loop round the eye's
+    // crown, in the eye's mid-plane, on the native eye's line of pull.
+    assert.equal(u.parts.treadleAnchorHead,undefined);assert.equal(u.parts.treadleAnchorStem,undefined);
+    const loop=new THREE.Box3().setFromObject(u.parts.treadleCordLoop,true),curve=u.bandCurve,end=curve.getPoint(1);
+    assert.ok(Math.abs(end.z)<1e-12&&Math.abs(loop.min.z+loop.max.z)<1e-3,'cord end and loop in the treadle plane');
+    assert.ok(loop.containsPoint(end)&&Math.hypot(end.x-s.lower[0],end.y-s.lower[1])<.48,'cord ends in the loop above the eye');
     assert.ok(new THREE.Box3().setFromObject(u.parts.treadle,true).min.y>-3.726);
     assert.equal(u.parts.leaf.geometry,geometry);assert.ok(geometry.attributes.position.array.every(Number.isFinite));
    }

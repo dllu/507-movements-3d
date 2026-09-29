@@ -125,7 +125,11 @@ test('049 each driving pawl contacts its real working face and each overrunning 
       assert.ok(pawl.rotation.z <= f.restAngle + 1e-12);
       const clearance = f.clearanceAt(pawl.rotation.z, relative);
       assert.ok(clearance > -1e-9);
-      if (pawl.rotation.z < f.restAngle - 1e-6) { lifted += 1; assert.ok(clearance < 1e-9, 'the actual ramp determines lift'); }
+      // p109: past a crest the pawl is held on its underside, then falls
+      // (clear of the teeth, lifted more than the ramp needs); otherwise the
+      // actual ramp determines the lift.
+      const mode = state[`${side}PawlMode`];
+      if (pawl.rotation.z < f.restAngle - 1e-6) { lifted += 1; if (mode === 'teeth') assert.ok(clearance < 1e-9, 'the actual ramp determines lift'); }
       if (side !== state.activeSide) continue;
       assert.ok(Math.abs(pawl.rotation.z - f.restAngle) < 1e-12);
       pawlBody.material.side = THREE.DoubleSide; ratchet.material.side = THREE.DoubleSide;
@@ -258,4 +262,28 @@ test('049 real keyed carriers and loose bores clear the horizontal shaft', () =>
     assert.ok(Math.hypot(world.y, world.z) - g.shaftRadius > 0.49, 'the actual vertical shaft skin clears the horizontal shaft');
   }
   console.log(JSON.stringify({ movement: 49, keywayRays: checks, minimumKeyGap }));
+});
+
+// p109: an idle pawl leaving a crest no longer snaps into the root in one
+// sample. It rides its underside over the overhang and then falls under
+// gravity over dropDuration; the loop seam is continuous.
+test('049 idle pawls fall into the roots smoothly and the loop seam is continuous', () => {
+  const model = makeRatchetBevel(), g = model.root.userData.geometry, motion = model.root.userData.motion;
+  const f = motion.follower, P = g.cycleDuration, samples = 2000;
+  let previous = null, maximumStep = 0, falls = 0;
+  for (let i = 0; i <= samples; i += 1) {
+    const state = motion.stateAt(P * i / samples);
+    for (const side of ['right', 'left']) {
+      assert.ok(f.clearanceAt(state[`${side}PawlAngle`], state[`${side}RelativeAngle`]) > -1e-9, 'clear of the teeth');
+      if (state[`${side}PawlMode`] === 'falling') falls += 1;
+    }
+    if (previous) maximumStep = Math.max(maximumStep, Math.abs(state.rightPawlAngle - previous.rightPawlAngle),
+      Math.abs(state.leftPawlAngle - previous.leftPawlAngle));
+    previous = state;
+  }
+  assert.ok(falls > 0, 'the drops are resolved in time');
+  // 0.3 rad over dropDuration 0.06 s: at most about 0.04 rad per P/2000.
+  assert.ok(maximumStep < 0.05, `largest pawl step ${maximumStep}`);
+  const first = motion.stateAt(0), last = motion.stateAt(P);
+  assert.ok(Math.abs(first.rightPawlAngle - last.rightPawlAngle) < 1e-12 && Math.abs(first.leftPawlAngle - last.leftPawlAngle) < 1e-12);
 });

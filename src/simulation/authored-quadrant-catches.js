@@ -71,7 +71,8 @@ function sourceHandGear(movementId) {
   const materials = {
     upper: matte(PALETTE.driven, { metalness: 0.12, roughness: 0.6 }),
     lower: matte(PALETTE.accent, { metalness: 0.14, roughness: 0.58 }),
-    steel: matte(0x9aa19d, { metalness: 0.3, roughness: 0.45 }),
+    // p109: mid steel grey; the pale #9aa19d pins read as holes in the bosses.
+    steel: matte(PALETTE.muted, { metalness: 0.3, roughness: 0.45 }),
     rod: matte(PALETTE.frame, { metalness: 0.2, roughness: 0.5 }),
     // Pass 99: the piston rod is steel grey so the orange tappet on its face
     // reads as a separate part.

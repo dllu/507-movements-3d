@@ -2,13 +2,13 @@
   "movement": 160,
   "poses": 129,
   "segments": 1024,
-  "minimumNonlocalClearanceLowerBound": 0.057719983157221294,
-  "worstTime": 2.0270077519379845,
+  "minimumNonlocalClearanceLowerBound": 0.010129198033096087,
+  "worstTime": 1.3138294573643412,
   "method": "Interpolated baked motion at off-keyframe phases. Nonlocal band portions separated by at least four radii: all sampled point pairs, subtract two arclength spacings and two band radii to bound intervening curve clearance. Local line/helix curvature radius exceeds band radius. Sampled-time check, not continuous-time proof.",
   "sources": [
     {
       "file": "src/simulation/baked/assets/160.json.gz",
-      "sha256": "aa2419560f7053a151d9d1ded275352ebd5f6644b70ea6f3389565830fa18f67"
+      "sha256": "124e1c5a99407c549a594bb95aaa0f4231c7bbe51092a4f084f9280a6322b4a0"
     },
     {
       "file": "scripts/review-baked-spring-band.mjs",

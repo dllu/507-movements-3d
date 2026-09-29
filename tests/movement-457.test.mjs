@@ -212,11 +212,16 @@ test('movement 457 rope keeps its length, hangs vertically except when the raise
       geometry.ropeLength * Math.sin(state.ropeSwing), 1e-12, `rope swing at ${sample}`);
     near(state.leftTip.z, state.ropeBottom.z, 0,
       `rope in the beam plane at ${sample}`);
-    near(state.bucketCenter.x, state.ropeBottom.x, 0,
-      `bucket x under the bail at ${sample}`);
+    // Pass 109: drawn aside, the bucket is turned a quarter turn on the rope
+    // (yaw = pi/2 * aside), so it tips outward in the view plane.
+    near(state.bucketYaw, Math.PI / 2 * state.bucketAside, 1e-15, `bucket yaw law at ${sample}`);
     // Tipped past 50 degrees at the top, the bail falls to the pour side on
-    // its ears and the bucket hangs back from the rope (bailHang).
-    const hang = bailHang(state.bucketTilt, geometry.bucketHandleRise);
+    // its ears and the bucket hangs back from the rope (bailHang), turned
+    // with the bucket.
+    const hang = bailHang(state.bucketTilt, geometry.bucketHandleRise)
+      .applyAxisAngle(new THREE.Vector3(0, 1, 0), state.bucketYaw);
+    near(state.bucketCenter.x - hang.x, state.ropeBottom.x, 1e-12,
+      `bucket x under the bail at ${sample}`);
     near(state.bucketCenter.y - hang.y,
       state.ropeBottom.y - (geometry.bucketHeight / 2 + geometry.bucketHandleRise),
     1e-12, `bucket hanger offset at ${sample}`);

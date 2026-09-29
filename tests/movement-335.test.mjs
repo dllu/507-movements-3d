@@ -542,16 +542,21 @@ test('movement 335 closes exactly and leaves movement 507 as the next draft', ()
   disposeModel(model.root);
 });
 
-test('movement 335 p96: shaft O ends in a round flange concentric with it', () => {
+test('movement 335 p109: whole symmetric beam past O, no shaft-O bracket, round rod in a turned gland', () => {
   const model = createMovementModel(catalog.movements[334]);
   model.update(0);
   model.root.updateMatrixWorld(true);
-  let flange = null;
-  let shank = null;
-  model.root.traverse((object) => {
-    if (object.userData.role === 'fixed-wall-bracket-of-beam-shaft-O-flange') flange = object;
-    if (object.userData.role === 'fixed-wall-bracket-of-beam-shaft-O-shank') shank = object;
-  });
-  assert.equal(flange.geometry.type, 'CylinderGeometry');
-  assert.ok(flange.geometry.parameters.radiusTop > 1.3 * shank.geometry.parameters.radiusTop);
+  const roles = new Map();
+  model.root.traverse((object) => { if (object.userData.role) roles.set(object.userData.role, object); });
+  assert.ok(![...roles.keys()].some((role) => role.startsWith('fixed-wall-bracket-of-beam-shaft-O')),
+    'no undrawn wall bracket behind shaft O');
+  const beam = roles.get('rigid-tapered-stationary-engine-beam-body');
+  beam.geometry.computeBoundingBox();
+  const box = beam.geometry.boundingBox;
+  assert.ok(Math.abs(box.max.x + box.min.x) < 1e-6, `beam symmetric about O (${box.min.x}, ${box.max.x})`);
+  const rod = roles.get('straight-round-piston-rod-below-E');
+  assert.equal(rod.geometry.type, 'CylinderGeometry');
+  assert.ok(roles.has('turned-piston-rod-gland-on-cylinder-cover'));
+  const camera = model.root.userData.cameraFitBounds;
+  assert.ok(camera.max.x < 0.3 * box.max.x, 'default camera keeps Brown\'s crop just past O');
 });

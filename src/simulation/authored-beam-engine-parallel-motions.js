@@ -441,7 +441,11 @@ function makeRack({
   // The solid back ends at the tooth root line, clear of the sector tips.
   const bodyRight = 0;
   const bodyTop = 9.059854 * sourceScale;
-  const toothedBottom = -10.242505 * sourceScale;
+  // Brown's teeth run on down the rod nearly to B, below the bed: six more
+  // pitches below the seventeen that work with sector C.
+  const extraLowerTeeth = 6;
+  const toothedBottom = -10.242505 * sourceScale
+    - extraLowerTeeth * rackToothPitch;
   const visibleRodBottom = -27.0 * sourceScale;
   const body = new THREE.Mesh(
     new THREE.BoxGeometry(
@@ -505,6 +509,14 @@ function makeRack({
   const backLineAnchor = new THREE.Object3D();
   backLineAnchor.position.set(bodyLeft, 0, rackPlaneZ);
   backLineAnchor.userData.role = 'analytic-back-line-of-rack-B';
+  for (let index = -extraLowerTeeth; index < 0; index += 1) {
+    const tooth = new THREE.Mesh(toothGeometry.clone(), rackMaterial);
+    tooth.position.set(0, rackFirstToothCenterY + index * rackToothPitch,
+      rackPlaneZ);
+    tooth.userData.index = index;
+    tooth.userData.role = 'plate-drawn-tooth-below-working-length-of-rack-B';
+    rack.add(tooth);
+  }
   rack.add(
     backWearStrip,
     originAnchor,
@@ -1728,7 +1740,7 @@ function stationaryBeamEngineParallelMotion(movement) {
   const fixedFrame = new THREE.Group();
   fixedFrame.userData.fixed = true;
   fixedFrame.userData.role = 'fixed-beam-fulcrum-shaft-O-and-radius-pin-F';
-  const pivotOShaftLow = beamPlaneZ - beamHalfDepth - 0.12;
+  const pivotOShaftLow = beamPlaneZ - beamHalfDepth - 0.02;
   const pivotOShaftHigh = beamPlaneZ + beamHalfDepth + 0.02;
   const pivotOShaft = cylinderAlongZ(0.38 * s, pivotOShaftHigh - pivotOShaftLow,
     darkMaterial, 34);
@@ -1744,11 +1756,11 @@ function stationaryBeamEngineParallelMotion(movement) {
   pivotFShaft.userData.fixed = true;
   pivotFShaft.userData.role = 'fixed-pin-at-radius-pivot-F';
   fixedFrame.add(pivotOShaft, pivotFShaft);
-  // Neither fixed pin floats: each runs back to a small flange on the engine
-  // framing behind the mechanism, hidden behind its boss in the plate view.
+  // Brown sections shaft O as a cut shaft, so it carries no undrawn wall
+  // bracket (the shank and flange read as a mushroom behind the boss). F's
+  // pin runs back to a small flange on the engine framing, hidden behind
+  // its boss in the plate view.
   fixedFrame.add(
-    pinWallBracket({ x: 0, y: 0, pinRadius: 0.38 * s, zPin: pivotOShaftLow, zWall: -0.55,
-      flange: 0.42, round: true, role: 'fixed-wall-bracket-of-beam-shaft-O', beyondPlateCrop: true }),
     pinWallBracket({ x: fixedRadiusPivotF.x, y: fixedRadiusPivotF.y, pinRadius: fixedPinRadius, zPin: pivotFShaftLow,
       zWall: -0.55, flange: 0.16, role: 'fixed-wall-bracket-of-radius-pin-F', beyondPlateCrop: true }),
     // F's small flange is carried at the head of a plain column standing on
@@ -1766,12 +1778,17 @@ function stationaryBeamEngineParallelMotion(movement) {
     { x: -beamMiddleStationRadius, y: 0, radius: pinRadius.B + pinClearance },
     { x: 0, y: 0, radius: 0.38 * s + pinClearance },
   ];
+  // Brown crops the beam just past O; it is whole, its far arm the mirror
+  // of the drawn one (as 337 and 338 build theirs), ending in a round boss
+  // where the hidden drive takes it. The default camera keeps Brown's crop.
   const beamOutline = clip.union(
     poly([
-      [-12.041667, -0.62], [-0.125, -1.40], [3.1, -1.10],
-      [3.1, 1.10], [0.125, 1.30], [-12.041667, 0.62],
+      [-12.041667, -0.62], [-0.125, -1.40], [0.125, -1.40],
+      [12.041667, -0.62], [12.041667, 0.62], [0.125, 1.30],
+      [-0.125, 1.30], [-12.041667, 0.62],
     ].map(([x, y]) => [x * s, y * s])),
     poly(circle([-beamLeftStationRadius, 0], 0.78 * s, 64)),
+    poly(circle([beamLeftStationRadius, 0], 0.78 * s, 64)),
     poly(circle([0, 0], 1.90 * s, 96)),
   );
   const beamBody = new THREE.Mesh(plate(clip.difference(beamOutline,
@@ -1847,36 +1864,59 @@ function stationaryBeamEngineParallelMotion(movement) {
   const piston = new THREE.Group();
   piston.userData.rotationDegreesOfFreedom = 0;
   piston.userData.role = 'near-vertical-piston-rod-carried-by-point-E';
-  const pistonHalfWidth = 0.1875 * s;
   const pistonEyeRadius = pinRadius.E + pinClearance + 0.035;
   const pistonBore = pinRadius.E + pinClearance;
+  // The eye at E is a flat bored plate; the rod below it is round, its
+  // radius the eye's half-depth so it runs flush into the eye's faces.
+  const pistonRodRadius = barHalfDepth;
   const pistonRod = new THREE.Mesh(plate(clip.difference(
-    clip.union(
-      poly([[-pistonHalfWidth, -7.2 * s], [pistonHalfWidth, -7.2 * s],
-        [pistonHalfWidth, 0], [-pistonHalfWidth, 0]]),
-      poly(circle([0, 0], pistonEyeRadius, 64)),
-    ),
+    poly(circle([0, 0], pistonEyeRadius, 64)),
     poly(circle([0, 0], pistonBore, 64)),
   ), pistonPlaneZ - barHalfDepth, pistonPlaneZ + barHalfDepth), outputMaterial);
   pistonRod.userData.bores = [{ x: 0, y: 0, radius: pistonBore }];
-  pistonRod.userData.role = 'straight-piston-rod-below-E';
+  pistonRod.userData.role = 'piston-rod-eye-at-E';
   // Brown breaks the rod off below E; it is whole, running down through the
   // gland of its cylinder below the plate's view over the whole stroke.
   const pistonCylinderTopY = -5.0;
   const wholePistonRodLength = -0.77 - pistonCylinderTopY + 0.3;
-  const pistonRodBeyondCrop = new THREE.Mesh(plate(
-    poly([[-pistonHalfWidth, -wholePistonRodLength], [pistonHalfWidth, -wholePistonRodLength],
-      [pistonHalfWidth, -7.2 * s], [-pistonHalfWidth, -7.2 * s]]),
-    pistonPlaneZ - barHalfDepth, pistonPlaneZ + barHalfDepth), outputMaterial);
-  pistonRodBeyondCrop.userData.role = 'piston-rod-running-on-into-its-cylinder';
-  pistonRodBeyondCrop.userData.beyondPlateCrop = true;
+  const rodTopY = -Math.sqrt(pistonEyeRadius ** 2 - pistonRodRadius ** 2) + 0.01;
+  const pistonRodShank = new THREE.Mesh(new THREE.CylinderGeometry(
+    pistonRodRadius, pistonRodRadius, rodTopY + wholePistonRodLength, 40), outputMaterial);
+  pistonRodShank.position.set(0, (rodTopY - wholePistonRodLength) / 2, pistonPlaneZ);
+  pistonRodShank.userData.role = 'straight-round-piston-rod-below-E';
   const pointEAnchor = new THREE.Object3D();
   pointEAnchor.position.z = pistonPlaneZ;
   pointEAnchor.userData.role = 'analytic-piston-point-E';
-  piston.add(pistonRod, pistonRodBeyondCrop, pointEAnchor);
+  piston.add(pistonRod, pistonRodShank, pointEAnchor);
   root.add(piston);
   root.add(glandCylinder({ x: -4.32, topY: pistonCylinderTopY, z: pistonPlaneZ, length: 2.4,
-    glandRadius: 0.12, boreRadius: 0.32, outerRadius: 0.45, role: 'piston-cylinder-below-plate-crop' }));
+    glandRadius: pistonRodRadius + 0.015, boreRadius: 0.32, outerRadius: 0.45,
+    role: 'piston-cylinder-below-plate-crop' }));
+  // A turned stuffing-box gland on the cover, bored to the round rod.
+  {
+    const r0 = pistonRodRadius + 0.015;
+    const ring = (outer, low, high) => {
+      const shape = new THREE.Shape();
+      shape.absarc(0, 0, outer, 0, Math.PI * 2, false);
+      const hole = new THREE.Path();
+      hole.absarc(0, 0, r0, 0, Math.PI * 2, true);
+      shape.holes.push(hole);
+      const geometry = new THREE.ExtrudeGeometry(shape, {
+        depth: high - low, bevelEnabled: false, curveSegments: 48,
+      });
+      geometry.rotateX(-Math.PI / 2);
+      geometry.translate(0, low, 0);
+      return geometry;
+    };
+    const glandMaterial = matte(PALETTE.frame, { metalness: 0.15, roughness: 0.62 });
+    const gland = new THREE.Group();
+    gland.add(new THREE.Mesh(ring(0.2, -0.01, 0.07), glandMaterial),
+      new THREE.Mesh(ring(0.145, 0.07, 0.2), glandMaterial));
+    gland.position.set(-4.32, pistonCylinderTopY, pistonPlaneZ);
+    gland.userData.role = 'turned-piston-rod-gland-on-cylinder-cover';
+    gland.userData.beyondPlateCrop = true;
+    root.add(gland);
+  }
 
   const pinOn = (parent, name, x, low, high) => {
     const pin = cylinderAlongZ(pinRadius[name], high - low, darkMaterial, 30);

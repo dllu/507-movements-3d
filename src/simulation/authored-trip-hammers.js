@@ -171,7 +171,9 @@ function firstOrderTripHammer(movement) {
   const contactEndPhase = contactStartPhase + contactPhaseSpan;
   const contactDuration = contactPhaseSpan * lobeCyclePeriod;
   const wiperTipRadius = raisedFaceGeometry.radialContact;
-  const wiperAngularWidth = 0.48;
+  // p109: broader triangles, as Brown draws them (base chord about 0.65 of
+  // the wheel radius; it was 0.46).
+  const wiperAngularWidth = 0.72;
   const camLeadingNormalLocal = new THREE.Vector2(
     -Math.sin(leadingFaceMountAngle),
     Math.cos(leadingFaceMountAngle),

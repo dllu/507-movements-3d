@@ -112,11 +112,21 @@ test('movement 193 matches Brown\'s two concentric tooth circles, single pinion,
   assert.equal(blocks.pitchGroove.parent, blocks.wheelRotor);
   assert.equal(blocks.guideGrooveOuter.parent, blocks.wheelRotor);
   assert.equal(blocks.guideGrooveRecess.parent, blocks.wheelRotor);
-  assert.equal(blocks.fixedUniversalCross.userData.fixed, true);
-  assert.equal(
-    blocks.universalSlipShaft.userData.role,
-    'vibrating-telescopic-shaft-through-universal-joint',
-  );
+  // p109: mangle wheels need no universal-joint drive (as 194). The
+  // jointed drive and its standard are left out, and the pinion shaft ends
+  // just proud of the pinion's hub.
+  for (const key of ['fixedUniversalCross', 'universalSlipShaft', 'rearInputShaft', 'movingUniversalJoint', 'framePost', 'frameFoot']) {
+    assert.equal(blocks[key].parent, null, key);
+  }
+  assert.equal(blocks.universalDrive, undefined);
+  model.root.traverse((object) => assert.ok(!/universal|slip-shaft|input-shaft/.test(object.userData.role ?? ''), object.userData.role));
+  {
+    model.root.updateMatrixWorld(true);
+    const shaft = new THREE.Box3().setFromObject(blocks.pinionShaft);
+    const pinion = new THREE.Box3().setFromObject(blocks.pinion);
+    assert.ok(shaft.max.z > pinion.max.z && shaft.max.z < pinion.max.z + 0.05, `shaft end ${shaft.max.z}`);
+  }
+  assert.ok(Math.abs(model.cameraDirection.y / model.cameraDirection.z) < 0.06, 'face-on default camera');
   blocks.mangleToothObjects.forEach((tooth, index) => {
     assert.equal(tooth.parent, blocks.wheelRotor);
     assert.equal(tooth.userData.index, index);
@@ -710,19 +720,16 @@ test('movement 193 is fully three-dimensional and remains distinct as the review
       blocks.wheelShaft,
       blocks.pinion,
       blocks.pinionShaft,
-      blocks.fixedUniversalCross,
-      blocks.universalSlipShaft,
-      blocks.rearInputShaft,
-      blocks.framePost,
-      blocks.frameFoot,
     ]) physicalBounds.expandByObject(object);
   }
   const size = physicalBounds.getSize(new THREE.Vector3());
   assert.ok(size.x > 5.0);
   assert.ok(size.y > 5.0);
-  assert.ok(size.z > 2.3);
-  assert.ok(physicalBounds.min.z < -0.74);
-  assert.ok(physicalBounds.max.z > 0.79);
+  // p109: the wheel shaft ends just proud of the backing and the pinion
+  // shaft just proud of the pinion's hub.
+  assert.ok(size.z > 0.75);
+  assert.ok(physicalBounds.min.z < -0.16 && physicalBounds.min.z > -0.2);
+  assert.ok(physicalBounds.max.z > 0.59 && physicalBounds.max.z < 0.61);
   let meshCount = 0;
   let mangleToothCount = 0;
   model.root.traverse((object) => {
@@ -731,7 +738,7 @@ test('movement 193 is fully three-dimensional and remains distinct as the review
       mangleToothCount += 1;
     }
   });
-  assert.ok(meshCount >= 20);
+  assert.ok(meshCount >= 16);
   assert.ok(blocks.toothLand.geometry.attributes.position.count > 1000);
   assert.equal(mangleToothCount, 0);
   assert.ok(model.cameraDirection.x > 0);

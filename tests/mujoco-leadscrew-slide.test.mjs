@@ -147,3 +147,11 @@ test('103 section caps fit the actual carriage and guide, leaving the native bod
     t.diagnostic(JSON.stringify({capSurfaceExcessPixels:100*excess,samples}));assert.ok(excess*100<.01);
   }finally{v.dispose();}
 });
+
+test('p109: 103 square thread has land equal to groove, not a thin fin', async () => {
+  const {makeLeadscrewSlideProfile} = await import('../src/simulation/mujoco-leadscrew-slide/profile.js');
+  const f = makeLeadscrewSlideProfile();
+  assert.ok(Math.abs(f.external.width - f.pitch / 2) < 1e-12);
+  assert.ok(f.coreRadius / f.crestRadius > 0.55);
+  assert.ok(Math.abs(f.internal.width - (f.pitch / 2 - 2 * f.clearance)) < 1e-12);
+});

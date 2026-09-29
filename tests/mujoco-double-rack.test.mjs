@@ -25,6 +25,11 @@ test('114 has closed oriented solids and a relieved half-pinion', () => {
     assert.equal(u.profile.sectorSpan, Math.PI);
     assert.equal(u.profile.endRelief, true);
     assert.equal(u.parts.pinion.geometry.userData.toothProfile.teeth, 14);
+    // p109 (2026-09-29 rule): a full-depth 20-degree involute half-pinion and
+    // trapezoidal basic-rack teeth (rack root 0.25 module below the pinion tip).
+    assert(Math.abs(u.profile.pressureAngle - Math.PI / 9) < 1e-12);
+    assert.equal(u.profile.addendum, 1); assert.equal(u.profile.dedendum, 1.25);
+    assert(Math.abs(u.profile.rootY - u.profile.pitchRadius - 1.25 * u.profile.module) < 1e-12);
     assert.equal(u.hideGround, true);
   } finally { disposeObject3D(v.root); }
 });

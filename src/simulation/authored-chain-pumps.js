@@ -448,6 +448,7 @@ function chainPump(movement) {
         carrierState.tangent,
       );
     });
+    root.userData.updateChainLinks?.();
     root.userData.updateStreams?.(time);
   };
 

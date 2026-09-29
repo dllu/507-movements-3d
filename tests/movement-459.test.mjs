@@ -568,3 +568,12 @@ test('movement 459 star-wheel axles are carried by one flat rear standard behind
   assert.ok(pulleyBox.min.z > box.max.z + 0.05, 'standard stands clear behind the pulleys');
   disposeModel(model.root);
 });
+
+test('movement 459 worm core overruns the thread ends so their end faces are not coplanar (p109)', () => {
+  const model = createMovementModel(catalog.movements[458]);
+  let worm = null;
+  model.root.traverse((o) => { if (!worm && o.userData.role === 'single-start-spiral-alternately-meshing-one-worm-wheel-at-a-time') worm = o; });
+  const core = worm.userData.rotor.children.find((o) => o.geometry?.type === 'CylinderGeometry');
+  // The thread spans the 1.12 worm length; the core runs 0.006 past each end.
+  assert.ok(Math.abs(core.geometry.parameters.height - (1.12 + 0.012)) < 1e-9);
+});

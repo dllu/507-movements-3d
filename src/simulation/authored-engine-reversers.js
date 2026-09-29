@@ -783,12 +783,17 @@ function sourceScaledSingleEngineReverser() {
   const shaftRotor = new THREE.Group();
   shaftRotor.position.set(shaftCenter.x, shaftCenter.y, 0);
   shaftRotor.userData.role = 'reversible-shaft-and-driving-projection';
+  // p109: the shaft ends 0.025 past the front face (z 0.77) and 0.027 behind
+  // the strap's back (z -0.358), so no bare 0.5-proud post stands out.
+  const shaftFront = 0.795;
+  const shaftBack = -0.385;
   const inputShaft = cylinderAlongZ(
     shaftRadius,
-    shaftLength,
+    shaftFront - shaftBack,
     darkMaterial,
     48,
   );
+  inputShaft.position.z = (shaftFront + shaftBack) / 2;
   inputShaft.userData.role = 'reversible-engine-crankshaft';
   const shaftFace = cylinderAlongZ(
     shaftFaceRadius,

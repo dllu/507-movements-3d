@@ -93,3 +93,23 @@ test('111 optional contact model uses construction vertices and advances without
   t.diagnostic(JSON.stringify({compiledVertices:count,maximumVertexErrorPixels:error*100,geoms:p.model.ngeom,angle:q.angle,outputPixels:q.output*100,penetrationPixels:penetration*100}));
  }finally{v.dispose();}
 });
+
+test('p109: 111 square threads end in full radial faces inside the sleeve and screw ends', () => {
+  const {root} = makeMicrometerGeometry();
+  const f = root.userData.profile;
+  assert.ok(Math.abs(f.outer.width - f.pitchOuter / 2) < 1e-12);
+  assert.ok(Math.abs(f.inner.width - f.pitchInner / 2) < 1e-12);
+  assert.ok(f.innerCore >= 0.6 * f.innerCrest - 1e-12);
+  assert.equal(f.outer.squareEnds, true);
+  assert.equal(f.inner.squareEnds, true);
+  assert.equal(f.outer.low, 0);
+  const box = new THREE.Box3();
+  for (const name of ['outerThread', 'innerThread']) {
+    const p = root.userData.parts[name].geometry.attributes.position;
+    box.makeEmpty();
+    for (let i = 0; i < p.count; i++) box.expandByPoint(new THREE.Vector3().fromBufferAttribute(p, i));
+    const t = name === 'outerThread' ? f.outer : f.inner;
+    assert.ok(box.min.z >= t.low - 1e-6 && box.max.z <= t.high + 1e-6, `${name} stays within its ends`);
+  }
+  disposeObject3D(root);
+});

@@ -3,7 +3,6 @@ import cavities from './baked/reversing-mangle-cavities.js';
 import {markShadows, PALETTE} from './primitives.js';
 import {circle, poly, plate, polygonClipping as clip} from './finite-plate-geometry.js';
 import {boredCylinderGeometry} from './piston-guide-parts.js';
-import {addMangleUniversalDrive} from './mangle-universal-drive.js';
 import {involuteSpurOutline, smoothExtrudeGeometry} from './smooth-extrusion.js';
 
 function area(points) {
@@ -121,11 +120,26 @@ export function finishReversingMangleGuides(root,update,id) {
   }
   d.finiteGuide={halfWidth,journalRadius:.055,collarRadius:.062,collarBore:.056,floorZ:floor,frontZ:front,pinionPlaneZ:.37};
   d.sourceAnimation={available:false,officialCanvasModelPresent:false,modelDefinitionsChecked:true};
-  d.reconstructionNote='The source supplies no numerical groove section or animated model. The reversing law is prescribed from ideal pitch rolling. A blind groove, connected backing and front-side universal input reconstruct hidden depth interfaces. Forces, friction and clearance take-up are not simulated.' + (id===194?' The retained radial pin row and pinion still interfere; finite tooth contact is not qualified.':' The complementary tooth cavity is cut offline with the actual pinion phase and checked through both reversals.');
+  d.reconstructionNote='The source supplies no numerical groove section or animated model. The reversing law is prescribed from ideal pitch rolling. A blind groove and connected backing reconstruct hidden depth interfaces; the undrawn input drive is omitted (the pinion shaft ends in its hub). Forces, friction and clearance take-up are not simulated.' + (id===194?' The retained radial pin row and pinion still interfere; finite tooth contact is not qualified.':' The complementary tooth cavity is cut offline with the actual pinion phase and checked through both reversals.');
   d.minimumDisplayCycleSeconds=d.transmission.cyclePeriod;
   // Rotated local bounding boxes inflate the almost circular wheel by sqrt(2).
   // Fit the visible finite vertices through a whole mechanism cycle instead.
   d.hideGround=true;
+  // p109: the 2026-09-29 rule: mangle wheels need no universal-joint drive
+  // (Brown draws none on 192-194). 192 and 193 now follow 194: the jointed
+  // drive, its column and the placeholder standard are left out before
+  // framing, and the pinion shaft ends just proud of the pinion's hub.
+  if(id!==194){
+    for(const key of ['universalSlipShaft','fixedUniversalCross','rearInputShaft','movingUniversalJoint','framePost','frameFoot'])
+      b[key]?.parent?.remove(b[key]);
+    root.updateMatrixWorld(true);
+    const pinionTop=new THREE.Box3().setFromObject(b.pinion).max.z,shaft=b.pinionShaft,rod=shaft.userData.rotor.children[0];
+    const bottom=shaft.position.z-shaft.userData.length/2,top=pinionTop+.027,radius=rod.geometry.parameters.radiusTop;
+    rod.geometry.dispose();
+    rod.geometry=new THREE.CylinderGeometry(radius,radius,top-bottom,22);
+    rod.position.z=(top+bottom)/2-shaft.position.z;
+    d.pinionShaftTop=top;
+  }
   const bounds=new THREE.Box3(),point=new THREE.Vector3(),visible=[];
   root.traverse(o=>{for(const material of [].concat(o.material??[]))material.fog=false;});
   root.traverseVisible(o=>{if(o.geometry?.attributes.position)visible.push(o);});
@@ -137,11 +151,7 @@ export function finishReversingMangleGuides(root,update,id) {
     }
   }
   d.cameraFitBounds=bounds.expandByScalar(.03);
-  // The captioned jointed pinion shaft and the plain frame (added after
-  // framing): Hooke joints at the input bearing and on the pinion shaft join a
-  // telescopic slip shaft; the input shaft turns in a bearing on an arm from a
-  // column beside the wheel, and a standard behind the wheel carries its shaft.
-  // They replace the factory's ball-ended placeholder joint and its standard.
+  // 194 drops the factory's placeholder joint and standard after framing.
   for(const key of ['universalSlipShaft','fixedUniversalCross','rearInputShaft','movingUniversalJoint','framePost','frameFoot'])
     b[key]?.parent?.remove(b[key]);
   // p102: 194's pinion rides deep inside the wheel face (its centre 1.6 from
@@ -149,28 +159,7 @@ export function finishReversingMangleGuides(root,update,id) {
   // swings up to the pinion's whole travel off the pinion axis and crosses
   // the pinion face in a face-on view, whatever the joint spacing. Brown
   // draws no drive, so 194 shows only the shaft end in the pinion's hub.
-  if(id===194){
-    d.cameraDistanceScale=1.04;d.cameraFov??=16;markShadows(root);
-    d.universalDrive=null;
-    return {root,update,cameraDirection:new THREE.Vector3(1.6,.9,16)};
-  }
-  const box=(o)=>new THREE.Box3().setFromObject(o);
-  root.updateMatrixWorld(true);
-  const fixedPoint=b.fixedUniversalCross.position;
-  let maxDeviation=0;
-  for(let pose=0;pose<=128;pose++){update(d.transmission.cyclePeriod*pose/128);const c=d.kinematics.pinionCenter;maxDeviation=Math.max(maxDeviation,Math.hypot(c.x-fixedPoint.x,c.y-fixedPoint.y));}
-  update(0);root.updateMatrixWorld(true);
-  const universal=addMangleUniversalDrive(root,{fixedPoint,pinionShaftTop:box(b.pinionShaft).max.z,maxDeviation,
-    wheelRadius:g.wheelRadius,wheelShaftBack:box(b.wheelShaft).min.z,wheelBackZ:Math.min(box(b.wheelRotor).min.z,-.21)});
-  Object.assign(b,{universalDrive:universal.drive,universalFrame:universal.frame,...Object.fromEntries(Object.entries(universal.blocks).map(([k,v])=>['universal'+k[0].toUpperCase()+k.slice(1),v]))});
-  d.universalDrive={fixedJoint:universal.J1.clone(),jointSpan:universal.span,maxDeviation};
-  const baseUpdate=update;
-  update=(time)=>{baseUpdate(time);universal.update(d.kinematics.pinionCenter,d.kinematics.pinionAngle);};
-  update(0);
-  d.cameraDistanceScale=1.04;
-  // A long lens, as 192's: Brown's flat face view, and the jointed shaft
-  // standing end-on in front of the wheel is not enlarged by perspective.
-  d.cameraFov??=16;
-  markShadows(root);
+  d.cameraDistanceScale=1.04;d.cameraFov??=16;markShadows(root);
+  d.universalDrive=null;
   return {root,update,cameraDirection:new THREE.Vector3(1.6,.9,16)};
 }

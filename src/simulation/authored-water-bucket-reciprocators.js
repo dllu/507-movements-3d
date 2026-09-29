@@ -523,13 +523,30 @@ function waterBucketReciprocator(movement) {
   valveDisk.position.y = -.93;
   valveDisk.userData.role = 'lifting-bottom-valve-disk';
   valve.add(valveDisk);
+  // Pass 109: the stem runs on up through the disk into a guide: a bar cast
+  // across the bucket 0.39 above its bottom, bored for the stem (0.003
+  // clear). At rest the stem stands 0.06 above the bar and at the full 0.24
+  // lift it still fills the bore, so the lifted disk stays on its axis
+  // instead of floating free over the seat.
+  const stemTop = -0.50, stemBottom = -1.20;
   const valveStem = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.055, 0.055, 0.30, 24),
+    new THREE.CylinderGeometry(0.055, 0.055, stemTop - stemBottom, 32),
     darkMaterial,
   );
-  valveStem.position.y = -1.05;
+  valveStem.position.y = (stemTop + stemBottom) / 2;
   valveStem.userData.role = 'ground-striking-valve-stem';
   valve.add(valveStem);
+  {
+    // Shell inner radius at the bar (y -0.59): 0.45 + 0.14 * (0.46 / 1.0).
+    const guideY = -0.59, halfLength = 0.45 + 0.14 * 0.46 + 0.012;
+    const outline = polygonClipping.difference(
+      poly([[-0.06, -halfLength], [0.06, -halfLength], [0.06, halfLength], [-0.06, halfLength]]),
+      poly(circle([0, 0], 0.058, 48)));
+    const guide = new THREE.Mesh(plate(outline, -0.03, 0.03).rotateX(-Math.PI / 2), bucketMaterial);
+    guide.position.y = guideY;
+    guide.userData.role = 'valve-stem-guide-bar-across-bucket';
+    bucket.add(guide);
+  }
 
   const counterweight = new THREE.Group();
   counterweight.position.set(counterweightRopeX, bottomAttachmentY, 0);

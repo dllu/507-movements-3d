@@ -550,8 +550,17 @@ function sealFork(root) {
   const water = b.waterFill[0];
   water.geometry.dispose();
   water.geometry = halfWaterBody(halfCurve, 0.372);
+  // Pass 109: the streak coordinates of the shared fork water (see
+  // ejector-trap-working-parts.js) on the closed half body.
+  {
+    const position = water.geometry.getAttribute('position'), uv = new THREE.BufferAttribute(new Float32Array(position.count * 2), 2);
+    for (let i = 0; i < position.count; i += 1) {
+      uv.setXY(i, 2 * (Math.atan2(position.getZ(i), position.getX(i)) / (2 * Math.PI) + 0.5) + 0.8 * position.getX(i), b.forkFlowAt(position.getY(i)));
+    }
+    water.geometry.setAttribute('uv', uv);
+  }
   const slicer = waterSurfaceSlicer(water.geometry);
-  const surfaceMaterial = [].concat(water.material)[0].clone();
+  const surfaceMaterial = (b.plainWaterMaterial ?? [].concat(water.material)[0]).clone();
   surfaceMaterial.side = THREE.DoubleSide;
   const surface = new THREE.Mesh(slicer.surface, surfaceMaterial);
   surface.userData.role = 'free-water-level-in-B-fork-and-C';

@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import {PALETTE, markShadows, matte} from './primitives.js';
 import {cutFaceMaterial, latheSectionGeometry} from './cutaway-section.js';
 import {waterVolumeMaterial} from './water-volume.js';
-import {WaterStream, ballisticPath} from './water-stream.js';
+import {WaterStream, ballisticPath, waterStreamMaterial} from './water-stream.js';
 import {
   FOUNTAIN,
   bowlWaterGeometry,
@@ -111,7 +111,37 @@ function heronsFountain(movement) {
   // faster streaks, so the plume reads as spray rather than glass wires.
   const tip = new THREE.Vector3(0, pipe.tip, -0.08);
   const fan = [[-15, -2], [-10, -6], [-6, 0], [-3, -9], [-1, -3], [1, -6], [3, 0], [6, -9], [10, -3], [15, -6]];
+  // Pass 109: the shared streak map is too faint on streams this thin, so
+  // the ten arcs read as static glass tubes. Each jet wears the shared
+  // material with a stronger streak map: bright slugs of water (alpha
+  // 0.3..1, three per tile, phase-jittered across) that scroll out along the
+  // arc from the spire tip at the local speed of the water.
+  const jetStreaks = (() => {
+    const W = 16, H = 96, data = new Uint8Array(W * H * 4);
+    for (let x = 0; x < W; x += 1) {
+      const phase = ((x * 7) % W) / W;
+      for (let y = 0; y < H; y += 1) {
+        const wave = 0.5 + 0.5 * Math.cos(2 * Math.PI * (3 * y / H + phase));
+        const slug = wave ** 3;
+        const i = 4 * (y * W + x);
+        data[i] = data[i + 1] = Math.round(255 * (0.88 + 0.12 * slug));
+        data[i + 2] = 255;
+        data[i + 3] = Math.round(255 * (0.30 + 0.70 * slug));
+      }
+    }
+    const texture = new THREE.DataTexture(data, W, H, THREE.RGBAFormat);
+    texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+    texture.magFilter = THREE.LinearFilter;
+    texture.minFilter = THREE.LinearMipmapLinearFilter;
+    texture.generateMipmaps = true;
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.needsUpdate = true;
+    return texture;
+  })();
   const jets = fan.map(([degrees, depthDegrees], index) => {
+    const jetMaterial = waterStreamMaterial({opacity: 0.62, normalScale: 0.5});
+    jetMaterial.map.dispose();
+    jetMaterial.map = jetStreaks.clone();
     const angle = THREE.MathUtils.degToRad(degrees), back = THREE.MathUtils.degToRad(depthDegrees);
     const stream = new WaterStream(ballisticPath({
       origin: tip,
@@ -126,8 +156,9 @@ function heronsFountain(movement) {
       section: (i, u, [a, b]) => [Math.min(a, 0.07), Math.min(b, 0.07)],
       spread: {start: 0.5, width: 1.8, thickness: 1.8},
       cyclePeriod: cycleDuration,
-      streakRate: 4.5,
-      opacity: 0.5,
+      streakRate: 2.4,
+      streakAcross: 1,
+      material: jetMaterial,
     });
     stream.userData.role = `fountain-jet-stream-${index + 1}-from-spire-tip-into-trough`;
     root.add(stream);

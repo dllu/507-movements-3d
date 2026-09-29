@@ -843,7 +843,9 @@ function reciprocatingWellLift(movement) {
   // (pitch radius less the thread radius), so the spiral is not a loose wire.
   {const core=worm.userData.rotor.children.find(o=>o.geometry?.type==='CylinderGeometry');
    const coreRadius=wormPitchRadius-0.045+0.004;
-   core.geometry.dispose();core.geometry=new THREE.CylinderGeometry(coreRadius,coreRadius,wormLength,40);}
+   // Pass 109: the core runs 0.006 past each end of the thread, so the
+   // thread's end faces no longer lie in the core's end planes (z-fight).
+   core.geometry.dispose();core.geometry=new THREE.CylinderGeometry(coreRadius,coreRadius,wormLength+0.012,40);}
 
   const makeWheelAssembly = (side, color) => {
     const center = gearCenters[side];

@@ -199,7 +199,10 @@ test('movement 63 p96: no bracket; the stop pin and spring stud are plain studs,
   const shaftBack = zRange(blocks.starShaft)[0];
   for (const part of [pin, stud]) {
     assert.equal(part.geometry.type, 'CylinderGeometry', 'a plain round stud');
-    assert.ok(Math.abs(zRange(part)[0] - shaftBack) < 1e-6, 'it runs back to the shafts\' back plane');
+    // p109: a short stub just behind the drop plate, not a long bare rod to
+    // the shafts' back plane.
+    const dropBack = zRange(blocks.drop)[0];
+    assert.ok(zRange(part)[0] > shaftBack + 0.2 && zRange(part)[0] < dropBack - 0.05, 'a short stub behind the drop');
   }
   assert.equal(stud.geometry.parameters.radiusTop, pin.geometry.parameters.radiusTop, 'both studs match');
   const [springBack, springFront] = zRange(blocks.springLeaf);

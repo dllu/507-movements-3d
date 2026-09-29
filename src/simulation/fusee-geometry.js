@@ -45,7 +45,10 @@ export function steppedFuseeGeometry(parameters, { segmentsPerTurn = 720 } = {})
   // tilted along the circumference by the lead (flat where clamped).
   const treadNormal = (j, radius) => {
     const theta = thetaAt(j);
-    const clamped = tread(j) !== p.topTread - slope * theta;
+    // p109: compare with a tolerance. An exact !== flagged random radial
+    // lines as clamped (the two expressions round differently), so their
+    // normals lay flat among tilted ones and the treads showed radial streaks.
+    const clamped = Math.abs(tread(j) - (p.topTread - slope * theta)) > 1e-9;
     const dz = clamped ? 0 : -slope;
     return new THREE.Vector3(Math.sin(theta) * dz, -Math.cos(theta) * dz, radius).normalize();
   };

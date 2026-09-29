@@ -134,7 +134,7 @@ test('046 tilted joint pins fit the rendered bores of every chain plate and end 
       const expected = anchor.userData.pinCenter.clone().applyMatrix4(anchor.matrixWorld);
       assert.ok(expected.distanceTo(state.pins[end]) < 2e-9, 'clevis bore and terminal chain pin remain concentric');
       data.pins.getMatrixAt(end, pin);
-      for (const leaf of anchor.children) {
+      for (const leaf of anchor.children.filter((child) => !child.userData.anchorBlock)) {
         inspect(leaf.matrixWorld, pin, anchor.userData.pinRadius, anchor.userData.thickness, anchor.userData.boreRadius);
       }
     }
@@ -424,4 +424,36 @@ test('046 p93: the chain is dark steel, so it does not read as a white dashed li
   const model = createMovementModel(catalog.movements[45]);
   const data = model.root.userData.blocks.chain.userData;
   for (const mesh of [data.evenPlates, data.oddPlates, data.pins]) assert.ok(mesh.material.color.getHSL({}).l < 0.4);
+});
+
+test('046 chain end is hooked into a block seated on the base-flange tread (p109)', () => {
+  const model = createMovementModel(catalog.movements[45]);
+  const { fuseeAnchor, chain } = model.root.userData.blocks;
+  const p = model.root.userData.geometry;
+  const block = fuseeAnchor.userData.block;
+  assert.ok(block && block.parent === fuseeAnchor);
+  block.geometry.computeBoundingBox();
+  const box = block.geometry.boundingBox;
+  // Bottom on the flange tread (a hair into it), top level with the pins.
+  const treadLocal = p.flangeTop - p.fuseeZBottom;
+  assert.ok(Math.abs(box.min.z - treadLocal) < 0.003 && box.min.z <= treadLocal, `block bottom ${box.min.z}`);
+  assert.ok(box.max.z > 0.03);
+  // Clear of the riser and of the terminal link's plates at every pose.
+  const positions = block.geometry.attributes.position;
+  let minimumRiser = Infinity;
+  for (let i = 0; i < positions.count; i += 1) {
+    const x = positions.getX(i), y = positions.getY(i), phi = Math.atan2(y, x) + fuseeAnchor.rotation.z;
+    minimumRiser = Math.min(minimumRiser, Math.hypot(x, y) - (p.chainRadiusStart + p.radialPitch * phi / (2 * Math.PI) - p.riserGap));
+  }
+  assert.ok(minimumRiser > 0.001, `block clears the riser ${minimumRiser}`);
+  model.update(0);
+  model.root.updateMatrixWorld(true);
+  const pins = model.root.userData.fuseeState.pins;
+  const endPin = fuseeAnchor.userData.pinCenter.clone().applyMatrix4(fuseeAnchor.matrixWorld);
+  assert.ok(endPin.distanceTo(pins[pins.length - 1]) < 1e-9, 'terminal pin in the clevis');
+  // The block lies ahead of the terminal pin (away from the wound chain),
+  // past the terminal plates' round ends.
+  const toBlock = new THREE.Box3().setFromObject(block).getCenter(new THREE.Vector3()).sub(endPin);
+  const back = pins[pins.length - 2].clone().sub(endPin);
+  assert.ok(toBlock.dot(back) < 0 && toBlock.length() > chain.userData.plateRadius);
 });

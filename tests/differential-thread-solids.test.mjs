@@ -34,11 +34,19 @@ test('260 shafts stay seated and its rotating nut journal clears its actual cros
   model.update(time);model.root.updateMatrixWorld(true);
   for(const[shaft,housing]of[[b.inputShaft,b.leftInputBearing],[b.screwCore,b.leftScrewGuide]]){const s=new THREE.Box3().setFromObject(shaft),h=new THREE.Box3().setFromObject(housing);assert.ok(s.min.x<h.min.x&&s.max.x>h.max.x);}
   const points=surfacePoints(b.nutJournal.geometry);
-  for(const target of[b.rightStandardTop,b.fixedNutBearing,...b.rightStandardBars]){
+  for(const target of[b.rightStandardTop,b.fixedNutBearing,...b.rightStandardFlares]){
    const surface=solidSurface(target.geometry),matrix=target.matrixWorld.clone().invert().multiply(b.nutJournal.matrixWorld);
    for(const p of points){const q=p.clone().applyMatrix4(matrix);assert.ok(!surface.inside(q)||surface.distance(q)<1e-6);}
   }
  }
+ disposeObject3D(model.root);
+});
+test('260 standards are single bored plates with filleted round bosses and no tori',()=>{
+ const model=factories[260](catalog[259]),b=model.root.userData.blocks;
+ model.root.traverse(o=>{if(o.isMesh&&o.visible)assert.notEqual(o.geometry.type,'TorusGeometry',o.userData.role??o.parent?.userData.role);});
+ for(const bar of[...b.tallStandardBars,...b.rightStandardBars])assert.equal(bar.parent,null);
+ for(const plate of[b.tallStandardTop,b.rightStandardTop]){assert.equal(plate.parent,b.frame);assert.equal(plate.geometry.parameters.shapes.holes.length,plate===b.tallStandardTop?2:1);}
+ for(const boss of[b.leftInputBearing,b.leftScrewGuide,b.fixedNutBearing])assert.ok(boss.geometry.userData.boreRadius>0);
  disposeObject3D(model.root);
 });
 test('266 uses complementary same-hand coarse and fine solid trapezoid nut threads',()=>{

@@ -603,7 +603,7 @@ test('movement 328 p92: the crosshead ends are round about their rod-joint pins'
   disposeModel(model.root);
 });
 
-test('movement 328 p96: forward end bosses carry the rod-joint pins to the rod plane', () => {
+test('movement 328 p109: crosshead, rod B and cylinder lie in the connecting rods\' plane, no forward posts', () => {
   const model = createMovementModel(catalog.movements[327]);
   model.update(0);
   model.root.updateMatrixWorld(true);
@@ -612,14 +612,15 @@ test('movement 328 p96: forward end bosses carry the rod-joint pins to the rod p
     model.root.traverse((object) => { if (object.userData.role === role) found = object; });
     return found;
   };
+  const bar = new THREE.Box3().setFromObject(find('horizontal-crosshead-rigid-span'));
+  const rodB = new THREE.Box3().setFromObject(find('vertical-piston-rod-B-rigid-with-crosshead'));
   for (const side of ['left', 'right']) {
-    const boss = new THREE.Box3().setFromObject(find(`${side}-crosshead-forward-end-boss`));
-    const bar = new THREE.Box3().setFromObject(find('horizontal-crosshead-rigid-span'));
+    assert.equal(find(`${side}-crosshead-forward-end-boss`), null, `${side} forward post removed`);
     const eye = new THREE.Box3().setFromObject(find(`${side}-equal-obliquity-connecting-rod-crosshead-eye-body`));
-    assert.ok(boss.min.z < bar.max.z, `${side} boss rooted in the crosshead`);
-    const gap = eye.min.z - boss.max.z;
-    assert.ok(gap > 0 && gap < 0.02, `${side} boss ends a running clearance behind the rod eye (${gap})`);
+    const gap = eye.min.z - bar.max.z;
+    assert.ok(gap > 0 && gap < 0.02, `${side} rod eye rides just in front of the crosshead eye (${gap})`);
   }
+  assert.ok(Math.abs((rodB.min.z + rodB.max.z) / 2 - (bar.min.z + bar.max.z) / 2) < 1e-6, 'rod B on the crosshead plane');
 });
 
 test('328 p104: round piston rod, closed cylinder bottom, brass input pinion', () => {

@@ -90,19 +90,26 @@ function edgeOnLinkGeometry227(g){
 // pins, so each broad inner plate shows its two rivet heads at its ends. Built in the link's frame: x along the chord, y across the
 // pulley plane (world z after the link's quarter turn), z radial.
 function pinnedOuterLinkGeometry227(g){
- const L=g.linkPitch,r=g.linkLoopHalfWidth,t=g.linkWireRadius,pin=(g.plateLinkEyeRadius??.048)-.006,
+ return pinnedOuterLinkGeometry({pitch:g.linkPitch,halfGap:g.linkLoopHalfWidth,plateHalfThickness:g.linkWireRadius,eyeRadius:g.plateLinkEyeRadius??.048});
+}
+// p109: 227's pinned outer link as a shared builder (462 reuses it). With
+// pins:false the side plates are bored for pins the caller supplies (462's
+// carrier cross shafts), instead of carrying their own pins and heads.
+export function pinnedOuterLinkGeometry({pitch,halfGap,plateHalfThickness,eyeRadius=.048,pins=true}){
+ const L=pitch,r=halfGap,t=plateHalfThickness,pin=eyeRadius-.006,
   head=pin*1.45,broad=head+.022,embed=.004,parts=[];
  const shape=new THREE.Shape();
  shape.absarc(L,0,broad,-Math.PI/2,Math.PI/2,false);
  shape.absarc(0,0,broad,Math.PI/2,3*Math.PI/2,false);
  shape.closePath();
+ if(!pins)for(const x of [0,L]){const eye=new THREE.Path();eye.absarc(x,0,pin+.003,0,2*Math.PI,true);shape.holes.push(eye);}
  for(const side of [-1,1]){
   // Shape (x, z) extruded 2t along -y by the quarter turn, then centred on y = side*r.
   const plateGeometry=new THREE.ExtrudeGeometry(shape,{bevelEnabled:false,curveSegments:16,depth:2*t,steps:1}).rotateX(Math.PI/2);
   plateGeometry.translate(0,side*r+t,0);
   parts.push(plateGeometry.index?plateGeometry.toNonIndexed():plateGeometry);
  }
- for(const x of [0,L]){
+ if(pins)for(const x of [0,L]){
   // The pin runs between the side plates' inner faces (ends embedded).
   const shaft=new THREE.CylinderGeometry(pin,pin,2*(r-t)+2*embed,20,1,false);shaft.translate(x,0,0);parts.push(shaft.toNonIndexed());
   for(const side of [-1,1]){
@@ -117,6 +124,7 @@ function pinnedOuterLinkGeometry227(g){
  const geometry=mergeGeometries(parts);
  geometry.computeBoundingBox();geometry.computeBoundingSphere();
  geometry.userData={profile:'pinned-outer-link-two-side-plates-227',broadHalf:broad,pinRadius:pin,headRadius:head,sidePlateHalfGap:r-t};
+ if(!pins)geometry.userData.profile='bored-outer-link-two-side-plates';
  return geometry;
 }
 export function correctChainDrive(model,id){

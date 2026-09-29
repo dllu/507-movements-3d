@@ -29,8 +29,11 @@ test('376 one-piece treads, their end cheeks, spokes and side rings have finite 
  assert.deepEqual(b.treadMounts,[]);
  const band=side=>b.faceRims[side>0?1:0];
  for(const tread of b.treadBoards)for(const side of[-1,1]){const i=tread.userData.index,angle=i*d.geometry.treadPitch,ring=b.sideRings[side>0?1:0];
-  joined(tread,band(side),b.wheelRotor.localToWorld(new T.Vector3(Math.cos(angle)*1.95,Math.sin(angle)*1.95,side*.6725)));
-  joined(tread,ring,b.wheelRotor.localToWorld(new T.Vector3(Math.cos(angle)*1.98,Math.sin(angle)*1.98,side*.58)));
+  // p109: boards run into continuous flange rings, which meet the band and ring.
+  const flange=b.treadFlanges[side>0?1:0],ends=d.treadChannel;
+  joined(tread,flange,b.wheelRotor.localToWorld(new T.Vector3(Math.cos(angle)*1.70,Math.sin(angle)*1.70,side*(ends.boardEndZ-.002))));
+  joined(flange,band(side),b.wheelRotor.localToWorld(new T.Vector3(Math.cos(angle)*1.95,Math.sin(angle)*1.95,side*.6725)));
+  joined(flange,ring,b.wheelRotor.localToWorld(new T.Vector3(Math.cos(angle)*1.98,Math.sin(angle)*1.98,side*.58)));
  }
  for(const spoke of b.radialSpokes){const p=spoke.localToWorld(new T.Vector3(spoke.userData.halfLength+.01,0,0)),ring=b.sideRings[spoke.userData.side>0?1:0];joined(spoke,ring,p);}
 });

@@ -131,3 +131,8 @@ for(const id of [181,182])test(`${id} (pass 104): the upper handle is ochre, the
   assert.ok(hsl.h>0.08&&hsl.h<0.16,'ochre upper handle');
  }finally{model.dispose?.();}
 });
+test('181/182 (p109): pivot shafts and pins are mid steel grey, not pale holes',()=>{
+ for(const id of [181,182]){const model=makeBakedDiagonalCatchModel(bundle,id);let n=0;
+  try{model.root.traverse(o=>{if(o.isMesh&&/pivot-shaft|pin/.test(o.userData.role??o.name??'')&&o.material?.color){assert.notEqual(o.material.color.getHex(),0x9aa19d);if(o.material.color.getHex()===0x7e8584)n++;}});assert.ok(n>0);}
+  finally{model.dispose?.();}}
+});

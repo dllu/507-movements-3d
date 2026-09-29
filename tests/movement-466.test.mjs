@@ -434,3 +434,14 @@ test('movement 466 starts on Brown’s lever slope and models his thin line as a
   assert.ok(maximumSag > maximumSagWhilePumping, 'cord slackens when the ball is lifted');
   disposeModel(model.root);
 });
+
+test('movement 466 plunger and crosshead contrast with the orange lever; ram casting is finely swept (p109)', () => {
+  const model = createMovementModel(catalog.movements[465]);
+  const colors = new Map();
+  model.root.traverse((o) => { if (o.isMesh && o.userData.role) colors.set(o.userData.role, [].concat(o.material)[0].color.getHex()); });
+  assert.notEqual(colors.get('plunger-rod'), 0xde5a3f);
+  assert.notEqual(colors.get('crosshead-block'), 0xde5a3f);
+  let casting = null;
+  model.root.traverse((o) => { if (!casting && o.userData.role === 'sectioned-ram-cylinder-casting') casting = o; });
+  assert.ok(casting.geometry.attributes.position.count > 3000, 'ram casting swept with 80 steps over the half');
+});

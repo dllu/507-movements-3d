@@ -640,6 +640,30 @@ function waterSealedBellPump(movement) {
     ropeMaterial,
   ), 'right-manual-pull-rope');
   root.add(leftPullRope, rightPullRope);
+  // Pass 109: each pull rope is made fast to its lever by a turn of the same
+  // rope round the lever's end (a ring about the lever's axis, its bore
+  // clearing the 0.14 x 0.13 bar's corners), and hangs from the bottom of
+  // that turn instead of butting on the lever's underside.
+  const PULL_LOOP_RADIUS = 0.14, PULL_LOOP_TUBE = 0.045, PULL_LOOP_INSET = 0.05;
+  const pullLoops = ['left', 'right'].map((side) => {
+    const loop = addRole(new THREE.Mesh(
+      new THREE.TorusGeometry(PULL_LOOP_RADIUS, PULL_LOOP_TUBE, 12, 40),
+      ropeMaterial,
+    ), `${side}-pull-rope-turn-round-lever-end`);
+    // It rides with its lever; its own spin is not a shaft's speed.
+    loop.userData.rotationallySymmetric = true;
+    root.add(loop);
+    return loop;
+  });
+  const loopAxis = new THREE.Vector3(), zAxis = new THREE.Vector3(0, 0, 1);
+  const placePullLoop = (loop, outer, inner) => {
+    loopAxis.subVectors(inner, outer).normalize();
+    // The rope's pull seats the turn on the bar's top face (half-height 0.07).
+    loop.position.copy(outer).addScaledVector(loopAxis, PULL_LOOP_INSET);
+    loop.position.y -= PULL_LOOP_RADIUS - PULL_LOOP_TUBE - 0.07;
+    loop.quaternion.setFromUnitVectors(zAxis, loopAxis);
+    return loop.position.clone().add(new THREE.Vector3(0, -PULL_LOOP_RADIUS, 0));
+  };
   const handGrips = [-1, 1].map((side, index) => {
     const grip = addRole(new THREE.Mesh(
       new THREE.CylinderGeometry(0.055, 0.055, 0.54, 18),
@@ -680,18 +704,20 @@ function waterSealedBellPump(movement) {
     );
     // Each pull rope keeps its length: the grip hangs below its lever end
     // and rises and falls with it (at y 0.20 when the levers stand level).
+    const leftHang = placePullLoop(pullLoops[0], state.leftOuterEnd, state.leftInnerEnd);
+    const rightHang = placePullLoop(pullLoops[1], state.rightOuterEnd, state.rightInnerEnd);
     const leftGrip = new THREE.Vector3(
-      state.leftOuterEnd.x,
+      leftHang.x,
       state.leftOuterEnd.y - pullRopeLength,
-      state.leftOuterEnd.z,
+      leftHang.z,
     );
     const rightGrip = new THREE.Vector3(
-      state.rightOuterEnd.x,
+      rightHang.x,
       state.rightOuterEnd.y - pullRopeLength,
-      state.rightOuterEnd.z,
+      rightHang.z,
     );
-    setRopeBetween(leftPullRope, state.leftOuterEnd, leftGrip, pullRopeRadius);
-    setRopeBetween(rightPullRope, state.rightOuterEnd, rightGrip, pullRopeRadius);
+    setRopeBetween(leftPullRope, leftHang, leftGrip, pullRopeRadius);
+    setRopeBetween(rightPullRope, rightHang, rightGrip, pullRopeRadius);
     handGrips[0].position.copy(leftGrip);
     handGrips[1].position.copy(rightGrip);
 

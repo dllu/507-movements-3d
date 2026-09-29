@@ -7513,7 +7513,10 @@ function twinObliqueRodTogglePressMotion() {
 
   root.userData.mechanism = 'fixed-upper-rotor-two-oblique-rod-toggle-press';
   root.userData.cameraDistanceScale = 1.04;
-  root.userData.hideGround = true;
+  // p109: Brown hatches the ground under the column feet and the bed; the
+  // shadow-catching ground is shown so the bed stands on it with the feet
+  // rather than floating free between them.
+  root.userData.hideGround = false;
   root.userData.supportsRestart = true;
   root.userData.minimumDisplayCycleSeconds = 4;
   root.userData.cameraFitBounds = new THREE.Box3(

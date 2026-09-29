@@ -119,7 +119,8 @@ test('movement 376 is one internal animal treadwheel with a rigid cage, sixteen 
   assert.deepEqual(belts, []);
   for (const role of [
     'horizontal-axis-cage-wheel-turned-by-animal-weight',
-    'internal-tread-board-with-end-cheeks-to-riveted-bands',
+    'internal-tread-board-between-continuous-flange-rings',
+    'continuous-inner-tread-flange-ring-joining-boards-to-riveted-band',
     'animal-held-at-one-side-while-walking-up-moving-interior',
     'overhung-output-axle-stub-rigid-with-treadwheel',
   ]) assert.ok(roles.includes(role), role);

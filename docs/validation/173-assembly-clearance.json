@@ -1894,7 +1894,7 @@
     },
     {
       "file": "src/simulation/mujoco-silk-tappet/assembly.js",
-      "sha256": "0a79aa4fd5f15c0fa45bf3527eaf56ed19817083e9905cf62b05054a9af24fe0"
+      "sha256": "b02d4d7177d22aa29cb9f711d29b6d3a05fa3838704f00cff4a4ed62df3ac9af"
     },
     {
       "file": "src/simulation/mujoco-silk-tappet/solids.js",

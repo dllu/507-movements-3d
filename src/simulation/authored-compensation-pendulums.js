@@ -3,7 +3,9 @@ import * as THREE from 'three';
 import {applyCutawayFor} from './cutaway-presentations.js';
 import {boredLatheGeometry} from './bored-lathe-geometry.js';
 import {trapezoidThread} from './differential-thread-solids.js';
-import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
+import {mergeGeometries, mergeVertices} from 'three/addons/utils/BufferGeometryUtils.js';
+import {creaseIndexedNormals} from './crease-normals.js';
+import {makeSeeThrough} from './see-through-part.js';
 import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
 import {
   PALETTE,
@@ -927,9 +929,14 @@ function mercurialCompensationPendulum(movement) {
   const indexPlate = new RoundedBoxGeometry(
     0.07, indexPlateTop - indexPlateBottom, 0.56, 3, 0.025,
   ).translate(indexPlateInner + 0.035, (indexPlateTop + indexPlateBottom) / 2, 0);
+  // The lathes' normals were smoothed round their square shoulders and
+  // ends; weld and crease them so only the turned curves shade smoothly.
+  const handleGeometry = mergeGeometries([leftArm, rightArm, indexPlate]
+    .map((g) => (g.index ? g.toNonIndexed() : g)));
+  handleGeometry.deleteAttribute('normal');
+  handleGeometry.deleteAttribute('uv');
   const adjusterHandle = new THREE.Mesh(
-    mergeGeometries([leftArm, rightArm, indexPlate]
-      .map((g) => (g.index ? g.toNonIndexed() : g))),
+    creaseIndexedNormals(mergeVertices(handleGeometry, 1e-5), Math.PI * 2 / 9),
     driverMaterial,
   );
   adjusterHandle.userData.role = 'jar-adjustment-cross-handle';
@@ -2210,7 +2217,16 @@ export function createAuthoredCompensationPendulumMovement(movement) {
   if (movement.id === 316) {
     // The mercury is a full column inside the clear glass (it was a
     // half-cylinder section, so the jar looked half empty when turned).
-    return applyCutawayFor(mercurialCompensationPendulum(movement), 316);
+    const model = applyCutawayFor(mercurialCompensationPendulum(movement), 316);
+    // Brown sections the jar to show the rod running down into the mercury
+    // nearly to the bottom: the mercury takes the house see-through style so
+    // the steel rod shows inside it.
+    model.root.traverse((object) => {
+      if (object.isMesh && object.userData.role === 'constant-mass-expanding-mercury-column') {
+        makeSeeThrough(object, { opacity: 0.7, edgeOpacity: 0.95 });
+      }
+    });
+    return model;
   }
   if (movement.id === 317) {
     return compoundBarCompensationPendulum(movement);

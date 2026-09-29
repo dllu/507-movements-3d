@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import {toCreasedNormals} from 'three/addons/utils/BufferGeometryUtils.js';
+import {creaseLatheNormals} from './crease-normals.js';
 import {bevelToothGeometry,bevelBodyGeometry} from './bevel-geometry.js';
 import {boredLatheGeometry} from './bored-lathe-geometry.js';
 import {bandInvoluteGear,involute} from './band-epicyclic-geometry.js';
@@ -6,10 +8,28 @@ import {boreSpur,boredCylinder} from './epicyclic-family-corrections.js';
 import {plate,poly,circle,polygonClipping as clip} from './finite-plate-geometry.js';
 const replace=(mesh,geometry)=>{mesh.geometry.dispose();mesh.geometry=geometry;};
 
-function ratioBevel(gear,mateRadius,boreRadius,{phase=0,fraction=.8,heightFactor=1.8}={}){
+// p109 (506): the shared back-cone tooth (bevel-geometry.js, as on 025 and
+// 495) with 495's smooth shading: each flank, its tip arc and the root
+// corners share creased normals (toCreasedNormals at 40 degrees, as 495's
+// truncated bevels), so flanks shade as smooth involute surfaces instead of
+// flat strips, while toe and heel stay hard-edged. The body is a 192-sided
+// lathe of the same profile as bevelBodyGeometry.
+function smoothBevelTooth(options){
+ const raw=bevelToothGeometry({...options,flankSegments:24,tipSegments:12});
+ const flat=raw.index?raw.toNonIndexed():raw;
+ const smooth=toCreasedNormals(flat,Math.PI/4.5);smooth.userData={...raw.userData,profile:'back-cone-involute-approximation-smooth-flanks'};
+ if(flat!==raw)flat.dispose();raw.dispose();return smooth;
+}
+function smoothBevelBody(tooth,boreRadius){
+ const {root,innerScale}=tooth.userData;
+ const profile=[[boreRadius,root.z*innerScale],[root.radius*innerScale,root.z*innerScale],[root.radius,root.z],[boreRadius,root.z],[boreRadius,root.z*innerScale]].map(([x,y])=>new THREE.Vector2(x,y));
+ return creaseLatheNormals(new THREE.LatheGeometry(profile,192)).rotateX(Math.PI/2);
+}
+function ratioBevel(gear,mateRadius,boreRadius,{phase=0,fraction=.8,heightFactor=1.8,smooth=false}={}){
  const n=gear.userData.teeth,radius=gear.userData.radius,module=2*radius/n,cone=Math.atan(radius/mateRadius);
- const raw=bevelToothGeometry({teeth:n,innerDistance:mateRadius*fraction,outerDistance:mateRadius,pitchConeAngle:cone,toothHeight:module*heightFactor,toothThicknessFactor:.93,flankSegments:16,tipSegments:6});
- const body=bevelBodyGeometry(raw,boreRadius);
+ const toothOptions={teeth:n,innerDistance:mateRadius*fraction,outerDistance:mateRadius,pitchConeAngle:cone,toothHeight:module*heightFactor,toothThicknessFactor:.93,flankSegments:16,tipSegments:6};
+ const raw=smooth?smoothBevelTooth(toothOptions):bevelToothGeometry(toothOptions);
+ const body=smooth?smoothBevelBody(raw,boreRadius):bevelBodyGeometry(raw,boreRadius);
  const rotor=gear.userData.rotor;
  const geometry=raw.clone().rotateX(Math.PI).translate(0,0,mateRadius).rotateZ(phase);
  body.rotateX(Math.PI).translate(0,0,mateRadius);
@@ -21,6 +41,11 @@ function ratioBevel(gear,mateRadius,boreRadius,{phase=0,fraction=.8,heightFactor
  Object.assign(gear.userData,{pitchConeAngle:cone,coneApexLocal:new THREE.Vector3(0,0,mateRadius),outerDistance:mateRadius,innerDistance:mateRadius*fraction,geometryPhase:phase,boreRadius,toothProfile:'ratio-derived-back-cone-involute-approximation'});
  raw.dispose();return gear;
 }
+// p109: each wheel's tooth phase in its own frame. One wheel of each pair
+// is 0 and its mate's phase was found by scripts/fit-506-bevel-phases.mjs
+// (widest least flank gap at the mounting pose); the rate equations keep
+// every mesh phase constant, so that pose holds through the cycle.
+export const PHASES_506={A:0,B:0.08726646259971647,H:0,G:0.07306029426953008,C:0,D:0,F:0,E:0.19634954084936207};
 function fullSpur(gear,boreRadius){
  boreSpur(gear,boreRadius);
  const p=gear.userData,r=p.pitchRadius,m=p.module,alpha=Math.PI/9;
@@ -50,12 +75,13 @@ function driverBearingCasting506(){
 
 function sourceSupports506(b){
  const outline=new THREE.Shape();
+ // p109: the arm stands 0.40 higher, over the larger upper wheel g.
  outline.moveTo(-3.65,-1.86);
  outline.quadraticCurveTo(-3.12,-1.68,-3.12,-.95);
- outline.lineTo(-3.12,1.07);
- outline.quadraticCurveTo(-3.12,1.84,-2.40,1.84);
- outline.lineTo(.25,1.84);outline.lineTo(.25,1.49);outline.lineTo(-2.35,1.49);
- outline.quadraticCurveTo(-2.76,1.49,-2.76,1.04);
+ outline.lineTo(-3.12,1.47);
+ outline.quadraticCurveTo(-3.12,2.24,-2.40,2.24);
+ outline.lineTo(.25,2.24);outline.lineTo(.25,1.89);outline.lineTo(-2.35,1.89);
+ outline.quadraticCurveTo(-2.76,1.89,-2.76,1.44);
  outline.lineTo(-2.76,-1.86);outline.closePath();
  const casting=new THREE.ExtrudeGeometry(outline,{depth:.34,bevelEnabled:false,curveSegments:20}).translate(0,0,-1.90);
  replace(b.rearPost,casting);b.rearPost.position.set(0,0,0);
@@ -63,12 +89,12 @@ function sourceSupports506(b){
  remove(b.mainBearingLinks[0]);
  const bridge=clip.difference(poly([[-.25,-1.90],[.25,-1.90],[.25,.28],[-.25,.28]]),poly(circle([0,0],.122,64)));
  replace(b.mainBearingLinks[1],plate(bridge,-.11,.11).rotateX(Math.PI/2));
- b.mainBearingLinks[1].position.set(0,1.66,0);
- for(const [i,y,h]of[[0,-1.67,.38],[1,1.66,.30]]){
+ b.mainBearingLinks[1].position.set(0,2.06,0);
+ for(const [i,y,h]of[[0,-1.67,.38],[1,2.06,.30]]){
   replace(b.mainBearings[i],boredLatheGeometry([{radial:.30,axial:-h/2},{radial:.30,axial:h/2}],.122,64));
   b.mainBearings[i].rotation.set(0,0,0);b.mainBearings[i].position.set(0,y,0);
  }
- replace(b.carrierShaftMN,new THREE.CylinderGeometry(.12,.12,3.68,32));b.carrierShaftMN.position.y=.03;
+ replace(b.carrierShaftMN,new THREE.CylinderGeometry(.12,.12,4.08,32));b.carrierShaftMN.position.y=.23;
  replace(b.supportBase,new THREE.BoxGeometry(6.80,.22,2.5));b.supportBase.position.set(-.8,-1.97,-.90);
  // Pass 101: the driver bearing boss and its bridge to the curved standard
  // are one casting: a flat bar running tangent into the round boss through
@@ -78,11 +104,13 @@ function sourceSupports506(b){
  b.driverBearing.rotation.set(0,Math.PI/2,0);b.driverBearing.position.set(-2.92,0,0);
  b.driverBearing.userData.role='driver-shaft-A-bearing-boss-cast-with-bridge-to-curved-standard';
  remove(b.driverBearingPedestal);delete b.driverBearingPedestal;
- replace(b.driverShaftA,new THREE.CylinderGeometry(.12,.12,1.95,32));b.driverShaftA.position.x=-2.525;
+ replace(b.driverShaftA,new THREE.CylinderGeometry(.12,.12,2.0,32));b.driverShaftA.position.x=-2.5;
  b.crankArm.position.x=-3.49;b.crankGrip.position.x=-3.49+b.crankGrip.userData.armOffsetX;b.inputIndex.position.set(-3.49,.50,.071);
- replace(b.radialAxle,new THREE.CylinderGeometry(.105,.105,1.68,32));b.radialAxle.position.x=.74;
- replace(b.outerCarrierHead,new THREE.CylinderGeometry(.22,.22,.30,32));b.outerCarrierHead.position.x=1.58;
- b.carrierIndex.position.x=1.741;
+ replace(b.radialAxle,new THREE.CylinderGeometry(.105,.105,1.43,32));b.radialAxle.position.x=.615;
+ // p109: head l stands just outside d's hub (x 1.224) and inside the
+ // radius (1.44) of a's toe, which it passes when the arm swings round.
+ replace(b.outerCarrierHead,new THREE.CylinderGeometry(.22,.22,.12,32));b.outerCarrierHead.position.x=1.29;
+ b.carrierIndex.position.x=1.361;
  b.upperIndex.visible=false;b.lowerIndex.visible=false;
 }
 
@@ -112,16 +140,18 @@ export function correctCompoundEpicyclic(root,id){
  if(id===506){
   const r=root.userData.geometry.pitchRadii;
   for(const[first,second,bore1,bore2]of[['A','B',.121,.121],['H','G',.121,.121],['C','D',.121,.106],['F','E',.121,.106]]){
-   ratioBevel(b[`gear${first}`],r[second.toLowerCase()],bore1,{phase:['A','H'].includes(first)?Math.PI/b[`gear${first}`].userData.teeth:0});
-   ratioBevel(b[`gear${second}`],r[first.toLowerCase()],bore2,{phase:second==='E'?Math.PI/16-Math.PI/12:0});
+   // p109: h's toe stops 0.05 outside a's heel (both on A): h's face is the
+   // outer 14% of its cone distance.
+   ratioBevel(b[`gear${first}`],r[second.toLowerCase()],bore1,{phase:PHASES_506[first],fraction:first==='H'?.86:.8,smooth:true});
+   ratioBevel(b[`gear${second}`],r[first.toLowerCase()],bore2,{phase:PHASES_506[second],smooth:true});
   }
   boredCylinder(b.lowerSleeve,.121);boredCylinder(b.upperSleeve,.121);boredCylinder(b.compoundSleeve,.106);
   replace(b.supportBase,new THREE.BoxGeometry(8.20,.22,2.5));b.supportBase.position.z=-.90;
   replace(b.driverBearingPedestal,new THREE.BoxGeometry(.28,3.16,.28));b.driverBearingPedestal.position.y=-1.58;
-  remove(b.carrierBar);replace(b.carrierIndex,new THREE.BoxGeometry(.024,.30,.045));b.carrierIndex.position.set(2.672,.13,0);
+  remove(b.carrierBar);replace(b.carrierIndex,new THREE.BoxGeometry(.024,.30,.045));b.carrierIndex.position.set(2.672,root.userData.geometry.differentialApex.y+.03,0);
   root.userData.reconstructionLimits='Conical involute approximation; source tooth counts inferred. Sampled engagement and residuals in movement-506-507.md.';
   sourceSupports506(b);
-  root.userData.cameraFitBounds=new THREE.Box3(new THREE.Vector3(-4.23,-2.10,-2.20),new THREE.Vector3(2.65,1.91,2.20));
+  root.userData.cameraFitBounds=new THREE.Box3(new THREE.Vector3(-4.23,-2.10,-2.21),new THREE.Vector3(2.65,2.31,2.21));
   root.userData.groundFloorY=-2.11;
  }else{
   // Nested sleeves must fit inside the small ten-tooth bevel roots.

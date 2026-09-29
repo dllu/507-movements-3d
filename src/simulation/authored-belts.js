@@ -11485,7 +11485,12 @@ function addProny244ShaftSection(root) {
   const { blocks } = root.userData;
   const rotor = blocks.drum.parent;
   const hubFrontZ = 0.35;
-  blocks.drumShaft.position.z = hubFrontZ - 0.63;
+  // Pass 109: the shaft ends 0.025 behind the hub's rear face (z -0.35)
+  // instead of standing 0.555 proud there as a bare post.
+  const shaftBackZ = -0.375;
+  const shaftFrontZ = hubFrontZ - 0.005;
+  blocks.drumShaft.scale.z = (shaftFrontZ - shaftBackZ) / 1.25;
+  blocks.drumShaft.position.z = (shaftFrontZ + shaftBackZ) / 2;
   const radius = 0.165;
   // Brown hatches the cut end of shaft A; the model shows the plain end of
   // the shaft itself, in the shaft's own material (no hatch strokes).

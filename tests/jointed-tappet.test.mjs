@@ -2,12 +2,16 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {makeJointedTappetCounter} from '../src/simulation/jointed-tappet.js';
-import {sampleJointedTappetMotion} from '../src/simulation/jointed-tappet-motion.js';
+import {sampleJointedTappetMotion,LEVEL_STRIKE_PHYSICS_TIME} from '../src/simulation/jointed-tappet-motion.js';
 import {solidSurface,surfacePoints} from './helpers/solid-surface.mjs';
 import {polygonClipping} from '../src/simulation/finite-plate-geometry.js';
 
 const near=(a,b,tolerance=1e-9)=>assert.ok(Math.abs(a-b)<=tolerance,`${a} != ${b}`);
 const dispose=model=>model.root.traverse(x=>{x.geometry?.dispose();x.material?.dispose();});
+// p109: the clock starts at the strike's level pose (Brown's tappet), not at
+// a release from it; at(t) maps a time on the old clock (whose settled cycles
+// began at rest) onto the new one.
+const S=LEVEL_STRIKE_PHYSICS_TIME*3/6,at=t=>t-S;
 const pose=(model,time)=>{model.update(time);model.root.updateMatrixWorld(true);return model.root.userData.kinematics;};
 
 test('076 locates C, the hinged end B, the holding pawl and D on a complete coaxial driver',()=>{
@@ -88,9 +92,11 @@ test('076 all four bearings have real bores with supporting material around them
 
 test('076 settles one counterclockwise tooth per stud, four per clockwise driver turn, and resets its joint',()=>{
   const model=makeJointedTappetCounter(),u=model.root.userData,p=u.geometry;
-  assert.ok(pose(model,0).q>=0&&pose(model,0).q<.03,'first frame near the plate pose');near(pose(model,.4).q,p.restQ);
-  assert.ok(pose(model,1).theta>p.wheelStart+1.1*p.pitch,'The wheel must pass one tooth for the holding pawl to drop in');
-  let fold=0;for(let t=1;t<2.2;t+=.01)fold=Math.min(fold,pose(model,t).alpha);
+  // The first frame is Brown's level tappet on the strike (no unprompted
+  // fall), with A not yet moved; the tappet rests on its key between strikes.
+  near(pose(model,0).q,0,1e-6);near(pose(model,0).theta,p.wheelStart,1e-6);near(pose(model,at(3.4)).q,p.restQ);
+  assert.ok(pose(model,at(1)).theta>p.wheelStart+1.1*p.pitch,'The wheel must pass one tooth for the holding pawl to drop in');
+  let fold=0;for(let t=at(1);t<at(2.2);t+=.01)fold=Math.min(fold,pose(model,t).alpha);
   assert.ok(fold<-.8,'The joint must fold to pass the return tooth');
   // The stud tips the tappet only far enough to index one tooth: it
   // releases B within 63° of rest (the rest is 0.48 rad since p94, so that B
@@ -100,8 +106,8 @@ test('076 settles one counterclockwise tooth per stud, four per clockwise driver
   assert.ok(p.restQ-qMin<1.1&&qMin<-.5,`tappet swing ${p.restQ-qMin}`);
   assert.ok(thetaMax<p.wheelStart+1.25*p.pitch,`wheel overtravel ${(thetaMax-p.wheelStart)/p.pitch}`);
   for(const cycle of [0,1,2,9,19,20,63]){
-    const held=pose(model,cycle*3+2.6);near(held.theta,p.wheelStart+(cycle+1)*p.pitch);near(held.q,p.restQ);near(held.alpha,0);near(held.holdingAngle,0);
-    const next=pose(model,(cycle+1)*3);near(next.theta,held.theta);near(next.driverAngle,-2*Math.PI*(cycle+1)/4);near(next.q,p.restQ);
+    const held=pose(model,at(cycle*3+2.6));near(held.theta,p.wheelStart+(cycle+1)*p.pitch);near(held.q,p.restQ);near(held.alpha,0);near(held.holdingAngle,0);
+    const next=pose(model,at((cycle+1)*3));near(next.theta,held.theta);near(next.driverAngle,-2*Math.PI*(cycle+1)/4);near(next.q,p.restQ);
   }
   for(const time of [3.07,3.53,4.1,5.2]){
     const a=pose(model,time),b=pose(model,time+3);near(b.theta-a.theta,p.pitch);near(b.q,a.q);near(b.alpha,a.alpha);near(b.holdingAngle,a.holdingAngle);
@@ -114,8 +120,10 @@ test('076 the cached clock is continuous at wraps, clamps negative time and reje
   assert.deepEqual(sampleJointedTappetMotion(-1),sampleJointedTappetMotion(0));
   for(const time of [NaN,Infinity,-Infinity])assert.throws(()=>sampleJointedTappetMotion(time),/clock/);
   for(const period of [0,-1,NaN,Infinity])assert.throws(()=>sampleJointedTappetMotion(1,{period}),/clock/);
-  for(const cycle of [1,2,20])for(const key of ['q','alpha','theta','holdingAngle','driverAngle']){
-    near(sampleJointedTappetMotion(cycle*3-1e-9)[key],sampleJointedTappetMotion(cycle*3+1e-9)[key],2e-9);
+  // The table wraps at at(3k) (tappet at rest); the display period's ends
+  // (3k) fall inside the strike, where the angles still change continuously.
+  for(const cycle of [1,2,20])for(const [wrap,tolerance] of [[at(cycle*3),2e-9],[cycle*3,2e-8]])for(const key of ['q','alpha','theta','holdingAngle','driverAngle']){
+    near(sampleJointedTappetMotion(wrap-1e-9)[key],sampleJointedTappetMotion(wrap+1e-9)[key],tolerance);
   }
   const slow=sampleJointedTappetMotion(.53),fast=sampleJointedTappetMotion(.53*2/3,{period:2});
   for(const key of ['q','alpha','theta','holdingAngle','driverAngle'])near(slow[key],fast[key]);
@@ -125,11 +133,11 @@ test('076 the cached clock is continuous at wraps, clamps negative time and reje
 test('076 the pawls\' own tips and B\'s heel resist motion into their contacting surfaces',()=>{
   const model=makeJointedTappetCounter(),u=model.root.userData;
   const cases=[
-    {time:.8,a:'dogBody',b:'wheelBody',block:'wheel',delta:-1e-4},
-    {time:2.5,a:'holdingBody',b:'wheelBody',block:'wheel',delta:-1e-4},
-    {time:.8,a:'dogBody',b:'tappetWeb',block:'dog',delta:1e-3},
-    {time:2.5,a:'tappetRestKey',b:'tappetWeb',block:'tappet',delta:1e-3},
-    {time:.7,a:'driverStud',b:'tappetBody',block:'driver',delta:-1e-4},
+    {time:at(.8),a:'dogBody',b:'wheelBody',block:'wheel',delta:-1e-4},
+    {time:at(2.5),a:'holdingBody',b:'wheelBody',block:'wheel',delta:-1e-4},
+    {time:at(.8),a:'dogBody',b:'tappetWeb',block:'dog',delta:1e-3},
+    {time:at(2.5),a:'tappetRestKey',b:'tappetWeb',block:'tappet',delta:1e-3},
+    {time:at(.7),a:'driverStud',b:'tappetBody',block:'driver',delta:-1e-4},
   ];
   for(const c of cases){
     const pairs=[[c.a,c.b],[c.b,c.a]].map(([a,b])=>({a,b,
@@ -225,15 +233,15 @@ test('076 B and the click are single plain plates in the wheel\'s plane, with no
 
 test('076 the click drops fully into the root after the overtravel and holds there; B drives the face',()=>{
   const model=makeJointedTappetCounter(),u=model.root.userData,p=u.geometry,c=u.contact,rot=(a,t)=>[a[0]*Math.cos(t)-a[1]*Math.sin(t),a[0]*Math.sin(t)+a[1]*Math.cos(t)];
-  let thetaMax=-Infinity;for(let t=3;t<6;t+=.002)thetaMax=Math.max(thetaMax,sampleJointedTappetMotion(t).theta);
+  let thetaMax=-Infinity;for(let t=at(3);t<at(6);t+=.002)thetaMax=Math.max(thetaMax,sampleJointedTappetMotion(t).theta);
   assert.ok(thetaMax>p.wheelStart+2.1*p.pitch,'A must overrun a tooth so the click can drop');
-  for(const time of [2.5,5.5,8.7]){
+  for(const time of [2.5,5.5,8.7].map(at)){
     const s=pose(model,time),nose=rot([p.PH[0]+rot(p.holdingNose,s.holdingAngle)[0],p.PH[1]+rot(p.holdingNose,s.holdingAngle)[1]],-s.theta);
     const touching=c.wheel.features(nose).filter(f=>Math.abs(f.distance-p.noseRadius)<1e-5);
     assert.equal(touching.length,2,`click tip seated on both flanks of the root at ${time}`);
   }
   // During the lift B's tip is on the face of the tooth it drives.
-  let driving=0;for(let t=.69;t<.89;t+=.01){const s=pose(model,t);if(Math.abs(c.gap(s.q,s.theta,s.alpha))<1e-5)driving++;}
+  let driving=0;for(let t=at(.69);t<at(.89);t+=.01){const s=pose(model,t);if(Math.abs(c.gap(s.q,s.theta,s.alpha))<1e-5)driving++;}
   assert.ok(driving>18,`B drives the tooth face through the lift (${driving})`);
   // p94: B's point reaches the root. It first meets the face just above the
   // root, slides down it as it pushes and comes within 0.0015 of the seat
@@ -241,7 +249,7 @@ test('076 the click drops fully into the root after the overtravel and holds the
   // along the face; every cycle does the same.
   const seatRadius=Math.hypot(...p.seat);
   for(const cycle of [0,1,5]){let deepest=Infinity;
-    for(let t=cycle*3+.6;t<cycle*3+1;t+=.0005){const s=sampleJointedTappetMotion(t);if(Math.abs(c.gap(s.q,s.theta,s.alpha))>1e-5)continue;
+    for(let t=at(cycle*3+3.6);t<at(cycle*3+4);t+=.0005){const s=sampleJointedTappetMotion(t);if(Math.abs(c.gap(s.q,s.theta,s.alpha))>1e-5)continue;
       const local=rot(c.noseAt(s.q,s.alpha),-s.theta),k=Math.round(Math.atan2(local[1],local[0])/p.pitch),tooth=rot(local,-k*p.pitch);
       if(Math.abs(Math.atan2(tooth[1],tooth[0]))<.05)deepest=Math.min(deepest,Math.hypot(tooth[0]-p.seat[0],tooth[1]-p.seat[1]));}
     assert.ok(deepest<.0015,`B's point reaches the root in cycle ${cycle} (${deepest})`);}

@@ -3,7 +3,7 @@ import { latheSectionGeometry } from './cutaway-section.js';
 import { caryFollowerLaw, caryWallRadius, correctCaryPump } from './rotary-pump-contact.js';
 import { circle, plate, poly, polygonClipping } from './finite-plate-geometry.js';
 import { waterVolumeMaterial } from './water-volume.js';
-import { WaterStream, ballisticPath, guidedPath, joinPaths } from './water-stream.js';
+import { WaterStream, ballisticPath, guidedPath, joinPaths, waterStreamMaterial } from './water-stream.js';
 import {
   PALETTE,
   markShadows,
@@ -651,9 +651,31 @@ function caryRotaryPump(movement) {
     chamberWater.renderOrder = 1;
     root.add(chamberWater);
     liveWater.push(chamberWater);
-    const flow = { radialSegments: 20, cyclePeriod: g.cycleDuration, streakRate: 1, opacity: 0.34 };
+    // Pass 109: finer, higher-contrast streaks (2.5 tiles per second of
+    // flight, the shared material at normal scale 0.6), so the suction
+    // column in F and the delivery pour from H read as moving water.
+    const flow = { radialSegments: 20, cyclePeriod: g.cycleDuration, streakRate: 2.5, streakAcross: 3 };
+    // The shared streak pattern with its alpha stretched from 0.72..1 to
+    // 0.35..1, so the thin pour shows its streaks moving at a glance.
+    const streakMaterial = () => {
+      const material = waterStreamMaterial({ opacity: 0.5, normalScale: 0.6 });
+      const {data, width, height} = material.map.image, stretched = new Uint8Array(data);
+      for (let i = 3; i < stretched.length; i += 4) {
+        stretched[i] = Math.round(255 * (0.35 + 0.65 * THREE.MathUtils.clamp((data[i] / 255 - 0.72) / 0.28, 0, 1)));
+      }
+      const map = new THREE.DataTexture(stretched, width, height, THREE.RGBAFormat);
+      map.wrapS = map.wrapT = THREE.RepeatWrapping;
+      map.magFilter = THREE.LinearFilter;
+      map.minFilter = THREE.LinearMipmapLinearFilter;
+      map.generateMipmaps = true;
+      map.colorSpace = THREE.SRGBColorSpace;
+      map.needsUpdate = true;
+      material.map.dispose();
+      material.map = map;
+      return material;
+    };
     const inlet = new WaterStream(guidedPath([new THREE.Vector3(-0.85, -3.05, 0), new THREE.Vector3(-0.85, -1.58, 0)],
-      { speed: 1, samples: 6 }), { ...flow, width: 0.245, thickness: 0.245 });
+      { speed: 1, samples: 6 }), { ...flow, material: streakMaterial(), width: 0.245, thickness: 0.245 });
     inlet.userData.role = 'water-rising-in-suction-pipe-F-to-port-L';
     const pipeCurve = dischargeH.shell.userData.curve;
     const outletAngle = -Math.PI / 3;
@@ -663,7 +685,7 @@ function caryRotaryPump(movement) {
       guidedPath(pipeCurve, { speed: 1.4, samples: 96 }));
     const fall = ballisticPath({ origin: spout, velocity: spoutDirection.clone().multiplyScalar(1.4), duration: 0.42, samples: 16 });
     const discharge = new WaterStream(joinPaths(inPipe, fall), {
-      ...flow, width: 0.28, thickness: 0.28, widthExponent: 0.5, fadeOut: 0.06,
+      ...flow, material: streakMaterial(), width: 0.28, thickness: 0.28, widthExponent: 0.5, fadeOut: 0.06,
     });
     discharge.userData.role = 'water-driven-from-port-M-through-H-and-falling-from-its-spout';
     root.add(inlet, discharge);

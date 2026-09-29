@@ -143,3 +143,10 @@ test('102 rotating section caps follow the finite nut without changing its physi
     t.diagnostic(JSON.stringify({capSurfaceExcessPixels:100*excess,samples}));assert.ok(excess*100<.01);
   }finally{v.dispose();}
 });
+
+test('p109: 102 square thread has land equal to groove on Brown\'s measured radii', async () => {
+  const {makeScrewProfile} = await import('../src/simulation/mujoco-screw/profile.js');
+  const f = makeScrewProfile();
+  assert.ok(Math.abs(f.external.width - f.pitch / 2) < 1e-12);
+  assert.ok(Math.abs(f.internal.width - (f.pitch / 2 - 2 * f.clearance)) < 1e-12);
+});

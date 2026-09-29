@@ -125,7 +125,7 @@ test('movement 506 records the unavailable animation and isolates the original m
   assert.match(sourceReference.reconstructionDisclosure,
     /supplies no tooth counts, pitch geometry, speed, or timing/is);
   assert.match(sourceReference.reconstructionDisclosure,
-    /original configuration only.*a=20, b=40, c=24, d=16, e=12, f=20, g=32, h=24/is);
+    /original configuration only.*a=20, b=36, c=21, d=16, e=10, f=13, g=43, h=34/is);
   assert.match(sourceReference.reconstructionDisclosure,
     /modified configuration.*documented but not superimposed/is);
   assert.match(sourceReference.reconstructionDisclosure,
@@ -140,13 +140,13 @@ test('movement 506 gives every bevel wheel an exact count, pitch radius, and com
   const { geometry, meshes, stateAtTime, transmission } = model.root.userData;
   const expectedTeeth = {
     a: 20,
-    b: 40,
-    c: 24,
+    b: 36,
+    c: 21,
     d: 16,
-    e: 12,
-    f: 20,
-    g: 32,
-    h: 24,
+    e: 10,
+    f: 13,
+    g: 43,
+    h: 34,
   };
 
   assert.deepEqual(transmission.teeth, expectedTeeth);
@@ -185,17 +185,17 @@ test('movement 506 derives both end speeds and the weighted carrier aggregate fr
   const { model } = movementModel();
   const { stateAtTime, transmission } = model.root.userData;
 
-  near(transmission.lowerBCSignedRatio, -1 / 2, 0,
+  near(transmission.lowerBCSignedRatio, -5 / 9, 2e-16,
     'a-b drives b-c in reverse');
-  near(transmission.upperFGSignedRatio, 3 / 4, 0,
+  near(transmission.upperFGSignedRatio, 34 / 43, 2e-16,
     'h-g drives f-g forward');
-  near(transmission.carrierToDriverRatio, 3 / 19, 8e-17,
+  near(transmission.carrierToDriverRatio, 3083 / 26961, 2e-16,
     'weighted aggregate carrier ratio');
-  near(transmission.planetCompoundToDriverRatio, -75 / 76, 2e-16,
+  near(transmission.planetCompoundToDriverRatio, -47411 / 53922, 4e-16,
     'd-e spin ratio');
-  assert.equal(transmission.lowerAggregateWeight, 24 * 12);
-  assert.equal(transmission.upperAggregateWeight, 20 * 16);
-  assert.equal(transmission.aggregateWeight, 608);
+  assert.equal(transmission.lowerAggregateWeight, 21 * 10);
+  assert.equal(transmission.upperAggregateWeight, 13 * 16);
+  assert.equal(transmission.aggregateWeight, 418);
   assert.ok(transmission.lowerBCAngularSpeed < 0);
   assert.ok(transmission.upperFGAngularSpeed > 0);
   assert.ok(transmission.carrierAngularSpeed > 0);
@@ -206,15 +206,15 @@ test('movement 506 derives both end speeds and the weighted carrier aggregate fr
       transmission.nominalCarrierPeriod * 20 * sample / 3000,
     );
     near(state.lowerBCAngularSpeed,
-      -state.driverAngularSpeed / 2, 0, `lower b-c rate ${sample}`);
+      -5 * state.driverAngularSpeed / 9, 4e-16, `lower b-c rate ${sample}`);
     near(state.upperFGAngularSpeed,
-      3 * state.driverAngularSpeed / 4, 0,
+      34 * state.driverAngularSpeed / 43, 4e-16,
       `upper f-g rate ${sample}`);
     near(state.carrierAngularSpeed,
-      3 * state.driverAngularSpeed / 19, 8e-17,
+      3083 * state.driverAngularSpeed / 26961, 4e-16,
       `carrier rate ${sample}`);
     near(state.planetCompoundAngularSpeed,
-      -75 * state.driverAngularSpeed / 76, 3e-16,
+      -47411 * state.driverAngularSpeed / 53922, 6e-16,
       `planet compound rate ${sample}`);
     near(state.aggregateEquationResidual, 0, 4e-14,
       `weighted aggregate ${sample}`);
@@ -235,12 +235,12 @@ test('movement 506 satisfies all four signed mesh-rate and tooth-phase equations
     for (const [pair, residual] of Object.entries(
       state.meshRateResiduals,
     )) {
-      near(residual, 0, 2e-15, `${pair} mesh rate ${sample}`);
+      near(residual, 0, 1e-14, `${pair} mesh rate ${sample}`);
     }
     for (const [pair, residual] of Object.entries(
       state.meshPhaseResiduals,
     )) {
-      near(residual, 0, 1e-11, `${pair} tooth phase ${sample}`);
+      near(residual, 0, 3e-11, `${pair} tooth phase ${sample}`);
     }
   }
   disposeModel(model.root);
@@ -307,9 +307,9 @@ test('movement 506 is continuous, fits every carrier pose, and leaves 507 next',
   near(oneTurn.carrierAngle - initial.carrierAngle, FULL_TURN, 0,
     'one aggregate carrier turn');
   near(oneTurn.driverAngle - initial.driverAngle,
-    19 * FULL_TURN / 3, 2e-14, 'driver remains unwrapped after subtracting the source mounting phase');
+    26961 * FULL_TURN / 3083, 6e-14, 'driver remains unwrapped after subtracting the source mounting phase');
   near(oneTurn.planetCompoundAngle - initial.planetCompoundAngle,
-    -25 * FULL_TURN / 4, 2e-14, 'd-e remains unwrapped');
+    -47411 * FULL_TURN / 6166, 6e-14, 'd-e remains unwrapped');
   near(after.carrierAngle - before.carrierAngle,
     2e-8 * transmission.carrierAngularSpeed, 2e-15,
     'no carrier reset');

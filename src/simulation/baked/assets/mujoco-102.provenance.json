@@ -4,11 +4,11 @@
   "format": "mujoco-loop",
   "version": 1,
   "asset": "src/simulation/baked/assets/mujoco-102.json.gz",
-  "bytes": 17202,
-  "assetSha256": "47dea48e879b2d4e6c3dcb3fc8e1b3e8a222638355ef36334b29cdecfb125adb",
+  "bytes": 10758,
+  "assetSha256": "5691363e7e70a2f1aef3d0499fdf5938b89a3dfb602a8a8f569da8f2ae41a624",
   "motionSources": {
     "src/simulation/mujoco-screw/physics.js": "0e28e499dd3036c628112904b5f9aa9c1430fa152ee70421bdf34eead092fd0d",
-    "src/simulation/mujoco-screw/profile.js": "d4d0aec836cd7ad136e69765babef96cd4bfbbb3dfe647ad7d08fe226c84796f",
+    "src/simulation/mujoco-screw/profile.js": "3f44012f71670ebf4b576b9fe66259a6cd90408a2db26bc04dc2162d4264f1b7",
     "src/simulation/mujoco-screw/source.js": "4a8f40da4ead6851cefdc280f649280a1b0c5dbfa2378a9cf8dfebc25a92875d",
     "src/simulation/mujoco-screw/thread-geometry.js": "226c91213d15b75ed4f8d2fd9e928754a48594d506286f615b621ed98c8c91c2",
     "src/simulation/mujoco-screw/visual.js": "4ecf304f7e253b71360591826ac8f43a4b5ef75450c0eba481ef09b2fb82a3aa",
@@ -19,10 +19,10 @@
     "src/simulation/mujoco-screw/section.js": "c972e668fc80f8fad3fb215b3e8142c8ef67ab94f11853c18ba6459f350fc734"
   },
   "physicsXmlSha256": {
-    "default": "e60bddf3b7ed4377f3c798dda7a0160cf8055df1e8a71e46c1909b8364a0224f"
+    "default": "04b51478704ff45e86d59b858e63d6971a1193a637ff9ace6564563a66ac2485"
   },
   "fullXmlSha256": {
-    "default": "186076af2c3b18a9df681de4656f9beaa680ea19d37de0e0418a5b104bcba92c"
+    "default": "5b974caf881441222b08093ebaa2dec1940289c2acefa16089c7a84b2df013b3"
   },
   "config": {
     "sampleRate": 60,
@@ -43,32 +43,32 @@
         "duration": 12,
         "samples": 750,
         "dt": 0.016,
-        "startTime": 24,
+        "startTime": 60,
         "periods": 1,
         "drivePeriod": 12
       },
       "closure": {
-        "rawSeamPixels": 1.1850162966540026e-11,
-        "maximumCorrectionPixels": 7.993605777301127e-13,
+        "rawSeamPixels": 9.129132986520776e-11,
+        "maximumCorrectionPixels": 8.881784197001252e-14,
         "maximumRotationCorrection": 0,
         "wraps": [
           {
             "key": "blocks.nut",
-            "angle": -6.714745946767575e-14,
-            "rawAngle": -6.714745946767575e-14
+            "angle": -9.334872284882945e-13,
+            "rawAngle": -9.334872284882945e-13
           }
         ]
       },
-      "roundTripPixels": 0.000008889883704278522,
+      "roundTripPixels": 0.004647809113174154,
       "seam": {
-        "seamStepPixels": 0.11338141040623335,
-        "interiorStepPixels": 8.396632049660436,
-        "seamSecondPixels": 0.07136428887052684,
-        "interiorSecondPixels": 1.1016094952152256
+        "seamStepPixels": 0.11371558911279461,
+        "interiorStepPixels": 8.397231022272004,
+        "seamSecondPixels": 0.0719734563029251,
+        "interiorSecondPixels": 1.1075910605833186
       }
     }
   },
   "extras": [],
   "removed": [],
-  "bakeSeconds": 68.9952018942833
+  "bakeSeconds": 79.36546791601181
 }

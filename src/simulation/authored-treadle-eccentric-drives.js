@@ -2,6 +2,7 @@ import { boredLatheGeometry } from './bored-lathe-geometry.js';
 import {correctReciprocatingCordParts} from './reciprocating-cord-working-parts.js';
 import * as THREE from 'three';
 import { LaidRopeGeometry } from './laid-rope.js';
+import { circle, plate, poly, polygonClipping } from './finite-plate-geometry.js';
 import {
   PALETTE,
   makePulley,
@@ -809,6 +810,36 @@ function treadleEccentricBandDrive(movement) {
     b.shaftPost.geometry.dispose();
     b.shaftPost.geometry = new THREE.BoxGeometry(0.24, top - bottom, 0.38);
     b.shaftPost.position.y = (top + bottom) / 2;
+  }
+  // p109: Brown's treadle is one tapered bar: a round eye concentric with
+  // the fulcrum pin at the right (it had a square end and a separate eye
+  // ring stacked in front), narrowing to 60% of that width at the round free
+  // end on the left, with the boss round the roller axle. The pin now spans
+  // the fixed bearing and the treadle's eye only.
+  {
+    const b = root.userData.blocks;
+    const g = root.userData.geometry;
+    const reach = g.treadleRadius + g.treadleBeyondRoller;
+    const eyeRadius = 0.16, rootHalf = 0.085, endHalf = 0.051;
+    const web = polygonClipping.difference(
+      polygonClipping.union(
+        poly([[0, -rootHalf], [reach, -endHalf], [reach, endHalf], [0, rootHalf]]),
+        poly(circle([0, 0], eyeRadius, 96)),
+        poly(circle([reach, 0], endHalf, 48)),
+        poly(circle([g.treadleRadius, 0], 0.125, 64)),
+      ),
+      poly(circle([0, 0], 0.079, 64)),
+      poly(circle([g.treadleRadius, 0], 0.074, 64)),
+    );
+    b.treadleBeam.geometry.dispose();
+    b.treadleBeam.geometry = plate(web, -0.15, 0.15);
+    b.treadleBeam.position.x = 0;
+    root.traverse((o) => {
+      if (o.userData.role === 'bored-moving-treadle-fulcrum-eye') o.visible = false;
+    });
+    b.treadlePivotPin.geometry.dispose();
+    b.treadlePivotPin.geometry = new THREE.CylinderGeometry(0.075, 0.075, 0.58, 32);
+    b.treadlePivotPin.position.z = -0.11;
   }
   return {
     cameraDirection: root.userData.cameraDirection,

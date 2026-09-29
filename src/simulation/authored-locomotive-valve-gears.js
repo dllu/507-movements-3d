@@ -778,7 +778,9 @@ function locomotiveStephensonExpansionLinkValveGear() {
   inputRotor.userData.axis = Z_AXIS.clone();
   inputRotor.userData.role =
     'one-locomotive-shaft-carrying-two-opposed-eccentrics';
-  const inputShaft = cylinderAlongZ(0.135, 2.65, darkMaterial, 38);
+  // p109: the shaft ends 0.03 past each sheave's outer face (z +-0.35), so
+  // it no longer stands ~1 proud as a black post with a clock-hand shadow.
+  const inputShaft = cylinderAlongZ(0.135, 0.76, darkMaterial, 38);
   inputShaft.userData.role = 'common-shaft-through-both-eccentrics';
   const forwardSheave = makeEccentricSheave({
     material: driverMaterial,
@@ -1130,6 +1132,10 @@ function locomotiveStephensonExpansionLinkValveGear() {
       band.userData.role = bandIndex === 0
         ? 'solid-sectioned-wall-block'
         : 'right-band-of-sectioned-wall';
+      // p109: the wall is the rearmost part (no ground). The slide-valve bed
+      // and lug stand 1.1-1.7 in front of it, and their shadow read as a dark
+      // painted wedge on Brown's plain section; the wall receives none.
+      band.userData.noShadow = true;
       sectionedWall.add(band);
     });
   }
@@ -1596,6 +1602,7 @@ function locomotiveStephensonExpansionLinkValveGear() {
   markShadows(root);
   for (const object of [
     cameraEnvelope,
+    ...sectionedWall.children,
   ]) {
     object.castShadow = false;
     object.receiveShadow = false;

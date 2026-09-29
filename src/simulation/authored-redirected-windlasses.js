@@ -845,8 +845,13 @@ function redirectedChineseWindlass(movement) {
   });
   // Hook: closed eye round the stirrup bar, then one smooth round bar.
   const hookBar = 0.045;
-  const hookEyeRadius = 0.085;
-  const hookEyeTube = 0.034;
+  // p109: the eye's bar (0.048) is a shade stouter than the shank (0.045),
+  // and the shank starts 0.002 above the eye's bottom centreline, so its
+  // open end lies wholly inside the eye's bar: the shank runs into the ring
+  // as one forged piece, with no flat cut end showing. The eye's bore
+  // (radius 0.051) is unchanged.
+  const hookEyeRadius = 0.099;
+  const hookEyeTube = 0.048;
   // The eye's inner crown rests 0.004 above the stirrup bar's top.
   const hookEyeCentreY = stirrupBottomY + stirrupRadius
     - (hookEyeRadius - hookEyeTube) + 0.004;
@@ -854,7 +859,7 @@ function redirectedChineseWindlass(movement) {
   const bowlCentreY = -0.80;
   const shankTop = v3(0, hookEyeCentreY - hookEyeRadius, 0);
   const hookPath = new THREE.CurvePath();
-  hookPath.add(new THREE.LineCurve3(shankTop.clone().add(v3(0, 0.02, 0)),
+  hookPath.add(new THREE.LineCurve3(shankTop.clone().add(v3(0, 0.002, 0)),
     v3(0, hookEyeCentreY - hookEyeRadius - 0.08, 0)));
   hookPath.add(new THREE.CubicBezierCurve3(
     v3(0, hookEyeCentreY - hookEyeRadius - 0.08, 0),

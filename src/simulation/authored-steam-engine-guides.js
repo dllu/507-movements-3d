@@ -1613,6 +1613,15 @@ function rollerGuidedFrenchEngineCrosshead(movement) {
   cylinderBody.position.set(0, -6.30 - cylinderDrop, crossheadPlaneZ);
   cylinderBody.userData.fixed = true;
   cylinderBody.userData.role = 'fixed-upright-engine-cylinder-below-crosshead';
+  // The bore is closed at the bottom by a solid end plug, flush with the
+  // cylinder's bottom face and 0.04 below the rod's lowest reach, so from
+  // below the cylinder reads as closed (as 328's).
+  const cylinderBottomPlug = new THREE.Mesh(
+    new THREE.CylinderGeometry(.205, .205, .50, 48), frameMaterial);
+  cylinderBottomPlug.position.y = -1.45 + .25;
+  cylinderBottomPlug.userData.fixed = true;
+  cylinderBottomPlug.userData.role = 'fixed-engine-cylinder-bottom-end-plug';
+  cylinderBody.add(cylinderBottomPlug);
   const cylinderTopCap = new THREE.Mesh(
     boredLatheGeometry([{axial: -.065, radial: 4.2 * sourceScale},
       {axial: .065, radial: 4.2 * sourceScale}], .115, 64),

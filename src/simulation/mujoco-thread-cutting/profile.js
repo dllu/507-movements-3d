@@ -9,13 +9,17 @@ export function makeThreadCuttingProfile({segments=128,leadTeeth=52,workTeeth=76
  const factors=[27,39],module=source.outerRadii.reduce((s,r,i)=>s+r/100*factors[i],0)/factors.reduce((s,n)=>s+n*n,0);
  const distance=module*(leadTeeth+workTeeth)/2,dx=workX-leadX,dz=Math.sqrt(distance*distance-dx*dx),leadZ=dz/2,workZ=-dz/2;
  const gearAngle=Math.atan2(dz,dx),ratio=-leadTeeth/workTeeth;
- const pitch=source.threads.lead[2]/100,lead=-pitch/(2*Math.PI),width=source.threads.lead[3]/100;
- const coreRadius=(source.leadCoreEdges[1]-source.leadCoreEdges[0])/200,crestRadius=(e.leadCrestRight-e.leadCrestLeft)/200;
+ const pitch=source.threads.lead[2]/100,lead=-pitch/(2*Math.PI);
+ // p109: square threads with land equal to groove (half the pitch) on a core
+ // of at least 0.6 of the crest diameter; Brown's thin bands on a slim core
+ // (0.40 p, core 0.44 OD) read as coil springs. The cut work thread follows.
+ const width=pitch/2,crestRadius=(e.leadCrestRight-e.leadCrestLeft)/200;
+ const coreRadius=Math.max((source.leadCoreEdges[1]-source.leadCoreEdges[0])/200,.6*crestRadius);
  const phase=y(source.threads.lead[0]+source.threads.lead[1]*(source.axes[0]-210)+source.threads.lead[3]/2)+lead*Math.PI/2;
  const external={inner:coreRadius,outer:crestRadius,low:y(source.threadRange[1]),high:y(source.threadRange[0]),width,lead,phase};
  const internal={inner:coreRadius+clearance,outer:crestRadius+clearance,low:y(e.carriageBottom),high:y(e.carriageTop),width:pitch-width-2*clearance,lead,phase:phase+pitch/2};
  const armY=y((e.armTop+e.armBottom)/2),armHeight=(e.armBottom-e.armTop)/100;
- const workRadius=(e.workBlankRight-e.workBlankLeft)/200,workCoreRadius=source.workCoreRadius/100;
+ const workRadius=(e.workBlankRight-e.workBlankLeft)/200,workCoreRadius=Math.max(source.workCoreRadius/100,.6*workRadius);
  const workLead=lead/ratio,workPitch=2*Math.PI*workLead,workWidth=workPitch*width/pitch,grooveWidth=workPitch-workWidth;
  const contactAngle=gearAngle+Math.PI,groovePhase=armY-workLead*contactAngle;
  const workThread={inner:workCoreRadius,outer:workRadius,low:y(source.cutRange[1]),high:y(source.cutRange[0]),width:workWidth,lead:workLead,phase:groovePhase-workPitch/2};

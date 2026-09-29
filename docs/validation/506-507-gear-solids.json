@@ -4,30 +4,30 @@
     {
       "id": 506,
       "poses": 33,
-      "queries": 706898,
+      "queries": 1142765,
       "penetrations": 0,
       "maxDepth": 0,
       "worst": null,
       "pairs": [
         {
           "pair": "a-b",
-          "maximumSampledGap": 0.00829463358296809,
-          "minimumSampledGap": 0.008269251604882238
+          "maximumSampledGap": 0.008278878255697592,
+          "minimumSampledGap": 0.008266803766272738
         },
         {
           "pair": "h-g",
-          "maximumSampledGap": 0.008288201614654407,
-          "minimumSampledGap": 0.00826997848903599
+          "maximumSampledGap": 0.00890051540046263,
+          "minimumSampledGap": 0.008887262551292843
         },
         {
           "pair": "c-d",
-          "maximumSampledGap": 0.008301724221120804,
-          "minimumSampledGap": 0.008274522422427134
+          "maximumSampledGap": 0.008281734316974253,
+          "minimumSampledGap": 0.0082688691678792
         },
         {
           "pair": "e-f",
-          "maximumSampledGap": 0.008306829691808872,
-          "minimumSampledGap": 0.008269668621361768
+          "maximumSampledGap": 0.008287279093904603,
+          "minimumSampledGap": 0.008267835888498687
         }
       ]
     },
@@ -102,11 +102,11 @@
   "sources": [
     {
       "file": "src/simulation/authored-epicyclic-trains.js",
-      "sha256": "3666a9b393cab3c6659cdb1a67c1643a6b77fc91d4688e4767ba2bec955dff86"
+      "sha256": "0b07d6561a08157485e4f6452598d28bc0467fd1b6e75b5e52e3163da40d9b6d"
     },
     {
       "file": "src/simulation/compound-epicyclic-corrections.js",
-      "sha256": "2f826940cb0fafb2e79e149a7aae420841c971f774eb070173c51552265fcb8d"
+      "sha256": "a9a070cec32c1d2f5da86a3862df5630583b7ad308db387df206d26d09f82136"
     },
     {
       "file": "src/simulation/epicyclic-family-corrections.js",

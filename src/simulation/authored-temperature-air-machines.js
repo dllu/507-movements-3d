@@ -250,8 +250,10 @@ function createTank({
 function temperatureAirMachine(movement) {
   const root = new THREE.Group();
   const cycleDuration = 13.8;
-  const operationEndPhase = 0.68;
-  const thermalResetStartPhase = 0.82;
+  // Pass 109: the stopped dwell is 6% of the loop (it was 14%, and with the
+  // run-down's slow tail the view stood still for a quarter of the loop).
+  const operationEndPhase = 0.82;
+  const thermalResetStartPhase = 0.88;
   const totalScrewTurns = 4;
   const initialColdTemperatureKelvin = 293.15;
   const initialWarmTemperatureKelvin = 313.15;
@@ -880,7 +882,11 @@ function temperatureAirMachine(movement) {
     // Bubbles swell in and out with the screw's speed instead of switching
     // on at a threshold (pass 69: no pop when the start begins or ends).
     const speedFade = smootherStep(Math.abs(state.screwAngularVelocity) / 0.6);
-    const fade = speedFade * smootherStep(Math.min(
+    // Pass 109: a bubble also swells in over a short run as it leaves the
+    // pipe into the warm bath, instead of appearing there at full size.
+    const emergeFade = smootherStep(THREE.MathUtils.clamp(
+      (pathDistance - warmBathEntryDistance) / (airPathLength * 0.02), 0, 1));
+    const fade = speedFade * emergeFade * smootherStep(Math.min(
       pathDistance / endFadeDistance,
       (airPathLength - pathDistance) / endFadeDistance,
       1,

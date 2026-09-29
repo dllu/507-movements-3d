@@ -1,3 +1,4 @@
+import { boredLatheGeometry } from './bored-lathe-geometry.js';
 import { correctDifferentialThreads } from './differential-thread-solids.js';
 import * as THREE from 'three';
 import {
@@ -723,33 +724,143 @@ function differentialScrewDrive(movement) {
     root.userData.kinematics = state;
   };
   correctDifferentialThreads(root, 260);
-  // Brown draws the short standard as a knee bracket whose outboard edge
-  // sweeps out to the bed below the screw, not a flat post. Each side bar
-  // gets a concave flared web on its outboard face.
+  // Pass 109: each standard is one plate, as Brown draws a solid post, not
+  // two side bars with a gap and loose torus rings. The plate is extruded
+  // across the frame (z) at the post's drawn width (x) and bored for the
+  // shafts; round bosses concentric with the bores are filleted into its
+  // face. The short standard keeps its flared knee webs.
   {
-    const bars = root.userData.blocks.rightStandardBars;
-    const barBox = new THREE.Box3().setFromObject(bars[0]);
-    const inverse = root.matrixWorld.clone().invert();
-    barBox.applyMatrix4(inverse);
-    const x0 = barBox.max.x;
-    const top = barBox.max.y;
-    const bottom = barBox.min.y;
+    const blocks = root.userData.blocks;
+    const plateThickness = 0.25;
+    const plateHalfWidth = 0.74;
+    const plateBottom = -3.25;
+    const standardPlate = (top, bores) => {
+      const shape = new THREE.Shape();
+      shape.moveTo(-plateHalfWidth, plateBottom);
+      shape.lineTo(plateHalfWidth, plateBottom);
+      shape.lineTo(plateHalfWidth, top);
+      shape.lineTo(-plateHalfWidth, top);
+      shape.closePath();
+      for (const [axisY, radius] of bores) {
+        const hole = new THREE.Path();
+        hole.absarc(0, axisY, radius, 0, FULL_TURN, true);
+        shape.holes.push(hole);
+      }
+      return new THREE.ExtrudeGeometry(shape, {
+        bevelEnabled: false,
+        curveSegments: 64,
+        depth: plateThickness,
+      }).translate(0, 0, -plateThickness / 2).rotateY(Math.PI / 2);
+    };
+    // A boss revolved about X from the plate face outward (side -1) or
+    // inward (+1): a concave fillet into the plate, a straight barrel and
+    // a small round on the end face. It starts 0.01 inside the plate so no
+    // faces coincide.
+    const filletedBoss = ({ boreRadius, height, radius, side, fillet = 0.06 }) => {
+      const profile = [];
+      // Concave quarter circle centred at (fillet, radius + fillet).
+      for (let k = 0; k <= 8; k += 1) {
+        const a = (k / 8) * Math.PI / 2;
+        profile.push({
+          axial: -0.01 + fillet * (1 - Math.cos(a)),
+          radial: radius + fillet * (1 - Math.sin(a)),
+        });
+      }
+      for (let k = 0; k <= 4; k += 1) {
+        const a = (k / 4) * Math.PI / 2;
+        profile.push({
+          axial: height - 0.025 + 0.025 * Math.sin(a),
+          radial: radius - 0.025 + 0.025 * Math.cos(a),
+        });
+      }
+      const geometry = boredLatheGeometry(profile, boreRadius, 96);
+      // Lathe axis Y -> world X, pointing away from the plate face.
+      geometry.rotateZ(side < 0 ? Math.PI / 2 : -Math.PI / 2);
+      return geometry;
+    };
+    const replaceGeometry = (mesh, geometry) => {
+      mesh.geometry.dispose();
+      mesh.geometry = geometry;
+      mesh.rotation.set(0, 0, 0);
+      mesh.scale.set(1, 1, 1);
+    };
+    const upperBore = 0.195;
+    const lowerBore = 0.26;
+    const nutJournalBore = 0.512;
+
+    replaceGeometry(blocks.tallStandardTop, standardPlate(2.56, [
+      [upperAxisY, upperBore],
+      [lowerAxisY, lowerBore],
+    ]));
+    blocks.tallStandardTop.position.set(leftStandardX, 0, 0);
+    blocks.tallStandardTop.userData.role = 'left-tall-standard-bored-plate';
+    blocks.tallStandardTop.userData.boreRadius = upperBore;
+    const leftOutboardFace = leftStandardX - plateThickness / 2;
+    for (const [boss, axisY, boreRadius, radius, role] of [
+      [blocks.leftInputBearing, upperAxisY, upperBore, 0.3,
+        'fixed-left-input-shaft-bearing-boss'],
+      [blocks.leftScrewGuide, lowerAxisY, lowerBore, 0.4,
+        'fixed-left-translating-screw-guide-boss'],
+    ]) {
+      replaceGeometry(boss, filletedBoss({
+        boreRadius, height: 0.12, radius, side: -1,
+      }));
+      boss.position.set(leftOutboardFace, axisY, 0);
+      boss.userData.role = role;
+    }
+
+    const rightTop = lowerAxisY + 0.72;
+    replaceGeometry(blocks.rightStandardTop, standardPlate(rightTop, [
+      [lowerAxisY, nutJournalBore],
+    ]));
+    blocks.rightStandardTop.position.set(rightStandardX, 0, 0);
+    blocks.rightStandardTop.userData.role = 'right-short-standard-bored-plate';
+    blocks.rightStandardTop.userData.boreRadius = nutJournalBore;
+    replaceGeometry(blocks.fixedNutBearing, filletedBoss({
+      boreRadius: nutJournalBore, height: 0.1, radius: 0.7, side: 1,
+    }));
+    blocks.fixedNutBearing.position.set(
+      rightStandardX - plateThickness / 2, lowerAxisY, 0,
+    );
+    blocks.fixedNutBearing.userData.role =
+      'fixed-bearing-boss-preventing-nut-wheel-lateral-motion';
+
+    // The nut's end collars are plain turned rings, not tori.
+    for (const ring of blocks.nutEndRings) {
+      const collar = boredLatheGeometry([
+        { axial: -0.04, radial: 0.555 },
+        { axial: 0.04, radial: 0.555 },
+      ], 0.4, 96);
+      collar.rotateZ(Math.PI / 2);
+      replaceGeometry(ring, collar);
+    }
+
+    for (const bar of [...blocks.tallStandardBars, ...blocks.rightStandardBars]) {
+      bar.removeFromParent();
+    }
+
+    // Brown draws the short standard as a knee bracket whose outboard edge
+    // sweeps out to the bed below the screw. Each side edge of the plate
+    // gets a concave flared web on its outboard face.
+    const x0 = rightStandardX + plateThickness / 2;
+    const top = -1.27;
+    const bottom = plateBottom;
     const flare = new THREE.Shape();
     flare.moveTo(x0, top);
     flare.quadraticCurveTo(x0 + 0.04, bottom + 0.18, x0 + 0.86, bottom);
     flare.lineTo(x0 - 0.004, bottom);
     flare.lineTo(x0 - 0.004, top);
-    root.userData.blocks.rightStandardFlares = bars.map((bar) => {
+    blocks.rightStandardFlares = [-1, 1].map((side) => {
       const web = new THREE.Mesh(
         new THREE.ExtrudeGeometry(flare, {
           bevelEnabled: false,
           curveSegments: 24,
           depth: 0.3,
-        }).translate(0, 0, bar.position.z - 0.15),
-        bar.material,
+        }).translate(0, 0, side * 0.59 - 0.15),
+        frameMaterial,
       );
       web.userData.role = 'right-short-standard-flared-knee';
-      bar.parent.add(web);
+      frame.add(web);
       return web;
     });
   }

@@ -103,18 +103,25 @@ function boatDetachingHook(movement) {
   const kneeT = -endLineLocal.y / -tongueEndDirection.y;
   const kneeLocal = endLineLocal.clone().addScaledVector(tongueEndDirection, -kneeT);
   const tipLocal = endLineLocal.clone().addScaledVector(tongueEndDirection, tongueTipBeyondEye);
-  const kneeRadius = 0.16;
+  // Pass 109: Brown's tongue is one smooth curve, so the knee is the
+  // largest arc tangent to both runs (it was a 0.16 elbow between two
+  // straight rods): 0.9 of the radius at which the arc would use up the
+  // shorter of the hinge run and the end run.
+  const kneeTurn = Math.acos(THREE.MathUtils.clamp(new THREE.Vector2(-1, 0).dot(tongueEndDirection), -1, 1));
+  const kneeRadius = Math.max(0.16, 0.9 * Math.min(
+    Math.abs(kneeLocal.x) - 0.2, kneeLocal.distanceTo(tipLocal) - tongueRadius,
+  ) / Math.tan(kneeTurn / 2));
   const tongueCenterline = (() => {
     const points = [];
     const horizontal = new THREE.Vector2(-1, 0);
-    const turn = Math.acos(THREE.MathUtils.clamp(horizontal.dot(tongueEndDirection), -1, 1));
+    const turn = kneeTurn;
     const setback = kneeRadius * Math.tan(turn / 2);
     const start = new THREE.Vector2(0, 0), kneeIn = kneeLocal.clone().addScaledVector(horizontal, -setback);
     const kneeOut = kneeLocal.clone().addScaledVector(tongueEndDirection, setback);
     for (let i = 0; i <= 16; i++) points.push(start.clone().lerp(kneeIn, i / 16));
     const centre = kneeIn.clone().add(new THREE.Vector2(0, -kneeRadius));
-    for (let i = 1; i <= 10; i++) {
-      const a = Math.PI / 2 + turn * i / 10;
+    for (let i = 1; i <= 24; i++) {
+      const a = Math.PI / 2 + turn * i / 24;
       points.push(new THREE.Vector2(centre.x + kneeRadius * Math.cos(a), centre.y + kneeRadius * Math.sin(a)));
     }
     points[points.length - 1] = kneeOut.clone();
@@ -128,8 +135,10 @@ function boatDetachingHook(movement) {
   const hookYaw = THREE.MathUtils.degToRad(55);
   const blockYaw = Math.atan2(0.28, 1);
   const hookU = new THREE.Vector3(Math.cos(hookYaw), 0, -Math.sin(hookYaw));
-  const hookBendRadius = 0.31;
-  const hookBarRadius = 0.11;
+  const hookBendRadius = 0.34;
+  // Pass 109: stouter, as Brown's forged hook (bar 0.13, bend 0.34; it
+  // was 0.11 on 0.31). A 0.14 bar jams the released tongue in the throat.
+  const hookBarRadius = 0.13;
   const hookGap = 0.003;
   const hookShankTop = 0.34;
   const hookBillTop = 0.22;

@@ -1266,7 +1266,9 @@ function longStoppingToothEscapement(movement) {
   });
   // Steel stops and impulse pins: white ones would read as holes on the
   // cream page.
-  const stopMaterial = matte(PALETTE.muted, {
+  // Lit face-on, PALETTE.muted rendered near-white on the cream page; one
+  // step darker reads as the mid-grey steel it is.
+  const stopMaterial = matte(0x60676a, {
     metalness: 0.2,
     roughness: 0.5,
   });

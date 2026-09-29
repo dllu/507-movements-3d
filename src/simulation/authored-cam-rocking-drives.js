@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { finishGrooveDrive } from './groove-drive-working-parts.js';
 import { makeBoredPlanarLink } from './bored-planar-link.js';
+import { applyRotationIndicator } from './rotation-indicator.js';
 import { circle, plate, poly, polygonClipping as clip } from './finite-plate-geometry.js';
 import {
   PALETTE,
@@ -218,6 +219,10 @@ function makeOutputWheel({
   rim.position.z = 0.10;
   rim.userData.role = 'rocking-output-wheel-rim';
   wheel.add(rim);
+  // Pass 109: the plain disc turns three times per cam turn at varying
+  // speed, which is the point of the movement; it carries the shared
+  // alternating-quadrant rotation cue (as 280 and 8-10).
+  applyRotationIndicator(rim);
   const spokes = [];
 
   // Brown shows only the shaft end in the crank's eye: a plain shaft,

@@ -8,7 +8,7 @@ import {disposeObject3D} from '../src/simulation/dispose-model.js';
 import {inspectWeightedClutchSolid} from '../scripts/lib/weighted-clutch-solid-audit.mjs';
 const mujoco=await loadMujoco();
 
-test('115 has seven closed solids and equal unshifted stub involute pinions',()=>{
+test('115 has seven closed solids and equal unshifted 20-degree involute pinions',()=>{
  const v=makeEqualRacksGeometry(),u=v.root.userData;
  try{
   assert.equal(Object.keys(u.parts).length,7);
@@ -18,13 +18,15 @@ test('115 has seven closed solids and equal unshifted stub involute pinions',()=
    const a=inspectWeightedClutchSolid(mesh.geometry);assert(a.volume>0,name);assert.equal(a.components,1,name);assert.equal(a.unmatchedEdges+a.degenerate+a.nonfinite+a.wrongNormals,0,name);
   }
   for(const n of ['upper','lower']){const f=u.parts[n].geometry.userData;assert.equal(f.teeth,12);assert.equal(f.profileShift,0);}
-  // Square stub teeth (Brown): 16-degree unshifted involutes whose pitch circles are the working circles,
-  // flat pinion tips over 1 module wide, rack tips over 0.3 pitch, and an addendum inside the
-  // 12:12 interference limit, so the central pair can mesh without undercut contact.
+  // p109 (2026-09-29 rule): Brown's square teeth are ideal 20-degree unshifted involutes whose pitch
+  // circles are the working circles, cut by a basic rack (dedendum 1.25), with trapezoidal rack teeth
+  // (flanks at the pressure angle, flat tips) and a 0.9-module addendum inside the 12:12 interference
+  // limit, so the central pair can mesh without undercut contact; contact ratio over 1.2.
   {const g=u.profile,pitch=g.pitch,m=g.module,a=g.pressureAngle,R=g.pitchRadius,rb=R*Math.cos(a),ra=R+g.addendum*m,inv=x=>Math.tan(x)-x,aa=Math.acos(rb/ra);
-   assert(Math.abs(R-g.workingRadius)<1e-12);assert(Math.abs(a-16*Math.PI/180)<1e-12);assert.equal(g.addendum,.64);assert.equal(g.dedendum,1);
-   assert(2*ra*(Math.PI/24+inv(a)-inv(aa))>1.05*m);assert((pitch/2-2*g.dedendum*m*Math.tan(a))/pitch>.3);
-   assert(ra*ra<=rb*rb+4*R*R*Math.sin(a)**2);assert(2*(Math.sqrt(ra*ra-rb*rb)-R*Math.sin(a))/(pitch*Math.cos(a))>1.05);}
+   assert(Math.abs(R-g.workingRadius)<1e-12);assert(Math.abs(a-20*Math.PI/180)<1e-12);assert.equal(g.addendum,.9);assert.equal(g.dedendum,1.25);
+   assert(Math.abs(g.rootY-g.workingRadius-R-(g.addendum+.25)*m)<1e-12);
+   assert(2*ra*(Math.PI/24+inv(a)-inv(aa))>.4*m);assert((pitch/2-2*g.dedendum*m*Math.tan(a))/pitch>.2);
+   assert(ra*ra<=rb*rb+4*R*R*Math.sin(a)**2);assert(2*(Math.sqrt(ra*ra-rb*rb)-R*Math.sin(a))/(pitch*Math.cos(a))>1.2);}
   assert.deepEqual(u.profile.counts,{upper:8,lower:9});assert.equal(u.hideGround,true);
  }finally{disposeObject3D(v.root);}
 });

@@ -75,7 +75,12 @@ function traversingRollerConeDrive(movement) {
   const rollerPitchRadius = coneTurnsPerTraverse
     * meanContactRadius / rollerTurnsPerTraverse;
   const rollerWidth = 0.22;
-  const rollerTreadTubeRadius = 0.045;
+  // Pass 109: Brown draws C as a flat, square-edged disk. The tread is a
+  // gentle crown of radius 0.37 across the whole 0.22 face (0.017 sag at the
+  // edges), so the rim reads flat, and the contact stays on the crown for
+  // the whole traverse (at most 0.26 rad between the fixed shaft slope and
+  // the local generator, i.e. 0.094 off the mid-plane).
+  const rollerTreadTubeRadius = 0.37;
   const rollerBodyRadius = rollerPitchRadius - rollerTreadTubeRadius;
   const sourceContactAxialPosition = 0.482;
   const sourceTraversePhase = Math.asin(
@@ -162,7 +167,16 @@ function traversingRollerConeDrive(movement) {
   const profileSamples = 64;
   const chordSag = profileCurvature
     * (coneLength / profileSamples) ** 2 / 8;
-  const profilePoints = [new THREE.Vector2(0, coneLargeEndX)];
+  // Pass 109: Brown draws a distinct flat rim band at the big end (his
+  // double vertical line), so the flare ends against a short cylindrical
+  // rim instead of a knife-edge lip.
+  const bigEndRimLength = 0.07;
+  const bigEndRimRadius = coneLargeRadius + 0.03;
+  const profilePoints = [
+    new THREE.Vector2(0, coneLargeEndX - bigEndRimLength),
+    new THREE.Vector2(bigEndRimRadius, coneLargeEndX - bigEndRimLength),
+    new THREE.Vector2(bigEndRimRadius, coneLargeEndX),
+  ];
   for (let sample = 0; sample <= profileSamples; sample += 1) {
     const axial = coneLargeEndX + coneLength * sample / profileSamples;
     profilePoints.push(new THREE.Vector2(
@@ -230,28 +244,41 @@ function traversingRollerConeDrive(movement) {
     radialSegments: 72,
   });
   rollerBody.geometry.dispose();
-  // One lathed disk, as Brown draws it: flat faces, and a crowned rim whose
-  // middle is the round tread (radius rollerTreadTubeRadius about a circle
-  // of radius rollerBodyRadius) that touches the drum, run out on straight
-  // tangents to the faces. No separate bead.
-  const crownHalfAngle = THREE.MathUtils.degToRad(50);
-  const crownProfile = [];
+  // One lathed disk, as Brown draws it: flat faces and a flat-looking rim,
+  // the gently crowned tread (radius rollerTreadTubeRadius about a circle of
+  // radius rollerBodyRadius) meeting each face in a small round. No bead.
   const faceHalf = rollerWidth / 2;
-  const arcEnd = {
-    radial: rollerBodyRadius + rollerTreadTubeRadius * Math.cos(crownHalfAngle),
-    axial: rollerTreadTubeRadius * Math.sin(crownHalfAngle),
-  };
-  const faceEdgeRadius = arcEnd.radial
-    - (faceHalf - arcEnd.axial) * Math.tan(crownHalfAngle);
-  crownProfile.push({axial: -faceHalf, radial: faceEdgeRadius});
-  for (let step = -10; step <= 10; step += 1) {
-    const angle = crownHalfAngle * step / 10;
-    crownProfile.push({
-      axial: rollerTreadTubeRadius * Math.sin(angle),
-      radial: rollerBodyRadius + rollerTreadTubeRadius * Math.cos(angle),
+  const edgeRound = 0.014;
+  const crownHalfAngle = Math.asin((faceHalf - edgeRound) / rollerTreadTubeRadius);
+  const crownProfile = [];
+  const crownPoint = (angle) => ({
+    axial: rollerTreadTubeRadius * Math.sin(angle),
+    radial: rollerBodyRadius + rollerTreadTubeRadius * Math.cos(angle),
+  });
+  const cornerRound = (side) => {
+    const end = crownPoint(side * crownHalfAngle);
+    const center = {
+      axial: end.axial - edgeRound * Math.sin(side * crownHalfAngle),
+      radial: end.radial - edgeRound * Math.cos(crownHalfAngle),
+    };
+    return Array.from({ length: 7 }, (_, k) => {
+      const angle = crownHalfAngle + (Math.PI / 2 - crownHalfAngle) * k / 6;
+      return {
+        axial: center.axial + side * edgeRound * Math.sin(angle),
+        radial: center.radial + edgeRound * Math.cos(angle),
+      };
     });
+  };
+  // A face ring just inside each round keeps the smoothed round's normals
+  // off the flat face (they streaked it radially).
+  const faceRing = (point) => ({ axial: point.axial, radial: point.radial - 0.01 });
+  const rearRound = cornerRound(-1).reverse();
+  const frontRound = cornerRound(1);
+  crownProfile.push(faceRing(rearRound[0]), ...rearRound);
+  for (let step = -12; step <= 12; step += 1) {
+    crownProfile.push(crownPoint(crownHalfAngle * step / 12));
   }
-  crownProfile.push({axial: faceHalf, radial: faceEdgeRadius});
+  crownProfile.push(...frontRound, faceRing(frontRound.at(-1)));
   rollerBody.geometry = boredLatheGeometry(crownProfile, .061, 96);
   rollerBody.userData.role = 'thin-friction-roller-disk';
   rollerRotor.add(rollerBody);

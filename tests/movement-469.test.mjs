@@ -284,7 +284,7 @@ test('movement 469 finite temperature gradient decays to equilibrium and cannot 
   const initial = stateAtPhase(0);
   const moving = stateAtPhase(0.34);
   const exhausted = stateAtPhase(geometry.operationEndPhase);
-  const stopped = stateAtPhase(0.75);
+  const stopped = stateAtPhase((geometry.operationEndPhase + geometry.thermalResetStartPhase) / 2);
   const externalReset = stateAtPhase(0.92);
 
   near(initial.temperatureDifferenceKelvin,

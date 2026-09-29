@@ -1012,6 +1012,15 @@ export const CAPSTAN_PLATE = Object.freeze({
   eyeRadiusPixels: 19,
   pinRadiusPixels: 7,
 });
+// Convex hull (monotone chain) of [x, y] points, counterclockwise.
+function convexHull(points) {
+  const sorted = [...points].sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  const cross = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+  const lower = [], upper = [];
+  for (const p of sorted) { while (lower.length >= 2 && cross(lower.at(-2), lower.at(-1), p) <= 0) lower.pop(); lower.push(p); }
+  for (const p of sorted.reverse()) { while (upper.length >= 2 && cross(upper.at(-2), upper.at(-1), p) <= 0) upper.pop(); upper.push(p); }
+  return [...lower.slice(0, -1), ...upper.slice(0, -1)];
+}
 function addNotchedRimAndLockingPawls(root, pawlMaterial, pinMaterial) {
   const g = root.userData.geometry, b = root.userData.blocks;
   pawlMaterial.fog = false;
@@ -1066,7 +1075,7 @@ function addNotchedRimAndLockingPawls(root, pawlMaterial, pinMaterial) {
   rim.userData.role = 'barrel-wheel-rim-with-six-locking-notches';
   b.barrelRotor.add(rim);
 
-  const makePawl = (name, eyePixels, notchSpec, bladeEdges, extra) => {
+  const makePawl = (name, eyePixels, notchSpec, extra) => {
     const pivot = platePoint(eyePixels);
     const eyeRadius = CAPSTAN_PLATE.eyeRadiusPixels * scale, pinRadius = CAPSTAN_PLATE.pinRadiusPixels * scale;
     // The nose fills its notch less a running clearance on every face.
@@ -1077,10 +1086,25 @@ function addNotchedRimAndLockingPawls(root, pawlMaterial, pinMaterial) {
       poly(notch(notchSpec.step, notchSpec.toward, (rimOuter + clearance) / rimOuter)),
       poly(circle([0, 0], rimOuter + 0.2, 360)),
     );
-    const blade = poly(bladeEdges.map(platePoint));
+    // Pass 109: each pawl is one clean line-and-arc outline: the eye
+    // concentric with its pin, two straight sides tangent to the eye running
+    // to the nose (the convex hull of the eye and the nose), the nose's own
+    // steep face and ramp matching the notch walls, and the underside
+    // relieved concentrically along the rim with running clearance. (The
+    // traced blade polygons left a stepped jog on the upper pawl's top edge
+    // and a nick where each blade met its nose.)
+    // Brown's nose is a sloped wedge: its end face runs from the top of the
+    // notch's steep face (at the rim) out and back to the bar's outer edge
+    // over the far end of the notch, so the hull takes the nose only up to
+    // the rim plus one point 0.2 proud over the ramp's end.
+    const noseAtRim = clip.intersection(nose, poly(circle([0, 0], rimOuter + clearance + 0.004, 360)));
+    const hullPoints = [...noseAtRim.flatMap((polygon) => polygon[0]),
+      polar(rimOuter + 0.2, notchSpec.step + notchSpec.toward * notchWidth), ...circle(pivot, eyeRadius, 96),
+      ...(extra ?? []).flatMap((part) => part.hullPoints?.(scale, notchSpec) ?? [])];
+    const blade = [convexHull(hullPoints)];
     const outline = clip.difference(
-      clip.union(nose, clip.difference(
-        clip.union(blade, poly(circle(pivot, eyeRadius, 64)), ...(extra ?? []).map((part) => part(platePoint, scale))),
+      clip.union(noseAtRim, clip.difference(
+        clip.union(blade, ...(extra ?? []).map((part) => part(platePoint, scale, notchSpec))),
         poly(circle([0, 0], rimOuter + clearance, 360)),
       )),
       poly(circle(pivot, pinRadius + 0.004, 48)),
@@ -1128,17 +1152,34 @@ function addNotchedRimAndLockingPawls(root, pawlMaterial, pinMaterial) {
     }
     return {group, mesh, pin, pivot, liftAngle: hi};
   };
-  // Upper pawl: flat blade from its eye to a nose in the top notch.
-  const upper = makePawl('upper', CAPSTAN_PLATE.upperEye, notches[0],
-    [[266, 70], [276, 63], [424, 58], [436, 86], [415, 77], [300, 86]]);
-  // Lower pawl: blade from its eye to a nose in the bottom notch, then the
-  // hooked tail curving down to the left.
-  const hook = (pt, sc) => {
-    const path = [[268, 478], [248, 478], [233, 484], [222, 493], [214, 504]].map(pt);
-    return clip.union(...path.slice(1).map((q, i) => capsule(path[i], q, 6.5 * sc, 16)));
+  // Upper pawl: a straight tapered bar from its eye to the nose in the top notch.
+  const upper = makePawl('upper', CAPSTAN_PLATE.upperEye, notches[0]);
+  // Lower pawl: the same bar to the nose in the bottom notch, then Brown's
+  // curled lift tail: one circular arc leaving the nose's outer corner
+  // tangent to the rim (away from the eye) and curling outward, round-ended.
+  const tail = (pt, sc, n) => {
+    const width = 6.5 * sc, start = n.step + n.toward * 0.012, r0 = rimOuter + clearance + width + 0.004;
+    const p0 = polar(r0, start);
+    // Tangent to the rim at p0, heading away from the ramp (psi decreasing
+    // for toward = +1), then curling outward about a centre outside the rim.
+    const dir = [-Math.sin(start) * n.toward * -1, Math.cos(start) * n.toward * -1];
+    const out = [Math.cos(start), Math.sin(start)], radius = 0.48, sweep = 1.05;
+    const centre = [p0[0] + out[0] * radius, p0[1] + out[1] * radius];
+    const a0 = Math.atan2(p0[1] - centre[1], p0[0] - centre[0]);
+    const turn = Math.sign(dir[0] * (p0[1] - centre[1]) * -1 + dir[1] * (p0[0] - centre[0])) || 1;
+    const path = Array.from({length: 17}, (_, i) => {
+      const a = a0 + turn * sweep * i / 16;
+      return [centre[0] + radius * Math.cos(a), centre[1] + radius * Math.sin(a)];
+    });
+    return clip.union(...path.slice(1).map((q, i) => capsule(path[i], q, width, 16)));
   };
-  const lower = makePawl('lower', CAPSTAN_PLATE.lowerEye, notches[3],
-    [[252, 470], [300, 466], [412, 458], [428, 497], [300, 490], [262, 486]], [hook]);
+  // The bar runs straight on to the tail's root, so the tail leaves the bar
+  // with no knob or step.
+  tail.hullPoints = (sc, n) => {
+    const width = 6.5 * sc, start = n.step + n.toward * 0.012, r0 = rimOuter + clearance + width + 0.004;
+    return circle(polar(r0, start), width, 32);
+  };
+  const lower = makePawl('lower', CAPSTAN_PLATE.lowerEye, notches[3], [tail]);
   const pawls = [
     {...upper, liftSign: -1},
     {...lower, liftSign: 1},

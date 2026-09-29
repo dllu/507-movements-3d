@@ -1,16 +1,30 @@
 import profile from '../data/jointed-tappet-profile.js';
 
 // Linear interpolation preserves the certified contact bounds of the cache.
-// The first turn includes the release from the pose drawn in the engraving;
-// subsequent turns begin with the tappet resting on its physical stop.
+// p109: every cycle plays the settled (steady) table, so the tappet never
+// falls unprompted from Brown's level pose onto its rest key at start-up
+// (the first-turn release table is kept only as bake evidence). The level
+// tappet of the plate is a pose of the strike: the clock starts at the
+// instant the stud has swung the tappet up through Brown's level pose
+// (q = 0, A not yet moved), so the default frame shows the plate's C and B.
+function levelStrikeTime(table) {
+  for (let i = 1; i < table.length; i += 1) {
+    const a = table[i - 1];
+    const b = table[i];
+    if (a[1] > 0 && b[1] <= 0) return a[0] + a[1] / (a[1] - b[1]) * (b[0] - a[0]);
+  }
+  throw new Error('The steady cycle never passes the level pose');
+}
+export const LEVEL_STRIKE_PHYSICS_TIME = levelStrikeTime(profile.steady);
+
 export function sampleJointedTappetMotion(time, {period = profile.period} = {}) {
   if (!Number.isFinite(time) || !Number.isFinite(period) || period <= 0) {
     throw new Error('Invalid playback clock');
   }
-  const physicsTime = Math.max(0, time) * profile.physicsPeriod / period;
+  const physicsTime = Math.max(0, time) * profile.physicsPeriod / period + LEVEL_STRIKE_PHYSICS_TIME;
   const cycle = Math.floor(physicsTime / profile.physicsPeriod);
   const local = physicsTime - cycle * profile.physicsPeriod;
-  const table = cycle === 0 ? profile.first : profile.steady;
+  const table = profile.steady;
   let low = 0;
   let high = table.length - 1;
   while (high - low > 1) {

@@ -2,7 +2,10 @@ import source from './source.js';
 
 export function makeScrewProfile({segments=256,contactSegments=64,clearance=.003}={}) {
   const world=p=>[(p[0]-source.axis[0])/100,(source.axis[1]-p[1])/100],pitch=source.thread[2]/100,lead=-pitch/(2*Math.PI);
-  const coreRadius=(source.coreEdges[1]-source.coreEdges[0])/200,crestRadius=(source.crestEdges[1]-source.crestEdges[0])/200,width=source.thread[3]/100;
+  const coreRadius=(source.coreEdges[1]-source.coreEdges[0])/200,crestRadius=(source.crestEdges[1]-source.crestEdges[0])/200;
+  // p109: a square thread with land equal to groove (half the pitch), not
+  // Brown's thin drawn band (0.375 p), which read as fins on a slim core.
+  const width=pitch/2;
   const topAtAxis=source.thread[0]+source.thread[1]*(source.axis[0]-227),phase=(source.axis[1]-topAtAxis)/100-lead*(-Math.PI/2)-width/2;
   const nutLow=world([0,source.nut.bottom])[1],nutHigh=world([0,source.nut.top])[1],nutBase=(nutLow+nutHigh)/2,nutHeight=nutHigh-nutLow;
   const low=nutLow-.03,high=0;

@@ -27,7 +27,7 @@ test('132 handle clears both frame columns, while the former rearward sweep inte
    assert(u.cameraFitBounds.containsBox(visibleBox));
   }
   assert(oldCollision,'negative control must detect the original collision');
-  assert(u.hideGround);assert(u.supportsRestart);assert(!b.upperRotationIndex.visible);assert(!b.platenMotionIndex.visible);
+  assert.equal(u.hideGround,false,"p109: the hatched ground is shown under the feet and bed");assert(u.supportsRestart);assert(!b.upperRotationIndex.visible);assert(!b.platenMotionIndex.visible);
   applyDisplayTiming(v,movement);assert.equal(u.animationTiming.displayCycleDuration,4);
   v.reset();assert(Math.abs(u.kinematics.downwardDisplacement)<1e-12);
  }finally{disposeObject3D(v.root);}

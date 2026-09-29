@@ -782,10 +782,15 @@ test('movement 185 rendered transforms keep every analytical joint visibly attac
   // Pass 72: Brown's notched quadrant is short.
   assert.ok(physicalSize.y > 4.8);
   // The fixed rockshaft and reversing axis stop just proud of their arms;
-  // the common eccentric shaft sets the depth.
-  assert.ok(physicalSize.z > 2.65);
-  assert.ok(physicalBounds.min.z < -1.32);
-  assert.ok(physicalBounds.max.z > 1.32);
+  // p109: so does the common eccentric shaft (0.03 past each sheave face).
+  assert.ok(physicalSize.z > 2.2);
+  assert.ok(physicalBounds.min.z < -1.0);
+  assert.ok(physicalBounds.max.z > 1.19);
+  {
+    const shaftBox = new THREE.Box3().setFromObject(inputRotor.children.find(o => o.userData.role === 'common-shaft-through-both-eccentrics'));
+    assert.ok(shaftBox.max.z > 0.37 && shaftBox.max.z < 0.39, `eccentric shaft front end ${shaftBox.max.z}`);
+    assert.ok(shaftBox.min.z < -0.37 && shaftBox.min.z > -0.39, `eccentric shaft back end ${shaftBox.min.z}`);
+  }
   assert.ok(model.cameraDirection.x > 0);
   assert.ok(model.cameraDirection.y > 0);
   assert.ok(model.cameraDirection.z > model.cameraDirection.x * 3.3);
