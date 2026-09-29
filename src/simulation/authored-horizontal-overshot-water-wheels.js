@@ -592,14 +592,14 @@ function horizontalOvershotWaterWheel(movement) {
       const k = i < first ? first : i > last ? last : i;
       if (k !== i) { points[i] = points[k].clone(); flows[i] = flows[k]; }
     }
-    return {points, speeds, times, flows};
+    return {points, speeds, times, flows, wetFirst: Math.max(0, first), wetLast: last < 0 ? filmSamples - 1 : last};
   };
   const films = Array.from({length: bladeCount}, (_, bladeIndex) => {
     const initial = filmPath(bladeIndex, 0);
-    let flows = initial.flows;
+    let flows = initial.flows, wetFirst = initial.wetFirst, wetLast = initial.wetLast;
     const film = new WaterStream(initial, {
       width: filmHalfWidth, thickness: filmHalfThickness, widthAxis: edgeLocal, widthExponent: 1,
-      cyclePeriod: cycleDuration, streakRate: 1.5, streakAcross: 4, opacity: 0.58, color: 0x9fdcea,
+      cyclePeriod: cycleDuration, streakRate: 1.5, streakAcross: 4, opacity: 0.3, color: 0x3fa6c8,
       section: (i) => {
         // A dry sample shrinks to a hair, not a point, so its normals stay
         // defined (a zero ring shades black).
@@ -607,13 +607,19 @@ function horizontalOvershotWaterWheel(movement) {
         if (wet <= 0) return [1e-4, 1e-4];
         // A thin trickle shrinks whole (not flattening into two faces).
         const width = i === 0 ? 0.10 : filmHalfWidth, scale = Math.min(1, wet / 0.15);
-        return [width * (0.35 + 0.65 * wet) * scale, filmHalfThickness * scale];
+        // Pass 101: the film tapers to a rounded tongue at the ends of its
+        // wet stretch (except where it rolls into the spill sheet), in the
+        // streams' own water colour, so it reads as running water rather
+        // than a square pale label lying on the board.
+        const fromTail = i - wetFirst, toHead = wetLast === filmSamples - 1 ? Infinity : wetLast - i;
+        const taper = Math.min(1, Math.sqrt(Math.max(0, Math.min(fromTail, toHead) + 0.35) / 3.35));
+        return [width * (0.35 + 0.65 * wet) * scale * taper, filmHalfThickness * scale * (0.5 + 0.5 * taper)];
       },
     });
     film.userData.role = `water-film-running-out-along-board-${bladeIndex + 1}`;
     film.userData.setTime = (time) => {
       const path = filmPath(bladeIndex, time);
-      flows = path.flows;
+      ({flows, wetFirst, wetLast} = path);
       film.visible = flows.some((flow) => flow > filmWetFlow);
       if (film.visible) film.setPath(path);
     };

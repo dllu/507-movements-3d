@@ -32,14 +32,22 @@ export function finishSingleTooth241(model) {
   }
   const click = polygonClipping.difference(polygonClipping.union(poly(clickPoints), ...swell, poly(circle([0, 0], 0.24, 96))), poly(circle([0, 0], 0.09, 96)));
   replace(b.holdingClickBody, plate(click, -0.09, 0.09));
-  replace(b.driverDisk, ring(0.098, g.driverBodyRadius, -0.12, 0.12, 96));
+  replace(b.driverDisk, ring(0.1, g.driverBodyRadius, -0.12, 0.12, 96)); // bore hidden inside the hub's
   b.driverDisk.rotation.set(0, 0, 0);
   b.driverDisk.position.z = 0; // Recess the disk so the source curl stays visible.
   const driverHub = b.driver.userData.rotor.children.find(o => o.isMesh && o.geometry.type === 'CylinderGeometry');
-  replace(driverHub, ring(0.098, 0.16, -0.32, 0.32, 96));
+  // p101: every pin and hub ends at its part stack plus a small head (they ran
+  // well out of both faces), and A's hub lies within the wheel's faces, so the
+  // bore reads as Brown's plain hole instead of a crescent shadow.
+  replace(driverHub, ring(0.098, 0.16, -0.28, 0.14, 96));
   driverHub.rotation.set(0, 0, 0);
   driverHub.userData.role = 'bored-single-tooth-driver-hub';
-  replace(b.outputWheel.userData.hub, ring(0.122, 0.39, -0.213, 0.213, 96));
+  replace(b.outputWheel.userData.hub, ring(0.122, 0.39, -0.145, 0.145, 96));
+  for (const [shaft, length, z] of [[b.outputShaft, 0.5, -0.01], [b.driverShaft, 0.48, 0.06], [b.holdingClickPivot, 0.26, 0.14]]) {
+    const mesh = shaft.userData.rotor.children.find(o => o.isMesh);
+    mesh.geometry.scale(1, length / shaft.userData.length, 1);
+    shaft.userData.length = length; shaft.position.z = z;
+  }
   b.outputWheel.userData.hub.material = b.outputWheelBody.material;
   const outputIndex = b.outputWheelIndicator;
   replace(outputIndex, new THREE.BoxGeometry(0.045, 0.72, 0.012));

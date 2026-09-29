@@ -14,6 +14,7 @@ const flat=(mesh,bore=null)=>{const p=mesh.geometry.parameters,shape=p.shapes.cl
 // inward face at every selector position. The slots are the pin envelope over
 // this whole slab (scripts/export-208-pin-envelope.mjs).
 export const pinion208Slab=Object.freeze([-.055,.205]);
+export const pin208End=.46;
 // Brown draws 209's forked catch as one solid flat horn: two broad crescent
 // tines tapering to points from a common root. The thin wire tubes and loose
 // ring are replaced by one flat plate (same centre paths) on a flat stem to a
@@ -97,8 +98,12 @@ export function correctVariableDrive(root,id){
   b.pinionWeb.userData.generationGeometry=b.pinionWeb.geometry;replace(b.pinionWeb,outlined(pinSlotOutline,pinion208Slab[1]-pinion208Slab[0],.078).translate(0,0,(pinion208Slab[0]+pinion208Slab[1])/2));for(const tooth of b.pinionTeeth)tooth.visible=false;
   for(const ring of b.pinionFaceRings)ring.visible=false;
   replace(b.pinWheelDisk,ring(1.58,.072,.18));replace(b.pinWheelHub,ring(.19,.072,.56));
-  for(const ringGroup of b.pinRings)for(const pin of ringGroup.children.filter(o=>o.userData.pinWheelPin)){replace(pin,new THREE.CylinderGeometry(.082,.082,.595,22));pin.position.z=(.085+.68)/2;}
-  root.userData.geometry.pinStartZ=.085;root.userData.geometry.pinLength=.595;
+  // p101: the pins stop at z 0.46 (0.06 past the pitch line, r 0.94 from the
+  // pinion axis). Reaching deeper (0.68, r 0.72) made the pins' sweep undercut
+  // every tooth into a slender hook; now each tooth is a clean radial-flank,
+  // round-top tooth (scripts/generate-208-pin-envelope.py).
+  for(const ringGroup of b.pinRings)for(const pin of ringGroup.children.filter(o=>o.userData.pinWheelPin)){replace(pin,new THREE.CylinderGeometry(.082,.082,pin208End-.085,22));pin.position.z=(.085+pin208End)/2;}
+  root.userData.geometry.pinStartZ=.085;root.userData.geometry.pinLength=pin208End-.085;
   replace(b.selectorCollar.children[0],ring(.15,.060,.13));
   // The selector collar sits beside the widened pinion's inward face.
   for(const part of b.selectorCollar.children)part.position.x=pinion208Slab[1]+.13/2+.015;

@@ -2,48 +2,53 @@
   "movement": 153,
   "method": "All visible mesh pairs belonging to different rigid bodies, bidirectional vertices/edge midpoints/face centers, 65 native poses from the sixth full disk cycle. Contact markers are excluded; intended soft working contacts are reported separately. Same-body mating interfaces excluded. No continuous collision proof.",
   "summary": {
-    "parts": 42,
-    "pairs": 591,
+    "parts": 41,
+    "pairs": 554,
     "poses": 65,
-    "checks": 3410036,
+    "checks": 3202678,
     "failingPairs": 0
   },
   "failures": {},
   "softContacts": {
     "part-29/bar-fixed-underside-direct-drive-projection-34": {
-      "firstPose": 3,
-      "points": 4,
-      "maximumDepth": 0.0000147204432975305
+      "firstPose": 1,
+      "points": 9,
+      "maximumDepth": 0.0000147236376151072
     },
-    "part-31/distal-input-driving-face-37": {
-      "firstPose": 10,
-      "points": 3,
-      "maximumDepth": 0.000004871116610640549
-    },
-    "bar-fixed-front-return-stud-35/bored-return-arm-39": {
-      "firstPose": 10,
+    "bar-fixed-front-return-stud-35/bored-return-arm-38": {
+      "firstPose": 14,
       "points": 2,
-      "maximumDepth": 0.00000554490942300534
+      "maximumDepth": 0.000006678238051199825
+    },
+    "part-31/flat-input-arm-37": {
+      "firstPose": 18,
+      "points": 1,
+      "maximumDepth": 0.0000026133955161322664
+    },
+    "physical-elbow-rest-stop-9/flat-input-arm-37": {
+      "firstPose": 28,
+      "points": 4,
+      "maximumDepth": 0.00000536230432379714
     },
     "part-31/bar-fixed-underside-direct-drive-projection-34": {
-      "firstPose": 35,
-      "points": 4,
-      "maximumDepth": 0.000014720456624629279
+      "firstPose": 29,
+      "points": 9,
+      "maximumDepth": 0.000014723654424523813
     },
-    "part-29/distal-input-driving-face-37": {
-      "firstPose": 42,
-      "points": 3,
-      "maximumDepth": 0.000004871117150310179
+    "part-29/flat-input-arm-37": {
+      "firstPose": 50,
+      "points": 1,
+      "maximumDepth": 0.000002613395102102345
     }
   },
   "sources": [
     {
       "file": "scripts/review-stud-reverser-assembly.mjs",
-      "sha256": "3611daf5883f7eb55a459041f9f230ddb536a5c0620c52bb85c0aa2f18f43629"
+      "sha256": "f211c79f74ea97c3c8312d8ca7c02f69613bbffa01da68ee3d494f74b6f95afc"
     },
     {
       "file": "src/simulation/mujoco-stud-reverser/geometry.js",
-      "sha256": "61f443ca61da1c5a21283aa6b005f6c64c072fa9404600a0e6afd4a45fb4ed07"
+      "sha256": "b9d9e33cb4b317e279039aa9c8360aca9e0a59fbd3666697e571bf9b95248466"
     },
     {
       "file": "src/simulation/mujoco-stud-reverser/sync.js",
@@ -55,7 +60,7 @@
     },
     {
       "file": "/dev/shm/153-supported-fine-samples.json",
-      "sha256": "f5f6d979c67c3c45858b0dc1b16248ac9ff96b17e925f6f746a4f84b1ceb3851"
+      "sha256": "8c18f3bab7f8383c43cb3f9dfa2f47cd0decc82cb48b3c73d53639821882adce"
     },
     {
       "file": "src/simulation/finite-plate-geometry.js",

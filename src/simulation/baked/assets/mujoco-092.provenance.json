@@ -13,7 +13,7 @@
     "src/simulation/mujoco/simulation.js": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
   },
   "visualSourcesAtBake": {
-    "src/simulation/mujoco-crank-slider/geometry.js": "8b7032bacac652b46b48b32a2c0c7ef7f88882e9d6d2746b50f7777a78e0802e"
+    "src/simulation/mujoco-crank-slider/geometry.js": "75e22fcfeff41d8fd88fa33a589e07a072f74576bdbf61fbb679b82eee9b839e"
   },
   "physicsXmlSha256": {
     "default": "34ec7bccae2c79921e137065e546b15ffbda96b54fd30d8190fcbfdea1f2abba"
@@ -67,5 +67,5 @@
   },
   "extras": [],
   "removed": [],
-  "bakeSeconds": 0.6133540048599243
+  "bakeSeconds": 0.6687911028861999
 }

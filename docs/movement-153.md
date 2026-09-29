@@ -11,6 +11,17 @@ bar's front stud. The replacement retains the source plan landmarks and the
 approximately diametric stud pair, with the following explicit reconstruction
 choices:
 
+- **Pass 101 (user review): the L lever is flat.** The input arm lies wholly
+  in the stud plane (z 0.64–1.0) as one extrusion with a rounded end; there is
+  no depth step. At Brown's arm direction a flat arm cannot work (the stud
+  would sweep it 66° and throw the bar 1.4 left, where the next stud jams under
+  the lug below bar -0.9; a shorter arm at that direction is struck end-on and
+  jams). The input arm (the L's shorter leg) is therefore shortened to 1.25
+  (Brown 1.667) and turned 15° up towards the disk centre (included angle
+  93.6° to 78.6°). Each stud now strikes its side and slips off its end after
+  a 43.7° swing; the bar runs -0.619 to 1.025 (was 0.038 to 1.025), i.e. 0.62
+  farther left than drawn, and every cycle ends at the drawn bar pose. See
+  `docs/p101-u2-review.md`. The earlier relieved arm below is historical.
 - The inner 100 source pixels of the input arm are raised above the disk stud
   ends. Its distal 19.08 pixels and rounded tip remain at working depth. The
   raised rear face is Z=0.76 and stud ends are Z=0.734 (pins end at 0.704 under

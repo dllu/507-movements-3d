@@ -81,3 +81,20 @@ test('397 p99: the crescent is Brown\'s slot arc, with the rocker upright at the
   assert.ok(s0.inputPinWorld.clone().sub(g.rockerPivot).distanceTo(u([298.9, 193.8])) * S < 1);
   assert.ok(Math.abs(s0.rockerAngle) < 1e-6 && s0.dwellActive);
 });
+test('397 p101: the S neck runs into the slot\'s lower end cap with no kink or spike', () => {
+ let body=null;m.root.traverse(o=>{if(o.userData.role==='finite-open-crescent-channel-walls-and-s-neck-to-foot-pivot')body=o;});
+ const outline=body.userData.outline;assert.equal(outline.length,1);
+ const ring=outline[0][0].slice(0,-1),n=ring.length,cap=d.openCrescentLaw.pointAtRadius(d.openCrescentLaw.low);
+ let worst=0,seen=0;
+ for(let i=0;i<n;i++){
+  const [a,b,c]=[ring[(i+n-1)%n],ring[i],ring[(i+1)%n]];
+  // the right flare and the lower end cap, where the notch was
+  if(!(b[0]>0.1&&b[0]<0.45&&b[1]>0.55&&b[1]<1.12))continue;seen++;
+  const u=Math.atan2(b[1]-a[1],b[0]-a[0]),v=Math.atan2(c[1]-b[1],c[0]-b[0]);
+  worst=Math.max(worst,Math.abs(Math.atan2(Math.sin(v-u),Math.cos(v-u))));
+  // nothing stands proud of the cap circle
+  assert.ok(Math.hypot(b[0]-cap.x,b[1]-cap.y)<0.29+2e-3||b[1]<0.9,`spike at ${b}`);
+ }
+ assert.ok(seen>40,`${seen} outline vertices`);
+ assert.ok(worst<6*Math.PI/180,`largest turn ${(worst*180/Math.PI).toFixed(2)} deg`);
+});

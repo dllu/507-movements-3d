@@ -16,6 +16,14 @@ const dispose = model => model.root.traverse(object => {
 
 test('068 has one shaped tooth and ten short rounded notches', () => {
   assert.equal(p.notches, 10);
+  // p101: tooth A is symmetric about its centre line, with a round tip.
+  assert.equal(p.idealTooth, true); assert.ok(p.tipRadius >= 0.06 && p.tipRadius <= 0.08);
+  const c = Math.cos(-p.toothAngle), s = Math.sin(-p.toothAngle), local = profile.driver[0].map(([x, y]) => [x * c - y * s, x * s + y * c]);
+  const near = local.filter(([x, y]) => Math.hypot(x, y) > 1.15 && Math.abs(Math.atan2(y, x)) < 0.35);
+  let asymmetry = 0;
+  const segment = ([x, y], [ax, ay], [bx, by]) => { const dx = bx - ax, dy = by - ay, t = Math.max(0, Math.min(1, ((x - ax) * dx + (y - ay) * dy) / (dx * dx + dy * dy))); return Math.hypot(x - ax - t * dx, y - ay - t * dy); };
+  for (const [x, y] of near) asymmetry = Math.max(asymmetry, Math.min(...local.map((a, i) => segment([x, -y], a, local[(i + 1) % local.length]))));
+  assert.ok(asymmetry < 2e-3, `tooth and notches mirror about A's centre line (${asymmetry})`);
   assert.equal(p.pitch, Math.PI / 5);
   let projectingRuns = 0, previous = false;
   for (const point of profile.driver[0]) {
@@ -49,7 +57,8 @@ test('068 starts at contact instead of interpolating into the preceding dwell', 
   const before = motion.atTime(p.entryTime - epsilon), after = motion.atTime(p.entryTime + epsilon);
   assert.equal(before.outputSpeed, 0);
   assert.equal(before.outputAngle, p.initialQ);
-  assert.ok(after.outputSpeed > 1.1 && after.outputSpeed < 1.2);
+  // p101: the ideal round-tipped tooth meets the slot flank at 1.49x.
+  assert.ok(after.outputSpeed > 1.4 && after.outputSpeed < 1.6);
   const field = makeSingleToothConstraintField(profile);
   assert.ok(field.atAngle(before.inputAngle)(before.outputAngle) <= 1e-7);
   assert.ok(field.atAngle(after.inputAngle)(before.outputAngle) > 1e-6);
@@ -77,7 +86,7 @@ test('068 progresses monotonically at a bounded speed and returns to dwell', () 
     assert.ok(state.outputSpeed >= 0);
     peak = Math.max(peak, state.outputSpeed); previous = state.outputAngle;
   }
-  assert.ok(peak > 1.8 && peak < 1.96);
+  assert.ok(peak > 1.9 && peak < 2.0);
   assert.equal(motion.atTime(2).outputSpeed, 0);
 });
 

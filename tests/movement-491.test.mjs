@@ -72,7 +72,7 @@ test('movement 491 is one rigid capstan with one cable and a moving pawl over a 
   // Brown draws the ratchet on the ground line; source presentation removes the plinth.
   assert.equal(blocks.basePlinth.parent, null);
   assert.ok(model.root.userData.sourcePresentation.removedRoles.includes('fixed-circular-base-plinth'));
-  assert.equal(blocks.handSpikeEndCaps.length, 2);
+  assert.equal(blocks.handSpikeEndCaps.length, 0);
   assert.equal(blocks.socketMarkers.length, 8);
   assert.equal(degreesOfFreedom.capstanOperatingCoordinates, 1);
   assert.equal(degreesOfFreedom.headBarrelAndHandspikeRelativeMotion, 0);

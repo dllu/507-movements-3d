@@ -50,13 +50,18 @@ function doubleActingPump(movement) {
   const maximumValveLift = 0.16;
   const maximumFlapAngle = 0.62;
   const hingeDrop = 0.045;
+  // Pass 101: the hinge axes stand flapHingeShift left of their old places
+  // so the bolder flaps (0.086 thick, was 0.05), centred on them, keep their
+  // seat-side faces where they were.
+  const flapHingeShift = 0.018;
+  const flapThickness = 0.086;
   // Hinges of the four flaps: 1 and 4 hang from the top wall, 3 from the
   // underside of the left jacket and 2 from the lip of the right jacket.
   const valveSeats = Object.freeze({
-    lowerDischarge3: new THREE.Vector3(sx(200), sy(408) - hingeDrop, 0),
-    lowerSuction2: new THREE.Vector3(sx(372), sy(415) - hingeDrop, 0),
-    upperDischarge4: new THREE.Vector3(sx(210), sy(114) - hingeDrop, 0),
-    upperSuction1: new THREE.Vector3(sx(372), sy(114) - hingeDrop, 0),
+    lowerDischarge3: new THREE.Vector3(sx(200) - flapHingeShift, sy(408) - hingeDrop, 0),
+    lowerSuction2: new THREE.Vector3(sx(372) - flapHingeShift, sy(415) - hingeDrop, 0),
+    upperDischarge4: new THREE.Vector3(sx(210) - flapHingeShift, sy(114) - hingeDrop, 0),
+    upperSuction1: new THREE.Vector3(sx(372) - flapHingeShift, sy(114) - hingeDrop, 0),
   });
   const flapLengths = {
     lowerDischarge3: sy(408) - sy(442) - hingeDrop - 0.05,
@@ -322,12 +327,14 @@ function doubleActingPump(movement) {
     group.position.copy(valveSeats[name]);
     const mountTop = name === 'lowerSuction2' ? sy(415)
       : name === 'lowerDischarge3' ? sy(408) : sy(114);
+    // The knuckle's hanger: a short block from just over the knuckle up
+    // into the wall it hangs from (0.0015 running clearance).
+    const hangerBottom = flapThickness / 2 + 0.0015, hangerTop = mountTop - valveSeats[name].y + 0.015;
     const body = new THREE.Mesh(
-      new THREE.BoxGeometry(0.09, mountTop - valveSeats[name].y - 0.04,
-        2 * pistonHalfDepth),
+      new THREE.BoxGeometry(0.09, hangerTop - hangerBottom, 2 * pistonHalfDepth),
       frameMaterial,
     );
-    body.position.y = (mountTop - valveSeats[name].y + 0.04) / 2;
+    body.position.y = (hangerTop + hangerBottom) / 2;
     body.userData.role = 'fixed-flap-hinge-block';
     group.add(body);
     const stop = new THREE.Mesh(
@@ -335,21 +342,23 @@ function doubleActingPump(movement) {
         -pistonHalfDepth, pistonHalfDepth),
       frameMaterial,
     );
-    stop.position.set(-0.14, mountTop - valveSeats[name].y, 0);
+    stop.position.set(-0.14 + flapHingeShift, mountTop - valveSeats[name].y, 0);
     stop.userData.role = 'fixed-flap-stop';
     group.add(stop);
     const disk = new THREE.Group();
+    // Pass 101: the knuckle is the flap's rounded top, radius half its
+    // thickness.
     const knuckle = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.035, 0.035, 2 * pistonHalfDepth, 24),
+      new THREE.CylinderGeometry(flapThickness / 2, flapThickness / 2, 2 * pistonHalfDepth - 0.004, 40),
       material,
     );
     knuckle.rotation.x = Math.PI / 2;
     disk.add(knuckle);
     const flap = new THREE.Mesh(
-      new THREE.BoxGeometry(0.05, length - 0.02, 2 * pistonHalfDepth - 0.02),
+      new THREE.BoxGeometry(flapThickness, length - 0.02, 2 * pistonHalfDepth - 0.004),
       material,
     );
-    flap.position.y = -0.02 - length / 2;
+    flap.position.set(0, -0.01 - length / 2, 0);
     disk.add(flap);
     group.add(disk);
     group.userData.disk = disk;
@@ -383,6 +392,10 @@ function doubleActingPump(movement) {
   // piston (their volumes change as it sweeps, what one gains the passages
   // give and the other passes on).
   const waterMaterial = waterVolumeMaterial({ opacity: 0.34 });
+  // Pass 101: the water's front face stands 0.027 behind the flaps' front
+  // faces, so the working flaps read opaque and crisp on the section rather
+  // than tinted behind a water layer.
+  const waterFrontZ = 0.585;
   const inside = poly(px([
     [122, 42], [122, 417],
     ...arcPoints(147, 417, 25, Math.PI, 0.5 * Math.PI, 16),
@@ -397,14 +410,15 @@ function doubleActingPump(movement) {
   ];
   const chamber = rect(216, 114, 330, 442);
   const passageWater = addRole(new THREE.Mesh(
-    plate(polygonClipping.difference(inside, ...solids, chamber), -casingHalfDepth + 0.004, casingHalfDepth - 0.004),
+    plate(polygonClipping.difference(inside, ...solids, chamber), -casingHalfDepth + 0.004, waterFrontZ),
     waterMaterial,
   ), 'water-filling-passages-A-B-and-valve-ports');
   passageWater.renderOrder = 1;
   root.add(passageWater);
   const chamberBox = () => {
-    const geometry = new THREE.BoxGeometry(sx(330) - sx(216), 1, 2 * (casingHalfDepth - 0.004));
-    geometry.translate((sx(216) + sx(330)) / 2, 0.5, 0);
+    const back = -casingHalfDepth + 0.004;
+    const geometry = new THREE.BoxGeometry(sx(330) - sx(216), 1, waterFrontZ - back);
+    geometry.translate((sx(216) + sx(330)) / 2, 0.5, (waterFrontZ + back) / 2);
     return geometry;
   };
   const upperChamberWater = addRole(new THREE.Mesh(chamberBox(), waterMaterial),

@@ -6,13 +6,13 @@ import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import loadMujoco from '@mujoco/mujoco';
 import {makeStudReverserPhysics} from '../src/simulation/mujoco-stud-reverser/physics.js';
-import {makeRelievedStudReverser} from '../src/simulation/mujoco-stud-reverser/geometry.js';
+import {makeRelievedStudReverser,FLAT_INPUT_ARM} from '../src/simulation/mujoco-stud-reverser/geometry.js';
 import {syncStudReverser} from '../src/simulation/mujoco-stud-reverser/sync.js';
 const hash=f=>createHash('sha256').update(fs.readFileSync(f)).digest('hex');
 for(const file of ['docs/validation/153-supported-fine.json','docs/validation/153-assembly.json','docs/validation/153-moving-volumes.json']){
  const r=JSON.parse(fs.readFileSync(file));for(const s of r.sources)assert.equal(hash(s.file),s.sha256,s.file);if(r.summary.failingPairs!==undefined)assert.equal(r.summary.failingPairs,0);
 }
-const p=makeStudReverserPhysics(await loadMujoco(),{inputContactMinimum:1.4,barFriction:2,timestep:.000125}),v=makeRelievedStudReverser();
+const p=makeStudReverserPhysics(await loadMujoco(),{...FLAT_INPUT_ARM,barFriction:2,timestep:.000125}),v=makeRelievedStudReverser();
 try{
  const b=v.root.userData.blocks,g=v.root.userData.geometry,names=['disk','bar','lever','leftGuide','rightGuide'],turns=[-2*Math.PI,0,0,0,0],motion=[];
  const start=480000,end=576000,stride=16;

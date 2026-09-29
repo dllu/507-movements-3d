@@ -233,7 +233,8 @@ export function installCarrierPawl225(root) {
   // Kept inside the framed view (right edge x 2.85, bottom y -2.65).
   const groundLeft = g.carrierPivot.x - 0.9, groundRight = 2.84;
   const ground = groundBlock(groundRight - groundLeft, 0.22, 0.8, { name: 'hatched-ground-under-carrier-lug' });
-  ground.material = ground.material[2];
+  // p101: the shared ground block's darker side faces are kept (the top-face
+  // material on every face read as a pale slab).
   ground.position.set((groundLeft + groundRight) / 2, g.carrierPivot.y - groundDrop - 0.11, 0.05);
   root.add(ground);
   replace(b.ratchet.userData.hub, ring(0.108, 0.32, -0.1988, 0.1988, 96));

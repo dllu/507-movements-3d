@@ -222,20 +222,31 @@ function undershotWaterWheel(movement) {
   const hub = cylinderAlongZ(hubRadius, 1.25, wheelMaterial, 40);
   hub.userData.role = 'undershot-wheel-hub-fast-on-shaft';
   rotor.add(hub);
-  for (let spokeIndex = 0; spokeIndex < spokeCount; spokeIndex += 1) {
-    const angle = spokeIndex * FULL_TURN / spokeCount;
-    const spoke = new THREE.Mesh(
-      new THREE.BoxGeometry(2.26, 0.13, 0.26),
-      wheelMaterial,
-    );
-    spoke.position.set(
-      1.13 * Math.cos(angle),
-      1.13 * Math.sin(angle),
-      0,
-    );
-    spoke.rotation.z = angle;
-    spoke.userData.role = `undershot-wheel-spoke-${spokeIndex + 1}-of-eight`;
-    rotor.add(spoke);
+  // Pass 101: each rim carries its own eight spokes in its plane (the usual
+  // two-sided wheel; Brown's elevation shows the front set), running from
+  // inside the hub to the rim tube's centre line, so no spoke ends in air
+  // between the rims. The spokes (0.18 deep) sit inside the 0.21 rim tube.
+  const spokeInner = 0.30;
+  const spokeLength = wheelRimRadius - spokeInner;
+  for (const face of [1, -1]) {
+    for (let spokeIndex = 0; spokeIndex < spokeCount; spokeIndex += 1) {
+      const angle = spokeIndex * FULL_TURN / spokeCount;
+      const spoke = new THREE.Mesh(
+        new THREE.BoxGeometry(spokeLength, 0.13, 0.18),
+        wheelMaterial,
+      );
+      const middle = spokeInner + spokeLength / 2;
+      spoke.position.set(
+        middle * Math.cos(angle),
+        middle * Math.sin(angle),
+        face * paddleAxialWidth / 2,
+      );
+      spoke.rotation.z = angle;
+      spoke.userData.role = face > 0
+        ? `undershot-wheel-spoke-${spokeIndex + 1}-of-eight`
+        : `rear-undershot-wheel-spoke-${spokeIndex + 1}-of-eight`;
+      rotor.add(spoke);
+    }
   }
   const paddleBoards = [];
   for (let paddleIndex = 0; paddleIndex < paddleCount;

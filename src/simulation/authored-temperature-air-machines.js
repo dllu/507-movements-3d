@@ -367,6 +367,27 @@ function temperatureAirMachine(movement) {
     waterFrontZ: TANK_WATER_FRONT_Z,
   });
   root.add(coldTankParts.tank, warmTankParts.tank);
+  // Pass 101: Brown's bottom line runs unbroken under both cisterns: one
+  // base slab carries the two tanks and bridges the space between their
+  // inner walls (they stood on two separate bases with a gap between).
+  {
+    const left = coldTankCenterX - coldTankWidth / 2, right = warmTankCenterX + warmTankWidth / 2;
+    const commonBase = coldTankParts.base;
+    commonBase.geometry.dispose();
+    commonBase.geometry = new THREE.BoxGeometry(right - left, 0.14, tankDepth);
+    commonBase.position.x = (left + right) / 2;
+    commonBase.userData.role = 'common-base-under-both-cisterns';
+    warmTankParts.base.removeFromParent();
+    warmTankParts.base.geometry.dispose();
+    warmTankParts.base = commonBase;
+    // The left cistern's low cut front runs on across the space to the right
+    // cistern's, so the base's front edge is one unbroken lip.
+    const front = coldTankParts.cutawayFront, warmLeft = warmTankCenterX - warmTankWidth / 2;
+    const frontWidth = warmLeft - left;
+    front.geometry.dispose();
+    front.geometry = new THREE.BoxGeometry(frontWidth, 0.34, 0.14);
+    front.position.x = left + frontWidth / 2;
+  }
 
   const screwMount = addRole(new THREE.Group(),
     'inclined-archimedean-screw-mount');

@@ -528,14 +528,34 @@ function slottedTraverse(movement) {
     frameMaterial,
   );
   fixedPinSupport.userData.role = 'fixed-upper-pin-rear-support';
-  const fixedPinBearing = cylinderAlongZ(0.18, 0.38,
-    inkMaterial, 34);
-  fixedPinBearing.position.set(
-    fixedPinWorld.x,
-    fixedPinWorld.y,
-    fixedFramePlaneZ + 0.11,
-  );
-  fixedPinBearing.userData.role = 'fixed-upper-slot-pin-bearing-O';
+  // Pass 101: fixed pin O is carried by one flat bracket cast on guide a's
+  // right upright (it floated as a drum behind the lever): a post continuing
+  // the upright up past the traversing bar, a round-cornered arm across to
+  // O, and a round boss concentric with O and bored for it, joined by
+  // tangent fillets. It lies between the moving standard (z <= -0.58) and
+  // the lever (z >= 0.21), and stays above boss C, so it never meets them.
+  const oBracketBackZ = -0.50, oBracketFrontZ = -0.12;
+  const oBracketOutline = (() => {
+    const rect = (x0, y0, x1, y1) => poly([[x0, y0], [x1, y0], [x1, y1], [x0, y1]]);
+    const ox = fixedPinWorld.x, oy = fixedPinWorld.y, armHalf = 0.11, bossRadius = 0.18, fillet = 0.05;
+    const postX0 = plateGuideXs[1] * sourceScale - 0.08, postX1 = plateGuideXs[1] * sourceScale + 0.08;
+    const postBottom = sourceOutputRailWorldY + (plateOutputRailHeight + 0.50) / 2 - 0.08;
+    const armTop = oy + armHalf, armBottom = oy - armHalf, corner = postX1 - postX0, inner = 0.08;
+    let shape = clip.union(rect(postX0, postBottom, postX1, armTop), rect(ox, armBottom, postX1, armTop),
+      poly(circle([ox, oy], bossRadius, 72)));
+    // round outer corner concentric with the inner fillet's corner
+    shape = clip.difference(shape, clip.difference(rect(postX0, armTop - corner, postX1, armTop),
+      poly(circle([postX0, armTop - corner], corner, 48))));
+    shape = clip.union(shape, clip.difference(rect(postX0 - inner, armBottom - inner, postX0, armBottom),
+      poly(circle([postX0 - inner, armBottom - inner], inner, 32))));
+    const rise = armHalf + fillet, dx = Math.sqrt((bossRadius + fillet) ** 2 - rise ** 2), tangentRise = rise * bossRadius / (bossRadius + fillet);
+    for (const side of [-1, 1]) shape = clip.union(shape, clip.difference(
+      rect(ox, oy + Math.min(side * armHalf, side * tangentRise), ox + dx, oy + Math.max(side * armHalf, side * tangentRise)),
+      poly(circle([ox + dx, oy + side * rise], fillet, 32))));
+    return clip.difference(shape, poly(circle([ox, oy], 0.112 + 0.004, 48)));
+  })();
+  const fixedPinBearing = new THREE.Mesh(plate(oBracketOutline, oBracketBackZ, oBracketFrontZ), frameMaterial);
+  fixedPinBearing.userData.role = 'fixed-bracket-on-guide-a-2-with-bored-boss-for-pin-O';
 
   const inputGuideWorldY = worldOffsetY
     + sourceInputGuideY * sourceScale;

@@ -4,15 +4,17 @@
   "duration": 72,
   "scope": "Standalone carrier, spherical tappet, hub and 18 straight box teeth. Only carrier has an actuator. Whole production assembly has separate visible-solid audits.",
   "assumptions": "Tooth dimensions, pin height, phase, inertia and screw friction are inferred. A contact margin prevents penetration; native results are not a rendered-solid clearance certificate.",
-  "maximumTimestepAngleDifference": 0.0000663445077146536,
+  "maximumTimestepAngleDifference": 0.00003777681612238126,
   "runs": [
     {
       "parameters": {
         "radialScale": 1.3,
         "axialScale": 1.55,
-        "pinRadius": 0.0325,
+        "pinRadius": 0.054,
+        "studAngle": -0.5654,
+        "studLength": 0.47,
         "timestep": 0.00005,
-        "height": 0.6305,
+        "height": 0.652,
         "phase": 0.171058,
         "friction": 0.002,
         "damping": 0.3,
@@ -26,125 +28,127 @@
       "turns": [
         {
           "turn": 1,
-          "wheel": 0.3490659475527264,
-          "advance": 0.3490659475527264,
-          "dwellSpeed": 1.0709054710610803e-11
+          "wheel": 0.348651242156612,
+          "advance": 0.348651242156612,
+          "dwellSpeed": 1.0772292217716416e-11
         },
         {
           "turn": 2,
-          "wheel": 0.6981317979791071,
-          "advance": 0.34906585042638066,
-          "dwellSpeed": 1.890448797757664e-11
+          "wheel": 0.6977170925586397,
+          "advance": 0.3490658504020277,
+          "dwellSpeed": 1.8902897054054695e-11
         },
         {
           "turn": 3,
-          "wheel": 1.0471976484115118,
-          "advance": 0.3490658504324047,
-          "dwellSpeed": 2.6359563188737173e-11
+          "wheel": 1.0467829429923479,
+          "advance": 0.3490658504337082,
+          "dwellSpeed": 2.6351199466713666e-11
         },
         {
           "turn": 4,
-          "wheel": 1.3962634988664446,
-          "advance": 0.3490658504549329,
-          "dwellSpeed": 4.6669313078210576e-11
+          "wheel": 1.395848793449631,
+          "advance": 0.3490658504572832,
+          "dwellSpeed": 5.7539383045355413e-11
         },
         {
           "turn": 5,
-          "wheel": 1.7453293492965327,
-          "advance": 0.3490658504300881,
-          "dwellSpeed": 4.630958493344635e-11
+          "wheel": 1.7449146438723424,
+          "advance": 0.3490658504227113,
+          "dwellSpeed": 4.4382651517592873e-11
         },
         {
           "turn": 6,
-          "wheel": 2.0943951997544867,
-          "advance": 0.349065850457954,
-          "dwellSpeed": 4.380363343856327e-11
+          "wheel": 2.093980494316041,
+          "advance": 0.34906585044369876,
+          "dwellSpeed": 4.985683800045049e-11
         },
         {
           "turn": 7,
-          "wheel": 2.4434610502185734,
-          "advance": 0.34906585046408667,
-          "dwellSpeed": 4.918218254605227e-11
+          "wheel": 2.4430463447561195,
+          "advance": 0.3490658504400783,
+          "dwellSpeed": 4.967498127246291e-11
         },
         {
           "turn": 8,
-          "wheel": 2.7925269006872555,
-          "advance": 0.3490658504686821,
-          "dwellSpeed": 5.327068926872165e-11
+          "wheel": 2.792112195200989,
+          "advance": 0.3490658504448696,
+          "dwellSpeed": 6.939006142054402e-11
         },
         {
           "turn": 9,
-          "wheel": 3.1415927511450983,
-          "advance": 0.3490658504578428,
-          "dwellSpeed": 6.665535855478519e-11
+          "wheel": 3.141178045634787,
+          "advance": 0.349065850433798,
+          "dwellSpeed": 5.037271510978467e-11
         },
         {
           "turn": 10,
-          "wheel": 3.4906586016043994,
-          "advance": 0.34906585045930116,
-          "dwellSpeed": 5.002445257006493e-11
+          "wheel": 3.490243896070354,
+          "advance": 0.3490658504355668,
+          "dwellSpeed": 5.0180434248895215e-11
         },
         {
           "turn": 11,
-          "wheel": 3.8397244520816387,
-          "advance": 0.34906585047723926,
-          "dwellSpeed": 4.7595715336016104e-11
+          "wheel": 3.839309746525154,
+          "advance": 0.3490658504548003,
+          "dwellSpeed": 4.608231170715849e-11
         },
         {
           "turn": 12,
-          "wheel": 4.188790302545823,
-          "advance": 0.34906585046418437,
-          "dwellSpeed": 5.1838802173249624e-11
+          "wheel": 4.188375596961803,
+          "advance": 0.34906585043664906,
+          "dwellSpeed": 5.28972686833737e-11
         },
         {
           "turn": 13,
-          "wheel": 4.5378561530063815,
-          "advance": 0.3490658504605584,
-          "dwellSpeed": 5.7230255886220135e-11
+          "wheel": 4.537441447403354,
+          "advance": 0.3490658504415505,
+          "dwellSpeed": 4.8634090813313233e-11
         },
         {
           "turn": 14,
-          "wheel": 4.886922003462064,
-          "advance": 0.3490658504556823,
-          "dwellSpeed": 4.5901363405610685e-11
+          "wheel": 4.886507297831277,
+          "advance": 0.34906585042792315,
+          "dwellSpeed": 5.2078370203414484e-11
         },
         {
           "turn": 15,
-          "wheel": 5.235987853919499,
-          "advance": 0.34906585045743554,
-          "dwellSpeed": 5.418912812512004e-11
+          "wheel": 5.235573148268774,
+          "advance": 0.3490658504374968,
+          "dwellSpeed": 6.181916128652022e-11
         },
         {
           "turn": 16,
-          "wheel": 5.585053704382372,
-          "advance": 0.349065850462873,
-          "dwellSpeed": 4.542170231635278e-11
+          "wheel": 5.584638998709673,
+          "advance": 0.34906585044089944,
+          "dwellSpeed": 5.4875062081735805e-11
         },
         {
           "turn": 17,
-          "wheel": 5.9341195548422405,
-          "advance": 0.34906585045986827,
-          "dwellSpeed": 5.4405356148521485e-11
+          "wheel": 5.933704849141147,
+          "advance": 0.3490658504314741,
+          "dwellSpeed": 4.7874947071907616e-11
         },
         {
           "turn": 18,
-          "wheel": 6.283185405295571,
-          "advance": 0.3490658504533304,
-          "dwellSpeed": 4.7346373847813544e-11
+          "wheel": 6.282770699570714,
+          "advance": 0.34906585042956717,
+          "dwellSpeed": 5.35467222216498e-11
         }
       ],
       "minimumGap": 0,
-      "contactSteps": 20862,
-      "maximumCarrierError": 0.00003562397469361253,
+      "contactSteps": 21401,
+      "maximumCarrierError": 0.00003610128437969706,
       "maximumRollback": 0
     },
     {
       "parameters": {
         "radialScale": 1.3,
         "axialScale": 1.55,
-        "pinRadius": 0.0325,
+        "pinRadius": 0.054,
+        "studAngle": -0.5654,
+        "studLength": 0.47,
         "timestep": 0.000025,
-        "height": 0.6305,
+        "height": 0.652,
         "phase": 0.171058,
         "friction": 0.002,
         "damping": 0.3,
@@ -158,125 +162,127 @@
       "turns": [
         {
           "turn": 1,
-          "wheel": 0.3490261153300355,
-          "advance": 0.3490261153300355,
-          "dwellSpeed": 1.2022412877617245e-11
+          "wheel": 0.34864559042775445,
+          "advance": 0.34864559042775445,
+          "dwellSpeed": 8.63706595046043e-12
         },
         {
           "turn": 2,
-          "wheel": 0.6980919657588556,
-          "advance": 0.34906585042882005,
-          "dwellSpeed": 2.7942472963909824e-11
+          "wheel": 0.6977114408393779,
+          "advance": 0.3490658504116234,
+          "dwellSpeed": 2.8014201829836955e-11
         },
         {
           "turn": 3,
-          "wheel": 1.0471578162147572,
-          "advance": 0.34906585045590166,
-          "dwellSpeed": 3.549940114436561e-11
+          "wheel": 1.046777291295979,
+          "advance": 0.3490658504566011,
+          "dwellSpeed": 3.5507282846535725e-11
         },
         {
           "turn": 4,
-          "wheel": 1.3962236667009362,
-          "advance": 0.349065850486179,
-          "dwellSpeed": 3.497966022496379e-11
+          "wheel": 1.3958431417524637,
+          "advance": 0.34906585045648475,
+          "dwellSpeed": 3.486753898707998e-11
         },
         {
           "turn": 5,
-          "wheel": 1.7452895171811564,
-          "advance": 0.3490658504802202,
-          "dwellSpeed": 4.325682005744292e-11
+          "wheel": 1.7449089922020313,
+          "advance": 0.3490658504495676,
+          "dwellSpeed": 4.8350470568865465e-11
         },
         {
           "turn": 6,
-          "wheel": 2.094355367661376,
-          "advance": 0.34906585048021976,
-          "dwellSpeed": 5.280566020947798e-11
+          "wheel": 2.093974842652825,
+          "advance": 0.34906585045079375,
+          "dwellSpeed": 5.1011652641232987e-11
         },
         {
           "turn": 7,
-          "wheel": 2.443421218130634,
-          "advance": 0.34906585046925764,
-          "dwellSpeed": 5.0056766485278186e-11
+          "wheel": 2.4430406930916324,
+          "advance": 0.34906585043880733,
+          "dwellSpeed": 4.8523814402149974e-11
         },
         {
           "turn": 8,
-          "wheel": 2.792487068606856,
-          "advance": 0.3490658504762223,
-          "dwellSpeed": 4.59659203923214e-11
+          "wheel": 2.7921065435394783,
+          "advance": 0.3490658504478459,
+          "dwellSpeed": 4.907668189640851e-11
         },
         {
           "turn": 9,
-          "wheel": 3.1415529190712714,
-          "advance": 0.3490658504644153,
-          "dwellSpeed": 4.766089714964681e-11
+          "wheel": 3.141172393972403,
+          "advance": 0.34906585043292493,
+          "dwellSpeed": 5.0836460819145795e-11
         },
         {
           "turn": 10,
-          "wheel": 3.490618769534354,
-          "advance": 0.3490658504630826,
-          "dwellSpeed": 4.888844028556435e-11
+          "wheel": 3.4902382444069486,
+          "advance": 0.3490658504345454,
+          "dwellSpeed": 4.7133458371491636e-11
         },
         {
           "turn": 11,
-          "wheel": 3.8396846200097934,
-          "advance": 0.34906585047543937,
-          "dwellSpeed": 6.681038107795055e-11
+          "wheel": 3.8393040948515815,
+          "advance": 0.3490658504446329,
+          "dwellSpeed": 6.683785102597128e-11
         },
         {
           "turn": 12,
-          "wheel": 4.188750470454436,
-          "advance": 0.34906585044464267,
-          "dwellSpeed": 6.368942650898727e-11
+          "wheel": 4.188369945268048,
+          "advance": 0.3490658504164661,
+          "dwellSpeed": 6.389377296412103e-11
         },
         {
           "turn": 13,
-          "wheel": 4.537816320919923,
-          "advance": 0.3490658504654869,
-          "dwellSpeed": 4.550663762387408e-11
+          "wheel": 4.5374357957021365,
+          "advance": 0.3490658504340889,
+          "dwellSpeed": 4.721194607879263e-11
         },
         {
           "turn": 14,
-          "wheel": 4.886882171380531,
-          "advance": 0.3490658504606081,
-          "dwellSpeed": 7.000082825622989e-11
+          "wheel": 4.886501646133445,
+          "advance": 0.3490658504313089,
+          "dwellSpeed": 5.510246074464622e-11
         },
         {
           "turn": 15,
-          "wheel": 5.23594802184354,
-          "advance": 0.34906585046300886,
-          "dwellSpeed": 5.3568236171144934e-11
+          "wheel": 5.235567496565806,
+          "advance": 0.3490658504323605,
+          "dwellSpeed": 5.0458439464132415e-11
         },
         {
           "turn": 16,
-          "wheel": 5.585013872310209,
-          "advance": 0.34906585046666905,
-          "dwellSpeed": 5.390397422943313e-11
+          "wheel": 5.584633346997524,
+          "advance": 0.34906585043171834,
+          "dwellSpeed": 5.4127766732658284e-11
         },
         {
           "turn": 17,
-          "wheel": 5.934079722745991,
-          "advance": 0.34906585043578175,
-          "dwellSpeed": 5.1547241864651845e-11
+          "wheel": 5.933699197427178,
+          "advance": 0.3490658504296542,
+          "dwellSpeed": 6.121205844389652e-11
         },
         {
           "turn": 18,
-          "wheel": 6.283145572654021,
-          "advance": 0.3490658499080306,
-          "dwellSpeed": 5.2586343934639735e-11
+          "wheel": 6.282765047559614,
+          "advance": 0.34906585013243596,
+          "dwellSpeed": 4.7651974172149e-11
         }
       ],
       "minimumGap": 0,
-      "contactSteps": 42335,
-      "maximumCarrierError": 0.000035616157685325334,
+      "contactSteps": 43504,
+      "maximumCarrierError": 0.00003608825435819085,
       "maximumRollback": 0
     },
     {
       "parameters": {
         "radialScale": 1.3,
         "axialScale": 1.55,
-        "pinRadius": 0.0325,
+        "pinRadius": 0.054,
+        "studAngle": -0.5654,
+        "studLength": 0.47,
         "timestep": 0.00005,
-        "height": 0.6305,
+        "height": 0.652,
         "phase": 0.171058,
         "friction": 0.002,
         "damping": 0.3,
@@ -410,7 +416,7 @@
     },
     {
       "file": "src/simulation/mujoco-silk-tappet/physics.js",
-      "sha256": "ce02bb386f4a4695878eb25f972390eaf28d0ee4ee26177b9edcd3914e86c767"
+      "sha256": "2fd392ac00e4cb5785426feadff5b653f03a7dc2c362b07888bd5a7770d4915d"
     },
     {
       "file": "src/simulation/mujoco/simulation.js",

@@ -237,3 +237,25 @@ test('p96: movement 188 rod crown and handle outlines are finely sampled smooth 
   }
   disposeObject3D(model.root);
 });
+
+test('p101: movement 188 rear web has the rod\'s exact height and fairs into its back face', () => {
+  const model = createMovementModel(movement);
+  const find = (role) => { let hit = null; model.root.traverse((o) => { if (o.userData.role === role) hit = o; }); return hit; };
+  const rod = find('eccentric-rod-with-crown-open-bottom-gab-and-tail');
+  const web = find('eccentric-rod-rear-web-carrying-leaf-clip');
+  model.root.updateMatrixWorld(true);
+  const rodBox = new THREE.Box3().setFromObject(rod), webBox = new THREE.Box3().setFromObject(web);
+  // Bottom and top of the plain bar: the web spans exactly the rod's section.
+  assert.ok(Math.abs(webBox.min.y - rodBox.min.y) < 1e-6, 'web bottom flush with rod bottom');
+  const position = rod.geometry.attributes.position;
+  let barTop = -Infinity;
+  for (let i = 0; i < position.count; i += 1) if (position.getX(i) < webBox.max.x - 1) barTop = Math.max(barTop, position.getY(i));
+  assert.ok(Math.abs(webBox.max.y - (barTop + rod.position.y)) < 1e-6, 'web top flush with the bar top');
+  assert.ok(Math.abs(webBox.max.z - rodBox.min.z) < 1e-6, 'web front meets the rod back face');
+  // The fairing: near the web's right end its depth tapers to zero.
+  const wp = web.geometry.attributes.position;
+  let endDepth = Infinity;
+  for (let i = 0; i < wp.count; i += 1) if (wp.getX(i) > webBox.max.x - 1e-4) endDepth = Math.min(endDepth, wp.getZ(i));
+  assert.ok(Math.abs(endDepth - webBox.max.z) < 1e-6, 'web ends tangent to the rod back face, not in a step');
+  disposeObject3D(model.root);
+});

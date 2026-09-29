@@ -90,5 +90,78 @@ export function makeTappetStudStopContact(options = {}) {
     const theta = (lo + hi) / 2;
     return { theta, ...toothContact(beta, theta), nominalGap: nominal.gap };
   };
-  return { p, pin, motion, toothContact, stopAt };
+  // p101: C's notch is one clean V: two straight flanks joined by a root arc,
+  // the convex hull of the rounded toe's disc (radius toeRadius plus a small
+  // relief) along its path while the passing stud thrusts the stop's tooth
+  // out. Brown's text: the stud thrusts the lever's end out and the other
+  // extremity enters the notch; on the tappet leaving the stud the lever is
+  // forced up again (by the notch's trailing flank) and held by C's rim. So
+  // the stop follows the stud until its deepest point, then rests until the
+  // trailing flank lifts its toe back onto the rim.
+  if (!(p.toeRadius > 0)) return { p, pin, motion, toothContact, stopAt };
+  const toeAt = (gamma, theta) => rotate(add(p.pivot, rotate(p.toeCenter, theta)), -gamma);
+  const relief = p.notchRelief ?? .004, samples = 1024, discSteps = 192, cloud = [];
+  let kneeGamma = p.gammaStart, kneeTheta = 0;
+  for (let i = 0; i <= samples; i++) {
+    const gamma = p.gammaStart + (p.gammaEnd - p.gammaStart) * i / samples, theta = stopAt(motion(gamma).beta).theta;
+    if (theta < kneeTheta) { kneeTheta = theta; kneeGamma = gamma; }
+    const c = toeAt(gamma, theta);
+    for (let k = 0; k < discSteps; k++) cloud.push(add(c, polar((p.toeRadius + relief) / Math.cos(Math.PI / discSteps), TAU * (k + .5) / discSteps)));
+  }
+  {
+    // Refine the knee: the stud's deepest thrust.
+    const step = (p.gammaStart - p.gammaEnd) / samples, f = g => stopAt(motion(g).beta).theta;
+    let lo = kneeGamma - step, hi = kneeGamma + step;
+    for (let i = 0; i < 80; i++) { const a = lo + (hi - lo) / 3, b = hi - (hi - lo) / 3; if (f(a) < f(b)) hi = b; else lo = a; }
+    kneeGamma = (lo + hi) / 2; kneeTheta = Math.min(kneeTheta, f(kneeGamma));
+  }
+  for (const gamma of [p.gammaStart, p.gammaEnd]) cloud.push(scale(unit(toeAt(gamma, 0)), p.driverRadius + .35));
+  const hull = convexHull(cloud);
+  // C's outline: the rim circle less the hull.
+  const rimSteps = 4096, inside = q => hull.every((a, i) => cross(sub(hull[(i + 1) % hull.length], a), sub(q, a)) > 0);
+  const cam = [];
+  for (let i = 0; i < rimSteps; i++) { const q = polar(p.driverRadius, TAU * i / rimSteps); if (!inside(q)) cam.push(q); }
+  const crossings = [];
+  for (let i = 0; i < hull.length; i++) {
+    const a = hull[i], b = hull[(i + 1) % hull.length], d = sub(b, a), A = dot(d, d), B = 2 * dot(a, d), C = dot(a, a) - p.driverRadius ** 2;
+    const disc = B * B - 4 * A * C; if (disc < 0) continue;
+    for (const t of [(-B - Math.sqrt(disc)) / (2 * A), (-B + Math.sqrt(disc)) / (2 * A)]) if (t >= 0 && t <= 1) crossings.push(add(a, scale(d, t)));
+  }
+  const chain = [...crossings, ...hull.filter(q => norm(q) < p.driverRadius)];
+  cam.push(...chain);
+  cam.sort((a, b) => Math.atan2(a[1], a[0]) - Math.atan2(b[1], b[0]));
+  p.notchHull = hull; p.cam = cam; p.kneeGamma = kneeGamma; p.kneeTheta = kneeTheta; p.notchRelief = relief;
+  // The toe can meet only the notch's flanks and root (the hull chain inside
+  // the rim) and the true rim circle beside it.
+  chain.sort((a, b) => Math.atan2(a[1], a[0]) - Math.atan2(b[1], b[0]));
+  const local = chain.slice(1).map((b, i) => [chain[i], b]);
+  const toeClearance = (gamma, theta) => {
+    const c = toeAt(gamma, theta), r = norm(c);
+    const inMaterial = r < p.driverRadius && !inside(c);
+    let d = Infinity; for (const [a, b] of local) d = Math.min(d, closestSegment(c, a, b).distance);
+    if (!inside(scale(c, p.driverRadius / r))) d = Math.min(d, Math.abs(r - p.driverRadius));
+    return inMaterial ? -d - p.toeRadius : d - p.toeRadius;
+  };
+  const stopAtGamma = gamma => {
+    const beta = motion(gamma).beta;
+    if (gamma >= p.gammaStart || gamma <= p.gammaEnd - .3) return { theta: 0, drive: 'rim', ...toothContact(beta, 0) };
+    if (gamma >= kneeGamma) { const theta = stopAt(beta).theta; return { theta, drive: 'stud', ...toothContact(beta, theta) }; }
+    // After the knee the stop rests until C's trailing flank, and then the
+    // flank's corner, lift the toe back onto the rim (a little after the
+    // index ends); the lowest clear angle, at most the rim's 0.
+    if (toeClearance(gamma, kneeTheta) >= 0) return { theta: kneeTheta, drive: 'rest', ...toothContact(beta, kneeTheta) };
+    if (toeClearance(gamma, 0) < -1e-9) throw Error('C leaves no room for the stop toe');
+    let lo = kneeTheta, hi = 0;
+    for (let i = 0; i < 60; i++) { const mid = (lo + hi) / 2; if (toeClearance(gamma, mid) >= 0) hi = mid; else lo = mid; }
+    if (hi > -1e-12) hi = 0;
+    return { theta: hi, drive: hi === 0 ? 'rim' : 'flank', ...toothContact(beta, hi) };
+  };
+  return { p, pin, motion, toothContact, stopAt, stopAtGamma, toeClearance, toeAt };
+}
+
+function convexHull(points) {
+  const sorted = [...points].sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  const turn = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+  const half = list => { const out = []; for (const q of list) { while (out.length >= 2 && turn(out.at(-2), out.at(-1), q) <= 0) out.pop(); out.push(q); } out.pop(); return out; };
+  return [...half(sorted), ...half([...sorted].reverse())];
 }

@@ -454,3 +454,25 @@ test('movement 230 closes in four authored seconds while movement 507 stays auth
   disposeModel(model.root);
   disposeModel(movement507.root);
 });
+
+test('p101: movement 230 rods ride 0.02 off flush hubs and the pins end just past the rods', () => {
+  const model = createMovementModel(catalog.movements[229]);
+  const boxes = {};
+  model.root.updateMatrixWorld(true);
+  model.root.traverse((object) => {
+    if (object.isMesh && object.visible && object.userData.role) boxes[object.userData.role] = new THREE.Box3().setFromObject(object);
+  });
+  for (const prefix of ['upper-input-shaft', 'lower-output-shaft']) {
+    const disk = boxes[`${prefix}-front-crank-disk`], hub = boxes[`${prefix}-front-shaft-hub`];
+    const rearCrank = boxes[`${prefix}-rear-crank-quarter-turn-from-front-pin`], rearHub = boxes[`${prefix}-rear-crank-shaft-hub`];
+    assert.ok(hub.max.z - disk.max.z <= 0.021, 'front hub nearly flush with the disk');
+    assert.ok(rearCrank.min.z - rearHub.min.z <= 0.021, 'rear hub nearly flush with the crank');
+    const front = boxes['front-parallelogram-connecting-rod-rigid-two-eye-plate'];
+    const rear = boxes['rear-quadrature-parallelogram-connecting-rod-rigid-two-eye-plate'];
+    assert.ok(front.min.z - hub.max.z > 0.01 && front.min.z - hub.max.z < 0.03, 'front rod 0.02 off its hubs');
+    assert.ok(rearHub.min.z - rear.max.z > 0.01 && rearHub.min.z - rear.max.z < 0.03, 'rear rod 0.02 off its hubs');
+    const pin = boxes[`${prefix}-front-plane-crank-pin`];
+    assert.ok(pin.max.z - front.max.z < 0.04, 'front pin ends just past the rod');
+  }
+  disposeModel(model.root);
+});

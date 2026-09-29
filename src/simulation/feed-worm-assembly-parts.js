@@ -29,9 +29,11 @@ export function correctFeedWormAssembly(root,id){
    // Brown draws the same hub on both wheels: a boss about a quarter of the
    // wheel's radius with an inner circle half that size. It is turned in the
    // wheel's own metal as a boss with a short raised collar on each face.
-   {const hub=b[side+'WheelHub'];replaced.add(hub.geometry);hub.material=old.material;
-    hub.geometry=boredLatheGeometry([{radial:.16,axial:-.32},{radial:.16,axial:-.28},{radial:.32,axial:-.28},
-     {radial:.32,axial:.28},{radial:.16,axial:.28},{radial:.16,axial:.32}],.074,96);hub.userData.boreRadius=.074;}
+   // p101: a darker shade of the wheel metal with a 45-degree chamfer on the
+   // collar, so the double ring reads without relying on shadow.
+   {const hub=b[side+'WheelHub'];replaced.add(hub.geometry);hub.material=old.material.clone();hub.material.color.multiplyScalar(.66);
+    hub.geometry=boredLatheGeometry([{radial:.16,axial:-.32},{radial:.16,axial:-.28},{radial:.29,axial:-.28},{radial:.32,axial:-.25},
+     {radial:.32,axial:.25},{radial:.29,axial:.28},{radial:.16,axial:.28},{radial:.16,axial:.32}],.074,96);hub.userData.boreRadius=.074;}
    journals.push({shaft:b[side+'WheelShaft'],part:b[side+'WheelHub'],radius:.073,bore:.074});
    const faceZ=b[side+'Wheel'].position.z;
    mark(b[side+'Index'],side==='upper'?.0015:.3655,replaced);b[side+'WheelShaft'].scale.z=.4;b[side+'WheelShaft'].position.z=faceZ+(side==='upper'?-.18:.18);
@@ -58,5 +60,8 @@ export function correctFeedWormAssembly(root,id){
  root.updateMatrixWorld(true);const box=new THREE.Box3();root.traverseVisible(o=>{if(o.isMesh){o.geometry.computeBoundingBox();if(o.isInstancedMesh){o.computeBoundingBox();box.union(o.boundingBox.clone().applyMatrix4(o.matrixWorld));}else box.union(o.geometry.boundingBox.clone().applyMatrix4(o.matrixWorld));}for(const m of(Array.isArray(o.material)?o.material:[o.material]))if(m)m.fog=false;});
  // Tooth rotations fit within their source outer circle at every phase.
  box.expandByScalar(.08);d.cameraFitBounds=box;markShadows(root);
+ // p101: 195's short shaft stubs cast a claw-shaped crescent across the hub
+ // face in the default light; they still receive shadow.
+ if(id===195)for(const side of ['upper','lower']){const shaft=b[side+'WheelShaft'];shaft.traverse(o=>{if(o.isMesh){o.userData.noShadow=true;o.castShadow=false;o.receiveShadow=true;}});}
  return new THREE.Vector3(.15,.12,18);
 }

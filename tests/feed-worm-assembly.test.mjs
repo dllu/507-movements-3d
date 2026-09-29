@@ -20,7 +20,9 @@ for(const id of[195,207]){
  });
  test(`${id} source framing fits actual visible vertices through a complete wheel turn`,()=>{
   const m=createAuthoredGearMovement({id}),d=m.root.userData;assert.equal(d.hideGround,true);assert.ok(m.cameraDirection.z>50*m.cameraDirection.x);const points=[];
-  m.root.traverseVisible(o=>{if(!o.isMesh)return;for(const mat of(Array.isArray(o.material)?o.material:[o.material]))assert.equal(mat.fog,false);points.push([o,o.geometry.attributes.position]);assert.equal(o.castShadow,true);});
+  m.root.traverseVisible(o=>{if(!o.isMesh)return;for(const mat of(Array.isArray(o.material)?o.material:[o.material]))assert.equal(mat.fog,false);points.push([o,o.geometry.attributes.position]);assert.equal(o.castShadow,!o.userData.noShadow);});
+  // p101: only 195's short wheel-shaft stubs are tagged noShadow (their claw shadow hid the hubs).
+  if(id===195){const tagged=[];m.root.traverse(o=>{if(o.isMesh&&o.userData.noShadow)tagged.push(o);});assert.ok(tagged.length>0);for(const o of tagged)assert.ok(['upper','lower'].some(side=>{let p=o;while(p){if(p===d.blocks[side+'WheelShaft'])return true;p=p.parent;}return false;}));}
   const box=d.cameraFitBounds.clone().expandByScalar(1e-5),v=new THREE.Vector3(),world=new THREE.Matrix4();
   for(let pose=0;pose<17;pose++){m.update(d.transmission.inputPeriod*24*pose/16);m.root.updateMatrixWorld(true);for(const[o,p]of points){for(let j=0;j<(o.isInstancedMesh?o.count:1);j++){if(o.isInstancedMesh){o.getMatrixAt(j,world);world.premultiply(o.matrixWorld);}else world.copy(o.matrixWorld);for(let i=0;i<p.count;i++){v.fromBufferAttribute(p,i).applyMatrix4(world);assert.ok(box.containsPoint(v),`${id} bounds miss ${v.toArray()}`);}}}}
   disposeObject3D(m.root);

@@ -229,7 +229,10 @@ function capstanWheelwork(movement) {
   carrierRotor.userData.role =
     'three-planet-carrier-free-in-direct-mode-and-base-braked-in-compound-mode';
   root.add(carrierRotor);
-  const carrierHub = cylinderAlongY(0.52, 0.20, accentMaterial, 42);
+  // Pass 101: the carrier is light grey (muted), not the planets' yellow,
+  // so the planet tooth outlines read against its arms.
+  const carrierMaterial = matte(PALETTE.muted, { metalness: 0.16, roughness: 0.55 });
+  const carrierHub = cylinderAlongY(0.52, 0.20, carrierMaterial, 42);
   carrierHub.position.y = 0.43;
   carrierHub.userData.role = 'planet-carrier-central-web-hub';
   carrierRotor.add(carrierHub);
@@ -244,7 +247,7 @@ function capstanWheelwork(movement) {
       end,
       0.34,
       0.16,
-      accentMaterial,
+      carrierMaterial,
     );
     arm.userData.role = `carrier-arm-to-planet-${index + 1}`;
     carrierRotor.add(arm);
@@ -253,7 +256,7 @@ function capstanWheelwork(movement) {
   const carrierLugs = [-1, 1].map((side) => {
     const lug = new THREE.Mesh(
       new THREE.BoxGeometry(0.62, 0.18, 0.72),
-      accentMaterial,
+      carrierMaterial,
     );
     lug.position.set(side * 3.27, 0.43, 0);
     lug.userData.role = side < 0

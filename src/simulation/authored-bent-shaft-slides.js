@@ -328,23 +328,26 @@ function bentShaftSlide(movement) {
   const slideC = new THREE.Group();
   slideC.position.set(slideMaximumX, slideAxisY, slideAxisZ);
   slideC.userData.role = 'rectilinearly-reciprocating-slide-C';
+  // Pass 101: slide C is orange, not rod B's blue, so B's entry into the
+  // socket reads against it.
+  const slideMaterial = matte(PALETTE.driver, { metalness: 0.14, roughness: 0.56 });
   const slideTop = .20;
   const slideBottom = -.30;
   const slideBody = new THREE.Mesh(
     new THREE.BoxGeometry(1.55, slideTop - slideBottom, 0.70),
-    drivenMaterial,
+    slideMaterial,
   );
   slideBody.position.set(-.45 - 1.55 / 2, (slideTop + slideBottom) / 2, 0);
   slideBody.userData.role = 'rigid-body-of-slide-C';
   const slideFront = new THREE.Mesh(
     new THREE.BoxGeometry(.62, slideTop - slideBottom, 0.70),
-    drivenMaterial,
+    slideMaterial,
   );
   slideFront.position.set(.23 + .31, (slideTop + slideBottom) / 2, 0);
   slideFront.userData.role = 'rigid-body-of-slide-C';
   const slideBridge = new THREE.Mesh(
     new THREE.BoxGeometry(.68, slideTop - slideBottom, 0.16),
-    drivenMaterial,
+    slideMaterial,
   );
   slideBridge.position.set((-.45 + .23) / 2, (slideTop + slideBottom) / 2, -.27);
   slideBridge.userData.role = 'rigid-body-of-slide-C';

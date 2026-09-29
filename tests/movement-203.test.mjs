@@ -749,3 +749,11 @@ test('movement 203 arms are single smooth flat plates built from ideal arcs', ()
     ['one-piece-flat-straight-output-arm-with-both-eyes', 'single-pin-sliding-in-curved-arm-slot'].sort());
   disposeModel(model.root);
 });
+
+test('p101: movement 203 slot pin is brass, not a pale near-white steel', async () => {
+  const {PALETTE} = await import('../src/simulation/primitives.js');
+  const model = createMovementModel(catalog.movements[202]);
+  let pin = null;
+  model.root.traverse((object) => { if (object.userData.role === 'single-pin-sliding-in-curved-arm-slot') pin = object; });
+  assert.equal(pin.material.color.getHex(), PALETTE.brass);
+});

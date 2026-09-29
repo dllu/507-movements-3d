@@ -11,6 +11,10 @@ import { loadProductionModel } from '../scripts/screen-disconnected-parts.mjs';
 // ring whose float rounding leaves a 1e-7 sliver; 454's delivery branch
 // wall has one zero-extent triangle pair (4e-7).
 const allowed = {
+  // Pass 101: 444's jet is a bundle of thin ballistic streams that overlap
+  // where they rise together as the column. Their overlaps are seams between
+  // depth-write-off water surfaces (a darker overlap, no depth fight).
+  444: (row) => row.kind === 'seam' && row.parts.every((part) => /^high-level-jet-stream-/.test(part)),
   466: (row) => row.parts.join('|') === 'sectioned-valve-chest-front-layer|sectioned-pump-barrel' && row.contrast < 0.05,
   453: (row) => row.kind === 'seam' && row.areaRelative < 1e-6,
   // 454's saddle-ended delivery branch has one degenerate triangle pair.

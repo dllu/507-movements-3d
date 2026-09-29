@@ -414,29 +414,37 @@ function alternatingWeightedRackDrive(movement) {
     roughness: 0.42,
   });
 
-  // Guide grooves b (pass 91). Each groove is Brown's: two straight vertical
-  // branches, the inner one where the rack stands upright in mesh and the
-  // outer one where it hangs out of mesh at outwardRackAngle, joined by an
-  // arc at two opposite corners. The pin locus is written in pin space, and
-  // the rack angle at any piston height follows from it exactly.
-  //  - Upper arc (outer corner): tangent to the outer branch, it rises
-  //    inward to a sharp corner at the top of the inner branch. Near the
-  //    corner it runs a large-radius arc (radius 1/topCornerCurvature)
-  //    leaving the corner along the rack's own swing about its pivot at the
-  //    top of the stroke, then a fillet bends it down into the outer branch.
-  //    Rack A rises on its outer branch and this arc's outer wall cams it
-  //    upright as it rises; it lands in the corner, in mesh, at the top of
+  // Guide grooves b (pass 91; pass 101 made them 180-degree symmetric).
+  // Each groove is Brown's: two straight vertical branches, the inner one
+  // where the rack stands upright in mesh and the outer one where it hangs
+  // out of mesh at outwardRackAngle, joined at two opposite corners by the
+  // same rounded corner curve, so the groove is (to the corner angles) its
+  // own half-turn image, as Brown draws it. Each corner curve leaves a sharp
+  // corner along a large-radius arc (radius 1/topCornerCurvature) and bends
+  // into the far branch along a fillet of one shared radius. The pin locus
+  // is written in pin space, and the rack angle at any piston height follows
+  // from it exactly.
+  //  - Upper curve (outer corner): from a sharp corner at the top of the
+  //    inner branch it leaves along the rack's own swing about its pivot at
+  //    the top of the stroke, so near the corner the piston hardly moves
+  //    while the racks swing and entering and leaving teeth stay within the
+  //    flank clearance of the pinion; the fillet bends it down into the
+  //    outer branch. Rack A rises on its outer branch and the curve's outer
+  //    wall cams it upright; it lands in the corner, in mesh, at the top of
   //    the stroke. A1 leaves the same corner as it starts down, carried over
-  //    the angle by C. Near the corner the piston hardly moves while the
-  //    racks swing, so entering and leaving teeth stay within the flank
-  //    clearance of the pinion.
-  //  - Lower arc (inner corner): tangent to the inner branch, it falls
-  //    outward to a sharp corner at the foot of the outer branch, meeting it
-  //    at bottomCornerAngle below horizontal. A's outboard weight swings it
-  //    out along this arc as it descends; A1's inboard weight swings it in
-  //    along it as it rises.
-  const topCornerCurvature = 0.4;
-  const topCornerSwing = 0.105;
+  //    the angle by C.
+  //  - Lower curve (inner corner): the upper one turned a half turn, from a
+  //    sharp corner at the foot of the outer branch to a fillet into the
+  //    inner branch. It leaves the foot at bottomCornerAngle, steeper than
+  //    the top corner's swing angle (the hanging rack's swing there is 18
+  //    degrees; a shallower foot would make the piston reverse). A's
+  //    outboard weight swings it out along this curve as it descends; A1's
+  //    inboard weight swings it in along it as it rises.
+  // The fillet is as large as the top exchange allows: the top corner must
+  // follow the swing over the last 0.04 rad of it (a larger fillet let the
+  // entering rack's teeth touch the pinion).
+  const topCornerCurvature = 0.3;
+  const topCornerSwing = 0.04;
   const bottomCornerAngle = 20 * Math.PI / 180;
   const pinXAt = (angle) => rackPivotHalfSpacing + guideArm * Math.cos(angle)
     + guideY * Math.sin(angle);
@@ -465,14 +473,36 @@ function alternatingWeightedRackDrive(movement) {
         - (x - cornerCentre.x) ** 2))
       : filletCentre.y + Math.sqrt(Math.max(0, filletRadius ** 2
         - (x - filletCentre.x) ** 2)));
+    // The lower curve: the same two radii, turning clockwise from the foot
+    // (heading 180 degrees - bottomCornerAngle, inward and up) to straight
+    // up at the inner branch. A clockwise arc of radius R from heading ha
+    // to hb moves by R (sin ha - sin hb, cos hb - cos ha).
     const lowerCorner = new THREE.Vector2(outerBranchX,
       pinYAt(outwardRackAngle, crossheadLowY));
     const width = outerBranchX - innerBranchX;
-    const lowerRadius = width / (1 - Math.sin(bottomCornerAngle));
-    const lowerCentre = new THREE.Vector2(innerBranchX + lowerRadius,
-      lowerCorner.y + Math.sqrt(lowerRadius ** 2 - (width - lowerRadius) ** 2));
-    const lowerY = (x) => lowerCentre.y - Math.sqrt(Math.max(0,
-      lowerRadius ** 2 - (x - lowerCentre.x) ** 2));
+    const footHeading = Math.PI - bottomCornerAngle;
+    const switchHeading = Math.PI - Math.asin(
+      (width + cornerRadius * Math.sin(bottomCornerAngle) - filletRadius)
+        / (cornerRadius - filletRadius),
+    );
+    const clockwiseCentre = (point, heading, radius) => new THREE.Vector2(
+      point.x + radius * Math.sin(heading), point.y - radius * Math.cos(heading));
+    const lowerCornerCentre = clockwiseCentre(lowerCorner, footHeading,
+      cornerRadius);
+    const lowerSwitch = new THREE.Vector2(
+      lowerCorner.x + cornerRadius * (Math.sin(footHeading)
+        - Math.sin(switchHeading)),
+      lowerCorner.y + cornerRadius * (Math.cos(switchHeading)
+        - Math.cos(footHeading)),
+    );
+    const lowerCentre = clockwiseCentre(lowerSwitch, switchHeading,
+      filletRadius);
+    const lowerRadius = filletRadius;
+    const lowerY = (x) => (x >= lowerSwitch.x
+      ? lowerCornerCentre.y - Math.sqrt(Math.max(0, cornerRadius ** 2
+        - (x - lowerCornerCentre.x) ** 2))
+      : lowerCentre.y - Math.sqrt(Math.max(0, lowerRadius ** 2
+        - (x - lowerCentre.x) ** 2)));
     // Piston height at which the pin, at rack angle a, lies on each arc.
     const upperCrossheadY = (angle) => upperY(pinXAt(angle))
       - guideY * Math.cos(angle) + guideArm * Math.sin(angle);
@@ -497,11 +527,16 @@ function alternatingWeightedRackDrive(movement) {
       cornerRadius,
       filletCentre,
       filletRadius,
+      filletStart: new THREE.Vector2(filletStartX, filletStartY),
       lowerArcHead,
       lowerCentre,
       lowerCorner,
+      lowerCornerCentre,
       lowerRadius,
+      lowerSwitch,
       upperArcFoot,
+      upperY,
+      lowerY,
       upperAngle: (crossheadY) => (crossheadY >= crossheadHighY ? 0
         : crossheadY <= upperArcFoot ? outwardRackAngle
           : invert(upperCrossheadY, crossheadY)),
@@ -948,7 +983,7 @@ function alternatingWeightedRackDrive(movement) {
       commonCrosshead:
         'Both lower pivots a translate together on one rigid piston-rod crosshead.',
       guideClosure:
-        'Each guide groove b is the closed fixed locus of its rigid rack guide pin: two straight vertical branches joined by an upper arc tangent to the outer branch and a lower arc tangent to the inner branch, with sharp corners at the top of the inner branch and the foot of the outer branch.',
+        'Each guide groove b is the closed fixed locus of its rigid rack guide pin: two straight vertical branches joined at opposite corners by one rounded corner curve (a radius-3.33 corner arc and a radius-0.745 fillet) tangent to the outer branch at the top and to the inner branch at the foot, with sharp corners at the top of the inner branch and the foot of the outer branch, so each groove is its own half-turn image except that its top corner leaves along the rack swing (8.3 degrees) and its foot at 20 degrees.',
       meshSelection:
         'Rack A1 is exactly vertical and meshes on ascent; rack A is exactly vertical and meshes on descent. The upper arc cams A upright as it rises; A\'s outboard weight swings it out on the lower arc; A1\'s inboard weight swings it in on the lower arc; elbow lever C, loaded by the roller on A1\'s rigid protrusion, carries A1 over the upper angle.',
       rigidRack:
@@ -1054,7 +1089,7 @@ function alternatingWeightedRackDrive(movement) {
           'elbow lever C and spring d carry the right-hand pin over the upper angle',
         ],
         reconstructionDisclosure:
-          'Because no official animation is available, arc radii, dimensions, tooth count, colors, and timing are independently engineered. The groove shapes (straight branches, arcs at opposite corners tangent to one branch each) and the weights fix the circulation: A rises out of mesh and is cammed in at the top, A1 needs C to be carried over its upper angle.',
+          'Because no official animation is available, arc radii, dimensions, tooth count, colors, and timing are independently engineered. The groove shapes (straight branches, one rounded corner curve at opposite corners, each tangent to one branch, half-turn symmetric as Brown draws them) and the weights fix the circulation: A rises out of mesh and is cammed in at the top, A1 needs C to be carried over its upper angle.',
       },
       officialPage: movement.sourceUrl,
       plate: 'Brown 1868, Movement 391',

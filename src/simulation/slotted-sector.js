@@ -10,7 +10,7 @@ export function makeSlottedSector(){
  const near=.60,far=2.70,outer=.29,phase=Math.atan2(-.03,.9);
  const pose=Math.atan2(distance+crankRadius*Math.sin(phase),crankRadius*Math.cos(phase))-Math.PI/2;
  const profiles=slottedSectorToothProfiles({radius,teeth,webRadius:1.17,pressureAngle:14.5*Math.PI/180,addendum:.8,dedendum:1});
- const driver=matte(PALETTE.driver),driven=matte(PALETTE.driven),frame=matte(PALETTE.frame),dark=matte(PALETTE.ink),brass=matte(PALETTE.brass);
+ const driver=matte(PALETTE.driver),driven=matte(PALETTE.driven),rackMaterial=matte(PALETTE.brass),frame=matte(PALETTE.frame),dark=matte(PALETTE.ink),brass=matte(PALETTE.brass);
  const ring=(r,cx=0,cy=0)=>Array.from({length:129},(_,i)=>[cx+r*Math.cos(i*2*Math.PI/128),cy+r*Math.sin(i*2*Math.PI/128)]);
  const capsule=(r,a,b)=>{const points=[];for(let i=0;i<=64;i++){const t=i*Math.PI/64;points.push([r*Math.cos(t),b+r*Math.sin(t)]);}for(let i=0;i<=64;i++){const t=Math.PI+i*Math.PI/64;points.push([r*Math.cos(t),a+r*Math.sin(t)]);}points.push(points[0]);return points;};
  const solid=(rings,z,thickness,material,parent,name)=>{
@@ -26,7 +26,8 @@ export function makeSlottedSector(){
  const crankPin=pin(pinRadius,-.065,.275,disk,crankRadius,0,brass,'crank-pin');
  const shaft=pin(.175,-.24,.23,root,0,distance,dark,'driver-shaft');
  const jaw=new THREE.Group();root.add(jaw);
- const start=-Math.PI/2-4.5*2*Math.PI/teeth,end=-Math.PI/2+4.5*2*Math.PI/teeth;
+ // Pass 101: Brown draws eleven sector teeth; the fan spans 11 pitches.
+ const sectorTeeth=11,start=-Math.PI/2-sectorTeeth/2*2*Math.PI/teeth,end=-Math.PI/2+sectorTeeth/2*2*Math.PI/teeth;
  // Pass 97: the web is a clean symmetric three-spoke sector, one extrusion.
  // The two side bars and the middle spoke share one width; each window is
  // the classical two straight spoke edges plus arcs concentric with the
@@ -45,7 +46,7 @@ export function makeSlottedSector(){
  if(union.length!==1)throw Error('Sector and slotted arm must form one connected solid');
  const body=solid(union[0],0,depth,driven,jaw,'slotted-sector');
  const toothMeshes=[];
- for(let i=0;i<9;i++){const mesh=solid([profiles.tooth.map(p=>p.toArray())],0,depth,driven,jaw,'sector-tooth');mesh.rotation.z=-Math.PI/2+(i-4)*2*Math.PI/teeth;toothMeshes.push(mesh);}
+ for(let i=0;i<sectorTeeth;i++){const mesh=solid([profiles.tooth.map(p=>p.toArray())],0,depth,driven,jaw,'sector-tooth');mesh.rotation.z=-Math.PI/2+(i-(sectorTeeth-1)/2)*2*Math.PI/teeth;toothMeshes.push(mesh);}
  solid([ring(.30),ring(.19)],-.015,.18,driven,jaw,'pivot-hub');
  const pivot=pin(.18,-.08,.27,root,0,0,dark,'pivot-shaft');
  const rack=new THREE.Group();root.add(rack);
@@ -56,9 +57,9 @@ export function makeSlottedSector(){
  const halfTravel=radius*Math.asin(crankRadius/distance),guideCenters=[-2.26,1.97];
  const barCenter=(guideCenters[0]+guideCenters[1])/2;
  const rackHalfLength=(guideCenters[1]-guideCenters[0])/2+halfTravel+.45;
- const rackBody=solid([rect(barCenter-rackHalfLength,rackBottom,barCenter+rackHalfLength,rackRoot)],0,depth,driven,rack,'rack-bar');
+ const rackBody=solid([rect(barCenter-rackHalfLength,rackBottom,barCenter+rackHalfLength,rackRoot)],0,depth,rackMaterial,rack,'rack-bar');
  const rackTeeth=[];
- for(let i=0;i<10;i++)rackTeeth.push(solid([profiles.rack.map(p=>[p.x+(i-4.5)*profiles.pitch,p.y-radius])],0,depth,driven,rack,'rack-tooth'));
+ for(let i=0;i<10;i++)rackTeeth.push(solid([profiles.rack.map(p=>[p.x+(i-4.5)*profiles.pitch,p.y-radius])],0,depth,rackMaterial,rack,'rack-tooth'));
  const guides=[];
  for(const x of guideCenters){
   const g=new THREE.Group();g.position.x=x;root.add(g);guides.push(g);

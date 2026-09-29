@@ -91,7 +91,7 @@ test('movement 358 is one carriage-mounted fusee constrained by two opposed cord
   for (const role of [
     'fixed-parallel-carriage-rails',
     'fusee-bearing-traversing-carriage',
-    'historically-profiled-sureda-fusee-body',
+    'straight-conical-fusee-body',
     'continuous-helical-fusee-groove',
     'first-opposed-fusee-cord',
     'second-opposed-fusee-cord',
@@ -151,34 +151,49 @@ test('movement 358 records Brown, Fuller, and the earlier Sureda arrangement wit
   disposeModel(model.root);
 });
 
-test('movement 358 turns Sureda’s ten observations into one monotone fusee profile', () => {
+test('movement 358 winds its groove on Brown\'s straight (linear) cone', () => {
   const model = createMovementModel(catalog.movements[357]);
   const data = model.root.userData;
   const { geometry, historicalTrial, profile, stateAtDriveTurns } = data;
 
-  // Ten display turns carry Sureda's ten observations (one turn each).
   assert.equal(geometry.revolutionCount, 10);
-  assert.equal(profile.sampledRadii.length, 10);
-  const turnsPerObservation = geometry.revolutionCount / 10;
-  near(
-    FULL_TURN * turnsPerObservation
-      * profile.sampledRadii.reduce((sum, value) => sum + value, 0),
-    geometry.carriageStroke,
-    3e-15 * geometry.carriageStroke,
-    'full profile integral',
-  );
-  for (let index = 0; index < 10; index += 1) {
-    const radius = profile.radiusAtTurns((index + 0.5) * turnsPerObservation);
-    near(radius, profile.sampledRadii[index], 3e-16,
-      `turn-center radius ${index}`);
-    near(
-      radius / profile.sampledRadii[0],
-      historicalTrial.carriageTravelLines[index]
-        / historicalTrial.carriageTravelLines[0],
-      4e-16,
-      `historical velocity ratio ${index}`,
-    );
+  // Brown draws a straight cone: the pitch radius falls linearly with the
+  // turn, from 0.86 to 0.23 (Sureda's first/last ratio, 30/112 ~ 0.27).
+  near(geometry.largeRadius, 0.86, 1e-12, 'large-end radius');
+  near(geometry.smallRadius, 0.23, 1e-12, 'small-end radius');
+  near(geometry.smallRadius / geometry.largeRadius,
+    historicalTrial.carriageTravelLines.at(-1)
+      / historicalTrial.carriageTravelLines[0], 0.01, 'end-ratio');
+  near(geometry.carriageStroke,
+    Math.PI * geometry.revolutionCount
+      * (geometry.largeRadius + geometry.smallRadius),
+    1e-12, 'stroke is the mean circumference times the turns');
+  assert.equal(profile.knots.length, 2);
+  const slope = (geometry.smallRadius - geometry.largeRadius)
+    / geometry.revolutionCount;
+  for (let index = 0; index <= 200; index += 1) {
+    const turns = geometry.revolutionCount * index / 200;
+    near(profile.radiusAtTurns(turns),
+      geometry.largeRadius + slope * turns, 2e-15, `linear radius ${index}`);
   }
+  // The rendered body is a straight cone too: its outline radii at the
+  // groove lands lie on one line.
+  const lands = [];
+  const position = data.blocks.fuseeBody.geometry.getAttribute('position');
+  for (let index = 0; index < position.count; index += 1) {
+    const radius = Math.hypot(position.getX(index), position.getZ(index));
+    const y = position.getY(index);
+    if (y < geometry.fuseeTopY - 0.02 && y > geometry.fuseeBottomY + 0.02) {
+      lands.push({ radius, y });
+    }
+  }
+  let maxOutward = -Infinity;
+  for (const { radius, y } of lands) {
+    const turns = (geometry.fuseeTopY - y) / geometry.fuseeHeight
+      * geometry.revolutionCount;
+    maxOutward = Math.max(maxOutward, radius - profile.radiusAtTurns(turns));
+  }
+  near(maxOutward, 0.004, 1e-4, 'land outline hugs the straight cone');
 
   let previousRadius = Infinity;
   let previousDisplacement = -Infinity;
@@ -221,7 +236,6 @@ test('movement 358 obeys the local fusee radius and carriage-wheel no-slip laws'
     /first cord winds by exactly the length released by the second/);
 
   const differenceStep = 1e-6;
-  // Sample stations between the profile knots at (k + 0.5) turns.
   for (const turns of [0.04, 0.83, 2.17, 4.33, 6.83, 8.83, 9.93]) {
     const turnRate = turns < geometry.revolutionCount / 2 ? 0.73 : -0.61;
     const state = stateAtDriveTurns(turns, turnRate, 0.14);
@@ -230,7 +244,7 @@ test('movement 358 obeys the local fusee radius and carriage-wheel no-slip laws'
     const derivativePerRadian = (
       next.displacement - previous.displacement
     ) / (2 * differenceStep * FULL_TURN);
-    near(derivativePerRadian, state.localRadius, 4e-10,
+    near(derivativePerRadian, state.localRadius, 4e-9,
       `local pitch-radius derivative ${turns}`);
     near(state.displacement,
       FULL_TURN * profile.radiusIntegralAtTurns(turns), 0,

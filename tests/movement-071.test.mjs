@@ -161,7 +161,9 @@ test('movement 71 pushes one stud one pitch per turn with a driving compressive 
   });
   assert.deepEqual([...stages].sort(),
     ['guard-locked', 'tappet-flank-push', 'tappet-tip-push']);
-  assert.ok(mouthSamples < 200, `upper lock stud over a slit mouth in ${mouthSamples} of 3001 samples`);
+  // p101: the plain arc slits are a little wider than the swept channels
+  // (282 samples); the other lock stud bears on rim throughout (above).
+  assert.ok(mouthSamples < 300, `upper lock stud over a slit mouth in ${mouthSamples} of 3001 samples`);
   assert.ok(maximumPenetration < 1e-9, `studs only cross the rim through the slit channels: ${maximumPenetration}`);
   assert.ok(Math.abs(minimumOtherClearance - geometry.lockPlay) < 1e-6,
     'the tappet passes the lock studs with the lock play as clearance');

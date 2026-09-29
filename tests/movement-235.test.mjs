@@ -400,7 +400,8 @@ test('movement 235 renderer binds the arm, tappet, spring, wheel, and two contac
   // Without the undrawn base block the drawn parts span about 6.06 × 3.62.
   assert.ok(size.x > 5.9);
   assert.ok(size.y > 3.5);
-  assert.ok(size.z > 0.8);
+  // p101: the arbor and arm pin end at their parts (depth about 0.75).
+  assert.ok(size.z > 0.7);
   let meshCount = 0;
   model.root.traverse((object) => { if (object.isMesh) meshCount += 1; });
   assert.ok(meshCount >= 19); // no undrawn base block and no cross-pin noses

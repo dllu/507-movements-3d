@@ -622,29 +622,45 @@ function opposedRadiusRodUprightEngine(movement) {
   crankShaft.userData.role = 'fixed-crankshaft-axis';
   fixedFrame.add(crankBearing, crankShaft);
 
-  const makePivotBearing = (center, prefix, planeZ) => {
-    const bearing = cylinderAlongZ(0.78 * sourceScale, 0.64,
-      frameMaterial, 38);
-    bearing.position.set(center.x, center.y, .35);
-    bearing.geometry.dispose();
-    bearing.geometry = boredCylinderGeometry(.78 * sourceScale, .27 * sourceScale + .004, .64);
+  // Pass 101: each radius-rod pivot is carried by one lug cast on the
+  // column's front face: a tab from the column's centre line running through
+  // tangent fillets into a round eye bored for the fixed pivot shaft (it was
+  // a drum lying on a cantilevered shelf).
+  const lugBackZ = -0.30, lugFrontZ = 0.67;
+  const pivotLugOutline = (towardColumn, tabLength) => {
+    const eye = 0.78 * sourceScale, half = 0.13, fillet = 0.05;
+    const bore = 0.27 * sourceScale + 0.004;
+    const rect = (x0, y0, x1, y1) => poly([[Math.min(x0, x1), Math.min(y0, y1)], [Math.max(x0, x1), Math.min(y0, y1)],
+      [Math.max(x0, x1), Math.max(y0, y1)], [Math.min(x0, x1), Math.max(y0, y1)]]);
+    let shape = clip.union(rect(0, -half, towardColumn * tabLength, half), poly(circle([0, 0], eye, 72)));
+    const rise = half + fillet, dx = Math.sqrt((eye + fillet) ** 2 - rise ** 2), tangentRise = rise * eye / (eye + fillet);
+    for (const side of [-1, 1]) {
+      shape = clip.union(shape, clip.difference(
+        rect(0, side * half, towardColumn * dx, side * tangentRise),
+        poly(circle([towardColumn * dx, side * rise], fillet, 32))));
+    }
+    return clip.difference(shape, poly(circle([0, 0], bore, 48)));
+  };
+  const makePivotBearing = (center, prefix) => {
+    const towardColumn = Math.sign(center.x);
+    const tabLength = Math.abs(towardColumn * columnCenterX * sourceScale - center.x);
+    const bearing = new THREE.Mesh(plate(pivotLugOutline(towardColumn, tabLength), lugBackZ, lugFrontZ), frameMaterial);
+    bearing.position.set(center.x, center.y, 0);
     bearing.userData.fixed = true;
-    bearing.userData.role = `fixed-${prefix}-bearing`;
-    const shaft = cylinderAlongZ(0.27 * sourceScale, 1.42,
+    bearing.userData.role = `fixed-${prefix}-lug-with-bored-eye-cast-on-column`;
+    const shaftBack = lugBackZ + 0.005, shaftFront = 1.09;
+    const shaft = cylinderAlongZ(0.27 * sourceScale, shaftFront - shaftBack,
       darkMaterial, 30);
-    shaft.position.set(center.x, center.y, .38);
+    shaft.position.set(center.x, center.y, (shaftFront + shaftBack) / 2);
     shaft.userData.fixed = true;
     shaft.userData.role = `fixed-${prefix}-shaft`;
-    const support = new THREE.Mesh(new THREE.BoxGeometry(.50, .15, .90), frameMaterial);
-    support.position.set(center.x + Math.sign(center.x) * .13, center.y - .175, -.06);
-    support.userData.role = `fixed-${prefix}-bearing-support-to-pillar`;
-    fixedFrame.add(bearing, shaft, support);
-    return { bearing, shaft, support };
+    fixedFrame.add(bearing, shaft);
+    return { bearing, shaft, support: bearing };
   };
   const topPivotBearing = makePivotBearing(topPivotT,
-    'upper-radius-pivot-T', 0.55);
+    'upper-radius-pivot-T');
   const bottomPivotBearing = makePivotBearing(bottomPivotB,
-    'lower-radius-pivot-B', 0.73);
+    'lower-radius-pivot-B');
 
   // Only the cylinder top is in the plate: gland, neck and cover on a round
   // barrel whose lower end is below the plate edge.

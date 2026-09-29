@@ -36,7 +36,7 @@ test('movement 464 is Hero’s fountain: one hollow casting in section, a jet pi
   assert.equal(root.userData.archetype, ARCHETYPE);
   assert.equal(root.userData.fidelity, 'authored');
   for (const key of ['casting', 'slab', 'jetPipe', 'rightWater', 'bowlWater']) assert.equal(blocks[key].parent, root, key);
-  assert.equal(blocks.jets.length, 6);
+  assert.equal(blocks.jets.length, 10);
   // The casting and the pipe are cut on z = 0 with their own cut faces.
   for (const part of [blocks.casting, blocks.slab, blocks.jetPipe]) {
     assert.equal(part.geometry.groups.length, 2, part.userData.role);

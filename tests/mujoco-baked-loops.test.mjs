@@ -102,3 +102,30 @@ for (const id of Object.keys(bakedMujocoRoutes).map(Number)) {
     } finally {baked.dispose();live.dispose();}
   });
 }
+
+// Configurations may record different parts (104's worm input records the worm
+// and wheel, its wheel input the wheel and carriage). Returning to a
+// configuration must restart it from its first frame, including the parts only
+// the other configuration moved.
+for (const id of Object.keys(bakedMujocoRoutes).map(Number).filter(id => Object.keys(read(id).bundle.variants).length > 1)) {
+  test(`${id} switching configurations and back restores the first frame of every part`, async () => {
+    const {bundle} = read(id), baked = makeBakedMujocoModel(bundle, await bakedMujocoRoutes[id].geometry(), bakedMujocoRoutes[id]);
+    try {
+      const u = baked.root.userData, snapshot = () => {
+        const poses = [];
+        baked.root.updateMatrixWorld(true);
+        baked.root.traverse(o => poses.push([o.visible, ...o.matrixWorld.elements]));
+        return poses;
+      };
+      const initial = snapshot(), names = Object.keys(bundle.variants);
+      for (const name of names.filter(n => n !== bundle.defaultVariant)) {
+        u.setConfiguration(name);
+        baked.update(bundle.variants[name].loop.duration * .37);
+        u.setConfiguration(bundle.defaultVariant);
+        const again = snapshot();
+        assert.equal(again.length, initial.length);
+        again.forEach((pose, i) => pose.forEach((v, k) => assert(Math.abs(v - initial[i][k]) < 1e-6, `${id} ${name}: object ${i} element ${k}`)));
+      }
+    } finally {baked.dispose();}
+  });
+}

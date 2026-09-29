@@ -18,7 +18,10 @@ function simplify(points, tolerance=2e-7) {
 }
 
 export function makeTappetStudStop({computeStopOutline=false,...options}={}) {
-  const motion=makeTappetStudStopContact({toeRadius:0,leftExtension:.05,rightExtension:-.03,...options});
+  // p101: the stop's toe is rounded (radius 0.04) and C's notch is one clean V
+  // (two straight flanks and a root arc; see tappet-stud-stop-contact.js).
+  const motion=makeTappetStudStopContact({toeRadius:.04,leftExtension:.05,rightExtension:-.03,...options});
+  const stopTheta=gamma=>motion.stopAtGamma(gamma).theta;
   const {p}=motion, root=new THREE.Group(), input=new THREE.Group(), output=new THREE.Group(), stop=new THREE.Group();
   root.add(input,output,stop);output.position.x=p.D;stop.position.set(...p.pivot,0);
   const parts={},families={},paths={};
@@ -32,15 +35,7 @@ export function makeTappetStudStop({computeStopOutline=false,...options}={}) {
   };
   const drum=(radius,bore,lo,hi,segments=512)=>turnedClutchGeometry([[lo,bore],[lo,radius],[hi,radius],[hi,bore]],{angularSegments:segments});
   const polygon=points=>{const s=new THREE.Shape(points.map(q=>new THREE.Vector2(...q)));s.closePath();return s;};
-  const notch=[];
-  for(let i=0;i<=4096;i++){
-    const gamma=p.gammaStart+(p.gammaEnd-p.gammaStart)*i/4096;
-    const theta=motion.stopAt(motion.motion(gamma).beta).theta;
-    notch.push(rotate(add(p.pivot,rotate(p.toeCenter,theta)),-gamma));
-  }
-  const first=Math.atan2(notch[0][1],notch[0][0]),last=Math.atan2(notch.at(-1)[1],notch.at(-1)[0]);
-  const rim=Array.from({length:4096},(_,i)=>polar(p.driverRadius,TAU*i/4096)).filter(q=>{const a=Math.atan2(q[1],q[0]);return a<first||a>last;});
-  paths.cam=[...simplify(notch.map(q=>q.map(Math.fround))),...rim].sort((a,b)=>Math.atan2(a[1],a[0])-Math.atan2(b[1],b[0]));
+  paths.cam=p.cam;
   // C's plain disk is deep enough to reach the stop's plane, so the stop is
   // one flat plate whose own corner rides C's rim and drops into the notch.
   const driverDiskDepth=[-.10,.31];p.driverDiskDepth=driverDiskDepth;
@@ -67,7 +62,10 @@ export function makeTappetStudStop({computeStopOutline=false,...options}={}) {
   // clear of the end of the stop's fixed pin.
   attach('tappet',extrusion(tappet,.31,.42,512),PALETTE.accent,input,'input');
   const localPixel=(x,y)=>sub([(x-352)/260,(415-y)/260],p.pivot);
-  const outline=new THREE.Shape();outline.moveTo(...p.toeCenter);
+  // Brown's toe point, just inside the rounded toe (whose arc touches C's
+  // rim at rest, centred toeRadius outside it).
+  const toeTip=sub(polar(p.driverRadius+.01,p.toeAngle),p.pivot);
+  const outline=new THREE.Shape();outline.moveTo(...toeTip);
   const quadratic=(cx,cy,x,y)=>outline.quadraticCurveTo(...localPixel(cx,cy),...localPixel(x,y));
   const line=(x,y)=>outline.lineTo(...localPixel(x,y));
   // The boss hump over the pin is the circle unioned in trimStop.
@@ -80,7 +78,12 @@ export function makeTappetStudStop({computeStopOutline=false,...options}={}) {
   // the same outline: the toe point rides C's rim and drops into C's notch,
   // and the plate is trimmed wherever C (deepened to this plane) sweeps
   // through it during the index, so only the toe point meets C.
-  paths.toe=[p.toeCenter,add(p.toeCenter,[.12,-.25]),add(p.toeCenter,[-.08,-.34])];
+  // The toe: a round end of radius toeRadius joined by tangent lines to
+  // Brown's toe base (the convex hull of the arc and the base points).
+  paths.toe=[...Array.from({length:384},(_,i)=>add(p.toeCenter,polar(p.toeRadius,TAU*i/384))),add(toeTip,[.12,-.25]),add(toeTip,[-.08,-.34])];
+  {const pts=[...paths.toe].sort((a,b)=>a[0]-b[0]||a[1]-b[1]),turn=(o,a,b)=>(a[0]-o[0])*(b[1]-o[1])-(a[1]-o[1])*(b[0]-o[0]);
+   const half=list=>{const out=[];for(const q of list){while(out.length>=2&&turn(out.at(-2),out.at(-1),q)<=0)out.pop();out.push(q);}out.pop();return out;};
+   paths.toe=[...half(pts),...half([...pts].reverse())];}
   // The trimmed outline is computed offline (the swept clip is slow) by
   // scripts/generate-tappet-stud-stop-outline.mjs; the 065 tests recompute it.
   const trimStop=(poses=480)=>{
@@ -91,13 +94,13 @@ export function makeTappetStudStop({computeStopOutline=false,...options}={}) {
       [ring(Array.from({length:512},(_,i)=>polar(pivotBossRadius,TAU*i/512)))]);
     const toStop=(q,gamma,theta)=>rotate(sub(rotate(q,gamma),p.pivot),-theta);
     const near=q=>norm(sub(q,p.toeCenter))<.45;
-    const stopRelief=.006,toePocket=[ring(Array.from({length:48},(_,i)=>add(p.toeCenter,polar(.03,TAU*i/48))))];
+    const stopRelief=.006,toePocket=[ring(Array.from({length:96},(_,i)=>add(p.toeCenter,polar(p.toeRadius+.03,TAU*i/96))))];
     const rimArc=Array.from({length:2048},(_,i)=>sub(polar(p.driverRadius,TAU*i/2048),p.pivot)).filter(near);
     let trimmed=clip.difference(drawn,[ring([...rimArc,sub([0,0],p.pivot)])]);
     for(let i=0;i<=poses;i++){
-      const gamma=p.gammaStart+(p.gammaEnd-p.gammaStart)*i/poses,theta=motion.stopAt(motion.motion(gamma).beta).theta;
+      const gamma=p.gammaStart+(p.gammaEnd-.03-p.gammaStart)*i/poses,theta=stopTheta(gamma);
       // Away from the toe point the trimmed edge keeps a running clearance.
-      const keep=(q,k)=>{const d=norm(sub(toStop(q,gamma,theta),p.toeCenter));return d<.05||(d<.25&&k%8===0)||k%128===0;};
+      const keep=(q,k)=>{const d=norm(sub(toStop(q,gamma,theta),p.toeCenter));return norm(q)<p.driverRadius-1e-9||d<.05||(d<.25&&k%8===0)||k%128===0;};
       const exact=paths.cam.filter(keep).map(q=>toStop(q,gamma,theta));
       const relieved=paths.cam.filter(keep).map(q=>toStop(scale(q,1+stopRelief/norm(q)),gamma,theta));
       trimmed=clip.difference(trimmed,[ring(exact)],clip.difference([ring(relieved)],toePocket));
@@ -122,7 +125,7 @@ export function makeTappetStudStop({computeStopOutline=false,...options}={}) {
   p.inputSpeed=.65;p.period=TAU/p.inputSpeed;p.sourceGamma=16.15*Math.PI/180;
   const stateAtTime=time=>{
     const travel=p.gammaStart-p.sourceGamma+p.inputSpeed*time,cycle=Math.floor(travel/TAU),phase=travel-cycle*TAU;
-    const gamma=p.gammaStart-phase,s=motion.motion(gamma), q=motion.stopAt(s.beta);
+    const gamma=p.gammaStart-phase,s=motion.motion(gamma), q=motion.stopAtGamma(gamma);
     return {...s,cycle,phase,gamma,driverAngle:p.sourceGamma-p.inputSpeed*time,
       outputAngle:cycle*p.pitch+s.beta-p.betaStart,stopAngle:q.theta,stop:q,
       stage:gamma>p.gammaEnd?'index-'+s.stage:'locked-dwell'};

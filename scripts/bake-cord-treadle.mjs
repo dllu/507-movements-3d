@@ -9,6 +9,9 @@ import {makeCordTreadlePhysics} from '../src/simulation/mujoco-cord-treadle/phys
 import {cordTreadleRigidProperties} from '../src/simulation/mujoco-cord-treadle/inertia.js';
 import {makeCordTreadleSolids} from '../src/simulation/mujoco-cord-treadle/solids.js';
 import {idealCordShape} from '../src/simulation/mujoco-cord-treadle/ideal-cord-shape.js';
+import {simulateCordLoop} from '../src/simulation/mujoco-cord-treadle/cord-dynamics.js';
+import {sampleBakedMotion} from '../src/simulation/baked/playback.js';
+import {encodeSmoothArray,decodeArray} from '../src/simulation/baked/mujoco-bake-format.js';
 const hash=file=>createHash('sha256').update(fs.readFileSync(file)).digest('hex');
 const p=makeCordTreadlePhysics(await loadMujoco(),{rigidProperties:cordTreadleRigidProperties(),floor:true,timestep:.000125}),v=makeCordTreadleSolids();
 try{
@@ -26,7 +29,14 @@ try{
  };
  for(let i=1;i<=2000;i++)refine(motion.at(-1),evaluate(i*.002),16);
  motion[motion.length-1]=[4,...first.slice(1).map((x,i)=>x+turns[i])];
+ // The visible cord's own dynamics (cord-dynamics.js), driven by the recorded
+ // pin, eye and pulley and run to its periodic steady state.
+ const loop=simulateCordLoop(t=>sampleBakedMotion({motion,names:['disk','treadle','pulley','amplitude'],turns,period:4,loopStart:0,loopEnd:4},t).slice(0,3),{period:4});
+ assert.ok(loop.closure<.01,'cord loop closure '+loop.closure);
+ const cord={segments:loop.segments,frames:loop.frames,period:loop.period,closure:loop.closure,options:loop.options,points:encodeSmoothArray(loop.points,2*(loop.segments+1),1e-5)};
+ {const decoded=decodeArray(cord.points);assert.equal(decoded.length,loop.points.length);decoded.forEach((x,i)=>assert.ok(Math.abs(x-loop.points[i])<2e-5));}
  const bounds=new THREE.Box3(),blocks=v.root.userData.blocks;
+ for(let i=0;i<loop.points.length;i+=2)bounds.expandByPoint(new THREE.Vector3(loop.points[i],loop.points[i+1],.64));
  for(let i=0;i<motion.length;i+=5){const row=motion[i];v.update({disk:row[1],treadle:row[2],pulley:row[3]});bounds.union(new THREE.Box3().setFromObject(v.root,true));for(const point of idealCordShape(row[1],row[2],{bakedAmplitude:row[4]}).points)bounds.expandByPoint(new THREE.Vector3(...point));}
  bounds.expandByScalar(.06);v.update({disk:0,treadle:0,pulley:0});
  for(const [name,body] of Object.entries(blocks)){
@@ -35,9 +45,9 @@ try{
   body.clear();for(const [material,geometries]of groups){const mesh=new THREE.Mesh(mergeGeometries(geometries),material);geometries.forEach(g=>g.dispose());mesh.castShadow=mesh.receiveShadow=true;body.add(mesh);}
  }
  v.root.traverse(o=>o.userData={});
- const sources=['scripts/bake-cord-treadle.mjs','src/simulation/mujoco-cord-treadle/physics.js','src/simulation/mujoco-cord-treadle/inertia.js','src/simulation/mujoco-cord-treadle/solids.js','src/simulation/mujoco-cord-treadle/ideal-cord-shape.js','src/simulation/cord-treadle-motion.js','src/simulation/mujoco/simulation.js','src/simulation/finite-plate-geometry.js'].map(file=>({file,sha256:hash(file)}));
- const metadata={version:1,movement:159,names:['disk','treadle','pulley','amplitude'],turns,period:4,loopStart:0,loopEnd:4,bounds:{min:bounds.min.toArray(),max:bounds.max.toArray()},focus:bounds.getCenter(new THREE.Vector3()).toArray(),cameraDirection:[.02,.02,15],sourceTime,closure,velocityClosure,refinements,sources,assumptions:'Native ideal massless cord and passive treadle; slack shape is a length-preserving geometric illustration, not finite-rope vibration.'};
- const file='src/simulation/baked/assets/159.json.gz';fs.writeFileSync(file,gzipSync(JSON.stringify({...metadata,motion,object:v.root.toJSON()}),{level:9}));
- fs.writeFileSync('src/simulation/baked/assets/159.provenance.json',JSON.stringify({...metadata,samples:motion.length,bytes:fs.statSync(file).size,sha256:hash(file)},null,2)+'\n');
+ const sources=['scripts/bake-cord-treadle.mjs','src/simulation/mujoco-cord-treadle/physics.js','src/simulation/mujoco-cord-treadle/inertia.js','src/simulation/mujoco-cord-treadle/solids.js','src/simulation/mujoco-cord-treadle/ideal-cord-shape.js','src/simulation/mujoco-cord-treadle/cord-dynamics.js','src/simulation/baked/mujoco-bake-format.js','src/simulation/cord-treadle-motion.js','src/simulation/mujoco/simulation.js','src/simulation/finite-plate-geometry.js'].map(file=>({file,sha256:hash(file)}));
+ const metadata={version:1,movement:159,names:['disk','treadle','pulley','amplitude'],turns,period:4,loopStart:0,loopEnd:4,bounds:{min:bounds.min.toArray(),max:bounds.max.toArray()},focus:bounds.getCenter(new THREE.Vector3()).toArray(),cameraDirection:[.02,.02,15],sourceTime,closure,velocityClosure,refinements,sources,assumptions:'Native ideal massless cord and passive treadle. The visible cord is a one-way-coupled chain with mass (cord-dynamics.js): the diagonal run is a limp point-mass rope under gravity with light damping, the groove and vertical run follow the recorded pulley; it does not load the treadle.'};
+ const file='src/simulation/baked/assets/159.json.gz';fs.writeFileSync(file,gzipSync(JSON.stringify({...metadata,motion,cord,object:v.root.toJSON()}),{level:9}));
+ fs.writeFileSync('src/simulation/baked/assets/159.provenance.json',JSON.stringify({...metadata,cord:{segments:cord.segments,frames:cord.frames,closure:cord.closure,options:cord.options},samples:motion.length,bytes:fs.statSync(file).size,sha256:hash(file)},null,2)+'\n');
  console.log({sourceTime,samples:motion.length,refinements,bytes:fs.statSync(file).size,closure,velocityClosure});
 }finally{p.dispose();v.dispose();}

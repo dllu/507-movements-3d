@@ -36,7 +36,12 @@ export const PL = Object.freeze([283, 353]);
 export const sourceScale = 0.0125;
 export const tappetSource = Object.freeze({ x0: 170, x1: 188, h: 41 });
 export const strokeSource = Object.freeze({ top: 86, bottom: 345, source183: 330 });
-export const upperFreeStop = 10;
+// Pass 101: the upper weight throws its handle 30 deg (was 10), so the
+// upper steam and lower eduction valves are really opened, as in 181. The
+// drop starts while the tappet is still rising past 124 px, and the swung
+// C-arm first meets the tappet there at 33.5 deg; 30 keeps about 8 px of
+// clearance. Brown's 55 deg of 181 would carry the C-arm into the tappet.
+export const upperFreeStop = 30;
 export const rimRadius = 137.5;
 export const bandRadius = 134.5;
 export const hubRadius = Object.freeze({ upper: 34, lower: 35 });
@@ -203,13 +208,16 @@ function upperWingOutline() {
 
 // Upper C-arm (plane A): two smooth splines through Brown's edges, each
 // meeting the hook's round end on its tangent from the last drawn point, so
-// the edges run into the hook without a kink.
+// the edges run into the hook without a kink. Pass 101: at the root both
+// edges leave the boss on tangents to a circle 1 px inside its rim (from
+// (234, 139.5) and (250.5, 162)), so the arm runs out of the boss with no
+// shelf or corner standing proud of it.
 function upperArmOutline() {
   const hook = [207.6, 298.8], hookR = 7.4;
-  const leftDrawn = [[248, 118], [240.5, 129], [234, 139.5], [222.5, 157], [216.4, 177], [218, 196], [225.5, 212.5], [230, 230], [229, 248],
+  const leftDrawn = [[244.7, 114.8], [234, 139.5], [222.5, 157], [216.4, 177], [218, 196], [225.5, 212.5], [230, 230], [229, 248],
     [222.5, 268], [215.5, 285]];
   const rightDrawn = [[225.5, 296.5], [233.5, 285.5], [240.8, 274.5],
-    [245.6, 255], [247.6, 236.5], [246.5, 221], [240.2, 206], [235.8, 191], [236.8, 178], [242.5, 168], [250.5, 162], [260, 160], [270, 162.5], [280, 160]];
+    [245.6, 255], [247.6, 236.5], [246.5, 221], [240.2, 206], [235.8, 191], [236.8, 178], [242.5, 168], [250.5, 162], [276.3, 161]];
   const aIn = tangentFrom(leftDrawn.at(-1), hook, hookR, -1) / deg;
   const aOut = tangentFrom(rightDrawn[0], hook, hookR, +1) / deg;
   let sweep = aOut - aIn; while (sweep > 0) sweep -= 360;

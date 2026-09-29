@@ -57,7 +57,8 @@ test('236 complete nose circles clear every float32 tooth edge and reseat contin
     assert.ok(Math.abs(a.wheelAngularSpeed - b.wheelAngularSpeed) < 3e-6);
     // Returning pawls' speeds are the slopes of their tracked tables.
     for (const key of ['longPawlAngularSpeed', 'shortPawlAngularSpeed']) assert.ok(Math.abs(a[key] - b[key]) < 5e-5);
-    assert.ok(Math.abs(a.wheelAngle - b.wheelAngle) < 1e-11);
+    // The flywheel runs on through the reversals: its angle is continuous.
+    assert.ok(Math.abs(b.wheelAngle - a.wheelAngle - 2e-7 * a.wheelAngularSpeed / d.geometry.cyclesPerSecond) < 1e-11);
   }
   console.log({ minimumEnclosingCircleClearance: minimum });
 });

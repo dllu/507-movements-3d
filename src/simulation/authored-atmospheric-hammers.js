@@ -964,7 +964,10 @@ export function createAuthoredAtmosphericHammerMovement(movement) {
   // Brown draws crank A and rod D dotted, behind cylinder B, and B's piston
   // dotted inside it: B's shell and heads are see-through (the shared style)
   // so the crank, rod and piston show from the front at every phase.
-  const seeThrough = new Set(['front-cutaway-moving-cylinder-shell-B', 'bored-lower-cylinder-head', 'closed-upper-cylinder-head']);
+  // Pass 101: the bar across the column's back crosses in front of crank A's
+  // disk and hub, so it takes the same see-through style.
+  const seeThrough = new Set(['front-cutaway-moving-cylinder-shell-B', 'bored-lower-cylinder-head', 'closed-upper-cylinder-head',
+    'fixed-bar-across-column-back-carrying-crank-A-bearing', 'single-loop-column-with-bell-foot']);
   model.root.traverse((object) => {
     if (object.isMesh && seeThrough.has(object.userData.role)) makeSeeThrough(object);
   });

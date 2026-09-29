@@ -646,7 +646,10 @@ test('movement 196 is fully three-dimensional as the review queue advances throu
   // Brown draws no standard behind pinion B; the arm pivot stands on a
   // short pedestal over a block.
   assert.equal(blocks.pinionStandard, null);
-  assert.equal(blocks.carrierStandard.userData.role, 'fixed-tapered-pedestal-under-arm-pivot');
+  assert.equal(blocks.carrierStandard.userData.role, 'fixed-flared-standard-with-arm-pivot-eye');
+  // p101: the stand eye is part of the one grey casting, concentric with the pin.
+  assert.equal(blocks.carrierBearing, blocks.carrierStandard);
+  assert.ok(Math.abs(blocks.carrierStandard.userData.eyeRadius - 0.23) < 1e-12);
   }
   const size = physicalBounds.getSize(new THREE.Vector3());
   assert.ok(size.x > 5.1);

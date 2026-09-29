@@ -64,3 +64,18 @@ retaining faces. Use ideal circular rims and explicitly inferred hidden faces;
 there is no need for prolonged pixel tracing. Existing source residuals and
 finite-solid intersections remain open. The older finite-solid report predates
 the presentation-only ground/marker change; physical meshes were unchanged.
+
+## Pass 101: upper handle throw
+
+The caption makes 183/184 a modification of 181/182, where the released upper
+handle is pulled up by its back weight far enough to open the upper steam and
+lower eduction valves. The site has no animation for 181–184. The old 10°
+upper stop barely opened those valves, so it is now 30° (`upperFreeStop`,
+rebaked table). The limit is Brown's geometry: the drop begins while the
+tappet is still rising past 124 px, and the swung C-arm first meets it there
+at 33.5°. 181's 55° would carry the C-arm into the tappet. The descending
+tappet now bears on the C-arm from about 141 px to 270 px and turns the handle
+back through the full 30°. The C-arm's two root edges now leave the boss on
+tangents, so no shelf stands proud of the hub. The lip screen still flags the
+curved arm's root (0.09, `-u`), because it measures a straight-rod section
+across a curling arm; the zooms show a flush tangent join.

@@ -73,3 +73,11 @@ test('092 ten-turn timestep refinement agrees within a tenth source pixel',t=>{
     t.diagnostic(JSON.stringify({maximumTimestepDifferencePixels:difference*100,maximumRefinedDifferencePixels:refined*100}));
   } finally {coarse.dispose();fine.dispose();finer.dispose();}
 });
+
+test('p101: 92 slide block contrasts with the blue connecting rod', async () => {
+  const {makeCrankSliderGeometry} = await import('../src/simulation/mujoco-crank-slider/geometry.js');
+  const {PALETTE} = await import('../src/simulation/primitives.js');
+  const {root} = makeCrankSliderGeometry(), parts = root.userData.parts;
+  assert.equal(parts.rod.material.color.getHex(), PALETTE.driven);
+  for (const name of ['crosshead', 'shoe']) assert.equal(parts[name].material.color.getHex(), PALETTE.accent, name);
+});

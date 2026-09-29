@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { ring, plate, poly } from './finite-plate-geometry.js';
 import { makeCellWaterGeometry, updateClippedCell } from './clipped-fluid-cell.js';
 import { waterVolume } from './water-volume.js';
-import { WaterStream, collectWaterStreams } from './water-stream.js';
+import { WaterStream, collectWaterStreams, guidedPath } from './water-stream.js';
 import {
   PALETTE,
   markShadows,
@@ -504,6 +504,21 @@ function eisachPotWheel(movement) {
   troughWater.position.y = (troughWaterTop + troughFloorTop - 0.01) / 2;
   troughWater.userData.role = 'raised-water-flow-in-discharge-trough';
   dischargeTrough.add(troughWater);
+  // Pass 101: the delivered water visibly runs along the trough toward the
+  // near (bank) end: a thin streaked sheet over the trough water's
+  // surface, so the delivery reads from the default view even while the
+  // pour itself is hidden behind the front rim (its underside 0.008 clear
+  // of the trough water's top face).
+  const troughSurfaceY = dischargeTroughY + troughWaterTop + 0.012;
+  const troughRun = new WaterStream(guidedPath([
+    new THREE.Vector3(dischargeTroughX, troughSurfaceY, 1.50 - (troughLength - 0.24) / 2),
+    new THREE.Vector3(dischargeTroughX, troughSurfaceY, 1.50 + (troughLength - 0.24) / 2),
+  ], {speed: 0.7, samples: 24}), {
+    width: 0.39, thickness: 0.004, widthAxis: 'horizontal', widthExponent: 1,
+    fadeIn: 0.04, fadeOut: 0.04, cyclePeriod: cycleDuration, streakRate: 1.4, opacity: 0.4,
+  });
+  troughRun.userData.role = 'delivered-water-running-along-discharge-trough';
+  root.add(troughRun);
   const troughSupports = [dischargeTroughX-.25, dischargeTroughX+.25].map((x) => {
     const support = new THREE.Mesh(
       new THREE.BoxGeometry(
@@ -553,8 +568,9 @@ function eisachPotWheel(movement) {
     }
     stream.flow = 0.35 + 0.65 * potState.dischargeFlow;
     stream.setPath(path);
-    // The pour fades in and out with the flow instead of switching on.
-    stream.material.opacity = 0.45 * THREE.MathUtils.smoothstep(potState.dischargeFlow, 0.01, 0.4);
+    // The pour fades in and out with the flow instead of switching on
+    // (Pass 101: bolder and fading in sooner, so it reads through the rim).
+    stream.material.opacity = 0.6 * THREE.MathUtils.smoothstep(potState.dischargeFlow, 0.01, 0.2);
   };
 
   const updateWaterStreams = collectWaterStreams(root);

@@ -495,7 +495,8 @@ function treadleBevelDrillingMachine(movement) {
     new THREE.BoxGeometry(.040,.26,.028),
     whiteMaterial,
   );
-  shaftSpinIndex.position.set(0,.96,.110);
+  // Hidden (Brown draws no index); kept inside the 0.105 guide bore.
+  shaftSpinIndex.position.set(0,.96,.080);
   shaftSpinIndex.userData.role =
     'white-index-showing-drillshaft-spin-during-axial-feed';
   shaftSpinRotor.add(shaftSpinIndex);
@@ -589,6 +590,8 @@ function treadleBevelDrillingMachine(movement) {
   lowerLeverRotor.add(treadlePedal);
   const lowerPivotHub = boredJournal(.16,.084,.48,darkMaterial);
   lowerPivotHub.userData.role = 'fixed-pivot-boss-of-foot-treadle';
+  // Pass 101: replaced by the treadle's own eye and a short fixed pin.
+  lowerPivotHub.visible = false;
   lowerLeverRotor.add(lowerPivotHub);
   root.add(lowerLeverRotor);
 
@@ -613,6 +616,7 @@ function treadleBevelDrillingMachine(movement) {
   // Short enough to stay in front of the frame's top arm (front face -0.54).
   const upperPivotHub = boredJournal(.16,.084,.30,darkMaterial);
   upperPivotHub.userData.role = 'fixed-pivot-boss-of-upper-feed-lever';
+  upperPivotHub.visible = false;
   upperLeverRotor.add(upperPivotHub);
   root.add(upperLeverRotor);
 
@@ -632,8 +636,11 @@ function treadleBevelDrillingMachine(movement) {
   const thrustRings=[neutralCollarY-.15,neutralCollarY+.15].map(y=>{
     const ring=new THREE.Mesh(new THREE.CylinderGeometry(.14,.14,.06,48),drivenMaterial);ring.position.y=y;shaftSpinRotor.add(ring);return ring;
   });
-  const pivotShafts=[lowerLeverPivot,upperLeverPivot].map(p=>{
-    const pin=cylinderAlongZ(.08,.64,darkMaterial);pin.position.set(p.x,p.y,linkagePlaneZ-.06);root.add(pin);return pin;
+  // Pass 101: each fulcrum pin runs from 0.02 behind its post's bored head
+  // to 0.02 proud of the lever's front face (post backs at z -0.86 and -0.80).
+  const pivotShafts=[[lowerLeverPivot,-.88],[upperLeverPivot,-.82]].map(([p,back])=>{
+    const front=linkagePlaneZ+.12;
+    const pin=cylinderAlongZ(.08,front-back,darkMaterial);pin.position.set(p.x,p.y,(front+back)/2);pin.userData.role='short-fixed-fulcrum-pin-through-post-head-and-lever-eye';root.add(pin);return pin;
   });
   for(const beam of [treadleBeam,upperLeverBeam]){
     const p=beam.geometry.parameters;
@@ -643,10 +650,14 @@ function treadleBevelDrillingMachine(movement) {
     // Brown draws both lever ends), so the pin no longer stands on the
     // beam's square end: radius 0.095 about the 0.06 pin, just inside the link's own 0.099 eye.
     outline=clip.union(outline,poly(circle([-p.width/2,0],.095,96)));
+    // Pass 101: each lever carries a round eye (r 0.16) concentric with its
+    // fixed fulcrum pin, in its own extrusion, instead of butting a drum.
+    const fulcrumEye=poly(circle([-beam.position.x,0],.16,96));
+    outline=clip.union(outline,fulcrumEye);
     if(beam===upperLeverBeam){
       // Round eye at the right end, concentric with the slot, as one plate.
       const eye=slotCentre-beam.position.x;
-      outline=clip.union(poly([[-p.width/2,-p.height/2],[eye,-p.height/2],[eye,p.height/2],[-p.width/2,p.height/2]]),poly(circle([eye,0],.15,96)),poly(circle([-p.width/2,0],.095,96)));
+      outline=clip.union(poly([[-p.width/2,-p.height/2],[eye,-p.height/2],[eye,p.height/2],[-p.width/2,p.height/2]]),poly(circle([eye,0],.15,96)),poly(circle([-p.width/2,0],.095,96)),fulcrumEye);
       const a=eye-slotHalfTravel,b=eye+slotHalfTravel,r=slotPinRadius+.004,slot=[];
       for(let i=0;i<=24;i++){const t=Math.PI/2+Math.PI*i/24;slot.push([a+r*Math.cos(t),r*Math.sin(t)]);}
       for(let i=0;i<=24;i++){const t=-Math.PI/2+Math.PI*i/24;slot.push([b+r*Math.cos(t),r*Math.sin(t)]);}
@@ -690,59 +701,53 @@ function treadleBevelDrillingMachine(movement) {
   frameTop.userData.role = 'upper-arm-of-drill-c-frame';
   frame.add(frameTop);
   const inputBearingBridge = makeBeam(
-    new THREE.Vector3(frameColumnX-.04, apex.y, frameRearZ),
-    new THREE.Vector3(frameColumnX-.04, apex.y, -.205),
+    new THREE.Vector3(frameColumnX-.025, apex.y, frameRearZ),
+    new THREE.Vector3(frameColumnX-.025, apex.y, -.17),
     { color: PALETTE.frame, depth: 0.16, thickness: 0.16 },
   );
   inputBearingBridge.userData.role =
     'bridge-to-horizontal-input-shaft-bearing';
   frame.add(inputBearingBridge);
-  const inputBearing = torusNormalToAxis(
-    0.155,
-    0.050,
-    frameMaterial,
-    X_AXIS,
-    48,
-  );
+  // Pass 101: the three shaft bearings are bored bosses (0.20 long, so the
+  // 0.16/0.12 bridges run into their curved sides without sharing a face),
+  // not thin torus rings.
+  const boredBearing=(outer,bore,axis,length=.20)=>{const mesh=new THREE.Mesh(boredCylinderGeometry(outer,bore,length),frameMaterial);mesh.quaternion.setFromUnitVectors(Y_AXIS,axis);return mesh;};
+  const inputBearing = boredBearing(.205,.105,X_AXIS);
   inputBearing.position.set(frameColumnX-.04, apex.y, 0);
   inputBearing.userData.role = 'fixed-horizontal-input-shaft-bearing';
   frame.add(inputBearing);
-  const lowerShaftGuide = torusNormalToAxis(
-    .155,
-    .050,
-    frameMaterial,
-    Y_AXIS,
-    48,
-  );
+  const lowerShaftGuide = boredBearing(.205,.105,Y_AXIS);
   lowerShaftGuide.position.set(0, 0.48, 0);
   lowerShaftGuide.userData.role =
     'fixed-lower-guide-bearing-for-sliding-rotating-drillshaft';
   frame.add(lowerShaftGuide);
-  const upperShaftGuide = torusNormalToAxis(
-    .255,
-    .050,
-    frameMaterial,
-    Y_AXIS,
-    48,
-  );
+  // 0.10 long, 0.02 clear of the pinion's axial retainers on the hub; its
+  // bridge is 0.08 thick so it runs into the boss's side.
+  const upperShaftGuide = boredBearing(.305,.205,Y_AXIS,.10);
   upperShaftGuide.position.set(0,2.65,0);
   upperShaftGuide.userData.role =
     'fixed-upper-bearing-around-keyed-pinion-hub';
   frame.add(upperShaftGuide);
   // The treadle fulcrum stands on its own post, as the plate's cropped
   // stand below the lever shows.
-  const lowerLeverSupport = makeBeam(
-    new THREE.Vector3(lowerLeverPivot.x, frameBaseY, linkagePlaneZ-.42),
-    lowerLeverPivot.clone().setZ(linkagePlaneZ-.42),
-    { color: PALETTE.frame, depth: 0.16, thickness: 0.16 },
-  );
+  // Pass 101: each fulcrum post is one plate: a tapered stem whose sides run
+  // tangent into a round head bored for the fixed pin, concentric with it.
+  const hullOf=points=>{const q=points.slice().sort((a,b)=>a[0]-b[0]||a[1]-b[1]),cross=(o,a,b)=>(a[0]-o[0])*(b[1]-o[1])-(a[1]-o[1])*(b[0]-o[0]),half=list=>{const out=[];for(const r of list){while(out.length>1&&cross(out.at(-2),out.at(-1),r)<=0)out.pop();out.push(r);}return out.slice(0,-1);};return[...half(q),...half(q.slice().reverse())];};
+  const fulcrumPost=(pivot,base,z,clipAbove)=>{
+    let outline=poly(hullOf([...circle([pivot.x,pivot.y],.16,96),...base]));
+    if(clipAbove)outline=clip.intersection(outline,poly(clipAbove));
+    const mesh=new THREE.Mesh(plate(clip.difference(outline,poly(circle([pivot.x,pivot.y],.084,64))),z-.08,z+.08),frameMaterial);
+    mesh.userData.fixed=true;return mesh;
+  };
+  const lowerLeverSupport = fulcrumPost(lowerLeverPivot,
+    [[lowerLeverPivot.x-.13,frameBaseY],[lowerLeverPivot.x+.13,frameBaseY]],linkagePlaneZ-.42);
   lowerLeverSupport.userData.role = 'fixed-support-for-treadle-pivot';
   frame.add(lowerLeverSupport);
-  const upperLeverSupport = makeBeam(
-    new THREE.Vector3(upperLeverPivot.x, 3.25, frameRearZ),
-    upperLeverPivot.clone().setZ(linkagePlaneZ-.36),
-    { color: PALETTE.frame, depth: 0.16, thickness: 0.16 },
-  );
+  // The upper post stands on the top arm (which ends at x -0.83), so its
+  // stem is kept over the arm below the arm's top face.
+  const upperLeverSupport = fulcrumPost(upperLeverPivot,
+    [[frameLeftX-.09,3.25],[frameLeftX+.16,3.25]],linkagePlaneZ-.36,
+    [[frameLeftX-.085,3.20],[4,3.20],[4,6],[-4,6],[-4,3.34],[frameLeftX-.085,3.34]]);
   upperLeverSupport.userData.role = 'fixed-support-for-upper-lever-pivot';
   frame.add(upperLeverSupport);
   const shaftGuideBridges=[];
@@ -752,7 +757,8 @@ function treadleBevelDrillingMachine(movement) {
     // The closed frame's lower bar already carries the lower guide's stem.
     const spans=start?[[start,rear]]:[];
     for(const [a,b] of [...spans,[rear,new THREE.Vector3(0,guide.position.y,guide===upperShaftGuide?-.285:-.185)]]){
-      const support=makeBeam(a,b,{color:PALETTE.frame,depth:.12,thickness:.12});
+      const size=guide===upperShaftGuide?.08:.12;
+      const support=makeBeam(a,b,{color:PALETTE.frame,depth:size,thickness:size});
       frame.add(support);shaftGuideBridges.push(support);
     }
   }

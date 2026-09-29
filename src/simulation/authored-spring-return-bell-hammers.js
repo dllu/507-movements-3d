@@ -626,6 +626,28 @@ function springReturnBellHammer(movement) {
   hanger.userData.role = 'fixed-bell-hanger-pin';
   fixedBellSupport.add(hanger);
   root.add(fixedBellSupport);
+  // Pass 101: the bell must hang from something. Source presentation drops
+  // the undrawn post and arm above (Brown draws none), so a minimal hanger
+  // stays: a pin resting in the bottom of the canon loop's opening, carried
+  // by a short beam that runs straight back from the loop to a small wall
+  // plate. From the plate's front view the bell hides both.
+  const bellHanger = new THREE.Group();
+  bellHanger.userData.fixed = true;
+  bellHanger.userData.role = 'fixed-bell-hanger-behind-bell';
+  const hangerY = bellTopY + 0.10;
+  const hangerPinFront = pivot.z + 0.09, hangerPinBack = pivot.z - 0.30;
+  const hangerPin = cylinderAlongZ(0.07, hangerPinFront - hangerPinBack, darkMaterial, 32);
+  hangerPin.position.set(bellCenterX, hangerY, (hangerPinFront + hangerPinBack) / 2);
+  hangerPin.userData.role = 'fixed-hanger-pin-through-canon-loop';
+  const beamFront = pivot.z - 0.16, beamBack = pivot.z - 1.40;
+  const hangerBeam = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.14, beamFront - beamBack), frameMaterial);
+  hangerBeam.position.set(bellCenterX, hangerY, (beamFront + beamBack) / 2);
+  hangerBeam.userData.role = 'fixed-hanger-beam-running-back-from-canon';
+  const wallPlate = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.60, 0.08), frameMaterial);
+  wallPlate.position.set(bellCenterX, hangerY - 0.10, beamBack - 0.04 + 0.02);
+  wallPlate.userData.role = 'fixed-wall-plate-carrying-hanger-beam';
+  bellHanger.add(hangerPin, hangerBeam, wallPlate);
+  root.add(bellHanger);
 
   const update = (time) => {
     const state = stateAtTime(time);

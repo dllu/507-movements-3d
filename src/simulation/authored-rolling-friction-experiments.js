@@ -510,8 +510,9 @@ function rollingCarriageFrictionExperiment(movement) {
   root.add(belt);
 
   const carriageWheels = carriageWheelCenters.map((center, index) => {
+    // Pass 101: brass wheels, so they read against the orange wagon body.
     const wheel = makeIndexedWheel({
-      color: PALETTE.driver,
+      color: PALETTE.brass,
       radius: carriageWheelRadius,
       rimTubeRadius: 0.040,
       spokes: 5,
@@ -1007,6 +1008,20 @@ export function createAuthoredRollingFrictionExperimentMovement(movement) {
   const {blocks: b, geometry: g} = root.userData;
   const center = g.indicatorCenter;
   const dark = b.dialRim.material;
+  // Pass 101: a dark case back behind the ivory dial (whose face stands at
+  // z 0.435-0.475 after correctRollerParts), so from behind the indicator
+  // reads as a solid case, not a pale disc. Its radius stays 0.005 inside the
+  // dial's so the two side walls never coincide.
+  {
+    const back = 0.36, front = 0.437;
+    const caseBack = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.535, 0.535, front - back, 64).rotateX(Math.PI / 2), dark);
+    caseBack.position.set(center.x, center.y, (front + back) / 2);
+    caseBack.userData.fixed = true;
+    caseBack.userData.role = 'dark-back-of-spring-force-indicator-case';
+    root.add(caseBack);
+    b.dialCaseBack = caseBack;
+  }
   // The wheel's axle runs through the rail to the pulley in front of it.
   {
     const back = -0.25, front = g.beltPlaneZ + 0.10;

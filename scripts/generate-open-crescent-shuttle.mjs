@@ -15,7 +15,21 @@ import {capsule,circle,poly,polygonClipping as clip} from '../src/simulation/fin
 export const OPEN_CRESCENT_DESIGN={crankCenter:[.44636176,.06256826],crankRadius:.98526847,reference:142.69741535*Math.PI/180,arc:{center:[.56391245,2.08743206],radius:1.06759247}};
 const law=openCrescentShuttleLaw({crankCenter:new THREE.Vector2(...OPEN_CRESCENT_DESIGN.crankCenter),rockerPivot:new THREE.Vector2(0,-2),crankRadius:OPEN_CRESCENT_DESIGN.crankRadius,reference:OPEN_CRESCENT_DESIGN.reference,period:6,arc:OPEN_CRESCENT_DESIGN.arc});
 const points=Array.from({length:513},(_,i)=>law.pointAtRadius(law.low+(law.high-law.low)*i/512).toArray());
-const stroke=r=>clip.union(...points.slice(1).map((p,i)=>capsule(points[i],p,r,12)));
+// p101: the slot centreline is one circular arc, so the pocket and the outer
+// wall are built exactly: two arcs concentric with it joined tangentially by
+// semicircular end caps about the end stations (the old union of 512
+// 12-segment capsules left 15-degree facets and slivers at the slot ends).
+const arcC=law.arcCenter.toArray(),arcR=law.arcRadius,angleAt=p=>Math.atan2(p[1]-arcC[1],p[0]-arcC[0]);
+const a0=angleAt(points[0]);let a1=angleAt(points.at(-1));while(a1-a0>Math.PI)a1-=2*Math.PI;while(a0-a1>Math.PI)a1+=2*Math.PI;
+const sgn=Math.sign(a1-a0),u=a=>[Math.cos(a),Math.sin(a)];
+const stroke=r=>{
+  const out=[],arcSteps=Math.ceil(Math.abs(a1-a0)*(arcR+r)/.004),capSteps=180;
+  for(let i=0;i<=arcSteps;i++){const a=a0+(a1-a0)*i/arcSteps;out.push([arcC[0]+(arcR+r)*Math.cos(a),arcC[1]+(arcR+r)*Math.sin(a)]);}
+  for(let i=1;i<capSteps;i++){const q=u(a1+sgn*Math.PI*i/capSteps);out.push([points.at(-1)[0]+r*q[0],points.at(-1)[1]+r*q[1]]);}
+  for(let i=0;i<=arcSteps;i++){const a=a1+(a0-a1)*i/arcSteps;out.push([arcC[0]+(arcR-r)*Math.cos(a),arcC[1]+(arcR-r)*Math.sin(a)]);}
+  for(let i=1;i<capSteps;i++){const q=u(a0+Math.PI+sgn*Math.PI*i/capSteps);out.push([points[0][0]+r*q[0],points[0][1]+r*q[1]]);}
+  return clip.union(poly(out));
+};
 const pocket=stroke(.1215),outer=stroke(.29),first=points[0],last=points.at(-1);
 const lower=clip.union(capsule([0,0],first,.13,32),poly(circle([0,0],.22,64)));
 // Brown draws the resting rocker upright: the top joint sits over the pivot

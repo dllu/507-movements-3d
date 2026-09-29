@@ -1237,6 +1237,15 @@ function powersMercuryRegulator(movement) {
     channel.mercury.castShadow = false;
   }
   for (const mercury of innerMercuryBlocks) mercury.castShadow = false;
+  // Pass 101: lever d, lit steeply through the open section, threw a large
+  // scythe-shaped shadow on the well's walls that read as a stray part.
+  // The two well walls take no shadows. The shared section cut (cutaway-section
+  // sectionMeshInPlace) re-enables receiving on every cut wall after this
+  // factory returns, so the flag is pinned on these meshes.
+  for (const wall of housingPosts) {
+    wall.userData.noShadow = true;
+    Object.defineProperty(wall, 'receiveShadow', {get: () => false, set: () => {}, configurable: true});
+  }
   update(0);
   return {
     cameraDirection: root.userData.cameraDirection,

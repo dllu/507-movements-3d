@@ -4,7 +4,7 @@ import {
   markShadows,
   matte,
 } from './primitives.js';
-import {waterFountainGeometry, waterJetMaterial} from './water-volume.js';
+import {WaterStream, ballisticPath} from './water-stream.js';
 import {applyCutawayFor} from './cutaway-presentations.js';
 import {latheSectionGeometry} from './cutaway-section.js';
 
@@ -531,15 +531,32 @@ function dectolOscillatingColumn(movement) {
   root.add(risingColumn);
   // Where the column breaks the upper surface it heaves up and falls back
   // as a translucent crown thinning into spray, as Brown draws it.
-  const topPlume = addRole(new THREE.Mesh(
-    waterFountainGeometry({
-      nozzleY: -0.04, apexY: 0.24, columnRadius: 0.13, crownRadius: 0.34,
-      fallY: -0.03, crownThickness: 0.03, fadeStart: 0.5,
-    }),
-    waterJetMaterial({ color: 0x2c7f9b, opacity: 0.45 }),
-  ), 'raised-water-column-spraying-in-upper-box');
-  topPlume.renderOrder = 2;
-  topPlume.position.set(0, reservoirWaterY, 0);
+  // Pass 101: the burst is thin ballistic streams thrown up from the
+  // surface and falling back onto it (it was a solid lathed crown centred on
+  // the section plane, whose front half and upright neck stood in the air
+  // gap as a floating frustum). They fan across and back, behind the cut
+  // plane, over the upper box water.
+  const topPlume = addRole(new THREE.Group(), 'raised-water-column-spraying-in-upper-box');
+  const plumeSpeed = Math.sqrt(2 * 9.81 * 0.30);
+  const plumeStreams = [[-16, -4], [-9, -10], [-4, -2], [0, -12], [4, -5], [9, -9], [13, -2], [-12, -12]]
+    .map(([across, back], index) => {
+      const a = THREE.MathUtils.degToRad(across), b = THREE.MathUtils.degToRad(back);
+      const stream = new WaterStream(ballisticPath({
+        origin: new THREE.Vector3(0, reservoirWaterY - 0.03, -0.06),
+        velocity: new THREE.Vector3(plumeSpeed * Math.sin(a), plumeSpeed * Math.cos(a) * Math.cos(b), plumeSpeed * Math.sin(b)),
+        endY: reservoirWaterY - 0.03,
+        samples: 24,
+      }), {
+        width: 0.035, thickness: 0.035, widthExponent: 0.5,
+        section: (i, u, [w, t]) => [Math.min(w, 0.06), Math.min(t, 0.06)],
+        spread: {start: 0.5, width: 1.6, thickness: 1.6},
+        cyclePeriod: cycleDuration, streakRate: 4, opacity: 0.45,
+      });
+      stream.userData.role = `raised-column-spray-stream-${index + 1}`;
+      stream.renderOrder = 2;
+      topPlume.add(stream);
+      return stream;
+    });
   root.add(topPlume);
 
   const upperColumnTopY = (fraction) => plateTopY
@@ -621,7 +638,10 @@ function dectolOscillatingColumn(movement) {
     risingColumn.visible = columnLength > 1e-3;
     const plumeGate = smoothStep5((columnFraction - 0.94) / 0.06);
     topPlume.visible = plumeGate > 0;
-    topPlume.scale.set(plumeGate, plumeGate, plumeGate);
+    for (const stream of plumeStreams) {
+      stream.material.opacity = 0.45 * plumeGate;
+      stream.update(time);
+    }
 
     const relativeDownFlow = state.downwardFlowRate / supplyFlowRate;
     const jetLength = chamberFloorY - columnTopY;
@@ -705,10 +725,10 @@ function dectolOscillatingColumn(movement) {
       const t = THREE.MathUtils.clamp((y - plateTopY) / Math.max(1e-6, coneTopY - plateTopY), 0, 1);
       r = (crownRadius + (0.40 - crownRadius) * (1 - t) ** 2.2) * radial;
     } else if (y <= crownTopY) r = Math.sqrt(Math.max(0, crownR ** 2 - (y - coneTopY) ** 2));
-    if (y <= columnTopY && y >= coneTopY) {
-      const s = THREE.MathUtils.clamp((y - crownTopY) / Math.max(1e-6, columnTopY - crownTopY), 0, 1);
-      r = Math.max(r, (0.16 - 0.04 * s) * columnScale);
-    }
+    // Pass 101: the checked column keeps the cone's top radius all the way
+    // up (it used to start at 0.16 over a 0.12 crown, a stepped collar that
+    // showed under the orifice), so cone, column and stream join smoothly.
+    if (y <= columnTopY && y >= coneTopY) r = Math.max(r, crownRadius * radial);
     return r;
   };
   const updateWaterBody = (state) => {
@@ -726,11 +746,16 @@ function dectolOscillatingColumn(movement) {
     // falling freely it spreads to meet the plate.
     const landing = radiusBelowTop(columnTopY - 1e-4, cone);
     const freeFall = THREE.MathUtils.smoothstep(landing, 0.30 * jetRadial, 0.05);
+    // A short stream (the column nearly up to the orifice) takes the
+    // column's radius rather than squeezing the full orifice-to-foot taper
+    // into a flat collar.
+    const fullness = THREE.MathUtils.smoothstep(jetLength, 0.05, 0.6);
     const jetRadius = (y) => {
       const u = (chamberFloorY - y) / jetLength;
-      const foot = freeFall * 0.30 + (1 - freeFall) * Math.max(0.12, landing / jetRadial);
+      const foot = freeFall * 0.30 + (1 - freeFall) * (landing > 1e-3 ? landing / jetRadial : 0.12);
+      const top = 0.24 * fullness + foot * (1 - fullness);
       return Math.min(orificeRadius - 0.012,
-        jetRadial * (0.24 * (1 - u) + foot * u - 0.10 * Math.sin(Math.PI * u) ** 1.4));
+        jetRadial * (top * (1 - u) + foot * u - 0.10 * fullness * Math.sin(Math.PI * u) ** 1.4));
     };
     let k = 0;
     bodyProfile[k++].set(0, chamberFloorY);

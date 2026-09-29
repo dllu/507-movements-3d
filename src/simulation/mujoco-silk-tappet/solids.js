@@ -20,8 +20,12 @@ export function makeSilkTappetSolids(parameters) {
     const tooth=add('tooth'+i,new THREE.BoxGeometry(.11*aScale,.09*r,.044*r),wheel,PALETTE.brass);
     tooth.position.set(0,.435*r*Math.cos(a),.435*r*Math.sin(a));tooth.rotation.x=a;
   }
-  const tappet=add('tappet',new THREE.SphereGeometry(parameters.pinRadius??.025,32,24),root,PALETTE.frame);
-  tappet.position.set(parameters.station,0,parameters.height);
+  // The stout stud's shank: the same capsule as the MuJoCo tappet geom,
+  // centred on its midpoint and lying along studAngle in the carrier plane.
+  const studAngle=parameters.studAngle??0,studLength=parameters.studLength??0,radius=parameters.pinRadius??.025;
+  const tappet=add('tappet',new THREE.CapsuleGeometry(radius,studLength,24,64).rotateZ(Math.PI/2),root,PALETTE.muted);
+  tappet.position.set(parameters.station+studLength/2*Math.cos(studAngle),studLength/2*Math.sin(studAngle),parameters.height);
+  tappet.rotation.z=studAngle;
   const update=state=>{carrier.rotation.z=state.carrier;wheel.rotation.x=state.wheel;root.updateMatrixWorld(true);};
   markShadows(root);root.userData.hideGround=true;
   return {root,parts,update,dispose:()=>disposeObject3D(root)};

@@ -737,7 +737,8 @@ test('movement 212 renders every rigid pose and terminal contact while movement 
   const sweptSize = sweptBounds.getSize(new THREE.Vector3());
   assert.ok(sweptSize.x > 4.8, 'frame and both profiles fill real width');
   assert.ok(sweptSize.y > 6.8, 'two source-scale wheels fill real height');
-  assert.ok(sweptSize.z > 1.5, 'shafts, profiles and highlights use depth without the undrawn frame');
+  // p101: the arbors end just proud of the hub rings, not as long stubs.
+  assert.ok(sweptSize.z > 0.65 && sweptSize.z < 0.75, 'wheels and short arbors, without the undrawn frame');
   assert.ok(sweptBounds.min.x < -2.4);
   assert.ok(sweptBounds.max.x > 2.2);
   assert.ok(sweptBounds.min.y < -3.5);

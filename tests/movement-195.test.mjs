@@ -714,3 +714,18 @@ test('movement 195 is fully three-dimensional as the review queue advances throu
   disposeModel(movement200.root);
   disposeModel(model.root);
 });
+
+test('p101: 195 hubs read in a darker shade with a chamfered collar and the shaft stubs cast no shadow', () => {
+  const model = createMovementModel(catalog.movements[194]);
+  const b = model.root.userData.blocks;
+  for (const side of ['upper', 'lower']) {
+    const hub = b[`${side}WheelHub`], body = b[`${side}GeneratedFace`];
+    assert.ok(hub.material.color.getHSL({}).l < body.material.color.getHSL({}).l * 0.8, `${side} hub is darker than the face`);
+    b[`${side}WheelShaft`].traverse((o) => {
+      if (!o.isMesh) return;
+      assert.equal(o.userData.noShadow, true);
+      assert.equal(o.castShadow, false);
+      assert.equal(o.receiveShadow, true);
+    });
+  }
+});

@@ -40,7 +40,7 @@ import { spiralWheelGeometry } from './spiral-wheel-geometry.js';
 import { rackGeneratedOutline } from './noncircular-gear-geometry.js';
 import { cylindricalWormGeometry, wormWheelGeometry } from './worm-gear-geometry.js';
 import { thinRibWormGeometry } from './thin-rib-worm-geometry.js';
-import { conicalStudMotion, conicalStudToothGeometry, conicalStudHeadGeometry, conicalStudParameters } from './conical-stud-geometry.js';
+import { conicalStudMotion, conicalStudFlutedConeGeometry, conicalStudParameters } from './conical-stud-geometry.js';
 import { steppedSectorCut, steppedSectorMotion } from './stepped-sector-geometry.js';
 import { mangleToothOutline } from './mangle-gear-geometry.js';
 import { makeIrregularDrive201, irregularDriver201 } from './irregular-gear-201.js';
@@ -337,9 +337,25 @@ function spurGears() {
     rotor.remove(oldRing);
     oldRing.geometry.dispose();
     oldRing.material.dispose();
-    // Brown's web circle is engraving shading, not a painted ring: the
-    // faces stay plain.
     const radius = gear.userData.pitchRadius;
+    // p101: Brown draws a second circle at about 0.77 R on both wheels, the
+    // rim/web boundary (as on 030 and 033): a full-depth toothed rim round a
+    // web recessed 0.06 on each face, in the wheel's own colour.
+    const webRadius = radius * 0.77;
+    const toothed = rotor.children.find((part) => part.geometry?.type === 'ExtrudeGeometry');
+    const rimShape = toothed.geometry.parameters.shapes;
+    const rimOptions = toothed.geometry.parameters.options;
+    rimShape.holes.push(new THREE.Path(Array.from({ length: 256 }, (_, i) => {
+      const a = -2 * Math.PI * i / 256;
+      return new THREE.Vector2(webRadius * Math.cos(a), webRadius * Math.sin(a));
+    })));
+    toothed.geometry.dispose();
+    toothed.geometry = new THREE.ExtrudeGeometry(rimShape, rimOptions).translate(0, 0, -squareTeeth.depth / 2);
+    const web = new THREE.Mesh(new THREE.CylinderGeometry(webRadius + 0.004, webRadius + 0.004, 0.26, 128), toothed.material);
+    web.rotation.x = Math.PI / 2;
+    web.userData.role = 'recessed-web';
+    rotor.add(web);
+    gear.userData.webRadius = webRadius;
     // The plate draws a plain boss ring about 0.43 of the pitch radius around
     // a sectioned shaft about 0.26 of it. The shaft is keyed to its wheel.
     const hub = rotor.children.find((part) => part.geometry?.type === 'CylinderGeometry');
@@ -3520,26 +3536,23 @@ function mangleWheel() {
 
 function conicalStudGear() {
   const root = new THREE.Group();
-  const fullTurn = 2 * Math.PI;
-  // Brown supplies no manufacturing dimensions. The complementary pitch
-  // cones and equal axial stud steps follow the drawing's proportions;
-  // indexing supplies a nominal motion law. The end-to-end handoff is still
-  // an approximation, recorded explicitly below.
+  // p101 (user direction): spherical studs centred on the stud cone's pitch
+  // surface along one revolution of an Archimedean spiral in plan, from the
+  // bottom rim to the top rim; straight ball-groove flutes on the toothed
+  // cone. Brown supplies no manufacturing dimensions: the cones keep his
+  // proportions and the motion is the prescribed rolling law of
+  // conical-stud-geometry.js (the hand-off across the spiral's seam is a
+  // blended transfer, not a simulated contact).
   const parameters = conicalStudParameters;
   const motion = conicalStudMotion(parameters);
-  const { centerDistance, halfHeight, studRadius, studFront, studBack } = parameters;
+  const { centerDistance, halfHeight, studRadius, studBodyRelief } = parameters;
   const meanPitchRadius = motion.meanRadius;
-  const toothedBottomRadius = meanPitchRadius - motion.slope * halfHeight;
-  const toothedTopRadius = meanPitchRadius + motion.slope * halfHeight;
+  const toothedBottomRadius = motion.toothedRadius(-halfHeight);
+  const toothedTopRadius = motion.toothedRadius(halfHeight);
   const studBottomRadius = centerDistance - toothedBottomRadius;
   const studTopRadius = centerDistance - toothedTopRadius;
-  const toothAngularPitch = fullTurn / parameters.teeth;
-  // The flutes are grooves in the pitch cone (no addendum), so the stud body
-  // sits just inside its own pitch cone and the heads stand 0.024 proud.
-  const studBodyRelief = 0.004;
-  // Body surface just clears the flute lands (addendum = factor x module).
-  const bodyRadiusAt = (height) => centerDistance - (meanPitchRadius + motion.slope * height)
-    * (1 + 2 * parameters.toothAddendumFactor / parameters.teeth) - studBodyRelief;
+  const toothAngularPitch = motion.pitch;
+  const bodyRadiusAt = (height) => motion.studPitchRadius(height) - studBodyRelief;
   const makeRotor = (x) => {
     const cone = new THREE.Group();
     cone.quaternion.setFromUnitVectors(Z_AXIS, Y_AXIS);
@@ -3550,31 +3563,26 @@ function conicalStudGear() {
     return cone;
   };
   const toothedCone = makeRotor(-centerDistance / 2);
-  const toothGeometry = conicalStudToothGeometry(parameters);
-  const toothMaterial = matte(PALETTE.driver, { metalness: 0.10, roughness: 0.68 });
-  const fullFaceTeeth = Array.from({ length: parameters.teeth }, (_, index) => {
-    const tooth = new THREE.Mesh(toothGeometry, toothMaterial);
-    tooth.rotation.z = index * toothAngularPitch;
-    tooth.userData.fullFaceTooth = true;
-    tooth.userData.index = index;
-    toothedCone.userData.rotor.add(tooth);
-    return tooth;
-  });
+  const flutedCone = new THREE.Mesh(conicalStudFlutedConeGeometry(parameters, motion),
+    matte(PALETTE.driver, { metalness: 0.10, roughness: 0.68 }));
+  flutedCone.userData.role = 'fluted-toothed-cone';
+  toothedCone.userData.rotor.add(flutedCone);
   toothedCone.userData.teeth = parameters.teeth;
-  toothedCone.userData.unitOutline = toothGeometry.userData.unitOutline;
-  toothedCone.userData.toothProfile = 'rack-generated-conical-involute';
+  toothedCone.userData.toothProfile = 'straight-ball-groove-flutes';
   const studCone = makeRotor(centerDistance / 2);
   const studBody = new THREE.Mesh(new THREE.CylinderGeometry(
     bodyRadiusAt(halfHeight), bodyRadiusAt(-halfHeight),
-    2 * halfHeight, 128, 1,
+    2 * halfHeight, 160, 1,
   ), matte(PALETTE.driven, { metalness: 0.1, roughness: 0.7 }));
   studBody.rotation.x = Math.PI / 2;
   studBody.userData.conicalBody = true;
   studCone.userData.rotor.add(studBody);
   const pinMaterial = matte(PALETTE.brass, { metalness: 0.18, roughness: 0.62 });
+  const sphere = new THREE.SphereGeometry(studRadius, 40, 28);
   const studs = motion.studs.map((stud, index) => {
-    const pin = new THREE.Mesh(conicalStudHeadGeometry(parameters, index), pinMaterial);
-    pin.userData = { spiralStud: true, index, axialPosition: stud.height,
+    const pin = new THREE.Mesh(sphere, pinMaterial);
+    pin.position.set(stud.radius * Math.cos(stud.angle), stud.radius * Math.sin(stud.angle), stud.height);
+    pin.userData = { spiralStud: true, sphericalStud: true, index, axialPosition: stud.height,
       localPitchRadius: stud.radius, materialAngle: stud.angle, outputProgress: stud.output };
     studCone.userData.rotor.add(pin);
     return pin;
@@ -3585,37 +3593,42 @@ function conicalStudGear() {
   const studShaft = makeShaft({ length: 3.30, radius: 0.07, axis: Y_AXIS });
   studShaft.position.x = centerDistance / 2;
   root.add(toothedCone, studCone, toothedShaft, studShaft);
-  const sourceOutputPhase = -0.7;
+  // Brown's view: the stud at the line of centres sits low (h about -0.85)
+  // and the row rises across the front face to the right-hand limb.
+  const sourceOutputPhase = 0.35;
   const sourceInputPhase = motion.inputAtOutput(sourceOutputPhase);
-  const inputAngularSpeed = 1.25;
+  // The stud cone runs 0.26x to 3.9x the toothed cone's speed; 0.6 rad/s
+  // input keeps its fastest (top-stud) turning readable.
+  const inputAngularSpeed = 0.6;
   const cycleDuration = motion.inputCycleAngle / inputAngularSpeed;
   root.userData.mechanism = 'parallel-complementary-cones-with-spiral-studs';
   root.userData.contactValidation = { status: 'incomplete',
-    reason: 'Continuous engagement and the spiral-end handoff remain unresolved.' };
-  root.userData.blocks = { fullFaceTeeth, studCone, studs, studBody, studShaft, toothedCone, toothedShaft };
+    reason: 'Swept spheres clear the ball-groove flutes at every sampled pose, but the rolling law and the seam hand-off are prescribed, not simulated contact.' };
+  root.userData.blocks = { fullFaceTeeth: [flutedCone], flutedCone, studCone, studs, studBody, studShaft, toothedCone, toothedShaft };
   root.userData.geometry = {
     centerDistance, coneHalfHeight: halfHeight, cycleDuration, meanPitchRadius, sourceInputPhase, sourceOutputPhase,
     contactRadiusVariation: motion.variation,
-    desiredMeanInputPerOutput: parameters.studCount / parameters.teeth,
     inputCycleAngle: motion.inputCycleAngle,
-    maximumContactRadius: meanPitchRadius + motion.slope * (parameters.axialCenter + parameters.axialAmplitude),
-    minimumContactRadius: meanPitchRadius + motion.slope * (parameters.axialCenter - parameters.axialAmplitude),
-    radiusSlope: motion.slope, studAxialAmplitude: parameters.axialAmplitude, studAxialCenter: parameters.axialCenter,
+    maximumContactRadius: motion.toothedRadius(motion.topHeight),
+    minimumContactRadius: motion.toothedRadius(motion.bottomHeight),
+    radiusSlope: motion.slope, spiralBottomHeight: motion.bottomHeight, spiralTopHeight: motion.topHeight,
+    spiralEndOutput: motion.spiralEnd, seamGap: parameters.seamGap, seamFlutes: parameters.seamFlutes,
     studBodyBottomRadius: bodyRadiusAt(-halfHeight), studBodyTopRadius: bodyRadiusAt(halfHeight),
     studBottomRadius, studTopRadius, studBodyRelief, studCount: parameters.studCount,
     studInputAngles: motion.studs.map((stud) => stud.input),
     studOutputProgresses: motion.studs.map((stud) => stud.output),
     studContactRatios: motion.studs.map((stud) => stud.ratio),
-    studLength: studFront + studBack, studFront, studBack, studRadius,
+    studRadius, grooveRadiusBottom: parameters.grooveRadiusBottom, grooveRadiusTop: parameters.grooveRadiusTop,
     toothAngularPitch, toothedBottomRadius, toothedTopRadius,
     toothedConeTeeth: parameters.teeth, parameters,
   };
+  root.userData.conicalStudMotion = motion;
   const update = (time) => {
     const inputAngle = sourceInputPhase + inputAngularSpeed * time;
     const outputProgress = motion.outputAtInput(inputAngle);
     const state = motion.stateAtOutput(outputProgress);
-    const studConeAngularSpeed = -inputAngularSpeed / state.ratio;
-    const toothedContactRadius = centerDistance / (1 + state.ratio);
+    const studConeAngularSpeed = -inputAngularSpeed / state.rate;
+    const toothedContactRadius = centerDistance / (1 + state.rate);
     const studContactRadius = centerDistance - toothedContactRadius;
     setSpin(toothedCone, inputAngle);
     setSpin(toothedShaft, inputAngle);
@@ -3624,9 +3637,9 @@ function conicalStudGear() {
     root.userData.kinematics = {
       inputAngle, inputAngularSpeed, outputProgress,
       toothedConeAngle: inputAngle, studConeAngle: -outputProgress,
-      studConeAngularSpeed, velocityRatio: -1 / state.ratio,
+      studConeAngularSpeed, velocityRatio: -state.ratio, seam: state.seam,
       contactHeight: state.virtualHeight, toothedContactRadius, studContactRadius,
-      activeStudInterval: motion.studs.indexOf(state.stud), handoffProgress: state.fraction,
+      activeStudInterval: state.stud ? motion.studs.indexOf(state.stud) : -1,
       pitchLineSpeedError: inputAngularSpeed * toothedContactRadius
         + studConeAngularSpeed * studContactRadius,
     };
@@ -4056,9 +4069,11 @@ function helicalGears(herringbone = false) {
   const root = new THREE.Group();
   // Brown gives no tooth counts. 28:40 reproduces the roughly 7:10 pitch
   // diameters of the engraving while retaining a common normal-system hob.
-  const teeth = [28, 40];
+  // 40's herringbone uses 42:60 at a finer module so its chevron pitch
+  // approaches Brown's 12-14 per visible face; the pitch radii are unchanged.
+  const teeth = herringbone ? [42, 60] : [28, 40];
   const helixAngle = THREE.MathUtils.degToRad(40);
-  const normalModule = 0.07 * Math.cos(helixAngle);
+  const normalModule = 0.07 * 28 / teeth[0] * Math.cos(helixAngle);
   const faceWidth = 0.74;
   const makeHelical = (count, handedness, color) => {
     const gear = new THREE.Group();
@@ -4081,6 +4096,8 @@ function helicalGears(herringbone = false) {
     gear.userData = { ...geometry.userData, axis: X_AXIS.clone(), rotor, body, hubs, phaseAt };
     return gear;
   };
+  // Left-hand upper wheel: 40 shows the plate's "^" chevrons above and "V"
+  // below (a diamond at the mesh), and 41's upper single helix leans "/".
   const driver = makeHelical(teeth[0], -1, PALETTE.driver);
   const driven = makeHelical(teeth[1], 1, PALETTE.driven);
   const driverRadius = driver.userData.pitchRadius;
@@ -22213,7 +22230,11 @@ function opposedFeedRollWormDrive() {
     if (object.material) object.material.fog = false;
   });
   update(0);
-  return finish(root, update, correctFeedWormAssembly(root, 195));
+  const model = finish(root, update, correctFeedWormAssembly(root, 195));
+  // finish() re-marks every mesh; keep the shaft stubs tagged noShadow (see
+  // correctFeedWormAssembly) from casting the claw shadow across the hubs.
+  root.traverse((o) => { if (o.isMesh && o.userData.noShadow) o.castShadow = false; });
+  return model;
 }
 
 function oppositeHandTwinWormFeedRollDrive() {
@@ -23005,15 +23026,17 @@ function threeRatioPinWheelAndSlidingSlottedPinion() {
   const inputShaftRadius = 0.07;
   const pinRadius = 0.082;
   const pinStartZ = diskFrontZ - 0.005;
-  const pinEndZ = 0.68;
+  // p101: pins stop 0.06 past the pitch line so the slotted pinion keeps
+  // clean round-top leaves (deeper pins undercut them into hooks).
+  const pinEndZ = 0.46;
   const pinLength = pinEndZ - pinStartZ;
   const pinContactZ = 0.4;
-  const pinionRootRadius = 0.83;
-  const pinionOuterRadius = 1.08;
+  const pinionRootRadius = 0.84;
+  const pinionOuterRadius = 1.03;
   const pinionDepth = pinionOuterRadius - pinionRootRadius;
   const pinionThickness = 0.11;
   const pinionBoreRadius = 0.078;
-  const slotWidth = pinRadius * 2 + 0.045;
+  const slotWidth = 0.18;
   const slotPitch = fullTurn / pinionSlotCount;
   const slotAngularWidth = slotWidth / pinionPitchRadius;
   const toothHalfAngle = (slotPitch - slotAngularWidth) / 2;
@@ -23977,7 +24000,18 @@ function threeRatioPinWheelAndSlidingSlottedPinion() {
   const model = finish(root, update, new THREE.Vector3(0.02, 0.015, 1));
   // The low key light otherwise throws a long streak from every pin across
   // the disc face; Brown's pins are plain circles.
-  for (const ring of pinRings) for (const pin of ring.userData.pins) pin.castShadow = false;
+  // p101: tag them noShadow as well, or the render-time shadow policy
+  // (shadow-policy.js) switched casting back on and hatched the face.
+  for (const ring of pinRings) {
+    for (const pin of ring.userData.pins) {
+      pin.traverse((part) => {
+        if (!part.isMesh) return;
+        part.userData.noShadow = true;
+        part.castShadow = false;
+        part.receiveShadow = true;
+      });
+    }
+  }
   return model;
 }
 
@@ -27019,28 +27053,68 @@ function fixedPinionIrregularVibratingWheelCarrier() {
   }
   const supportMaterial = matte(PALETTE.frame, { metalness: 0.08, roughness: 0.72 });
   supportMaterial.fog = false;
-  const pedestalBack = 0.095;
-  const pedestalDepth = 0.22;
-  const pedestalTop = carrierPivot.y - 0.22;
+  // The casting spans the old stand eye's depth (z 0.085..0.325) so the
+  // pivot pin ends flush in its bore.
+  const pedestalBack = 0.085;
+  const pedestalDepth = 0.24;
   const plinthTop = carrierPivot.y - 0.72;
   const blockTop = plinthTop - 0.08;
-  const pedestalShape = new THREE.Shape([
-    new THREE.Vector2(carrierPivot.x - 0.18, pedestalTop),
-    new THREE.Vector2(carrierPivot.x + 0.18, pedestalTop),
-    new THREE.Vector2(carrierPivot.x + 0.4, plinthTop),
-    new THREE.Vector2(carrierPivot.x + 0.5, plinthTop),
-    new THREE.Vector2(carrierPivot.x + 0.5, blockTop),
-    new THREE.Vector2(carrierPivot.x - 0.5, blockTop),
-    new THREE.Vector2(carrierPivot.x - 0.5, plinthTop),
-    new THREE.Vector2(carrierPivot.x - 0.4, plinthTop),
-  ]);
+  // p101: one grey casting, as Brown's flared standard: a round eye
+  // concentric with the pivot pin, straight flanks tangent to the eye, and
+  // concave fillets flaring into the plinth. The separate ink eye disc that
+  // sat tangentially on a flat pedestal top is retired.
+  const eyeRadius = 0.23;
+  const flareHalfWidth = 0.34;
+  const flareFillet = 0.12;
+  const pedestalBore = 0.075;
+  const pivotX = carrierPivot.x;
+  const pivotY = carrierPivot.y;
+  const flankFoot = new THREE.Vector2(pivotX + flareHalfWidth, plinthTop);
+  const footVector = flankFoot.clone().sub(new THREE.Vector2(pivotX, pivotY));
+  const eyeTangentAngle = Math.atan2(footVector.y, footVector.x)
+    + Math.acos(eyeRadius / footVector.length());
+  const eyeTangent = new THREE.Vector2(
+    pivotX + eyeRadius * Math.cos(eyeTangentAngle),
+    pivotY + eyeRadius * Math.sin(eyeTangentAngle),
+  );
+  const flankDirection = flankFoot.clone().sub(eyeTangent).normalize();
+  const flankNormal = new THREE.Vector2(-flankDirection.y, flankDirection.x);
+  const filletCenter = new THREE.Vector2(
+    flankFoot.x + flareFillet * (1 - flankNormal.y) / flankNormal.x,
+    plinthTop + flareFillet,
+  );
+  const filletFlankAngle = Math.atan2(-flankNormal.y, -flankNormal.x);
+  const pedestalShape = new THREE.Shape();
+  pedestalShape.moveTo(pivotX - 0.5, blockTop);
+  pedestalShape.lineTo(pivotX + 0.5, blockTop);
+  pedestalShape.lineTo(pivotX + 0.5, plinthTop);
+  pedestalShape.lineTo(filletCenter.x, plinthTop);
+  pedestalShape.absarc(filletCenter.x, filletCenter.y, flareFillet, -Math.PI / 2, filletFlankAngle, true);
+  pedestalShape.lineTo(eyeTangent.x, eyeTangent.y);
+  pedestalShape.absarc(pivotX, pivotY, eyeRadius, eyeTangentAngle, Math.PI - eyeTangentAngle, false);
+  pedestalShape.lineTo(2 * pivotX - filletCenter.x - flareFillet * Math.cos(filletFlankAngle),
+    filletCenter.y + flareFillet * Math.sin(filletFlankAngle));
+  pedestalShape.absarc(2 * pivotX - filletCenter.x, filletCenter.y, flareFillet,
+    Math.PI - filletFlankAngle, -Math.PI / 2, true);
+  pedestalShape.lineTo(pivotX - 0.5, plinthTop);
+  pedestalShape.closePath();
+  const pedestalHole = new THREE.Path();
+  pedestalHole.absarc(pivotX, pivotY, pedestalBore, 0, Math.PI * 2, true);
+  pedestalShape.holes.push(pedestalHole);
   const pivotPedestal = new THREE.Mesh(
-    new THREE.ExtrudeGeometry(pedestalShape, { depth: pedestalDepth, bevelEnabled: false })
+    new THREE.ExtrudeGeometry(pedestalShape, { depth: pedestalDepth, bevelEnabled: false, curveSegments: 64 })
       .translate(0, 0, pedestalBack),
     supportMaterial,
   );
+  pivotPedestal.userData.eyeRadius = eyeRadius;
+  pivotPedestal.userData.boreRadius = pedestalBore;
+  const retiredStandEye = root.userData.blocks.carrierBearing;
+  if (retiredStandEye) {
+    retiredStandEye.removeFromParent();
+    retiredStandEye.geometry?.dispose();
+  }
   pivotPedestal.userData.fixed = true;
-  pivotPedestal.userData.role = 'fixed-tapered-pedestal-under-arm-pivot';
+  pivotPedestal.userData.role = 'fixed-flared-standard-with-arm-pivot-eye';
   const wallBlock = new THREE.Mesh(
     new THREE.BoxGeometry(1.9, 0.8, 0.34),
     supportMaterial,
@@ -27050,7 +27124,7 @@ function fixedPinionIrregularVibratingWheelCarrier() {
   wallBlock.userData.role = 'fixed-block-under-pivot-pedestal';
   root.add(pivotPedestal, wallBlock);
   Object.assign(root.userData.blocks, {
-    carrierStandard: pivotPedestal, frameFoot: wallBlock, pinionStandard: null,
+    carrierStandard: pivotPedestal, carrierBearing: pivotPedestal, frameFoot: wallBlock, pinionStandard: null,
   });
   refitCycleBounds(root, update, root.userData.transmission.cyclePeriod
     ?? root.userData.transmission.inputCyclePeriod);

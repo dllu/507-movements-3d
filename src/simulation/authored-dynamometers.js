@@ -441,10 +441,12 @@ function hoopReactionDynamometer(movement) {
     'right-loose-input-miter-gear-free-on-horizontal-shaft';
   root.add(inputGear);
 
+  // Pass 101: light grey, not the hoop's blue, so the output wheel reads
+  // against the hoop band standing just in front of it.
   const outputGear = makePitchConeGear({
     axis: X_AXIS.clone().negate(),
     boreRadius: 0.105,
-    color: PALETTE.driven,
+    color: PALETTE.muted,
     indexTooth: 0,
     innerDistance: innerConeDistance,
     outerDistance: outerConeDistance,

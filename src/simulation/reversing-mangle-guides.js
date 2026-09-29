@@ -57,11 +57,25 @@ export function finishReversingMangleGuides(root,update,id) {
     b.pitchGroove.material=wheelMaterial;
   }
   if(cavities[id]) {
+    // p101: the land's top and the face beside it were one blue, so the teeth
+    // read only through thin side slivers (a dashed-line look) wherever no
+    // shadow fell. Sink a darker groove floor 0.02 under the face along the
+    // whole tooth row (root to tip plus clearance), clear of the shaft guide.
+    if(b.pitchGroove){
+      const band=channelLoops(d,g.toothHeight/2+.024,true),channel=clip.difference(loops.outer,loops.inner);
+      const floorBand=clip.difference(band.outer,band.inner,channel,bore);
+      replace(b.guideGrooveOuter,plate(clip.difference(disk,loops.outer,bore,floorBand),floor,front));
+      replace(b.guideGrooveRecess,plate(clip.difference(loops.inner,bore,floorBand),floor,front));
+      replace(b.pitchGroove,plate(floorBand,floor,front-.02));
+      b.pitchGroove.material=wheelMaterial.clone();
+      b.pitchGroove.material.color.multiplyScalar(.62);
+      b.pitchGroove.userData.role='darker-sunk-groove-floor-under-mangle-teeth';
+    }
     const cavity=poly(cavities[id].points);
     // 192's teeth border a raised hooked land with the pinion running
     // outside it; 193's pinion runs inside its pitch loop.
     const land=g.toothLandInsidePitchLoop?clip.difference(clip.intersection(disk,cavity),bore):clip.difference(disk,cavity,bore);
-    const toothLand=new THREE.Mesh(plate(land,front,.36),b.wheelBody.material);
+    const toothLand=new THREE.Mesh(plate(land,b.pitchGroove?front-.02:front,.36),b.wheelBody.material);
     toothLand.userData.role='generated-conjugate-mangle-cavity';
     b.wheelRotor.add(toothLand);
     const retired=new Set();

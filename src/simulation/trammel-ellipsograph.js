@@ -41,17 +41,32 @@ export function makeTrammelEllipsograph(){
  const boardMargin=.4;
  add('drawing-board-under-ellipse',plate(poly(ellipse(ea+boardMargin,eb+boardMargin,720)),paperTop-.1,paperTop).rotateX(-Math.PI/2),root,boardMaterial).castShadow=false;
  {
-  const box=new THREE.Box3(),walls=[],floors=[];root.updateMatrixWorld(true);
+  // Pass 101: the grooved cross is one slab (the single groove floor, dark on
+  // its top face where the slots expose it) and one wall extrusion (the
+  // cross outline less both slots), replacing the separate walls, corner
+  // blocks, end caps, floors and bases with their lip and step.
+  const box=new THREE.Box3(),walls=[],floors=[],caps={},legacy=[];root.updateMatrixWorld(true);
   const toRoot=new THREE.Matrix4().copy(root.matrixWorld).invert();
   root.traverse(o=>{const r=o.userData?.role??'';if(!o.isMesh)return;
-   if(/groove-side-wall|solid-corner-around|closed-(?:horizontal|vertical)-groove-end/.test(r)){box.setFromObject(o).applyMatrix4(toRoot);walls.push(box.clone());}
-   if(/recessed-(?:horizontal|vertical)-groove-floor/.test(r)){box.setFromObject(o).applyMatrix4(toRoot);floors.push(box.clone());}});
+   if(/groove-side-wall|solid-corner-around|closed-(?:horizontal|vertical)-groove-end/.test(r)){box.setFromObject(o).applyMatrix4(toRoot);const w=box.clone();w.role=r;walls.push(w);legacy.push(o);}
+   if(/closed-(?:horizontal|vertical)-groove-end/.test(r))caps[`${/horizontal/.test(r)?'h':'v'}-${o.userData.side}`]=box.clone();
+   if(/recessed-(?:horizontal|vertical)-groove-floor/.test(r)){box.setFromObject(o).applyMatrix4(toRoot);floors.push({box:box.clone(),horizontal:/horizontal/.test(r)});legacy.push(o);}});
   // Local frame: x across, z = minus the screen y, y up from the paper.
   const rect=bx=>poly([[bx.min.x,-bx.max.z],[bx.max.x,-bx.max.z],[bx.max.x,-bx.min.z],[bx.min.x,-bx.min.z]]);
-  const outline=clip.union(...walls.map(rect),...floors.map(rect));
-  let wallMesh;root.traverse(o=>{if(!wallMesh&&o.isMesh&&/groove-side-wall/.test(o.userData?.role??''))wallMesh=o;});
-  add('cross-piece-solid-base-on-board',plate(outline,paperTop,crossFloor).rotateX(-Math.PI/2),root,wallMesh.material);
-  add('cross-piece-base-under-groove-walls',plate(clip.difference(outline,...floors.map(rect)),crossFloor,wallBase).rotateX(-Math.PI/2),root,wallMesh.material);
+  // The cross is the union of its two arms' bounds (the legacy blocks left
+  // hairline seams between them).
+  const armBounds=horizontal=>walls.filter(w=>/horizontal/.test(w.role)===horizontal&&!/solid-corner/.test(w.role)).reduce((a,w)=>a.union(w),new THREE.Box3());
+  const outline=clip.union(rect(armBounds(true)),rect(armBounds(false)));
+  // Each slot runs between the inner faces of its end caps.
+  const slots=floors.map(({box:f,horizontal})=>{const slot=f.clone();
+   if(horizontal){slot.min.x=caps['h-left'].max.x;slot.max.x=caps['h-right'].min.x;}else{slot.min.z=caps['v-rear'].max.z;slot.max.z=caps['v-front'].min.z;}return rect(slot);});
+  const wallMaterial=legacy.find(o=>/groove-side-wall/.test(o.userData.role)).material;
+  const floorMaterial=legacy.find(o=>/groove-floor/.test(o.userData.role)).material;
+  const floorTop=.2,wallTop=Math.max(...walls.map(w=>w.max.y));
+  for(const o of legacy)o.removeFromParent();
+  // ExtrudeGeometry groups: 0 = the two caps (floor and underside), 1 = sides.
+  add('cross-piece-single-floor-slab',plate(outline,paperTop,floorTop).rotateX(-Math.PI/2),root,[floorMaterial,wallMaterial]);
+  add('cross-piece-walls-one-extrusion',plate(clip.difference(outline,...slots),floorTop-.001,wallTop).rotateX(-Math.PI/2),root,wallMaterial);
  }
  root.rotation.x=Math.PI/2;
  const update=time=>{legacyUpdate(time);const s=u.kinematics;shoes[0].position.set(s.horizontalStud.position.x,0,s.horizontalStud.position.z);shoes[1].position.set(s.verticalStud.position.x,0,s.verticalStud.position.z);root.updateMatrixWorld(true);};

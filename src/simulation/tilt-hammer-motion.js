@@ -4,17 +4,30 @@ const dot=(a,b)=>a[0]*b[0]+a[1]*b[1];
 const cross=(a,b)=>a[0]*b[1]-a[1]*b[0];
 const tangent=p=>[-p[1],p[0]];
 
+// p101: each wiper tip is rounded by a fillet of radius p.tipRadius tangent
+// to the circular flank and to the radial drop face. To keep the lift of the
+// sharp tip, the drop face stands p.tipFaceTurn further round than the
+// sharp tip (on the ray at pitch + tipFaceTurn), where the continued flank
+// is a little higher; each lobe's flank then starts at tipFaceTurn. Returns
+// the fillet centre and tangent points in the lobe frame (sharp tip on +y).
+export function tiltHammerTipFillet(p){
+  const r=p.tipRadius??0,turn=p.tipFaceTurn??0,R=p.flankRadius;
+  if(!(r>0))return{radius:0,turn:0,center:[0,p.high],flankPoint:[0,p.high],facePoint:[0,p.high]};
+  const [fx,fy]=rotate(p.flankCenter,-turn),cy=fy+Math.sqrt((R-r)**2-(r-fx)**2),d=[r-fx,cy-fy],l=Math.hypot(...d);
+  return{radius:r,turn,center:rotate([r,cy],turn),flankPoint:rotate([fx+d[0]*R/l,fy+d[1]*R/l],turn),facePoint:rotate([0,cy],turn)};
+}
+
 // Contact is solved against the actual circular flank or finite lobe tip.
 // Gravity knots retain the independently audited trajectory. No polygon
 // construction, event search or numerical integration runs during playback.
 export function makeTiltHammerMotion(profile){
-  const p=profile.parameters,mass=profile.mass,events=profile.events,fall=profile.fall;
+  const p=profile.parameters,mass=profile.mass,events=profile.events,fall=profile.fall,tip=tiltHammerTipFillet(p);
   const gravityAcceleration=q=>-p.gravity*rotate(mass.centroid,q)[0]/mass.inertiaPerMass;
   const energy=(q,velocity)=>mass.inertiaPerMass*velocity**2/2+p.gravity*rotate(mass.centroid,q)[1];
   const contactAtAngle=angle=>{
     if(Math.abs(angle-events.flankEnd.angle)<1e-12)angle=events.flankEnd.angle;
     const arc=angle>events.flankEnd.angle;
-    const center=rotate(arc?p.flankCenter:[0,p.high],angle),radius=arc?p.flankRadius+p.noseRadius:p.noseRadius;
+    const center=rotate(arc?p.flankCenter:tip.center,angle),radius=arc?p.flankRadius+p.noseRadius:p.noseRadius+tip.radius;
     const delta=sub(center,p.pivot),length=Math.hypot(...delta);
     const x=(p.noseOrbit**2-radius**2+length**2)/(2*length);
     const height=Math.sqrt(Math.max(0,p.noseOrbit**2-x*x));
@@ -58,5 +71,5 @@ export function makeTiltHammerMotion(profile){
       inputSpeed:-p.omega,camContactEngaged:state.stage==='cam-lift-and-tip-contact',
       workpieceContactEngaged:state.stage==='workpiece-dwell'};
   };
-  return{parameters:p,mass,events,atTime,atCycleTime,contactAtAngle,gravityAcceleration,energy};
+  return{parameters:p,mass,events,tip,atTime,atCycleTime,contactAtAngle,gravityAcceleration,energy};
 }

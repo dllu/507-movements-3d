@@ -29,7 +29,6 @@ test('246 actual bored bars and slide passages clear their captured pins through
       for(const pin of small)auditParts.both(bar,pin,'bar/pin');
       for(const slide of [...w.fixedSlide,...w.pencilSlide])auditParts.both(bar,slide,'bar/slide');
       for(const joint of Object.values(b.jointPins))for(const washer of joint.children.slice(1))auditParts.both(bar,washer,'bar/retainer');
-      for(const fixed of [w.fixedCap,w.fixedRing])auditParts.both(bar,fixed,'bar/fixed-retainer');
     }
     for(let j=0;j<w.bars.length;j++)for(let k=j+1;k<w.bars.length;k++)auditParts.both(w.bars[j],w.bars[k],'bar/bar');
     for(const slide of w.fixedSlide)auditParts.both(slide,w.fixedPost,'fixed-slide/post');
@@ -38,6 +37,18 @@ test('246 actual bored bars and slide passages clear their captured pins through
     auditParts.both(pins[0],b.tracerKnob,'compound-pin/knob');
   }
   console.log({id:246,...auditParts.report()});
+});
+
+test('246 tracer cap is seated on the hollow pin at B and C is one turned piece',()=>{
+  const m=create({id:246}),b=m.root.userData.blocks,w=m.root.userData.workingParts;
+  for(let i=0;i<=8;i++){
+    m.update(m.root.userData.geometry.cyclePeriod*i/8);m.root.updateMatrixWorld(true);
+    const pin=new THREE.Box3().setFromObject(b.jointPins.B.children[0]),cap=new THREE.Box3().setFromObject(b.tracerKnob),shaft=new THREE.Box3().setFromObject(b.tracerShaft);
+    assert.ok(Math.abs(cap.min.y-pin.max.y)<1e-9,`cap gap ${cap.min.y-pin.max.y}`);
+    assert.ok(shaft.max.y>cap.min.y&&shaft.max.y<=cap.max.y+1e-9);
+  }
+  assert.equal(w.fixedPost.geometry.type,'LatheGeometry');
+  assert.deepEqual(b.fixedPivot.children.filter(o=>o.isMesh).length,1);
 });
 
 test('246 finite bore stations stay centered on pins with axial capture and close running clearance',()=>{
@@ -55,7 +66,7 @@ test('246 finite bore stations stay centered on pins with axial capture and clos
         assert.ok(Math.hypot(p.x-q.x,p.z-q.z)<1e-12);
         pin.geometry.computeBoundingBox();const box=pin.geometry.boundingBox.clone().applyMatrix4(pin.matrixWorld);
         assert.ok(box.min.y<p.y-g.barThickness/2&&box.max.y>p.y+g.barThickness/2);
-        const radius=pin.geometry.parameters?.radiusTop??.105;
+        const radius=pin===w.fixedPost?.095:(pin.geometry.parameters?.radiusTop??.105);
         assert.ok(h.radius-radius>.0029&&h.radius-radius<.0041);
       }
     }

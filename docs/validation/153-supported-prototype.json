@@ -8,8 +8,10 @@
     "barDamping": 1,
     "leverDamping": 0.02,
     "outputLengthScale": 1,
-    "inputContactMinimum": 1.4,
+    "inputContactMinimum": 0,
     "contact": true,
+    "flatInputLength": 1.25,
+    "inputAngleOffset": 0.2617993877991494,
     "mass": {
       "disk": {
         "volume": 2.486389953218294,
@@ -44,19 +46,19 @@
         ]
       },
       "lever": {
-        "volume": 0.38010036054531793,
+        "volume": 0.37499323365518983,
         "centroid": [
-          0.2966832965985889,
-          0.3990333006212974,
-          0.1096419531140282
+          0.2123638124447049,
+          0.4580901960984016,
+          0.09848112316420819
         ],
         "inertia": [
-          0.19333642573315596,
-          0.11678606818310369,
-          0.29738070053706156,
-          0.03980465590351541,
-          -0.008587622813741903,
-          0.009046055752191227
+          0.17966426596838173,
+          0.06365835592706459,
+          0.23128745835767714,
+          0.013094353234316129,
+          -0.00439406417980384,
+          0.006116239523094124
         ]
       }
     },
@@ -64,16 +66,16 @@
     "initialDisk": 1.6993518923437687,
     "initialLever": -0.5087298243155534,
     "speed": -0.5235987755982988,
-    "assumptions": "Only disk is driven. Bar and lever move through frictionless finite contact. Gravity returns the relieved arm onto a rendered, contact-active fixed stop; no lever joint limit prescribes the reset. Bar guide friction, damping, depth relief, bearings and retaining guides are inferred. Moving mesh volumes are integrated at common density normalized to bar mass one; body interfaces are checked separately. Nonworking collisions are audited on rendered poses rather than solved live."
+    "assumptions": "Only disk is driven. Bar and lever move through frictionless finite contact on a flat L lever whose input arm lies wholly in the stud plane (shortened to 1.25 and turned 15.0° towards the disk). Gravity returns the lever onto a rendered, contact-active fixed stop; no lever joint limit prescribes the reset. Bar guide friction, damping, bearings and retaining guides are inferred. Moving mesh volumes are integrated at common density normalized to bar mass one."
   },
   "summary": {
     "barRange": [
-      0.0382508857324156,
-      1.0244922158037189
+      -0.6174597210212455,
+      1.0244921795108604
     ],
     "leverRange": [
-      -0.5097653320800112,
-      -0.12213835926075614
+      -0.5094831863302203,
+      0.2525786982531774
     ],
     "cycleEnds": [
       {
@@ -87,56 +89,56 @@
       },
       {
         "time": 11.999999999994708,
-        "bar": 0.0382508857630984,
-        "lever": -0.5087424842998448,
+        "bar": -0.00037515947325410693,
+        "lever": -0.5087424473531541,
         "velocities": [
-          -2.2352360039378057e-306,
-          7.042201989712379e-14
+          0.7382505199641739,
+          1.2699100562697096e-13
         ]
       },
       {
         "time": 24.000000000023583,
-        "bar": 0.038250885936003655,
-        "lever": -0.5087424842998448,
+        "bar": -0.0003751603722711353,
+        "lever": -0.5087424473531541,
         "velocities": [
-          -2.2352359876298798e-306,
-          7.039090927598075e-14
+          0.7382505295977057,
+          1.3523759109974264e-13
         ]
       },
       {
         "time": 36.00000000008088,
-        "bar": 0.038250885908859306,
-        "lever": -0.5087424842998448,
+        "bar": -0.0003751603300121616,
+        "lever": -0.5087424473531541,
         "velocities": [
-          -2.2352359789173697e-306,
-          7.035161446850921e-14
+          0.7382505296113995,
+          1.301938981672158e-13
         ]
       },
       {
         "time": 48.00000000013818,
-        "bar": 0.038250885803661996,
-        "lever": -0.5087424842998448,
+        "bar": -0.0003751593673495501,
+        "lever": -0.5087424473531541,
         "velocities": [
-          -2.235235978121879e-306,
-          7.031818210192755e-14
+          0.7382505199933442,
+          1.2755443613638388e-13
         ]
       },
       {
         "time": 60.00000000019548,
-        "bar": 0.0382508857324156,
-        "lever": -0.5087424842998448,
+        "bar": -0.00037515932508489034,
+        "lever": -0.5087424473531541,
         "velocities": [
-          -2.235235972066934e-306,
-          7.04832346976269e-14
+          0.7382505199840379,
+          1.2730345044687233e-13
         ]
       },
       {
         "time": 72.0000000000254,
-        "bar": 0.03825088583266122,
-        "lever": -0.5087424842998448,
+        "bar": -0.00037516037071770586,
+        "lever": -0.5087424473531541,
         "velocities": [
-          -2.2352359746927773e-306,
-          7.036735932233288e-14
+          0.7382505296113222,
+          1.2836442538447172e-13
         ]
       }
     ]
@@ -144,15 +146,15 @@
   "sources": [
     {
       "file": "scripts/probe-stud-reverser.mjs",
-      "sha256": "0e763aac7a1a517f3bd041aedabd6f49cfb5ebf5d098af6cbe96e7fbe8a24b55"
+      "sha256": "6eed68030f5ecc1c9eba1ed879ed6aea0c29f66e3d97491597f6082641fac9ec"
     },
     {
       "file": "src/simulation/mujoco-stud-reverser/physics.js",
-      "sha256": "dcc520d098838e2a346078dec20e790e10457c4d6507b9aa569a0ca713a0cce3"
+      "sha256": "42f4df92d79573fae9e74eb9ae1f9afe6dcff8b6a58f3a9157e720221f1ac7fc"
     },
     {
       "file": "src/simulation/mujoco-stud-reverser/geometry.js",
-      "sha256": "61f443ca61da1c5a21283aa6b005f6c64c072fa9404600a0e6afd4a45fb4ed07"
+      "sha256": "b9d9e33cb4b317e279039aa9c8360aca9e0a59fbd3666697e571bf9b95248466"
     },
     {
       "file": "src/simulation/authored-stud-drives.js",

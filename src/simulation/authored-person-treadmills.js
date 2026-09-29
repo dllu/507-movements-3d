@@ -40,11 +40,10 @@ function tubeBetween(start, end, radius, material) {
   );
 }
 
-// Brown's walker is a tall, broad man: his standing foot is on a board a
-// little below axle height, his raised knee is lifted onto the next board
-// up, and his hands grip the rail at chin height near the top of the drum.
-// FIGURE_SCALE sizes his jacket, head and arms; the legs have their own
-// lengths and full trouser radii.
+// Brown's walker is a tall, broad man climbing the drum's steps with an
+// upright back, one leg straight and the other knee raised onto the next
+// step, his hands on the rail in front of him. FIGURE_SCALE sizes his jacket,
+// head and arms; the legs have their own lengths and full trouser radii.
 const FIGURE_SCALE = 1.2;
 const UPPER_LEG_LENGTH = 0.74;
 const LOWER_LEG_LENGTH = 0.70;
@@ -52,26 +51,84 @@ const THIGH_RADIUS = 0.09;
 // The knee fillet is wider than the trouser leg's inner half-width (0.08) at
 // the knee, so the bent leg never folds through itself.
 const KNEE_FILLET_RADIUS = 0.11;
-// Hip station relative to the drum axis; the standing leg is nearly
-// straight at the lowest planted board and the stepping knee rises high.
-const HIP_OFFSET = { x: 2.51, y: 0.75 };
-// Pass 99: each sole stands on the outer part of its board, its heel at
-// the board's edge, so the legs reach less far in toward the drum. Boards
-// are met 10 degrees above the horizontal and left about 17 below it, near
-// axle height as Brown draws; 52% stance keeps a foot on a board at all
-// times. Chosen by a 2-D search of hip, touchdown, stance and swing
-// (docs/p99-e-review.md): mean planted thigh 87 degrees from vertical
-// against the old 98. Radial boards at the drum's side stop the raised
-// knee from coming in over the feet, so a fully upright stance is not
-// reachable with Brown's figure and drum proportions.
-const TOUCHDOWN_DEGREES = 10;
+// Pass 101: an upright stair climb. Near axle height the drum's side is a
+// vertical ladder of shelves 0.67 apart (about half his leg), so any raised
+// knee meets the shelf above and the hips had to hang 0.95 out from the
+// feet, which read as sitting (p84-p99 searches). He now climbs the drum's
+// upper quarter, where its descending face is a staircase: the boards are set
+// 35 degrees off radial so their treads are level at 35 degrees above the
+// axle, and he stands there with his hips 0.16 outboard of the mid-stance
+// foot and over it as it leaves. The raised thigh is about level at
+// touchdown and the stance knee is at about 25 degrees at lift-off: mean
+// planted thigh 46 degrees from vertical, against 87. Treads tilt at most 13
+// degrees under the sole. The cost is height: his hips stand 2.1 above the
+// axle, where Brown draws them 0.75 (docs/p101-u5-review.md).
+const HIP_OFFSET = { x: 1.46, y: 2.105 };
+const BOARD_TILT = THREE.MathUtils.degToRad(-35);
+const TOUCHDOWN_DEGREES = 48.37;
 const STANCE_FRACTION = 0.52;
 const FOOT_RADIAL = 0.07;
-const SWING_OUT = 2.0;
-const SWING_UP = 1.70;
+const SWING_OUT = 0.8;
+const SWING_UP = 2.0;
+const SWING_EASE = 8;
 const LEAN_ANGLE = THREE.MathUtils.degToRad(0);
 const ANKLE_EASE_START = THREE.MathUtils.degToRad(60);
 const ANKLE_EASE_SPAN = THREE.MathUtils.degToRad(3);
+// Pass 101: the rail in the person frame (origin 0.27 * FIGURE_SCALE above
+// the hips): at shoulder height, 0.45 in front of the chest's centre.
+const RAIL_HEIGHT_IN_PERSON = 0.55;
+const RAIL_REACH_IN_PERSON = -0.45;
+const FIST_TURN = THREE.MathUtils.degToRad(45);
+// The plank's distance in front of the bearing standard.
+const PLANK_STANDOFF = 0.25;
+// The Blender sleeve (scripts/blender/figures.py) is modelled reaching
+// overhead: shoulder S0, elbow E and wrist W. It is re-posed here as two
+// rigid bones blended across the elbow, to a new elbow and wrist that keep
+// both bone lengths: the wrist sits where the turned fist's wrist is, and the
+// elbow is the outboard, lowest point that reaches both.
+const ARM_REST = { shoulder: [0.0, 0.57, 0.26], elbow: [0.02, 0.73, 0.6], wrist: [-0.19, 1.02, 0.51] };
+function reposedArmGeometry(name, side, hand) {
+  const v = (a) => new THREE.Vector3(a[0], a[1], side * a[2]);
+  const s0 = v(ARM_REST.shoulder), e0 = v(ARM_REST.elbow), w0 = v(ARM_REST.wrist);
+  const upper = e0.distanceTo(s0), fore = w0.distanceTo(e0);
+  // Wrist of the fist (hand-fist wrist, scale 0.75), turned with it.
+  const fistWrist = new THREE.Vector3(0.0186 * 0.75, -0.124 * 0.75, side * 0.1674 * 0.75)
+    .applyAxisAngle(Z_AXIS, FIST_TURN);
+  const w1 = hand.clone().add(fistWrist);
+  // Elbow: on the circle of points at `upper` from the shoulder and `fore`
+  // from the wrist, the one farthest outboard and down.
+  const axis = w1.clone().sub(s0), d = axis.length();
+  axis.normalize();
+  const along = (upper * upper - fore * fore + d * d) / (2 * d);
+  const radius = Math.sqrt(Math.max(0, upper * upper - along * along));
+  const centre = s0.clone().addScaledVector(axis, along);
+  const prefer = new THREE.Vector3(0.2, -1, side * 1.4);
+  const out = prefer.clone().addScaledVector(axis, -prefer.dot(axis)).normalize();
+  const e1 = centre.clone().addScaledVector(out, radius);
+  const turnUpper = new THREE.Quaternion().setFromUnitVectors(
+    e0.clone().sub(s0).normalize(), e1.clone().sub(s0).normalize());
+  const turnFore = new THREE.Quaternion().setFromUnitVectors(
+    w0.clone().sub(e0).normalize(), w1.clone().sub(e1).normalize());
+  const upperDirection = e0.clone().sub(s0).normalize();
+  const foreDirection = w0.clone().sub(e0).normalize();
+  const bisector = upperDirection.clone().add(foreDirection).normalize();
+  const geometry = figureGeometry(name, (position) => {
+    const p = new THREE.Vector3(), a = new THREE.Vector3(), b = new THREE.Vector3();
+    for (let i = 0; i < position.length; i += 3) {
+      p.set(position[i], position[i + 1], position[i + 2]);
+      // Signed distance past the elbow along the bisector of the two bones
+      // sets the blend, over 0.08 either side of the joint.
+      const past = p.clone().sub(e0).dot(bisector);
+      const t = THREE.MathUtils.smoothstep(past, -0.08, 0.08);
+      a.copy(p).sub(s0).applyQuaternion(turnUpper).add(s0);
+      b.copy(p).sub(e0).applyQuaternion(turnFore).add(e1);
+      p.lerpVectors(a, b, t);
+      position[i] = p.x; position[i + 1] = p.y; position[i + 2] = p.z;
+    }
+  });
+  geometry.userData.reposed = { shoulder: s0, elbow: e1, wrist: w1 };
+  return geometry;
+}
 // Hips stand just outboard of the jacket's lower half-width.
 const HIP_HALF_SPACING = 0.182 * FIGURE_SCALE + THIGH_RADIUS + 0.01;
 
@@ -89,11 +146,11 @@ function externalPersonTreadmill(movement) {
   // The boards' phase at the plate pose is chosen so that, as Brown draws
   // him, one leg is straight at the end of its stance while the other knee
   // is raised with its foot just set on a higher board.
-  const wheelStartAngle = THREE.MathUtils.degToRad(9.6);
+  const wheelStartAngle = THREE.MathUtils.degToRad(-3.47);
   const gaitCyclesPerWheelTurn = treadCount / 2;
   const gaitAngularSpeed = Math.abs(wheelAngularSpeed)
     * gaitCyclesPerWheelTurn;
-  const personStationAngle = THREE.MathUtils.degToRad(20);
+  const personStationAngle = THREE.MathUtils.degToRad(35);
   const personStationPoint = wheelCenter.clone().add(new THREE.Vector3(
     Math.cos(personStationAngle) * treadRadius,
     Math.sin(personStationAngle) * treadRadius,
@@ -106,8 +163,8 @@ function externalPersonTreadmill(movement) {
   const personCenterOfMass = wheelCenter.clone().add(
     // Brown's man climbs on the descending side, centred across the drum's
     // width, behind the diagonal plank that stands at the wheel's face.
-    // Scaled to Brown's figure, whose cap only just rises above the drum
-    // top and whose feet are on the boards near axle height.
+    // Pass 101: raised to the drum's upper quarter, where the boards form a
+    // staircase, so he climbs upright (see HIP_OFFSET).
     new THREE.Vector3(HIP_OFFSET.x, HIP_OFFSET.y + 0.27 * FIGURE_SCALE, 0),
   );
   const personWeight = new THREE.Vector3(0, -personMass * gravity, 0);
@@ -123,7 +180,8 @@ function externalPersonTreadmill(movement) {
     upperLength: upperLegLength, lowerLength: lowerLegLength,
     touchdownAngle: THREE.MathUtils.degToRad(TOUCHDOWN_DEGREES),
     stanceFraction: STANCE_FRACTION, footRadial: FOOT_RADIAL,
-    swingOut: SWING_OUT, swingUp: SWING_UP };
+    swingOut: SWING_OUT, swingUp: SWING_UP, boardTilt: BOARD_TILT,
+    swingEase: SWING_EASE };
 
   const stateAtTime = (time) => {
     const wheelTravel = wheelAngularSpeed * time;
@@ -241,9 +299,10 @@ function externalPersonTreadmill(movement) {
       Math.sin(angle) * treadRadius,
       0,
     );
-    // Radial boards provide upward-facing steps on the descending side.
-    // Tangential boards would present a nearly vertical wall to the walker.
-    tread.rotation.z = angle;
+    // Each board is turned 35 degrees off radial about its centre, so its
+    // upper face is a level tread when it passes 35 degrees above the axle
+    // on the descending side, where the man climbs.
+    tread.rotation.z = angle + BOARD_TILT;
     tread.userData.index = index;
     tread.userData.role =
       'cross-width-peripheral-step-board-rigid-with-treadmill';
@@ -254,12 +313,14 @@ function externalPersonTreadmill(movement) {
         new THREE.BoxGeometry(0.28, 0.16, 0.16),
         wheelMaterial,
       );
+      // The lug sits on its board's axis 0.15 out from the board's centre
+      // (at the end ring's outer edge) and across the board.
       lug.position.set(
-        Math.cos(angle) * (wheelRadius + 0.03),
-        Math.sin(angle) * (wheelRadius + 0.03),
+        Math.cos(angle) * treadRadius + 0.15 * Math.cos(angle + BOARD_TILT),
+        Math.sin(angle) * treadRadius + 0.15 * Math.sin(angle + BOARD_TILT),
         side * drumWidth / 2,
       );
-      lug.rotation.z = angle + Math.PI / 2;
+      lug.rotation.z = angle + BOARD_TILT + Math.PI / 2;
       lug.userData.index = index;
       lug.userData.side = side;
       lug.userData.role = 'end-ring-step-lug-at-one-tread-board';
@@ -421,74 +482,35 @@ function externalPersonTreadmill(movement) {
   neck.visible = false;
   capBand.visible = false;
   const arms = [];
-  // He faces the drum and reaches up to a rail just above and in front of
-  // his cap: Brown's topmost horizontal line along the drum.
-  const leanedHead = leanPoint(0, 0.80 * FIGURE_SCALE);
-  // Brown's hands grip the rail at the height of the cap's crown.
-  const handRailY = personCenterOfMass.y + leanedHead.y + 0.12 * FIGURE_SCALE;
-  const handRailX = personCenterOfMass.x + leanedHead.x - 0.18 * FIGURE_SCALE;
+  // Pass 101: he holds the rail in front of him at shoulder height, elbows
+  // out and down, as Brown draws his arms, not overhead.
+  const handRailY = personCenterOfMass.y + RAIL_HEIGHT_IN_PERSON;
+  const handRailX = personCenterOfMass.x + RAIL_REACH_IN_PERSON;
+  // The fist is turned about the rail so its wrist faces the elbow.
+  const fistTurn = new THREE.Quaternion().setFromAxisAngle(Z_AXIS, FIST_TURN);
   for (const side of [-1, 1]) {
-    const shoulder = new THREE.Vector3(
-      0,
-      0.45 * FIGURE_SCALE,
-      side * 0.22 * FIGURE_SCALE,
-    );
-    // The arm is built unleaned and turned with the body, so its hand is
-    // placed at the rail point turned back by the lean.
-    const handInBody = leanPoint(
+    const hand = new THREE.Vector3(
       handRailX - personCenterOfMass.x,
       handRailY - personCenterOfMass.y,
-      -LEAN_ANGLE,
-    );
-    const hand = new THREE.Vector3(
-      handInBody.x,
-      handInBody.y,
       side * 0.33 * FIGURE_SCALE,
     );
-    // Upper arm out and up to an elbow held wide, forearm up to the rail.
-    const elbow = new THREE.Vector3(
-      hand.x * 0.45,
-      0.72 * FIGURE_SCALE,
-      side * 0.42 * FIGURE_SCALE,
-    );
     const arm = new THREE.Mesh(
-      new THREE.TubeGeometry(
-        new THREE.CatmullRomCurve3([shoulder, elbow, hand], false, 'centripetal'),
-        24,
-        0.058 * FIGURE_SCALE,
-        12,
-        false,
-      ),
+      reposedArmGeometry(side > 0 ? 'man-arm-left' : 'man-arm-right', side, hand),
       personMaterial,
     );
-    for (const [point, radius, material] of [
-      [shoulder, 0.07 * FIGURE_SCALE, personMaterial],
-      [elbow, 0.058 * FIGURE_SCALE, personMaterial],
-      [hand, 0.062 * FIGURE_SCALE, skinMaterial],
-    ]) {
-      const joint = new THREE.Mesh(new THREE.SphereGeometry(radius, 16, 10), material);
-      joint.position.copy(point);
-      joint.userData.role = point === hand ? 'person-hand-gripping-rail' : 'person-arm-joint';
-      arm.add(joint);
-    }
-    // Blender sleeve from the shoulder out to a wide elbow and up to the
-    // wrist, and a closed fist round the rail, thumb inboard and the back of
-    // the hand toward the viewer (the far hand is its mirror image).
-    arm.geometry.dispose();
-    arm.geometry = figureGeometry(side > 0 ? 'man-arm-left' : 'man-arm-right');
-    for (const joint of [...arm.children]) {
-      if (joint.userData.role === 'person-arm-joint') arm.remove(joint);
-      else joint.visible = false;
-    }
+    // A closed fist round the rail, thumb inboard and the back of the hand
+    // outboard (the far hand is its mirror image).
     const fist = makeGripFist(0.059, 0.75, skinMaterial);
     fist.position.copy(hand);
     fist.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(
-      new THREE.Vector3(0, 0, 1), new THREE.Vector3(0, -1, 0), new THREE.Vector3(1, 0, 0)));
+      new THREE.Vector3(0, 0, 1), new THREE.Vector3(0, -1, 0), new THREE.Vector3(1, 0, 0)))
+      .premultiply(fistTurn);
     if (side > 0) fist.scale.x *= -1;
     fist.userData.role = 'person-hand-gripping-rail';
     arm.add(fist);
     applyLean(arm);
     arm.userData.side = side;
+    arm.userData.hand = hand.clone();
     arm.userData.role = 'person-arm-holding-fixed-safety-rail';
     arms.push(arm);
     person.add(arm);
@@ -623,10 +645,12 @@ function externalPersonTreadmill(movement) {
   pedestalPlank.position.set(wheelCenter.x, -2.02, pedestalZ);
   pedestalPlank.userData.role = 'source-visible-plank-under-bearing-standard';
   fixedFrame.add(pedestalPlank);
+  // Pass 101: the rail ends 0.3 beyond the man's far hand; it is carried by
+  // the plank alone, as the presentation shows no posts.
   const handRailStart = new THREE.Vector3(
     handRailX,
     handRailY,
-    -drumWidth / 2 - 0.20,
+    -0.33 * FIGURE_SCALE - 0.30,
   );
   // The rail runs away from the viewer beyond the man's near hand, as
   // Brown draws it running off the plate to the right.
@@ -650,7 +674,7 @@ function externalPersonTreadmill(movement) {
   // rail the man holds runs along the drum's axis and passes through Brown's
   // drawn hole about a seventh of the way down the plank, so the plank
   // carries the rail's near end.
-  const plankZ = gearFaceZ + gearThickness + 0.20 + 0.90;
+  const plankZ = gearFaceZ + gearThickness + 0.20 + PLANK_STANDOFF;
   const plankThickness = 0.10;
   const plankWidth = 0.26;
   const plankLean = THREE.MathUtils.degToRad(36);
@@ -700,7 +724,7 @@ function externalPersonTreadmill(movement) {
   };
   fixedFrame.add(diagonalGuard);
   const railPosts = [];
-  for (const z of [-drumWidth / 2 - 0.16, personCenterOfMass.z + 0.48]) {
+  for (const z of []) {
     const post = new THREE.Mesh(
       new THREE.BoxGeometry(0.14, 2.12, 0.14),
       frameMaterial,
@@ -858,7 +882,7 @@ function externalPersonTreadmill(movement) {
         engravingEvidence:
           'the plate shows a broad field of cross-width peripheral steps, one braced end wheel and output axle at left, one person standing externally on the right side, a fixed handrail, and a diagonal fixed side frame',
         reconstructionDisclosure:
-          'drum depth, fourteen tread boards with radial working faces, end-ring structure, supports, colors, speed, person mass, and tread-indexed gait are engineered because Brown gives no values and the official page has no canvas animation; finite sole placement is prescribed, while balance and muscle/contact forces remain unqualified',
+          'drum depth, fourteen tread boards set 35 degrees off radial so they are level treads at the climbing station, end-ring structure, supports, colors, speed, person mass, and tread-indexed gait are engineered because Brown gives no values and the official page has no canvas animation; finite sole placement is prescribed, while balance and muscle/contact forces remain unqualified',
       },
       officialPage: 'https://507movements.com/mm_377.html',
       primaryScan: {
@@ -888,7 +912,7 @@ function externalPersonTreadmill(movement) {
   update(0);
   root.userData.cameraFitBounds = new THREE.Box3(
     new THREE.Vector3(-2.55, -2.25, -1.75),
-    new THREE.Vector3(2.26, 2.18, 2.06),
+    new THREE.Vector3(2.26, 3.40, 2.06),
   );
   root.userData.groundFloorY = -2.15;
   // A narrow field keeps the drum's boards and rail near-parallel, as the

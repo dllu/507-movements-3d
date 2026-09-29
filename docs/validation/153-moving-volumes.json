@@ -2,10 +2,10 @@
   "movement": 153,
   "method": "Moving meshes within each rigid body at one pose; relative transforms are constant through motion. Bidirectional vertices, edge midpoints and face centers. Fixed-frame overlaps excluded; moving mating interfaces are checked. No exact CSG volume proof.",
   "summary": {
-    "parts": 42,
-    "pairs": 39,
+    "parts": 41,
+    "pairs": 35,
     "poses": 1,
-    "checks": 31256,
+    "checks": 29932,
     "failingPairs": 0
   },
   "failures": {},
@@ -13,11 +13,11 @@
   "sources": [
     {
       "file": "scripts/review-stud-reverser-moving-volumes.mjs",
-      "sha256": "6c357b9925bd24df533cc162aae5bcaec1a8d26a0d5aa2104ed8356878d7e41a"
+      "sha256": "7c6789d58f1fdc13f1d740a3bce3f71cb50150bd65944259d25585f7d0ee31dc"
     },
     {
       "file": "src/simulation/mujoco-stud-reverser/geometry.js",
-      "sha256": "61f443ca61da1c5a21283aa6b005f6c64c072fa9404600a0e6afd4a45fb4ed07"
+      "sha256": "b9d9e33cb4b317e279039aa9c8360aca9e0a59fbd3666697e571bf9b95248466"
     },
     {
       "file": "src/simulation/mujoco-stud-reverser/sync.js",
@@ -29,7 +29,7 @@
     },
     {
       "file": "/dev/shm/153-supported-fine-samples.json",
-      "sha256": "f5f6d979c67c3c45858b0dc1b16248ac9ff96b17e925f6f746a4f84b1ceb3851"
+      "sha256": "8c18f3bab7f8383c43cb3f9dfa2f47cd0decc82cb48b3c73d53639821882adce"
     },
     {
       "file": "src/simulation/finite-plate-geometry.js",

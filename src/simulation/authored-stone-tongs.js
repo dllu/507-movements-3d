@@ -326,8 +326,13 @@ function stoneLiftingTongs(movement) {
   // The stone is centred on z 0, the plane of the shackle and hoist rope, so
   // the pull passes straight through its centre of gravity. The left tong
   // works at z +tongPlaneZ and the right at -tongPlaneZ.
-  const socketDepth = 0.085;
-  const socketHalfWidth = 0.095;
+  // Pass 101: each socket is the tong point's own V (half-angle atan(0.12 /
+  // 0.29), apex 0.05 in from the seat) offset by a 0.004 running clearance,
+  // so at the lift the point fills it and visibly bites; the old wider,
+  // deeper socket left the point standing 0.03-0.05 off its flanks.
+  const nibHalfAngle = Math.atan2(0.12, 0.29), nibClearance = 0.004;
+  const socketDepth = 0.05 + nibClearance / Math.sin(nibHalfAngle);
+  const socketHalfWidth = socketDepth * Math.tan(nibHalfAngle), socketUpperOpening = 0.016;
   const stoneOutlineWithSockets = (sockets) => {
     const points = [];
     stoneShapePoints.forEach(([x, y], index) => {
@@ -336,7 +341,13 @@ function stoneLiftingTongs(movement) {
       const inward = seat < 0 ? 1 : -1;
       // Brown's outline runs down the left side from the seat and up the
       // right side to it; keep the socket's rim points in that order.
-      points.push([x, y + socketHalfWidth * inward], [x + socketDepth * inward, y], [x, y - socketHalfWidth * inward]);
+      // The point withdraws up and out about 32 degrees off the socket
+      // axis, steeper than the V's 22.5-degree flank, so the upper flank
+      // opens to a wider rim (straight from the seat) and clears the
+      // withdrawing apex; the lower flank stays the point's own V.
+      const up = socketHalfWidth + socketUpperOpening, down = socketHalfWidth;
+      const [first, last] = inward > 0 ? [up, -down] : [-down, up];
+      points.push([x, y + first], [x + socketDepth * inward, y], [x, y + last]);
     });
     return poly(points);
   };

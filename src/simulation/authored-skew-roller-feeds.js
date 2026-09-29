@@ -248,6 +248,7 @@ function skewRollerHelicalRodFeed(movement) {
     metalness: 0.13,
     roughness: 0.56,
   });
+  const rearRollerMaterial = matte(PALETTE.accent, { metalness: 0.18, roughness: 0.5 });
   const rodMaterial = matte(PALETTE.driven, {
     metalness: 0.15,
     roughness: 0.54,
@@ -370,7 +371,9 @@ function skewRollerHelicalRodFeed(movement) {
         rollerBodyLength,
         56,
       ),
-      driverMaterial,
+      // Pass 101: the rear roller is brass so the two overlapping rollers
+      // don't merge orange on orange in the default view.
+      specification.name === 'rear' ? rearRollerMaterial : driverMaterial,
     );
     body.userData.role = 'one-of-two-oblique-friction-drive-rollers';
     body.userData.name = specification.name;

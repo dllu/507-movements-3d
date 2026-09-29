@@ -8,7 +8,7 @@ import {
   markShadows,
   matte,
 } from './primitives.js';
-import {waterFountainGeometry, waterJetMaterial, waterVolumeMaterial} from './water-volume.js';
+import {waterVolumeMaterial} from './water-volume.js';
 import {WaterStream, ballisticPath, guidedPath, joinPaths} from './water-stream.js';
 import {latheSectionGeometry, sectionMeshInPlace} from './cutaway-section.js';
 
@@ -632,19 +632,54 @@ function hydraulicRam(movement) {
     'continuous-uniform-upward-efflux-from-air-cushion';
   root.add(outputWater);
   // Brown's jet: a solid column rising well above the nozzle that breaks into
-  // a plume falling away on every side. One translucent water column and a
-  // thin falling crown thinning into spray at its rim, not a bundle of
-  // streamline tubes and droplets.
-  const jetBaseY = 2.90, jetTopY = 4.05;
-  const fountainTop = new THREE.Mesh(
-    waterFountainGeometry({
-      nozzleY: jetBaseY - 0.02, apexY: jetTopY, columnRadius: 0.1,
-      crownRadius: 0.55, fallY: 2.75, crownThickness: 0.035, fadeStart: 0.78,
-    }).translate(chamberCenter.x, 0, 0),
-    waterJetMaterial({ color: 0x8bdae6, opacity: 0.5 }),
-  );
-  fountainTop.renderOrder = 2;
-  fountainTop.userData.role = 'continuous-high-level-water-jet-crown';
+  // a plume falling away on every side. Pass 101: twelve thin ballistic
+  // streams leave the nozzle nearly upright (together they read as the
+  // column), part at the apex and fall away round it, their streaks running
+  // with the water, as 464's jet does (it used to be a static solid crown).
+  const jetBaseY = 2.90, jetTopY = 4.05, jetFallY = 2.75;
+  const jetSpeed = Math.sqrt(2 * 9.81 * (jetTopY - jetBaseY));
+  const fountainTop = new THREE.Group();
+  fountainTop.userData.role = 'continuous-high-level-water-jet-plume';
+  const fountainJets = Array.from({length: 12}, (_, index) => {
+    const tilt = THREE.MathUtils.degToRad([5.6, 8.2, 6.8][index % 3]);
+    const azimuth = Math.PI * 2 * (index + 0.5) / 12;
+    const horizontalSpeed = jetSpeed * Math.sin(tilt);
+    const path = ballisticPath({
+      // Staggered a little in height and outward so no two streams' start
+      // faces lie in one plane over each other (coincident-face flicker).
+      origin: new THREE.Vector3(chamberCenter.x + 0.012 * Math.cos(azimuth), jetBaseY - 0.17 + 0.012 * index,
+        0.012 * Math.sin(azimuth)),
+      velocity: new THREE.Vector3(jetSpeed * Math.sin(tilt) * Math.cos(azimuth), jetSpeed * Math.cos(tilt),
+        jetSpeed * Math.sin(tilt) * Math.sin(azimuth)),
+      gravity: 9.81,
+      endY: jetFallY,
+      samples: 40,
+    });
+    // The half-section stays under 0.8 of the path's local radius of
+    // curvature (v^3 / (g v_h)), so the tube never folds on itself where it
+    // turns over at the apex.
+    // Each stream a slightly different gauge, so where the bundle overlaps in
+    // the column no two surfaces coincide.
+    const gauge = 0.030 + 0.0017 * index;
+    const stream = new WaterStream(path, {
+      width: gauge,
+      thickness: gauge,
+      widthExponent: 0.5,
+      section: (i, u, [a, b]) => {
+        const limit = Math.min(0.06, 0.8 * path.speeds[i] ** 3 / (9.81 * horizontalSpeed));
+        return [Math.min(a, limit), Math.min(b, limit)];
+      },
+      spread: {start: 0.55, width: 1.6, thickness: 1.6},
+      fadeOut: 0.3,
+      cyclePeriod: cycleDuration,
+      streakRate: 2.4,
+      opacity: 0.42,
+    });
+    stream.userData.role = `high-level-jet-stream-${index + 1}-rising-and-falling-away`;
+    stream.renderOrder = 2;
+    fountainTop.add(stream);
+    return stream;
+  });
   root.add(fountainTop);
   const driveMarkers = [];
   for (let index = 0; index < 11; index += 1) {
@@ -1119,7 +1154,7 @@ function hydraulicRam(movement) {
     tankWater.material = waterVolumeMaterial({opacity: 0.3});
     tankWater.renderOrder = 1;
     tankWater.userData.role = 'tail-water-filling-sectioned-lower-tank';
-    liveWater.push(riserWater, driveStream, supply, efflux, vesselWater, neckWater, tankWater);
+    liveWater.push(...fountainJets, riserWater, driveStream, supply, efflux, vesselWater, neckWater, tankWater);
     // Streaks in the drive pipe advance with the drive current: surging while
     // the waste valve is open, checked when it shuts (seamless each cycle).
     const TRAVEL = 480, travel = new Float64Array(TRAVEL + 1);
@@ -1136,6 +1171,7 @@ function hydraulicRam(movement) {
       const state = stateAtTime(time);
       setVesselLevel(state.chamberWaterVolume / chamberTotalInternalVolume);
       riserWater.update(time);
+      for (const jet of fountainJets) jet.update(time);
       supply.update(time);
       driveStream.update(driveTravel(time));
       efflux.update(time);

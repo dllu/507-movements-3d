@@ -1,11 +1,16 @@
 // Prescribed, tread-indexed climbing gait. This solves placement, not human
 // balance or ground reactions. A planted sole follows one material board;
 // the free foot goes around the outside of the next board before landing.
+// Boards may be set at `boardTilt` from the radial direction (turned about
+// their centres); `footRadial` is the ankle's offset along the board from its
+// centre. `swingEase` (2 = cubic Hermite) sets how quickly the swing forgets
+// the board's velocity at lift-off and takes up the next board's at landing.
 export function treadmillLegState(time, index, geometry) {
   const { treadPitch, treadRadius, treadCount, wheelStartAngle, wheelPeriod,
     hipX, hipY, upperLength, lowerLength,
     touchdownAngle = 30 * Math.PI / 180, stanceFraction = 0.60,
-    footRadial = 0.04, swingOut = 1.80, swingUp = 1.70 } = geometry;
+    footRadial = 0.04, swingOut = 1.80, swingUp = 1.70, boardTilt = 0,
+    swingEase = 2 } = geometry;
   const speed = 2 * Math.PI / wheelPeriod;
   const cycle = 2 * treadPitch;
   const phase = (speed * time + touchdownAngle - wheelStartAngle - treadPitch)
@@ -16,9 +21,11 @@ export function treadmillLegState(time, index, geometry) {
   const planted = progress <= stanceFraction;
   // .0525 board half-thickness + .10 sole thickness + .0005 clearance.
   const normalOffset = 0.153;
-  const radius = treadRadius + footRadial;
-  const point = a => [radius * Math.cos(a) - normalOffset * Math.sin(a),
-    radius * Math.sin(a) + normalOffset * Math.cos(a)];
+  const point = (a) => {
+    const b = a + boardTilt;
+    return [treadRadius * Math.cos(a) + footRadial * Math.cos(b) - normalOffset * Math.sin(b),
+      treadRadius * Math.sin(a) + footRadial * Math.sin(b) + normalOffset * Math.cos(b)];
+  };
   let [ankleX, ankleY] = point(angle);
   let velocityX = speed * ankleY, velocityY = -speed * ankleX;
   if (!planted) {
@@ -31,8 +38,10 @@ export function treadmillLegState(time, index, geometry) {
     // Cubic Hermite endpoints match the board's position and velocity.
     // The outward arc clears intervening board edges before returning above
     // the next tread; angular interpolation alone cuts through its underside.
-    const h = [2*v**3-3*v**2+1, -2*v**3+3*v**2, v**3-2*v**2+v, v**3-v**2];
-    const dh = [6*v**2-6*v, -6*v**2+6*v, 3*v**2-4*v+1, 3*v**2-2*v];
+    const k = swingEase;
+    const h = [2*v**3-3*v**2+1, -2*v**3+3*v**2, v*(1-v)**k, v**k*(v-1)];
+    const dh = [6*v**2-6*v, -6*v**2+6*v, (1-v)**k - k*v*(1-v)**(k-1),
+      k*v**(k-1)*(v-1) + v**k];
     const startD = [speed*start[1]/vRate, -speed*start[0]/vRate];
     const endD = [speed*end[1]/vRate, -speed*end[0]/vRate];
     const pos = [0,1].map(i=>h[0]*start[i]+h[1]*end[i]+h[2]*startD[i]+h[3]*endD[i]);
@@ -58,6 +67,6 @@ export function treadmillLegState(time, index, geometry) {
   const wheelAngle = wheelStartAngle - speed * time;
   const treadIndex = ((Math.round((angle - wheelAngle) / treadPitch) % treadCount) + treadCount) % treadCount;
   return { index, phase: phase * 2 * Math.PI, progress, planted, treadIndex,
-    soleAngle: angle, ankleX, ankleY, upperAngle, lowerAngle,
+    soleAngle: angle + boardTilt, ankleX, ankleY, upperAngle, lowerAngle,
     upperAngularSpeed, lowerAngularSpeed };
 }

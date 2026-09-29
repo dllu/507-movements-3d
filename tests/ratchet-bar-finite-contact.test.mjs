@@ -117,7 +117,7 @@ test('271 pawl roots, lever and fixed bearing contain real shaft bores', () => {
     const a = i * Math.PI / 16;
     assert.ok(field.signedDistance(new THREE.Vector3(pin.position.x + r * Math.cos(a), pin.position.y + r * Math.sin(a), 0)) > 0.0018);
   }
-  const bearing = model.root.children.find(o => o.userData.role === 'bored-stationary-fulcrum-bearing');
+  const bearing = model.root.userData.blocks.pivotStand;
   const fixedField = solidSurface(bearing.geometry);
   assert.ok(fixedField.signedDistance(new THREE.Vector3(0.13, 0, -0.1)) > 0.0038);
 });
@@ -138,8 +138,10 @@ test('271 bar lies on the source table, clears the post, and carries no drawn ma
     for (const leg of b.tableLegs) {
       assert.ok(new THREE.Box3().setFromObject(leg).max.y <= table.min.y + 1e-9);
     }
-    const stand = new THREE.Box3().setFromObject(b.pivotStand);
-    assert.ok(stand.min.x - body.max.x > 0.0599);
+    // The post's left face at the bar's height (its bored eye is above the bar).
+    const standLeft = -b.pivotStand.userData.postHalfWidth;
+    assert.ok(standLeft - body.max.x > 0.0599);
+    assert.ok(new THREE.Box3().setFromObject(b.rack).max.y < -0.25);
     for (const marker of b.rackIndexes) assert.equal(marker.visible, false);
     // The cord's free span always reaches from the pulley to the bar end.
     const cord = new THREE.Box3().setFromObject(b.cordSpan);
@@ -153,7 +155,7 @@ test('271 bar lies on the source table, clears the post, and carries no drawn ma
     model.update(i * timeline.demonstrationPeriod / 200); model.root.updateMatrixWorld(true);
     const body = new THREE.Box3().setFromObject(b.rackBody);
     assert.ok(body.min.x > g.pulleyCenter.x + g.pulleyRadius + 0.15, `bar end clears the pulley at ${i}`);
-    assert.ok(new THREE.Box3().setFromObject(b.pivotStand).min.x - body.max.x > 0.0599);
+    assert.ok(-b.pivotStand.userData.postHalfWidth - body.max.x > 0.0599);
   }
 });
 

@@ -437,8 +437,10 @@ test('movement 377 plank lies in the wheel-face plane, the rail passes through i
   near(plane.leanFromUpright, THREE.MathUtils.degToRad(36), 1e-12, 'plank lean');
   // The plank stands in front of the end gear, bearing and standard.
   blocks.endGear.geometry.computeBoundingBox();
-  assert.ok(box.min.z > blocks.endGear.geometry.boundingBox.max.z + 0.5);
-  assert.ok(box.min.z > blocks.rearPedestal.position.z + 0.5);
+  // Pass 101: just in front of the bearing (0.16 half-length) and standard.
+  assert.ok(box.min.z > blocks.endGear.geometry.boundingBox.max.z + 0.3);
+  assert.ok(box.min.z > blocks.bearing.position.z + 0.16 + 0.02);
+  assert.ok(box.min.z < blocks.bearing.position.z + 0.16 + 0.1, 'plank close in front of the standard');
   // The rail is a rod along z through the hole and 0.03 proud of the plank.
   blocks.handRail.geometry.computeBoundingBox();
   const rail = blocks.handRail.geometry.boundingBox;
@@ -446,7 +448,9 @@ test('movement 377 plank lies in the wheel-face plane, the rail passes through i
   near(railCenter.x, plane.holeCenter.x, 1e-6, 'rail axis x at the hole');
   near(railCenter.y, plane.holeCenter.y, 1e-6, 'rail axis y at the hole');
   near(rail.max.z, box.max.z + 0.03, 1e-6, 'rail end stands proud of the plank');
-  assert.ok(rail.min.z < -geometry.drumWidth / 2, 'rail runs past the far end ring');
+  // Pass 101: the rail is trimmed to 0.3 past the far hand, inside the drum's width.
+  assert.ok(rail.min.z > -geometry.drumWidth / 2, 'rail ends within the drum width');
+  assert.equal(blocks.railPosts.length, 0, 'the plank alone carries the rail');
   const position = plank.geometry.attributes.position;
   let holeRadius = Infinity;
   for (let index = 0; index < position.count; index += 1) {
@@ -468,6 +472,45 @@ test('movement 377 plank lies in the wheel-face plane, the rail passes through i
   near(hands[0].z + hands[1].z, 0, 1e-6, 'hands symmetric about the drum centre');
   for (const hand of hands) {
     near(Math.hypot(hand.x - railCenter.x, hand.y - railCenter.y), 0, 1e-6, 'fist closed round the rail axis');
+  }
+  disposeModel(model.root);
+});
+
+// Pass 101 (user review): an upright climb, not a seated one. The torso is
+// upright (no lean), the planted thighs average under 50 degrees from
+// vertical, the hips stand over the stance foot as it leaves the board with
+// the knee nearly straight, the soles stay on near-level treads, and both
+// hands hold the rail in front at shoulder height.
+test('movement 377 man climbs upright with his hips over the leaving foot and holds the rail at shoulder height', () => {
+  const model = createMovementModel(catalog.movements[376]);
+  const data = model.root.userData;
+  const gait = data.geometry.gaitGeometry;
+  let planted = 0, thigh = 0, tilt = 0, liftOver = 0, liftKnee = 0;
+  for (let i = 0; i <= 4000; i += 1) {
+    for (const leg of data.stateAtTime(4 * i / 4000).legStates) {
+      if (!leg.planted) continue;
+      planted += 1;
+      thigh += Math.abs(leg.upperAngle);
+      const sole = THREE.MathUtils.euclideanModulo(leg.soleAngle + Math.PI, FULL_TURN) - Math.PI;
+      tilt = Math.max(tilt, Math.abs(sole));
+      if (leg.progress > gait.stanceFraction - 0.01) {
+        liftOver = Math.max(liftOver, Math.abs(leg.ankleX - gait.hipX));
+        liftKnee = Math.max(liftKnee, leg.lowerAngle);
+      }
+    }
+  }
+  assert.ok(thigh / planted < THREE.MathUtils.degToRad(50), `mean planted thigh ${THREE.MathUtils.radToDeg(thigh / planted)}`);
+  assert.ok(liftOver < 0.06, `hips over the leaving foot (${liftOver})`);
+  assert.ok(liftKnee < THREE.MathUtils.degToRad(27), `knee nearly straight at lift-off (${THREE.MathUtils.radToDeg(liftKnee)})`);
+  assert.ok(tilt < THREE.MathUtils.degToRad(14), `treads near level under the sole (${THREE.MathUtils.radToDeg(tilt)})`);
+  model.root.updateMatrixWorld(true);
+  for (const arm of data.blocks.arms) {
+    const shoulder = arm.geometry.userData.reposed.shoulder;
+    const hand = arm.userData.hand;
+    assert.ok(Math.abs(hand.y - shoulder.y) < 0.05, 'hands at shoulder height');
+    assert.ok(hand.x < shoulder.x - 0.3, 'hands in front of the chest');
+    const elbow = arm.geometry.userData.reposed.elbow;
+    assert.ok(elbow.y < shoulder.y && elbow.y < hand.y, 'elbows down');
   }
   disposeModel(model.root);
 });

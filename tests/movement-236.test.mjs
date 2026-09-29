@@ -68,7 +68,10 @@ test('movement 236 is one lever, two alternating pawls, and one fifteen-tooth ra
   assert.equal(transmission.longPawlDrivesFirstHalf, true);
   assert.equal(transmission.shortPawlDrivesSecondHalf, true);
   assert.equal(transmission.wheelDwellsOnlyAtLeverReversals, false);
-  assert.equal(transmission.wheelStandsWhileEachPawlSeats, true);
+  // p101: the wheel is a flywheel and never stands.
+  assert.equal(transmission.wheelStandsWhileEachPawlSeats, false);
+  assert.equal(transmission.standingFractionOfCycle, 0);
+  near(transmission.flywheel.minimumSpeedRatio, 0.88, 1e-15, 'coasting loses at most 12% of the speed');
   near(transmission.outputTeethPerLeverCycle, 2, 2e-14,
     'two tooth pitches per lever oscillation');
   assert.equal(blocks.ratchet.parent, model.root);
@@ -131,9 +134,16 @@ test('movement 236 preserves the measured engraving layout and solved handoff', 
   near(geometry.longDriveTeeth + geometry.shortDriveTeeth, 2, 1e-15, 'two teeth per lever cycle');
   near(geometry.longDriveTeeth, 1.175, 1e-15, 'b drives 1.175 teeth');
   // Brown's drawn pose is the handoff: the lever at the top of its swing.
-  assert.equal(geometry.sourceCyclePhase, 0.5);
+  assert.equal(geometry.sourceCyclePhase, geometry.flywheelTopCoordinate);
   const source = stateAtCycleCoordinate(geometry.sourceCyclePhase);
   near(THREE.MathUtils.radToDeg(source.leverAngle), 0, 1e-9, 'lever at the engraving angle at the top of its swing');
+  let top = -Infinity, bottom = Infinity;
+  for (let i = 0; i <= 8192; i += 1) {
+    const { leverAngle } = stateAtCycleCoordinate(i / 8192);
+    top = Math.max(top, leverAngle); bottom = Math.min(bottom, leverAngle);
+  }
+  near(top, geometry.leverBias + geometry.leverAmplitude, 1e-7, 'the lever turns at its drawn top');
+  near(bottom, geometry.leverBias - geometry.leverAmplitude, 1e-7, 'and at the bottom of its swing');
   vectorNear(source.longAnchor, geometry.sourceLongAnchor, 0.05,
     'engraving long-pawl pivot');
   vectorNear(source.shortAnchor, geometry.sourceShortAnchor, 0.05,
@@ -147,88 +157,46 @@ test('movement 236 preserves the measured engraving layout and solved handoff', 
   disposeModel(model.root);
 });
 
-test('movement 236 long pawl drives its exact share of teeth with rigid contact', () => {
-  const model = createMovementModel(catalog.movements[235]);
-  const { geometry, stateAtCycleCoordinate } = model.root.userData;
-  const samples = 16_384;
-  let previousWheelAngle = -Infinity;
-  let maximumWheelSpeed = 0;
-  for (let sample = 0; sample < samples; sample += 1) {
-    const coordinate = 0.5 * sample / samples;
-    const state = stateAtCycleCoordinate(coordinate);
-    assert.equal(state.stage, 'long-pawl-b-drives-short-pawl-c-resets');
-    assert.equal(state.longDriving, true);
-    assert.equal(state.shortDriving, false);
-    assert.equal(state.activePawl, 'long-b');
-    assert.ok(state.shortProfileClearance > -1e-10);
-    if (coordinate < geometry.longEngagePhase) {
-      // Backlash: the wheel stands while b slides down into its root.
-      assert.equal(state.engaged, false);
-      assert.equal(state.wheelAngularSpeed, 0);
-      assert.equal(state.wheelAngle, 0);
-      assert.ok(state.longProfileClearance > -1e-10);
-      continue;
+for (const [longPawl, name] of [[true, 'long pawl b'], [false, 'short pawl c']]) {
+  test(`movement 236 ${name} drives the flywheel with rigid seated contact on its own half-stroke`, () => {
+    const model = createMovementModel(catalog.movements[235]);
+    const { geometry, stateAtCycleCoordinate, transmission } = model.root.userData;
+    const { events } = transmission.flywheel;
+    const [catchAt, separateAt] = longPawl ? [events.bCatch, events.bSeparation] : [events.cCatch, events.cSeparation];
+    const [from, to] = longPawl ? [0, geometry.flywheelTopCoordinate] : [geometry.flywheelTopCoordinate, 1];
+    const samples = 16_384;
+    let previousWheelAngle = -Infinity;
+    let driven = 0;
+    for (let sample = 0; sample < samples; sample += 1) {
+      const coordinate = from + (to - from) * sample / samples;
+      const state = stateAtCycleCoordinate(coordinate);
+      assert.equal(state.longDriving, longPawl);
+      assert.equal(state.activePawl, longPawl ? 'long-b' : 'short-c');
+      assert.ok(state.wheelAngle > previousWheelAngle, `the wheel never stands (${coordinate})`);
+      previousWheelAngle = state.wheelAngle;
+      const driving = coordinate > catchAt + 1e-9 && coordinate < separateAt - 1e-9;
+      if (coordinate < catchAt - 1e-9 || coordinate > separateAt + 1e-9) assert.equal(state.engaged, false);
+      if (!driving) continue;
+      driven += 1;
+      assert.equal(state.engaged, true);
+      assert.ok(Math.abs(longPawl ? state.longProfileClearance : state.shortProfileClearance) < 3e-12);
+      assert.ok(state.activePawlLengthError < 3e-12);
+      assert.ok(state.contactCenterError < 4e-12);
+      assert.ok(state.activeTipVelocityError < 1e-9);
+      assert.ok(state.activeCompressionTorque > 1);
+      // While a pawl drives, the wheel's speed is the pawl's.
+      near(state.wheelAngularSpeed, state.wheelAngleDerivativePerLeverAngle * state.leverAngularSpeed,
+        1e-7, `driven speed at ${coordinate}`);
     }
-    assert.equal(state.engaged, true);
-    assert.ok(Math.abs(state.longProfileClearance) < 3e-12);
-    assert.ok(state.activePawlLengthError < 3e-12);
-    assert.ok(state.contactCenterError < 3e-12);
-    assert.ok(state.activeTipVelocityError < 3e-12);
-    assert.ok(state.activeCompressionTorque > 1);
-    assert.ok(state.wheelAngle >= previousWheelAngle - 2e-13);
-    assert.ok(state.wheelAngularSpeed >= -2e-12);
-    previousWheelAngle = state.wheelAngle;
-    maximumWheelSpeed = Math.max(maximumWheelSpeed, state.wheelAngularSpeed);
-  }
-  const handoff = stateAtCycleCoordinate(0.5);
-  near(handoff.wheelAngle, geometry.longDriveTeeth * geometry.toothPitch, 3e-15,
-    'long pawl advances its share');
-  near(handoff.wheelAngularSpeed, 0, 2e-15,
-    'wheel stops at the lever reversal');
-  assert.ok(maximumWheelSpeed > 0.31);
-  disposeModel(model.root);
-});
-
-test('movement 236 short pawl continues counterclockwise through the return stroke', () => {
-  const model = createMovementModel(catalog.movements[235]);
-  const { geometry, stateAtCycleCoordinate } = model.root.userData;
-  const samples = 16_384;
-  let previousWheelAngle = geometry.toothPitch;
-  let maximumWheelSpeed = 0;
-  for (let sample = 0; sample < samples; sample += 1) {
-    const coordinate = 0.5 + 0.5 * sample / samples;
-    const state = stateAtCycleCoordinate(coordinate);
-    assert.equal(state.stage, 'short-pawl-c-drives-long-pawl-b-resets');
-    assert.equal(state.longDriving, false);
-    assert.equal(state.shortDriving, true);
-    assert.equal(state.activePawl, 'short-c');
-    assert.ok(state.longProfileClearance > -1e-10);
-    if (coordinate - 0.5 < geometry.shortEngagePhase) {
-      assert.equal(state.engaged, false);
-      assert.equal(state.wheelAngularSpeed, 0);
-      assert.equal(state.wheelAngle, geometry.longDriveTeeth * geometry.toothPitch);
-      assert.ok(state.shortProfileClearance > -1e-10);
-      continue;
-    }
-    assert.equal(state.engaged, true);
-    assert.ok(Math.abs(state.shortProfileClearance) < 3e-12);
-    assert.ok(state.activePawlLengthError < 3e-12);
-    assert.ok(state.contactCenterError < 4e-12);
-    assert.ok(state.activeTipVelocityError < 3e-12);
-    assert.ok(state.activeCompressionTorque > 1);
-    assert.ok(state.wheelAngle >= previousWheelAngle - 2e-13);
-    assert.ok(state.wheelAngularSpeed >= -2e-12);
-    previousWheelAngle = state.wheelAngle;
-    maximumWheelSpeed = Math.max(maximumWheelSpeed, state.wheelAngularSpeed);
-  }
-  const closure = stateAtCycleCoordinate(1);
-  near(closure.wheelAngle, 2 * geometry.toothPitch, 6e-15,
-    'short pawl adds the second exact pitch');
-  near(closure.wheelAngularSpeed, 0, 2e-15,
-    'wheel stops at the second reversal');
-  assert.ok(maximumWheelSpeed > 0.31);
-  disposeModel(model.root);
-});
+    assert.ok(driven / samples > 0.4, `${name} drives for ${driven / samples} of its half`);
+    // Each pawl lets go a twentieth of a pitch short of its end seat and is
+    // caught again after the wheel has coasted through the reversal.
+    const released = stateAtCycleCoordinate(separateAt);
+    near(released.localWheelAngle / geometry.toothPitch,
+      longPawl ? geometry.longDriveTeeth - 0.05 : 1.95, 1e-9, 'separation station');
+    disposeModel(model.root);
+  });
+}
 
 test('movement 236 returned pawls ride the teeth, rigid and outside every tooth', () => {
   const model = createMovementModel(catalog.movements[235]);
@@ -284,45 +252,30 @@ test('movement 236 returned pawls ride the teeth, rigid and outside every tooth'
   disposeModel(model.root);
 });
 
-test('movement 236 output turns on both strokes and stands only while a pawl seats', () => {
+test('movement 236 flywheel turns continuously: never stands, coasts through each reversal', () => {
   const model = createMovementModel(catalog.movements[235]);
   const { geometry, stateAtCycleCoordinate, transmission } = model.root.userData;
-  let standing = 0;
   const samples = 32_768;
+  const drivingSpeed = transmission.flywheel.drivingSpeedPitchesPerCycle * geometry.toothPitch * geometry.cyclesPerSecond;
+  let slowest = Infinity, fastest = 0, coasting = 0;
   for (let sample = 0; sample < samples; sample += 1) {
-    const coordinate = (sample + 0.5) / samples;
-    const state = stateAtCycleCoordinate(coordinate);
-    const half = coordinate < 0.5 ? coordinate : coordinate - 0.5;
-    const engage = coordinate < 0.5 ? geometry.longEngagePhase : geometry.shortEngagePhase;
-    if (half < engage) {
-      standing += 1;
-      assert.equal(state.wheelDwelling, true);
-    } else {
-      assert.ok(state.wheelAngularSpeed > 0, `positive output speed at ${coordinate}`);
-    }
+    const state = stateAtCycleCoordinate((sample + 0.5) / samples);
+    assert.equal(state.wheelDwelling, false);
+    slowest = Math.min(slowest, state.wheelAngularSpeed);
+    fastest = Math.max(fastest, state.wheelAngularSpeed);
+    if (!state.engaged) coasting += 1;
   }
-  near(standing / samples, transmission.standingFractionOfCycle, 1e-4, 'standing fraction');
-  // The backlash costs under a third of the cycle (p94: 0.42).
-  assert.ok(transmission.standingFractionOfCycle < 0.32);
-  for (const coordinate of [0, 0.5, 1]) {
+  near(fastest, drivingSpeed, 1e-12, 'driving speed');
+  assert.ok(slowest >= 0.88 * drivingSpeed - 1e-12, `slowest ${slowest / drivingSpeed} of the driving speed`);
+  near(coasting / samples, transmission.flywheel.coastFractionOfCycle, 2e-3, 'coasting fraction');
+  // At both lever reversals the lever stops but the wheel runs on.
+  for (const coordinate of [0, geometry.flywheelTopCoordinate, 1]) {
     const state = stateAtCycleCoordinate(coordinate);
-    assert.equal(state.inputReversing, true);
-    near(state.wheelAngularSpeed, 0, 2e-15, `stands at the reversal ${coordinate}`);
+    assert.ok(Math.abs(state.leverAngularSpeed) < 1e-9, `lever reverses at ${coordinate}`);
+    assert.ok(state.wheelAngularSpeed > 0.88 * drivingSpeed, `wheel runs on at ${coordinate}`);
   }
-  near(
-    stateAtCycleCoordinate(0.5).wheelAngle
-      - stateAtCycleCoordinate(0).wheelAngle,
-    geometry.longDriveTeeth * geometry.toothPitch,
-    3e-15,
-    'first half-stroke travel',
-  );
-  near(
-    stateAtCycleCoordinate(1).wheelAngle
-      - stateAtCycleCoordinate(0.5).wheelAngle,
-    geometry.shortDriveTeeth * geometry.toothPitch,
-    4e-15,
-    'second half-stroke travel',
-  );
+  near(stateAtCycleCoordinate(1).wheelAngle - stateAtCycleCoordinate(0).wheelAngle,
+    2 * geometry.toothPitch, 4e-15, 'two pitches per lever cycle');
   disposeModel(model.root);
 });
 
@@ -407,7 +360,7 @@ test('movement 236 renderer binds both pawls and closes before movement 339', ()
   assert.equal(animationTiming.authoredCyclePeriod, transmission.cyclePeriod);
   assert.equal(animationTiming.targetCycleDuration, 2);
   assertReadableTiming(animationTiming);
-  near(stateAtCycleCoordinate(15).wheelAngle, 2 * FULL_TURN, 2e-14,
+  near(stateAtCycleCoordinate(15).wheelAngle - stateAtCycleCoordinate(0).wheelAngle, 2 * FULL_TURN, 2e-14,
     'fifteen lever cycles close two wheel revolutions');
   model.root.updateMatrixWorld(true);
   const size = new THREE.Box3().setFromObject(model.root)
@@ -416,7 +369,16 @@ test('movement 236 renderer binds both pawls and closes before movement 339', ()
   assert.ok(size.y > 5.4);
   // Only the wheel, pawls, lever and their plain pins: no studs or flanges
   // reach back behind the mechanism.
-  assert.ok(size.z > 0.85 && size.z < 1.0);
+  // p101: the lever's back face sits on the pawl eyes, so the stack is
+  // about 0.71 deep (was 0.94 with the pawls hung on bare pins behind it).
+  assert.ok(size.z > 0.65 && size.z < 0.76);
+  const lever = blocks.lever, eyeFront = (pawl, plane) => {
+    const box = new THREE.Box3().setFromObject(pawl.children.find((o) => /eye-boss-to-lever/.test(o.userData.role ?? '')) ?? pawl.userData.pivotHub);
+    return box.max.z;
+  };
+  for (const pawl of [blocks.longPawl, blocks.shortPawl]) {
+    near(eyeFront(pawl) , lever.position.z - 0.09, 0.003, 'pawl eye meets the lever back face');
+  }
   const fixedStuds = [];
   model.root.traverse((object) => { if (/fixed-stud/.test(object.userData.role ?? '')) fixedStuds.push(object); });
   assert.equal(fixedStuds.length, 0);

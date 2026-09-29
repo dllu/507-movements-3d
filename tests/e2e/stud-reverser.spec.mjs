@@ -3,7 +3,7 @@ import {expectReconstructionNote,settleCanvas} from '../helpers/viewer.mjs';
 test('153 plays its passive stud reverser and restarts on desktop and mobile',async({page})=>{
  const errors=[];page.on('pageerror',e=>errors.push(e.message));await page.emulateMedia({reducedMotion:'reduce'});
  await page.goto('/portable/#/movement/153');const canvas=page.locator('.simulation-canvas');await expect(canvas).toBeVisible();await settleCanvas(canvas);await page.waitForTimeout(300);
- await expectReconstructionNote(page,'The disk studs push the bar forward and operate the elbow for its return.');
+ await expectReconstructionNote(page,'The disk studs push the bar forward and operate the flat elbow for its return;');
  const initial=await canvas.screenshot();await page.screenshot({path:'/dev/shm/153-packaged-source.png'});
  await page.locator('.play-control').click();await page.waitForTimeout(2380);await page.locator('.play-control').click();
  expect((await canvas.screenshot()).equals(initial)).toBe(false);await page.screenshot({path:'/dev/shm/153-packaged-moving.png'});

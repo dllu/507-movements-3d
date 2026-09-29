@@ -12,6 +12,52 @@ function spurBore(gear,bore,depth=null){
  const mark=rotor.children[3],start=Math.max(bore+.045,gear.userData.radius*.22),end=Math.max(start+.06,gear.userData.radius*.72);
  replace(mark,new THREE.BoxGeometry(end-start,.04,.024));mark.position.x=(start+end)/2;
 }
+// Pass 101 (266): a closed trapezoid (V-flanked) thread swept helically,
+// root on the core, crest narrower than root, like Brown's cut threads. The
+// axial width is linear in radius: rootWidth at p.inner, crestWidth at
+// p.outer. Each section is the trapezoid exactly clipped to [p.low, p.high]:
+// its radial extent [ra, rb] shrinks where a flank leaves the slab, and each
+// boundary has one kink where it meets an end plane. So the ends close on
+// the planes with no overlapping or coincident faces.
+const widthAt=(p,r)=>p.rootWidth+(p.crestWidth-p.rootWidth)*(r-p.inner)/(p.outer-p.inner);
+function trapezoidThread(p,segments=128){
+ const tau=2*Math.PI,mod=a=>((a%tau)+tau)%tau,wi=p.rootWidth,wo=p.crestWidth,maxW=Math.max(wi,wo);
+ const dw=(wo-wi)/(p.outer-p.inner),clampR=r=>Math.min(p.outer,Math.max(p.inner,r)),rAtWidth=w=>p.inner+(w-wi)/dw;
+ const range=[(p.low-maxW/2-p.phase)/p.lead,(p.high+maxW/2-p.phase)/p.lead].sort((a,b)=>a-b),angles=[];
+ for(let turn=Math.floor(range[0]/tau);turn<=Math.ceil(range[1]/tau);turn++)for(let i=0;i<segments;i++){const a=turn*tau+tau*i/segments;if(a>range[0]&&a<range[1])angles.push(a);}
+ for(const z of[p.low,p.high])for(const w of[wi,wo])for(const sign of[-1,1]){const a=(z-p.phase-sign*w/2)/p.lead;if(a>range[0]&&a<range[1])angles.push(a);}
+ angles.push(...range);angles.sort((a,b)=>a-b);
+ const list=angles.filter((a,i)=>!i||a-angles[i-1]>1e-10);
+ const section=a=>{
+  const c=p.phase+p.lead*a,need=2*Math.max(c-p.high,p.low-c,0);
+  let ra=p.inner,rb=p.outer;
+  if(need>0){const r=clampR(rAtWidth(need));if(dw<0)rb=Math.min(rb,r);else ra=Math.max(ra,r);}
+  if(ra>rb)ra=rb=(ra+rb)/2;
+  const lower=r=>Math.max(p.low,c-widthAt(p,r)/2),upper=r=>Math.min(p.high,c+widthAt(p,r)/2);
+  const kl=Math.min(rb,Math.max(ra,rAtWidth(2*(c-p.low)))),ku=Math.min(rb,Math.max(ra,rAtWidth(2*(p.high-c))));
+  const ca=Math.cos(mod(a)),sa=Math.sin(mod(a)),P=(r,z)=>[r*ca,r*sa,z];
+  // lower boundary ra->kl->rb, upper boundary ra->ku->rb
+  const lo=[ra,kl,rb].map(r=>({r,z:lower(r)})),hi=[ra,ku,rb].map(r=>({r,z:upper(r)}));
+  const onPlane=(pts,f,plane)=>[0,1].map(k=>{const r=(pts[k].r+pts[k+1].r)/2;return Math.abs(f(r)-plane)<1e-12;});
+  return{ca,sa,P,lo,hi,loPlane:onPlane(lo,lower,p.low),hiPlane:onPlane(hi,upper,p.high)};
+ };
+ const flankNormal=(s,r,side,plane)=>plane?[0,0,side]:new THREE.Vector3(-dw/2*s.ca,-dw/2*s.sa,side).addScaledVector(new THREE.Vector3(-s.sa,s.ca,0),-side*p.lead/Math.max(r,1e-9)).normalize().toArray();
+ const rad=(s,sign)=>[sign*s.ca,sign*s.sa,0];
+ const positions=[],normals=[];
+ const tri=(pp,nn)=>{const a=new THREE.Vector3(...pp[0]),cr=new THREE.Vector3(...pp[1]).sub(a).cross(new THREE.Vector3(...pp[2]).sub(a));if(cr.lengthSq()<1e-22)return;
+  const avg=new THREE.Vector3(...nn[0]).add(new THREE.Vector3(...nn[1])).add(new THREE.Vector3(...nn[2]));if(cr.dot(avg)<0){pp=[pp[0],pp[2],pp[1]];nn=[nn[0],nn[2],nn[1]];}positions.push(...pp.flat());normals.push(...nn.flat());};
+ const quad=(pp,nn)=>{tri([pp[0],pp[1],pp[2]],[nn[0],nn[1],nn[2]]);tri([pp[0],pp[2],pp[3]],[nn[0],nn[2],nn[3]]);};
+ let A=section(list[0]);
+ for(let i=1;i<list.length;i++){const B=section(list[i]),pa=v=>A.P(v.r,v.z),pb=v=>B.P(v.r,v.z);
+  quad([pa(A.lo[0]),pb(B.lo[0]),pb(B.hi[0]),pa(A.hi[0])],[rad(A,-1),rad(B,-1),rad(B,-1),rad(A,-1)]);
+  quad([pa(A.lo[2]),pb(B.lo[2]),pb(B.hi[2]),pa(A.hi[2])],[rad(A,1),rad(B,1),rad(B,1),rad(A,1)]);
+  for(const [key,side,planes] of [['lo',-1,'loPlane'],['hi',1,'hiPlane']])for(let k=0;k<2;k++){
+   const plane=A[planes][k]&&B[planes][k],a0=A[key][k],a1=A[key][k+1],b0=B[key][k],b1=B[key][k+1];
+   quad([pa(a0),pb(b0),pb(b1),pa(a1)],[flankNormal(A,a0.r,side,plane),flankNormal(B,b0.r,side,plane),flankNormal(B,b1.r,side,plane),flankNormal(A,a1.r,side,plane)]);
+  }
+  A=B;}
+ const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));g.setAttribute('normal',new THREE.Float32BufferAttribute(normals,3));g.computeBoundingBox();g.computeBoundingSphere();g.userData.thread={...p};return g;
+}
 export function correctDifferentialThreads(root,id){
  const b=root.userData.blocks,g=root.userData.geometry;
  root.userData.hideGround=true;
@@ -45,18 +91,23 @@ export function correctDifferentialThreads(root,id){
   root.userData.reconstructionNote='Two unequal gear reductions turn the screw and its axially fixed nut at different speeds. Their relative rotation produces the slow axial feed. The displayed reversal and thread proportions are reconstructed.';
  }else if(id===266){
   const profiles={};
-  // Brown's screw is a stout shaft with a shallow square thread; on the thin
-  // 0.102 core the deep thread read as loose ribbons. Thicken the core (0.15)
-  // so the thread is 0.055 deep.
-  const core=.15;g.threadRootRadius=core;
+  // Brown draws V-flanked cut threads whose root is well below the crest.
+  // Pass 101: a trapezoid thread (root 0.8 pitch wide on a 0.12 core, crest
+  // 0.2 pitch at 0.205) replaces the shallow square ribbon on a thick core,
+  // which read as a coil spring. The bearings carry the exact complement,
+  // with 0.004 total axial clearance at every radius.
+  const core=.12,outer=.205,clearance=.004;g.threadRootRadius=core;
   {const p=b.shaftCore.geometry.parameters;replace(b.shaftCore,new THREE.CylinderGeometry(core,core,p.height,48));}
   for(const [key,pitch,start,end,bearing,x,depth]of[['fixed',g.fixedThreadPitch,g.fixedThreadStart,g.fixedThreadEnd,b.fixedBearing,g.fixedBearingX,g.fixedBearingDepth],['moving',g.movingThreadPitch,g.movingThreadStart,g.movingThreadEnd,b.movingBearing,g.movingBearingInitialX,g.movingBearingDepth]]){
-   const external={inner:core,outer:.205,low:start,high:end,width:pitch/2,lead:pitch/(2*Math.PI),phase:start};
-   const internal={inner:core+.002,outer:.226,low:-depth/2,high:depth/2,width:pitch/2-.004,lead:external.lead,phase:start+pitch/2-x};
-   replace(b[`${key}Thread`],thread(external));b[`${key}Thread`].material.color.copy(b.shaftCore.material.color);
-   const mesh=new THREE.Mesh(thread(internal,'x'),b[`${key}BearingBody`].material);mesh.userData.role=`${key}-matching-internal-square-thread`;bearing.add(mesh);b[`${key}InternalThread`]=mesh;
+   const external={inner:core,outer,low:start,high:end,rootWidth:.8*pitch,crestWidth:.2*pitch,lead:pitch/(2*Math.PI),phase:start,pitch};
+   const internal={inner:core+.002,outer:.226,low:-depth/2,high:depth/2,lead:external.lead,phase:start+pitch/2-x,pitch};
+   internal.rootWidth=pitch-clearance-widthAt(external,internal.outer);internal.crestWidth=pitch-clearance-widthAt(external,internal.inner);
+   // Internal thread: its root is at the bore (outer), its crest inward.
+   const internalGeometryProfile={...internal,rootWidth:internal.crestWidth,crestWidth:internal.rootWidth};
+   replace(b[`${key}Thread`],trapezoidThread(external));b[`${key}Thread`].material.color.copy(b.shaftCore.material.color);
+   const mesh=new THREE.Mesh(trapezoidThread(internalGeometryProfile).rotateY(Math.PI/2),b[`${key}BearingBody`].material);mesh.userData.role=`${key}-matching-internal-trapezoid-thread`;bearing.add(mesh);b[`${key}InternalThread`]=mesh;
    for(const collar of b[`${key}BearingCollars`])replace(collar,annulus(.208,.28,.025).rotateX(Math.PI/2));
-   profiles[key]={external,internal};
+   profiles[key]={external,internal,widthAt:r=>widthAt(external,r),internalWidthAt:r=>widthAt(internalGeometryProfile,r)};
   }
   b.fixedContactMarker.visible=false;b.movingContactMarker.visible=false;
   root.userData.threadProfiles=profiles;root.userData.minimumDisplayCycleSeconds=12;

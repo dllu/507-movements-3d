@@ -2904,13 +2904,15 @@ test('movement 36 rolls one sliding pinion around a closed mangle-wheel groove',
   disposeModel(model.root);
 });
 
-test('movement 37 has full conical teeth, an end-to-end spiral, and explicitly provisional motion', () => {
+const near = (actual, expected, tolerance, message) => assert.ok(Math.abs(actual - expected) <= tolerance,
+  `${message}: ${actual} vs ${expected}`);
+
+test('movement 37 has spherical studs on one Archimedean revolution and straight ball-groove flutes', () => {
   const model = createMovementModel(catalog.movements[36]);
-  const { fullFaceTeeth, studs, toothedCone, studCone, toothedShaft, studShaft } = model.root.userData.blocks;
+  const { flutedCone, studs, toothedCone, studCone, toothedShaft, studShaft } = model.root.userData.blocks;
   const g = model.root.userData.geometry;
   assert.equal(model.root.userData.mechanism, 'parallel-complementary-cones-with-spiral-studs');
   assert.equal(model.root.userData.contactValidation.status, 'incomplete');
-  assert.equal(fullFaceTeeth.length, g.toothedConeTeeth);
   assert.equal(studs.length, g.studCount);
   for (const part of [toothedCone, studCone, toothedShaft, studShaft]) {
     assert.ok(part.userData.axis.distanceTo(Y_AXIS) < 1e-12);
@@ -2918,28 +2920,36 @@ test('movement 37 has full conical teeth, an end-to-end spiral, and explicitly p
   assert.ok(Math.abs(studCone.position.x - toothedCone.position.x - g.centerDistance) < 1e-12);
   assert.ok(g.toothedTopRadius > g.toothedBottomRadius);
   assert.ok(g.studBodyTopRadius < g.studBodyBottomRadius);
-  assert.equal(toothedCone.userData.toothProfile, 'rack-generated-conical-involute');
-  for (const tooth of fullFaceTeeth) {
-    const positions = tooth.geometry.attributes.position;
-    for (let i = 0; i < positions.count; i += 1) {
-      assert.ok(Math.abs(Math.abs(positions.getZ(i)) - g.coneHalfHeight) < 1e-6,
-        'straight full-face flanks join the two conical end contours without axial ridges');
-    }
-  }
+  assert.equal(toothedCone.userData.toothProfile, 'straight-ball-groove-flutes');
+  assert.equal(flutedCone.geometry.userData.fluteCount, g.toothedConeTeeth);
+  // p101: each stud is a sphere centred ON the stud cone's pitch surface; the
+  // centres lie on one revolution of an Archimedean spiral in plan (radius
+  // linear in angle) running from the bottom rim to the top rim.
+  const { spiralBottomHeight: hb, spiralTopHeight: ht } = g;
+  const planRadius = (h) => g.centerDistance - (g.meanPitchRadius + g.radiusSlope * h);
+  const rb = planRadius(hb), rt = planRadius(ht);
+  near(hb, -g.coneHalfHeight + g.studRadius, 1e-12, 'bottom stud tangent to the bottom face');
+  near(ht, g.coneHalfHeight - g.studRadius, 1e-12, 'spiral ends at the top face');
   for (const [index, stud] of studs.entries()) {
-    assert.equal(stud.userData.spiralStud, true);
-    assert.ok(Math.abs(stud.userData.axialPosition
-      - (g.studAxialCenter - g.studAxialAmplitude + 2 * g.studAxialAmplitude * index / (g.studCount - 1))) < 1e-12,
-    'the visible stud row progresses from one axial end to the other');
-    assert.ok(stud.geometry.userData.generatedStudHead);
+    assert.equal(stud.userData.sphericalStud, true);
+    assert.equal(stud.geometry.type, 'SphereGeometry');
+    near(stud.geometry.parameters.radius, g.studRadius, 0, 'stud sphere radius');
+    const r = Math.hypot(stud.position.x, stud.position.y);
+    near(r, planRadius(stud.position.z), 1e-12, 'stud centre on the pitch cone');
+    const turned = stud.userData.materialAngle - Math.PI;
+    near(r, rb + (rt - rb) * turned / (2 * Math.PI), 1e-12, 'stud centre on the Archimedean spiral');
     if (index) assert.ok(stud.userData.outputProgress > studs[index - 1].userData.outputProgress);
   }
+  near(studs[0].position.z, hb, 1e-12, 'the spiral starts at the bottom rim');
+  assert.ok(studs.at(-1).userData.materialAngle - Math.PI > 2 * Math.PI - 0.71, 'one revolution less the seam gap');
+  assert.ok(g.studRadius >= 0.045, 'studs are proud spheres, not flat heads');
   const speeds = [];
   for (let sample = 0; sample < 96; sample += 1) {
     const time = g.cycleDuration * (sample + 0.37) / 96;
     model.update(time, 0);
     const state = { ...model.root.userData.kinematics };
     assert.ok(state.inputAngularSpeed > 0 && state.studConeAngularSpeed < 0);
+    assert.ok(Math.abs(state.pitchLineSpeedError) < 1e-12);
     speeds.push(-state.studConeAngularSpeed);
     assert.ok(Math.abs(toothedCone.userData.rotor.rotation.z - state.inputAngle) < 1e-12);
     assert.ok(Math.abs(studCone.userData.rotor.rotation.z + state.outputProgress) < 1e-12);
@@ -2949,15 +2959,13 @@ test('movement 37 has full conical teeth, an end-to-end spiral, and explicitly p
       + state.studConeAngularSpeed) < 0.0002,
     'the displayed speed agrees with the derivative of the prescribed animation');
   }
-  assert.ok(Math.max(...speeds) / Math.min(...speeds) > 2.5,
+  assert.ok(Math.max(...speeds) / Math.min(...speeds) > 8,
     'the spiral across the plate\'s complementary cones varies the speed strongly');
   assert.ok(g.studBodyTopRadius > 0.2, 'the stud body is a frustum, not a pointed cone');
-  // p99: Brown's about 28 flutes, one stud per tooth pitch along the spiral.
-  assert.equal(g.toothedConeTeeth, 28);
   assert.ok(g.toothedTopRadius > 1.5 && g.toothedBottomRadius < 0.5, 'Brown\'s strongly tapered toothed cone');
   model.update(g.cycleDuration, 0);
-  assert.ok(Math.abs(model.root.userData.kinematics.outputProgress - g.sourceOutputPhase - 2 * Math.PI) < 1e-12);
-  assert.ok(Math.abs(model.root.userData.kinematics.inputAngle - g.sourceInputPhase - g.studCount * g.toothAngularPitch) < 1e-12);
+  assert.ok(Math.abs(model.root.userData.kinematics.outputProgress - g.sourceOutputPhase - 2 * Math.PI) < 1e-9);
+  assert.ok(Math.abs(model.root.userData.kinematics.inputAngle - g.sourceInputPhase - g.inputCycleAngle) < 1e-12);
   disposeModel(model.root);
 });
 
@@ -3096,7 +3104,7 @@ for (const id of [40, 41]) {
     const model = createMovementModel(catalog.movements[id - 1]);
     const { driver, driven, driverShaft, drivenShaft } = model.root.userData.blocks;
     const g = model.root.userData.geometry;
-    assert.deepEqual(g.teeth, [28, 40]);
+    assert.deepEqual(g.teeth, id === 40 ? [42, 60] : [28, 40]);
     assert.equal(g.herringbone, id === 40);
     assert.ok(Math.abs(g.driverRadius / g.drivenRadius - 0.7) < 1e-12);
     assert.ok(Math.abs(driver.position.distanceTo(driven.position) - g.driverRadius - g.drivenRadius) < 1e-12);
@@ -3106,7 +3114,7 @@ for (const id of [40, 41]) {
     for (const [i, gear] of [driver, driven].entries()) {
       const d = gear.userData;
       assert.ok(d.axis.distanceTo(X_AXIS) < 1e-12);
-      assert.equal(d.handedness, i === 0 ? -1 : 1);
+      assert.equal(d.handedness, i === 0 ? -1 : 1, '40 upper wheel shows the plate\'s "^" chevrons, 41 leans "/"');
       assert.equal(d.toothProfile, 'normal-system-involute');
       assert.ok(Math.abs(d.transverseModule * Math.cos(g.helixAngle) - g.normalModule) < 1e-12);
       assert.ok(Math.abs(Math.tan(d.pressureAngle) * Math.cos(g.helixAngle) - Math.tan(Math.PI / 9)) < 1e-12);

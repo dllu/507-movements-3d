@@ -37,8 +37,13 @@ test('230 shafts stop before either rod plane, including both dead-center poses'
     const rear = new THREE.Box3().setFromObject(blocks.rearRod, true);
     for (const assembly of blocks.shafts) {
       const shaft = new THREE.Box3().setFromObject(assembly.userData.parts.shaft, true);
-      assert.ok(front.min.z - shaft.max.z > 0.14, 'front rod clears shaft end');
-      assert.ok(shaft.min.z - rear.max.z > 0.13, 'rear rod clears shaft end');
+      // p101: rods ride 0.02 off the hubs, and shaft ends stop 0.005 inside
+      // the hub faces, so each rod still clears every shaft end and hub face.
+      assert.ok(front.min.z - shaft.max.z > 0.015, 'front rod clears shaft end');
+      assert.ok(shaft.min.z - rear.max.z > 0.015, 'rear rod clears shaft end');
+      const { frontHub, rearHub } = assembly.userData.parts;
+      assert.ok(front.min.z - new THREE.Box3().setFromObject(frontHub, true).max.z > 0.01, 'front rod clears hub face');
+      assert.ok(new THREE.Box3().setFromObject(rearHub, true).min.z - rear.max.z > 0.01, 'rear rod clears hub face');
     }
   }
   disposeModel(model);

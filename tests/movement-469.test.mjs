@@ -493,8 +493,10 @@ test('movement 469 water bodies share no face plane with their cistern walls or 
     ['z', box.min.z], ['z', box.max.z]];
   for (const prefix of ['natural-temperature-left', 'higher-temperature-right']) {
     const water = boxOf(`${prefix}-water-body`);
-    const walls = ['cistern-base', 'cistern-end-wall-left', 'cistern-end-wall-right',
+    // Pass 101: one common base slab under both cisterns.
+    const walls = ['cistern-end-wall-left', 'cistern-end-wall-right',
       'cistern-back-wall', 'cistern-cutaway-front'].map((w) => boxOf(`${prefix}-${w}`));
+    walls.push(boxOf('common-base-under-both-cisterns'));
     for (const [axis, value] of planes(water)) {
       for (const wall of walls) {
         for (const [wallAxis, wallValue] of planes(wall)) {
@@ -506,7 +508,7 @@ test('movement 469 water bodies share no face plane with their cistern walls or 
     }
     // Sunk into the floor and the end and back walls; front face just
     // behind the z = 0.6 section plane.
-    const base = boxOf(`${prefix}-cistern-base`);
+    const base = boxOf('common-base-under-both-cisterns');
     assert.ok(water.min.y < base.max.y - 0.02, 'water bottom sunk into the floor');
     const left = boxOf(`${prefix}-cistern-end-wall-left`);
     const right = boxOf(`${prefix}-cistern-end-wall-right`);

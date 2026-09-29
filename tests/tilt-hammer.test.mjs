@@ -1,12 +1,27 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import{makeFourLobeTiltHammer}from'../src/simulation/tilt-hammer.js';
+import{makeFourLobeTiltHammer,tiltHammerCamRing}from'../src/simulation/tilt-hammer.js';
 import{makeTiltHammerMotion}from'../src/simulation/tilt-hammer-motion.js';
 import profile from '../src/data/tilt-hammer-profile.js';
 import{makeTiltHammerContactStudy}from'../scripts/lib/tilt-hammer-contact-study.mjs';
 import{solidSurface,surfacePoints}from'./helpers/solid-surface.mjs';
-const motion=makeTiltHammerMotion(profile),p=motion.parameters,e=motion.events,study=makeTiltHammerContactStudy();
+const motion=makeTiltHammerMotion(profile),p=motion.parameters,e=motion.events,sharpStudy=makeTiltHammerContactStudy();
+// p101: the wiper tips are rounded, so the nose gap is measured against the
+// runtime cam outline (flank, tip fillet and drop face) sampled finely.
+const camRing=tiltHammerCamRing(p,motion.tip,2048,4096);
+const study={gap:(angle,q)=>{
+  const c=Math.cos(q),s=Math.sin(q),n=[p.pivot[0]+p.noseOffset[0]*c-p.noseOffset[1]*s,p.pivot[1]+p.noseOffset[0]*s+p.noseOffset[1]*c];
+  const ca=Math.cos(-angle),sa=Math.sin(-angle),x=n[0]*ca-n[1]*sa,y=n[0]*sa+n[1]*ca;
+  if(Math.hypot(x,y)>p.high+.2)return 1;
+  let best=Infinity,inside=false;
+  for(let i=0,j=camRing.length-1;i<camRing.length;j=i++){
+    const a=camRing[j],b=camRing[i],dx=b[0]-a[0],dy=b[1]-a[1],t=Math.max(0,Math.min(1,((x-a[0])*dx+(y-a[1])*dy)/(dx*dx+dy*dy)));
+    best=Math.min(best,Math.hypot(x-a[0]-t*dx,y-a[1]-t*dy));
+    if((a[1]>y)!==(b[1]>y)&&x<(b[0]-a[0])*(y-a[1])/(b[1]-a[1])+a[0])inside=!inside;
+  }
+  return (inside?-best:best)-p.noseRadius;
+}};
 const at=time=>motion.atTime(time-p.initialTime);
 const near=(a,b,tolerance=1e-8)=>assert.ok(Math.abs(a-b)<=tolerance,`${a} != ${b}`);
 const dispose=model=>model.root.traverse(object=>{object.geometry?.dispose();object.material?.dispose();});
@@ -18,6 +33,9 @@ test('072 preserves the measured four-lobe cam and the source lever arrangement'
   near(p.high*p.scale,209.92077714825875,1e-6);
   near(p.flankRadius*p.scale,206.5437461597015,1e-9);
   near(p.pitch,Math.PI/2,0);
+  // p101: rounded wiper tips keep the sharp tips' crest lift.
+  near(p.tipRadius,.06*p.high,1e-12);near(e.crest.q,p.sharpCrestQ,1e-9);
+  assert.ok(sharpStudy.parameters.high>0);
   assert.ok(p.noseOffset[0]<0);
   data.parts.striker.geometry.computeBoundingBox();
   assert.ok(data.parts.striker.geometry.boundingBox.max.x<p.noseOffset[0]);
@@ -49,7 +67,8 @@ test('072 respects every finite cam flank and step through all four lobes',()=>{
     assert.ok(state.q<=p.restQ+1e-12);peak=Math.max(peak,Math.abs(state.velocity));
     if(state.camContactEngaged)assert.ok(Math.abs(study.gap(state.angle,state.q))<1e-7);
   }
-  assert.ok(peak>.71&&peak<.73);
+  // p101: the rounded tips release a little later, so the drop lands at 0.701.
+  assert.ok(peak>.69&&peak<.71);
   assert.equal(at((e.landing.time+p.period)/2).stage,'workpiece-dwell');
 });
 

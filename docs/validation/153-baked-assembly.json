@@ -2,43 +2,43 @@
   "movement": 153,
   "method": "All visible mesh pairs belonging to different rigid bodies, bidirectional vertices/edge midpoints/face centers, 65 interpolated baked poses across the full cycle, offset between recorded samples. Uses the authored constituent solids with the baked generalized coordinates; the bundle merges these same solids by body and material. Contact markers are excluded; intended soft working contacts are reported separately. Same-body mating interfaces excluded. No continuous collision proof.",
   "summary": {
-    "parts": 42,
-    "pairs": 591,
+    "parts": 41,
+    "pairs": 554,
     "poses": 65,
-    "checks": 3420830,
+    "checks": 3223150,
     "failingPairs": 0
   },
   "failures": {},
   "softContacts": {
     "part-29/bar-fixed-underside-direct-drive-projection-34": {
-      "firstPose": 0,
-      "points": 2,
-      "maximumDepth": 0.000004122452252675046
+      "firstPose": 2,
+      "points": 1,
+      "maximumDepth": 0.0000022615681528337372
     },
-    "part-31/distal-input-driving-face-37": {
-      "firstPose": 12,
-      "points": 2,
-      "maximumDepth": 0.000002342764524598806
+    "part-31/flat-input-arm-37": {
+      "firstPose": 14,
+      "points": 3,
+      "maximumDepth": 0.0000958825943715158
     },
-    "part-29/distal-input-driving-face-37": {
-      "firstPose": 42,
-      "points": 9,
-      "maximumDepth": 0.00032541447545474903
+    "bar-fixed-front-return-stud-35/bored-return-arm-38": {
+      "firstPose": 14,
+      "points": 1,
+      "maximumDepth": 0.000005849070219055008
     },
-    "bar-fixed-front-return-stud-35/bored-return-arm-39": {
-      "firstPose": 42,
-      "points": 5,
-      "maximumDepth": 0.00017660056602711305
+    "part-29/flat-input-arm-37": {
+      "firstPose": 48,
+      "points": 1,
+      "maximumDepth": 0.0000013359590245710552
     }
   },
   "sources": [
     {
       "file": "scripts/review-stud-reverser-baked-assembly.mjs",
-      "sha256": "1c46973973812fb8a689a2e05faa0ae39a7920a2b51e62e89b5690773b1f4a53"
+      "sha256": "5bbfd8f75600470d232c64ddef6d2ceb9aab537ae7f5ded4a999fd1cee344bf6"
     },
     {
       "file": "src/simulation/mujoco-stud-reverser/geometry.js",
-      "sha256": "61f443ca61da1c5a21283aa6b005f6c64c072fa9404600a0e6afd4a45fb4ed07"
+      "sha256": "b9d9e33cb4b317e279039aa9c8360aca9e0a59fbd3666697e571bf9b95248466"
     },
     {
       "file": "src/simulation/mujoco-stud-reverser/sync.js",
@@ -50,7 +50,7 @@
     },
     {
       "file": "src/simulation/baked/assets/153.json.gz",
-      "sha256": "29890190e8e28d366ddc22b8fbe41118a7d32d15d197aaa7644d33b1980d2287"
+      "sha256": "899cb66fae1258fa78710fd64dca2394aa77695984dc093beab5cff67a29628c"
     },
     {
       "file": "src/simulation/baked/playback.js",

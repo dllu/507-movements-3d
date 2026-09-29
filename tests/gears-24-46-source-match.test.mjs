@@ -216,3 +216,15 @@ test('043 view keeps the lower wheel edge-on and turns the upper wheel toward th
   assert.ok(Math.abs(worldAxis(drivenAxis).dot(previousView)) > 0.3,
     'negative control: the earlier oblique view foreshortens the driven wheel');
 });
+
+test('p101: 24 draws the plate rim/web circle as a recessed web at 0.77 R on both wheels', () => {
+  const model = modelFor(24);
+  for (const gear of [model.root.userData.blocks.driver, model.root.userData.blocks.driven]) {
+    const web = gear.userData.rotor.children.find((part) => part.userData.role === 'recessed-web');
+    assert.ok(web, 'web present');
+    assert.ok(Math.abs(gear.userData.webRadius - 0.77 * gear.userData.pitchRadius) < 1e-12);
+    assert.ok(web.geometry.parameters.height < 0.38 - 0.1, 'web is recessed below both rim faces');
+    const toothed = gear.userData.rotor.children.find((part) => part.geometry?.type === 'ExtrudeGeometry');
+    assert.equal(toothed.geometry.parameters.shapes.holes.length, 1, 'rim is an annulus round the web');
+  }
+});

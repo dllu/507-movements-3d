@@ -346,8 +346,10 @@ function twoPitchDifferentialScrew(movement) {
       new THREE.ExtrudeGeometry(shape, {
         bevelEnabled: false,
         curveSegments: 12,
-        depth: 0.7,
-      }).translate(movingBearingDepth / 2 - 0.001, 0, -0.35),
+        // 0.001 inside the standard's front and back faces, so the 0.001
+        // overlap strip has no coplanar faces (it flickered).
+        depth: 0.698,
+      }).translate(movingBearingDepth / 2 - 0.001, 0, -0.349),
       movingStandardMaterial,
     );
     fillet.scale.x = side;

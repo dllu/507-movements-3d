@@ -668,3 +668,39 @@ test('movement 208 slot outline is free of swept-cutter zigzags', async () => {
   assert.ok(result.zigzags <= 16, `zigzags ${result.zigzags}`);
   assert.ok(result.longestRun < 6);
 });
+
+test('movement 208 p101: the slotted pinion has clean, regular round-top leaves', async () => {
+  const outline = (await import('../src/simulation/generated-pin-slot-208.js')).default;
+  const radii = outline.map(([x, y]) => Math.hypot(x, y));
+  near(Math.min(...radii), 0.84, 1e-6, 'root circle');
+  near(Math.max(...radii), 1.03, 2e-4, 'tip circle');
+  // Sixteen identical leaves: the outline repeats exactly under a 1/16 turn.
+  const period = outline.length / 16;
+  assert.equal(period, Math.round(period));
+  const turn = 2 * Math.PI / 16;
+  for (let i = 0; i < period; i += 7) {
+    const [x, y] = outline[i], [u, v] = outline[i + period];
+    near(u, x * Math.cos(turn) - y * Math.sin(turn), 2e-7, 'leaf repeat x');
+    near(v, x * Math.sin(turn) + y * Math.cos(turn), 2e-7, 'leaf repeat y');
+  }
+  // Each leaf is symmetric about its centreline (pi/16 off each slot centre).
+  const mirrored = outline.map(([x, y]) => {
+    const a = 2 * (Math.PI / 16) - Math.atan2(y, x), r = Math.hypot(x, y);
+    return [r * Math.cos(a), r * Math.sin(a)];
+  });
+  const distance = (p) => Math.min(...outline.map(([x, y]) => Math.hypot(x - p[0], y - p[1])));
+  for (let i = 0; i < period; i += 11) assert.ok(distance(mirrored[i]) < 0.004, `leaf symmetric at ${i}`);
+});
+
+test('p101: 208 axial pins are tagged noShadow so the render policy keeps them from hatching the face', () => {
+  const model = createMovementModel(catalog.movements[207]);
+  let pins = 0;
+  model.root.traverse((o) => {
+    if (!o.isMesh || !/axial-drive-pin/.test(o.userData.role ?? '')) return;
+    pins += 1;
+    assert.equal(o.userData.noShadow, true);
+    assert.equal(o.castShadow, false);
+    assert.equal(o.receiveShadow, true);
+  });
+  assert.ok(pins > 30);
+});

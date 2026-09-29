@@ -633,9 +633,11 @@ test("movement 309 drops B's bottom edge into Brown's small nib short of the coc
   // Brown's level bottom edge (y ~206) with open space below it...
   assert.ok(solidAt(112, 204), 'level bottom edge');
   assert.ok(!solidAt(112, 208.5), 'open below the level bottom');
-  // ...then the edge drops into a nib hanging about 5 px below it.
-  assert.ok(solidAt(127.8, 210.8), 'nib hangs below the bottom line');
-  assert.ok(!solidAt(124, 210.8), 'nib is a point, not a thickened bottom');
+  // ...then the edge drops into a small nib (p101: at the corner of the
+  // 0.035 relief contour, about 2 px below the line at x 125.8).
+  assert.ok(solidAt(125.3, 207.6), 'nib hangs below the bottom line');
+  assert.ok(!solidAt(122, 208.2), 'nib is a point, not a thickened bottom');
+  assert.ok(!solidAt(127.8, 210.8), 'nib stands clear of the next tooth');
   // Everything under the lifting face, where the cocking tooth passes, is cut.
   assert.ok(!solidAt(134, 205), 'no material in the cocking tooth sweep');
   disposeLike(root);
@@ -662,4 +664,49 @@ test('movement 309 (pass 92): each half-fork ends in a round eye standing a marg
   } finally {
     model.root.traverse((o) => { o.geometry?.dispose?.(); });
   }
+});
+
+test('movement 309 (p101): pallet B bears at one clean contact; idle edges stand clear of every tooth', () => {
+  const model = createMovementModel(catalog.movements[308]);
+  const root = model.root, g = root.userData.geometry;
+  const n = g.toothCount, pitch = 2 * Math.PI / n, wheel = [];
+  const polar = (a, r) => [Math.cos(a) * r, Math.sin(a) * r];
+  for (let k = 0; k < n; k += 1) {
+    const c = k * pitch;
+    wheel.push(polar(c - pitch * 0.03, g.wheelRootRadius), polar(c, g.toothTipRadius));
+    for (let i = 0; i < 4; i += 1) wheel.push(polar(c + pitch * (0.5 + 0.47 * i / 4), g.wheelRootRadius));
+  }
+  let teeth;
+  root.traverse((o) => { if (o.userData.role === 'thirty-pointed-escape-wheel-teeth') teeth = o; });
+  const plate = root.userData.sweptPlates.find((p) => p.key === 'left-pallet-plate');
+  const dense = [];
+  plate.outline.forEach((a, i) => {
+    const b = plate.outline[(i + 1) % plate.outline.length];
+    const m = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / 0.006));
+    for (let k = 0; k < m; k += 1) dense.push([a[0] + (b[0] - a[0]) * k / m, a[1] + (b[1] - a[1]) * k / m]);
+  });
+  const seg = ([px, py], [ax, ay], [bx, by]) => {
+    const dx = bx - ax, dy = by - ay;
+    const t = Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / (dx * dx + dy * dy)));
+    return Math.hypot(px - ax - t * dx, py - ay - t * dy);
+  };
+  let worst = 0;
+  for (let s = 0; s < 240; s += 1) {
+    model.update(g.pendulumPeriod * s / 240, 0.016);
+    root.updateMatrixWorld(true);
+    const rel = new THREE.Matrix4().copy(plate.owner.matrixWorld).invert().multiply(teeth.matrixWorld);
+    const w = wheel.map(([x, y]) => { const v = new THREE.Vector3(x, y, 0).applyMatrix4(rel); return [v.x, v.y]; });
+    // Contact clusters: runs of outline samples within 0.025 of a tooth.
+    let clusters = 0, inRun = false;
+    for (const p of dense) {
+      let d = Infinity;
+      for (let k = 0; k < w.length; k += 1) d = Math.min(d, seg(p, w[k], w[(k + 1) % w.length]));
+      const near = d < 0.025;
+      if (near && !inRun) clusters += 1;
+      inRun = near;
+    }
+    worst = Math.max(worst, clusters);
+  }
+  assert.ok(worst <= 1, `B has ${worst} simultaneous contacts`);
+  disposeLike(root);
 });

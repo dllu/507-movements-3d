@@ -62,7 +62,9 @@ function addBalanceBeamOperator(root, { beam, beamPivot, beamAmplitude, beamMate
   const barY = 1.62, barZ = 0.32, barEnds = [-1.45, 1.25], handsX = [-0.75, 0.50];
   const yaw = THREE.MathUtils.degToRad(25);
   const hipBase = { x: -0.12, y: beamTop + ankleLift + 0.92 };
-  const jacketMaterial = matte(PALETTE.driver, { metalness: 0.02, roughness: 0.76 });
+  // Pass 101: brown cloth, not the beam's orange, so the arms and hands read
+  // against the hand bar, stanchions and beam.
+  const jacketMaterial = matte(0x6e5440, { metalness: 0.02, roughness: 0.76 });
   const trouserMaterial = matte(0x4d5d6c, { metalness: 0.02, roughness: 0.8 });
   const skinMaterial = matte(0xe8b48f, { metalness: 0.0, roughness: 0.8 });
   const darkMaterial = matte(PALETTE.ink, { metalness: 0.24, roughness: 0.48, side: THREE.DoubleSide });

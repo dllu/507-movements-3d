@@ -135,6 +135,26 @@ function bucketAndHeadWater({barrelRadius:r1,headRadius:r2,step,top},bottom,segm
   return geometry;
 }
 
+// 448's hand lever in its own plane: a band of half-width `width(s)` along
+// the old tube centreline (sampled in x, y), flaring (smoothstep over
+// `flare`) into the rod eye, the pivot eye and the end ring, with the bores
+// and the ring's hole cut out; extruded ±depth.
+function flatLeverGeometry(curve,{depth,rodEye,pivotEye,ringOuter=.23,ringInner=.13,bar=.095,tip=.07,flare=.42}){
+  const n=160,points=curve.getSpacedPoints(n),end=points[n];
+  const eyes=[{x:rodEye.x,y:0,r:rodEye.radius},{x:0,y:0,r:pivotEye.radius},{x:end.x,y:end.y,r:.13}];
+  const smooth=t=>{t=Math.min(1,Math.max(0,t));return t*t*(3-2*t);};
+  const halfWidth=(point,u)=>{let w=bar+(tip-bar)*smooth((point.x-0.3)/(end.x-0.3));
+    for(const e of eyes){const d=Math.hypot(point.x-e.x,point.y-e.y);w=Math.max(w,w+(e.r*.96-w)*(1-smooth(d/flare)));}return w;};
+  const left=[],right=[];
+  for(let i=0;i<=n;i+=1){const p=points[i],t=curve.getTangentAt(i/n),nx=-t.y,ny=t.x,len=Math.hypot(nx,ny),w=halfWidth(p,i/n);
+    left.push([p.x+nx/len*w,p.y+ny/len*w]);right.push([p.x-nx/len*w,p.y-ny/len*w]);}
+  const band=poly([...left,...right.reverse()]);
+  const outline=polygonClipping.difference(
+    polygonClipping.union(band,poly(circle([rodEye.x,0],rodEye.radius,96)),poly(circle([0,0],pivotEye.radius,96)),poly(circle([end.x,end.y],ringOuter,96))),
+    poly(circle([rodEye.x,0],rodEye.bore,64)),poly(circle([0,0],pivotEye.bore,64)),poly(circle([end.x,end.y],ringInner,64)));
+  return plate(outline,-depth,depth);
+}
+
 export function correctLiftPumpParts(root, id) {
   const d=root.userData,b=d.blocks,g=d.geometry,modern=id===449;
   b.base.visible=false;
@@ -258,18 +278,29 @@ export function correctLiftPumpParts(root, id) {
     replace(pivotPin,pinGeometry(.09,.11,BRACKET_LOW,LEVER_HALF));
     replace(rodPin,pinGeometry(.07,.085,-LEVER_HALF,LINK_HIGH));
     for(const pin of [pivotPin,rodPin]){pin.rotation.set(0,0,0);pin.scale.setScalar(1);}
-    const pivotEye=new THREE.Mesh(turned([[-LEVER_HALF,.095],[-LEVER_HALF,.20],[LEVER_HALF,.20],[LEVER_HALF,.095]],96),b.lever.children[0].material);
-    const rodEye=new THREE.Mesh(turned([[-LEVER_HALF,.074],[-LEVER_HALF,.18],[LEVER_HALF,.18],[LEVER_HALF,.074]],96),b.lever.children[0].material);
-    rodEye.position.x=rodPin.position.x;
-    pivotEye.userData.role='hand-lever-bored-pivot-eye';rodEye.userData.role='hand-lever-bored-rod-eye';
-    b.lever.add(pivotEye,rodEye);b.leverEyes=[pivotEye,rodEye];
-    // The grip is Brown's plain round knob, cast with the lever.
-    b.lever.children[3].material=b.lever.children[0].material;
+    // Pass 101: Brown's lever is one flat curved bar, not a round tube with
+    // drums across it and a ball on the end: one extrusion LEVER_HALF deep
+    // along the old centreline, flaring smoothly into round eyes concentric
+    // with the pivot and rod pins and ending in a ring, as he draws it.
+    const arm=b.lever.children[0];
+    replace(arm,flatLeverGeometry(arm.geometry.parameters.path,{
+      depth:LEVER_HALF,rodEye:{x:rodPin.position.x,radius:.18,bore:.074},pivotEye:{radius:.20,bore:.095}}));
+    arm.userData.role='hand-lever-flat-curved-bar-with-eyes-and-ring-end';
+    b.leverEyes=[arm];
+    b.lever.children[3].visible=false;
     const jointPin=new THREE.Mesh(pinGeometry(.07,.085,-.055,LINK_HIGH),b.pumpRod.material);
     jointPin.position.set(0,.62,0);b.piston.add(jointPin);b.jointPin=jointPin;
     d.linkZ=(LINK_LOW+LINK_HIGH)/2;
     // The lever bracket rises from the head's top flange to the pivot.
-    const supportProfile=polygonClipping.difference(poly([[.97,2.75],[1.22,2.75],[1.12,3.10],[1.08,3.40],[.95,3.46],[.69,3.46],[.56,3.30],[.56,3.08],[.72,2.93],[.90,2.85]]),poly(circle([g.leverPivot.x,g.leverPivot.y],.095,96)));
+    // Pass 101: one casting with the head's rim: a round boss concentric
+    // with the pivot, concave flanks sweeping down into the flange, and a
+    // tapering rib running on down the head's outer wall (it used to be an
+    // angular block perched on the flange's edge).
+    const bezier=(a,c,e,n=24)=>Array.from({length:n+1},(_,i)=>{const t=i/n;return[(1-t)**2*a[0]+2*(1-t)*t*c[0]+t*t*e[0],(1-t)**2*a[1]+2*(1-t)*t*c[1]+t*t*e[1]];});
+    const px=g.leverPivot.x,py=g.leverPivot.y;
+    const web=poly([...bezier([px-.20,py-.12],[px+.12,py-.26],[.99,2.70]),[.99,2.30],
+      ...bezier([1.03,2.30],[1.06,2.62],[1.22,2.70]),...bezier([1.22,2.72],[1.18,2.94],[px+.21,py-.10])]);
+    const supportProfile=polygonClipping.difference(polygonClipping.union(poly(circle([px,py],.25,96)),web),poly(circle([px,py],.095,96)));
     const support=new THREE.Mesh(plate(supportProfile,BRACKET_LOW,BRACKET_HIGH),b.base.material);
     support.userData.role='fixed-bored-lever-bracket';root.add(support);b.leverSupport=support;
     replace(b.spout,curvedPipeWall(b.spout.geometry.parameters.path,.19,.25,72));

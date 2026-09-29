@@ -3,7 +3,7 @@ import {expectReconstructionNote,settleCanvas} from '../helpers/viewer.mjs';
 test('159 plays its baked cord treadle and restarts on desktop and mobile',async({page})=>{
  const errors=[];page.on('pageerror',e=>errors.push(e.message));await page.emulateMedia({reducedMotion:'reduce'});
  await page.goto('/portable/#/movement/159');const canvas=page.locator('.simulation-canvas');await expect(canvas).toBeVisible();await settleCanvas(canvas);await page.waitForTimeout(300);
- await expectReconstructionNote(page,'The crank drives a passive treadle through an ideal massless cord.');
+ await expectReconstructionNote(page,'The crank drives a passive treadle through its cord.');
  const initial=await canvas.screenshot();await page.screenshot({path:'/dev/shm/159-packaged-source.png'});
  await page.locator('.play-control').click();await page.waitForTimeout(1800);await page.locator('.play-control').click();
  expect((await canvas.screenshot()).equals(initial)).toBe(false);await page.screenshot({path:'/dev/shm/159-packaged-moving.png'});

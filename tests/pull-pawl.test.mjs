@@ -15,7 +15,7 @@ test('078 follows the engraved frame, high fulcrum, pawl pivots and 26-tooth whe
  for(const [name,pixel]of [['lever',[598.0604838709677,272.83266129032256]],['left',[431.5703125,259.177734375]],['right',[765.4758364312268,269.70260223048325]]]){
   const expected=source(pixel);near(u.blocks[name].position.x,expected[0]);near(u.blocks[name].position.y,expected[1]);
  }
- assert.equal(p.teeth,26);assert.equal(Object.keys(u.parts).length,23);near(p.innerRadius,315.5246053439235/379.2944180983833);
+ assert.equal(p.teeth,26);assert.equal(Object.keys(u.parts).length,25);// p101: +2 pin collarsnear(p.innerRadius,315.5246053439235/379.2944180983833);
  const wheel=u.parts.wheelBody.geometry.parameters.shapes[0];assert.equal(wheel.holes.length,7,'Six spoke openings and one axle bore');
  assert.ok(p.rootAngle<0,'The pulling ratchet needs undercut teeth');
  assert.equal(u.hideGround,true);assert.equal(u.fidelity,'authored');assert.match(u.idealConstraints,/rear relief/);

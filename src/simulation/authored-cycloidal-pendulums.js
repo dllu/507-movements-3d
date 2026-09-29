@@ -272,9 +272,11 @@ function cycloidalIsochronousPendulum(movement) {
     oscillationAmplitude,
   );
 
+  // Pass 101: rougher, non-metallic paint, so the long cycloidal underside
+  // no longer washes out to near-white by grazing (Fresnel) reflection.
   const cheekMaterial = matte(PALETTE.driver, {
-    metalness: 0.12,
-    roughness: 0.59,
+    metalness: 0,
+    roughness: 0.9,
   });
   const darkMaterial = matte(PALETTE.ink, {
     metalness: 0.25,

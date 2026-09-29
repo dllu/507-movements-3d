@@ -138,8 +138,13 @@ export function correctFlexiblePumpParts(root,id) {
     d.updateSolids=()=>{b.leftConnectingRod.position.z=.34;b.rightConnectingRod.position.z=.34;};
   }else{
     const curve=body.geometry.parameters.path,left=[],right=[];
-    for(let i=0;i<=64;i++){const p=curve.getPoint(i/64),t=curve.getTangent(i/64).normalize();left.push([p.x-t.y*.115,p.y+t.x*.115]);right.push([p.x+t.y*.115,p.y-t.x*.115]);}
-    planarLever(body,poly([...left,...right.reverse()]),[{x:0,y:0,inner:.214,outer:.30}],.23);
+    // Pass 101: Brown's lever tapers to a plain rounded end at the grip
+    // (it carried a black cylinder set crosswise, a T-grip he does not draw).
+    const tipU=.30,tipWidth=.065,taper=u=>u>=tipU?.115:tipWidth+(.115-tipWidth)*(u/tipU)**2*(3-2*u/tipU);
+    for(let i=0;i<=64;i++){const u=i/64,w=taper(u),p=curve.getPoint(u),t=curve.getTangent(u).normalize();left.push([p.x-t.y*w,p.y+t.x*w]);right.push([p.x+t.y*w,p.y-t.x*w]);}
+    const tip=curve.getPoint(0);
+    planarLever(body,polygonClipping.union(poly([...left,...right.reverse()]),poly(circle([tip.x,tip.y],tipWidth,48))),[{x:0,y:0,inner:.214,outer:.30}],.23);
+    lever.children[1].visible=false;
     normalizedLink(b.connectingRod,g.connectingRodLength,.144);
     replace(lever.children[2],new THREE.CylinderGeometry(.14,.14,.96,32));
     // Pass 88: the clevis foot stands 0.006 up inside the clamp's upper

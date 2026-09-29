@@ -34,6 +34,8 @@ export default {
   // or a raised spiral; the disks and hubs take the cue.
   98: ['disk', '(front|rear)Hub'],
   99: ['disk', '(front|rear)Hub'],
+  // 100: the plain crank disk behind the quick-return crank (pass 101).
+  100: ['disk', '(front|rear)Hub'],
   // 113: the table's two plain support rollers (turned by rolling contact).
   113: ['leftRoller', 'rightRoller'],
   117: ['upperRoller', 'lowerRoller'],

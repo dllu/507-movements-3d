@@ -130,3 +130,11 @@ test('053 clears every separately moving member throughout the reversing operati
   const report = probeReversingClutchContact(16, false);
   assert.equal(report.penetratingSamples, 0, JSON.stringify(report)); console.log(JSON.stringify(report));
 });
+
+test('p101: 053 top driving bevel is steel grey, contrasting with the ochre left bevel it meshes with', () => {
+  const model = makeReversingClutch(), {inputGear, leftGear} = model.root.userData.blocks;
+  const colour = (gear) => { let c; gear.traverse((o) => { if (!c && o.isMesh && o.material.color.getHex() !== 0xffffff) c = o.material.color; }); return c; };
+  const hsl = colour(inputGear).getHSL({});
+  assert.ok(hsl.s < 0.1, 'input bevel is a neutral steel');
+  assert.ok(Math.abs(colour(leftGear).getHSL({}).s - hsl.s) > 0.4);
+});

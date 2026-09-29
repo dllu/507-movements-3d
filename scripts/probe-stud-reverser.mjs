@@ -2,7 +2,8 @@ import fs from 'node:fs';
 import {createHash} from 'node:crypto';
 import loadMujoco from '@mujoco/mujoco';
 import {makeStudReverserPhysics} from '../src/simulation/mujoco-stud-reverser/physics.js';
-const mujoco=await loadMujoco(),p=makeStudReverserPhysics(mujoco,{timestep:Number(process.env.DT??.00025),barFriction:Number(process.env.FRICTION??.5),outputLengthScale:Number(process.env.OUTPUT_SCALE??1),inputContactMinimum:Number(process.env.INPUT_MIN??0)});
+import {FLAT_INPUT_ARM} from '../src/simulation/mujoco-stud-reverser/geometry.js';
+const mujoco=await loadMujoco(),p=makeStudReverserPhysics(mujoco,{timestep:Number(process.env.DT??.00025),barFriction:Number(process.env.FRICTION??.5),outputLengthScale:Number(process.env.OUTPUT_SCALE??1),inputContactMinimum:Number(process.env.INPUT_MIN??0),...(process.env.FLAT?FLAT_INPUT_ARM:{})});
 try{
  const rows=[],ticks=Math.round(6*p.description.period/p.timestep),stride=Math.round(.01/p.timestep);
  for(let i=0;i<=ticks;i++){if(i%stride===0)rows.push(p.state());if(i<ticks)p.step();}

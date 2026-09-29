@@ -14876,22 +14876,27 @@ function quadratureTwinCrankShaftCoupling() {
   const frontDiskDepth = 0.34;
   const shaftRadius = 0.16;
   // Both ends stop before the translating rods sweep across the shaft axes.
-  const shaftStartZ = -0.95;
-  const shaftEndZ = 0.96;
+  // Pass 101: hubs and shaft ends stand only 0.02 proud of the disk and rear
+  // crank faces, and each rod rides 0.02 off them (it was 0.2-0.27 off, held
+  // only by bare pins). Each pin ends 0.02 proud of its rod's eye liner.
+  // The shaft ends stop 0.005 inside the hub faces (no coplanar end caps).
+  const shaftStartZ = -0.89;
+  const shaftEndZ = 0.865;
+  const rearHubBackZ = -0.895;
   const shaftLength = shaftEndZ - shaftStartZ;
   const hubRadius = 0.30;
-  const hubDepth = 0.54;
+  const hubDepth = 0.38;
   const upperShaftCenter = new THREE.Vector3(0, centerDistance / 2, 0);
   const lowerShaftCenter = new THREE.Vector3(0, -centerDistance / 2, 0);
 
   const frontDiskCenterZ = 0.68;
-  const frontRodPlaneZ = 1.22;
+  const frontRodPlaneZ = 0.995;
   const rearCrankPlaneZ = -0.76;
-  const rearRodPlaneZ = -1.20;
-  const frontPinCenterZ = 0.96;
-  const frontPinLength = 0.82;
-  const rearPinCenterZ = -0.98;
-  const rearPinLength = 0.68;
+  const rearRodPlaneZ = -1.02;
+  const frontPinCenterZ = 0.835;
+  const frontPinLength = 0.57;
+  const rearPinCenterZ = -0.90;
+  const rearPinLength = 0.48;
   const crankPinRadius = 0.105;
   // The liner bore is a close running fit on the pin; the rod plate's eye
   // carries the liner.
@@ -15085,7 +15090,7 @@ function quadratureTwinCrankShaftCoupling() {
 
     const rearHub = cylinderAlongZ(
       rearCrankEyeOuterRadius * 0.92,
-      rearCrankDepth + 0.12,
+      2 * (rearCrankPlaneZ - rearHubBackZ),
       linerMaterial,
       36,
     );

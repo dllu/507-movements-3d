@@ -12,7 +12,7 @@ const v=makeRelievedStudReverser();
 try{
  const u=v.root.userData,b=u.blocks,groups=new Map([[b.fixedFrame,'fixed'],[b.diskRotor,'disk'],[b.slidingBar,'bar'],[b.lever,'lever'],...b.guideRollers.map((g,i)=>[g.userData.rotor,'guide'+i])]);
  const annotations=new Set([b.directContactMarker,b.returnInputContactMarker,b.returnOutputContactMarker]);
- const workingPairs=b.pinAssemblies.flatMap(a=>[[a.userData.blocks.pin,b.undersideLug],[a.userData.blocks.pin,b.inputArm.userData.blocks.working]]).concat(b.outputArm.children.map(m=>[m,b.barFrontStud]),[[b.inputArm.userData.blocks.raised,b.leverStop]]);
+ const workingPairs=b.pinAssemblies.flatMap(a=>[[a.userData.blocks.pin,b.undersideLug],[a.userData.blocks.pin,b.inputArm.userData.blocks.working]]).concat(b.outputArm.children.map(m=>[m,b.barFrontStud]),[[b.inputArm.userData.blocks.raised??b.inputArm.userData.blocks.working,b.leverStop]]);
  const isWorking=(a,b)=>workingPairs.some(([x,y])=>(a===x&&b===y)||(a===y&&b===x));
  const softContacts={};
  const parts=[];v.root.traverse(mesh=>{

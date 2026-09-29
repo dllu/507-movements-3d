@@ -14,48 +14,27 @@ export function stampMeshParameters(radius,teeth,explicitAddendum){
  return{addendum,pressureAngle,baseRadius:base,rootRadius:radius-addendum-.006,tipRadius:radius+addendum,contactRatio:explicitAddendum===undefined?1:ratioFor(addendum),
   gearBaseAngle:Math.PI+Math.PI/(2*teeth)+pitchContactAngle,rackOffset:pitch/4-radius*pitchContactAngle};
 }
-// Brown's rack and mutilated pinion both have square teeth. The rack keeps
-// nearly parallel (6 degree) flanks, and each pinion tooth is the envelope
-// the rack cuts as it rolls on the pitch circle, so the pair is conjugate
-// (exact pitch-line lift, no interference) while both read as square teeth.
-// Rack frame: pitch line y=0, tips toward +y by tipDepth, root at -rootDepth.
-export const SQUARE_STAMP_TEETH={pressureAngle:6*Math.PI/180,tipDepth:.10,rootDepth:.20,rackThickness:.40,tipClearance:.012,driveBacklash:.0008,returnBacklash:.004};
-export function squareStampTeeth(radius,teeth,options=SQUARE_STAMP_TEETH){
- const {pressureAngle,tipDepth,rootDepth,rackThickness,tipClearance,driveBacklash,returnBacklash}=options,pitch=2*Math.PI*radius/teeth,halfPitchAngle=Math.PI/teeth,
-  widthAt=y=>rackThickness*pitch/2-y*Math.tan(pressureAngle),
-  rack=[[-widthAt(-rootDepth-.02),-rootDepth-.02],[widthAt(-rootDepth-.02),-rootDepth-.02],[widthAt(tipDepth),tipDepth],[-widthAt(tipDepth),tipDepth]];
- // Pinion-tooth frame: tooth along +x; the rack's pitch line is x=radius
- // with its teeth pointing toward -x and a gap centred on the tooth at zero
- // roll. Rolling by theta moves the rack r*theta along y.
- const rootRadius=radius-tipDepth,tipRadius=radius+rootDepth-tipClearance,radii=[],samples=160,rolls=3000;
- for(let i=0;i<=samples;i++)radii.push(rootRadius+(tipRadius-rootRadius)*i/samples);
- const halfWidth=radii.map(()=>halfPitchAngle);
- for(let j=0;j<=rolls;j++){
-  const theta=-.62+1.24*j/rolls,c=Math.cos(-theta),sn=Math.sin(-theta);
-  for(let k=-2;k<=2;k++){
-   const centre=pitch/2+k*pitch+radius*theta;
-   const ring=rack.map(([u,v])=>{const x=radius-v,y=centre+u;return[x*c-y*sn,x*sn+y*c];});
-   for(let e=0;e<ring.length;e++){
-    const [ax,ay]=ring[e],[bx,by]=ring[(e+1)%ring.length],dx=bx-ax,dy=by-ay,aa=dx*dx+dy*dy,bb=2*(ax*dx+ay*dy);
-    radii.forEach((rho,i)=>{
-     const disc=bb*bb-4*aa*(ax*ax+ay*ay-rho*rho);if(disc<0)return;
-     for(const sign of[-1,1]){const t=(-bb+sign*Math.sqrt(disc))/(2*aa);if(t<0||t>1)continue;const angle=Math.atan2(ay+t*dy,ax+t*dx);if(angle>0&&angle<halfWidth[i])halfWidth[i]=angle;}
-    });
-   }
-  }
- }
- // The -y flank leads (it lifts the rack as the pinion turns clockwise with
- // this tooth on its rack side); the trailing flank takes the backlash.
- const lower=radii.map((rho,i)=>{const a=Math.max(0,halfWidth[i]-driveBacklash/rho);return[rho*Math.cos(a),-rho*Math.sin(a)];}),
-  upper=radii.map((rho,i)=>{const a=Math.max(0,halfWidth[i]-returnBacklash/rho);return[rho*Math.cos(a),rho*Math.sin(a)];}).reverse(),
-  inner=radius-tipDepth-.05,tip=[],from=Math.atan2(lower.at(-1)[1],lower.at(-1)[0]),to=Math.atan2(upper[0][1],upper[0][0]);
- for(let i=1;i<12;i++){const a=from+(to-from)*i/12;tip.push([tipRadius*Math.cos(a),tipRadius*Math.sin(a)]);}
- const tooth=[[inner*Math.cos(halfPitchAngle),-inner*Math.sin(halfPitchAngle)],...lower,...tip,...upper,[inner*Math.cos(halfPitchAngle),inner*Math.sin(halfPitchAngle)]];
- return{rack:rack.map(([u,v])=>[u,v]),tooth,rootRadius,tipRadius,pitch,...options};
+// Pass 101: Brown's rack and pinion teeth are deep, nearly square trapezoids,
+// tooth about equal to gap. Both are cut from the shared involute rack/pinion
+// builder at one circular pitch (0.0004 backlash on each member, so the driving flanks stay within 0.001) and a 20-degree pressure angle (the squarest
+// flank that leaves the 18-tooth virtual pinion free of undercut at this
+// addendum) (tooth = gap on the pitch line, 0.001
+// backlash). The pinion tooth is one tooth of rackPinionGeometry's outline;
+// the rack tooth follows rackToothGeometry's flanks, run 0.02 into the rod.
+export function involuteStampTeeth(radius,teeth,addendum,backlash=.001,pressureAngle=20*Math.PI/180){
+ if(addendum>radius*Math.sin(pressureAngle)**2)throw new RangeError('351: involute pinion would be undercut');
+ const gear=rackPinionGeometry({radius,teeth,addendum,depth:.1,bore:.05,backlash,pressureAngle}),u=gear.userData,outline=u.outline,
+  flank=outline.length/teeth,halfPitchAngle=Math.PI/teeth,inner=radius-addendum-.06,pitch=2*Math.PI*radius/teeth;
+ const profile=outline.slice(0,flank-16).map(v=>[v.x,v.y]);
+ gear.dispose();
+ const tooth=[[inner*Math.cos(halfPitchAngle),-inner*Math.sin(halfPitchAngle)],...profile,[inner*Math.cos(halfPitchAngle),inner*Math.sin(halfPitchAngle)]];
+ const half=pitch/4-backlash/2,widthAt=y=>half-y*Math.tan(pressureAngle),root=-addendum-.006,embed=root-.02,
+  rack=[[-widthAt(embed),embed],[widthAt(embed),embed],[widthAt(addendum),addendum],[-widthAt(addendum),addendum]];
+ return{tooth,rack,rootRadius:u.rootRadius,tipRadius:u.tipRadius,tipDepth:addendum,rootDepth:-root,pitch,pressureAngle,backlash};
 }
 export function correctStampParts(model){
- const {root}=model,d=root.userData,b=d.blocks,g=d.geometry,square=squareStampTeeth(g.pitchRadius,g.virtualToothCount),
-  p={...stampMeshParameters(g.pitchRadius,g.virtualToothCount,g.meshAddendum),addendum:square.tipDepth,rootRadius:square.rootRadius-.006,tipRadius:square.tipRadius,rackRootDepth:square.rootDepth,square};
+ const {root}=model,d=root.userData,b=d.blocks,g=d.geometry,square=involuteStampTeeth(g.pitchRadius,g.virtualToothCount,g.meshAddendum),
+  p={...stampMeshParameters(g.pitchRadius,g.virtualToothCount,g.meshAddendum),addendum:square.tipDepth,rootRadius:square.rootRadius,tipRadius:square.tipRadius,rackRootDepth:square.rootDepth,square};
  const tooth=plate(poly(square.tooth),-g.gearDepth/2,g.gearDepth/2);
  b.gearTeeth.forEach((o,i)=>{replace(o,tooth);o.rotation.z=i*g.toothPitchAngle;});
  // Rack tooth outline is drawn tips toward +y, then turned so the tips face

@@ -62,3 +62,20 @@ test('179 lifting grip follows the engraved side, gab opens downward, and link p
   }
  }finally{disposeObject3D(m.root);}
 });
+
+test('p101: 179 lever pedestal is one cast lug standing on the foundation, with a plain pin',()=>{
+ const m=createAuthoredEngineReverserMovement({id:179}),b=m.root.userData.blocks;
+ try{
+  m.root.updateMatrixWorld(true);
+  assert.equal(b.leverSupport,undefined,'no separate support beam');
+  assert.equal(b.leverPedestal.geometry.type,'ExtrudeGeometry','pedestal is one extrusion');
+  const ped=new THREE.Box3().setFromObject(b.leverPedestal),base=new THREE.Box3().setFromObject(b.baseRail);
+  assert.ok(ped.min.y<base.max.y&&base.max.y-ped.min.y<.02,'foot seated on the foundation top');
+  assert.ok(base.min.z<=ped.min.z&&base.max.z>=ped.max.z,'foundation runs under the whole foot');
+  const pivot=new THREE.Vector3().setFromMatrixPosition(b.leverPedestal.matrixWorld);
+  assert.ok(Math.abs(ped.max.y-pivot.y-.30)<.005,'top arc concentric with the pivot');
+  const pin=new THREE.Box3().setFromObject(b.leverBaseHub);
+  assert.equal(b.leverBaseHub.geometry.parameters.radiusTop,.12,'plain pin, not an oversized eye');
+  assert.ok(pin.min.z<ped.min.z&&pin.min.z>ped.min.z-.03,'pin passes through the lug');
+ }finally{disposeObject3D(m.root);}
+});

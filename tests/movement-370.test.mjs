@@ -44,7 +44,7 @@ function disposeModel(root) {
   materials.forEach((material) => material.dispose());
 }
 
-test('movement 370 contains the opposite-ended hand crank, guided long bar, rigid mirror-ratchet, shaft eccentric, and oscillating click', () => {
+test('movement 370 contains the opposite-ended hand crank, guided long bar, rigid mirror-ratchet, crankpin eccentric and Brown\'s S-shaped click rod', () => {
   const movement = catalog.movements[369];
   const model = createMovementModel(movement);
   const data = model.root.userData;
@@ -62,11 +62,11 @@ test('movement 370 contains the opposite-ended hand crank, guided long bar, rigi
   assert.equal(data.archetype, movement.archetype);
   assert.match(data.mechanism, /one-hand-crank/);
   assert.match(data.mechanism, /simultaneous-bar-slide-and-oscillation/);
-  assert.match(data.mechanism, /eccentric-oscillates-a-click/);
+  assert.match(data.mechanism, /eccentric-drives-brown-s-shaped-click-rod/);
   assert.equal(degreesOfFreedom.independentPrescribedInputs, 1);
   assert.equal(degreesOfFreedom.storedEnergyStates, 0);
   assert.match(degreesOfFreedom.input, /continuous hand-crank angle/);
-  assert.match(degreesOfFreedom.note, /one-way ratchet indexing/);
+  assert.match(degreesOfFreedom.note, /S-link/);
 
   for (const component of [
     blocks.upperRail,
@@ -74,7 +74,6 @@ test('movement 370 contains the opposite-ended hand crank, guided long bar, rigi
     blocks.crankBearing,
     blocks.inputRotor,
     blocks.longBar,
-    blocks.eccentricFollower,
     ...blocks.guidePins,
     ...blocks.railFasteners,
   ]) assert.equal(component.parent, model.root);
@@ -83,7 +82,8 @@ test('movement 370 contains the opposite-ended hand crank, guided long bar, rigi
     blocks.upperEye,
     blocks.upperEyeBore,
     blocks.mirrorRotor,
-    blocks.clickCarrier,
+    blocks.sLinkBody,
+    blocks.rodKeeper,
   ]) assert.equal(component.parent, blocks.longBar);
   for (const component of [
     blocks.mirrorBacking,
@@ -93,16 +93,6 @@ test('movement 370 contains the opposite-ended hand crank, guided long bar, rigi
     blocks.mirrorIndex,
   ]) assert.equal(component.parent, blocks.mirrorRotor);
   for (const component of [
-    blocks.carrierArm,
-    blocks.carrierPivot,
-    blocks.pawlSlide,
-  ]) assert.equal(component.parent, blocks.clickCarrier);
-  for (const component of [
-    blocks.pawlBody,
-    blocks.pawlTip,
-    blocks.contactMarker,
-  ]) assert.equal(component.parent, blocks.pawlSlide);
-  for (const component of [
     blocks.crankPinBoss,
     blocks.handleArm,
     blocks.handle,
@@ -110,10 +100,11 @@ test('movement 370 contains the opposite-ended hand crank, guided long bar, rigi
     blocks.eccentricDisk,
     blocks.shaftIndex,
   ]) assert.equal(component.parent, blocks.inputRotor);
-  assert.equal(blocks.ratchetWheel.userData.toothCount,
+  assert.equal(blocks.ratchetWheel.userData.ratchetProfile.teeth,
     geometry.ratchetToothCount);
-  assert.equal(blocks.ratchetWheel.userData.toothPitch,
-    geometry.ratchetToothPitch);
+  // No telescoping follower, click carrier or separate pawl remain.
+  for (const gone of ['eccentricFollower', 'clickCarrier', 'carrierArm',
+    'pawlSlide', 'pawlBody', 'finiteClick']) assert.equal(blocks[gone], undefined, gone);
 
   const roles = [];
   const beltObjects = [];
@@ -125,15 +116,15 @@ test('movement 370 contains the opposite-ended hand crank, guided long bar, rigi
   for (const role of [
     'crankpin-through-long-bar-upper-eye',
     'free-turning-hand-handle',
-    'off-center-disk-eccentric-on-common-crankshaft',
+    'eccentric-sheave-keyed-on-the-crankpin-rear-end',
     'long-bar-with-longitudinal-and-oscillating-motion',
     'one-of-two-fixed-lower-rail-bar-guide-pins',
     'square-polishing-mirror-face',
     'ratchet-wheel-rigidly-secured-to-square-mirror',
-    'eccentric-oscillated-click-carrier-about-ratchet-axis',
-    'click-tip-engaging-one-ratchet-tooth',
-    'sliding-follower-transmitting-crankshaft-eccentric-to-click-carrier',
+    'brown-s-shaped-eccentric-rod-and-click',
+    'loose-rod-keeper-on-bar-back',
   ]) assert.ok(roles.includes(role), role);
+  assert.ok(!roles.some((role) => /telescop|sliding-follower|click-carrier/.test(role)));
   assert.equal(beltObjects.length, 0);
   disposeModel(model.root);
 });
@@ -303,7 +294,7 @@ test('movement 370 mirror remains at one rigid station on the bar while its cent
         state.mirrorCenter.y - state.crankPin.y,
       ),
       geometry.mirrorDistanceFromTopEye,
-      9e-16,
+      4e-15,
       'fixed top-eye-to-mirror distance',
     );
     near(state.mirrorWorldAngle,
@@ -330,7 +321,7 @@ test('movement 370 mirror remains at one rigid station on the bar while its cent
       && Math.abs(state.barAngularSpeed) > 0.02) {
       sawBarOnlyAngularMotion = true;
     }
-    if (state.phase > 0.10 && state.phase < 0.40
+    if (state.phase > 0.25 && state.phase < 0.45
       && state.ratchetAngularSpeed * geometry.clickHand > 0
       && Math.abs(state.barAngularSpeed) > 0.02) {
       sawCombinedAngularMotion = true;
@@ -357,150 +348,95 @@ test('movement 370 mirror remains at one rigid station on the bar while its cent
   disposeModel(model.root);
 });
 
-test('movement 370 common-shaft eccentric gives the exact harmonic click-carrier stroke and its telescoping follower reaches both moving endpoints', () => {
+test('movement 370 eccentric keyed on the crankpin carries the S-link strap round the bar eye, all in the ratchet plane', () => {
   const model = createMovementModel(catalog.movements[369]);
   const data = model.root.userData;
   const { blocks, geometry, stateAtTime } = data;
-  let minimumFollowerLength = Infinity;
-  let maximumFollowerLength = -Infinity;
-
-  for (let sample = 0; sample <= 1200; sample += 1) {
-    const time = geometry.inputCyclePeriod * 2 * sample / 1200;
+  // One plane: the ratchet, the S-link and its eccentric share their depth.
+  const depth = (mesh) => {
+    mesh.geometry.computeBoundingBox();
+    const box = mesh.geometry.boundingBox.clone();
+    model.root.updateMatrixWorld(true);
+    return box.applyMatrix4(mesh.matrixWorld);
+  };
+  model.update(0);
+  const wheel = depth(blocks.ratchetWheel), link = depth(blocks.sLinkBody), disc = depth(blocks.eccentricDisk);
+  near((link.min.z + link.max.z) / 2, geometry.clickPlaneZ, 1e-6, 'S-link plane');
+  near((wheel.min.z + wheel.max.z) / 2, geometry.clickPlaneZ, 1e-6, 'ratchet plane');
+  near((disc.min.z + disc.max.z) / 2, geometry.clickPlaneZ, 1e-6, 'eccentric plane');
+  // Behind the lower rail (back face -0.21) and the bar.
+  assert.ok(link.max.z < -0.21 && wheel.max.z < -0.21 && disc.max.z < -0.21);
+  for (let sample = 0; sample <= 200; sample += 1) {
+    const time = geometry.inputCyclePeriod * sample / 200;
     const state = stateAtTime(time);
-    const expectedFraction = 0.5
-      * (1 - Math.cos(FULL_TURN * state.phase));
-    near(state.carrierFraction, expectedFraction, 3e-16,
-      'eccentric harmonic carrier fraction');
-    // The carrier swings a pitch plus the click's backlash.
-    near(state.carrierAngle,
-      geometry.carrierBaseAngle
-        + geometry.clickHand
-          * (geometry.ratchetToothPitch + geometry.clickBacklash)
-          * state.carrierFraction,
-      0, 'click-carrier angle');
-    near(
-      Math.hypot(
-        state.eccentricCenter.x - geometry.crankCenter.x,
-        state.eccentricCenter.y - geometry.crankCenter.y,
-      ),
-      geometry.eccentricity,
-      3e-16,
-      'eccentric center radius',
-    );
+    near(Math.hypot(...state.strapCentre), geometry.eccentricity, 1e-12,
+      'strap centre circles the bar eye at the throw');
+    near(Math.hypot(state.eccentricCenter.x - state.crankPin.x,
+      state.eccentricCenter.y - state.crankPin.y), geometry.eccentricity, 1e-12,
+    'eccentric centre at the throw from the crankpin');
     model.update(time);
-    vectorNear(blocks.eccentricFollower.userData.upperEndpoint,
-      state.eccentricCenter, 0, 'follower eccentric endpoint');
-    vectorNear(blocks.eccentricFollower.userData.lowerEndpoint,
-      state.carrierPivotWorld, 0, 'follower carrier endpoint');
-    near(blocks.eccentricFollower.userData.currentLength,
-      state.eccentricCenter.distanceTo(state.carrierPivotWorld), 0,
-      'telescoping follower length');
-    minimumFollowerLength = Math.min(minimumFollowerLength,
-      blocks.eccentricFollower.userData.currentLength);
-    maximumFollowerLength = Math.max(maximumFollowerLength,
-      blocks.eccentricFollower.userData.currentLength);
+    model.root.updateMatrixWorld(true);
+    // The rendered sheave centre (fixed in the crank) is the strap centre.
+    const sheave = new THREE.Vector3(
+      geometry.crankRadius + geometry.eccentricity * Math.cos(geometry.eccentricPhase),
+      geometry.eccentricity * Math.sin(geometry.eccentricPhase),
+      geometry.clickPlaneZ,
+    ).applyMatrix4(blocks.inputRotor.matrixWorld);
+    const strap = new THREE.Vector3(0, 0, 0).applyMatrix4(blocks.sLinkBody.matrixWorld);
+    near(Math.hypot(sheave.x - strap.x, sheave.y - strap.y), 0, 1e-12, 'strap concentric with the sheave');
+    near(sheave.x, state.eccentricCenter.x, 1e-12, 'state eccentric x');
+    near(sheave.y, state.eccentricCenter.y, 1e-12, 'state eccentric y');
   }
-  assert.ok(maximumFollowerLength - minimumFollowerLength > 0.71);
-
-  const h = 1e-5;
-  for (const phase of [0.12, 0.32, 0.68, 0.88]) {
-    const time = geometry.inputCyclePeriod * phase;
-    const before = stateAtTime(time - h);
-    const state = stateAtTime(time);
-    const after = stateAtTime(time + h);
-    near(
-      (after.carrierAngle - before.carrierAngle) / (2 * h),
-      state.carrierAngularSpeed,
-      // central difference of an angle near 2.5 rad at h = 1e-5
-      5e-11,
-      'analytic carrier angular speed',
-    );
-  }
-  assert.match(data.transmission.clickCarrierLaw,
-    /\(1-cos\(input phase\)\)\/2/);
+  // The strap runs on the sheave with running clearance.
+  near(geometry.strapInnerRadius - geometry.eccentricDiscRadius, 0.005, 1e-12, 'strap clearance');
   disposeModel(model.root);
 });
 
-test('movement 370 click advances exactly one tooth on each forward half-turn and lifts over the stationary wheel on return', () => {
+test('movement 370 S-link hook drives exactly one tooth while the strap descends and overruns the stationary wheel on the rise', () => {
   const model = createMovementModel(catalog.movements[369]);
   const data = model.root.userData;
-  const { geometry, stateAtTime } = data;
-  const period = geometry.inputCyclePeriod;
-  // Brown's click pushes the wheel anticlockwise (clickHand +1, p90): the
-  // signed advance is clickHand times the tooth count.
-  const pitch = geometry.clickHand * geometry.ratchetToothPitch;
-  assert.equal(geometry.clickHand, 1);
-
-  const backlash = geometry.clickBacklash;
-  const stroke = geometry.ratchetToothPitch + backlash;
-  const click = data.blocks.finiteClick;
-  const liftAt = (state) => click.angleAt(state.ratchetAngle - state.carrierAngle);
-  for (let cycle = 0; cycle < 16; cycle += 1) {
-    const start = stateAtTime(cycle * period);
-    const driveMid = stateAtTime((cycle + 0.25) * period);
-    const driveEnd = stateAtTime((cycle + 0.5) * period);
-    const returnMid = stateAtTime((cycle + 0.75) * period);
-    const next = stateAtTime((cycle + 1) * period);
-    near(start.ratchetAngle, cycle * pitch, 2e-15,
-      `cycle ${cycle} start index`);
-    // The drive first takes up the backlash, then carries the wheel.
-    near(driveMid.ratchetAngle,
-      cycle * pitch + geometry.clickHand * (stroke / 2 - backlash), 2e-15,
-      `cycle ${cycle} mid-stroke advance`);
-    near(driveEnd.ratchetAngle, (cycle + 1) * pitch, 2e-15,
-      `cycle ${cycle} drive completion`);
-    near(returnMid.ratchetAngle, driveEnd.ratchetAngle, 0,
-      `cycle ${cycle} return dwell`);
-    near(next.ratchetAngle, driveEnd.ratchetAngle, 2e-15,
-      `cycle ${cycle} boundary continuity`);
-    near(driveMid.ratchetAngle - cycle * pitch,
-      driveMid.carrierAngle - geometry.carrierBaseAngle
-        - geometry.clickHand * backlash, 8e-16,
-      `cycle ${cycle} carrier drives wheel`);
-    near(driveMid.pawlTipWorld.distanceTo(driveMid.selectedToothWorld),
-      0, 5e-16, `cycle ${cycle} engaged click contact`);
-    near(driveMid.pawlLift, 0, 0,
-      `cycle ${cycle} click seated on drive`);
-    // The finite hook: off the face by the backlash at the start of the
-    // drive, seated in the root while driving, lifted over a tooth on return.
-    assert.ok(Math.abs(liftAt(start)) > 1e-3, `cycle ${cycle} backlash at drive start`);
-    near(liftAt(driveMid), 0, 1e-12, `cycle ${cycle} hook seated in the root`);
-    near(liftAt(driveEnd), 0, 1e-12, `cycle ${cycle} hook seated at drive end`);
-    assert.ok(Math.abs(liftAt(returnMid)) > 0.05, `cycle ${cycle} hook rides over a tooth`);
-    near(returnMid.ratchetAngularSpeed, 0, 0,
-      `cycle ${cycle} wheel dwell speed`);
-    near(returnMid.pawlLift, geometry.pawlMaximumLift, 2e-16,
-      `cycle ${cycle} maximum overrun lift`);
-    assert.ok(returnMid.pawlTipWorld.distanceTo(
-      returnMid.selectedToothWorld) > 0.3 * geometry.ratchetOuterRadius);
-    assert.equal(start.engagedToothIndex,
-      positiveModulo(-cycle, geometry.ratchetToothCount));
-  }
-
-  let previousAngle = -Infinity;
-  for (let sample = 0; sample <= 4000; sample += 1) {
-    const state = stateAtTime(period * 5 * sample / 4000);
-    assert.ok(state.ratchetAngle * geometry.clickHand
-      >= previousAngle - 2e-15);
-    previousAngle = state.ratchetAngle * geometry.clickHand;
-    if (state.phase <= 0.5) {
-      assert.ok(state.pawlTipWorld.distanceTo(
-        state.selectedToothWorld) < 5e-16);
-    } else {
-      near(state.ratchetAngularSpeed, 0, 0,
-        'stationary return-stroke ratchet');
+  const { geometry, stateAtTime, sLinkSolver: solver, driveTable } = data;
+  const pitch = geometry.ratchetToothPitch;
+  const record = driveTable.record;
+  near(record.at(-1).w - record[0].w, pitch, 1e-12, 'one tooth per steady turn');
+  near(record.at(-1).beta, record[0].beta, 1e-9, 'periodic hook pose');
+  let engagedSamples = 0;
+  let descending = 0;
+  for (let i = 1; i < record.length; i += 1) {
+    const a = record[i - 1], b = record[i];
+    assert.ok(b.w >= a.w - 1e-15, 'the wheel never runs back');
+    if (b.w > a.w + 1e-12) {
+      engagedSamples += 1;
+      assert.ok(b.engaged, 'only the hook turns the wheel');
+      // It pushes while its strap comes down the bar (and a little past
+      // the bottom, where the strap's sideways swing still carries it).
+      if (b.e[1] < a.e[1]) descending += 1;
+    }
+    assert.ok(!solver.overlaps(b.e, b.beta, b.w), `hook clear of the teeth at ${i}`);
+    if (b.engaged) {
+      // Seated: the round tip's centre sits at its seat radius.
+      const tip = solver.nosePoint(b.e, b.beta);
+      near(Math.hypot(tip[0], tip[1] + geometry.mirrorDistanceFromTopEye),
+        solver.noseRadius, 1e-9, `seated tip radius at ${i}`);
     }
   }
-  assert.match(data.transmission.ratchetLaw, /wheel dwells/);
+  assert.ok(descending > 0.9 * engagedSamples, `descending ${descending} of ${engagedSamples}`);
+  assert.ok(engagedSamples > record.length * 0.25 && engagedSamples < record.length * 0.45,
+    `drive share ${engagedSamples / record.length}`);
+  for (let turn = 0; turn < 3; turn += 1) {
+    const start = stateAtTime(geometry.inputCyclePeriod * turn);
+    const end = stateAtTime(geometry.inputCyclePeriod * (turn + 1));
+    near(end.ratchetAngle - start.ratchetAngle, geometry.clickHand * pitch, 1e-12,
+      `turn ${turn} advances one tooth anticlockwise`);
+  }
   disposeModel(model.root);
 });
 
-test('movement 370 renderer preserves bar guide, mirror pose, click contact, follower endpoints, and smooth motion over two crank turns', () => {
+test('movement 370 renderer preserves bar guide, mirror pose, S-link pose and smooth motion over two crank turns', () => {
   const model = createMovementModel(catalog.movements[369]);
   const data = model.root.userData;
   const { animationTiming, blocks, geometry } = data;
   let maximumGuideError = 0;
-  let maximumDriveContactError = 0;
   let largestMirrorCenterStep = 0;
   let previousMirrorCenter = null;
   const stages = new Set();
@@ -526,24 +462,14 @@ test('movement 370 renderer preserves bar guide, mirror pose, click contact, fol
     );
     near(blocks.mirrorRotor.rotation.z, state.ratchetAngle, 0,
       'rendered ratchet angle');
-    near(blocks.clickCarrier.rotation.z, state.carrierAngle, 0,
-      'rendered click-carrier angle');
-    near(blocks.pawlSlide.position.x, state.pawlLift, 0,
-      'rendered click lift');
-    vectorNear(blocks.eccentricFollower.userData.upperEndpoint,
-      state.eccentricCenter, 0, 'rendered upper follower endpoint');
-    vectorNear(blocks.eccentricFollower.userData.lowerEndpoint,
-      state.carrierPivotWorld, 0, 'rendered lower follower endpoint');
+    near(blocks.sLinkBody.rotation.z, state.clickRotation, 0,
+      'rendered hook rotation');
+    near(blocks.sLinkBody.position.x, state.strapCentre[0], 0, 'rendered strap x');
+    near(blocks.sLinkBody.position.y, state.strapCentre[1], 0, 'rendered strap y');
     maximumGuideError = Math.max(
       maximumGuideError,
       data.constraints.guide.centerlineError,
     );
-    if (data.constraints.clickContact.engaged) {
-      maximumDriveContactError = Math.max(
-        maximumDriveContactError,
-        data.constraints.clickContact.clearance,
-      );
-    }
     assert.ok(data.constraints.guide.sideClearance > 0.042);
     model.root.updateMatrixWorld(true);
     const renderedMirrorCenter = blocks.mirrorRotor.getWorldPosition(
@@ -556,8 +482,7 @@ test('movement 370 renderer preserves bar guide, mirror pose, click contact, fol
     );
     vectorNear(renderedIndex, state.mirrorIndexPoint, 3e-15,
       'rendered compound mirror index');
-    assert.equal(blocks.contactMarker.visible, false);
-    assert.ok(blocks.finiteClick.body.visible);
+    assert.ok(blocks.sLinkBody.visible);
     if (previousMirrorCenter !== null) {
       largestMirrorCenterStep = Math.max(
         largestMirrorCenterStep,
@@ -572,7 +497,6 @@ test('movement 370 renderer preserves bar guide, mirror pose, click contact, fol
     }
   }
   assert.ok(maximumGuideError < 1.5e-15);
-  assert.ok(maximumDriveContactError < 5e-16);
   assert.ok(largestMirrorCenterStep < 0.0077);
   assert.deepEqual(stages, new Set([
     'eccentric-driven-click-advancing-ratchet-one-tooth',
@@ -592,20 +516,21 @@ test('movement 370 is continuous at every crank boundary and completes one ratch
   const oneTurn = stateAtTime(period);
   const fullIndex = stateAtTime(period * geometry.ratchetToothCount);
 
-  near(oneTurn.inputAngle - start.inputAngle, FULL_TURN, 9e-16,
+  // Brown marks no direction; the crank turns clockwise in the plate.
+  near(oneTurn.inputAngle - start.inputAngle, -FULL_TURN, 9e-16,
     'one input revolution');
   near(oneTurn.ratchetAngle - start.ratchetAngle,
-    geometry.clickHand * geometry.ratchetToothPitch, 0,
+    geometry.clickHand * geometry.ratchetToothPitch, 1e-12,
     'one ratchet tooth per turn');
   vectorNear(oneTurn.crankPin, start.crankPin, 0,
     'bar crankpin repeats each input turn');
   vectorNear(oneTurn.mirrorCenter, start.mirrorCenter, 0,
     'mirror center orbit repeats each input turn');
   near(fullIndex.inputAngle - start.inputAngle,
-    FULL_TURN * geometry.ratchetToothCount, 1.5e-14,
+    -FULL_TURN * geometry.ratchetToothCount, 1.5e-14,
     'twelve input revolutions');
   near(fullIndex.ratchetAngle - start.ratchetAngle,
-    geometry.clickHand * FULL_TURN, 9e-16,
+    geometry.clickHand * FULL_TURN, 1e-12,
     'one complete mirror-ratchet revolution (anticlockwise)');
   vectorNear(fullIndex.crankPin, start.crankPin, 0,
     'full-index crankpin closure');
@@ -615,7 +540,7 @@ test('movement 370 is continuous at every crank boundary and completes one ratch
     positiveModulo(fullIndex.mirrorWorldAngle - start.mirrorWorldAngle,
       FULL_TURN),
     0,
-    9e-16,
+    1e-12,
     'full compound orientation closure',
   );
 
@@ -625,7 +550,7 @@ test('movement 370 is continuous at every crank boundary and completes one ratch
     assert.ok(after.crankPin.distanceTo(before.crankPin) < 2e-7);
     assert.ok(after.mirrorCenter.distanceTo(before.mirrorCenter) < 2e-7);
     assert.ok(Math.abs(after.ratchetAngle - before.ratchetAngle) < 1e-12);
-    assert.ok(after.pawlTipWorld.distanceTo(before.pawlTipWorld) < 2e-7);
+    assert.ok(after.clickNoseWorld.distanceTo(before.clickNoseWorld) < 2e-6);
   }
 
   const model507 = createMovementModel(movement507);

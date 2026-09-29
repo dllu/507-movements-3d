@@ -41,12 +41,13 @@ export function makeCrankSliderGeometry() {
   attach('rod',plate(rod,.20,.32),'rod',PALETTE.driven);
   const [x0,y0,x1,y1]=source.crosshead;
   const block=poly([[x0,y0],[x1,y0],[x1,y1],[x0,y1]].map(([x,y])=>[px(x-source.wrist[0]),px(source.wrist[1]-y)]));
-  attach('crosshead',plate(block,.08,.18),'slider',PALETTE.driven);
+  // Pass 101: the slide block is gold so the blue rod's end reads against it.
+  attach('crosshead',plate(block,.08,.18),'slider',PALETTE.accent);
   attach('wristPin',disk(wristPinRadius,.18,.34,96),'slider',PALETTE.brass);
   attach('wristCap',disk(.054,.34,.365,96),'slider',PALETTE.brass);
   const [top,upper,lower,bottom]=source.guideY.map(y=>point([0,y])[1]),left=point([source.guideLeft,0])[0],innerLeft=point([source.guideInnerLeft,0])[0],right=point([source.guideRight,0])[0];
   const clearance=.002,shoeY=[lower-offset+clearance,upper-offset-clearance];
-  attach('shoe',new THREE.BoxGeometry(.34,shoeY[1]-shoeY[0],.20),'slider',PALETTE.driven,[0,(shoeY[0]+shoeY[1])/2,-.02]);
+  attach('shoe',new THREE.BoxGeometry(.34,shoeY[1]-shoeY[0],.20),'slider',PALETTE.accent,[0,(shoeY[0]+shoeY[1])/2,-.02]);
   // Brown breaks the guide off at the right; the real guide runs on a little
   // past that line and is closed by an end bar, so its bars do not stop in
   // open space. The slot (and the stroke limit `right`) are unchanged.

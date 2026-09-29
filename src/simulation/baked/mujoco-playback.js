@@ -125,10 +125,25 @@ export function makeBakedMujocoModel(bundle, visual, {sync} = {}) {
   for (const patch of bundle.objectPatches ?? []) Object.assign(find(patch.key), patch.props);
   for (const [name, value] of Object.entries(bundle.rootUserData ?? {})) u[name] = decodeUserValue(value);
   let disposed = false, variant, tracks;
+  // Each configuration may record only the parts it moves (104's worm input
+  // records the worm and wheel, its wheel input the wheel and carriage). Keep
+  // every recorded part's built pose and visibility so switching configuration
+  // restores the parts the new one does not record, instead of leaving them
+  // wherever the previous configuration stopped.
+  const initialPoses = new Map();
+  for (const other of Object.values(bundle.variants)) {
+    for (const t of [...other.transforms, ...(other.visibility ?? [])]) {
+      const object = find(t.key);
+      if (!initialPoses.has(object)) initialPoses.set(object, {position: object.position.clone(), quaternion: object.quaternion.clone(), scale: object.scale.clone(), visible: object.visible});
+    }
+  }
   const activate = name => {
     variant = bundle.variants[name];
     if (!variant) throw new RangeError('Unknown baked configuration ' + name);
     const samples = variant.loop.samples;
+    for (const [object, pose] of initialPoses) {
+      object.position.copy(pose.position);object.quaternion.copy(pose.quaternion);object.scale.copy(pose.scale);object.visible = pose.visible;
+    }
     tracks = [
       ...variant.transforms.map(t => makeTransformTrack(find(t.key), t, samples)),
       ...(variant.vertices ?? []).map(t => makeVertexTrack(find(t.key), t, samples)),

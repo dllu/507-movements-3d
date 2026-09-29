@@ -6,9 +6,11 @@
   "parameters": {
     "radialScale": 1.3,
     "axialScale": 1.55,
-    "pinRadius": 0.0325,
+    "pinRadius": 0.054,
+    "studAngle": -0.5654,
+    "studLength": 0.47,
     "timestep": 0.000025,
-    "height": 0.6305,
+    "height": 0.652,
     "phase": 0.171058,
     "friction": 0.002,
     "damping": 0.3,
@@ -19,8 +21,8 @@
     "pitch": 0.3490658503988659,
     "start": -0.3
   },
-  "maximumError": 4.985473908580708e-7,
-  "nativeHash": "9fb349078eb1e46b1fd39ccd6698e47a23a48adc85208abe0033b6f881345900",
+  "maximumError": 4.1335093514671684e-7,
+  "nativeHash": "484085f650fd31f4c40147f7ecdd95a40441dc90a1d46bd75c94ca99f1dedcd2",
   "sources": [
     {
       "file": "scripts/bake-silk-tappet.mjs",
@@ -32,11 +34,11 @@
     },
     {
       "file": "src/simulation/mujoco-silk-tappet/physics.js",
-      "sha256": "ce02bb386f4a4695878eb25f972390eaf28d0ee4ee26177b9edcd3914e86c767"
+      "sha256": "2fd392ac00e4cb5785426feadff5b653f03a7dc2c362b07888bd5a7770d4915d"
     }
   ],
-  "samples": 2558,
+  "samples": 2631,
   "nativeSamples": 144001,
-  "bytes": 51130,
-  "sha256": "45741b81eec206c2da855d5f23e879dbbcb65067868a9d6c9e2554bd2d49c7bb"
+  "bytes": 52612,
+  "sha256": "a22c31da687ac07b6a43160cc06e4a37e1608e707c5dcc25c09b93d954a6a7d0"
 }

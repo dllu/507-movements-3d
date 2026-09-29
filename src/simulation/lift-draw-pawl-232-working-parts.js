@@ -1,6 +1,6 @@
 import {finishRockingPawl232} from './lift-draw-pawl-232-branch.js';
 import * as T from 'three';
-import {poly,circle,plate,polygonClipping as clip} from './finite-plate-geometry.js';
+import {poly,circle,plate,ring,polygonClipping as clip} from './finite-plate-geometry.js';
 import {makeBoredPlanarLink} from './bored-planar-link.js';
 
 function unexpanded(mesh,extra=[]){
@@ -42,5 +42,16 @@ export function finishLiftDrawPawl232(model){
  d.hideGround=true;d.minimumDisplayCycleSeconds=6;
  model.root.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}for(const mat of(Array.isArray(o.material)?o.material:[o.material]))if(mat)mat.fog=false;});
  model.update=t=>{oldUpdate(t);const s=d.stateAtTime(t);b.inputLever.position.z=.70;coupler.userData.setEndpoints(new T.Vector3(s.inputCouplerPivot.x,s.inputCouplerPivot.y,.86),new T.Vector3(s.pawlCouplerPivot.x,s.pawlCouplerPivot.y,.86));b.inputCouplerPin.position.z=.78;b.pawlCouplerPin.position.z=.50;d.kinematics=s;};
- model.cameraDirection=new T.Vector3(.6,.45,12);model.update(0);return finishRockingPawl232(model);
+ model.cameraDirection=new T.Vector3(.6,.45,12);model.update(0);
+ const finished=finishRockingPawl232(model);
+ // p101: C's two eyes carry bosses of C's own colour forward to the parts
+ // they bear on (carrier A's back face at .42, the coupler's back face at
+ // .80), so neither joint is a bare black column bridging air; the upper
+ // pin is trimmed to the stack (C's back -.10 to A's front .56 plus a head).
+ {const pawl=b.pawl,mat=b.pawlBody.material;
+  const upperBoss=new T.Mesh(ring(.077,.15,.10,.42,96),mat);upperBoss.userData.role='232-C-upper-eye-boss-to-carrier-A';pawl.add(upperBoss);
+  const couplerBoss=new T.Mesh(ring(.0705,.13,.10,.80,96),mat);couplerBoss.position.set(g.shortLinkLength,0,0);couplerBoss.userData.role='232-C-coupler-eye-boss';pawl.add(couplerBoss);
+  const pin=b.upperPivotPin;pin.geometry.dispose();pin.geometry=new T.CylinderGeometry(.075,.075,.72,48);pin.position.z=.24;
+  b.pawlUpperBoss=upperBoss;b.pawlCouplerBoss=couplerBoss;}
+ return finished;
 }

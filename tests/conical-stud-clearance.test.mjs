@@ -3,92 +3,53 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import * as THREE from 'three';
 import { createMovementModel } from '../src/simulation/registry.js';
+import { conicalStudFluteRadius, conicalStudMotion, conicalStudParameters } from '../src/simulation/conical-stud-geometry.js';
+import { probeConicalStudContact } from '../scripts/probe-conical-stud-contact.mjs';
 
 const catalog = JSON.parse(await readFile(new URL('../src/data/movements.json', import.meta.url)));
 
-function surfaceSamples(mesh) {
-  const position = mesh.geometry.attributes.position;
-  const index = mesh.geometry.index;
-  const points = Array.from({ length: position.count }, (_, i) =>
-    new THREE.Vector3().fromBufferAttribute(position, i));
-  const count = index ? index.count : position.count;
-  for (let i = 0; i < count; i += 3) {
-    const a = points[index ? index.getX(i) : i];
-    const b = points[index ? index.getX(i + 1) : i + 1];
-    const c = points[index ? index.getX(i + 2) : i + 2];
-    for (const weights of [[1/3, 1/3, 1/3], [0.6, 0.2, 0.2], [0.2, 0.6, 0.2], [0.2, 0.2, 0.6]]) {
-      points.push(a.clone().multiplyScalar(weights[0]).addScaledVector(b, weights[1]).addScaledVector(c, weights[2]));
-    }
-  }
-  return points;
-}
-
-test('037 conical teeth and cut studs clear the opposite rotating solids', () => {
-  const model = createMovementModel(catalog.movements[36]);
-  const { fullFaceTeeth, studs, toothedCone, studCone } = model.root.userData.blocks;
-  const g = model.root.userData.geometry;
-  const outline = toothedCone.userData.unitOutline;
-  const count = outline.length, turn = 2 * Math.PI;
-  const headPoints = studs.map(surfaceSamples);
-  const toothPoints = fullFaceTeeth.map(surfaceSamples);
-  let minStudClearance = Infinity, minBodyClearance = Infinity, maxWorkingGap = 0;
-  const p = new THREE.Vector3();
-  for (let sample = 0; sample < 128; sample += 1) {
-    model.update(g.cycleDuration * (sample + 0.371) / 128, 0);
-    model.root.updateMatrixWorld(true);
-    const leftInverse = toothedCone.userData.rotor.matrixWorld.clone().invert();
-    const rightInverse = studCone.userData.rotor.matrixWorld.clone().invert();
-    let workingGap = Infinity;
-    for (const [i, stud] of studs.entries()) {
-      const transform = leftInverse.clone().multiply(stud.matrixWorld);
-      for (const point of headPoints[i]) {
-        p.copy(point).applyMatrix4(transform);
-        const radius = Math.hypot(p.x, p.y);
-        const pitchRadius = g.meanPitchRadius + g.radiusSlope * p.z;
-        if (radius > pitchRadius * (1 + 2 / g.toothedConeTeeth) + 0.25) continue;
-        const angle = THREE.MathUtils.euclideanModulo(Math.atan2(p.y, p.x), turn);
-        const col = Math.floor(angle / turn * count);
-        const a = outline[col], b = outline[(col + 1) % count];
-        const surface = (a.x * b.y - a.y * b.x) * pitchRadius
-          / (p.x / radius * (b.y - a.y) - p.y / radius * (b.x - a.x));
-        const clearance = radius - surface;
-        minStudClearance = Math.min(minStudClearance, clearance);
-        workingGap = Math.min(workingGap, clearance);
-      }
-    }
-    maxWorkingGap = Math.max(maxWorkingGap, workingGap);
-    for (const [i, tooth] of fullFaceTeeth.entries()) {
-      const transform = rightInverse.clone().multiply(tooth.matrixWorld);
-      for (const point of toothPoints[i]) {
-        p.copy(point).applyMatrix4(transform);
-        const bodyRadius = THREE.MathUtils.lerp(g.studBodyBottomRadius, g.studBodyTopRadius,
-          (p.z + g.coneHalfHeight) / (2 * g.coneHalfHeight));
-        minBodyClearance = Math.min(minBodyClearance, Math.hypot(p.x, p.y) - bodyRadius);
-      }
-    }
-  }
-  // p99: the flutes have no addendum; the stud body runs 0.004 inside its
-  // pitch cone, so the heads stand only 0.024 proud.
-  assert.ok(minBodyClearance > 0.003, `tooth/body clearance: ${minBodyClearance}`);
-  assert.ok(minStudClearance >= -0.000002, `stud/tooth clearance: ${minStudClearance}`);
-  // Keep the unresolved engagement visible. A clearance cut is not evidence
-  // that every pose has a torque-transmitting contact.
-  assert.equal(model.root.userData.contactValidation.status, 'incomplete');
-  console.log(JSON.stringify({ minStudClearance, minBodyClearance, maxWorkingGap }));
+test('037 p101: swept spherical studs clear the straight ball-groove flutes', () => {
+  const result = probeConicalStudContact({ samples: 2400, spherePoints: 400 });
+  assert.ok(result.minGrooveMargin > 0.0008, `groove margin ${result.minGrooveMargin}`);
+  assert.ok(result.minStudCentreSpacing > 2 * result.studRadius + 0.04, 'studs stand apart');
+  assert.ok(Math.max(...result.centredBacklash) < 0.015 && Math.min(...result.centredBacklash) > 0.002);
 });
 
-test('037 p93: stud crowns shade smoothly at the pole (no star from the shallow tip-sweep shave)', () => {
+test('037 p101: rendered studs and flutes clear each other and the stud body', () => {
   const model = createMovementModel(catalog.movements[36]);
-  const { studs } = model.root.userData.blocks;
-  for (const stud of studs.slice(0, 13)) {
-    const position = stud.geometry.attributes.position, normal = stud.geometry.attributes.normal;
-    const pole = new THREE.Vector3().fromBufferAttribute(normal, 0);
-    // The first ring (vertices 1..64) lies within 1/16 of the stud radius:
-    // its normals stay within 5 degrees of the pole's.
-    for (let i = 1; i <= 64; i += 1) {
-      const n = new THREE.Vector3().fromBufferAttribute(normal, i);
-      assert.ok(n.angleTo(pole) < THREE.MathUtils.degToRad(5), `stud ${stud.userData.index} vertex ${i}`);
+  const { flutedCone, studs, toothedCone, studCone, studBody } = model.root.userData.blocks;
+  const g = model.root.userData.geometry;
+  const motion = conicalStudMotion(conicalStudParameters);
+  const sphere = studs[0].geometry.attributes.position;
+  const land = flutedCone.geometry.attributes.position;
+  const p = new THREE.Vector3();
+  let minStud = Infinity, minBody = Infinity;
+  for (let sample = 0; sample < 160; sample += 1) {
+    model.update(g.cycleDuration * (sample + 0.371) / 160, 0);
+    model.root.updateMatrixWorld(true);
+    const toothedInverse = toothedCone.userData.rotor.matrixWorld.clone().invert();
+    const studInverse = studCone.userData.rotor.matrixWorld.clone().invert();
+    for (const stud of studs) {
+      const transform = toothedInverse.clone().multiply(stud.matrixWorld);
+      for (let i = 0; i < sphere.count; i += 1) {
+        p.fromBufferAttribute(sphere, i).applyMatrix4(transform);
+        if (Math.abs(p.z) > g.coneHalfHeight) continue;
+        const radius = Math.hypot(p.x, p.y);
+        if (radius > motion.toothedRadius(p.z) + 0.01) continue;
+        minStud = Math.min(minStud, radius - conicalStudFluteRadius(conicalStudParameters, motion, Math.atan2(p.y, p.x), p.z));
+      }
     }
-    assert.ok(position.count > 0);
+    const transform = studInverse.clone().multiply(flutedCone.matrixWorld);
+    for (let i = 0; i < land.count; i += 13) {
+      p.fromBufferAttribute(land, i).applyMatrix4(transform);
+      const bodyRadius = THREE.MathUtils.lerp(g.studBodyBottomRadius, g.studBodyTopRadius,
+        (p.z + g.coneHalfHeight) / (2 * g.coneHalfHeight));
+      minBody = Math.min(minBody, Math.hypot(p.x, p.y) - bodyRadius);
+    }
   }
+  assert.ok(minStud > 0, `stud/flute clearance ${minStud}`);
+  assert.ok(minBody > 0.003, `land/body clearance ${minBody}`);
+  assert.equal(studBody.userData.conicalBody, true);
+  assert.equal(model.root.userData.contactValidation.status, 'incomplete');
+  console.log(JSON.stringify({ minStud, minBody }));
 });

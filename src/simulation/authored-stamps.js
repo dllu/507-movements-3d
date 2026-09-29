@@ -1065,7 +1065,7 @@ function carryRackOnFiniteTeeth(model) {
   // With the plate's fine pitch the entering tooth sweeps across about two
   // rack pitches before the pitch point, so a stamp resting at the lift datum
   // would sit in its path. The workpiece and anvil sit 0.30 lower: the
-  // entering square tooth's tip then meets the next rack tooth's lower flank
+  // entering involute tooth's tip then meets the next rack tooth's lower flank
   // from below (not its end face) and picks the stamp up continuously into
   // the pitch-line lift.
   const restDisplacement = -0.30;
@@ -1177,7 +1177,7 @@ function carryRackOnFiniteTeeth(model) {
   // Full carried travel: the higher apex and the lowered rest.
   d.cameraFitBounds.min.y -= 0.40;
   d.cameraFitBounds.max.y += 0.40;
-  d.reconstructionNote = 'Eight square pinion teeth, each the envelope cut by the rack\'s nearly straight-flanked (6 degree) square teeth rolling on the pitch circle, lift a straight rack at the exact pitch-line rate. After release the rack is stepped under gravity and held to the nearest height clear of the finite teeth, so it follows the withdrawing final tooth before falling from that later release; the entering tooth lifts the resting rack at pickup. This inelastic kinematic projection is not solved contact dynamics: rebound, tooth elasticity and impact forces are not solved. A longer lower rod keeps the head below the lower guide at the carried apex.';
+  d.reconstructionNote = 'Eight 20 degree involute pinion teeth (the shared rack/pinion builder, tooth equal to gap on the pitch line) lift eight matching involute rack teeth at the exact pitch-line rate. After release the rack is stepped under gravity and held to the nearest height clear of the finite teeth, so it follows the withdrawing final tooth before falling from that later release; the entering tooth lifts the resting rack at pickup. This inelastic kinematic projection is not solved contact dynamics: rebound, tooth elasticity and impact forces are not solved. A longer lower rod keeps the head below the lower guide at the carried apex.';
   d.stampCarriedContact = {
     carriedImpactTime: impactTime,
     carriedImpactVelocity: impactVelocity,
@@ -1219,7 +1219,9 @@ function matchBrownStampProportions(model) {
   // outline. The plain side keeps Brown's 0.6. It sits Brown's third of a
   // pitch above the top tooth.
   const topCollarLeft = left - 0.6 * rodWidth;
-  const topCollarRight = right + 0.30 * rodWidth;
+  // Pass 101: the involute teeth stand 0.266 proud of the rod face, and
+  // the root disk is 0.272 from it, so the full-depth part stops at 0.27.
+  const topCollarRight = right + 0.27 * rodWidth;
   const topCollarBackRight = right + 0.78 * rodWidth;
   const rackZ = b.rack.position.z;
   const collarFrontZ = 0.255;

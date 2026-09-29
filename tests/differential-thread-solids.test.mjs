@@ -41,9 +41,9 @@ test('260 shafts stay seated and its rotating nut journal clears its actual cros
  }
  disposeObject3D(model.root);
 });
-test('266 uses complementary same-hand coarse and fine solid nut threads',()=>{
+test('266 uses complementary same-hand coarse and fine solid trapezoid nut threads',()=>{
  const model=factories[266](catalog[265]),u=model.root.userData;
- for(const[key,pitch]of[['fixed',.3],['moving',.24]]){const p=u.threadProfiles[key];assert.ok(Math.abs(p.external.lead*2*Math.PI-pitch)<1e-12);assert.equal(p.internal.lead,p.external.lead);assert.ok(p.internal.inner>p.external.inner);assert.ok(p.internal.outer>p.external.outer);assert.ok(Math.abs(p.external.width+p.internal.width-pitch+.004)<1e-12);assert.ok(u.blocks[`${key}InternalThread`].geometry.attributes.position.count>1000);}
+ for(const[key,pitch]of[['fixed',.3],['moving',.24]]){const p=u.threadProfiles[key];assert.ok(Math.abs(p.external.lead*2*Math.PI-pitch)<1e-12);assert.equal(p.internal.lead,p.external.lead);assert.ok(p.internal.inner>p.external.inner);assert.ok(p.internal.outer>p.external.outer);for(let r=p.internal.inner;r<=p.external.outer+1e-12;r+=.01)assert.ok(Math.abs(p.widthAt(r)+p.internalWidthAt(r)-pitch+.004)<1e-12);assert.ok(p.external.rootWidth>2*p.external.crestWidth,'V-flanked trapezoid thread');assert.ok(p.external.outer-p.external.inner>.08,'thread depth');assert.ok(u.blocks[`${key}InternalThread`].geometry.attributes.position.count>1000);}
  disposeObject3D(model.root);
 });
 test('275 rack is clear at the correct phase and intersects after a half-turn phase error',()=>{

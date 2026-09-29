@@ -155,7 +155,9 @@ function cyclograph(movement) {
   // length (was 0.036).
   const ruleWidth = 0.40;
   const ruleDepth = 0.14;
-  const braceDistance = 3.05;
+  // Pass 101: Brown's brace lies along the chord, its upper edge by the
+  // guide pins (which he dots behind it), so it sits 3.6 from the crossing.
+  const braceDistance = 3.6;
   const braceOverhang = 0.29;
   const cycleDuration = 6;
   const sourcePhaseOffset = 0.25;
@@ -456,7 +458,8 @@ function cyclograph(movement) {
     new THREE.Vector3(braceEnd.x, braceEnd.y, .42),
     0.36,
     0.12,
-    rulerMaterial,
+    // A second, lighter tone, so the brace reads apart from the two rules.
+    matte(0x5f93ad, { metalness: 0.12, roughness: 0.6 }),
   );
   brace.userData.role = 'third-straight-rule-fastened-across-as-brace';
   carriage.add(brace);

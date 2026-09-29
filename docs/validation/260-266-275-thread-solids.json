@@ -6,7 +6,7 @@
     },
     {
       "file": "src/simulation/authored-differential-screws.js",
-      "sha256": "75f7b982eec60bacf66c4feb1fd808a10b1758f5adea4edf0baa6bb8c8798ffc"
+      "sha256": "c98990b22a1e5efa5f7156de705ea48543dcc27c9fd37ab936464d8bacfbdeed"
     },
     {
       "file": "src/simulation/authored-worm-racks.js",
@@ -14,7 +14,7 @@
     },
     {
       "file": "src/simulation/differential-thread-solids.js",
-      "sha256": "bfb9a079b21db1b6f094f375de4265ff3579d30862fb53050d76cabb04176ea0"
+      "sha256": "f21575efd1aa7bf9962aecd21ff87d7a6f6dfcb6cd00be6ca29a36f5cd699982"
     },
     {
       "file": "src/simulation/mujoco-screw/thread-geometry.js",
@@ -62,21 +62,21 @@
     {
       "id": 266,
       "poses": 33,
-      "queries": 663719,
+      "queries": 748424,
       "penetrations": 0,
       "maxDepth": 0,
       "worst": null,
       "pairs": [
         {
           "pair": "coarse-thread",
-          "maximumSampledGap": 0.0017934732046062899,
-          "minimumSampledGap": 0.0017190873808811532,
+          "maximumSampledGap": 0.001169036515519836,
+          "minimumSampledGap": 0.0010805144820178524,
           "activePoses": 33
         },
         {
           "pair": "fine-thread",
-          "maximumSampledGap": 0.0018452247937153197,
-          "minimumSampledGap": 0.0017825892137916727,
+          "maximumSampledGap": 0.001344266627052585,
+          "minimumSampledGap": 0.001264640259071118,
           "activePoses": 33
         }
       ]

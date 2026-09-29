@@ -29,3 +29,23 @@ test('161 visible eyes and pins follow native hinges through the complete speed 
   v.root.traverse(o=>{if(o.isMesh)assert.equal(o.material.fog,false);});
  }finally{v.dispose();p.dispose();}
 });
+
+test('161 lower bracket is one tapered casting round the spindle and the end eye is as deep as the rod',()=>{
+ const v=makeBallGovernorSolids();
+ try{
+  const {parts}=v.root.userData;
+  assert.equal(parts.lowerBearing,undefined,'no separate bearing drum perched on the bar');
+  const support=parts.lowerSupport,box=new THREE.Box3().setFromObject(support);
+  // Round boss concentric with the spindle: the bar sides (z = ±R) run tangentially into it.
+  assert.ok(Math.abs(box.max.x-.28)<1e-3&&Math.abs(box.max.z-.28)<1e-3&&Math.abs(box.min.z+.28)<1e-3);
+  const p=support.geometry.attributes.position;let boreMin=Infinity,endHeight=-Infinity,endLow=Infinity;
+  for(let i=0;i<p.count;i++){
+   const x=p.getX(i),y=p.getY(i),z=p.getZ(i),r=Math.hypot(x,z);if(r>.05)boreMin=Math.min(boreMin,r);
+   if(x<-2.3){endHeight=Math.max(endHeight,y);endLow=Math.min(endLow,y);}
+  }
+  assert.ok(Math.abs(boreMin-.106)<2e-3,'spindle bore');
+  assert.ok(Math.abs(endHeight-endLow-.16)<2e-3&&box.max.y-box.min.y>.39,'tapers from boss depth to a thin end');
+  const eye=new THREE.Box3().setFromObject(parts.spindleEndEye),spindle=new THREE.Box3().setFromObject(parts.spindle);
+  assert.ok(eye.max.z-eye.min.z>=spindle.max.z-spindle.min.z-1e-6,'eye as thick as the rod');
+ }finally{v.dispose();}
+});

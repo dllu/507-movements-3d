@@ -110,7 +110,13 @@ export function finishStarTappet(root){
   replace(b.holdingClickBody,plate(clip.difference(holdingClickOutline(g),poly(circle([0,0],.074,128))),-.06,.06));
   replace(b.holdingClickBearing,ring(.074,.12,-.035,.035,128),true);
   const shaft=b.holdingClickShaft.userData.rotor.children.find(o=>o.isMesh);replace(shaft,new THREE.CylinderGeometry(.07,.07,.34,64));
-  replace(b.ratchet.userData.hub,ring(.104,.31,-.21,.21,128));
+  // p101: Brown draws a plain round hole: the hub stands inside the star's
+  // own faces (0.22 deep) instead of 0.1 proud, where it read only as a
+  // crescent shadow. The arbor and the arm's pivot pin end just past their
+  // parts instead of running out as long black spikes.
+  replace(b.ratchet.userData.hub,ring(.104,.31,-.105,.105,128));
+  {const arbor=b.ratchetShaft.userData.rotor.children.find(o=>o.isMesh);arbor.geometry.scale(1,.48/.94,1);b.ratchetShaft.position.z=.5;b.ratchetShaft.userData.length=.48;
+   const armPin=b.carrierShaft.userData.rotor.children.find(o=>o.isMesh);armPin.geometry.scale(1,.28/.72,1);b.carrierShaft.position.z=.33;b.carrierShaft.userData.length=.28;}
   // The old spring lived half a unit in front of its clamp/arm. Keep the
   // same bending curve but move it into the arm/tappet layers and join it.
   // Spring and clamp sit behind the arm, in the tail lobe's plane (world 0.1).

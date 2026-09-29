@@ -623,7 +623,9 @@ function fourMotionFeed(movement) {
     returnStart: 0.58,
   });
 
-  const driverMaterial = matte(PALETTE.driver, {
+  // Pass 101: cam C is brass, so forked bar A's orange projection reads
+  // where it rides on the cam.
+  const driverMaterial = matte(PALETTE.brass, {
     metalness: 0.20,
     roughness: 0.50,
   });

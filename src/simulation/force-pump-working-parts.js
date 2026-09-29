@@ -110,9 +110,13 @@ export function correctForcePumpParts(root,id){
   // lug -0.31..-0.21 grown out of the barrel wall; pins pass through bores.
   const L1=g.leverRodPinRadius,Ls=g.swingLinkLength,bore=.063;
   const path=b.lever.children[0].geometry.parameters.path.getPoints(96).map(p=>[p.x,p.y]);
+  // Pass 101: the bar ends in Brown's ring (it ended in a black ball).
+  const grip=path.at(-1);
   const bar=polygonClipping.union(...path.slice(1).map((p,i)=>capsule(path[i],p,.085,16)),
-    poly(circle([0,0],.15,64)),poly(circle([L1,0],.15,64)));
-  replace(b.lever.children[0],plate(polygonClipping.difference(bar,poly(circle([0,0],bore,48)),poly(circle([L1,0],bore,48))),-.10,.10));
+    poly(circle([0,0],.15,64)),poly(circle([L1,0],.15,64)),poly(circle(grip,.21,96)));
+  replace(b.lever.children[0],plate(polygonClipping.difference(bar,poly(circle([0,0],bore,48)),poly(circle([L1,0],bore,48)),
+    poly(circle(grip,.12,96))),-.10,.10));
+  b.lever.children[3].visible=false;
   b.lever.children[0].userData.role='hand-lever-flat-bar-pinned-to-rod-top';
   // Pass 92: each pin is a plain cylinder whose axis the mesh turns onto z
   // (was baked into the buffer), so the pin's round axis is its own; the

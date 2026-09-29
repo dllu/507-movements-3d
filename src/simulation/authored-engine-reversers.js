@@ -1040,14 +1040,23 @@ function sourceScaledSingleEngineReverser() {
   // a plain cylinder whose radius its corners overhung.
   const leverKnobHalfLength = 0.31;
   const leverBarLength = manualLeverLength - leverKnobHalfLength + 0.004;
+  // Pass 101: the bar's foot is a half-round concentric with the base pin,
+  // so the lever needs no oversized eye to hide square corners at the pivot.
+  const leverFoot = new THREE.Shape();
+  leverFoot.moveTo(0, -0.09);
+  leverFoot.lineTo(leverBarLength, -0.09);
+  leverFoot.lineTo(leverBarLength, 0.09);
+  leverFoot.lineTo(0, 0.09);
+  leverFoot.absarc(0, 0, 0.09, Math.PI / 2, 3 * Math.PI / 2, false);
   const manualLeverBar = new THREE.Mesh(
-    new THREE.BoxGeometry(leverBarLength, 0.18, 0.32),
+    centeredExtrusion(leverFoot, 0.32, 0),
     brassMaterial,
   );
-  manualLeverBar.position.x = leverBarLength / 2;
   manualLeverBar.userData.role = 'long-upright-reversing-lever';
-  const leverBaseHub = cylinderAlongZ(0.25, .94, darkMaterial, 30);
-  leverBaseHub.position.z = .04;
+  // Brown draws a plain pin (about 0.1 radius) through the lug. It runs
+  // through the lug (0.02 proud behind) to 0.04 proud of the lever's face.
+  const leverBaseHub = cylinderAlongZ(0.12, .64, darkMaterial, 48);
+  leverBaseHub.position.z = -.12;
   leverBaseHub.userData.role = 'fixed-base-pivot-of-reversing-lever';
   const leverLinkHub = cylinderAlongZ(0.22, 0.66, darkMaterial, 30);
   leverLinkHub.position.set(leverJointRadius, 0, 0.16);
@@ -1109,26 +1118,51 @@ function sourceScaledSingleEngineReverser() {
     baseRail.geometry = block.geometry;
     baseRail.material = block.material;
   }
+  // Pass 101: the lever pedestal is one cast lug, as Brown draws it: a top
+  // arc concentric with the pin, straight flanks tangent to that arc, and
+  // concave fillets flaring into a flat foot that sits on the foundation.
+  // The foundation's front face is brought forward under the lug.
+  const pedestalRadius = 0.30;
+  const pedestalFootHalfWidth = 0.42;
+  const pedestalFillet = 0.09;
+  const foundationTop = foundationCenter.y + 21 * sourceScale / 2;
+  const pedestalHeight = leverBasePivot.y - foundationTop;
+  const pedestalShape = new THREE.Shape();
+  {
+    const foot = new THREE.Vector2(pedestalFootHalfWidth, -pedestalHeight - 0.01);
+    const tangentAngle = Math.atan2(foot.y, foot.x)
+      + Math.acos(pedestalRadius / foot.length());
+    const tangent = new THREE.Vector2(Math.cos(tangentAngle), Math.sin(tangentAngle))
+      .multiplyScalar(pedestalRadius);
+    const flank = tangent.clone().sub(foot).normalize();
+    const flankStart = foot.clone().addScaledVector(flank, pedestalFillet);
+    pedestalShape.moveTo(-foot.x - pedestalFillet, foot.y);
+    pedestalShape.lineTo(foot.x + pedestalFillet, foot.y);
+    pedestalShape.quadraticCurveTo(foot.x, foot.y, flankStart.x, flankStart.y);
+    pedestalShape.lineTo(tangent.x, tangent.y);
+    pedestalShape.absarc(0, 0, pedestalRadius, tangentAngle, Math.PI - tangentAngle, false);
+    pedestalShape.lineTo(-flankStart.x, flankStart.y);
+    pedestalShape.quadraticCurveTo(-foot.x, foot.y, -foot.x - pedestalFillet, foot.y);
+    const bore = new THREE.Path();
+    bore.absarc(0, 0, 0.123, 0, 2 * Math.PI, true); // 0.003 running fit
+    pedestalShape.holes.push(bore);
+  }
   const leverPedestal = new THREE.Mesh(
-    ring(.26,.36,-.10,.10,96),
+    centeredExtrusion(pedestalShape, 0.24, 0),
     frameMaterial,
   );
-  leverPedestal.position.set(
-    leverBasePivot.x,
-    leverBasePivot.y,
-    -.51,
-  );
+  leverPedestal.position.set(leverBasePivot.x, leverBasePivot.y, -.52);
   leverPedestal.userData.role = 'fixed-pedestal-under-upright-lever';
-  const leverSupport = makeBeam(
-    new THREE.Vector3(leverBasePivot.x, baseY, baseZ),
-    new THREE.Vector3(
-      leverBasePivot.x,
-      leverBasePivot.y - .38,
-      -.51,
-    ),
-    { thickness: 0.16, depth: 0.25, color: PALETTE.frame },
-  );
-  leverSupport.userData.role = 'foundation-support-for-lever-pedestal';
+  {
+    // Deepen the foundation forward (z -1.15 .. -0.30) so the lug's foot
+    // (z -0.64 .. -0.40) stands wholly on it.
+    const front = -0.30, back = baseZ - 0.25;
+    const block = groundBlock(170 * sourceScale, 21 * sourceScale, front - back,
+      {name: 'engraved-foundation-under-hand-lever'});
+    baseRail.geometry.dispose();
+    baseRail.geometry = block.geometry;
+    baseRail.position.z = (front + back) / 2;
+  }
 
   const shaftBearing = new THREE.Group();
   shaftBearing.position.set(shaftCenter.x, shaftCenter.y, -0.68);
@@ -1182,7 +1216,6 @@ function sourceScaledSingleEngineReverser() {
   root.add(
     baseRail,
     leverPedestal,
-    leverSupport,
     shaftBearing,
     ...shaftBearingBraces,
     valveGuideSupport,
@@ -1339,7 +1372,6 @@ function sourceScaledSingleEngineReverser() {
     leverJointAnchor,
     leverLinkHub,
     leverPedestal,
-    leverSupport,
     liftingHandle,
     liftingHandleGrip,
     looseEccentric,

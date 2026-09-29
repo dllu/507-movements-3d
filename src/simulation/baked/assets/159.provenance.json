@@ -53,7 +53,7 @@
   "sources": [
     {
       "file": "scripts/bake-cord-treadle.mjs",
-      "sha256": "0a42536771727023338918a813ad4ac923d545ebb0de7290a9eacfbc5db086e0"
+      "sha256": "dc468ad85d229fd4691a014c833b658a787509b170ac54b95156f08267032833"
     },
     {
       "file": "src/simulation/mujoco-cord-treadle/physics.js",
@@ -72,6 +72,14 @@
       "sha256": "f9532a352244b260e0bef4c282dd7f096f367cef3b8dc9897d80b1d99d5cdda5"
     },
     {
+      "file": "src/simulation/mujoco-cord-treadle/cord-dynamics.js",
+      "sha256": "2d107ce1ee4a894cc25f99548fa27b202127a4012931c574ea955c526a416fee"
+    },
+    {
+      "file": "src/simulation/baked/mujoco-bake-format.js",
+      "sha256": "db0ed716c5e216f7d99591caa8ce25aadb0aa2ceadbd464a25f36b44fb4a2453"
+    },
+    {
       "file": "src/simulation/cord-treadle-motion.js",
       "sha256": "75ff86f8c6e9c43dbf16037f2a2aaeda3ca4141b33bd8fac34d1b6d1cf93d56d"
     },
@@ -84,8 +92,26 @@
       "sha256": "7984734dc15dfec9bd0f1198b9f8544dee4b9b6529a77eec92681927cd63db71"
     }
   ],
-  "assumptions": "Native ideal massless cord and passive treadle; slack shape is a length-preserving geometric illustration, not finite-rope vibration.",
+  "assumptions": "Native ideal massless cord and passive treadle. The visible cord is a one-way-coupled chain with mass (cord-dynamics.js): the diagonal run is a limp point-mass rope under gravity with light damping, the groove and vertical run follow the recorded pulley; it does not load the treadle.",
+  "cord": {
+    "segments": 64,
+    "frames": 200,
+    "closure": 0.0017571438154266872,
+    "options": {
+      "segments": 64,
+      "substep": 0.00025,
+      "iterations": 48,
+      "gravity": 98.1,
+      "damping": 3,
+      "maximumBend": 1.2,
+      "bending": 0,
+      "shortest": 0.3,
+      "ropeRadius": 0.045,
+      "warmupPeriods": 8,
+      "frames": 200
+    }
+  },
   "samples": 3345,
-  "bytes": 500250,
-  "sha256": "cc216a58af95ba1796394931693e9504671dce568b1150eac83c38632bec265a"
+  "bytes": 527448,
+  "sha256": "fc9a35fd3841704c379ac2cd4f395b14f65e3ba4c735b30f67a4a9dc8d53a10e"
 }

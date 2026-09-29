@@ -101,13 +101,30 @@ function makeSlottedRocker({
     x * cosLean + y * sinLean, -x * sinLean + y * cosLean, 0)), false, 'centripetal')
     .getPoints(64).map(({x, y}) => [x, y]);
   const neckLeft = neckEdge([[-0.21, 0], [-0.145, 0.25], [-0.10, 0.50], [-0.105, 0.70], [-0.13, 0.84], [-0.20, 0.978], [-0.30, 1.075], [-0.36, 1.20]]);
-  const neckRight = neckEdge([[0.21, 0], [0.16, 0.25], [0.12, 0.50], [0.155, 0.70], [0.21, 0.80], [0.30, 0.87]]);
+  // p101: the right flare ends tangent to the slot's lower end circle (the
+  // outer wall's cap, radius 0.29 about the first slot station) so the S runs
+  // into the crescent with no kink; before, its tip poked 0.02 past the cap.
+  const capCenter = crescent.points[0], capRadius = 0.29, capAngle = -52 * Math.PI / 180;
+  const stem = new THREE.CatmullRomCurve3([[0.21, 0], [0.16, 0.25], [0.12, 0.50], [0.155, 0.70], [0.19, 0.76]]
+    .map(([x, y]) => new THREE.Vector3(x * cosLean + y * sinLean, -x * sinLean + y * cosLean, 0)), false, 'centripetal');
+  const stemEnd = stem.getPoint(1), stemTangent = stem.getTangent(1);
+  // Join exactly at the cap vertex nearest the chosen angle, so the union
+  // leaves no micro-step between the flare's end and the cap polygon.
+  const capRing = crescent.body[0][0], capTarget = [capCenter[0] + capRadius * Math.cos(capAngle), capCenter[1] + capRadius * Math.sin(capAngle)];
+  const joinVertex = capRing.reduce((best, p) => Math.hypot(p[0] - capTarget[0], p[1] - capTarget[1]) < Math.hypot(best[0] - capTarget[0], best[1] - capTarget[1]) ? p : best);
+  const joinAngle = Math.atan2(joinVertex[1] - capCenter[1], joinVertex[0] - capCenter[0]);
+  const joinPoint = new THREE.Vector3(joinVertex[0], joinVertex[1], 0);
+  const joinTangent = new THREE.Vector3(-Math.sin(joinAngle), Math.cos(joinAngle), 0);
+  const reach = stemEnd.distanceTo(joinPoint) * 0.45;
+  const flare = new THREE.CubicBezierCurve3(stemEnd, stemEnd.clone().addScaledVector(stemTangent, reach),
+    joinPoint.clone().addScaledVector(joinTangent, -reach), joinPoint);
+  const neckRight = [...stem.getPoints(48), ...flare.getPoints(32).slice(1), capCenter].map(({x, y, 0: px, 1: py}) => [x ?? px, y ?? py]);
   const neck = polygonClipping.union(poly([...neckRight, ...neckLeft.reverse()]), poly(circle([0, 0], 0.22, 64)));
   const rockerBody = polygonClipping.difference(
     polygonClipping.union(crescent.body, neck),
     crescent.pocket, poly(circle([0, 0], 0.144, 64)));
   const slotBody = new THREE.Mesh(plate(rockerBody,.40,.64),rockerMaterial);
-  slotBody.userData.role='finite-open-crescent-channel-walls-and-s-neck-to-foot-pivot';rocker.add(slotBody);
+  slotBody.userData.role='finite-open-crescent-channel-walls-and-s-neck-to-foot-pivot';slotBody.userData.outline=rockerBody;rocker.add(slotBody);
   const slot=new THREE.Group();slot.userData.role='open-crescent-slot-void';rocker.add(slot);
   const lowerArm=slotBody;
   const upperArm=new THREE.Mesh(plate(crescent.upper,.40,.64),rockerMaterial);

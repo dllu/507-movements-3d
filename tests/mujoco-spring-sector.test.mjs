@@ -34,10 +34,12 @@ test('083 drives only the input slider; filled collision holes cannot reach the 
     assert.ok(Math.max(...Array.from(data.qvel, Math.abs)) < 1e-7, 'initial spring settling must finish');
     let minimum = Infinity;
     for (const name of ['front', 'rear']) {
-      assert.ok(description.collision[name].maximumBoundaryError < 1e-10);
+      // p101: the apex boss arc simplifies by up to 2e-6, far above the crown.
+      assert.ok(description.collision[name].maximumBoundaryError < 1e-5);
       const rings = nativePlateContours(u.parts[name + 'Sector'].geometry)
         .sort((a, b) => Math.abs(signedArea(b)) - Math.abs(signedArea(a)));
-      assert.equal(rings.length, 3);
+      // p101: the round apex boss closes B's guide clearance into a fourth contour.
+      assert.equal(rings.length, 4);
       // Y is affine on each polygon edge. Check every vertex at both angle
       // limits and its interior sinusoid minimum, using the lowest guide stop.
       for (const ring of rings.slice(1)) for (const [x, y] of ring) {
@@ -115,7 +117,11 @@ test('083 visible hardware remains closed and clear at both reversals and both d
     for (const time of [0, 1, 2, 3, 4]) {
       v.update(time); const audit = auditClutchSourceSolids(v); checks += audit.checks;
       assert.equal(audit.topology.length, 89); assert.deepEqual(audit.topologyIssues, []);
+      // p101: the remote fork and pin are physics-only (hidden); the shown
+      // rod ends plainly over them.
+      const hidden = name => v.root.userData.parts[name]?.userData.presentationHidden;
       for (const issue of audit.issues) {
+        if (hidden(issue.from) || hidden(issue.to)) continue;
         assert.ok(([issue.from, issue.to].some(name => /^(front|rear)Sector$/.test(name))) &&
           ([issue.from, issue.to].some(name => /^wheelTooth\d+$/.test(name))), JSON.stringify(issue));
         assert.ok(issue.gap * v.root.userData.source.scale > -.2, JSON.stringify(issue)); softContacts++;

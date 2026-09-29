@@ -625,17 +625,20 @@ function persianIrrigationWheel(movement) {
   tripPinBracket.userData.eyeRadius = tripPinEyeRadius;
   tripPinBracket.userData.role = 'stationary-tipping-pin-arm';
   root.add(tripPinBracket);
+  // Pass 101: the post stands in the stream bed's top face (it used to run
+  // on 0.25 below the bed's underside), seated 0.02 into it.
+  const bedTopY = groundY + 0.45;
   const tripPinPost = new THREE.Mesh(
     new THREE.BoxGeometry(
       0.12,
-      tripPinPosition.y - groundY,
+      tripPinPosition.y - bedTopY,
       0.12,
     ),
     frameMaterial,
   );
   tripPinPost.position.set(
     3.42,
-    (tripPinPosition.y + groundY) / 2,
+    (tripPinPosition.y + bedTopY) / 2,
     1.34,
   );
   tripPinPost.userData.role = 'stationary-tipping-pin-post';

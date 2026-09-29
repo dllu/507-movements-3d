@@ -81,18 +81,26 @@ export function makeSilkTraverseAssembly(bundle) {
  move(363,289);line(382,289);curve([407,291],[416,308],[422,340]);line(496,340);line(496,328);line(441,328);
  curve([432,291],[418,275],[382,274]);line(363,274);bracketShape.closePath();
  add('guideBracket',plate(poly(bracketShape.getPoints(32).map(p=>p.toArray())),1.8,1.94),PALETTE.frame,'fixed');
- // Brown breaks the fixed blocks off at the right edge. Model them whole:
- // square-ended blocks joined by one upright frame post just beyond the
- // drawn breaks, behind the guide rod's plane.
+ // Brown breaks the fixed blocks off at the right edge. Model them whole as
+ // two plain square-ended blocks (pass 101: the undrawn upright and web that
+ // joined them into one C-frame are gone; neither block needs a drawn support).
  add('guideFoot',plate(sourcePoly([[386,346],[545,346],[545,391],[386,391]]),1.74,2.01),PALETTE.frame,'fixed');
- add('frameWeb',plate(sourcePoly([[520,346],[545,346],[545,391],[520,391]]),1.18,1.74),PALETTE.frame,'fixed');
  // Join the source foot and curved support without inventing an overall base.
  add('footNeck',plate(sourcePoly([[422,336],[496,336],[496,350],[422,350]]),1.8,1.94),PALETTE.frame,'fixed');
- root.updateMatrixWorld(true);const tip=contact.parts.tappet.getWorldPosition(new THREE.Vector3());
- const stem=add('tappetStem',plate(round(.02),tip.z,1.13),PALETTE.ink,'fixed');stem.position.set(tip.x,tip.y,0);
- const supportEnd=raster([406,179]);
- const bar=add('tappetArm',new THREE.BoxGeometry(supportEnd[0]-tip.x,.06,.08),PALETTE.frame,'fixed');bar.position.set((supportEnd[0]+tip.x)/2,tip.y,1.1);
- add('tappetSupport',plate(sourcePoly([[406,151],[545,151],[545,391],[520,391],[520,199],[406,199]]),1.02,1.18),PALETTE.frame,'fixed');
+ // Pass 101: Brown's stout stud. The shank is the contact capsule itself
+ // (solids.js), horizontal in the source view; a hex nut and a turned collar
+ // (Brown's collar is about a quarter of the star wheel's diameter) seat it
+ // on the striker box's end face. The box is centred on the stud's axis.
+ root.updateMatrixWorld(true);
+ const stud=contact.parts.tappet,studAxis=new THREE.Vector3(1,0,0).applyQuaternion(stud.getWorldQuaternion(new THREE.Quaternion()));
+ const studFar=stud.getWorldPosition(new THREE.Vector3()).addScaledVector(studAxis,bundle.parameters.studLength/2);
+ const boxFace=raster([406,179]),studZ=studFar.z,nutLength=.06,collarLength=boxFace[0]-studFar.x-nutLength;
+ if(collarLength<.03)throw new RangeError('173 stud does not reach the striker box');
+ const hexNut=add('studNut',alongX(new THREE.CylinderGeometry(.16,.16,nutLength,6).rotateY(Math.PI/6).rotateX(Math.PI/2)),PALETTE.ink,'fixed');
+ hexNut.position.set(studFar.x+nutLength/2,studFar.y,studZ);
+ const collar=add('studCollar',alongX(plate(round(.15),-collarLength/2,collarLength/2)),PALETTE.muted,'fixed');
+ collar.position.set(boxFace[0]-collarLength/2,studFar.y,studZ);
+ add('tappetSupport',plate(sourcePoly([[406,151],[545,151],[545,199],[406,199]]),studZ-.2,studZ+.2),PALETTE.frame,'fixed');
  const stateAtTime=time=>{
   const c=(((time+displayOffset)%cycle)+cycle)%cycle;
   let q;

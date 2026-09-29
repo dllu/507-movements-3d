@@ -3,29 +3,40 @@ import {createAuthoredStudDriveMovement} from '../authored-stud-drives.js';
 import {plate,poly,circle,ring,disk,polygonClipping as clip} from '../finite-plate-geometry.js';
 import {disposeObject3D} from '../dispose-model.js';
 
-// Reconstruction hypothesis: raise the inner input arm above the disk studs,
-// retaining only its distal driving face at the original working depth.
-// A flat arm cannot work at Brown's layout: his arm end lies on the stud
-// orbit, so any arm joining it to the pivot straddles the orbit until the
-// end has swung about 66° (the return needs 25°). The relief is kept as
-// shallow as the contact allows: the raised back face clears the stud ends
-// by 0.026 and the driving pad overlaps their pins by 0.064, a 0.12 step
-// (half the former 0.24). The pad's
-// inner edge is an arc concentric with the arm's rounded end, crossing the
-// arm's centre line at the contact minimum, so it reads as a round striking
-// boss. (An arc reaching the arm edges at the contact minimum, radius 0.29,
-// holds the stud long enough to throw the elbow over; see p99-e review.)
-export function makeRelievedStudReverser({inputContactMinimum=1.4}={}){
+// Pass 101 (user review): the L lever is flat. Its whole input arm lies in
+// the stud plane with no depth step. At Brown's drawn arm direction a flat arm
+// cannot work: his arm end lies on the stud orbit, so the stud sweeps the
+// lever about 66° and the return arm throws the bar about 1.4 left, beyond
+// the reach of the next stud (it jams under the lug below bar -0.9); a
+// shorter arm at that direction meets the stud end-on and jams. Shortening
+// the input arm (the L's shorter leg) to 1.25 (Brown 1.667) and turning it
+// 15° up towards the disk centre lets each stud strike its side and slip off
+// its end after a 44° swing, which returns the bar to -0.62: farther left
+// than drawn but within the stud's reach (see docs/p101-u2-review.md).
+// The legacy relieved arm (inputContactMinimum, flatInputLength:0) is kept
+// for the historical reports.
+export const FLAT_INPUT_ARM=Object.freeze({flatInputLength:1.25,inputAngleOffset:15*Math.PI/180});
+export function makeRelievedStudReverser({inputContactMinimum=1.4,flatInputLength=FLAT_INPUT_ARM.flatInputLength,inputAngleOffset=flatInputLength?FLAT_INPUT_ARM.inputAngleOffset:0}={}){
  const model=createAuthoredStudDriveMovement({id:153}),u=model.root.userData,b=u.blocks,g=u.geometry,arm=b.inputArm;
- const material=arm.children[0].material,L=g.leverInputLength,h=g.leverInputHalfWidth;
- if(!(inputContactMinimum>h&&inputContactMinimum<L-h))throw new RangeError('Invalid relieved arm length');
+ const material=arm.children[0].material,h=g.leverInputHalfWidth;
+ const L=flatInputLength||g.leverInputLength;
+ if(!flatInputLength&&!(inputContactMinimum>h&&inputContactMinimum<L-h))throw new RangeError('Invalid relieved arm length');
+ if(flatInputLength&&!(flatInputLength>g.leverPivotRadius+h&&flatInputLength<=g.leverInputLength))throw new RangeError('Invalid flat arm length');
  for(const mesh of [...arm.children]){arm.remove(mesh);mesh.geometry.dispose();}
  const rectangle=(l,r)=>poly([[l,-h],[r,-h],[r,h],[l,h]]);
+ if(flatInputLength){
+  // Flat L: the whole input arm lies in the stud plane, one extrusion with a
+  // rounded end concentric with its end centre.
+  const working=new THREE.Mesh(plate(clip.difference(clip.union(rectangle(0,L),poly(circle([L,0],h,96))),poly(circle([0,0],g.leverPivotRadius,96))),-.02,.34),material);
+  working.name='flat-input-arm';arm.userData.blocks={working};g.flatInputLength=L;g.leverInputLength=L;arm.add(working);
+ }else{
  const padRadius=L-inputContactMinimum,pad=clip.intersection(rectangle(L-padRadius,L),poly(circle([L,0],padRadius,192)));
  const working=new THREE.Mesh(plate(clip.union(pad,poly(circle([L,0],h,96))),-.02,.34),material);
  working.name='distal-input-driving-face';
  const raised=new THREE.Mesh(plate(clip.difference(clip.difference(rectangle(0,L),pad),poly(circle([0,0],g.leverPivotRadius,96))),.10,.34),material);raised.name='raised-inner-input-arm';
  arm.add(working,raised);arm.userData.blocks={working,raised};g.inputContactMinimum=inputContactMinimum;
+ }
+ if(inputAngleOffset){arm.rotation.z=inputAngleOffset;g.inputAngleOffset=inputAngleOffset;}
  const replace=(mesh,geometry)=>{mesh.geometry.dispose();mesh.geometry=geometry;mesh.rotation.set(0,0,0);};
  replace(b.diskBody,ring(.134,g.diskRadius,-g.diskDepth/2,g.diskDepth/2,128));
  replace(b.diskHub,ring(.134,g.hubRadius,.07,.23,96));
@@ -63,7 +74,7 @@ export function makeRelievedStudReverser({inputContactMinimum=1.4}={}){
  const fixedMaterial=b.fixedFrame.children[0].material;
  const fixed=(name,geometry)=>{const mesh=new THREE.Mesh(geometry,fixedMaterial);mesh.name=name;b.fixedFrame.add(mesh);return mesh;};
  const theta=-g.sourceLeverRestAngle,stopRadius=.08;
- const stop=new THREE.Vector2(.70,-h-stopRadius).rotateAround(new THREE.Vector2(),theta).add(new THREE.Vector2(g.leverPivot.x,g.leverPivot.y));
+ const stop=new THREE.Vector2(.70,-h-stopRadius).rotateAround(new THREE.Vector2(),theta+(g.inputAngleOffset??0)).add(new THREE.Vector2(g.leverPivot.x,g.leverPivot.y));
  b.leverStop=fixed('physical-elbow-rest-stop',disk(stopRadius,.82,1.0,96).translate(stop.x,stop.y,0));
  fixed('rest-stop-support-shaft',disk(.05,-.42,.82,96).translate(stop.x,stop.y,0));
  const box=(name,x0,x1,y0,y1,z0,z1)=>fixed(name,plate(poly([[x0,y0],[x1,y0],[x1,y1],[x0,y1]]),z0,z1));

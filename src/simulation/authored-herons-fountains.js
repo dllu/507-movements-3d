@@ -104,25 +104,29 @@ function heronsFountain(movement) {
   for (const water of [rightWater, bowlWater]) water.renderOrder = 1;
   root.add(rightWater, bowlWater);
 
-  // The jet: thin streams leaving the spire tip and falling back on both
-  // sides into the trough water (Brown's willow plume), their streaks
-  // running with the water.
+  // The jet: streams leaving the spire tip and falling back on both sides
+  // into the trough water (Brown's willow plume), their streaks running with
+  // the water. Pass 101: ten fuller streams fanned in depth as well as
+  // across (all behind the section plane, over the trough water), with
+  // faster streaks, so the plume reads as spray rather than glass wires.
   const tip = new THREE.Vector3(0, pipe.tip, -0.08);
-  const jets = [-14, -8, -3, 3, 8, 14].map((degrees, index) => {
-    const angle = THREE.MathUtils.degToRad(degrees);
+  const fan = [[-15, -2], [-10, -6], [-6, 0], [-3, -9], [-1, -3], [1, -6], [3, 0], [6, -9], [10, -3], [15, -6]];
+  const jets = fan.map(([degrees, depthDegrees], index) => {
+    const angle = THREE.MathUtils.degToRad(degrees), back = THREE.MathUtils.degToRad(depthDegrees);
     const stream = new WaterStream(ballisticPath({
       origin: tip,
-      velocity: new THREE.Vector3(jetSpeed * Math.sin(angle), jetSpeed * Math.cos(angle), 0),
+      velocity: new THREE.Vector3(jetSpeed * Math.sin(angle), jetSpeed * Math.cos(angle) * Math.cos(back), jetSpeed * Math.sin(back)),
       gravity,
       endY: troughLevel,
       samples: 32,
     }), {
-      width: 0.018,
-      thickness: 0.018,
+      width: 0.03,
+      thickness: 0.03,
       widthExponent: 0.5,
-      spread: {start: 0.6, width: 1.8, thickness: 1.8},
+      section: (i, u, [a, b]) => [Math.min(a, 0.07), Math.min(b, 0.07)],
+      spread: {start: 0.5, width: 1.8, thickness: 1.8},
       cyclePeriod: cycleDuration,
-      streakRate: 2.4,
+      streakRate: 4.5,
       opacity: 0.5,
     });
     stream.userData.role = `fountain-jet-stream-${index + 1}-from-spire-tip-into-trough`;

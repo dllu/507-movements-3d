@@ -11,14 +11,13 @@ function replace(o,g){o.geometry.dispose();o.geometry=g;}
 function presentation(root){root.userData.hideGround=true;root.traverse(o=>{for(const m of o.material?(Array.isArray(o.material)?o.material:[o.material]):[])m.fog=false;});}
 
 export function correctMirrorPolisher(root){
-  const b=root.userData.blocks,g=root.userData.geometry,h=g.clickHand,scale=g.ratchetOuterRadius/.72;
+  const b=root.userData.blocks,g=root.userData.geometry;
   // Brown's bar runs on past its top eye as a square end.
   const barTopRun=.30,eyeY=g.longBarLength/2;
-  const body=clip.difference(rectangle(g.longBarWidth,g.longBarLength+barTopRun,0,barTopRun/2),poly(circle([0,eyeY],.122,64)),poly(circle([0,eyeY-g.mirrorDistanceFromTopEye],.107,64)));
+  const body=clip.difference(rectangle(g.longBarWidth,g.longBarLength+barTopRun,0,barTopRun/2),poly(circle([0,eyeY],.17,64)),poly(circle([0,eyeY-g.mirrorDistanceFromTopEye],.107,64)));
   replace(b.barBody,plate(body,-.08,.08));replace(b.upperEye,tube(.17,.19,.122));b.upperEyeBore.visible=false;
   // Crank side, all in front of the bar face (z 0.18), front to back:
-  // handle crank 1.00-1.14, upper rail 0.53-0.95, eccentric 0.37-0.49, eye
-  // crank 0.21-0.35. The shaft runs from the eye crank to the handle crank
+  // handle crank 1.00-1.14, upper rail 0.53-0.95, eye crank 0.21-0.35. The shaft runs from the eye crank to the handle crank
   // and never reaches the bar's plane, which sweeps across its axis.
   const railZ=.74;
   replace(b.upperRail,plate(clip.difference(rectangle(4.40,.35),poly(circle([0,0],.122,64))),-.21,.21));b.upperRail.position.z=railZ;
@@ -32,71 +31,27 @@ export function correctMirrorPolisher(root){
   // and the handle; the handle is the shared turned handle, its foot sunk in
   // the arm's front face with a margin all round.
   replace(b.handleArm,plate(poly(crankArmOutline({handleX:-g.handleRadius,handleEndRadius:.12,hubEndRadius:.19})),-.07,.07));b.handleArm.position.set(0,0,1.07);
-  replace(b.crankPinBoss,new THREE.CylinderGeometry(.12,.12,.35,32));b.crankPinBoss.position.z=.175;
   replace(b.handle,turnedHandleGeometry({height:.44+HANDLE_FOOT_EMBED,side:[[.065,0],[.048,.15],[.045,.4],[.068,.6],[.08,.78]],shank:handleShank(.14)})); // pass 98: flush with the arm's back face
   b.handle.rotation.set(Math.PI/2,0,0);b.handle.position.set(-g.handleRadius,0,1.14-HANDLE_FOOT_EMBED);
   // The turned handle's bulb replaces the separate ball knob.
   b.handleKnob.visible=false;
-  const eccentricShape=clip.difference(poly(circle([0,0],.34,96)),poly(circle([-g.eccentricity,0],.122,64)));
-  replace(b.eccentricDisk,plate(eccentricShape,-.06,.06).rotateX(-Math.PI/2));b.eccentricDisk.position.z=g.eccentricPlaneZ;
   // Behind the bar (face 0.02-0.18) and the lower rail (-0.21 to -0.01),
-  // front to back: click carrier -0.24 to -0.28, ratchet (and click) -0.30
-  // to -0.44, square mirror -0.46 to -0.54, as Brown draws the mirror and
-  // ratchet behind the bar and the ratchet's teeth over the square.
+  // front to back: ratchet, S-link and eccentric -0.31 to -0.44, square
+  // mirror -0.46 to -0.54, as Brown draws the mirror and ratchet behind the
+  // bar and the ratchet's teeth over the square.
   replace(b.mirrorBacking,plate(clip.difference(rectangle(g.mirrorSize+.10,g.mirrorSize+.10),poly(circle([0,0],.107,64))),-.04,.04));b.mirrorBacking.position.z=0;
   // Brown's mirror is one plain square plate: a silvered block, not a white
   // panel inset in a dark border.
   b.mirrorFace.visible=false;b.mirrorBacking.material=b.mirrorFace.material.clone();b.mirrorBacking.material.color.set(0xc3c9cb);
   // Brown draws no crank or mirror index marks; they stay as hidden references.
   b.mirrorIndex.visible=false;b.shaftIndex.visible=false;
-  const ratchetLocalZ=g.clickPlaneZ-g.barPlaneZ-g.mirrorRotorZ;
-  b.clickCarrier.position.z=g.clickPlaneZ-g.barPlaneZ;b.carrierPivot.visible=false;
-  const carrierShape=clip.difference(clip.union(rectangle(g.carrierPivotRadius,.085,g.carrierPivotRadius/2),poly(circle([0,0],.14,48)),poly(circle([g.carrierPivotRadius,0],.13,48))),poly(circle([0,0],.107,48)),poly(circle([g.carrierPivotRadius,0],.082,48)));
-  replace(b.carrierArm,plate(carrierShape,-.02,.02));b.carrierArm.position.set(0,0,.11);
-  for(const o of [b.pawlBody,b.pawlTip,b.contactMarker])o.visible=false;
-  // The click hangs from the carrier pivot and trails toward the teeth it
-  // drives; on Brown's side it trails clockwise-behind (h=-1 mirrors it).
-  const toe=[.68*scale,-.22*scale*h];
-  const pawl=new THREE.Group();pawl.position.set(g.carrierPivotRadius,0,0);pawl.rotation.z=Math.atan2(toe[1],toe[0]-g.carrierPivotRadius);b.clickCarrier.add(pawl);
-  const length=Math.hypot(toe[0]-g.carrierPivotRadius,toe[1]),stub=new THREE.Mesh(new THREE.BoxGeometry(length,.08,.12),b.pawlBody.material);stub.userData.role='polishing-click-body';pawl.add(stub);
-  const phase=g.carrierBaseAngle+Math.atan2(toe[1],toe[0])+.05*g.ratchetToothPitch*h;
-  b.ratchetWheel.rotation.z=0;b.ratchetWheel.position.z=ratchetLocalZ;
-  const outline=ratchet(b.ratchetWheel,{radius:g.ratchetOuterRadius,bore:.107,teeth:g.ratchetToothCount,hand:h,phase,depth:.14});
-  b.finiteClick=makeFollower(pawl,b.ratchetWheel,[0,0],outline);
-  // The click's stem: from its back face through the carrier arm forward,
-  // beside the bar's edge (the carrier keeps it clear of the bar), to the
-  // eccentric rod's lower ball joint in front of the bar, as Brown's hooked click
-  // comes round the bar's edge to the teeth behind it.
   {
-    const back=-.06,front=g.followerLowerZ-g.clickPlaneZ-.05;
-    replace(b.finiteClick.pin,new THREE.CylinderGeometry(.08,.08,front-back,32));b.finiteClick.pin.position.z=(front+back)/2;
-  }
-  {
-    // The axle runs from the mirror's back face forward through the carrier
+    // The axle runs from the mirror's back face forward through the ratchet
     // and the bar, ending just proud of the bar's face.
     const rotorZ=g.barPlaneZ+g.mirrorRotorZ,back=rotorZ-.04,front=g.barPlaneZ+.10;
     b.mirrorAxle.geometry.dispose();b.mirrorAxle.geometry=new THREE.CylinderGeometry(.105,.105,front-back,30);b.mirrorAxle.position.z=(front+back)/2-rotorZ;
   }
-  replace(b.eccentricFollower.userData.outer,tube(.043,1,.031));
-  // The eccentric works in a strap: a ring round the eccentric disk, from
-  // whose rim the rod runs down to the click carrier, so no rod crosses the
-  // shaft. The follower's kinematic endpoint stays the eccentric centre.
-  {
-    const f=b.eccentricFollower,d=f.userData,strapInner=.346,strapOuter=.40;
-    const strap=new THREE.Mesh(plate(clip.difference(poly(circle([0,0],strapOuter,96)),poly(circle([0,0],strapInner,96))),-.06,.06),d.outer.material);
-    strap.userData.role='eccentric-strap-ring-round-shaft-eccentric';f.add(strap);d.strap=strap;d.upperJoint.visible=false;
-    const place=d.setEndpoints,start=new THREE.Vector3(),end=new THREE.Vector3(),axis=new THREE.Vector3();
-    d.setEndpoints=(upper,lower)=>{
-      place(upper,lower);strap.position.copy(upper);
-      axis.copy(lower).sub(upper).normalize();
-      start.copy(upper).addScaledVector(axis,strapOuter-.01);
-      end.copy(d.outer.position).addScaledVector(axis,d.outer.scale.y/2);
-      d.outer.position.copy(start).add(end).multiplyScalar(.5);d.outer.scale.y=start.distanceTo(end);
-    };
-  }
-  root.userData.updatePolishingInterfaces=state=>b.finiteClick.update(state.ratchetAngle-state.carrierAngle);
   root.userData.minimumDisplayCycleSeconds=10;
-  root.userData.reconstructionNote='The guided bar follows the crank exactly. Mirror indexing and the eccentric-driven carrier stroke are prescribed, with a geometric overrunning click on the ratchet\'s left side turning it clockwise as Brown draws. The mirror and ratchet stand behind the bar and the lower rail, as Brown draws them behind the bar; the click\'s stem comes forward beside the bar\'s edge to the eccentric rod. The telescoping follower is an illustrative transmission, not a closed rigid linkage or a validated passive ratchet under polishing load.';
   presentation(root);
 }
 

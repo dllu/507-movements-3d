@@ -1,7 +1,7 @@
 {
   "movement": 173,
   "status": "selected-source-features-qualified",
-  "maximumWheelBoundsError": 2.0933810941038473,
+  "maximumWheelBoundsError": 1.9087510612624783,
   "landmarks": [
     {
       "name": "wrist",
@@ -41,10 +41,10 @@
     }
   ],
   "projectedWheelBounds": [
-    333.093381094102,
-    144.57302630437562,
-    390.90661890589615,
-    229.42697369562129
+    332.9087510612606,
+    144.26530958297326,
+    391.0912489387375,
+    229.73469041702364
   ],
   "approximateSourceWheelBounds": [
     331,
@@ -60,11 +60,11 @@
     },
     {
       "file": "src/simulation/mujoco-silk-tappet/assembly.js",
-      "sha256": "6ac350ff4380ba7de32f78f0d6799a84bce883f1aeba1b1940319aee80a8ea3f"
+      "sha256": "1bd41801804b4fd22e241611d9facca8ac0102e849bb8e678e486fb34be679c1"
     },
     {
       "file": "src/simulation/mujoco-silk-tappet/solids.js",
-      "sha256": "96c52ee7d2837db6883d9b5853c35ee915d6aea665b22d4713ac6d2f76931c31"
+      "sha256": "d92fff31cb840a7644e62120289a0eb3378337aa59880b640b11d7801104372d"
     },
     {
       "file": "src/simulation/mujoco-silk-tappet/playback.js",
@@ -72,7 +72,7 @@
     },
     {
       "file": "src/simulation/baked/assets/173-tappet.json.gz",
-      "sha256": "45741b81eec206c2da855d5f23e879dbbcb65067868a9d6c9e2554bd2d49c7bb"
+      "sha256": "a22c31da687ac07b6a43160cc06e4a37e1608e707c5dcc25c09b93d954a6a7d0"
     },
     {
       "file": "public/engravings/mm_173.png",

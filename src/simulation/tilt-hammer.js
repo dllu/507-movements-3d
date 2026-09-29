@@ -7,6 +7,28 @@ import{matte,markShadows}from'./primitives.js';
 // The bloom (workpiece) outline is baked in the profile: its tail ends in a plain
 // cut, and its dip is the striker's seat (scripts/seat-tilt-hammer-striker.mjs).
 
+// Cam B's outline. Each lobe: the circular flank up to the tip fillet's
+// tangent point, the round tip (p101), then the radial drop face to the
+// next lobe's flank.
+export function tiltHammerCamRing(p,tip,segments,tipSteps){
+  const ring=[],flankStart=tip.turn,flankEnd=Math.atan2(tip.flankPoint[1],tip.flankPoint[0]);
+  const filletFrom=Math.atan2(tip.flankPoint[1]-tip.center[1],tip.flankPoint[0]-tip.center[0]),filletTo=Math.PI+tip.turn;
+  tipSteps??=tip.radius>0?Math.max(8,Math.ceil(segments*(filletTo-filletFrom)/(4*Math.PI))):0;
+  for(let lobe=0;lobe<4;lobe++){
+    const rotation=lobe*p.pitch,push=([x,y])=>ring.push([x*Math.cos(rotation)-y*Math.sin(rotation),x*Math.sin(rotation)+y*Math.cos(rotation)]);
+    for(let i=0;i<=segments;i++){
+      const angle=flankStart+(flankEnd-flankStart)*i/segments,dx=Math.cos(angle),dy=Math.sin(angle),v=p.flankCenter[0]*dx+p.flankCenter[1]*dy;
+      const radius=v+Math.sqrt(p.flankRadius**2-(p.flankCenter[0]**2+p.flankCenter[1]**2)+v*v);
+      push([radius*dx,radius*dy]);
+    }
+    for(let i=1;i<=tipSteps;i++){
+      const a=filletFrom+(filletTo-filletFrom)*i/tipSteps;
+      push([tip.center[0]+tip.radius*Math.cos(a),tip.center[1]+tip.radius*Math.sin(a)]);
+    }
+  }
+  return ring;
+}
+
 export function makeFourLobeTiltHammer(){
   const motion=makeTiltHammerMotion(profile),p=motion.parameters,root=new THREE.Group();
   const input=new THREE.Group(),hammer=new THREE.Group(),fixed=new THREE.Group();root.add(input,hammer,fixed);
@@ -24,13 +46,7 @@ export function makeFourLobeTiltHammer(){
     if(d.kind==='turned')geometry=turnedClutchGeometry(d.profile,d);
     else if(d.kind==='plate')geometry=plate(d);
     else{
-      const ring=[];
-      for(let lobe=0;lobe<4;lobe++)for(let i=0;i<=d.segments;i++){
-        const angle=p.pitch*i/d.segments,dx=Math.cos(angle),dy=Math.sin(angle),v=p.flankCenter[0]*dx+p.flankCenter[1]*dy;
-        const radius=v+Math.sqrt(p.flankRadius**2-(p.flankCenter[0]**2+p.flankCenter[1]**2)+v*v);
-        const x=radius*dx,y=radius*dy,rotation=lobe*p.pitch;
-        ring.push([x*Math.cos(rotation)-y*Math.sin(rotation),x*Math.sin(rotation)+y*Math.cos(rotation)]);
-      }
+      const ring=tiltHammerCamRing(p,motion.tip,d.segments);
       geometry=plate({...d,polygons:[[[...ring,ring[0]]]]});
     }
     const mesh=new THREE.Mesh(geometry,matte(new THREE.Color().fromArray(descriptor.color),{metalness:.16,roughness:.62}));

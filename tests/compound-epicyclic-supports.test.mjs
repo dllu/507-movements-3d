@@ -7,7 +7,7 @@ import {disposeObject3D} from '../src/simulation/dispose-model.js';
 
 for (const id of [506,507]) test(`${id} moving rendered solids clear the reconstructed source supports`, () => {
  const model=createAuthoredEpicyclicTrainMovement({id}),u=model.root.userData,b=u.blocks;
- const supports=id===506?[b.rearPost,b.mainBearingLinks[1],...b.mainBearings,b.driverBearing,b.driverBearingPedestal,b.supportBase]:[b.outputBearing,b.outputBearingPedestal,b.bottomMainBearing,b.supportBase];
+ const supports=id===506?[b.rearPost,b.mainBearingLinks[1],...b.mainBearings,b.driverBearing,b.supportBase]:[b.outputBearing,b.outputBearingPedestal,b.bottomMainBearing,b.supportBase];
  const groups=id===506?[b.driverAH,b.lowerBC,b.upperFG,b.carrierKL]:[b.outputCAssembly,b.longSleeveDE,b.shortSleeveAH,b.carrierMN,b.fixedShaftMP];
  const moving=[];for(const group of groups)group.traverseVisible(o=>{if(o.isMesh)moving.push(o);});
  const cache=new Map();

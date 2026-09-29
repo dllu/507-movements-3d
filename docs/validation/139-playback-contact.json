@@ -6,11 +6,11 @@
   "sources": [
     {
       "file": "src/simulation/baked/assets/139.json.gz",
-      "sha256": "c27ae57f3aac3fedb65700a4ec6dfe95543f458cd3f3827663a3c4b3c006d3a9"
+      "sha256": "123f15a6d96e7854047918c0bb3fbdf0ca104a0e92de3218a0a0ebc52a798a9a"
     },
     {
       "file": "src/simulation/mujoco-internal-rack/geometry.js",
-      "sha256": "bda9a595762b83e4e1c47726e554abfd60eb4e67d7c29322facedb9499bca5bf"
+      "sha256": "25259ea5c5f9820cd70b605e78f8e30f03348371b500ea525dfe2b6e6146eced"
     },
     {
       "file": "scripts/review-internal-rack-playback.mjs",

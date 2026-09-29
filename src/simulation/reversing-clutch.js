@@ -57,7 +57,8 @@ export function makeReversingClutch() {
   };
   const leftGear = bevel(new THREE.Vector3(1, 0, 0), true, PALETTE.accent, p.looseBore);
   const rightGear = bevel(new THREE.Vector3(1, 0, 0), false, PALETTE.driver, p.looseBore);
-  const inputGear = bevel(new THREE.Vector3(0, 1, 0), false, PALETTE.brass, p.verticalShaftRadius);
+  // p101: steel grey, so the driver does not merge with the ochre left bevel it meshes with.
+  const inputGear = bevel(new THREE.Vector3(0, 1, 0), false, PALETTE.muted, p.verticalShaftRadius);
   const crown = (profile, front, direction, workingPhase, color, keyed = false, smoothProfileIndices = []) => {
     // Keep a fixed root station beside each displaced front corner. This
     // splits the bore and outer wall at the working face's lower edge,

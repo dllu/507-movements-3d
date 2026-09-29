@@ -30,8 +30,10 @@ export function makePinClutch() {
     outputBore: 0.103, keyHalfWidth: 0.020, keyBottom: 0.085, keyTop: 0.125,
     keywayHalfWidth: 0.026, keywayTop: 0.131,
     grooveLeft: 0.54, grooveRight: 0.73, grooveRadius: 0.16, collarRadius: 0.30,
-    shoeClearance: 0.00001, shoeHeight: 0.085, shoeBackZ: 0.205, shoeFrontZ: 0.270,
-    leverZ: 0.335, leverDepth: 0.050, pivotRadius: 0.045, pivotBore: 0.046,
+    shoeClearance: 0.00001, shoeHeight: 0.085, shoeBackZ: 0.205, shoeFrontZ: 0.320,
+    // p101: the lever stands 0.05 further forward (and the shoe with it) so
+    // the grip passes 0.057 clear in front of the end barrel, not grazing it.
+    leverZ: 0.385, leverDepth: 0.050, pivotRadius: 0.045, pivotBore: 0.046,
     followerRadius: 0.030, followerBore: 0.031 };
   const root = new THREE.Group(), driver = rotorFrame(), output = rotorFrame(), spindle = rotorFrame();
   const driverBody = turned([[-0.55, p.driverBore], [-0.55, p.driverHubRadius], [-0.20, p.driverHubRadius],
@@ -85,9 +87,9 @@ export function makePinClutch() {
   outline.quadraticCurveTo(-0.13, -0.13, -0.13, 0); outline.closePath();
   outline.holes.push(polygon(0, 0, p.pivotBore, 128), polygon(0, p.leverLength, p.followerRadius, 128));
   const leverBody = plate(outline, p.leverDepth, PALETTE.frame);
-  const followerPin = turned([[-0.160, 0], [-0.160, p.followerRadius], [0.035, p.followerRadius], [0.035, 0]], PALETTE.brass);
+  const followerPin = turned([[-0.210, 0], [-0.210, p.followerRadius], [0.035, p.followerRadius], [0.035, 0]], PALETTE.brass);
   const followerCap = turned([[0.030, 0], [0.030, 0.043], [0.055, 0.043], [0.055, 0]], PALETTE.brass);
-  const followerBackCap = turned([[-0.155, 0], [-0.155, 0.043], [-0.135, 0.043], [-0.135, 0]], PALETTE.brass);
+  const followerBackCap = turned([[-0.205, 0], [-0.205, 0.043], [-0.185, 0.043], [-0.185, 0]], PALETTE.brass);
   followerPin.position.y = p.leverLength; followerCap.position.y = p.leverLength; followerBackCap.position.y = p.leverLength;
   // Pass 98: one smooth turned profile (a centripetal spline through the old
   // stations, closed by a quarter-ellipse dome) in place of a six-segment
@@ -112,8 +114,8 @@ export function makePinClutch() {
   const shoe = plate(shoeShape, p.shoeFrontZ - p.shoeBackZ, PALETTE.brass);
   shoe.position.z = (p.shoeFrontZ + p.shoeBackZ) / 2;
   const pivot = new THREE.Group(); pivot.position.set(p.leverPivotX, p.leverPivotY, 0);
-  const pivotPin = turned([[0.27, 0], [0.27, p.pivotRadius], [0.385, p.pivotRadius], [0.385, 0]], PALETTE.ink);
-  const pivotCaps = [[0.280, 0.305], [0.365, 0.393]].map(([a, b]) =>
+  const pivotPin = turned([[0.32, 0], [0.32, p.pivotRadius], [0.435, p.pivotRadius], [0.435, 0]], PALETTE.ink);
+  const pivotCaps = [[0.330, 0.355], [0.415, 0.443]].map(([a, b]) =>
     turned([[a, 0], [a, 0.075], [b, 0.075], [b, 0]], PALETTE.brass));
   // Brown draws the fixed fulcrum only as a capped pin, with no bracket; it
   // ends as a plain stub (p62: the undrawn wall flange is removed).

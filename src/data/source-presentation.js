@@ -610,9 +610,9 @@ export default {
     note: 'Face view of the treadwheel: the riveted rim, the square lattice of crossing bars round the sectioned axle and the horse walking inside. Brown draws no trestle, standard or base rail, so the axle ends as plain stubs either side of the wheel; no white index is drawn.',
   },
   377: {
-    camera: [1, 0.02, 0.62],
-    remove: ['fixed-treadmill-foundation', 'fixed-hand-rail-support', 'white-index-.*'],
-    note: 'Level side view of the treadmill (Brown mixes an end view of the wheel with a side view of the drum; the camera sits between, nearer the side): the notched spur wheel on the near end of the axle behind its flared A-frame standard on a plank, the long diagonal side bar in front, and the drum running off to the right with the man, back to the viewer, stepping up its boards and holding the rail before him. The rail ends at the side bar, fastened by one bolt through the hole Brown draws near its top; no foundation slab, rail posts, bracket or white index are drawn.',
+    camera: [1, 0.32, 0.62],
+    remove: ['fixed-treadmill-foundation', 'white-index-.*'],
+    note: 'Level side view of the treadmill (Brown mixes an end view of the wheel with a side view of the drum; the camera sits between, nearer the side): the notched spur wheel on the near end of the axle behind its flared A-frame standard on a plank, the long diagonal side bar in front, and the drum running off to the right with the man, back to the viewer, stepping up its boards and holding the rail before him. The rail ends at the side bar, fastened by one bolt through the hole Brown draws near its top; no foundation slab, rail posts, bracket or white index are drawn. Pass 101: the man climbs upright on the drum\'s upper quarter, where its treads form a stair, so the camera is raised about 15 degrees: he then stands among the treads, with steps above his feet, as Brown draws him.',
   },
   378: {
     camera: [0.05, 0.08, 1],
@@ -768,7 +768,7 @@ export default {
   420: {
     camera: [0.08, 0.02, 1],
     remove: ['fixed-overhead-bell-support'],
-    note: 'Side elevation of the hammer on its bracket with the under-lever return spring on the plank, and the bell with its canon loop; Brown draws no post, arm or hanger for the bell, so none is shown.',
+    note: 'Side elevation of the hammer on its bracket with the under-lever return spring on the plank, and the bell with its canon loop; Brown draws no support for the bell, so it hangs on a minimal pin and short beam from a wall plate behind it, hidden by the bell in this view.',
   },
   421: {
     note: 'The sectioned cylinder with its head, stuffing box and bottom, the trunk piston closed under the pitman pin, the pitman and the crank on its bare shaft; Brown\'s dotted crank-pin circle is notation and is not drawn, nor is a crankshaft standard (the shaft axis is a fixed ideal constraint). A port in the head and one in the bottom carry the steam; translucent steam shows high-pressure steam above the piston on the down-stroke and the same steam working expansively below it on the up-stroke.',

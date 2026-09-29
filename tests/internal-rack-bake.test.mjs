@@ -45,3 +45,13 @@ test('139 interpolated suspension pins fit their bores and moving hardware stays
   v.reset();assert.deepEqual(Object.values(v.root.userData.state.qpos),b.motion[0].slice(1));
  }finally{v.dispose();}
 });
+test('p101: 139 toothed rim is extruded to the collision depth and the backing sits behind it',()=>{
+ const v=makeBakedRigidMovement(b,{slideAxes:{frame:'x',rack:'y',couplerX:'x',coupler:'y'}});
+ const find=name=>{let found;v.root.traverse(o=>{if(o.name===name)found=o;});return found;};
+ const rim=new Box3().setFromBufferAttribute(find('steel-tooth-rim').geometry.attributes.position);
+ const backing=new Box3().setFromBufferAttribute(find('rack-backing').geometry.attributes.position);
+ const pinion=new Box3().setFromBufferAttribute(find('pinion-teeth').geometry.attributes.position);
+ assert(rim.max.z-rim.min.z>=.119,'rim is as deep as the native collision cells');
+ assert(rim.min.z<=pinion.min.z&&rim.max.z>=pinion.max.z,'rim spans the pinion face');
+ assert(backing.max.z<=rim.min.z+1e-9,'backing lies behind the rim');
+});

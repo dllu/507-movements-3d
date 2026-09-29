@@ -1,300 +1,229 @@
 import * as THREE from 'three';
-import { rackGeneratedOutline } from './noncircular-gear-geometry.js';
-import { conicalStudCut as savedCut } from '../data/conical-stud-profile.js';
 import { creaseIndexedNormals } from './crease-normals.js';
 
 const turn = 2 * Math.PI;
-/** Crown sag of the round stud heads at their rim. */
-export const conicalStudCrownSag = 0.012;
-const cache = new Map();
 
+// Pass 101 (user direction): the studs are spheres whose centres lie ON the
+// stud cone's pitch surface, strung along ONE revolution of an Archimedean
+// spiral in plan, r(psi) linear in psi, from the cone's bottom rim to its top
+// rim (inset by the stud radius so every sphere lies within the cone's
+// height). The flutes of the toothed cone are straight ball grooves: each is
+// a round channel about a generator of the toothed pitch cone, so it follows
+// Brown's straight flute lines and receives a sphere at any height.
+//
+// Brown's cones (plate 37), scaled to a 1.8 centre distance: 2.07 tall, the
+// toothed cone about 1.55 across the top and 0.45 at the foot on a mean near
+// 1.02; he draws about 28 flutes. 24 flutes keep a 0.028 land between the
+// 0.045-radius studs' grooves at the foot of the toothed cone.
 export const conicalStudParameters = Object.freeze({
-  // Brown's cones (plate 37), scaled to a 1.8 centre distance: 2.07 tall,
-  // toothed cone about 1.55 at the top and 0.45 at the foot (mean 1.02),
-  // stud cone a frustum about 0.23 across the top. He draws about 28 flutes.
-  // Studs sit one tooth pitch apart along the spiral, so 28 flutes with 17
-  // studs per turn put the spiral just above mid-height, where the toothed
-  // cone is the larger (h 0.15 +- 0.40 gives a solved mean radius of 1.022).
-  // The output angle between studs then grows from 13 to 34 degrees up the
-  // spiral, as Brown's spacing grows (16 to 21 degrees over his seven).
-  // The flutes are grooves cut into the pitch cone (no addendum), so the
-  // stud cone's body lies just inside its pitch cone and the round heads
-  // stand only their engagement (0.02) plus a 0.004 running relief proud.
-  centerDistance: 1.8, radiusSlope: 0.53, axialAmplitude: 0.4, axialCenter: 0.15,
-  halfHeight: 1.035, teeth: 28, studCount: 17, studRadius: 0.05,
-  studFront: 0.02, studBack: 0.16, toothAddendumFactor: 0,
+  centerDistance: 1.8, radiusSlope: 0.53, halfHeight: 1.035,
+  teeth: 24, studCount: 23, studRadius: 0.045,
+  // The spiral's two ends sit at one plan angle. A stud at each end would
+  // put the top and bottom studs in one flute at once with ratios 0.15 and
+  // 2.8, so the top stud (on the slender end of the stud cone) could not
+  // leave its flute. The seam therefore spans seamGap of output angle with
+  // no stud (the top stud stands seamGap short of the spiral's top end, where
+  // Brown's spacing is already about 45 degrees) and the toothed cone
+  // advances seamFlutes pitches across it.
+  seamGap: 0.7, seamFlutes: 2, seamBlend: 0.12,
+  // Stud body runs just inside its pitch cone; the lands are the toothed
+  // pitch cone itself.
+  studBodyRelief: 0.004,
+  // Ball-groove radius, linear in height: every sphere clears the flutes at
+  // all poses (the widest need is where top studs approach, see
+  // scripts/probe-conical-stud-contact.mjs).
+  grooveRadiusBottom: 0.0485, grooveRadiusTop: 0.0585,
 });
 
-/** An end-to-end spiral with equal axial steps, as in the engraving.
- * Nominal indexing integrates adjacent pitch ratios. This is prescribed
- * motion; continuous force transmission across the spiral seam is unresolved.
- */
-export function conicalStudMotion({ centerDistance, radiusSlope, axialAmplitude, axialCenter = 0, teeth, studCount }) {
+const smootherIntegral = (u) => u ** 4 * (2.5 - 3 * u + u * u);
+const smootherStep = (u) => u ** 3 * (10 - 15 * u + 6 * u * u);
+
+/** Prescribed motion: while stud i is engaged the pitch cones roll at the
+ * spiral's height under the line of centres, so input angle is the integral
+ * of Rs/Rt (closed form, the radii being linear in output angle). Across
+ * the seam the rate blends from the top ratio to the bottom ratio. */
+export function conicalStudMotion(parameters = conicalStudParameters) {
+  const { centerDistance: C, radiusSlope: k, halfHeight, teeth, studCount: n,
+    studRadius, seamGap: g, seamFlutes: q, seamBlend } = parameters;
   const pitch = turn / teeth;
-  const heights = Array.from({ length: studCount }, (_, index) =>
-    axialCenter - axialAmplitude + 2 * axialAmplitude * index / (studCount - 1));
-  const ratiosAt = (mean) => heights.map((height) => {
-    const radius = mean + radiusSlope * height;
-    return (centerDistance - radius) / radius;
-  });
-  const reach = radiusSlope * (Math.abs(axialCenter) + axialAmplitude);
-  let low = reach + 0.001;
-  let high = centerDistance - reach - 0.001;
-  for (let iteration = 0; iteration < 60; iteration += 1) {
+  const bottomHeight = -halfHeight + studRadius, topHeight = halfHeight - studRadius;
+  const heightAt = (psi) => bottomHeight + (topHeight - bottomHeight) * psi / turn;
+  const spiralEnd = turn - g;
+  const b = k * (topHeight - bottomHeight) / turn;
+  const integral = (mean, psi) => {
+    const r0 = mean + k * bottomHeight;
+    return C / b * Math.log((r0 + b * psi) / r0) - psi;
+  };
+  let low = 0.8, high = 1.25;
+  for (let iteration = 0; iteration < 80; iteration += 1) {
     const mean = (low + high) / 2;
-    const ratios = ratiosAt(mean);
-    const period = ratios.reduce((sum, ratio, index) => sum + 2 * pitch
-      / (ratio + ratios[(index + 1) % studCount]), 0);
-    if (period < turn) low = mean;
+    if (integral(mean, spiralEnd) > (n - 1) * pitch) low = mean;
     else high = mean;
   }
   const meanRadius = (low + high) / 2;
-  const ratios = ratiosAt(meanRadius);
-  let output = 0;
-  const studs = heights.map((height, index) => {
-    const ratio = ratios[index];
-    const nextRatio = ratios[(index + 1) % studCount];
-    const span = 2 * pitch / (ratio + nextRatio);
-    const stud = { output, height, angle: Math.PI + output,
-      radius: centerDistance - meanRadius - radiusSlope * height,
-      ratio, nextRatio, span, input: index * pitch };
-    output += span;
-    return stud;
+  const toothedRadius = (height) => meanRadius + k * height;
+  const studPitchRadius = (height) => C - toothedRadius(height);
+  const rateAt = (psi) => studPitchRadius(heightAt(psi)) / toothedRadius(heightAt(psi));
+  const topRate = rateAt(spiralEnd), bottomRate = rateAt(0);
+  const seamSwitch = (bottomRate * g - q * pitch) / (bottomRate - topRate);
+  const seamInput = (x) => {
+    // x: output angle past the top stud (0..g).
+    const u = (x - seamSwitch + seamBlend) / (2 * seamBlend);
+    const blended = u <= 0 ? 0 : u >= 1 ? 2 * seamBlend * (smootherIntegral(1) + (u - 1))
+      : 2 * seamBlend * smootherIntegral(u);
+    return (n - 1) * pitch + topRate * x + (bottomRate - topRate) * blended;
+  };
+  const seamRate = (x) => {
+    const u = THREE.MathUtils.clamp((x - seamSwitch + seamBlend) / (2 * seamBlend), 0, 1);
+    return topRate + (bottomRate - topRate) * smootherStep(u);
+  };
+  const inputCycleAngle = (n - 1 + q) * pitch;
+  const phaseInput = (psi) => (psi <= spiralEnd ? integral(meanRadius, psi) : seamInput(psi - spiralEnd));
+  const phaseRate = (psi) => (psi <= spiralEnd ? rateAt(psi) : seamRate(psi - spiralEnd));
+  const studs = Array.from({ length: n }, (_, index) => {
+    let lo = 0, hi = spiralEnd;
+    for (let iteration = 0; iteration < 70; iteration += 1) {
+      const mid = (lo + hi) / 2;
+      if (integral(meanRadius, mid) < index * pitch) lo = mid; else hi = mid;
+    }
+    const output = index === n - 1 ? spiralEnd : (lo + hi) / 2;
+    const height = heightAt(output);
+    return { output, height, angle: Math.PI + output, radius: studPitchRadius(height),
+      ratio: toothedRadius(height) / studPitchRadius(height), input: index * pitch };
   });
-  const inputCycleAngle = pitch * studCount;
   const stateAtOutput = (angle) => {
     const cycles = Math.floor(angle / turn);
-    const phase = THREE.MathUtils.euclideanModulo(angle, turn);
-    const stud = studs.find((s) => phase < s.output + s.span) ?? studs.at(-1);
-    const fraction = (phase - stud.output) / stud.span;
-    const ratio = stud.ratio + (stud.nextRatio - stud.ratio) * fraction;
-    const input = cycles * inputCycleAngle + stud.input + stud.span
-      * (stud.ratio * fraction + (stud.nextRatio - stud.ratio) * fraction ** 2 / 2);
-    const virtualHeight = (centerDistance / (1 + ratio) - meanRadius) / radiusSlope;
-    return { input, ratio, fraction, virtualHeight, stud };
+    const phase = angle - cycles * turn;
+    const rate = phaseRate(phase);
+    const input = cycles * inputCycleAngle + phaseInput(phase);
+    const index = studs.findLastIndex((stud) => stud.output <= phase + 1e-12);
+    return { input, rate, ratio: 1 / rate, stud: studs[Math.max(0, index)],
+      seam: phase > spiralEnd, virtualHeight: heightAt(Math.min(phase, spiralEnd)) };
   };
   const inputAtOutput = (angle) => stateAtOutput(angle).input;
   const outputAtInput = (input) => {
     const cycles = Math.floor(input / inputCycleAngle);
-    const phase = THREE.MathUtils.euclideanModulo(input, inputCycleAngle);
-    const index = Math.min(studCount - 1, Math.floor(phase / pitch));
-    const stud = studs[index];
-    const local = (phase - stud.input) / stud.span;
-    const fraction = 2 * local / (stud.ratio
-      + Math.sqrt(stud.ratio ** 2 + 2 * (stud.nextRatio - stud.ratio) * local));
-    return cycles * turn + stud.output + stud.span * fraction;
+    const target = input - cycles * inputCycleAngle;
+    let lo = 0, hi = turn;
+    for (let iteration = 0; iteration < 64; iteration += 1) {
+      const mid = (lo + hi) / 2;
+      if (phaseInput(mid) < target) lo = mid; else hi = mid;
+    }
+    // One Newton step on the smooth phase law polishes the bisection.
+    let psi = (lo + hi) / 2;
+    psi -= (phaseInput(psi) - target) / phaseRate(psi);
+    return cycles * turn + psi;
   };
-  const heightAtOutput = (outputAngle) => stateAtOutput(outputAngle).virtualHeight;
-  return { inputAtOutput, outputAtInput, stateAtOutput, heightAtOutput,
-    variation: radiusSlope * axialAmplitude, meanRadius, slope: radiusSlope, studs, inputCycleAngle };
+  return { studs, meanRadius, slope: k, pitch, inputCycleAngle, spiralEnd, seamSwitch,
+    bottomHeight, topHeight, heightAt, toothedRadius, studPitchRadius, topRate, bottomRate,
+    stateAtOutput, inputAtOutput, outputAtInput,
+    variation: k * (topHeight - bottomHeight) / 2 };
 }
 
-function unitOutline(teeth, addendumFactor = 1) {
-  return rackGeneratedOutline({
-    pitchPoints: Array.from({ length: 720 }, (_, index) =>
-      new THREE.Vector2(Math.cos(turn * index / 720), Math.sin(turn * index / 720))),
-    teeth, contactPointIndex: 0, toothAtContact: false, addendumFactor,
-  }).points;
+export function conicalStudGrooveRadius(parameters, height) {
+  const { halfHeight, grooveRadiusBottom, grooveRadiusTop } = parameters;
+  return THREE.MathUtils.lerp(grooveRadiusBottom, grooveRadiusTop, (height + halfHeight) / (2 * halfHeight));
 }
 
-/** Homothetic transverse involutes give straight generators over the entire
- * conical face. The two end contours and each flank lie on one conical scale;
- * this is a parallel-axis tapered pinion, not an intersecting-axis bevel pair.
- */
-export function conicalStudToothGeometry(parameters) {
-  const motion = conicalStudMotion(parameters);
-  const outline = unitOutline(parameters.teeth, parameters.toothAddendumFactor);
-  const columns = outline.length / parameters.teeth;
-  const { halfHeight } = parameters;
-  const positions = [];
-  const normals = [];
-  const triangle = (a, b, c, desired) => {
-    const normal = b.clone().sub(a).cross(c.clone().sub(a)).normalize();
-    if (normal.dot(desired) < 0) { [b, c] = [c, b]; normal.negate(); }
-    for (const p of [a, b, c]) {
-      positions.push(p.x, p.y, p.z);
-      normals.push(normal.x, normal.y, normal.z);
+/** Radius of the fluted cone's surface at local angle and height. The groove
+ * about each generator is round in its own normal section; a horizontal slice
+ * cuts it as an ellipse, radial semi-axis rho*sqrt(1+k^2), tangential rho. */
+export function conicalStudFluteRadius(parameters, motion, angle, height) {
+  const R = motion.toothedRadius(height), p = motion.pitch;
+  const rho = conicalStudGrooveRadius(parameters, height);
+  const A = rho * Math.hypot(1, parameters.radiusSlope), B = rho;
+  const t = angle - Math.round(angle / p) * p;
+  // Ray from the axis at angle t against the ellipse centred at (R, 0).
+  const c = Math.cos(t), s = Math.sin(t);
+  const qa = (c / A) ** 2 + (s / B) ** 2, qb = -2 * R * c / A ** 2, qc = (R / A) ** 2 - 1;
+  const disc = qb * qb - 4 * qa * qc;
+  if (disc <= 0) return R;
+  const inner = (-qb - Math.sqrt(disc)) / (2 * qa);
+  return Math.min(R, inner);
+}
+
+/** The fluted (toothed) cone as one closed solid: the pitch-cone lands with
+ * a straight ball groove along each of its generators, and flat end faces. */
+export function conicalStudFlutedConeGeometry(parameters = conicalStudParameters, motion = conicalStudMotion(parameters)) {
+  const { halfHeight, teeth, radiusSlope: k } = parameters;
+  const p = motion.pitch, rows = 36, grooveSegments = 18, landSegments = 4;
+  const positions = [], indices = [];
+  const rowStart = [];
+  let columns = 0;
+  for (let row = 0; row <= rows; row += 1) {
+    const z = -halfHeight + 2 * halfHeight * row / rows;
+    const R = motion.toothedRadius(z), rho = conicalStudGrooveRadius(parameters, z);
+    const A = rho * Math.hypot(1, k), B = rho;
+    // Edge: the land circle meets the ellipse at x = R - A^2/(2R) + ...;
+    // solve (R cos t - R)^2/A^2 + (R sin t)^2/B^2 = 1 for t by bisection.
+    let lo = 0, hi = p / 2;
+    for (let i = 0; i < 60; i += 1) {
+      const t = (lo + hi) / 2;
+      const f = ((R * Math.cos(t) - R) / A) ** 2 + (R * Math.sin(t) / B) ** 2 - 1;
+      if (f < 0) lo = t; else hi = t;
     }
-  };
-  const at = (index, height) => new THREE.Vector3(
-    outline[index].x * (motion.meanRadius + motion.slope * height),
-    outline[index].y * (motion.meanRadius + motion.slope * height), height);
-  const bottomCenter = new THREE.Vector3(0, 0, -halfHeight);
-  const topCenter = new THREE.Vector3(0, 0, halfHeight);
-  for (let i = 0; i < columns; i += 1) {
-    const a = at(i, -halfHeight), b = at(i + 1, -halfHeight);
-    const c = at(i, halfHeight), d = at(i + 1, halfHeight);
-    const outward = new THREE.Vector3(b.y - a.y, a.x - b.x, 0);
-    triangle(a, b, c, outward);
-    triangle(b, d, c, outward);
-    triangle(bottomCenter, b, a, new THREE.Vector3(0, 0, -1));
-    triangle(topCenter, c, d, new THREE.Vector3(0, 0, 1));
-  }
-  for (const col of [0, columns]) {
-    const angle = col * turn / outline.length, sign = col === 0 ? -1 : 1;
-    const normal = new THREE.Vector3(-Math.sin(angle) * sign, Math.cos(angle) * sign, 0);
-    const bottom = at(col, -halfHeight), top = at(col, halfHeight);
-    triangle(bottomCenter, bottom, topCenter, normal);
-    triangle(bottom, top, topCenter, normal);
-  }
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-  geometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
-  geometry.userData.unitOutline = outline;
-  geometry.userData.conicalInvolute = true;
-  return geometry;
-}
-
-function headTopology(parameters) {
-  const rings = 16, sectors = 64;
-  const points = [{ u: 0, v: 0 }];
-  const indices = [];
-  for (let ring = 1; ring <= rings; ring += 1) {
-    for (let col = 0; col < sectors; col += 1) {
-      const a = turn * col / sectors, radius = parameters.studRadius * ring / rings;
-      points.push({ u: radius * Math.cos(a), v: radius * Math.sin(a) });
-    }
-  }
-  for (let col = 0; col < sectors; col += 1) indices.push(0, 1 + col, 1 + (col + 1) % sectors);
-  for (let ring = 1; ring < rings; ring += 1) {
-    for (let col = 0; col < sectors; col += 1) {
-      const a = 1 + (ring - 1) * sectors + col;
-      const b = 1 + (ring - 1) * sectors + (col + 1) % sectors;
-      const c = a + sectors, d = b + sectors;
-      indices.push(a, c, b, b, c, d);
-    }
-  }
-  return { points, indices, rings, sectors };
-}
-
-/** Remove the synchronized pinion from the stud blanks. The uncut cone stays
- * continuous. This addresses geometric interference; a cut alone does not
- * establish continuous contact or force transmission, particularly at the seam.
- */
-export function conicalStudCut(parameters, { regenerate = false } = {}) {
-  const key = JSON.stringify(parameters);
-  if (!regenerate && cache.has(key)) return cache.get(key);
-  if (!regenerate && savedCut?.key === key) { cache.set(key, savedCut); return savedCut; }
-  const motion = conicalStudMotion(parameters);
-  const outline = unitOutline(parameters.teeth, parameters.toothAddendumFactor);
-  const topology = headTopology(parameters);
-  const count = outline.length, angleStep = turn / count;
-  const samples = 19200, clearance = 0.0012;
-  const { centerDistance, studBack, studFront } = parameters;
-  const pins = motion.studs.map((stud) => topology.points.map(({ u, v }) => ({
-    angle: stud.angle + u / stud.radius, height: stud.height + v,
-    base: centerDistance - motion.meanRadius - motion.slope * (stud.height + v) - studBack,
-    // The uncut head face runs parallel to the cone face, a fixed step past
-    // the local pitch cone, so no edge of a round head stands up higher.
-    cap: centerDistance - motion.meanRadius - motion.slope * (stud.height + v) + studFront,
-  })));
-  for (let sample = 0; sample < samples; sample += 1) {
-    const output = turn * sample / samples, input = motion.inputAtOutput(output);
-    const cosInput = Math.cos(input), sinInput = Math.sin(input);
-    for (const [index, stud] of motion.studs.entries()) {
-      const blankRadius = centerDistance - stud.radius + studFront
-        + parameters.studRadius * (1 + motion.slope);
-      if (centerDistance ** 2 + stud.radius ** 2
-        + 2 * centerDistance * stud.radius * Math.cos(stud.angle - output) > blankRadius ** 2) continue;
-      for (const point of pins[index]) {
-        const pitchRadius = motion.meanRadius + motion.slope * point.height;
-        const ox = centerDistance * cosInput / pitchRadius;
-        const oy = -centerDistance * sinInput / pitchRadius;
-        const dx = Math.cos(point.angle - output - input);
-        const dy = Math.sin(point.angle - output - input);
-        const start = Math.atan2(oy + point.base / pitchRadius * dy, ox + point.base / pitchRadius * dx);
-        const end = Math.atan2(oy + point.cap / pitchRadius * dy, ox + point.cap / pitchRadius * dx);
-        const delta = THREE.MathUtils.euclideanModulo(end - start + Math.PI, turn) - Math.PI;
-        const first = Math.floor(Math.min(start, start + delta) / angleStep) - 1;
-        const last = Math.ceil(Math.max(start, start + delta) / angleStep) + 1;
-        for (let edge = first; edge <= last; edge += 1) {
-          const a = outline[THREE.MathUtils.euclideanModulo(edge, count)];
-          const b = outline[THREE.MathUtils.euclideanModulo(edge + 1, count)];
-          const ex = b.x - a.x, ey = b.y - a.y;
-          const denominator = dx * ey - dy * ex;
-          if (Math.abs(denominator) < 1e-12) continue;
-          const radial = ((a.x - ox) * ey - (a.y - oy) * ex) / denominator * pitchRadius;
-          const fraction = ((a.x - ox) * dy - (a.y - oy) * dx) / denominator;
-          if (fraction >= 0 && fraction <= 1 && radial >= point.base && radial < point.cap) {
-            point.cap = radial - clearance;
-          }
-        }
+    const edge = (lo + hi) / 2;
+    const edgeBeta = Math.atan2(R * Math.sin(edge) / B, (R * Math.cos(edge) - R) / A);
+    const ring = [];
+    for (let flute = 0; flute < teeth; flute += 1) {
+      const centre = flute * p;
+      const put = (angle, radius) => ring.push([radius * Math.cos(angle), radius * Math.sin(angle)]);
+      const local = (x, y) => [centre + Math.atan2(y, x), Math.hypot(x, y)];
+      for (let i = 0; i < grooveSegments; i += 1) {
+        // Groove: ellipse parameter from -edgeBeta round through pi to +edgeBeta.
+        const beta = -edgeBeta - (turn - 2 * edgeBeta) * i / grooveSegments;
+        const [angle, radius] = local(R + A * Math.cos(beta), B * Math.sin(beta));
+        put(angle, radius);
+      }
+      for (let i = 0; i < landSegments; i += 1) {
+        const angle = centre + edge + (p - 2 * edge) * i / landSegments;
+        put(angle, R);
       }
     }
+    // The ring runs anticlockwise: each groove from its left edge down
+    // through its root to the right edge, then the land to the next groove.
+    const ordered = ring;
+    columns = ordered.length;
+    rowStart.push(positions.length / 3);
+    for (const [x, y] of ordered) positions.push(x, y, z);
   }
-  // Relief over each triangle's neighborhood prevents sharp envelope corners
-  // being bridged by the rendered, piecewise-planar stud cap.
-  const caps = pins.map((points) => {
-    const values = points.map((point) => point.cap);
-    const relieved = [...values];
-    for (let i = 0; i < topology.indices.length; i += 3) {
-      const triangle = topology.indices.slice(i, i + 3);
-      const radius = Math.min(...triangle.map((index) => values[index]));
-      for (const index of triangle) relieved[index] = Math.min(relieved[index], radius);
-    }
-    return relieved;
-  });
-  const result = { key, caps, samples, clearance };
-  cache.set(key, result);
-  return result;
-}
-
-export function conicalStudHeadGeometry(parameters, index) {
-  const cut = conicalStudCut(parameters), motion = conicalStudMotion(parameters);
-  const stud = motion.studs[index], topology = headTopology(parameters);
-  const positions = [], indices = [...topology.indices];
-  const { points, sectors, rings } = topology;
-  // Round (button) heads: a shallow crown, highest at the stud's axis, so a
-  // head at the silhouette reads as Brown's round stud and not as a square
-  // block. The crown only removes material inside the cut cap.
-  const crownPoint = (u, v) => {
-    const angle = stud.angle + u / stud.radius, height = stud.height + v;
-    const pitch = parameters.centerDistance - motion.meanRadius - motion.slope * height;
-    const radius = pitch + parameters.studFront - conicalStudCrownSag * (u * u + v * v) / parameters.studRadius ** 2;
-    return new THREE.Vector3(radius * Math.cos(angle), radius * Math.sin(angle), height);
-  };
-  const smoothNormals = new Map();
-  for (const back of [false, true]) {
-    for (const [i, { u, v }] of points.entries()) {
-      const angle = stud.angle + u / stud.radius, height = stud.height + v;
-      const pitch = parameters.centerDistance - motion.meanRadius - motion.slope * height;
-      const crown = crownPoint(u, v).setZ(0).length();
-      const radius = back ? pitch - parameters.studBack : Math.min(cut.caps[index][i], crown);
-      positions.push(radius * Math.cos(angle), radius * Math.sin(angle), height);
-      // The pinion's tip sweep shaves up to 0.0018 off every crown top, and
-      // the conservative per-triangle relief turns that shave into a 64-point
-      // star at the pole. Where the shave is that shallow, and away from the
-      // cap's creased rim, shade with the crown's own normal; deeper relief
-      // (the working cut) keeps its true normals.
-      if (!back && crown - radius < 0.0025 && i <= (rings - 1) * sectors) {
-        const e = 1e-5, du = crownPoint(u + e, v).sub(crownPoint(u - e, v)), dv = crownPoint(u, v + e).sub(crownPoint(u, v - e));
-        const normal = du.cross(dv).normalize();
-        if (normal.x * Math.cos(angle) + normal.y * Math.sin(angle) < 0) normal.negate();
-        smoothNormals.set(positions.slice(-3).map((value) => Math.fround(value)).join(), normal);
-      }
+  const quad = (a, b, c, d) => indices.push(a, b, d, b, c, d);
+  for (let row = 0; row < rows; row += 1) {
+    for (let col = 0; col < columns; col += 1) {
+      const a = rowStart[row] + col, b = rowStart[row] + (col + 1) % columns;
+      quad(a, b, b + columns, a + columns);
     }
   }
-  const offset = points.length;
-  for (let i = 0; i < topology.indices.length; i += 3) {
-    const [a, b, c] = topology.indices.slice(i, i + 3);
-    indices.push(offset + a, offset + c, offset + b);
-  }
-  for (let col = 0; col < sectors; col += 1) {
-    const a = 1 + (rings - 1) * sectors + col;
-    const b = 1 + (rings - 1) * sectors + (col + 1) % sectors;
-    indices.push(a, offset + a, b, b, offset + a, offset + b);
+  // Flat end faces: fans from the axis over each end ring (own vertices).
+  for (const [row, sign] of [[0, -1], [rows, 1]]) {
+    const centre = positions.length / 3;
+    positions.push(0, 0, sign * halfHeight);
+    const start = positions.length / 3;
+    for (let col = 0; col < columns; col += 1) {
+      const v = rowStart[row] + col;
+      positions.push(positions[3 * v], positions[3 * v + 1], positions[3 * v + 2]);
+    }
+    for (let col = 0; col < columns; col += 1) {
+      const a = start + col, b = start + (col + 1) % columns;
+      if (sign > 0) indices.push(centre, a, b); else indices.push(centre, b, a);
+    }
   }
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
   geometry.setIndex(indices);
-  // Hard edges where the cut cap meets the stud's side wall and back.
-  creaseIndexedNormals(geometry);
-  const position = geometry.attributes.position, normal = geometry.attributes.normal;
-  for (let i = 0; i < position.count; i += 1) {
-    const smooth = smoothNormals.get([position.getX(i), position.getY(i), position.getZ(i)].join());
-    if (smooth) normal.setXYZ(i, smooth.x, smooth.y, smooth.z);
+  // Orient outward: the first side quad's normal must point away from the axis.
+  const v = (i) => new THREE.Vector3(positions[3 * i], positions[3 * i + 1], positions[3 * i + 2]);
+  const [i0, i1, i2] = indices;
+  const n = v(i1).sub(v(i0)).cross(v(i2).sub(v(i0)));
+  const mid = v(i0).setZ(0);
+  if (n.dot(mid) < 0) {
+    const index = geometry.index;
+    for (let i = 0; i < index.count; i += 3) {
+      const t = index.getX(i + 1); index.setX(i + 1, index.getX(i + 2)); index.setX(i + 2, t);
+    }
   }
-  geometry.userData.generatedStudHead = true;
-  geometry.userData.cut = cut;
+  creaseIndexedNormals(geometry, Math.PI / 5);
+  geometry.userData.flutedCone = true;
+  geometry.userData.fluteCount = teeth;
   return geometry;
 }

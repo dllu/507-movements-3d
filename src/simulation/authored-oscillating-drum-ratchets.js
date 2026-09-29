@@ -547,10 +547,13 @@ function oscillatingDrumRatchet(movement) {
   looseDrum.position.set(drumCenter.x, drumCenter.y, 0);
   looseDrum.userData.axis = Z_AXIS.clone();
   looseDrum.userData.role = 'cord-drum-loose-on-flywheel-shaft';
+  // Pass 101: the drum is light grey (muted), not the beam's orange, so the
+  // orange beam arms read where they sweep across it.
+  const drumMaterial = matte(PALETTE.muted, { metalness: 0.16, roughness: 0.55 });
   const drumBody = makeAnnularDrum({
     depth: 0.18,
     innerRadius: 0.47,
-    material: driverMaterial,
+    material: drumMaterial,
     outerRadius: drumRadius,
     role: 'oscillating-annular-cord-drum',
     z: 0.39,
@@ -559,7 +562,7 @@ function oscillatingDrumRatchet(movement) {
   // The grooved cord rim is part of the drum, in its own colour.
   const drumOuterRim = new THREE.Mesh(
     new THREE.TorusGeometry(drumRadius, 0.052, 10, 64),
-    driverMaterial,
+    drumMaterial,
   );
   drumOuterRim.position.z = 0.50;
   drumOuterRim.userData.role = 'loose-drum-cord-groove';

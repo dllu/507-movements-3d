@@ -103,6 +103,24 @@ export function boredLeverPlate(anchors, handle) {
   return plate(polygonClipping.difference(outline, ...holes), -0.1, 0.1);
 }
 
+// One outline: a post of half-width `half` from `bottom` up into a round eye
+// centred on the origin, joined by fillets tangent to both, less the bore.
+export function standardWithEye({ half, bottom, eyeRadius, boreRadius, fillet, segments = 96 }) {
+  const R = eyeRadius, f = fillet, cy = -Math.sqrt((R + f) ** 2 - (half + f) ** 2);
+  const points = [[-half, bottom], [half, bottom], [half, cy]];
+  const arc = (cx, cy0, r, a0, a1, n) => Array.from({ length: n + 1 }, (_, i) => {
+    const a = a0 + (a1 - a0) * i / n; return [cx + r * Math.cos(a), cy0 + r * Math.sin(a)];
+  });
+  // right fillet: centre (half + f, cy), from the post side (angle pi) up to the eye
+  const rightTangent = Math.atan2(-cy, -(half + f));
+  points.push(...arc(half + f, cy, f, Math.PI, rightTangent, 12).slice(1));
+  const eyeStart = Math.atan2(cy, half + f), eyeEnd = Math.PI - eyeStart;
+  points.push(...arc(0, 0, R, eyeStart, eyeEnd, segments).slice(1, -1));
+  const leftTangent = Math.atan2(-cy, half + f);
+  points.push(...arc(-half - f, cy, f, leftTangent, 0, 12));
+  return polygonClipping.difference([[points]], poly(circle([0, 0], boreRadius, segments)));
+}
+
 // C2 imposed return: rise before the first crest, descend only after the final
 // crest. The finite gap at pickup supplies the otherwise missing overtravel.
 export function pawlReturnLift(fraction) {
@@ -137,14 +155,23 @@ export function finishRatchetBarSupports(root) {
     // copy of that shaft would occupy the same solid.
     if (center) pin.visible = false;
   }
-  // Brown's post stands on the ground line beside the table.
+  // Brown's post stands on the ground line beside the table. Pass 101: the
+  // post and the fulcrum eye are one extrusion, centred on the fulcrum pin:
+  // the post's sides run through fillets into a round eye bored for the
+  // stationary shaft (it was a boss perched on a block with coincident faces).
   const groundY = (246 - 377) * 0.018;
+  const postLeft = b.pivotStand.position.x - b.pivotStand.geometry.parameters.width / 2;
+  const post = standardWithEye({ half: -postLeft, bottom: groundY, eyeRadius: 0.25, boreRadius: 0.134, fillet: 0.08 });
   b.pivotStand.geometry.dispose();
-  b.pivotStand.geometry = new THREE.BoxGeometry(0.42, -0.2 - groundY, 0.7);
-  b.pivotStand.position.y = (-0.2 + groundY) / 2;
-  const bearing = new THREE.Mesh(ring(0.134, 0.25, -0.69, 0.01, 96), matte(PALETTE.frame));
-  bearing.userData.role = 'bored-stationary-fulcrum-bearing';
-  root.add(bearing);
+  b.pivotStand.geometry = plate(post, -0.69, 0.01);
+  b.pivotStand.position.set(0, 0, 0);
+  b.pivotStand.userData.role = 'fixed-lever-fulcrum-standard-with-bored-eye';
+  b.pivotStand.userData.postHalfWidth = -postLeft;
+  // The stationary shaft fills the eye's bore to 0.005 inside its back face,
+  // so the eye does not read as an open tube from behind.
+  b.fixedFulcrum.geometry.dispose();
+  b.fixedFulcrum.geometry = new THREE.CylinderGeometry(0.13, 0.13, 0.5 + 0.685, 48);
+  b.fixedFulcrum.position.z = (0.5 - 0.685) / 2;
   // The plate draws a plank table on two block legs, not a bed rail with
   // guide pedestals and keepers: the thin bar simply lies on the table top.
   for (const { post, cap } of b.guidePosts) {
@@ -161,7 +188,7 @@ export function finishRatchetBarSupports(root) {
   // Brown runs the table's top and bottom edges into the post's left face,
   // so the plank ends against the post (the post stands 7 px right of the
   // plate's, clearing the bar's in-view return).
-  const tableRight = b.pivotStand.position.x - b.pivotStand.geometry.parameters.width / 2;
+  const tableRight = postLeft;
   const table = new THREE.Mesh(new THREE.BoxGeometry(tableRight - sourceX(135), tableTop - tableBottom, 0.6), frameMaterial);
   table.position.set((sourceX(135) + tableRight) / 2, (tableTop + tableBottom) / 2, -0.06);
   table.userData.role = 'source-plank-table-carrying-the-ratchet-bar';

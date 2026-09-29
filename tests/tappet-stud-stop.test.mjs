@@ -52,16 +52,28 @@ test('065 all 21 physical solids are closed and have outward stored normals',()=
 });
 
 test('065 actual contact normals transmit compatible motion with positive reactions',()=>{
- const span=p.gammaStart-p.gammaEnd;
- for(let i=0;i<11;i++){
-  const time=atPhase(span*(i+.317)/11),h=1e-5,before=stateAtTime(time-h),after=stateAtTime(time+h);
-  const wd=(after.outputAngle-before.outputAngle)/(2*h),ws=(after.stopAngle-before.stopAngle)/(2*h);
-  const t=contact('tappet','stud0','input','output'),s=contact('stopBody','stud2','stop','output'),c=contact('driverDisk','stopBody','input','stop');
-  for(const[q,wa,wb]of[[t,-p.inputSpeed,wd],[s,ws,wd],[c,-p.inputSpeed,ws]])assert.ok(Math.abs(q.a*wa+q.b*wb)<.006,'actual normal power residual');
-  assert.ok(t.b>0&&c.b>0&&s.a<0,'finite normals have the required driving and opposing moments');
-  const ns=.25,nt=(1-s.b*ns)/t.b,nc=-s.a*ns/c.b;
-  assert.ok(nt>0&&nc>0);near(t.b*nt+s.b*ns,1);near(c.b*nc+s.a*ns,0);
+ // p101: the passing stud thrusts the stop's toe into C's V notch; after the
+ // deepest point the stop rests until the notch's trailing flank lifts the
+ // toe back onto C's rim (Brown's text). The massless stop carries no load,
+ // so only the tappet transmits D's resisting torque.
+ const span=p.gammaStart-p.gammaEnd,drives=new Set();
+ for(let i=0;i<22;i++){
+  const time=atPhase(span*(i+.317)/22),h=1e-5,before=stateAtTime(time-h),after=stateAtTime(time+h),state=stateAtTime(time);
+  const wd=(after.outputAngle-before.outputAngle)/(2*h),ws=(after.stopAngle-before.stopAngle)/(2*h),drive=state.stop.drive;drives.add(drive);
+  const t=contact('tappet','stud0','input','output');
+  assert.ok(Math.abs(t.a*-p.inputSpeed+t.b*wd)<.006,'tappet normal power residual');assert.ok(t.b>0,'tappet drives D');
+  if(drive==='stud'){
+   const q=contact('stopBody','stud2','stop','output');assert.ok(Math.abs(q.a*ws+q.b*wd)<.006,'stud thrusts the stop');
+   assert.ok(q.a*ws>0,'the stud does positive work on the stop');
+   assert.ok(closest('driverDisk','stopBody',.05).distance>.003,'the toe runs clear of the leading flank');
+  }
+  if(drive==='flank'){
+   const q=contact('driverDisk','stopBody','input','stop');assert.ok(Math.abs(q.a*-p.inputSpeed+q.b*ws)<.006,'the flank lifts the toe');
+   assert.ok(q.b*ws>0,'C does positive work on the stop');
+   assert.ok(closest('stopBody','stud2',.05).distance>1e-4,'the lifted stop clears the passing stud');
+  }
  }
+ assert.deepEqual([...drives].sort(),['flank','rest','stud']);
 });
 
 test('065 two adjacent studs and the input rim lock both output directions',()=>{
@@ -97,7 +109,7 @@ test('065 default timing exposes the short index and still honors a slower reque
  applyDisplayTiming(model,catalog.movements[64]);
 });
 
-test('065 the stop is one flat plate whose toe point alone meets C in their shared plane',async()=>{
+test('065 the stop is one flat plate whose rounded toe alone meets C in their shared plane',async()=>{
  const {makeTappetStudStop}=await import('../src/simulation/tappet-stud-stop.js');
  const fresh=makeTappetStudStop({computeStopOutline:true}).root.userData.paths.stop,baked=model.root.userData.paths.stop;
  assert.equal(fresh.length,baked.length);
@@ -107,13 +119,14 @@ test('065 the stop is one flat plate whose toe point alone meets C in their shar
  near(box.min.z,.145,1e-6);near(box.max.z,.265,1e-6);
  const disk=new THREE.Box3().setFromBufferAttribute(parts.driverDisk.geometry.attributes.position);
  assert.ok(disk.min.z<=.145-.1&&disk.max.z>=.265,'C is deep enough to meet the stop in its plane');
- const toe=baked.findIndex(q=>Math.hypot(q[0]-p.toeCenter[0],q[1]-p.toeCenter[1])<1e-6);assert.ok(toe>=0,'the toe point is a vertex of the stop');
+ // p101: the toe is a round end of radius toeRadius (no knife point).
+ const toeArc=baked.filter(q=>Math.abs(Math.hypot(q[0]-p.toeCenter[0],q[1]-p.toeCenter[1])-p.toeRadius)<1e-6);assert.ok(toeArc.length>=20&&p.toeRadius>=.04,'the toe is a rounded arc');
  // Away from the toe the stop keeps clear of C through the whole index.
  const span=p.gammaStart-p.gammaEnd;let minimum=Infinity;
  for(let i=0;i<=96;i++){
   const time=atPhase(span*i/96),state=stateAtTime(time);
   for(const q of baked){
-   if(Math.hypot(q[0]-p.toeCenter[0],q[1]-p.toeCenter[1])<.04)continue;
+   if(Math.hypot(q[0]-p.toeCenter[0],q[1]-p.toeCenter[1])<p.toeRadius+.02)continue;
    const w=[p.pivot[0]+q[0]*Math.cos(state.stopAngle)-q[1]*Math.sin(state.stopAngle),p.pivot[1]+q[0]*Math.sin(state.stopAngle)+q[1]*Math.cos(state.stopAngle)];
    const c=[w[0]*Math.cos(-state.driverAngle)-w[1]*Math.sin(-state.driverAngle),w[0]*Math.sin(-state.driverAngle)+w[1]*Math.cos(-state.driverAngle)];
    if(Math.hypot(...c)>1.4)continue;

@@ -3,7 +3,7 @@
   "factorySource": {
     "file": "src/simulation/authored-gears-core.js",
     "name": "opposedFeedRollWormDrive",
-    "sha256": "d42717ff781b47739d1696cb70d2d83ef28b48be79e28c6c7bdaa7792b2aeea4"
+    "sha256": "cd1ae1e448e7a8527870e88e9b3cc040f10ca81e3a30825a12961c8f799a305e"
   },
   "poses": 17,
   "phaseOffset": 0,
@@ -31,7 +31,7 @@
   "sources": [
     {
       "file": "src/simulation/feed-worm-assembly-parts.js",
-      "sha256": "0a6011b18d06c7546138bf4da465ecda6f38ca60bc52db59e383d8f7d8403c69"
+      "sha256": "e9cafbacb25decc62d2188fcf6bb993a18fc831a5a2179a2cc4682a7ef4b2ff4"
     },
     {
       "file": "src/simulation/face-slot-worm-195.js",

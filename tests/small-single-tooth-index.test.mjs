@@ -17,6 +17,12 @@ const dispose = model => model.root.traverse(object => {
 
 test('069 has thirty asymmetric teeth and one broad projecting driver tooth', () => {
   assert.equal(p.teeth, 30);
+  // p101: the thirty teeth are identical rotated copies (ideal flanks).
+  const n = profile.output[0].length / 30, c = Math.cos(p.pitch), s = Math.sin(p.pitch);
+  for (let i = 0; i < n; i++) {
+    const [x, y] = profile.output[0][i], [u, v] = profile.output[0][i + n];
+    assert.ok(Math.hypot(x * c - y * s - u, x * s + y * c - v) < 1e-12);
+  }
   const radii = profile.output[0].map(q => Math.hypot(...q));
   const tips = radii.filter((r, i) => r > radii[(i + radii.length - 1) % radii.length]
     && r > radii[(i + 1) % radii.length]);
@@ -70,14 +76,17 @@ test('069 indexes monotonically at bounded speed and stops at the resolved rim e
     peak = Math.max(peak, -state.outputSpeed); previous = state.outputAngle;
   }
   assert.ok(peak > .45 && peak < .46);
-  assert.ok(atAngle(p.exitAngle - 1e-5).outputSpeed < -.05);
+  // p101: with the ideal flanks B's tooth eases A into the rim seat.
+  assert.ok(atAngle(p.exitAngle - .02).outputSpeed < -.1);
+  assert.ok(atAngle(p.exitAngle - 1e-5).outputSpeed < 0);
   assert.equal(Math.abs(atAngle(p.exitAngle + 1e-5).outputSpeed), 0);
   assert.equal(atAngle(p.exitAngle + 1e-5).advance, 2 * p.pitch);
   assert.equal(Math.abs(atAngle(5).outputSpeed), 0);
 });
 
 test('069 preserves its resisting-load pause and resumes when contact requires movement', () => {
-  const held = atAngle(3.9), before = atAngle(3.9797387756638796), after = atAngle(3.9798487756638796);
+  // p101: the ideal teeth pause at the re-solved knot 3.99706593721.
+  const held = atAngle(3.95), before = atAngle(3.9970559372149324), after = atAngle(3.9971659372149324);
   assert.equal(Math.abs(held.outputSpeed), 0); assert.equal(Math.abs(before.outputSpeed), 0);
   assert.equal(held.outputAngle, before.outputAngle);
   assert.ok(after.outputSpeed < -.1);
@@ -92,7 +101,7 @@ test('069 actual plate skins clear at contact transitions and the cycle seam', (
   const data = [parts.driverPlate, parts.wheelPlate].map(mesh => ({ mesh,
     solid: solidSurface(mesh.geometry), samples: surfacePoints(mesh.geometry) }));
   for (const angle of [0, p.entryAngle - 1e-5, p.entryAngle + 1e-5, 2.81, 3.1, 3.869,
-    3.9797487756638796, p.exitAngle - 1e-5, p.exitAngle, p.exitAngle + 1e-5, p.period]) {
+    3.9970659372149324, p.exitAngle - 1e-5, p.exitAngle, p.exitAngle + 1e-5, p.period]) {
     model.update(angle - p.initialInputPhase); model.root.updateMatrixWorld(true);
     for (const [a, b] of [[data[0], data[1]], [data[1], data[0]]]) {
       const matrix = b.mesh.matrixWorld.clone().invert().multiply(a.mesh.matrixWorld);

@@ -529,7 +529,9 @@ function selfRockingCradle(movement) {
     'crank-pin-of-wheel-A');
   root.add(inputWheelA);
 
-  const outputWheelB = plainWheel(PALETTE.driven, outputWheelRadius, 0.42,
+  // Pass 101: light grey (muted), not rocker E's blue, which it fills the
+  // frame against; the yellow rod and brown band still read over it.
+  const outputWheelB = plainWheel(PALETTE.muted, outputWheelRadius, 0.42,
     'larger-fixed-axis-oscillating-wheel-B');
   outputWheelB.position.copy(outputCenter);
   const outputPinMarker = crankPin(outputWheelB, outputPinRadius, 0.42,

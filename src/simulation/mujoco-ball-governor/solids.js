@@ -84,12 +84,25 @@ export function makeBallGovernorSolids() {
   const horizontal = (shape, low, high) => plate(shape,low,high).rotateX(-Math.PI/2);
   add('outputFork',horizontal(forkShape(2.268,.255,.197),-.64,-.44),'output',PALETTE.brass);
   const baseY = pixel([279,480])[1];
-  const supportShape=clip.difference(poly([[-2.322,-.32],[-.17,-.32],[-.17,.32],[-2.322,.32]]),
-    capsule([-2.5,0],[-.55,0],.13,48));
-  const support=horizontal(supportShape,-.07,.07).rotateX(.43);
-  add('lowerSupport',support,'fixed',PALETTE.frame,[0,baseY,0]);
-  add('lowerBearing',axialY(ring(.106,.20,baseY-.10,baseY+.30,96)),'fixed',PALETTE.frame);
-  add('spindleEndEye',ring(.065,.153,-.05,.05,64),'rotor',PALETTE.ink,[0,pixel([279,503])[1],0]);
+  // Pass 101: the lower bracket is ONE casting. In plan it is a straight bar
+  // whose sides run tangentially into a round boss concentric with the
+  // spindle (bar half-width = boss radius), bored for the spindle, with the
+  // closed slot Brown draws; in elevation it tapers from the boss's full depth
+  // to a thin outer end (top level, underside one inclined plane), as drawn.
+  const bossRadius=.28,bossBottom=baseY-.10,bossTop=baseY+.30,armEnd=-2.322,endThickness=.16;
+  const underSlope=(bossTop-bossBottom-endThickness)/-armEnd;
+  const supportPlan=clip.difference(clip.union(
+    poly([[armEnd,-bossRadius],[0,-bossRadius],[0,bossRadius],[armEnd,bossRadius]]),
+    poly(circle([0,0],bossRadius,128))),
+    poly(circle([0,0],.106,96)),capsule([-2.08,0],[-.55,0],.13,48));
+  const support=horizontal(supportPlan,0,1),supportPosition=support.attributes.position;
+  for(let i=0;i<supportPosition.count;i++){
+    const x=supportPosition.getX(i),t=supportPosition.getY(i),bottom=bossBottom-underSlope*x;
+    supportPosition.setY(i,bottom+t*(bossTop-bottom));
+  }
+  support.computeVertexNormals();
+  add('lowerSupport',support,'fixed',PALETTE.frame);
+  add('spindleEndEye',ring(.065,.153,-.10,.10,64),'rotor',PALETTE.ink,[0,pixel([279,503])[1],0]);
   // Solid-to-solid joins within a rigid part are deliberate: head cheeks/hub,
   // sleeve barrel/crossbar and arm stems embedded in their balls.
   const update = makeBallGovernorUpdater(root);

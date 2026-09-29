@@ -4,25 +4,25 @@
   "maximumCoordinateDifferences": [
     {
       "name": "disk",
-      "maximum": 0.0001804955681805609
+      "maximum": 0.00047913110746833354
     },
     {
       "name": "bar",
-      "maximum": 0.0005052670932802344
+      "maximum": 0.0017889030036005726
     },
     {
       "name": "lever",
-      "maximum": 0.0022623262338842265
+      "maximum": 0.0015658524644169836
     }
   ],
   "sources": [
     {
       "file": "/dev/shm/153-supported-samples.json",
-      "sha256": "8298947775e6282513bfd9ef1a61e9c281ddfea546eee680efd087b6dbeca328"
+      "sha256": "32b6d195d1bace751dba7b9d8a49a0fb61c147d6b5cf516e79903d440e1a28ad"
     },
     {
       "file": "/dev/shm/153-supported-fine-samples.json",
-      "sha256": "5992cf585421387ab99cd1676324a0b86fef0697e0c49362211578edaa87ae89"
+      "sha256": "8c18f3bab7f8383c43cb3f9dfa2f47cd0decc82cb48b3c73d53639821882adce"
     }
   ]
 }

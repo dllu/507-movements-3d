@@ -21,7 +21,7 @@
     },
     {
       "file": "src/simulation/gab-disengager-188.js",
-      "sha256": "6f189faaaec47585f47e7a21c19350ac4db3b4f8e7b46111b0ab1e2df92f5ff7"
+      "sha256": "cd6894d38530c721de774d079b26ee059866dc260c5e54af3133c0c70a8d10d9"
     },
     {
       "file": "src/simulation/gab-disengager-189.js",
@@ -57,7 +57,7 @@
       "bodies": 4,
       "meshes": 28,
       "pairs": 228,
-      "queries": 8971012,
+      "queries": 9101860,
       "intersections": {}
     },
     {

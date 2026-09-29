@@ -724,3 +724,24 @@ test pass, including playback changes, restart, orbit, no horizontal overflow,
 no page errors and no WASM request. Packaged front and oblique views were
 inspected. Local Node animation updates measured 0.183 ms median and 0.228 ms
 p95 over 1,000 warmed frames; this excludes browser rendering.
+
+## Pass 101: the visible cord has inertia
+
+The user found the slack's appearance too abrupt: the quasi-static ideal
+profile jumps into its full length-preserving sag within about 20 ms, since
+its depth grows with the square root of the slack. Production now plays a
+recorded cord with mass (`src/simulation/mujoco-cord-treadle/cord-dynamics.js`,
+baked by `scripts/bake-cord-treadle.mjs` into the bundle's `cord` field):
+the diagonal run is a limp 64-link point-mass rope (links resist stretch, not
+compression; 0.3 minimum link, 1.2 rad anti-kink limit) under gravity at the
+rigid bodies' scale (98.1 units/s²) with 3/s air damping, sliding on the
+pulley's upper-left quarter and the floor. Cord from the top of the pulley on
+lies in the groove and hangs straight to the eye, moving with the recorded
+pulley without slip. It is run eight periods to its periodic state and one
+4 s period is recorded at 200 frames (closure residual 0.0018, removed
+linearly). The coupling is one way: the treadle still moves under MuJoCo's
+ideal massless cord. At slack onset the peak centreline acceleration falls
+from 398 to 115 units/s² (0.02 s frames); the final take-up remains a snap
+(the pin lifts the treadle impulsively in the native solve). The recorded
+chain length stays within 0.989–1.000 of the cord length.
+

@@ -1,7 +1,7 @@
 {
   "movement": 173,
   "poses": 129,
-  "meshes": 40,
+  "meshes": 39,
   "pairs": [
     [
       "hub",
@@ -57,19 +57,15 @@
     ],
     [
       "hub",
-      "frameWeb"
-    ],
-    [
-      "hub",
       "footNeck"
     ],
     [
       "hub",
-      "tappetStem"
+      "studNut"
     ],
     [
       "hub",
-      "tappetArm"
+      "studCollar"
     ],
     [
       "hub",
@@ -129,19 +125,15 @@
     ],
     [
       "tooth0",
-      "frameWeb"
-    ],
-    [
-      "tooth0",
       "footNeck"
     ],
     [
       "tooth0",
-      "tappetStem"
+      "studNut"
     ],
     [
       "tooth0",
-      "tappetArm"
+      "studCollar"
     ],
     [
       "tooth0",
@@ -201,19 +193,15 @@
     ],
     [
       "tooth1",
-      "frameWeb"
-    ],
-    [
-      "tooth1",
       "footNeck"
     ],
     [
       "tooth1",
-      "tappetStem"
+      "studNut"
     ],
     [
       "tooth1",
-      "tappetArm"
+      "studCollar"
     ],
     [
       "tooth1",
@@ -273,19 +261,15 @@
     ],
     [
       "tooth2",
-      "frameWeb"
-    ],
-    [
-      "tooth2",
       "footNeck"
     ],
     [
       "tooth2",
-      "tappetStem"
+      "studNut"
     ],
     [
       "tooth2",
-      "tappetArm"
+      "studCollar"
     ],
     [
       "tooth2",
@@ -345,19 +329,15 @@
     ],
     [
       "tooth3",
-      "frameWeb"
-    ],
-    [
-      "tooth3",
       "footNeck"
     ],
     [
       "tooth3",
-      "tappetStem"
+      "studNut"
     ],
     [
       "tooth3",
-      "tappetArm"
+      "studCollar"
     ],
     [
       "tooth3",
@@ -417,19 +397,15 @@
     ],
     [
       "tooth4",
-      "frameWeb"
-    ],
-    [
-      "tooth4",
       "footNeck"
     ],
     [
       "tooth4",
-      "tappetStem"
+      "studNut"
     ],
     [
       "tooth4",
-      "tappetArm"
+      "studCollar"
     ],
     [
       "tooth4",
@@ -489,19 +465,15 @@
     ],
     [
       "tooth5",
-      "frameWeb"
-    ],
-    [
-      "tooth5",
       "footNeck"
     ],
     [
       "tooth5",
-      "tappetStem"
+      "studNut"
     ],
     [
       "tooth5",
-      "tappetArm"
+      "studCollar"
     ],
     [
       "tooth5",
@@ -561,19 +533,15 @@
     ],
     [
       "tooth6",
-      "frameWeb"
-    ],
-    [
-      "tooth6",
       "footNeck"
     ],
     [
       "tooth6",
-      "tappetStem"
+      "studNut"
     ],
     [
       "tooth6",
-      "tappetArm"
+      "studCollar"
     ],
     [
       "tooth6",
@@ -633,19 +601,15 @@
     ],
     [
       "tooth7",
-      "frameWeb"
-    ],
-    [
-      "tooth7",
       "footNeck"
     ],
     [
       "tooth7",
-      "tappetStem"
+      "studNut"
     ],
     [
       "tooth7",
-      "tappetArm"
+      "studCollar"
     ],
     [
       "tooth7",
@@ -705,19 +669,15 @@
     ],
     [
       "tooth8",
-      "frameWeb"
-    ],
-    [
-      "tooth8",
       "footNeck"
     ],
     [
       "tooth8",
-      "tappetStem"
+      "studNut"
     ],
     [
       "tooth8",
-      "tappetArm"
+      "studCollar"
     ],
     [
       "tooth8",
@@ -777,19 +737,15 @@
     ],
     [
       "tooth9",
-      "frameWeb"
-    ],
-    [
-      "tooth9",
       "footNeck"
     ],
     [
       "tooth9",
-      "tappetStem"
+      "studNut"
     ],
     [
       "tooth9",
-      "tappetArm"
+      "studCollar"
     ],
     [
       "tooth9",
@@ -849,19 +805,15 @@
     ],
     [
       "tooth10",
-      "frameWeb"
-    ],
-    [
-      "tooth10",
       "footNeck"
     ],
     [
       "tooth10",
-      "tappetStem"
+      "studNut"
     ],
     [
       "tooth10",
-      "tappetArm"
+      "studCollar"
     ],
     [
       "tooth10",
@@ -921,19 +873,15 @@
     ],
     [
       "tooth11",
-      "frameWeb"
-    ],
-    [
-      "tooth11",
       "footNeck"
     ],
     [
       "tooth11",
-      "tappetStem"
+      "studNut"
     ],
     [
       "tooth11",
-      "tappetArm"
+      "studCollar"
     ],
     [
       "tooth11",
@@ -993,19 +941,15 @@
     ],
     [
       "tooth12",
-      "frameWeb"
-    ],
-    [
-      "tooth12",
       "footNeck"
     ],
     [
       "tooth12",
-      "tappetStem"
+      "studNut"
     ],
     [
       "tooth12",
-      "tappetArm"
+      "studCollar"
     ],
     [
       "tooth12",
@@ -1065,19 +1009,15 @@
     ],
     [
       "tooth13",
-      "frameWeb"
-    ],
-    [
-      "tooth13",
       "footNeck"
     ],
     [
       "tooth13",
-      "tappetStem"
+      "studNut"
     ],
     [
       "tooth13",
-      "tappetArm"
+      "studCollar"
     ],
     [
       "tooth13",
@@ -1137,19 +1077,15 @@
     ],
     [
       "tooth14",
-      "frameWeb"
-    ],
-    [
-      "tooth14",
       "footNeck"
     ],
     [
       "tooth14",
-      "tappetStem"
+      "studNut"
     ],
     [
       "tooth14",
-      "tappetArm"
+      "studCollar"
     ],
     [
       "tooth14",
@@ -1209,19 +1145,15 @@
     ],
     [
       "tooth15",
-      "frameWeb"
-    ],
-    [
-      "tooth15",
       "footNeck"
     ],
     [
       "tooth15",
-      "tappetStem"
+      "studNut"
     ],
     [
       "tooth15",
-      "tappetArm"
+      "studCollar"
     ],
     [
       "tooth15",
@@ -1281,19 +1213,15 @@
     ],
     [
       "tooth16",
-      "frameWeb"
-    ],
-    [
-      "tooth16",
       "footNeck"
     ],
     [
       "tooth16",
-      "tappetStem"
+      "studNut"
     ],
     [
       "tooth16",
-      "tappetArm"
+      "studCollar"
     ],
     [
       "tooth16",
@@ -1353,19 +1281,15 @@
     ],
     [
       "tooth17",
-      "frameWeb"
-    ],
-    [
-      "tooth17",
       "footNeck"
     ],
     [
       "tooth17",
-      "tappetStem"
+      "studNut"
     ],
     [
       "tooth17",
-      "tappetArm"
+      "studCollar"
     ],
     [
       "tooth17",
@@ -1461,19 +1385,15 @@
     ],
     [
       "disk",
-      "frameWeb"
-    ],
-    [
-      "disk",
       "footNeck"
     ],
     [
       "disk",
-      "tappetStem"
+      "studNut"
     ],
     [
       "disk",
-      "tappetArm"
+      "studCollar"
     ],
     [
       "disk",
@@ -1521,19 +1441,15 @@
     ],
     [
       "channelRail-1",
-      "frameWeb"
-    ],
-    [
-      "channelRail-1",
       "footNeck"
     ],
     [
       "channelRail-1",
-      "tappetStem"
+      "studNut"
     ],
     [
       "channelRail-1",
-      "tappetArm"
+      "studCollar"
     ],
     [
       "channelRail-1",
@@ -1581,19 +1497,15 @@
     ],
     [
       "channelRail1",
-      "frameWeb"
-    ],
-    [
-      "channelRail1",
       "footNeck"
     ],
     [
       "channelRail1",
-      "tappetStem"
+      "studNut"
     ],
     [
       "channelRail1",
-      "tappetArm"
+      "studCollar"
     ],
     [
       "channelRail1",
@@ -1641,19 +1553,15 @@
     ],
     [
       "lowerBearing",
-      "frameWeb"
-    ],
-    [
-      "lowerBearing",
       "footNeck"
     ],
     [
       "lowerBearing",
-      "tappetStem"
+      "studNut"
     ],
     [
       "lowerBearing",
-      "tappetArm"
+      "studCollar"
     ],
     [
       "lowerBearing",
@@ -1701,19 +1609,15 @@
     ],
     [
       "upperBearing",
-      "frameWeb"
-    ],
-    [
-      "upperBearing",
       "footNeck"
     ],
     [
       "upperBearing",
-      "tappetStem"
+      "studNut"
     ],
     [
       "upperBearing",
-      "tappetArm"
+      "studCollar"
     ],
     [
       "upperBearing",
@@ -1749,19 +1653,15 @@
     ],
     [
       "screwThread",
-      "frameWeb"
-    ],
-    [
-      "screwThread",
       "footNeck"
     ],
     [
       "screwThread",
-      "tappetStem"
+      "studNut"
     ],
     [
       "screwThread",
-      "tappetArm"
+      "studCollar"
     ],
     [
       "screwThread",
@@ -1797,19 +1697,15 @@
     ],
     [
       "lowerShaft",
-      "frameWeb"
-    ],
-    [
-      "lowerShaft",
       "footNeck"
     ],
     [
       "lowerShaft",
-      "tappetStem"
+      "studNut"
     ],
     [
       "lowerShaft",
-      "tappetArm"
+      "studCollar"
     ],
     [
       "lowerShaft",
@@ -1845,19 +1741,15 @@
     ],
     [
       "upperShaft",
-      "frameWeb"
-    ],
-    [
-      "upperShaft",
       "footNeck"
     ],
     [
       "upperShaft",
-      "tappetStem"
+      "studNut"
     ],
     [
       "upperShaft",
-      "tappetArm"
+      "studCollar"
     ],
     [
       "upperShaft",
@@ -1885,19 +1777,15 @@
     ],
     [
       "nut",
-      "frameWeb"
-    ],
-    [
-      "nut",
       "footNeck"
     ],
     [
       "nut",
-      "tappetStem"
+      "studNut"
     ],
     [
       "nut",
-      "tappetArm"
+      "studCollar"
     ],
     [
       "nut",
@@ -1925,19 +1813,15 @@
     ],
     [
       "wrist",
-      "frameWeb"
-    ],
-    [
-      "wrist",
       "footNeck"
     ],
     [
       "wrist",
-      "tappetStem"
+      "studNut"
     ],
     [
       "wrist",
-      "tappetArm"
+      "studCollar"
     ],
     [
       "wrist",
@@ -1957,19 +1841,15 @@
     ],
     [
       "yoke",
-      "frameWeb"
-    ],
-    [
-      "yoke",
       "footNeck"
     ],
     [
       "yoke",
-      "tappetStem"
+      "studNut"
     ],
     [
       "yoke",
-      "tappetArm"
+      "studCollar"
     ],
     [
       "yoke",
@@ -1989,26 +1869,22 @@
     ],
     [
       "guideRod",
-      "frameWeb"
-    ],
-    [
-      "guideRod",
       "footNeck"
     ],
     [
       "guideRod",
-      "tappetStem"
+      "studNut"
     ],
     [
       "guideRod",
-      "tappetArm"
+      "studCollar"
     ],
     [
       "guideRod",
       "tappetSupport"
     ]
   ],
-  "queries": 73699356,
+  "queries": 73963808,
   "intersections": {},
   "method": "Every cross-rigid-family pair; finite mesh vertices, edge midpoints and face centers. All physical meshes classified; standalone contact has a separate dense audit. Sampled clearance only.",
   "sources": [
@@ -2018,11 +1894,11 @@
     },
     {
       "file": "src/simulation/mujoco-silk-tappet/assembly.js",
-      "sha256": "6ac350ff4380ba7de32f78f0d6799a84bce883f1aeba1b1940319aee80a8ea3f"
+      "sha256": "1bd41801804b4fd22e241611d9facca8ac0102e849bb8e678e486fb34be679c1"
     },
     {
       "file": "src/simulation/mujoco-silk-tappet/solids.js",
-      "sha256": "96c52ee7d2837db6883d9b5853c35ee915d6aea665b22d4713ac6d2f76931c31"
+      "sha256": "d92fff31cb840a7644e62120289a0eb3378337aa59880b640b11d7801104372d"
     },
     {
       "file": "src/simulation/mujoco-silk-tappet/playback.js",
@@ -2030,7 +1906,7 @@
     },
     {
       "file": "src/simulation/baked/assets/173-tappet.json.gz",
-      "sha256": "45741b81eec206c2da855d5f23e879dbbcb65067868a9d6c9e2554bd2d49c7bb"
+      "sha256": "a22c31da687ac07b6a43160cc06e4a37e1608e707c5dcc25c09b93d954a6a7d0"
     },
     {
       "file": "src/simulation/finite-plate-geometry.js",

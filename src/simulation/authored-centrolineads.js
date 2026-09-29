@@ -188,6 +188,9 @@ function centrolinead(movement) {
   const instrument = new THREE.Group();
   instrument.userData.role =
     'single-rigid-centrolinead-after-both-leg-angles-are-clamped';
+  // Pass 101: the legs are a second, lighter blue so they read apart from
+  // the slotted head and blade where they overlap.
+  const legMaterial = matte(0x5f93ad, { metalness: 0.12, roughness: 0.6 });
   const makeLeg = (direction, role) => {
     const normal = new THREE.Vector2(-direction.y, direction.x);
     const end = direction.clone().multiplyScalar(visibleLegLength);
@@ -204,7 +207,7 @@ function centrolinead(movement) {
       ),
       legWidth,
       0.16,
-      toolMaterial,
+      legMaterial,
     );
     body.userData.role = `${role}-adjustable-leg-body`;
     const backEdge = beamBetween(

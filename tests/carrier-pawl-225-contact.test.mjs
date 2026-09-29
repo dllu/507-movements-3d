@@ -104,7 +104,7 @@ test('225 actual full-cycle geometry fits and updates preserve all meshes', () =
     at(model, i / 64);
     d.stateAtTime(i * 0.03);
     model.root.traverse(o => { if (!o.isMesh || !o.visible) return;
-      assert.equal(o.material.fog, false);
+      for (const m of [o.material].flat()) assert.equal(m.fog, false);
       for (let j = 0; j < o.geometry.attributes.position.count; j++) {
         point.fromBufferAttribute(o.geometry.attributes.position, j).applyMatrix4(o.matrixWorld);
         assert.ok(d.cameraFitBounds.containsPoint(point), `${o.userData.role}: ${point.toArray()}`);

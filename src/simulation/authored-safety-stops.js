@@ -184,6 +184,34 @@ function otisSafetyStop(movement) {
   // short stub floating just above the platform.
   const upperRopeAnchor = new THREE.Vector3(0, 12, ropeLayerZ);
   const maximumRopeGap = 0.48;
+  const ropeRadius = 0.052;
+  const ropeStubLength = 1.45;
+  const sourcePlatformHeadTopY = sourcePointToModel(sourceRasterPlatformLeftTop).y;
+  const smootherStep = (u) => u * u * u * (10 - 15 * u + 6 * u * u);
+  // The broken stub, from its free end down to the eye: straight up the
+  // rope's line when slack is 0, limp at 1 (up out of the thimble, over to
+  // the right and along the top of B's head), with the same point spacing
+  // by arc length so it blends between the two.
+  const limpRopeStub = (eye, headTopY, slack) => {
+    const bezier = Array.from({ length: 17 }, (_, index) => cubicBezierPoint(
+      eye,
+      eye.clone().add(new THREE.Vector3(0.03, 0.42, 0)),
+      new THREE.Vector3(eye.x + 0.42, headTopY, eye.z),
+      new THREE.Vector3(eye.x + 0.72, headTopY, eye.z),
+      index / 16,
+    ));
+    let curveLength = 0;
+    for (let index = 1; index < bezier.length; index += 1) curveLength += bezier[index].distanceTo(bezier[index - 1]);
+    const tail = Math.max(0.1, ropeStubLength - curveLength);
+    const limp = [...bezier, ...[1, 2, 3].map((k) => bezier.at(-1).clone().add(new THREE.Vector3(tail * k / 3, 0, 0)))];
+    const cumulative = [0];
+    for (let index = 1; index < limp.length; index += 1) cumulative.push(cumulative.at(-1) + limp[index].distanceTo(limp[index - 1]));
+    const total = cumulative.at(-1);
+    const points = limp.map((point, index) => eye.clone()
+      .add(new THREE.Vector3(0, ropeStubLength * cumulative[index] / total, 0))
+      .lerp(point, slack));
+    return points.reverse();
+  };
 
   const leftLowerJointAtAngle = (angle) => new THREE.Vector3(
     leftPivot.x + lowerArmLength * Math.cos(angle + elbowAngle),
@@ -223,6 +251,7 @@ function otisSafetyStop(movement) {
     let platformSpeed;
     let platformAcceleration;
     let stage;
+    let failurePosition = null;
 
     if (cycleTime < sourceDwellEnd) {
       springRelease = 1;
@@ -278,6 +307,7 @@ function otisSafetyStop(movement) {
       platformSpeed = -rackPitch * motion.velocity;
       platformAcceleration = -rackPitch * motion.acceleration;
       stage = 'rope-failed-spring-tripping-pawls-during-short-drop';
+      failurePosition = motion.position;
     } else {
       springRelease = 1;
       springReleaseSpeed = 0;
@@ -370,19 +400,22 @@ function otisSafetyStop(movement) {
       platformY + pinEyeY + ropeEyeOffset,
       ropeLayerZ,
     );
-    // The break lies above Brown's crop, which shows only the stub a.
-    const breakCenter = ropeEye.clone().lerp(upperRopeAnchor, 0.85);
-    const halfGap = maximumRopeGap * springRelease / 2;
-    const upperBrokenEnd = breakCenter.clone().add(new THREE.Vector3(
-      -halfGap * 0.58,
-      halfGap,
+    // Pass 101: rope a parts just above the eye as soon as the drop starts
+    // (it had stood rigidly upright after breaking). The long upper piece
+    // hangs straight from the hoist and recoils a little; the short lower
+    // stub goes limp, curling over and lying on B's head. Both re-join as
+    // the demonstration reset re-tensions the rope.
+    const ropeSlack = failurePosition === null
+      ? springRelease
+      : smootherStep(THREE.MathUtils.clamp(failurePosition / 0.4, 0, 1));
+    const headTopY = platformY + sourcePlatformHeadTopY + ropeRadius + 0.004;
+    const stubPoints = limpRopeStub(ropeEye, headTopY, ropeSlack);
+    const upperBrokenEnd = ropeEye.clone().add(new THREE.Vector3(
+      0,
+      ropeStubLength + maximumRopeGap * ropeSlack,
       0,
     ));
-    const lowerBrokenEnd = breakCenter.clone().add(new THREE.Vector3(
-      halfGap * 0.58,
-      -halfGap,
-      0,
-    ));
+    const lowerBrokenEnd = ropeSlack > 0 ? stubPoints[0].clone() : upperBrokenEnd.clone();
     const leftEyeHeight = leftPivot.y
       + (-leftPivot.x) * Math.tan(leverAngle);
     const rightEyeHeight = rightPivot.y
@@ -424,7 +457,9 @@ function otisSafetyStop(movement) {
       rightPawlTip,
       ropeEye,
       ropeGap: upperBrokenEnd.distanceTo(lowerBrokenEnd),
-      ropeTension: 1 - springRelease,
+      ropeSlack,
+      ropeTension: 1 - ropeSlack,
+      stubPoints,
       springContact,
       springRelease,
       springReleaseAcceleration,
@@ -913,7 +948,7 @@ function otisSafetyStop(movement) {
   const lowerRope = makeDynamicCable({
     color: PALETTE.belt,
     laid: true,
-    maxSegments: 9,
+    maxSegments: 24,
     radius: 0.052,
   });
   lowerRope.userData.role = 'lower-segment-of-hoisting-rope-a';
@@ -1221,45 +1256,21 @@ function otisSafetyStop(movement) {
   };
 
   const updateRope = (state) => {
-    const upperControlA = upperRopeAnchor.clone().lerp(
-      state.upperBrokenEnd,
-      0.36,
-    );
-    const upperControlB = upperRopeAnchor.clone().lerp(
-      state.upperBrokenEnd,
-      0.72,
-    ).add(new THREE.Vector3(-0.04 * state.springRelease, 0, 0));
-    const upperPoints = Array.from({ length: 10 }, (_, index) => (
-      cubicBezierPoint(
-        upperRopeAnchor,
-        upperControlA,
-        upperControlB,
-        state.upperBrokenEnd,
-        index / 9,
-      )
-    ));
-    const lowerControlA = state.lowerBrokenEnd.clone().lerp(
-      state.ropeEye,
-      0.32,
-    ).add(new THREE.Vector3(0.08 * state.springRelease, -0.07, 0));
-    const lowerControlB = state.lowerBrokenEnd.clone().lerp(
-      state.ropeEye,
-      0.72,
-    ).add(new THREE.Vector3(0.04 * state.springRelease, -0.06, 0));
-    const lowerPoints = Array.from({ length: 10 }, (_, index) => (
-      cubicBezierPoint(
-        state.lowerBrokenEnd,
-        lowerControlA,
-        lowerControlB,
-        state.ropeEye,
-        index / 9,
-      )
-    ));
     // The rope material rises and falls with the platform eye, so the lay
     // travels with it (both pieces run downward from their upper ends).
     const ropeTravel = -state.ropeEye.y;
+    const broken = state.ropeSlack > 0;
+    const upperEnd = broken ? state.upperBrokenEnd : state.ropeEye;
+    const upperPoints = Array.from({ length: 10 }, (_, index) => (
+      upperRopeAnchor.clone().lerp(upperEnd, index / 9)
+    ));
     upperRope.userData.setPoints(upperPoints, ropeTravel);
-    lowerRope.userData.setPoints(lowerPoints, ropeTravel);
+    lowerRope.visible = broken;
+    if (broken) {
+      // Keep the lay continuous with the upper piece at the break.
+      const stubTop = upperRopeAnchor.y - state.ropeEye.y - ropeStubLength;
+      lowerRope.userData.setPoints(state.stubPoints, ropeTravel - stubTop);
+    }
     upperRope.userData.brokenEnd = state.upperBrokenEnd.clone();
     lowerRope.userData.brokenEnd = state.lowerBrokenEnd.clone();
     lowerRope.userData.attachment = state.ropeEye.clone();
@@ -1340,6 +1351,24 @@ function otisSafetyStop(movement) {
     update,
     cameraDirection: new THREE.Vector3(4.4, 3.8, 12.0),
   };
+}
+
+// A straight bar with round bosses centred on pins along its axis, each
+// joined to both bar edges by fillets tangent to the edge and the boss.
+function bossedBar({ x0, x1, y, half, bosses, radius, fillet, segments = 64 }) {
+  const rect = (a, b, c, d) => poly([[a, b], [c, b], [c, d], [a, d]]);
+  let shape = polygonClipping.union(rect(x0, y - half, x1, y + half),
+    ...bosses.map((x) => poly(circle([x, y], radius, segments))));
+  const rise = half + fillet, dx = Math.sqrt((radius + fillet) ** 2 - rise ** 2);
+  const tangentRise = rise * radius / (radius + fillet);
+  for (const x of bosses) for (const side of [-1, 1]) {
+    const edge = y + side * half, top = y + side * tangentRise, centreY = y + side * rise;
+    const patch = polygonClipping.difference(
+      rect(x - dx, Math.min(edge, top), x + dx, Math.max(edge, top)),
+      poly(circle([x - dx, centreY], fillet, 32)), poly(circle([x + dx, centreY], fillet, 32)));
+    shape = polygonClipping.union(shape, patch);
+  }
+  return shape;
 }
 
 export function createAuthoredSafetyStopMovement(movement) {
@@ -1434,6 +1463,24 @@ export function createAuthoredSafetyStopMovement(movement) {
         (z0 + z1) / 2,
       );
     }
+  }
+  // Pass 101: the elbow-lever fulcrum pins (r 0.13) sat on the edges of the
+  // 0.14-high pivot bar. The bar is now one extrusion with a round boss
+  // concentric with each pin, joined to the bar by tangent fillets.
+  {
+    const { blocks: b, geometry: g } = result.root.userData;
+    const box = new THREE.Box3().setFromObject(b.pivotSupport).translate(b.carriage.position.clone().negate());
+    const bar = bossedBar({
+      x0: box.min.x, x1: box.max.x, y: g.leftPivot.y, half: (box.max.y - box.min.y) / 2,
+      bosses: [g.leftPivot.x, g.rightPivot.x], radius: 0.2, fillet: 0.06,
+    });
+    let material;
+    b.pivotSupport.traverse((o) => { if (o.isMesh) { material ??= o.material; o.visible = false; } });
+    const mesh = new THREE.Mesh(plate(bar, box.min.z, box.max.z), material);
+    mesh.userData.role = 'platform-elbow-lever-pivot-bar-with-bored-bosses';
+    mesh.castShadow = true; mesh.receiveShadow = true;
+    b.carriage.add(mesh);
+    b.pivotBar = mesh;
   }
   // Brown draws no index marks on the pin, platform or rack seats.
   const whiteIndices = [];

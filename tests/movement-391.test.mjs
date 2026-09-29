@@ -210,7 +210,8 @@ test('movement 391 guide grooves are Brown\'s: two straight vertical branches jo
     const onOuter = Math.abs(p.x - outer) < 1e-9;
     const onUpper = Math.abs(p.distanceTo(arcs.cornerCentre) - arcs.cornerRadius) < 1e-9
       || Math.abs(p.distanceTo(arcs.filletCentre) - arcs.filletRadius) < 1e-9;
-    const onLower = Math.abs(p.distanceTo(arcs.lowerCentre) - arcs.lowerRadius) < 1e-9;
+    const onLower = Math.abs(p.distanceTo(arcs.lowerCentre) - arcs.lowerRadius) < 1e-9
+      || Math.abs(p.distanceTo(arcs.lowerCornerCentre) - arcs.cornerRadius) < 1e-9;
     assert.ok(onInner || onOuter || onUpper || onLower, `pin at ${p.x}, ${p.y} lies on a branch or corner arc`);
     innerCount += onInner; outerCount += onOuter; upperCount += onUpper && !onInner && !onOuter; lowerCount += onLower && !onInner && !onOuter;
     if (onUpper && !onInner && !onOuter) assert.ok(p.y > arcs.lowerCentre.y, 'upper arc at the top');
@@ -220,7 +221,8 @@ test('movement 391 guide grooves are Brown\'s: two straight vertical branches jo
     assert.ok(Math.abs(q.x - inner) < 1e-9 || Math.abs(q.x - outer) < 1e-9
       || Math.abs(q.distanceTo(arcs.cornerCentre) - arcs.cornerRadius) < 1e-9
       || Math.abs(q.distanceTo(arcs.filletCentre) - arcs.filletRadius) < 1e-9
-      || Math.abs(q.distanceTo(arcs.lowerCentre) - arcs.lowerRadius) < 1e-9,
+      || Math.abs(q.distanceTo(arcs.lowerCentre) - arcs.lowerRadius) < 1e-9
+      || Math.abs(q.distanceTo(arcs.lowerCornerCentre) - arcs.cornerRadius) < 1e-9,
     'left groove mirrors the right');
   }
   // Mostly straight: the two vertical branches carry most of the loop.
@@ -234,6 +236,24 @@ test('movement 391 guide grooves are Brown\'s: two straight vertical branches jo
   // Sharp corners at the top of the inner branch and the foot of the outer.
   near(arcs.corner.x, inner, 1e-12, 'upper corner on the inner branch');
   near(arcs.lowerCorner.x, outer, 1e-12, 'lower corner on the outer branch');
+  // Pass 101: the groove is its own half-turn image. Both corners use one
+  // corner-arc radius and one fillet radius, and the two corner curves have
+  // nearly equal extents; only the angle at which each leaves its sharp
+  // corner differs (the swing at the top, 20 degrees at the foot).
+  near(arcs.lowerRadius, arcs.filletRadius, 1e-12, 'one fillet radius at both corners');
+  near(arcs.lowerCornerCentre.distanceTo(arcs.lowerCorner), arcs.cornerRadius, 1e-12, 'lower corner arc radius');
+  near(arcs.cornerCentre.distanceTo(arcs.corner), arcs.cornerRadius, 1e-12, 'upper corner arc radius');
+  assert.ok(arcs.filletRadius > 0.74, `rounded top outer corner ${arcs.filletRadius}`);
+  const upperDrop = arcs.corner.y - arcs.filletCentre.y;
+  const lowerRise = arcs.lowerCentre.y - arcs.lowerCorner.y;
+  assert.ok(Math.abs(upperDrop - lowerRise) < 0.1, `corner extents ${upperDrop} ${lowerRise}`);
+  // Each fillet meets its branch tangentially and the corner arc
+  // tangentially at the switch point.
+  near(arcs.lowerSwitch.distanceTo(arcs.lowerCentre), arcs.lowerRadius, 1e-12, 'fillet through the switch');
+  near(arcs.lowerSwitch.distanceTo(arcs.lowerCornerCentre), arcs.cornerRadius, 1e-12, 'corner arc through the switch');
+  const a = arcs.lowerSwitch.clone().sub(arcs.lowerCentre).normalize();
+  const b = arcs.lowerSwitch.clone().sub(arcs.lowerCornerCentre).normalize();
+  near(a.dot(b), 1, 1e-12, 'lower arcs tangent at the switch');
   disposeModel(model.root);
 });
 

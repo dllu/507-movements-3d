@@ -730,3 +730,18 @@ test('movement 192 is fully three-dimensional and remains distinct as the review
   disposeModel(movement200.root);
   disposeModel(model.root);
 });
+
+test('p101: 192 and 193 teeth stand over a darker sunk groove floor, not the land colour', () => {
+  for (const id of [192, 193]) {
+    const model = createMovementModel(catalog.movements[id - 1]);
+    const b = model.root.userData.blocks;
+    assert.equal(b.pitchGroove.userData.role, 'darker-sunk-groove-floor-under-mangle-teeth');
+    const floor = b.pitchGroove.material.color, land = b.toothLand.material.color;
+    assert.ok(floor.r < land.r * 0.7 && floor.g < land.g * 0.7 && floor.b < land.b * 0.7, `${id} floor is darker`);
+    b.pitchGroove.geometry.computeBoundingBox();
+    b.toothLand.geometry.computeBoundingBox();
+    const face = model.root.userData.finiteGuide.frontZ;
+    assert.ok(Math.abs(b.pitchGroove.geometry.boundingBox.max.z - (face - 0.02)) < 1e-6, `${id} floor sits 0.02 under the face`);
+    assert.ok(Math.abs(b.toothLand.geometry.boundingBox.min.z - (face - 0.02)) < 1e-6, `${id} land reaches the sunk floor`);
+  }
+});

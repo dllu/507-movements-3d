@@ -242,6 +242,11 @@ function expandingPulley(movement) {
   const frameMaterial = matte(PALETTE.frame, { metalness: 0.13, roughness: 0.66 });
   const darkMaterial = matte(PALETTE.ink, { metalness: 0.22, roughness: 0.49 });
   const whiteMaterial = matte(PALETTE.white, { roughness: 0.47 });
+  // Pass 101: the arms and the rim segments were wheel c's blue, so the arms
+  // vanished under c and against the rim. Three drawn parts, three tones:
+  // c stays blue, the arms are light steel and the rim segments brass.
+  const armMaterial = matte(0x9aa2a4, { metalness: 0.2, roughness: 0.52 });
+  const rimMaterial = matte(PALETTE.brass, { metalness: 0.16, roughness: 0.56 });
 
   const wheelGear = makeGear({
     color: PALETTE.driven,
@@ -317,12 +322,12 @@ function expandingPulley(movement) {
 
     const slider = new THREE.Group();
     slider.rotation.z = angle;
-    const arm = new THREE.Mesh(new THREE.BoxGeometry(2.28, 0.16, 0.13), drivenMaterial);
+    const arm = new THREE.Mesh(new THREE.BoxGeometry(2.28, 0.16, 0.13), armMaterial);
     arm.position.set(1.72, 0, armZ);
     arm.userData.role = `pulley-arm-${index}`;
     const rim = new THREE.Mesh(
       centeredExtrusion(annularSegmentShape(rimInnerRadius, rimOuterRadius, rimHalfAngle), 0.2),
-      drivenMaterial,
+      rimMaterial,
     );
     rim.position.z = armZ;
     rim.userData.role = `expanding-pulley-rim-segment-${index}`;

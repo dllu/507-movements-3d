@@ -8,11 +8,11 @@
         "threeRatioPinWheelAndSlidingSlottedPinion",
         "rollingContactEllipsesWithToothedContinuation"
       ],
-      "sha256": "8d5bcbe1a7a04c70dbf27e4d82b62d8bbef8f13f0072e3b48584282a0e572704"
+      "sha256": "ad7c2360d110a34f5a596439d5b63de463fba11956827377059ff12592e093e9"
     },
     {
       "file": "src/simulation/variable-drive-205-209-parts.js",
-      "sha256": "84c1a050a0264892835b6a6cc0bca02ddde4be50f5254a69b7f16e04d7bacfa8"
+      "sha256": "465af804c843d2ad8786f545b03c11a04ea6400a845969f4f4eb34a39c799492"
     },
     {
       "file": "src/simulation/generated-variable-drive-205-209.js",
@@ -20,7 +20,7 @@
     },
     {
       "file": "src/simulation/generated-pin-slot-208.js",
-      "sha256": "8a30afdf899966855067dc077a31e53157b2fd7c24cdf9036ce309a12061184d"
+      "sha256": "1410ad64f1095ef0c4b01a312fa434df0ce62bd25b6e0dfbf486f3b1c4b6a06b"
     },
     {
       "file": "src/simulation/bored-lathe-geometry.js",
@@ -65,10 +65,10 @@
   ],
   "pinSlots": {
     "poses": 167,
-    "tested": 1036070,
+    "tested": 854924,
     "inside": 0,
     "maxPenetration": 0,
-    "maxGap": 0.0017587503814830887,
-    "maxWorkingGap": 0.0017587503814830887
+    "maxGap": 0.01202263218175462,
+    "maxWorkingGap": 0.01202263218175462
   }
 }

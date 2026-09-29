@@ -68,7 +68,11 @@ function makeSmoothSupportingRoller({
   drum.userData.role = 'smooth-cylindrical-workpiece-support-surface';
   rotor.add(drum);
 
-  const shaft = cylinderAlongZ(0.16, rollerWidth + 0.86, pinMaterial, 28);
+  // Pass 101: the shaft ends 0.05 proud of the roller's front face (Brown's
+  // section shows it cut flush there), so no long stub points at the camera;
+  // behind, it still runs 0.43 into its bearing block.
+  const shaft = cylinderAlongZ(0.16, rollerWidth + 0.48, pinMaterial, 28);
+  shaft.position.z = -0.19;
   shaft.userData.role = 'lower-roller-shaft';
   rotor.add(shaft);
 
@@ -180,7 +184,11 @@ function makeToothedFeedRoller({
     teeth.push(tooth);
   }
 
-  const shaft = cylinderAlongZ(0.15, rollerWidth + 0.86, pinMaterial, 28);
+  // Pass 101: the shaft ends 0.05 proud of the roller's front face (Brown's
+  // section shows it cut flush there), so no long stub points at the camera;
+  // behind, it still runs 0.43 into its bearing block.
+  const shaft = cylinderAlongZ(0.15, rollerWidth + 0.48, pinMaterial, 28);
+  shaft.position.z = -0.19;
   shaft.userData.role = 'upper-roller-shaft';
   rotor.add(shaft);
 

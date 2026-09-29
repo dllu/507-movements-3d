@@ -495,7 +495,10 @@ function reactionFerry(movement) {
   // Pass 69 (p69-w1): in Brown's plan the river reads as clear water; the
   // boat's and banks' shadows thrown two units down onto the bed read as a
   // second, ghost boat drifting beside the real one, so the bed takes none.
+  // Pass 101: the render-time shadow policy re-enabled receiving on every
+  // opaque part, bringing the ghost boat back; noShadow exempts the bed.
   riverBed.receiveShadow = false;
+  riverBed.userData.noShadow = true;
   update(0);
   correctReactionFerry(root);
   return {

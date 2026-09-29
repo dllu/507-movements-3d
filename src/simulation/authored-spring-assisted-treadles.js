@@ -432,8 +432,11 @@ function springAssistedTreadle(movement) {
   crankShaft.position.copy(wheelCenter).setZ(0.0);
   crankShaft.userData.role = 'fixed-crankshaft-journal-for-flywheel-and-crank-B';
   fixedFrame.add(crankShaft);
-  const treadleShaft = cylinderAlongZ(0.044, 0.28, darkMaterial, 28);
-  treadleShaft.position.copy(treadlePivot).setZ(0.36);
+  // Pass 101: the pin (0.004 running clearance in the lug's 0.048 bore)
+  // stands only 0.01 proud of the lug's front face, so at the oblique default
+  // view it no longer reads off-centre with a pale crescent of bore beside it.
+  const treadleShaft = cylinderAlongZ(0.044, 0.22, darkMaterial, 40);
+  treadleShaft.position.copy(treadlePivot).setZ(0.33);
   treadleShaft.userData.role = 'fixed-treadle-pivot-pin';
   fixedFrame.add(treadleShaft);
   root.add(fixedFrame);

@@ -637,10 +637,13 @@ function chainPump(movement) {
     flume.add(bank);
     root.add(flume);
     b.flume = flume;
-    const sheet = { width: 0.30, widthAxis: new THREE.Vector3(0, 0, 1), cyclePeriod: g.cycleDuration, opacity: 0.5 };
+    // Pass 101: denser and a little deeper, so the delivery over the lip and
+    // across the bank reads from the level default view (it was a faint
+    // pale line and the spout read empty).
+    const sheet = { width: 0.30, widthAxis: new THREE.Vector3(0, 0, 1), cyclePeriod: g.cycleDuration, opacity: 0.58, color: 0x3f98b6 };
     const spoutY = floorTop + 0.05;
     const lip = new THREE.Vector3(lipX, spoutY, 0);
-    const landY = bankTop + 0.035;
+    const landY = bankTop + 0.058;
     const spoutStream = addRole(new WaterStream(joinPaths(
       guidedPath([new THREE.Vector3(g.leftLegX - 0.1, spoutY, 0), lip], { speed: 1.2, samples: 12 }),
       ballisticPath({ origin: lip, velocity: new THREE.Vector3(-1.2, 0, 0), endY: landY, samples: 16 }),
@@ -649,7 +652,7 @@ function chainPump(movement) {
     const landing = spoutStream.path.points.at(-1);
     const flumeStream = addRole(new WaterStream(
       guidedPath([new THREE.Vector3(landing.x + 0.08, landY, 0), new THREE.Vector3(bankLeft, landY, 0)], { speed: 1.0, samples: 16 }),
-      { ...sheet, width: 0.44, thickness: 0.04, widthExponent: 0.3, streakRate: 1.5 }), 'delivered-water-running-away-over-the-bank');
+      { ...sheet, width: 0.44, thickness: 0.055, widthExponent: 0.3, streakRate: 1.5 }), 'delivered-water-running-away-over-the-bank');
     root.add(flumeStream);
     b.deliveryStreams = [spoutStream, flumeStream];
     root.userData.updateStreams = collectWaterStreams(root);

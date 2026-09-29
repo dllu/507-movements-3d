@@ -11,7 +11,7 @@ test('131 source-traced assembly has one slotted body, two web pockets and finit
  const v=makeSlottedSector(),u=v.root.userData,d=u.geometry,b=u.blocks,p=u.profiles;
  try{
   assert.equal(u.bodyRings.length,5);assert.equal(d.distance*100,155);assert.equal(d.diskRadius*200,223);assert.equal(d.crankRadius*100,90);
-  assert.equal(b.toothMeshes.length,9);assert.equal(d.period,4);
+  assert.equal(b.toothMeshes.length,11);assert.equal(d.period,4);
   // Pass 97: the web is a symmetric three-spoke sector. Its two windows
   // mirror about the bisector (x = 0 in the sector frame), and the side bars,
   // middle spoke and rim band all keep one width.

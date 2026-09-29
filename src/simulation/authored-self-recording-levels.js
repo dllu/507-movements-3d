@@ -420,15 +420,21 @@ function selfRecordingLevel(movement) {
   const handle = new THREE.Group();
   handle.userData.role = 'left-hand-push-handle-fixed-to-carriage';
   // The plate's hands hold one diagonal round bar that crosses the end of
-  // the horizontal bar outside the arch; it lies on the brace and runs up
-  // to the arch, which carry it.
-  const gripStart = new THREE.Vector3(-2.62, 0.68, 0.17);
-  const gripEnd = new THREE.Vector3(-1.22, 1.48, 0.17);
+  // the horizontal bar outside the arch and runs up into the arch. Pass 101:
+  // the bar lies in the arch's own plane and ends on the arch tube's centre
+  // line at its (-1.25, 1.44) knot, so the two tubes join as one member
+  // (the bar's end is buried in the thicker arch) instead of lying tangent
+  // across the front of the brace and the arch.
+  const gripStart = new THREE.Vector3(-2.62, 0.68, archZ);
+  const gripEnd = new THREE.Vector3(-1.25, 1.44, archZ);
+  // The free grip end is rounded (a capsule); its upper cap is buried in
+  // the arch tube.
   const handleGrip = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.075, 0.075, gripStart.distanceTo(gripEnd), 30),
+    new THREE.CapsuleGeometry(0.075, gripStart.distanceTo(gripEnd) - 0.075, 8, 30),
     darkMaterial,
   );
-  handleGrip.position.copy(gripStart).add(gripEnd).multiplyScalar(0.5);
+  handleGrip.position.copy(gripStart).add(gripEnd).multiplyScalar(0.5)
+    .addScaledVector(gripEnd.clone().sub(gripStart).normalize(), -0.0375);
   handleGrip.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0),
     gripEnd.clone().sub(gripStart).normalize());
   handleGrip.userData.role = 'diagonal-push-handle-bar';
@@ -659,16 +665,20 @@ function selfRecordingLevel(movement) {
     'pencil-carrier-fixed-on-pendulum-rod';
   pendulum.add(pendulumRod, pendulumBob, pencilCarrier);
   carriage.add(pendulum);
+  // Pass 101: a short 0.08 pin, centred on the pivot, runs from inside the
+  // arch-apex boss to just proud of the pendulum eye's front face.
+  const pivotPinBack = archZ - 0.04;
+  const pivotPinFront = 1.17 + 0.0475 + 0.025;
   const pendulumPivotAxle = cylinderAlongZ(
-    0.16,
-    1.20,
+    0.08,
+    pivotPinFront - pivotPinBack,
     darkMaterial,
     34,
   );
   pendulumPivotAxle.position.set(
     pendulumPivot.x,
     pendulumPivot.y,
-    0.60,
+    (pivotPinFront + pivotPinBack) / 2,
   );
   pendulumPivotAxle.userData.role =
     'pendulum-pivot-on-carriage-perpendicular-bisector';
@@ -683,7 +693,16 @@ function selfRecordingLevel(movement) {
     1.23,
   );
   pivotIndex.userData.role = 'white-pendulum-axis-index';
+  // A white dot reads as a hole on the cream page; the pin end is enough.
+  pivotIndex.visible = false;
   carriage.add(pivotIndex);
+  // Pass 101: a bored boss cast on the arch apex, concentric with the pivot;
+  // the arch tube (r 0.105) runs into its curved side from both hands.
+  const apexBoss = new THREE.Mesh(boredCylinderGeometry(0.20, 0.084, 0.26), frameMaterial);
+  apexBoss.rotation.x = Math.PI / 2;
+  apexBoss.position.set(pendulumPivot.x, pendulumPivot.y, archZ);
+  apexBoss.userData.role = 'bored-pivot-boss-cast-on-arch-apex';
+  carriage.add(apexBoss);
 
   const pencilStylus = new THREE.Group();
   pencilStylus.userData.role =
@@ -920,14 +939,14 @@ function selfRecordingLevel(movement) {
   const guideOutline = poly([[-0.08,-guideHalf],[0.08,-guideHalf],[0.08,guideHalf],[-0.08,guideHalf]]);
   replaceGeometry(verticalDrumGuide, plate(polygonClipping.difference(guideOutline,
     poly(circle([0,drumCenter.y-(guideBottom+guideTop)/2],0.068,128))), -0.08, 0.08).rotateY(Math.PI/2));
-  const pendulumEye = new THREE.Mesh(boredCylinderGeometry(0.22,0.163,0.095), darkMaterial);
+  const pendulumEye = new THREE.Mesh(boredCylinderGeometry(0.17,0.084,0.095), darkMaterial);
   pendulumEye.rotation.x=Math.PI/2;
   pendulumEye.userData.role='bored-pendulum-pivot-eye';
   pendulum.add(pendulumEye);
   // The pencil slides in a bore through the carrier and rod.
   const pencilBore = 0.0175;
   replaceGeometry(pendulumRod, plate(polygonClipping.difference(
-    poly([[-0.0425,-pendulumBobRadius],[0.0425,-pendulumBobRadius],[0.0425,-0.19],[-0.0425,-0.19]]),
+    poly([[-0.0425,-pendulumBobRadius],[0.0425,-pendulumBobRadius],[0.0425,-0.12],[-0.0425,-0.12]]),
     poly(circle([0,-pencilPendulumRadius],pencilBore,48))), -0.0475, 0.0475));
   pendulumRod.position.y=0;
   replaceGeometry(pencilCarrier, boredCylinderGeometry(0.13, pencilBore, 0.06));

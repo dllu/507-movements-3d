@@ -6,9 +6,10 @@ import * as THREE from 'three';
 import loadMujoco from '@mujoco/mujoco';
 import {makeStudReverserModel} from '../src/simulation/baked/stud-reverser.js';
 import {makeStudReverserPhysics} from '../src/simulation/mujoco-stud-reverser/physics.js';
+import {FLAT_INPUT_ARM} from '../src/simulation/mujoco-stud-reverser/geometry.js';
 const bundle=JSON.parse(gunzipSync(fs.readFileSync('src/simulation/baked/assets/153.json.gz')));
 test('153 interpolated baked motion tracks passive native dynamics between samples',async()=>{
- const p=makeStudReverserPhysics(await loadMujoco(),{inputContactMinimum:1.4,barFriction:2,timestep:.000125}),v=makeStudReverserModel(bundle),errors=[0,0,0];
+ const p=makeStudReverserPhysics(await loadMujoco(),{...FLAT_INPUT_ARM,barFriction:2,timestep:.000125}),v=makeStudReverserModel(bundle),errors=[0,0,0];
  try{for(let tick=0;tick<=576000;tick++){
   if(tick>=480000&&(tick-480000)%4===0){const time=(tick-480000)*.000125;v.update(time);const s=v.root.userData.state.qpos;['disk','bar','lever'].forEach((name,k)=>{errors[k]=Math.max(errors[k],Math.abs(s[name]-p.data.qpos[k]));});}
   if(tick<576000)p.step();

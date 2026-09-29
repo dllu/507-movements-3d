@@ -449,7 +449,10 @@ function pendulumTreeSaw(movement) {
     carriage.add(anchor);
   }
 
-  const connectingRod = makeBoredPlanarLink({length:connectingRodLength,width:.085,eyeRadius:.12,boreRadius:pinBoreRadius,depth:.10},ropeMaterial);
+  // Pass 101: the rigid rod is steel grey (muted), not rope brown, so it
+  // doesn't read as a cord that pushes.
+  const rodMaterial = matte(PALETTE.muted, { metalness: 0.2, roughness: 0.5 });
+  const connectingRod = makeBoredPlanarLink({length:connectingRodLength,width:.085,eyeRadius:.12,boreRadius:pinBoreRadius,depth:.10},rodMaterial);
   connectingRod.userData.role =
     'constant-length-rod-from-pendulum-pin-to-horizontal-saw-slider';
   root.add(connectingRod);

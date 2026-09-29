@@ -697,8 +697,11 @@ function dualBandOscillationRectifier(movement) {
   shaft.userData.role = 'shaft-fast-with-both-ratchets-and-flywheel';
   flywheelRotor.add(shaft);
 
+  // Pass 101: the loose pulleys are light grey (muted), not flywheel B's
+  // blue, so the band wraps and pulleys read against B's hub and spokes.
+  const loosePulleyMaterial = matte(PALETTE.muted, { metalness: 0.16, roughness: 0.55 });
   const openCarrier = makeLoosePulleyCarrier({
-    beltMaterial: drivenMaterial,
+    beltMaterial: loosePulleyMaterial,
     darkMaterial,
     pawlMaterial: brassMaterial,
     planeZ: openPlaneZ,
@@ -712,7 +715,7 @@ function dualBandOscillationRectifier(movement) {
   // Both loose pulleys are identical, in one colour, so the fast brass ratchet
   // and its dark pawls read against the front one's face.
   const crossedCarrier = makeLoosePulleyCarrier({
-    beltMaterial: drivenMaterial,
+    beltMaterial: loosePulleyMaterial,
     darkMaterial,
     pawlMaterial: brassMaterial,
     planeZ: crossedPlaneZ,

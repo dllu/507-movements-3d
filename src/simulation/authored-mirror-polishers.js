@@ -1,10 +1,7 @@
 import { correctMirrorPolisher } from './polishing-joint-parts.js';
 import { plate, poly, circle, polygonClipping } from './finite-plate-geometry.js';
-import {
-  makeSeatedFollower,
-  sawRatchetOutline,
-  seatedClickOutline,
-} from './seated-ratchet-click.js';
+import { buildMirrorSLink, makeSLinkSolver, simulateSLinkDrive } from './mirror-s-link-click.js';
+import { makeSeeThrough } from './see-through-part.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -30,261 +27,24 @@ function cylinderAlongZ(radius, length, material, segments = 28) {
   return cylinder;
 }
 
-// Brown's click comes down from its eye on the carrier, beside the bar, and
-// its nose sits in a root on the ratchet's left side, so the carrier's
-// downward swing pushes the tooth down and turns the wheel anticlockwise.
-// One planar plate with a bored boss: the blade is one circular arc from the
-// boss to the flank, and the nose is cut along the tooth face.
-function seatMirrorClick(root) {
-  const b = root.userData.blocks;
-  const g = root.userData.geometry;
-  const old = b.finiteClick;
-  const hand = g.clickHand;
-  const teeth = g.ratchetToothCount;
-  const radius = g.ratchetOuterRadius;
-  const pitch = FULL_TURN / teeth;
-  // Engaged, the wheel stands this far round from the carrier (mod pitch).
-  const seatWheelAngle = -g.carrierBaseAngle - hand * g.clickBacklash;
-  // Brown's nose engages the ratchet's left side, below the carrier eye.
-  const noseAngle = THREE.MathUtils.degToRad(35);
-  const wheel = sawRatchetOutline({
-    radius,
-    rootRadius: radius * 0.8,
-    teeth,
-    hand,
-    rootAngle: noseAngle - seatWheelAngle,
-    rake: 0.06,
-  });
-  const depth = 0.14;
-  const bore = 0.107;
-  b.ratchetWheel.geometry.dispose();
-  b.ratchetWheel.geometry = plate(polygonClipping.difference(
-    poly(wheel.outline),
-    poly(circle([0, 0], bore, 96)),
-  ), -depth / 2, depth / 2);
-  b.ratchetWheel.rotation.z = 0;
-  b.ratchetWheel.userData.ratchetProfile = {
-    outline: wheel.outline, radius, bore, teeth, hand, phase: wheel.phase, depth,
-    rootRadius: wheel.rootRadius, rake: wheel.rake,
-  };
-  const pawl = old.group;
-  const pivot = [pawl.position.x, pawl.position.y];
-  const at = (r, a) => [r * Math.cos(a + seatWheelAngle), r * Math.sin(a + seatWheelAngle)];
-  const apex = at(wheel.rootRadius, wheel.rootAngle);
-  const unit = (to) => {
-    const v = [to[0] - apex[0], to[1] - apex[1]];
-    const l = Math.hypot(v[0], v[1]);
-    return [v[0] / l, v[1] / l];
-  };
-  const outline = seatedClickOutline({
-    pivot,
-    apex,
-    face: unit(at(radius, wheel.rootAngle + hand * wheel.rake * pitch)),
-    flank: unit(at(radius, wheel.rootAngle - hand * (1 - wheel.rake) * pitch)),
-    width: 0.085,
-    bossRadius: 0.13,
-    boreRadius: 0.082,
-    shank: 0.10,
-    fillet: 0,
-    trimRadius: 0.16,
-  });
-  const local = outline.polygons.map((polygon) => polygon.map((ring) => ring.map((p) => [p[0] - pivot[0], p[1] - pivot[1]])));
-  old.body.geometry.dispose();
-  old.body.geometry = plate(local, -0.06, 0.06);
-  old.body.userData.role = 'finite-bored-hooked-click';
-  // A dark hook reads apart from the brass ratchet it draws round.
-  old.body.material = matte(PALETTE.ink, { metalness: 0.24, roughness: 0.48 });
-  old.body.material.fog = false;
-  pawl.rotation.z = 0;
-  // A hair of running clearance keeps the dark hook visibly off the brass.
-  const core = makeSeatedFollower({ outline, wheel, pivot, seatWheelAngle, runningClearance: 0.0015 });
-  // Brown's click pushes: on the return it climbs the long flank and, past
-  // the tip, falls into the next root. Its nose's lift arc swings forward, so
-  // it rests on the passed tip corner until the carrier has drawn it clear
-  // (about 0.07 pitch), then falls at a finite rate (0.03 pitch of return),
-  // inside the 0.2 pitch of overtravel, and is on the flank again before the
-  // drive stroke draws it back into the root.
-  // Resting lift: the lowest clear lift on the flank. (Because of that
-  // forward swing, clearance is not monotonic in lift and the shared
-  // bisection would overshoot.)
-  const restingLift = (x) => {
-    if (!core.overlaps(x, 0)) return 0;
-    const step = 0.01;
-    let high = step;
-    while (core.overlaps(x, high)) {
-      high += step;
-      if (high > 0.9) throw new RangeError('click cannot clear the ratchet');
-    }
-    let low = high - step;
-    for (let i = 0; i < 30; i += 1) {
-      const mid = (low + high) / 2;
-      if (core.overlaps(x, mid)) low = mid; else high = mid;
-    }
-    return high + 2e-6;
-  };
-  const samples = 384;
-  const contact = Array.from({ length: samples + 1 }, (_, i) => restingLift(pitch * i / samples));
-  contact[samples] = contact[0];
-  const lerp = (table, u) => {
-    const i = Math.min(table.length - 2, Math.floor(u)), t = u - i;
-    return table[i] + (table[i + 1] - table[i]) * t;
-  };
-  // Contact lift at any relative wheel angle (the drive stroke).
-  const angleAt = (relativeWheelAngle) => core.liftSign * lerp(contact,
-    positiveModulo(hand * (relativeWheelAngle - seatWheelAngle), pitch) / pitch * samples);
-  // The return stroke, indexed by carrier travel back from the seat.
-  const returnTravel = pitch + g.clickBacklash;
-  const returnSamples = Math.ceil(samples * returnTravel / pitch);
-  const dropPerSample = Math.max(...contact) / (0.03 * samples);
-  const returnLift = [];
-  for (let i = 0; i <= returnSamples; i += 1) {
-    const x = returnTravel * i / returnSamples;
-    const onFlank = lerp(contact, positiveModulo(x, pitch) / pitch * samples);
-    if (i === 0) { returnLift.push(onFlank); continue; }
-    // Fall at the finite rate, but never into the undercut tip that the
-    // nose's arc passes under: hold just above it until the carrier's return
-    // has drawn the nose clear.
-    let lift = Math.max(onFlank, returnLift[i - 1] - dropPerSample * samples / returnSamples * returnTravel / pitch);
-    const xm = positiveModulo(x, pitch);
-    while (lift > onFlank && core.overlaps(xm, lift)) lift += 0.002;
-    returnLift.push(lift);
-  }
-  const returnAngleAt = (travelBack) => core.liftSign * lerp(returnLift,
-    Math.min(Math.max(travelBack / returnTravel, 0), 1) * returnSamples);
-  const playbackAngleAt = angleAt;
-  b.finiteClick = {
-    group: pawl,
-    body: old.body,
-    pin: old.pin,
-    wheel: b.ratchetWheel,
-    pivot,
-    outline: wheel.outline,
-    clickOutline: outline,
-    seatWheelAngle,
-    liftSign: core.liftSign,
-    angleAt,
-    playbackAngleAt,
-    returnAngleAt,
-    returnTravel,
-    core,
-    update(angle, state) {
-      pawl.rotation.z = state && !state.stage.startsWith('eccentric-driven')
-        ? returnAngleAt(returnTravel * (1 - state.carrierFraction))
-        : angleAt(angle);
-    },
-  };
-  root.userData.updatePolishingInterfaces = (state) => b.finiteClick.update(state.ratchetAngle - state.carrierAngle, state);
-  root.userData.reconstructionNote = 'The guided bar follows the crank exactly. Mirror indexing and the eccentric-driven carrier stroke are prescribed, with a geometric overrunning click on the ratchet\'s left side pushing it anticlockwise as Brown draws. The mirror and ratchet stand behind the bar and the lower rail, as Brown draws them behind the bar; the click\'s stem comes forward beside the bar\'s edge to the eccentric rod. The telescoping follower is an illustrative transmission, not a closed rigid linkage or a validated passive ratchet under polishing load.';
-}
-
-function makeRatchetWheel({
-  depth,
-  material,
-  outerRadius,
-  rootRadius,
-  toothCount,
-  z,
-}) {
-  const shape = new THREE.Shape();
-  const pitch = FULL_TURN / toothCount;
-  let first = true;
-  for (let tooth = 0; tooth < toothCount; tooth += 1) {
-    for (const sample of [
-      { offset: -0.50, radius: rootRadius },
-      { offset: -0.38, radius: outerRadius },
-      { offset: 0.34, radius: outerRadius * 0.91 },
-      { offset: 0.50, radius: rootRadius },
-    ]) {
-      const angle = tooth * pitch + sample.offset * pitch;
-      const x = sample.radius * Math.cos(angle);
-      const y = sample.radius * Math.sin(angle);
-      if (first) {
-        shape.moveTo(x, y);
-        first = false;
-      } else shape.lineTo(x, y);
-    }
-  }
-  shape.closePath();
-  const geometry = new THREE.ExtrudeGeometry(shape, {
-    bevelEnabled: true,
-    bevelSegments: 1,
-    bevelSize: 0.016,
-    bevelThickness: 0.016,
-    depth,
-  });
-  geometry.translate(0, 0, -depth / 2);
-  const wheel = new THREE.Mesh(geometry, material);
-  wheel.position.z = z;
-  wheel.userData.outerRadius = outerRadius;
-  wheel.userData.role =
-    'ratchet-wheel-rigidly-secured-to-square-mirror';
-  wheel.userData.rootRadius = rootRadius;
-  wheel.userData.toothCount = toothCount;
-  wheel.userData.toothPitch = pitch;
-  return wheel;
-}
-
-function makeTelescopingFollower({ darkMaterial, followerMaterial }) {
-  const group = new THREE.Group();
-  const outer = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.043, 0.043, 1, 12),
-    darkMaterial,
-  );
-  const inner = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.029, 0.029, 1, 12),
-    followerMaterial,
-  );
-  const upperJoint = new THREE.Mesh(
-    new THREE.SphereGeometry(0.070, 18, 12),
-    followerMaterial,
-  );
-  const lowerJoint = new THREE.Mesh(
-    new THREE.SphereGeometry(0.062, 18, 12),
-    followerMaterial,
-  );
-  group.add(outer, inner, upperJoint, lowerJoint);
-  const setSegment = (mesh, start, end) => {
-    const direction = end.clone().sub(start);
-    const length = direction.length();
-    mesh.position.copy(start).add(end).multiplyScalar(0.5);
-    mesh.scale.set(1, length, 1);
-    mesh.quaternion.setFromUnitVectors(Y_AXIS, direction.normalize());
-  };
-  group.userData.setEndpoints = (upper, lower) => {
-    const midpoint = upper.clone().lerp(lower, 0.57);
-    setSegment(outer, upper, midpoint.clone().lerp(lower, 0.10));
-    setSegment(inner, midpoint.clone().lerp(upper, 0.08), lower);
-    upperJoint.position.copy(upper);
-    lowerJoint.position.copy(lower);
-    group.userData.currentLength = upper.distanceTo(lower);
-    group.userData.lowerEndpoint = lower.clone();
-    group.userData.upperEndpoint = upper.clone();
-  };
-  group.userData.inner = inner;
-  group.userData.lowerJoint = lowerJoint;
-  group.userData.outer = outer;
-  group.userData.role =
-    'sliding-follower-transmitting-crankshaft-eccentric-to-click-carrier';
-  group.userData.upperJoint = upperJoint;
-  return markShadows(group);
-}
-
 function mirrorPolishingCompoundMotion(movement) {
   const root = new THREE.Group();
 
   const inputCyclePeriod = 5;
-  const inputAngularSpeed = FULL_TURN / inputCyclePeriod;
+  // Brown marks no direction. The crank turns clockwise in the plate, so the
+  // eccentric's strap comes down on the bar's right side while the S-link's
+  // hook pushes the ratchet's left-hand teeth down (anticlockwise).
+  const inputAngularSpeed = -FULL_TURN / inputCyclePeriod;
   const inputStartAngle = THREE.MathUtils.degToRad(110);
-  // The whole crank side stands in front of the bar: the shaft ends at the
-  // eye crank in front of the bar face, so the bar can sweep past the shaft
-  // axis. Front to back: handle crank, upper rail, eccentric, eye crank, bar;
-  // the lower rail lies behind the bar, as Brown draws both rails, and the
-  // click carrier, ratchet and mirror lie behind the lower rail, so Brown's
-  // mirror and ratchet stand behind the bar and pass behind the rail and its
-  // pins at the bottom of each stroke. The mirror sits 2.85 below the top
-  // eye (Brown: about 3.6 crank radii, here 4.0) so that its axle, which
-  // crosses the rail's depth, always stays above the rail; Brown's own
-  // proportions would carry it through the rail.
+  // The crank side stands in front of the bar: the shaft ends at the eye
+  // crank in front of the bar face, so the bar can sweep past the shaft
+  // axis. Front to back: handle crank, upper rail, eye crank, bar; the lower
+  // rail lies behind the bar, as Brown draws both rails. Behind the lower
+  // rail, in one plane, lie the ratchet, the S-link and the eccentric that
+  // drives it, and behind them the mirror, as Brown dashes the rod, ratchet
+  // and mirror behind the bar. The mirror sits 2.85 below the top eye
+  // (Brown: about 3.6 crank radii, here 4.0) so that its axle, which crosses
+  // the rail's depth, always stays above the rail.
   const crankPlaneZ = 0;
   const barPlaneZ = 0.10;
   const crankCenter = new THREE.Vector3(0, 2.32, 0);
@@ -304,31 +64,46 @@ function mirrorPolishingCompoundMotion(movement) {
   const ratchetToothPitch = FULL_TURN / ratchetToothCount;
   // Brown's ratchet spans about 0.83 of the mirror's side.
   const ratchetOuterRadius = 0.52;
-  const ratchetRootRadius = 0.44;
-  // Brown's click comes down the ratchet's left side from above and pushes
-  // its teeth downward: the wheel turns anticlockwise in the plate
-  // (clickHand +1, angles anticlockwise positive). His teeth rake that way:
-  // on the right side each tip has its long flank above and its short
-  // radial face below.
+  const ratchetRootRadius = 0.416;
+  const ratchetRake = 0.06;
+  // Brown's hook comes down the ratchet's left side from above and pushes
+  // its teeth downward: the wheel turns anticlockwise (clickHand +1).
   const clickHand = 1;
-  // The carrier swings 130 -> 160 degrees (Brown's click pivot stands at
-  // about 125 degrees, 1.7 ratchet radii out, its nose at about 165), so its
-  // pivot, where the eccentric rod's click stem passes the bar's plane,
-  // always stays beside the bar.
-  const carrierBaseAngle = THREE.MathUtils.degToRad(130);
-  const carrierPivotRadius = 0.8;
-  const pawlContactRadius = ratchetOuterRadius;
-  const pawlMaximumLift = 0.105;
-  // Carrier travel taken up before the click's nose meets the tooth face.
-  const clickBacklash = 0.2 * ratchetToothPitch;
-  const eccentricity = 0.18;
-  const mirrorRotorZ = -0.60;
-  // World depths: the ratchet/click plane behind the lower rail (rail back
-  // face at z -0.21); the carrier-pivot follower joint and the shaft
-  // eccentric in front of the bar (face at z 0.18).
-  const clickPlaneZ = -0.37;
-  const followerLowerZ = 0.56;
-  const eccentricPlaneZ = 0.43;
+  // The hook seats (mid-drive) in the root at 160 degrees, upper left.
+  const clickRootAngle = THREE.MathUtils.degToRad(160);
+  // Brown's rod rises behind the bar toward its top eye, not to the shaft:
+  // an eccentric on the shaft itself would need the shaft to pierce the bar,
+  // which sweeps right across the shaft's axis. The eccentric is keyed on
+  // the crankpin's rear end, rigid with the crank, so relative to the bar
+  // its centre circles the eye at the throw. At phase 0 (Brown's pose) the
+  // strap stands at the top of its circle.
+  const eccentricity = 0.15;
+  const eccentricPhase = THREE.MathUtils.degToRad(-20);
+  const eccentricDiscRadius = eccentricity + 0.12 + 0.05;
+  const sLinkWidth = 0.10;
+  const sLinkDepth = 0.12;
+  const mirrorRotorZ = -0.54;
+  // World depth of the ratchet / S-link / eccentric plane (behind the lower
+  // rail, whose back face is at z -0.21).
+  const clickPlaneZ = -0.31;
+  const wheelCentre = [0, -mirrorDistanceFromTopEye];
+  const eRef = [eccentricity, 0];
+  const sLink = buildMirrorSLink({
+    wheelCentre,
+    radius: ratchetOuterRadius,
+    rootRadius: ratchetRootRadius,
+    teeth: ratchetToothCount,
+    rake: ratchetRake,
+    rootAngle: clickRootAngle,
+    eRef,
+    discRadius: eccentricDiscRadius,
+    strapWidth: 0.065,
+    width: sLinkWidth,
+    stemLength: 0.16,
+    crossingY: wheelCentre[1] + 0.76,
+    bendRadius: 0.2,
+  });
+  const sLinkSolver = makeSLinkSolver(sLink, { wheelCentre, eRef });
 
   const inputCycleAtTime = (time) => {
     const turns = time / inputCyclePeriod;
@@ -346,41 +121,78 @@ function mirrorPolishingCompoundMotion(movement) {
     return { cycleIndex, phase };
   };
 
+  const barAtPose = (poseAngle) => {
+    const crankPin = crankCenter.clone().add(new THREE.Vector3(
+      crankRadius * Math.cos(poseAngle),
+      crankRadius * Math.sin(poseAngle),
+      barPlaneZ,
+    ));
+    const guideToEye = crankPin.clone().sub(guidePoint);
+    guideToEye.z = 0;
+    const length = guideToEye.length();
+    const barUpDirection = guideToEye.clone().divideScalar(length);
+    return {
+      crankPin,
+      guideToEye,
+      guideCoordinateFromTopEye: length,
+      barUpDirection,
+      barWorldAngle: Math.atan2(-barUpDirection.x, barUpDirection.y),
+    };
+  };
+  // The strap centre in the bar frame: the eccentric's centre is fixed in
+  // the crank, at the throw from the crankpin.
+  const strapCentreAt = (phase) => {
+    const pose = inputStartAngle + FULL_TURN * phase * Math.sign(inputAngularSpeed);
+    const a = pose + eccentricPhase - barAtPose(pose).barWorldAngle;
+    return [eccentricity * Math.cos(a), eccentricity * Math.sin(a)];
+  };
+  // The rod is marched round three crank turns from a seated start; the
+  // steady last turn is the playback table (w(phase + 1) = w(phase) + pitch).
+  const driveSamples = 720;
+  const driveTurns = 2;
+  const driveRecord = simulateSLinkDrive(sLinkSolver, strapCentreAt, {
+    samples: driveSamples,
+    turns: driveTurns,
+    rake: ratchetRake,
+  });
+  const driveBase = driveRecord[0].w - (driveTurns - 1) * ratchetToothPitch;
+  const driveAt = (phase) => {
+    const u = phase * driveSamples;
+    const i = Math.min(driveSamples - 1, Math.floor(u));
+    const t = u - i;
+    const a = driveRecord[i], b = driveRecord[i + 1];
+    return {
+      beta: a.beta + (b.beta - a.beta) * t,
+      w: a.w + (b.w - a.w) * t - driveRecord[0].w,
+      wRate: (b.w - a.w) * driveSamples / inputCyclePeriod,
+      engaged: t < 0.5 ? a.engaged : b.engaged,
+    };
+  };
+
   const stateAtTime = (time) => {
     const { cycleIndex, phase } = inputCycleAtTime(time);
     const phaseAngle = FULL_TURN * phase;
-    const sine = phase === 0 || phase === 0.5
-      ? 0
-      : Math.sin(phaseAngle);
-    const cosine = phase === 0
-      ? 1
-      : phase === 0.5 ? -1 : Math.cos(phaseAngle);
     const unwrappedTurns = cycleIndex + phase;
-    const inputAngle = inputStartAngle + FULL_TURN * unwrappedTurns;
-    const inputPoseAngle = inputStartAngle + phaseAngle;
-    const crankPin = crankCenter.clone().add(new THREE.Vector3(
-      crankRadius * Math.cos(inputPoseAngle),
-      crankRadius * Math.sin(inputPoseAngle),
-      barPlaneZ,
-    ));
+    const inputAngle = inputStartAngle
+      + Math.sign(inputAngularSpeed) * FULL_TURN * unwrappedTurns;
+    const inputPoseAngle = inputStartAngle
+      + Math.sign(inputAngularSpeed) * phaseAngle;
+    const {
+      crankPin,
+      guideToEye,
+      guideCoordinateFromTopEye,
+      barUpDirection,
+      barWorldAngle,
+    } = barAtPose(inputPoseAngle);
     const crankPinVelocity = new THREE.Vector3(
       -crankRadius * inputAngularSpeed * Math.sin(inputPoseAngle),
       crankRadius * inputAngularSpeed * Math.cos(inputPoseAngle),
       0,
     );
-    const guideToEye = crankPin.clone().sub(guidePoint);
-    guideToEye.z = 0;
-    const guideCoordinateFromTopEye = guideToEye.length();
-    const barUpDirection = guideToEye.clone()
-      .divideScalar(guideCoordinateFromTopEye);
     const barLocalXDirection = new THREE.Vector3(
       barUpDirection.y,
       -barUpDirection.x,
       0,
-    );
-    const barWorldAngle = Math.atan2(
-      -barUpDirection.x,
-      barUpDirection.y,
     );
     const barLongitudinalSpeed = barUpDirection.dot(crankPinVelocity);
     const guideSideClearance = guidePinOffset
@@ -403,87 +215,20 @@ function mirrorPolishingCompoundMotion(movement) {
       barDirectionVelocity,
       -mirrorDistanceFromTopEye,
     );
-
-    const carrierFraction = 0.5 * (1 - cosine);
-    const carrierFractionRate = 0.5 * sine * inputAngularSpeed;
-    // Backlash: the carrier swings one pitch plus the click's backlash, so
-    // on the return the click drops fully past the next tooth; on the drive
-    // it first takes up that backlash, then carries the wheel one pitch.
-    const carrierStroke = ratchetToothPitch + clickBacklash;
-    const carrierAngle = carrierBaseAngle
-      + clickHand * carrierStroke * carrierFraction;
-    const carrierAngularSpeed = clickHand * carrierStroke
-      * carrierFractionRate;
-    const drivingStroke = phase <= 0.5;
-    const carrierTravel = carrierStroke * carrierFraction;
-    const engagedStroke = drivingStroke && carrierTravel > clickBacklash;
-    const stepFraction = drivingStroke
-      ? Math.max(0, carrierTravel - clickBacklash) / ratchetToothPitch
-      : 1;
-    const stepFractionRate = engagedStroke
-      ? carrierStroke * carrierFractionRate / ratchetToothPitch
-      : 0;
-    const ratchetAngle = clickHand * (cycleIndex * ratchetToothPitch
-      + ratchetToothPitch * stepFraction);
-    const ratchetAngularSpeed = clickHand * ratchetToothPitch
-      * stepFractionRate;
-    const pawlLift = drivingStroke
-      ? 0
-      : pawlMaximumLift * sine ** 2;
-    const pawlLiftRate = drivingStroke
-      ? 0
-      : pawlMaximumLift * 2 * sine * cosine * inputAngularSpeed;
-    const engagedToothIndex = positiveModulo(
-      -cycleIndex,
-      ratchetToothCount,
-    );
-    const selectedToothIndex = drivingStroke
-      ? engagedToothIndex
-      : positiveModulo(Math.round(
-        (carrierAngle - carrierBaseAngle - ratchetAngle)
-          / (clickHand * ratchetToothPitch),
-      ), ratchetToothCount);
-    const pawlTipRadius = pawlContactRadius + pawlLift;
-    const pawlTipLocal = new THREE.Vector3(
-      pawlTipRadius * Math.cos(carrierAngle),
-      -mirrorDistanceFromTopEye
-        + pawlTipRadius * Math.sin(carrierAngle),
-      clickPlaneZ,
-    );
-    const carrierPivotLocal = new THREE.Vector3(
-      carrierPivotRadius * Math.cos(carrierAngle),
-      -mirrorDistanceFromTopEye
-        + carrierPivotRadius * Math.sin(carrierAngle),
-      followerLowerZ,
-    );
-    const toWorldFromBar = (localPoint) => (
+    const drive = driveAt(phase);
+    const ratchetAngle = clickHand
+      * (driveBase + cycleIndex * ratchetToothPitch + drive.w);
+    const ratchetAngularSpeed = drive.wRate;
+    const strapCentre = strapCentreAt(phase);
+    const toWorldFromBar = (x, y, z) => (
       crankPin.clone()
-        .addScaledVector(barLocalXDirection, localPoint.x)
-        .addScaledVector(barUpDirection, localPoint.y)
-        .setZ(localPoint.z)
+        .addScaledVector(barLocalXDirection, x)
+        .addScaledVector(barUpDirection, y)
+        .setZ(z)
     );
-    const pawlTipWorld = toWorldFromBar(pawlTipLocal);
-    const carrierPivotWorld = toWorldFromBar(carrierPivotLocal);
-    const selectedToothAngle = drivingStroke
-      ? carrierAngle
-      : positiveModulo(
-        ratchetAngle
-          + clickHand * selectedToothIndex * ratchetToothPitch
-          + carrierBaseAngle,
-        FULL_TURN,
-      );
-    const selectedToothLocal = new THREE.Vector3(
-      pawlContactRadius * Math.cos(selectedToothAngle),
-      -mirrorDistanceFromTopEye
-        + pawlContactRadius * Math.sin(selectedToothAngle),
-      clickPlaneZ,
-    );
-    const selectedToothWorld = toWorldFromBar(selectedToothLocal);
-    const eccentricCenter = crankCenter.clone().add(new THREE.Vector3(
-      eccentricity * Math.cos(inputPoseAngle),
-      eccentricity * Math.sin(inputPoseAngle),
-      eccentricPlaneZ,
-    ));
+    const eccentricCenter = toWorldFromBar(strapCentre[0], strapCentre[1], clickPlaneZ);
+    const noseLocal = sLinkSolver.nosePoint(strapCentre, drive.beta);
+    const clickNoseWorld = toWorldFromBar(noseLocal[0], noseLocal[1], clickPlaneZ);
     const mirrorWorldAngle = barWorldAngle + ratchetAngle;
     const mirrorWorldAngularSpeed = barAngularSpeed + ratchetAngularSpeed;
     const mirrorIndexPoint = mirrorCenter.clone()
@@ -499,15 +244,13 @@ function mirrorPolishingCompoundMotion(movement) {
       barLongitudinalSpeed,
       barUpDirection,
       barWorldAngle,
-      carrierAngle,
-      carrierAngularSpeed,
-      carrierFraction,
-      carrierPivotWorld,
+      clickEngaged: drive.engaged,
+      clickNoseWorld,
+      clickRotation: drive.beta,
       crankPin,
       crankPinVelocity,
       cycleIndex,
       eccentricCenter,
-      engagedToothIndex,
       guideCoordinateFromTopEye,
       guideSideClearance,
       inputAngle,
@@ -518,19 +261,13 @@ function mirrorPolishingCompoundMotion(movement) {
       mirrorIndexPoint,
       mirrorWorldAngle,
       mirrorWorldAngularSpeed,
-      pawlLift,
-      pawlLiftRate,
-      pawlTipWorld,
       phase,
       ratchetAngle,
       ratchetAngularSpeed,
-      selectedToothWorld,
-      selectedToothIndex,
-      stage: drivingStroke
+      stage: drive.engaged
         ? 'eccentric-driven-click-advancing-ratchet-one-tooth'
         : 'click-overrunning-back-across-stationary-ratchet',
-      stepFraction,
-      stepFractionRate,
+      strapCentre,
     };
   };
 
@@ -558,10 +295,7 @@ function mirrorPolishingCompoundMotion(movement) {
     metalness: 0.36,
     roughness: 0.24,
   });
-  const followerMaterial = matte(PALETTE.muted, {
-    metalness: 0.19,
-    roughness: 0.55,
-  });
+  const linkMaterial = matte(PALETTE.ink, { metalness: 0.24, roughness: 0.48 });
 
   const upperRail = new THREE.Mesh(
     new THREE.BoxGeometry(4.40, 0.35, 0.42),
@@ -629,8 +363,12 @@ function mirrorPolishingCompoundMotion(movement) {
   handleArm.position.x = -handleRadius / 2;
   handleArm.userData.role = 'opposite-hand-handle-crank-arm';
   inputRotor.add(handleArm);
-  const crankPinBoss = cylinderAlongZ(0.12, 0.33, darkMaterial, 28);
-  crankPinBoss.position.x = crankRadius;
+  // The crankpin runs from the eye crank back through the bar's eye to the
+  // eccentric keyed on its rear end, stopping just inside the eccentric.
+  const pinFront = 0.35;
+  const pinBack = clickPlaneZ + sLinkDepth / 2 - 0.005;
+  const crankPinBoss = cylinderAlongZ(0.12, pinFront - pinBack, darkMaterial, 32);
+  crankPinBoss.position.set(crankRadius, 0, (pinFront + pinBack) / 2);
   crankPinBoss.userData.role = 'crankpin-through-long-bar-upper-eye';
   inputRotor.add(crankPinBoss);
   const handle = cylinderAlongZ(0.095, 0.48, darkMaterial, 28);
@@ -644,10 +382,19 @@ function mirrorPolishingCompoundMotion(movement) {
   handleKnob.position.set(-handleRadius, 0, 0.44);
   handleKnob.userData.role = 'hand-handle-end-knob';
   inputRotor.add(handleKnob);
-  const eccentricDisk = cylinderAlongZ(0.25, 0.12, driverMaterial, 36);
-  eccentricDisk.position.set(eccentricity, 0, 0.31);
+  // One solid round sheave keyed on the crankpin's rear end, centred at the
+  // throw from the pin.
+  const eccentricCentreInCrank = [
+    crankRadius + eccentricity * Math.cos(eccentricPhase),
+    eccentricity * Math.sin(eccentricPhase),
+  ];
+  const eccentricDisk = new THREE.Mesh(
+    plate([[circle(eccentricCentreInCrank, eccentricDiscRadius, 128)]],
+      clickPlaneZ - sLinkDepth / 2, clickPlaneZ + sLinkDepth / 2),
+    driverMaterial,
+  );
   eccentricDisk.userData.role =
-    'off-center-disk-eccentric-on-common-crankshaft';
+    'eccentric-sheave-keyed-on-the-crankpin-rear-end';
   inputRotor.add(eccentricDisk);
   const shaftIndex = new THREE.Mesh(
     new THREE.BoxGeometry(0.34, 0.045, 0.035),
@@ -703,16 +450,30 @@ function mirrorPolishingCompoundMotion(movement) {
   mirrorFace.position.z = 0.32;
   mirrorFace.userData.role = 'square-polishing-mirror-face';
   mirrorRotor.add(mirrorFace);
-  const ratchetWheel = makeRatchetWheel({
-    depth: 0.34,
-    material: ratchetMaterial,
-    outerRadius: ratchetOuterRadius,
+  // The saw ratchet, bored for the axle, in the S-link's plane.
+  const ratchetBore = 0.107;
+  const ratchetDepth = 0.14;
+  const ratchetWheel = new THREE.Mesh(
+    plate(polygonClipping.difference(
+      poly(sLink.wheel.outline),
+      poly(circle([0, 0], ratchetBore, 96)),
+    ), -ratchetDepth / 2, ratchetDepth / 2),
+    ratchetMaterial,
+  );
+  ratchetWheel.position.z = clickPlaneZ - barPlaneZ - mirrorRotorZ;
+  ratchetWheel.userData.role =
+    'ratchet-wheel-rigidly-secured-to-square-mirror';
+  ratchetWheel.userData.ratchetProfile = {
+    outline: sLink.wheel.outline,
+    radius: ratchetOuterRadius,
+    bore: ratchetBore,
+    teeth: ratchetToothCount,
+    hand: clickHand,
+    phase: sLink.wheel.phase,
+    depth: ratchetDepth,
     rootRadius: ratchetRootRadius,
-    toothCount: ratchetToothCount,
-    z: 0.07,
-  });
-  ratchetWheel.rotation.z = carrierBaseAngle
-    + ratchetToothPitch * 0.38;
+    rake: ratchetRake,
+  };
   mirrorRotor.add(ratchetWheel);
   const mirrorAxle = cylinderAlongZ(0.105, 0.52, darkMaterial, 30);
   mirrorAxle.position.z = 0.02;
@@ -727,55 +488,64 @@ function mirrorPolishingCompoundMotion(movement) {
     'asymmetric-index-showing-intermittent-mirror-rotation';
   mirrorRotor.add(mirrorIndex);
 
-  const clickCarrier = new THREE.Group();
-  clickCarrier.position.set(0, -mirrorDistanceFromTopEye, 0.53);
-  clickCarrier.userData.axis = Z_AXIS.clone();
-  clickCarrier.userData.role =
-    'eccentric-oscillated-click-carrier-about-ratchet-axis';
-  longBar.add(clickCarrier);
-  const carrierArm = new THREE.Mesh(
-    new THREE.BoxGeometry(carrierPivotRadius, 0.085, 0.09),
-    followerMaterial,
+  // Brown's S-shaped eccentric rod: strap, rod and hook are one plate in
+  // the ratchet's plane, placed about its strap centre.
+  const sLinkBody = new THREE.Mesh(
+    plate(sLink.polygons.map((polygon) => polygon.map((ring) => ring.map(
+      (p) => [p[0] - eRef[0], p[1] - eRef[1]],
+    ))), -sLinkDepth / 2, sLinkDepth / 2),
+    linkMaterial,
   );
-  carrierArm.position.x = carrierPivotRadius / 2;
-  carrierArm.userData.role = 'oscillating-click-carrier-arm';
-  clickCarrier.add(carrierArm);
-  const carrierPivot = cylinderAlongZ(0.090, 0.18, darkMaterial, 24);
-  carrierPivot.position.x = carrierPivotRadius;
-  carrierPivot.userData.role = 'click-pivot-on-oscillating-carrier';
-  clickCarrier.add(carrierPivot);
-  const pawlSlide = new THREE.Group();
-  pawlSlide.userData.role = 'radially-lifting-overrunning-click';
-  clickCarrier.add(pawlSlide);
-  const pawlLength = carrierPivotRadius - pawlContactRadius;
-  const pawlBody = new THREE.Mesh(
-    new THREE.BoxGeometry(pawlLength, 0.10, 0.10),
-    ratchetMaterial,
-  );
-  pawlBody.position.x = (carrierPivotRadius + pawlContactRadius) / 2;
-  pawlBody.userData.role = 'spring-biased-ratchet-click-body';
-  pawlSlide.add(pawlBody);
-  const pawlTip = new THREE.Mesh(
-    new THREE.ConeGeometry(0.085, 0.18, 3),
-    ratchetMaterial,
-  );
-  pawlTip.rotation.z = Math.PI / 2;
-  pawlTip.position.x = pawlContactRadius + 0.09;
-  pawlTip.userData.role = 'click-tip-engaging-one-ratchet-tooth';
-  pawlSlide.add(pawlTip);
-  const contactMarker = new THREE.Mesh(
-    new THREE.SphereGeometry(0.040, 16, 12),
-    mirrorMaterial,
-  );
-  contactMarker.position.x = pawlContactRadius;
-  contactMarker.userData.role = 'visible-click-tooth-contact-marker';
-  pawlSlide.add(contactMarker);
+  sLinkBody.position.z = clickPlaneZ - barPlaneZ;
+  sLinkBody.userData.role = 'brown-s-shaped-eccentric-rod-and-click';
+  longBar.add(sLinkBody);
 
-  const eccentricFollower = makeTelescopingFollower({
-    darkMaterial,
-    followerMaterial,
-  });
-  root.add(eccentricFollower);
+  // Brown's dashed box on the bar: a loose keeper (a U-staple from the bar's
+  // back) that the rod's straight run passes through. It holds the rod in
+  // its plane and bounds its swing; it is sized from the rod's sweep below.
+  const barBackLocal = -0.08;
+  const rodSweep = (y) => {
+    let low = Infinity, high = -Infinity;
+    for (const { e, beta } of driveRecord) {
+      // The rod's straight run: points (eRef.x, y') in the reference pose.
+      for (const yRef of [y - 0.12, y, y + 0.12]) {
+        const q = [0, yRef - eRef[1]];
+        const x = e[0] + q[0] * Math.cos(beta) - q[1] * Math.sin(beta);
+        low = Math.min(low, x); high = Math.max(high, x);
+      }
+    }
+    return [low - sLinkWidth / 2, high + sLinkWidth / 2];
+  };
+  const keeperY = -1.62;
+  const keeperHeight = 0.14;
+  const [sweepLow, sweepHigh] = rodSweep(keeperY);
+  const keeperGap = 0.02;
+  const keeperWall = 0.05;
+  const keeperInner = [sweepLow - keeperGap, sweepHigh + keeperGap];
+  const rodBackLocal = clickPlaneZ - barPlaneZ - sLinkDepth / 2;
+  // The U in the bar's (x, depth) section, extruded along the bar.
+  const keeperDepthFront = barBackLocal + 0.005;
+  const keeperDepthBack = rodBackLocal - keeperGap - keeperWall;
+  const keeperShape = polygonClipping.difference(
+    poly([
+      [keeperInner[0] - keeperWall, -keeperDepthFront],
+      [keeperInner[1] + keeperWall, -keeperDepthFront],
+      [keeperInner[1] + keeperWall, -keeperDepthBack],
+      [keeperInner[0] - keeperWall, -keeperDepthBack],
+    ]),
+    poly([
+      [keeperInner[0], -keeperDepthFront - 0.01],
+      [keeperInner[1], -keeperDepthFront - 0.01],
+      [keeperInner[1], -(keeperDepthBack + keeperWall)],
+      [keeperInner[0], -(keeperDepthBack + keeperWall)],
+    ]),
+  );
+  const keeperGeometry = plate(keeperShape, -keeperHeight / 2, keeperHeight / 2);
+  keeperGeometry.rotateX(-Math.PI / 2);
+  const rodKeeper = new THREE.Mesh(keeperGeometry, frameMaterial);
+  rodKeeper.position.y = keeperY;
+  rodKeeper.userData.role = 'loose-rod-keeper-on-bar-back';
+  longBar.add(rodKeeper);
 
   const update = (time) => {
     const state = stateAtTime(time);
@@ -783,21 +553,14 @@ function mirrorPolishingCompoundMotion(movement) {
     longBar.position.copy(state.crankPin);
     longBar.quaternion.setFromUnitVectors(Y_AXIS, state.barUpDirection);
     mirrorRotor.rotation.z = state.ratchetAngle;
-    clickCarrier.rotation.z = state.carrierAngle;
-    pawlSlide.position.x = state.pawlLift;
-    eccentricFollower.userData.setEndpoints(
-      state.eccentricCenter,
-      state.carrierPivotWorld,
-    );
-    root.userData.updatePolishingInterfaces?.(state);
+    sLinkBody.position.x = state.strapCentre[0];
+    sLinkBody.position.y = state.strapCentre[1];
+    sLinkBody.rotation.z = state.clickRotation;
     root.userData.currentState = state;
     root.userData.constraints = {
       clickContact: {
-        clearance: state.pawlTipWorld.distanceTo(state.selectedToothWorld),
-        engaged: state.phase <= 0.5,
-        pawlPoint: state.pawlTipWorld.clone(),
-        selectedToothIndex: state.selectedToothIndex,
-        toothPoint: state.selectedToothWorld.clone(),
+        engaged: state.clickEngaged,
+        noseWorld: state.clickNoseWorld.clone(),
       },
       guide: {
         centerlineError: state.crankPin.clone()
@@ -816,9 +579,8 @@ function mirrorPolishingCompoundMotion(movement) {
         worldAngle: state.mirrorWorldAngle,
       },
       ratchet: {
-        carrierAngle: state.carrierAngle,
+        clickRotation: state.clickRotation,
         cumulativeAdvance: state.ratchetAngle,
-        pawlLift: state.pawlLift,
         toothPitch: ratchetToothPitch,
       },
     };
@@ -829,14 +591,9 @@ function mirrorPolishingCompoundMotion(movement) {
       'crank-guided-sliding-oscillating-bar-eccentric-click-mirror-ratchet',
     blocks: {
       barBody,
-      carrierArm,
-      carrierPivot,
-      clickCarrier,
-      contactMarker,
       crankBearing,
       crankPinBoss,
       eccentricDisk,
-      eccentricFollower,
       guidePins,
       handle,
       handleArm,
@@ -849,11 +606,10 @@ function mirrorPolishingCompoundMotion(movement) {
       mirrorFace,
       mirrorIndex,
       mirrorRotor,
-      pawlBody,
-      pawlSlide,
-      pawlTip,
       railFasteners,
       ratchetWheel,
+      rodKeeper,
+      sLinkBody,
       shaftIndex,
       upperEye,
       upperEyeBore,
@@ -863,27 +619,31 @@ function mirrorPolishingCompoundMotion(movement) {
       independentPrescribedInputs: 1,
       input: 'continuous hand-crank angle',
       note:
-        'the upper crankpin and lower loose pin guide determine bar slide and oscillation; the keyed eccentric phase determines click-carrier stroke and one-way ratchet indexing',
+        'the upper crankpin and lower loose pin guide determine bar slide and oscillation; the eccentric keyed on the crankpin moves the S-link strap round the bar eye, and the hook, hanging against the teeth, drives the ratchet one tooth per turn',
       storedEnergyStates: 0,
+    },
+    driveTable: {
+      record: driveRecord,
+      samples: driveSamples,
+      turns: driveTurns,
     },
     dynamics: {
       sourceSpecifiesDimensionsTimingClearanceOrPolishingLoad: false,
       treatment:
-        'the ideal kinematic reconstruction omits polishing force and inertia; Brown gives topology but no dimensions, eccentric law, clearances, ratchet tooth count, or operating speed',
+        'the kinematic reconstruction omits polishing force and inertia; the hook is taken to hang against the teeth under its own weight and the wheel to hold still (polishing friction) while the hook overruns; Brown gives topology but no dimensions, clearances, ratchet tooth count, or operating speed',
     },
     fidelity: 'authored',
     geometry: {
       barPlaneZ,
-      carrierBaseAngle,
-      carrierPivotRadius,
       clickHand,
       clickPlaneZ,
+      clickRootAngle,
       crankCenter: crankCenter.clone(),
       crankPlaneZ,
       crankRadius,
+      eccentricDiscRadius,
       eccentricity,
-      eccentricPlaneZ,
-      followerLowerZ,
+      eccentricPhase,
       guidePinOffset,
       guidePinRadius,
       guidePoint: guidePoint.clone(),
@@ -891,22 +651,28 @@ function mirrorPolishingCompoundMotion(movement) {
       inputAngularSpeed,
       inputCyclePeriod,
       inputStartAngle,
+      keeperInner,
+      keeperY,
       longBarLength,
       longBarWidth,
       mirrorDistanceFromTopEye,
       mirrorRotorZ,
       mirrorSize,
       mirrorThickness,
-      pawlContactRadius,
-      pawlMaximumLift,
-      clickBacklash,
       ratchetOuterRadius,
+      ratchetRake,
       ratchetRootRadius,
       ratchetToothCount,
       ratchetToothPitch,
+      sLinkDepth,
+      sLinkWidth,
+      strapInnerRadius: sLink.strapInner,
+      strapOuterRadius: sLink.strapOuter,
     },
+    sLink,
+    sLinkSolver,
     mechanism:
-      'one-hand-crank-carries-the-long-bar-eye-around-a-fixed-shaft-the-lower-pin-guide-forces-simultaneous-bar-slide-and-oscillation-and-a-coaxial-eccentric-oscillates-a-click-that-indexes-the-bar-mounted-mirror-ratchet',
+      'one-hand-crank-carries-the-long-bar-eye-around-a-fixed-shaft-the-lower-pin-guide-forces-simultaneous-bar-slide-and-oscillation-and-a-crankpin-eccentric-drives-brown-s-shaped-click-rod-that-indexes-the-bar-mounted-mirror-ratchet',
     officialDescription: movement.description,
     sourceAnimation: {
       available: false,
@@ -941,7 +707,7 @@ function mirrorPolishingCompoundMotion(movement) {
         engravingEvidence:
           'the plate shows the long-bar upper eye on one side of the upper fixed crank axis, the hand handle on the opposite crank arm, two lower-rail guide pins flanking the bar, a toothed wheel and square mirror centered on the bar, and dotted hidden click/eccentric outlines',
         reconstructionDisclosure:
-          'dimensions, loose-guide clearance, twelve-tooth ratchet, harmonic eccentric follower law, telescoping follower representation, tooth engagement phase, and operating period are engineered because Brown supplies no numerical values and the official page has no canvas animation',
+          'dimensions, loose-guide clearance, twelve-tooth ratchet, eccentric throw and phase (keyed on the crankpin rear end), S-link outline, keeper size, tooth engagement phase, and operating period are engineered because Brown supplies no numerical values and the official page has no canvas animation',
       },
       officialPage: 'https://507movements.com/mm_370.html',
       primaryScan: {
@@ -961,16 +727,20 @@ function mirrorPolishingCompoundMotion(movement) {
       barMotionLaw:
         'distance from upper eye to fixed guide is the longitudinal slide coordinate, while the direction of that line is the bar oscillation coordinate',
       clickCarrierLaw:
-        'the shaft eccentric gives carrier fraction (1-cos(input phase))/2: the carrier advances one tooth pitch plus the click backlash during the first half-turn and returns during the second',
+        'the eccentric keyed on the crankpin carries the S-link strap centre round the bar eye at the throw; the rod hangs from it and its hook rests on the ratchet outline',
       compoundMirrorLaw:
         'mirror center follows its fixed station on the sliding/oscillating bar, and mirror world angle equals bar angle plus cumulative ratchet angle',
       ratchetLaw:
-        'the click takes up its backlash, then drives the wheel with the carrier on the forward half-turn; on the return half-turn the wheel dwells while the click lifts, overruns and drops into the next root',
+        'while the strap descends the hook slides down the flank into the root, then drives the tooth face and the wheel one tooth; while it rises the wheel dwells and the hook rides up the flank, passes the tip and drops (at a finite rate) onto the next flank',
     },
   };
 
   correctMirrorPolisher(root);
-  seatMirrorClick(root);
+  // Brown dashes the rod, its keeper and the ratchet behind the bar: the bar
+  // is see-through (the shared style) so they show.
+  makeSeeThrough(barBody);
+  makeSeeThrough(upperEye);
+  root.userData.reconstructionNote = 'The guided bar follows the crank exactly. Brown\'s S-shaped rod lies in the ratchet\'s plane behind the bar: its strap rides an eccentric keyed on the crankpin\'s rear end (an eccentric on the shaft itself would need the shaft to pierce the bar, which sweeps across it), it passes a loose keeper on the bar\'s back, and its hook, hanging against the teeth, drives the ratchet anticlockwise one tooth per crank turn and overruns on the return. The hook\'s contact is solved geometrically on the actual outlines; the wheel is assumed to hold still (polishing friction) while the hook overruns, and no polishing load is modelled.';
   update(0);
   root.userData.cameraFitBounds = new THREE.Box3(
     new THREE.Vector3(-2.48, -3.88, -0.55),

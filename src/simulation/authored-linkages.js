@@ -2863,8 +2863,9 @@ function curvedSlottedArmVariableVibration() {
       0.94,
       96,
     ),
-    // Steel, not white: a white pin would read as a hole on the cream page.
-    matte(PALETTE.muted, { metalness: 0.2, roughness: 0.5 }),
+    // Brass, not white or pale steel: a pale pin reads as a hole on the
+    // cream page (pass 101).
+    matte(PALETTE.brass, { metalness: 0.24, roughness: 0.47 }),
   );
   followerPin.rotation.x = Math.PI / 2;
   followerPin.position.set(-outputArmLength, 0, -0.23);

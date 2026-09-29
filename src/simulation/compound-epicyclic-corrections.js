@@ -29,6 +29,25 @@ function fullSpur(gear,boreRadius){
 }
 function remove(object){object?.removeFromParent();object?.traverse(o=>o.geometry?.dispose());}
 
+// 506's driver bearing: boss radius R round the shaft, bar half-height h
+// running back (outline u = -z) to the curved standard, joined by concave
+// fillets of radius f tangent to both. Extruded along the shaft axis.
+function driverBearingCasting506(){
+ const R=.24,h=.15,f=.10,bore=.122,barEnd=1.74,thick=.24;
+ const cu=Math.sqrt((R+f)**2-(h+f)**2);
+ const arc=(cx,cy,r,a0,a1,n)=>Array.from({length:n+1},(_,i)=>{const a=a0+(a1-a0)*i/n;return[cx+r*Math.cos(a),cy+r*Math.sin(a)];});
+ const tangent=Math.atan2(h+f,cu);
+ const points=[
+  [barEnd,h],
+  ...arc(cu,h+f,f,-Math.PI/2,-Math.PI+tangent,12),
+  ...arc(0,0,R,tangent,2*Math.PI-tangent,96),
+  ...arc(cu,-h-f,f,Math.PI-tangent,Math.PI/2,12),
+  [barEnd,-h],
+ ];
+ const shape=clip.difference(poly(points),poly(circle([0,0],bore,64)));
+ return plate(shape,-thick/2,thick/2);
+}
+
 function sourceSupports506(b){
  const outline=new THREE.Shape();
  outline.moveTo(-3.65,-1.86);
@@ -51,10 +70,14 @@ function sourceSupports506(b){
  }
  replace(b.carrierShaftMN,new THREE.CylinderGeometry(.12,.12,3.68,32));b.carrierShaftMN.position.y=.03;
  replace(b.supportBase,new THREE.BoxGeometry(6.80,.22,2.5));b.supportBase.position.set(-.8,-1.97,-.90);
- replace(b.driverBearing,boredLatheGeometry([{radial:.24,axial:-.12},{radial:.24,axial:.12}],.122,64));
- b.driverBearing.rotation.set(0,0,Math.PI/2);b.driverBearing.position.x=-2.92;
- replace(b.driverBearingPedestal,new THREE.BoxGeometry(.24,.30,1.58));b.driverBearingPedestal.position.set(-2.92,0,-.95);
- b.driverBearingPedestal.userData.role='driver-bearing-bridge-to-curved-standard';
+ // Pass 101: the driver bearing boss and its bridge to the curved standard
+ // are one casting: a flat bar running tangent into the round boss through
+ // concave fillets, one grey frame extrusion 0.24 thick (it was a drum with a box
+ // butted flush against its side, coincident faces flickering at the joint).
+ replace(b.driverBearing,driverBearingCasting506());b.driverBearing.material=b.driverBearingPedestal.material;
+ b.driverBearing.rotation.set(0,Math.PI/2,0);b.driverBearing.position.set(-2.92,0,0);
+ b.driverBearing.userData.role='driver-shaft-A-bearing-boss-cast-with-bridge-to-curved-standard';
+ remove(b.driverBearingPedestal);delete b.driverBearingPedestal;
  replace(b.driverShaftA,new THREE.CylinderGeometry(.12,.12,1.95,32));b.driverShaftA.position.x=-2.525;
  b.crankArm.position.x=-3.49;b.crankGrip.position.x=-3.49+b.crankGrip.userData.armOffsetX;b.inputIndex.position.set(-3.49,.50,.071);
  replace(b.radialAxle,new THREE.CylinderGeometry(.105,.105,1.68,32));b.radialAxle.position.x=.74;

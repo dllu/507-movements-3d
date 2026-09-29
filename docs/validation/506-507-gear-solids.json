@@ -106,7 +106,7 @@
     },
     {
       "file": "src/simulation/compound-epicyclic-corrections.js",
-      "sha256": "6654d1b4d2c00c07de8a4e20c1456d7024bc6096eb98b95fce21ee5a05b0d920"
+      "sha256": "921534e139e1952b1de1ec7f344753b6844a2b4019695d0c14d9ff5f4c2fe10d"
     },
     {
       "file": "src/simulation/epicyclic-family-corrections.js",

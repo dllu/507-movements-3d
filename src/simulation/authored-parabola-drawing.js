@@ -149,7 +149,9 @@ function parabolaDrawingInstrument(movement) {
   const whiteMaterial = matte(PALETTE.white, { roughness: 0.42 });
   // The thread's end and bight take the thread's ink: white ones would read
   // as holes on the cream page and the pale board.
-  const threadMaterial = darkMaterial;
+  // Pass 101: the thread, its looped end, knot and bight are the shared hemp
+  // brown, as every rope and cord and as sibling 405's thread.
+  const threadMaterial = matte(PALETTE.rope, { roughness: 0.78 });
   const boardMaterial = matte(0xdadad4, {
     metalness: 0.02,
     roughness: 0.92,
@@ -276,7 +278,7 @@ function parabolaDrawingInstrument(movement) {
   root.add(focusPin);
   const focusThreadLoop = new THREE.Mesh(
     new THREE.TorusGeometry(0.145, 0.025, 10, 36),
-    darkMaterial,
+    threadMaterial,
   );
   focusThreadLoop.position.set(focus.x, focus.y, 0.255);
   focusThreadLoop.userData.role = 'thread-end-looped-on-focus-pin';
@@ -333,11 +335,11 @@ function parabolaDrawingInstrument(movement) {
   square.add(threadAnchor);
   root.add(square);
 
-  const focusCord = makeDynamicCord(0.025, darkMaterial);
+  const focusCord = makeDynamicCord(0.025, threadMaterial);
   focusCord.userData.role =
     'taut-thread-segment-from-focus-to-pencil-bight';
   root.add(focusCord);
-  const bladeCord = makeDynamicCord(0.025, darkMaterial);
+  const bladeCord = makeDynamicCord(0.025, threadMaterial);
   bladeCord.userData.role =
     'taut-thread-segment-from-pencil-bight-along-blade-to-anchor';
   root.add(bladeCord);

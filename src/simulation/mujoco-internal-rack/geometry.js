@@ -11,6 +11,8 @@ const simplify=(p,epsilon=.00015)=>{
  return maximum<=epsilon?[a,b]:[...simplify(p.slice(0,index+1),epsilon).slice(0,-1),...simplify(p.slice(index),epsilon)];
 };
 const reduced=p=>p.map(p=>p.map(r=>simplify([...r,r[0]])));
+// Rim half-depth (the native collision cells span z +/-0.06) and the backing's rear face.
+const RIM=.06,BACK0=-.075;
 /** Source proportions with explicit, lightweight-sheet/weighted-coupler depths. */
 export function makeInternalRackGeometry(profile){
  profile={...profile,body:reduced(profile.body),opening:reduced(profile.opening)};
@@ -25,8 +27,11 @@ export function makeInternalRackGeometry(profile){
  const eyeLink=(a,b,width=.04)=>clip.union(capsule(a,b,width,32),poly(circle(a,.065,48)),poly(circle(b,.065,48)));
  const backing=clip.difference(rect(-1.39,-.55-d.orbit,1.46,.88-d.orbit),profile.opening);
  const rimMass=area(profile.body)*.01*.0006*7850,backingMass=area(backing)*.01*.00025*2700,rackMass=rimMass+backingMass;
- add(rack,'steel-tooth-rim',profile.body,-.003,.003,PALETTE.driven);
- add(rack,'rack-backing',backing,-.0055,-.003,PALETTE.driven);
+ // The toothed rim is rendered at the native collision depth (+/-0.06), so
+ // the 0.114 pinion meshes with solid teeth; the backing sheet sits behind it.
+ // Panel masses above stay the lightweight feasibility assumptions.
+ add(rack,'steel-tooth-rim',profile.body,-RIM,RIM,PALETTE.driven);
+ add(rack,'rack-backing',backing,BACK0,-RIM,PALETTE.driven);
  const wheel=bore(poly(profile.pinion),[[0,0]],.108),pinionDepth=rackMass/(area(wheel)*.01*2700)/.1;
  add(pinion,'pinion-teeth',wheel,-pinionDepth/2,pinionDepth/2,PALETTE.driver);pin(pinion,'input-shaft',[0,0],-.24,pinionDepth/2+.025,.1075);
  const frameShape=clip.union(clip.difference(rect(-1.80,-1.31,1.90,1.40),rect(-1.39,-.91,1.46,.88)),rect(-2.40,-1.31,2.53,-.93));
@@ -50,16 +55,16 @@ export function makeInternalRackGeometry(profile){
   pin(crank,side+'-top-pin',[-.075,.58],.245,.31+couplerDepth+.015);
   const rx=x+.38,ry=.675-d.orbit;
   // The boss stands 0.003 behind the 0.0055 backing (at 0.006 it lay within depth tolerance and z-fought).
-  add(rack,side+'-rack-boss',poly(circle([rx,ry],.065,48)),-.0085,.015,PALETTE.ink);
-  pin(rack,side+'-rack-pin',[rx,ry],-.006,.31+rodDepth+.015);
+  add(rack,side+'-rack-boss',poly(circle([rx,ry],.065,48)),BACK0-.003,.015,PALETTE.ink);
+  pin(rack,side+'-rack-pin',[rx,ry],BACK0-.0005,.31+rodDepth+.015);
  }
  const coupler=new THREE.Group();frame.add(coupler);blocks.coupler=coupler;
  add(coupler,'weighted-coupler',couplerShape,.31,.31+couplerDepth,PALETTE.brass);
  // Thin rack edges run in real U channels behind the wooden carriage.
  for(const [side,x,sign]of [['left',-1.39,-1],['right',1.46,1]]){
-  add(frame,side+'-guide-web',rect(x+sign*.01,-.99,x+sign*.05,.96),-.017,.015,PALETTE.frame);
-  for(const [face,z1,z2]of [['rear',-.017,-.007],['front',.005,.015]])add(frame,side+'-guide-'+face,rect(x-.04,-.99,x+.04,.96),z1,z2,PALETTE.frame);
-  add(frame,side+'-guide-mount',rect(x+sign*.04,-.99,x+sign*.10,.96),.005,.20,PALETTE.frame);
+  add(frame,side+'-guide-web',rect(x+sign*.01,-.99,x+sign*.05,.96),BACK0-.0115,-RIM+.0095,PALETTE.frame);
+  for(const [face,z1,z2]of [['rear',BACK0-.0115,BACK0-.0015],['front',-RIM+.0005,-RIM+.0095]])add(frame,side+'-guide-'+face,rect(x-.04,-.99,x+.04,.96),z1,z2,PALETTE.frame);
+  add(frame,side+'-guide-mount',rect(x+sign*.04,-.99,x+sign*.10,.96),-RIM+.0005,.20,PALETTE.frame);
  }
  // Fixed shaft bearing and horizontal ways; inferred rear supports stay behind moving parts.
  add(root,'shaft-bearing',bore(poly(circle([0,0],.16,48)),[[0,0]],.108),-.24,-.17,PALETTE.frame);

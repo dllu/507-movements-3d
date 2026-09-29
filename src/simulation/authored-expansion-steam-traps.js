@@ -759,7 +759,7 @@ function rayExpansionSteamTrap(movement) {
   root.add(valvePlungerA);
 
   // Loaded elbow lever D: one flat plate (bored boss, lower arm with a
-  // straight inner edge, neck to the ball load), with stop-screw b threaded
+  // straight inner edge, pear-shaped load plate), with stop-screw b threaded
   // through the lower arm.
   const leverD = new THREE.Group();
   leverD.position.copy(leverPivot);
@@ -773,31 +773,50 @@ function rayExpansionSteamTrap(movement) {
       armBottom + armEndRadius * Math.sin(angle)]);
   }
   armOutline.push([armEndCentre + armEndRadius, armBottom], [leverEdgeOffset, 0]);
-  const weightLength = Math.hypot(leverWeightLocalCenter.x, leverWeightLocalCenter.y);
-  const across = [-leverWeightLocalCenter.y / weightLength, leverWeightLocalCenter.x / weightLength];
-  const neckOutlineD = [
-    [0.10 * across[0], 0.10 * across[1]], [-0.10 * across[0], -0.10 * across[1]],
-    [leverWeightLocalCenter.x - 0.08 * across[0], leverWeightLocalCenter.y - 0.08 * across[1]],
-    [leverWeightLocalCenter.x + 0.08 * across[0], leverWeightLocalCenter.y + 0.08 * across[1]],
-  ];
+  // Pass 101: Brown's load is a flat pear-shaped plate running out of D's
+  // eye (it was a gold ball on a neck): the eye circle (r 0.30) and a round
+  // bulb (r 0.50) at the load centre, joined on each side by a concave
+  // circular fillet (r 0.60) tangent to both. One extrusion with the arm and
+  // the eye, bored concentric with the pivot.
+  const pearEndRadius = 0.50, eyeRadiusD = 0.30, pearFilletRadius = 2.4;
+  const pearOutlineD = (() => {
+    const d = Math.hypot(leverWeightLocalCenter.x, leverWeightLocalCenter.y);
+    const axis = Math.atan2(leverWeightLocalCenter.y, leverWeightLocalCenter.x);
+    const a = eyeRadiusD + pearFilletRadius, b = pearEndRadius + pearFilletRadius;
+    // Fillet centre (u, v) in the axis frame: |c| = a, |c - (d, 0)| = b.
+    const u = (a * a - b * b + d * d) / (2 * d), v = Math.sqrt(a * a - u * u);
+    const arc = (cx, cy, r, from, to, n) => Array.from({length: n + 1}, (_, i) => {
+      const t = from + (to - from) * i / n;
+      return [cx + r * Math.cos(t), cy + r * Math.sin(t)];
+    });
+    const eyeTouch = Math.atan2(v, u), bulbTouch = Math.atan2(v, u - d);
+    const local = [
+      // bulb, from the upper tangent round the far end to the lower one
+      ...arc(d, 0, pearEndRadius, bulbTouch, -bulbTouch, 96),
+      // lower concave fillet, bulb tangent back to eye tangent
+      ...arc(u, -v, pearFilletRadius, Math.PI - bulbTouch, Math.PI - eyeTouch, 32).map(([x, y]) => [x, y]),
+      // eye, round the back
+      ...arc(0, 0, eyeRadiusD, -eyeTouch, -2 * Math.PI + eyeTouch, 96),
+      // upper concave fillet, eye tangent to bulb tangent
+      ...arc(u, v, pearFilletRadius, -Math.PI + eyeTouch, -Math.PI + bulbTouch, 32),
+    ];
+    const c = Math.cos(axis), sn = Math.sin(axis);
+    return local.map(([x, y]) => [x * c - y * sn, x * sn + y * c]);
+  })();
   const circleRing = (x, y, radius, count = 96) => {
     const ring = Array.from({length: count}, (_, i) => [x + radius * Math.cos(FULL_TURN * i / count), y + radius * Math.sin(FULL_TURN * i / count)]);
     return [[...ring, ring[0]]];
   };
   const leverShape = polygonClipping.difference(
     polygonClipping.union([[...armOutline, armOutline[0]]], circleRing(0, 0, 0.30),
-      [[...neckOutlineD, neckOutlineD[0]]]),
+      [[...pearOutlineD, pearOutlineD[0]]]),
     circleRing(0, 0, 0.13),
   );
   const lowerLeverArm = new THREE.Mesh(plate(leverShape, -0.09, 0.09), leverMaterial);
   lowerLeverArm.userData.role = 'lower-arm-of-loaded-elbow-lever-D';
   const weightedLeverArm = lowerLeverArm;
-  const leverWeight = new THREE.Mesh(
-    new THREE.SphereGeometry(0.50, 64, 32),
-    leverMaterial,
-  );
-  leverWeight.position.copy(leverWeightLocalCenter);
-  leverWeight.userData.role = 'fixed-load-on-long-arm-of-lever-D';
+  // The pear load is part of the lever's one plate.
+  const leverWeight = lowerLeverArm;
   const screwY = stopScrewTipLocal.y, screwTipX = stopScrewTipLocal.x;
   const screwEndX = 0.50, headStartX = 0.47, headEndX = 0.70;
   const stopScrewB = new THREE.Mesh(latheGeometry([
@@ -815,7 +834,7 @@ function rayExpansionSteamTrap(movement) {
   );
   screwHeadB.position.set((headStartX + headEndX) / 2, screwY, 0);
   screwHeadB.userData.role = 'head-of-adjusting-screw-b';
-  leverD.add(lowerLeverArm, leverWeight, stopScrewB, screwHeadB);
+  leverD.add(lowerLeverArm, stopScrewB, screwHeadB);
   root.add(leverD);
 
   // D's fixed support (behind the lever) with its pivot pin and cap.

@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {mercuryMaterial as sharedMercuryMaterial} from './cutaway-section.js';
 import {correctMercuryInstrument} from './mercury-instrument-parts.js';
+import {turned} from './finite-plate-geometry.js';
 import {serifNumeralGeometry} from './serif-numerals.js';
 import {
   PALETTE,
@@ -533,6 +534,21 @@ function siphonPressureGauge(movement) {
   }
   pressureCore.castShadow = false;
   correctMercuryInstrument(root, 498, update);
+  // Pass 101: Brown's small ferrule over the joint where the pressure pipe
+  // meets the top of the glass leg (the two used to butt end to end): a
+  // turned brass sleeve with chamfered ends, lapping 0.15 over each, its
+  // bore 0.003 clear of both so no face lies on the tube walls.
+  {
+    const r0 = glassOuterRadius + 0.003, r1 = glassOuterRadius + 0.055, half = 0.15, chamfer = 0.02;
+    const ferrule = addRole(new THREE.Mesh(turned([
+      [-half, r0], [-half, r1 - chamfer], [-half + chamfer, r1], [half - chamfer, r1], [half, r1 - chamfer], [half, r0],
+    ], 96).rotateX(-Math.PI / 2), brassMaterial), 'ferrule-over-pressure-pipe-and-glass-leg-joint');
+    ferrule.position.set(-legCenterX, tubeTopY, 0);
+    ferrule.castShadow = true;
+    ferrule.receiveShadow = true;
+    root.add(ferrule);
+    root.userData.blocks.pressureJointFerrule = ferrule;
+  }
   return {
     root,
     update,

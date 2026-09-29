@@ -100,28 +100,30 @@ function easedConstantSpeedStroke(time, duration, rampDuration) {
   };
 }
 
-function makeFuseeProfile({ revolutionCount, stroke }) {
+// Brown draws the fusee as a straight (linear) cone: its outline runs
+// straight from the large-end flange to the small-end collar, and the
+// groove follows it. The pitch radius therefore falls linearly with the
+// groove turn, and the carriage payout is its integral. Sureda's ten
+// observations fix only the end radii (their first/last ratio 30/112
+// matches the plate's last groove against its large end, about 0.3).
+function makeFuseeProfile({ largeRadius, revolutionCount, smallRadius }) {
   const observedTotal = SUREDA_TRAVEL_LINES.reduce(
     (sum, value) => sum + value,
     0,
   );
-  // Each observation governs revolutionCount / 10 groove turns (one turn
-  // each in Sureda's ten-turn original); the payout still integrates to
-  // the stroke.
   const turnsPerObservation = revolutionCount / SUREDA_TRAVEL_LINES.length;
-  const radiusScale = stroke
-    / (FULL_TURN * observedTotal * turnsPerObservation);
-  const sampledRadii = SUREDA_TRAVEL_LINES.map(
-    (distance) => distance * radiusScale,
+  const radiusScale = largeRadius / SUREDA_TRAVEL_LINES[0];
+  const sampledRadii = Array.from(
+    { length: SUREDA_TRAVEL_LINES.length },
+    (_, index) => THREE.MathUtils.lerp(
+      largeRadius,
+      smallRadius,
+      (index + 0.5) / SUREDA_TRAVEL_LINES.length,
+    ),
   );
   const knots = [
-    { radius: sampledRadii[0], turn: 0 },
-    { radius: sampledRadii[0], turn: 0.5 * turnsPerObservation },
-    ...sampledRadii.slice(1).map((radius, index) => ({
-      radius,
-      turn: (index + 1.5) * turnsPerObservation,
-    })),
-    { radius: sampledRadii.at(-1), turn: revolutionCount },
+    { radius: largeRadius, turn: 0 },
+    { radius: smallRadius, turn: revolutionCount },
   ];
   const segmentAreas = [];
   let totalArea = 0;
@@ -181,12 +183,14 @@ function makeFuseeProfile({ revolutionCount, stroke }) {
 
   return {
     knots,
+    largeRadius,
     observedTotal,
     radiusAt,
     radiusDerivativeAt,
     radiusIntegralAt,
     radiusScale,
     sampledRadii,
+    smallRadius,
     totalArea,
     turnsPerObservation,
   };
@@ -229,7 +233,7 @@ function makeProfiledFuseeBody({
     new THREE.LatheGeometry(lathePoints, 72),
     material,
   );
-  body.userData.role = 'historically-profiled-sureda-fusee-body';
+  body.userData.role = 'straight-conical-fusee-body';
   return body;
 }
 
@@ -316,10 +320,14 @@ function fuseeCarriageTraverse(movement) {
   // one-turn-per-second crank ceiling a full out-and-return cycle takes
   // about 22 s.
   const revolutionCount = 10;
-  // Brown's plan draws a stubby fusee (large diameter about 1.2 times its
-  // length); 2.8 units of stroke per turn gives Sureda's radii that
-  // proportion.
-  const carriageStroke = 2.8 * revolutionCount;
+  // Brown's plan draws a stubby straight cone (large diameter about 1.2
+  // times its length, the last groove about 0.3 of the large diameter).
+  // The pitch radius falls linearly from 0.86 to 0.23, so the stroke is
+  // the mean circumference times the turn count (about 34.2).
+  const fuseeLargeRadius = 0.86;
+  const fuseeSmallRadius = 0.23;
+  const carriageStroke = Math.PI * revolutionCount
+    * (fuseeLargeRadius + fuseeSmallRadius);
   const fuseeHeight = 1.52;
   const fuseeCenterY = 0.93;
   const fuseeTopY = fuseeCenterY + fuseeHeight / 2;
@@ -363,11 +371,12 @@ function fuseeCarriageTraverse(movement) {
   const cyclePeriod = 2 * (strokeDuration + dwellDuration);
   const displayTimeOffset = strokeDuration / 2;
   const profile = makeFuseeProfile({
+    largeRadius: fuseeLargeRadius,
     revolutionCount,
-    stroke: carriageStroke,
+    smallRadius: fuseeSmallRadius,
   });
-  const largeRadius = profile.sampledRadii[0];
-  const smallRadius = profile.sampledRadii.at(-1);
+  const largeRadius = profile.largeRadius;
+  const smallRadius = profile.smallRadius;
 
   const frameMaterial = matte(PALETTE.frame, {
     metalness: 0.18,
@@ -890,7 +899,7 @@ function fuseeCarriageTraverse(movement) {
     historicalTrial: {
       carriageTravelLines: SUREDA_TRAVEL_LINES.slice(),
       profileInterpretation:
-        'the ten observations are treated as circumference samples at the centers of ten successive groove turns and joined monotonically',
+        'only the first/last observation ratio is used: Brown draws a straight cone, so the pitch radius falls linearly between them and the carriage speed falls linearly with the turn',
       totalTravelLines: profile.observedTotal,
     },
     mechanism:

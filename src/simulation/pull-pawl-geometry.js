@@ -101,18 +101,28 @@ export function makePullPawlGeometry({phase=1.115052755202599,rootRadius=.872,ro
  attach('rockerAxle',disk(.033,.18,.46),'fixed',PALETTE.muted,[...A,0]);
  attach('rockerAxleCap',disk(.051,.46,.48),'fixed',PALETTE.muted,[...A,0]);
 
- // The left end is a true arc concentric with the left pawl pin; the right
- // pin's eye is a circle concentric with it (unioned below). Both replace
- // traced lopsided bulges.
- const leverOuter=[['M',758,233],...concentricEnd([758,233],[742,301],pivotPx.left,36),['L',742,301],
-  ['L',790,289],['L',817,295],['Q',842,303,867,301],['L',1213,309],
-  // Brown's swallowtail break notch is drawing notation: finish the hand
-  // lever with a whole rounded end.
-  ['Q',1247,306,1246,285],['Q',1245,263,1228,261],['L',861,252],['Q',833,243,802,255],['L',787,250],['L',758,233]],
-  leverLocal=v=>sub(source(v),A),leverShape=clip.difference(clip.union(poly(sourceContour(leverOuter,leverLocal)),poly(circle(arms.right,42/scale))),
+ // p101: lever B is one extrusion of circles joined by tangent lines: the
+ // left end is an arc concentric with the left pawl pin (36 px), the right
+ // pin's eye a circle concentric with it (42 px), and the hand lever runs on
+ // as a straight taper from that eye to a round end (24.5 px, Brown's bar
+ // width there), with no neck or bulb; Brown's swallowtail break notch is
+ // drawing notation, so the lever ends whole.
+ const hull=points=>{
+  const sorted=[...points].sort((a,b)=>a[0]-b[0]||a[1]-b[1]),turn=(o,a,b)=>(a[0]-o[0])*(b[1]-o[1])-(a[1]-o[1])*(b[0]-o[0]);
+  const chain=list=>{const out=[];for(const q of list){while(out.length>1&&turn(out.at(-2),out.at(-1),q)<=0)out.pop();out.push(q);}out.pop();return out;};
+  return[...chain(sorted),...chain([...sorted].reverse())];
+ };
+ const leverLocal=v=>sub(source(v),A),eye=(pixel,r)=>circle(leverLocal(pixel),r/scale,256),
+  leftEye=eye(pivotPx.left,36),rightEye=eye(pivotPx.right,42),handleEnd=eye([1222,285],24.5),
+  leverShape=clip.difference(clip.union(poly(hull([...leftEye,...rightEye])),poly(hull([...rightEye,...handleEnd]))),
    poly(circle([0,0],.036)),...Object.values(arms).map(v=>poly(circle(v,.037))));
  attach('rockerB',plate(leverShape,.355,.435),'lever',PALETTE.driver);
  attach('rockerPivotBoss',ring(.036,.115,.435,.455),'lever',PALETTE.driver);
+ // p101: each pawl pin carries a lever-coloured distance collar from the
+ // lever's back face to the pawl eye, so no bare pin shows between them. The
+ // collars turn with the prescribed lever (no change to the pawls' masses).
+ for(const [key,r] of [['left',24],['right',28]])
+  attach(key+'PivotCollar',ring(.037,r/scale,.166,.355),'lever',PALETTE.driver,[...arms[key],0]);
  const contours={
   // Each pawl's eye is a true arc concentric with its pin (radius 24 and
   // 28 px), the bar edges running straight and tangent into it from the

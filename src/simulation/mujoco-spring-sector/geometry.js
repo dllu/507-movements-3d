@@ -8,6 +8,21 @@ import {makeSpringSectorLinkage} from './linkage.js';
 // Review cameras use the same Vite-resolved Three instance as the model.
 export {THREE};
 
+// Monotone-chain convex hull of [x, y] points (counter-clockwise).
+function hull(points) {
+  const sorted = [...points].sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  const cross = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+  const chain = list => {
+    const out = [];
+    for (const q of list) {
+      while (out.length >= 2 && cross(out.at(-2), out.at(-1), q) <= 0) out.pop();
+      out.push(q);
+    }
+    out.pop(); return out;
+  };
+  return [...chain(sorted), ...chain([...sorted].reverse())];
+}
+
 // Isolated reconstruction candidate. Twin radial guides behind each plate
 // retain shaft clocking while allowing spring-supported rise. The engraving
 // specifies the function but leaves this guide construction unshown.
@@ -23,7 +38,15 @@ export function makeSpringSectorGeometry() {
     edge.push(polar(p.tipRadiusPixels, phase + i * pitch));
     if (i < last) edge.push(polar(p.rootRadiusPixels, phase + (i + p.shortFaceFraction) * pitch));
   }
-  const outline = poly([point([562, 416]), ...edge, point([651, 414])]);
+  // p101: Brown's apex is a round boss about B, not a flat cut with a ring
+  // perched on it. The boss is part of the sector's one extrusion; its sides
+  // run straight and tangent from the boss to the first and last tooth
+  // roots. The sector rides 0.01-0.11 up its spring guides, so the boss is
+  // centred at the mid-lift position and wide enough (0.30) that B's collar
+  // (0.219) always sits inside it.
+  const bossCenter = [0, -.06], bossRadius = .30;
+  const outline = clip.union(poly([point([562, 416]), ...edge, point([651, 414])]),
+    poly(hull([...circle(bossCenter, bossRadius, 128), edge[0], edge.at(-1)])));
   const holes = ['leftOpening', 'rightOpening'].map(name => {
     const curve = new THREE.CatmullRomCurve3(source.landmarks[name].map(q => new THREE.Vector3(...point(q), 0)), true, 'centripetal');
     return poly(curve.getPoints(192).slice(0, -1).map(q => [q.x, q.y]));
@@ -50,12 +73,15 @@ export function makeSpringSectorGeometry() {
     profiles[name] = shape;
     attach(name + 'Sector', plate(shape, -depth / 2, depth / 2), name, color);
     const plane = sign * wheelPitchRadius, guideZ = -sign * .17;
-    const cover = clip.difference(clip.union(poly(circle([0, 0], source.circles.rockshaftEyeOuter.radius / scale, 128)),
+    const backing = clip.difference(clip.union(poly(circle([0, 0], source.circles.rockshaftEyeOuter.radius / scale, 128)),
       capsule([0, 0], [0, -.18], .12, 48)), poly(circle([0, 0], 25 / scale, 128)));
-    attach(name + 'HubCover', ring(25 / scale, source.circles.rockshaftEyeOuter.radius / scale,
+    const cover = attach(name + 'HubCover', ring(25 / scale, source.circles.rockshaftEyeOuter.radius / scale,
       Math.min(sign * .065, sign * .125), Math.max(sign * .065, sign * .125), 128),
       'shaft', color, [0, 0, plane]);
-    attach(name + 'NotchBacking', plate(cover, Math.min(-sign * .07, -sign * .055), Math.max(-sign * .07, -sign * .055)),
+    // B's collar: a darker shade, so it reads as a collar on the shaft
+    // against the sector's own boss, which slides a little under it.
+    cover.material.color.multiplyScalar(.72);
+    attach(name + 'NotchBacking', plate(backing, Math.min(-sign * .07, -sign * .055), Math.max(-sign * .07, -sign * .055)),
       'shaft', color, [0, 0, plane]);
     attach(name + 'CarrierHub', ring(25 / scale, .2, Math.min(-sign * .30, -sign * .25), Math.max(-sign * .30, -sign * .25), 128),
       'shaft', PALETTE.muted, [0, 0, plane]);
@@ -89,10 +115,12 @@ export function makeSpringSectorGeometry() {
   const rodAngle = Math.atan2(rodEnd[1] - pin[1], rodEnd[0] - pin[0]);
   const normal = [-Math.sin(rodAngle) * 21 / scale, Math.cos(rodAngle) * 21 / scale];
   const offset = (q, sign) => q.map((v, i) => v + sign * normal[i]);
+  // p101: Brown's rod A runs plainly off the crop; its far end is a round
+  // end, and the (physics-only) remote fork, pin and stem are not shown.
   const rodOutline = clip.union(poly([offset(pin, 1), offset(rodEnd, 1), offset(rodEnd, -1), offset(pin, -1)]),
-    poly(circle(pin, source.circles.rodEyeOuter.radius / scale, 128)), poly(circle(rodEnd, .15, 128)));
-  const rodGeometry = plate(clip.difference(rodOutline, poly(circle(pin, source.circles.rodEyeInner.radius / scale, 128)),
-    poly(circle(rodEnd, .085, 128))), .065, .135);
+    poly(circle(pin, source.circles.rodEyeOuter.radius / scale, 128)), poly(circle(rodEnd, 21 / scale, 128)));
+  const rodGeometry = plate(clip.difference(rodOutline, poly(circle(pin, source.circles.rodEyeInner.radius / scale, 128))),
+    .065, .135);
   rodGeometry.translate(-pin[0], -pin[1], 0);
   attach('inputRod', rodGeometry,
     'rod', PALETTE.accent, [0, 0, wheelPitchRadius]);
@@ -208,7 +236,7 @@ export function makeSpringSectorGeometry() {
   // coils) stay in the model and physics but are not shown; the sector-coloured
   // hub cover and backing keep the sector reading as hung on shaft B.
   for (const [name, mesh] of Object.entries(parts))
-    if (/^(?:front|rear)(?:GuideFrame|CarrierBridge|CarrierHub|SliderHousing\d|GuideRod\d|Spring\d)$/.test(name)) {
+    if (/^(?:front|rear)(?:GuideFrame|CarrierBridge|CarrierHub|SliderHousing\d|GuideRod\d|Spring\d)$|^(?:inputFork(?:Back|Front|Bridge)|remotePin(?:Head|Nut)?|inputStem)$/.test(name)) {
       mesh.visible = false; mesh.userData.presentationHidden = true;
     }
   root.userData = {parts, families, blocks, profiles, source, setState, linkage, springs, geometry: {sectorPitchRadius,

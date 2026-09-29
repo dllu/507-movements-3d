@@ -22,6 +22,22 @@ test('173 baked assembly retains nut lead, horizontal guide and reset through it
  }
  for(const cycle of [1,2,10]){m.update(g.duration*cycle+.5);assert.ok(Math.abs(m.root.userData.kinematics.wheel-stateAtTime(.5).wheel)<1e-10);}
  m.update(g.duration+.01);const before=m.root.userData.kinematics.carrier;m.update(g.duration+.1);assert.ok(m.root.userData.kinematics.carrier>before);m.reset();assert.deepEqual(m.root.userData.kinematics,initial);
- assert.equal(Object.keys(parts).length,40);assert.equal(m.root.userData.hideGround,true);
+ assert.equal(Object.keys(parts).length,39);assert.equal(m.root.userData.hideGround,true);
+ }finally{m.dispose();}
+});
+test('173 striker is one stout horizontal stud with nut and collar seated on a plain striker box',()=>{
+ const m=makeSilkTraverseAssembly(bundle);try{
+ const {parts}=m.root.userData,box=o=>new THREE.Box3().setFromObject(o);
+ for(const gone of ['tappetStem','tappetArm','frameWeb'])assert.equal(parts[gone],undefined,gone);
+ const axis=new THREE.Vector3(1,0,0).applyQuaternion(parts.tappet.getWorldQuaternion(new THREE.Quaternion()));
+ assert.ok(Math.abs(axis.y)<1e-3&&Math.abs(axis.z)<1e-9,'stud lies horizontal in the source view');
+ const wheel=2*(.435+.045)*bundle.parameters.radialScale;
+ assert.ok(bundle.parameters.pinRadius>=.05,'stout shank');
+ parts.studCollar.geometry.computeBoundingBox();assert.ok(2*parts.studCollar.geometry.boundingBox.max.y>=.24*wheel,'collar about a quarter of the star wheel');
+ const stud=box(parts.tappet),nut=box(parts.studNut),collar=box(parts.studCollar),support=box(parts.tappetSupport);
+ assert.ok(Math.abs(nut.min.x-stud.max.x+bundle.parameters.pinRadius)<1e-3,'nut on the shank end');
+ assert.ok(Math.abs(collar.min.x-nut.max.x)<1e-4&&Math.abs(collar.max.x-support.min.x)<1e-4,'collar seats on the box face');
+ const zc=(stud.min.z+stud.max.z)/2;assert.ok(support.min.z<zc-.15&&support.max.z>zc+.15,'box centred on the stud');
+ assert.ok(support.min.y>1,'striker box is a plain block, not a C-frame');
  }finally{m.dispose();}
 });

@@ -286,8 +286,28 @@ export function loopHandlePinCamGabDisengager() {
   const rodFront = extrude(polygonClipping.difference(rodOutline, gab, pivotBore), Z.rod, rodMaterial,
     'eccentric-rod-with-crown-open-bottom-gab-and-tail');
   // The rod is deeper behind its plain bar, where the leaf's clip is screwed.
-  const rodRail = extrude(poly(ring([[-300, 297], [245, 297], [245, 335], [-300, 335]])),
-    Z.rail, rodMaterial, 'eccentric-rod-rear-web-carrying-leaf-clip');
+  // Pass 101: the web has exactly the rod's height (rod top to rod bottom) and
+  // is one vertical extrusion of its plan outline, whose back face fairs into
+  // the rod's back face with a smooth S-curve ahead of the handle hub instead
+  // of stopping in a square step.
+  const rodRail = (() => {
+    const [back, front] = Z.rail;
+    const x0 = R([-300, 0]).x, fairStart = R([150, 0]).x, fairEnd = R([245, 0]).x;
+    const top = R([0, 297]).y, bottom = rodBottomY;
+    const outline = new THREE.Shape();
+    outline.moveTo(x0, front);
+    outline.lineTo(x0, back);
+    outline.lineTo(fairStart, back);
+    const run = fairEnd - fairStart;
+    outline.bezierCurveTo(fairStart + 0.45 * run, back, fairEnd - 0.45 * run, front, fairEnd, front);
+    outline.closePath();
+    const geometry = new THREE.ExtrudeGeometry(outline, {depth: top - bottom, bevelEnabled: false, curveSegments: 48});
+    geometry.rotateX(Math.PI / 2);
+    geometry.translate(0, top, 0);
+    const mesh = new THREE.Mesh(geometry, rodMaterial);
+    mesh.userData.role = 'eccentric-rod-rear-web-carrying-leaf-clip';
+    return mesh;
+  })();
   const pivotPin = cylinderAlongZ(pivotPinRadius, 0.58, darkMaterial, 32);
   pivotPin.position.set(pivot.x, pivot.y, -0.13);
   pivotPin.userData.role = 'handle-pivot-pin-on-rod';

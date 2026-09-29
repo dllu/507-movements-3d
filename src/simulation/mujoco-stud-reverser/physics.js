@@ -5,8 +5,9 @@ import {rigidFamilyInertia} from '../mujoco/mass.js';
 import {createMujocoSimulation} from '../mujoco/simulation.js';
 import {disposeObject3D} from '../dispose-model.js';
 
-export function makeStudReverserPhysics(mujoco,{timestep=.00025,gravity=9.81,barFriction=.5,barDamping=1,leverDamping=.02,outputLengthScale=1,inputContactMinimum=0,contact=true}={}){
- const visual=inputContactMinimum?makeRelievedStudReverser({inputContactMinimum}):createAuthoredStudDriveMovement({id:153}),u=visual.root.userData,b=u.blocks,g=u.geometry,initial=u.stateAtTime(0);
+export function makeStudReverserPhysics(mujoco,{timestep=.00025,gravity=9.81,barFriction=.5,barDamping=1,leverDamping=.02,outputLengthScale=1,inputContactMinimum=0,contact=true,flatInputLength=0,inputAngleOffset=0}={}){
+ const relieved=Boolean(inputContactMinimum||flatInputLength);
+ const visual=relieved?makeRelievedStudReverser({inputContactMinimum,flatInputLength,inputAngleOffset}):createAuthoredStudDriveMovement({id:153}),u=visual.root.userData,b=u.blocks,g=u.geometry,initial=u.stateAtTime(0);
  if(outputLengthScale!==1){
   if(!b.outputArm.userData.blocks.beam)throw new RangeError('Output length trial is only supported on the legacy geometry');
   b.outputArm.userData.blocks.beam.scale.x=outputLengthScale;b.outputArm.userData.blocks.beam.position.x*=outputLengthScale;b.outputArm.userData.blocks.endCap.position.x*=outputLengthScale;
@@ -26,19 +27,20 @@ export function makeStudReverserPhysics(mujoco,{timestep=.00025,gravity=9.81,bar
  b.pinAssemblies.forEach((a,i)=>add('disk-pin-'+i,a.userData.blocks.pin,b.diskRotor,'disk',1,6));
  add('bar-lug',b.undersideLug,b.slidingBar,'bar',2,1);
  add('bar-pin',b.barFrontStud,b.slidingBar,'bar',16,8);
- if(inputContactMinimum){add('lever-input',b.inputArm.userData.blocks.working,b.lever,'lever',4,1);add('raised-input',b.inputArm.userData.blocks.raised,b.lever,'lever',4,1);}
+ if(flatInputLength)add('lever-input',b.inputArm.userData.blocks.working,b.lever,'lever',4,1);
+ else if(inputContactMinimum){add('lever-input',b.inputArm.userData.blocks.working,b.lever,'lever',4,1);add('raised-input',b.inputArm.userData.blocks.raised,b.lever,'lever',4,1);}
  else add('lever-input',b.inputArm,b.lever,'lever',4,1);
  add('lever-output',b.outputArm,b.lever,'lever',8,16);
- if(inputContactMinimum)add('lever-rest-stop',b.leverStop,b.fixedFrame,'fixed',32,4);
+ if(relieved)add('lever-rest-stop',b.leverStop,b.fixedFrame,'fixed',32,4);
  const angle=initial.lever.worldAngle,period=g.diskPeriod,speed=-g.diskScreenAngularSpeed;
  const xml=`<mujoco model="153 passive impact prototype"><compiler angle="radian" inertiafromgeom="false"/><option timestep="${timestep}" gravity="0 -${gravity} 0" integrator="implicitfast" iterations="100" tolerance="1e-10"><flag multiccd="disable"/></option>
  <default><geom friction="0 0 0" condim="1" solref=".002 1" solimp=".999 .9999 .0001"/></default><asset>${assets.join('')}</asset><worldbody>${geoms.fixed.join('')}
  <body name="disk"><joint name="disk" axis="0 0 1"/>${inertia('disk')}${geoms.disk.join('')}</body>
  <body name="bar"><joint name="bar" type="slide" axis="1 0 0" frictionloss="${barFriction}" damping="${barDamping}"/>${inertia('bar')}${geoms.bar.join('')}</body>
- <body name="lever" pos="${g.leverPivot.toArray().join(' ')}"><joint name="lever" axis="0 0 1" damping="${leverDamping}" ${inputContactMinimum?'':`limited="true" range="${angle} 6.283185307179586" solreflimit=".002 1"`}/>${inertia('lever')}${geoms.lever.join('')}</body>
+ <body name="lever" pos="${g.leverPivot.toArray().join(' ')}"><joint name="lever" axis="0 0 1" damping="${leverDamping}" ${relieved?'':`limited="true" range="${angle} 6.283185307179586" solreflimit=".002 1"`}/>${inertia('lever')}${geoms.lever.join('')}</body>
  </worldbody><actuator><position joint="disk" kp="10000" kv="100"/></actuator></mujoco>`;
  const initialDisk=-initial.driverScreenAngle;
  let physics;try{physics=createMujocoSimulation(mujoco,{xml,initialize:({data})=>{data.qpos.set([initialDisk,0,angle]);data.qvel[0]=speed;},beforeStep:({data,time})=>{data.ctrl[0]=initialDisk+speed*time+.01*speed;}});
  }finally{disposeObject3D(visual.root);}
- return Object.assign(physics,{description:{period,timestep,gravity,barFriction,barDamping,leverDamping,outputLengthScale,inputContactMinimum,contact,mass,density,initialDisk,initialLever:angle,speed,assumptions:inputContactMinimum?'Only disk is driven. Bar and lever move through frictionless finite contact. Gravity returns the relieved arm onto a rendered, contact-active fixed stop; no lever joint limit prescribes the reset. Bar guide friction, damping, depth relief, bearings and retaining guides are inferred. Moving mesh volumes are integrated at common density normalized to bar mass one; body interfaces are checked separately. Nonworking collisions are audited on rendered poses rather than solved live.':'Rejected legacy diagnostic: overlapping decorative volumes, inferred joint limits and incomplete nonworking collision coverage.'},state:()=>({time:physics.data.time,qpos:Array.from(physics.data.qpos),qvel:Array.from(physics.data.qvel)})});
+ return Object.assign(physics,{description:{period,timestep,gravity,barFriction,barDamping,leverDamping,outputLengthScale,inputContactMinimum,contact,flatInputLength,inputAngleOffset,mass,density,initialDisk,initialLever:angle,speed,assumptions:flatInputLength?'Only disk is driven. Bar and lever move through frictionless finite contact on a flat L lever whose input arm lies wholly in the stud plane (shortened to '+flatInputLength+' and turned '+(inputAngleOffset*180/Math.PI).toFixed(1)+'° towards the disk). Gravity returns the lever onto a rendered, contact-active fixed stop; no lever joint limit prescribes the reset. Bar guide friction, damping, bearings and retaining guides are inferred. Moving mesh volumes are integrated at common density normalized to bar mass one.':inputContactMinimum?'Only disk is driven. Bar and lever move through frictionless finite contact. Gravity returns the relieved arm onto a rendered, contact-active fixed stop; no lever joint limit prescribes the reset. Bar guide friction, damping, depth relief, bearings and retaining guides are inferred. Moving mesh volumes are integrated at common density normalized to bar mass one; body interfaces are checked separately. Nonworking collisions are audited on rendered poses rather than solved live.':'Rejected legacy diagnostic: overlapping decorative volumes, inferred joint limits and incomplete nonworking collision coverage.'},state:()=>({time:physics.data.time,qpos:Array.from(physics.data.qpos),qvel:Array.from(physics.data.qvel)})});
 }

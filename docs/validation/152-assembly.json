@@ -2,10 +2,10 @@
   "movement": 152,
   "method": "All visible mesh pairs belonging to different rigid bodies, bidirectional vertices/edge midpoints/face centers, 65 poses spanning a full bar revolution. Pencil trace is an annotation and excluded. Same-body mating interfaces excluded. No continuous collision proof.",
   "summary": {
-    "parts": 34,
-    "pairs": 296,
+    "parts": 16,
+    "pairs": 62,
     "poses": 65,
-    "checks": 805672,
+    "checks": 1097614,
     "failingPairs": 0
   },
   "failures": {},
@@ -16,7 +16,7 @@
     },
     {
       "file": "src/simulation/trammel-ellipsograph.js",
-      "sha256": "6a9cda6dfc4baaa86140e1425722879aa71ff5859287d2d363ce3a165c0eef8e"
+      "sha256": "27443fbfa3223b768beb72f1f000bea64568de6be429a75dc4d78cbdd6b94483"
     },
     {
       "file": "src/simulation/authored-drawing-instruments.js",

@@ -493,8 +493,15 @@ test('movement 278 update binds platform travel, mirrored levers, spring, split 
     }
     assert.ok(cameraFitBounds.containsPoint(
       model.root.userData.kinematics.ropeEye));
-    assert.ok(model.root.userData.kinematics.lowerBrokenEnd.y
-      > cameraFitBounds.max.y);
+    // Pass 101: the rope parts just above the eye; the limp lower stub lies
+    // on B's head inside the frame, and the upper piece hangs from the hoist.
+    const kinematics = model.root.userData.kinematics;
+    if (kinematics.ropeSlack > 0) {
+      if (kinematics.ropeSlack === 1) assert.ok(cameraFitBounds.containsBox(new THREE.Box3().setFromObject(blocks.lowerRope, true)));
+      assert.ok(kinematics.upperBrokenEnd.y > kinematics.ropeEye.y + 1.4);
+    } else {
+      assert.equal(blocks.lowerRope.visible, false);
+    }
   }
   assert.equal(cameraFitBounds.containsBox(renderedBounds), true);
   disposeModel(model.root);

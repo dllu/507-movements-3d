@@ -60,7 +60,6 @@ function boatDetachingHook(movement) {
   const plateLeverEye = [190, 180];
   const plateRopeEye = [362, 427];
   const plateHookThroatX = 220;
-  const plateLowerArm = [[247, 238], [265, 250], [290, 300], [318, 340], [338, 380], [352, 410], plateRopeEye];
 
   const hingeCenter = new THREE.Vector2(0, fromPlate(plateTongueHinge).y);
   const eyeCenterRest = fromPlate(plateLeverEye);
@@ -323,13 +322,33 @@ function boatDetachingHook(movement) {
   const downward = upward.clone().negate();
   const eyeOuterHalfWidth = eyeInnerHalfWidth + eyeWall;
   const armAttach = eyeCenterRest.clone().addScaledVector(downward, eyeOuterHalfWidth - 0.02);
-  const lowerArm = plateLowerArm.map(fromPlate);
-  lowerArm[0] = new THREE.Vector2(0, 0);
-  const lowerArmPoints = new THREE.SplineCurve(lowerArm).getPoints(48).map(p => [p.x, p.y]);
+  // Pass 101: the long lower arm is one circular arc of constant width from
+  // the fulcrum to the rope eye, bowed to the outside by Brown's sagitta
+  // (8 px; his traced points lie 0-9 px off the chord, all on that side),
+  // instead of a spline through hand-traced points that wobbled into an S.
+  const lowerArmSagitta = 8 / PX, lowerArmHalfWidth = 0.11;
+  const lowerArmOutline = (() => {
+    const chord = ropeEyeRest.length(), half = chord / 2;
+    const radius = (half * half + lowerArmSagitta * lowerArmSagitta) / (2 * lowerArmSagitta);
+    const along = ropeEyeRest.clone().normalize();
+    // The bow lies on Brown's side of the chord, up and to the right.
+    const bow = new THREE.Vector2(-along.y, along.x);
+    const center = along.clone().multiplyScalar(half).addScaledVector(bow, lowerArmSagitta - radius);
+    const a0 = Math.atan2(-center.y, -center.x), a1 = Math.atan2(ropeEyeRest.y - center.y, ropeEyeRest.x - center.x);
+    let sweep = a1 - a0;
+    if (sweep > Math.PI) sweep -= 2 * Math.PI;
+    if (sweep < -Math.PI) sweep += 2 * Math.PI;
+    const side = (r) => Array.from({length: 97}, (_, i) => {
+      const a = a0 + sweep * i / 96;
+      return [center.x + r * Math.cos(a), center.y + r * Math.sin(a)];
+    });
+    const outer = side(radius + lowerArmHalfWidth), inner = side(radius - lowerArmHalfWidth).reverse();
+    return poly([...outer, ...inner]);
+  })();
   const leverOutline = clip.difference(clip.union(
     poly(circle([0, 0], 0.21, 96)),
     capsule([0, 0], [armAttach.x, armAttach.y], 0.14, 24),
-    ...lowerArmPoints.slice(1).map((p, i) => capsule(lowerArmPoints[i], p, 0.11, 16)),
+    lowerArmOutline,
     poly(circle([ropeEyeRest.x, ropeEyeRest.y], 0.19, 96))),
   poly(circle([0, 0], boreRadius, 48)), poly(circle([ropeEyeRest.x, ropeEyeRest.y], 0.09, 48)));
   const leverBody = addRole(new THREE.Mesh(plate(leverOutline, -leverThickness / 2, leverThickness / 2), leverMaterial),
