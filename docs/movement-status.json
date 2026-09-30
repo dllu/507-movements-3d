@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedOn": "2026-09-28",
+  "updatedOn": "2026-09-30",
   "evidencePolicy": "Historical source inspections without attributable reviewer identity remain unverified. Scoped nonpenetration is not global clearance. MuJoCo follows installed production routes; rejected studies are separate.",
   "movements": [
     {
@@ -1001,11 +1001,11 @@
       "id": 27,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-109 lane, integrated by primary agent",
-        "reviewPass": 109,
-        "reviewedOn": "2026-09-28",
-        "evidence": "docs/p109-f1-review.md",
-        "note": "Pass 109: flaw fixed; checked in default, rotated and phase captures beside the plate."
+        "reviewer": "Claude Opus 5.5 — pass-111 lane, integrated by primary agent",
+        "reviewPass": 111,
+        "reviewedOn": "2026-09-30",
+        "evidence": "docs/p111-a-review.md",
+        "note": "Pass 111: the central nub the user saw colliding with the rollers is removed; centre close-ups over 8 phases and a 257-sample intersection screen are clean."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -1023,16 +1023,17 @@
         "docs/p89-review.md",
         "docs/p99-a-review.md",
         "docs/p104-g1-review.md",
-        "docs/p109-f1-review.md"
+        "docs/p109-f1-review.md",
+        "docs/p111-a-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-gears-core.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-28",
+      "updatedOn": "2026-09-30",
       "visibleFlaws": "",
-      "limits": "Zero-clearance ideal slot constraint; roller spin during central disengagement is prescribed. p89: the roller hubs stand 0.01 proud of the drum faces and the drums are bored to the hub radius (flush hub ends and a shared bore flickered). p99: one-piece carrier plate with eyes concentric with the pins and hex nuts; exact chamfer normals (no bumpy shading); Brown's raised sector frames on the wheel. His central knob is omitted because the rollers pass through the wheel centre. p104: the drum's rim and back are frame blue (no black disc from behind). p109: a domed central hub with knob.",
+      "limits": "Zero-clearance ideal slot constraint; roller spin during central disengagement is prescribed. p89: the roller hubs stand 0.01 proud of the drum faces and the drums are bored to the hub radius (flush hub ends and a shared bore flickered). p99: one-piece carrier plate with eyes concentric with the pins and hex nuts; exact chamfer normals (no bumpy shading); Brown's raised sector frames on the wheel. His central knob is omitted because the rollers pass through the wheel centre. p104: the drum's rim and back are frame blue (no black disc from behind). p111: p109's domed central hub is removed again: the rollers sweep through the centre (0.139 solid overlap before; zero over 256 phases after).",
       "assessment": "reasonable"
     },
     {
@@ -2889,11 +2890,11 @@
       "id": 77,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-104 lane, integrated by primary agent",
-        "reviewPass": 104,
-        "reviewedOn": "2026-09-28",
-        "evidence": "docs/p104-g2-review.md",
-        "note": "Pass 104: flaw fixed; checked in default, rotated and phase captures beside the plate."
+        "reviewer": "Claude Opus 5.5 — pass-111 lane, integrated by primary agent",
+        "reviewPass": 111,
+        "reviewedOn": "2026-09-30",
+        "evidence": "docs/p111-a-review.md",
+        "note": "Pass 111: the jerky arms now fall gently under gravity onto the next pin (simulated and baked at real time); strips, fall frames and rotated views checked beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -2916,16 +2917,17 @@
         "docs/p91-w-review.md",
         "docs/p93-fa-review.md",
         "docs/p98-b-review.md",
-        "docs/p104-g2-review.md"
+        "docs/p104-g2-review.md",
+        "docs/p111-a-review.md"
       ],
       "mujoco": {
         "mode": "none",
-        "evidence": "src/simulation/alternating-peg-pawl.js",
-        "note": "Authored analytical/prescribed playback; no production MuJoCo import."
+        "evidence": "scripts/lib/alternating-peg-gravity-sim.mjs",
+        "note": "Offline planar rigid-body gravity/contact simulation (not MuJoCo), baked to src/data/alternating-peg-profile.js by scripts/bake-alternating-peg-gravity.mjs."
       },
-      "updatedOn": "2026-09-28",
+      "updatedOn": "2026-09-30",
       "visibleFlaws": "",
-      "limits": "Small rollback and startup take-up remain; hook dimensions and material/load parameters are reconstructed. Undrawn supports and extensions removed (pass 60); rods end straight and cleanly. Spoked web built by the shared filleted spoked-wheel builder. Both hook heads are one C of circular arcs: a round socket seating the peg at its back, a constant-thickness rim and round lips; the lower jaw stops short of the next peg. The recorded motion predates the new heads (same seat and contact, all sampled poses clear). p90: the black peg rims are removed; the hook heads cannot be thicker than 0.09 without entering peg 23 in the recorded motion. p91: white or near-white parts recoloured by role (pins steel, washers brass, panels stone); no geometry change. p93: flat hook shanks 0.6 of a peg diameter; darker steel pegs. p98: the lever's rounded top is concentric with the upper pawl pin. p104: fulcrum A trimmed to just behind the lever with a rear cap.",
+      "limits": "Hook dimensions and material/load parameters are reconstructed. Undrawn supports and extensions removed (pass 60); rods end straight and cleanly. Spoked web built by the shared filleted spoked-wheel builder. Both hook heads are one C of circular arcs: a round socket seating the peg at its back, a constant-thickness rim and round lips; the lower jaw stops short of the next peg. p90: the black peg rims are removed; the hook heads cannot be thicker than 0.09 without entering peg 23. p91: white or near-white parts recoloured by role (pins steel, washers brass, panels stone); no geometry change. p93: flat hook shanks 0.6 of a peg diameter; darker steel pegs. p98: the lever's rounded top is concentric with the upper pawl pin. p104: fulcrum A trimmed to just behind the lever with a rear cap. p111: the lever is one sine wave (no whip); both pawls are simulated rigid bodies with real pivot inertia that fall freely under gravity onto the next pin and are then pushed, baked from an exact one-pin cycle played at 1:1 time against the current C heads. The wheel rests about 49% of the cycle (at each lever reversal and during take-up, which ends in a real impact); at t=0 the wheel is 4.1° past Brown's peg phase. Density, load, lubrication and scale are assumptions. Older 077 integration/probe scripts read the removed start-up table and are stale.",
       "assessment": "reasonable"
     },
     {

@@ -786,22 +786,8 @@ function makeRadialSlotWheel({ radius = 1.78, slotCount = 6, slotEndRadius = 1.5
   const wall = new THREE.Mesh(wallGeometry, matte(PALETTE.driven, { metalness: 0.12 }));
   wall.userData.role = 'raised-sector-frames-and-groove-walls';
   rotor.add(wall);
-  // p109: Brown's domed central hub with its small knob, standing on the
-  // floor where the six sector frames meet (it clears the rollers' closest
-  // approach, 0.18 from the axis, and the carrier above).
-  {
-    const profile = [new THREE.Vector2(0, floorZ - 0.01), new THREE.Vector2(0.14, floorZ - 0.01), new THREE.Vector2(0.14, 0.1)];
-    for (let i = 1; i <= 16; i += 1) {
-      const a = (Math.PI / 2) * i / 16;
-      profile.push(new THREE.Vector2(0.14 * Math.cos(a) + (i === 16 ? 0 : 0), 0.1 + 0.12 * Math.sin(a)));
-    }
-    const dome = profile.filter((p) => p.x >= 0.045 || p.y <= 0.1);
-    dome.push(new THREE.Vector2(0.045, 0.1 + 0.12 * Math.sqrt(1 - (0.045 / 0.14) ** 2)), new THREE.Vector2(0.045, 0.27));
-    for (let i = 1; i <= 8; i += 1) { const a = (Math.PI / 2) * i / 8; dome.push(new THREE.Vector2(0.045 * Math.cos(a), 0.27 + 0.02 * Math.sin(a))); }
-    const hub = new THREE.Mesh(new THREE.LatheGeometry(dome, 64).rotateX(Math.PI / 2), wall.material);
-    hub.userData.role = 'domed-central-hub-with-knob';
-    rotor.add(hub);
-  }
+  // Brown's central knob is omitted: the rollers sweep through the wheel's
+  // centre (p111 removed the p109 domed hub, which the drums struck).
   const sectors = [wall];
   for (let index = 0; index < slotCount; index += 1) {
     const angle = index * sectorAngle;

@@ -98,3 +98,35 @@ test('032 source-sized friction wheels meet without their actual treads or face 
     assert.ok(gap < 0.0005, 'the tessellated round treads meet within half a thousandth');
   }
 });
+
+test('027 p111: no central knob; the rollers sweep through the wheel centre without entering any wheel solid', async () => {
+  const { solidSurface } = await import('./helpers/solid-surface.mjs');
+  const model = createMovementModel(catalog.movements[26]);
+  const { driven, rollers } = model.root.userData.blocks;
+  const solids = [];
+  driven.traverse((part) => {
+    assert.notEqual(part.userData.role, 'domed-central-hub-with-knob');
+    if (part.isMesh) solids.push({ part, solid: solidSurface(part.geometry) });
+  });
+  let closest = Infinity;
+  for (let sample = 0; sample < 256; sample += 1) {
+    model.update(2 * Math.PI / 1.08 * sample / 256, 0);
+    model.root.updateMatrixWorld(true);
+    const inverse = driven.userData.rotor.matrixWorld.clone().invert();
+    for (const roller of rollers) roller.traverse((part) => {
+      const positions = part.geometry?.attributes.position;
+      if (!positions) return;
+      for (let i = 0; i < positions.count; i += 1) {
+        const world = new THREE.Vector3().fromBufferAttribute(positions, i).applyMatrix4(part.matrixWorld);
+        const local = world.clone().applyMatrix4(inverse);
+        closest = Math.min(closest, Math.hypot(local.x, local.y));
+        for (const { part: wheel, solid } of solids) {
+          const point = world.clone().applyMatrix4(wheel.matrixWorld.clone().invert());
+          if (solid.box.containsPoint(point) && solid.inside(point)) assert.ok(solid.distance(point) <= 1e-6, `roller enters ${wheel.userData.role} at ${sample}`);
+        }
+      }
+    });
+  }
+  // The drums really do pass over the centre, so a central knob would be struck.
+  assert.ok(closest < 0.05, `closest roller approach ${closest}`);
+});

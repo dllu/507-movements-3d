@@ -37,25 +37,57 @@ test('077 all bearings are bored and retain material around the shaft',()=>{
  dispose(model);
 });
 
-test('077 advances one pin per steady cycle with independent gravity-returning pawls',()=>{
+test('077 p111: a smooth crank-like lever advances one pin per cycle with no rollback',()=>{
  const model=makeAlternatingPegPawlDrive(),u=model.root.userData,p=u.geometry;
- near(pose(model,0).theta,0);near(pose(model,0).q,0);
- const first=pose(model,4);assert.ok(first.theta/p.pitch>1.27&&first.theta/p.pitch<1.30);
- for(const time of [4,4.1,4.5,5,6,7.8,8,19.2,95.7]){
-  const a=pose(model,time),b=pose(model,time+4);near(b.theta-a.theta,p.pitch);
-  for(const key of ['q','upperAngle','lowerAngle'])near(b[key],a[key]);
+ near(pose(model,0).q,0);assert.ok(Math.abs(pose(model,0).theta)<p.pitch/2);
+ for(const time of [0,.1,.5,1,2,3.8,4,19.2,95.7]){
+  const a=pose(model,time),b=pose(model,time+4);near(b.theta-a.theta,p.pitch,1e-9);
+  for(const key of ['q','upperAngle','lowerAngle'])near(b[key],a[key],1e-9);
   pose(model,time+37);assert.deepEqual(pose(model,time),a);
  }
- let stopped=0,upperReset=0,lowerReset=0,reverse=0,previous=pose(model,4);
+ // The lever follows one sinusoid (no fast whip back); the wheel never runs backwards.
+ const physics=u.profile.physics,omega=2*Math.PI/physics.period;
+ let stopped=0,reverse=0,previous=pose(model,0);
  for(let i=1;i<=4000;i++){
-  const state=pose(model,4+4*i/4000);if(Math.abs(state.theta-previous.theta)<1e-10)stopped++;
-  reverse+=Math.min(0,state.theta-previous.theta);
-  upperReset=Math.max(upperReset,previous.upperAngle-state.upperAngle);lowerReset=Math.max(lowerReset,previous.lowerAngle-state.lowerAngle);previous=state;
+  const time=4*i/4000,state=pose(model,time);
+  near(state.q,physics.qmid+physics.amplitude*Math.sin(omega*time+physics.psi),1e-9);
+  if(Math.abs(state.theta-previous.theta)<1e-10)stopped++;reverse+=Math.min(0,state.theta-previous.theta);previous=state;
  }
- assert.ok(stopped/4000<.20);assert.ok(stopped/4000>.15);
- assert.ok(reverse<0&&Math.abs(reverse)<5e-6,'Retain the reduced physical backlash');
- assert.ok(upperReset>1e-5&&lowerReset>1e-5,'Both independent pawls must lift to return');
- near(u.playbackPeriod,4);near(u.minimumDisplayCycleSeconds,4);dispose(model);
+ assert.ok(stopped/4000>.4&&stopped/4000<.55,'wheel rests at the lever reversals and take-up: '+stopped/4000);
+ // A landing pawl may nudge the wheel back by a few micro-radians (invisible).
+ assert.ok(reverse>-1e-5,'no visible rollback '+reverse);
+ near(u.playbackPeriod,4);near(u.minimumDisplayCycleSeconds,4);near(physics.period,4);dispose(model);
+});
+
+test('077 p111: each pawl falls freely under gravity onto the next pin, without jitter',()=>{
+ const model=makeAlternatingPegPawlDrive(),u=model.root.userData,p=u.geometry;
+ const clearance=(key,state)=>{
+  const P=p.A.map((v,i)=>v+[p.arms[key][0]*Math.cos(state.q)-p.arms[key][1]*Math.sin(state.q),p.arms[key][0]*Math.sin(state.q)+p.arms[key][1]*Math.cos(state.q)][i]),
+   angle=key==='upper'?state.upperAngle:state.lowerAngle,outline=u.profiles[key];let best=Infinity;
+  for(const center of p.pinCenters){
+   const c=[center[0]*Math.cos(state.theta)-center[1]*Math.sin(state.theta)-P[0],center[0]*Math.sin(state.theta)+center[1]*Math.cos(state.theta)-P[1]],
+    local=[c[0]*Math.cos(angle)+c[1]*Math.sin(angle),-c[0]*Math.sin(angle)+c[1]*Math.cos(angle)];
+   let d=Infinity;for(let i=0;i<outline.length;i++){const a=outline[i],b=outline[(i+1)%outline.length],dx=b[0]-a[0],dy=b[1]-a[1],
+    t=Math.max(0,Math.min(1,((local[0]-a[0])*dx+(local[1]-a[1])*dy)/(dx*dx+dy*dy)));d=Math.min(d,Math.hypot(local[0]-a[0]-t*dx,local[1]-a[1]-t*dy));}
+   best=Math.min(best,d-p.pinRadius);
+  }
+  return best;
+ };
+ for(const key of ['upper','lower']){
+  const angle=key+'Angle',N=8000;let fastest={v:0},reversals=0,last=0,drop=0,previous=pose(model,0)[angle];
+  for(let i=1;i<=N;i++){
+   const time=4*i/N,value=pose(model,time)[angle],v=(value-previous)/(4/N);
+   // A falling head turns the pawl positively for the upper and lower pawls alike.
+   if(v>fastest.v)fastest={v,time:time-2/N};drop=Math.max(drop,value-previous);
+   if(Math.abs(v)>.05){if(last&&Math.sign(v)!==last)reversals++;last=Math.sign(v);}previous=value;
+  }
+  assert.ok(fastest.v>.5&&fastest.v<2,key+': a gravity fall, not a snap: '+fastest.v);
+  // Just before landing the falling pawl touches nothing.
+  assert.ok(clearance(key,pose(model,fastest.time-.02))>1e-4,key+': free fall');
+  assert.ok(drop<.01,key+': no teleport '+drop);
+  assert.ok(reversals<=4,key+': jitter '+reversals);
+ }
+ dispose(model);
 });
 
 test('077 the cached clock joins continuously, supports seeking and scales display speed',()=>{
@@ -68,18 +100,19 @@ test('077 the cached clock joins continuously, supports seeking and scales displ
  normal.angularVelocities.forEach((v,k)=>near(fast.angularVelocities[k],v*2));
 });
 
-test('077 each driving hook has actual material contact with its wheel pin',()=>{
+test('077 each driving hook bears on its wheel pin through the socket back',()=>{
  const model=makeAlternatingPegPawlDrive(),u=model.root.userData;
- for(const [time,key]of [[4.5,'upper'],[6,'lower']]){
+ for(const [time,key]of [[.8,'upper'],[2.6,'lower']]){
   const pawn=u.parts[key+'Pawl'],solid=solidSurface(pawn.geometry),points=surfacePoints(pawn.geometry),pinSolid=solidSurface(u.parts.wheelPin0.geometry);
   const penetrates=()=>Object.entries(u.parts).filter(([name])=>/^wheelPin\d+$/.test(name)).some(([,pin])=>{
    const toPin=pin.matrixWorld.clone().invert().multiply(pawn.matrixWorld);
    return points.some(sample=>{const point=sample.clone().applyMatrix4(toPin);return pinSolid.inside(point)&&pinSolid.distance(point)>1e-6;});
   });
-  const state=pose(model,time),p=u.geometry,
-    nose=new THREE.Vector3(-p.lengths[key],0,0).applyMatrix4(u.blocks[key].matrixWorld),
-    pegCenters=p.pinCenters.map(point=>new THREE.Vector3(...point,0).applyMatrix4(u.blocks.wheel.matrixWorld));
-  assert.ok(Math.min(...pegCenters.map(center=>center.distanceTo(nose)))<2e-6,key+': driving pin must sit inside the hook');
+  const state=pose(model,time),p=u.geometry;assert.ok(Math.abs(state.angularVelocities[1])>.02,key+': wheel driven');
+  const socket=new THREE.Vector3(-p.lengths[key]+p.socketOffset[0],p.socketOffset[1],0).applyMatrix4(u.blocks[key].matrixWorld),
+    pegCenters=p.pinCenters.map(point=>new THREE.Vector3(...point,0).applyMatrix4(u.blocks.wheel.matrixWorld)),
+    offset=Math.min(...pegCenters.map(center=>center.distanceTo(socket)));
+  assert.ok(Math.abs(offset-(p.socketRadius-p.pinRadius))<3e-5,key+': driving pin bears on the socket '+offset);
   assert.equal(penetrates(),false,key+': nominal intrusion');
   u.blocks.wheel.rotation.z-=1e-4;model.root.updateMatrixWorld(true);assert.equal(penetrates(),true,key+': absent driving face contact');
   assert.ok(solid.box.getSize(new THREE.Vector3()).x>.8);
