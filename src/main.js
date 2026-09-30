@@ -19,11 +19,11 @@ let activeCleanup = () => {};
 
 // Soft ambient occlusion in the 3D view: 'auto' (default; on unless the device
 // looks low-end or frames turn slow), 'on' or 'off'. Override per visit with
-// #/movement/7?ao=off or persistently with localStorage['507.ambientOcclusion'].
+// movement/7?ao=off or persistently with localStorage['507.ambientOcclusion'].
 function ambientOcclusionPreference() {
   const valid = new Set(['auto', 'on', 'off']);
-  const fromHash = new URLSearchParams(location.hash.split('?')[1] ?? '').get('ao');
-  if (valid.has(fromHash)) return fromHash;
+  const fromQuery = new URLSearchParams(location.search).get('ao');
+  if (valid.has(fromQuery)) return fromQuery;
   try {
     const stored = localStorage.getItem('507.ambientOcclusion');
     if (valid.has(stored)) return stored;
@@ -64,13 +64,12 @@ function appShell(content, active = 'catalog', view = 'page', catalogPage = 1) {
   return `
     <header class="site-header">
       <div class="header-inner">
-        <a class="brand" href="#/catalog?page=1" aria-label="507 Movements home">
+        <a class="brand" href="./" aria-label="507 Movements home">
           <span class="brand-mark">507</span>
           <span class="brand-copy">Mechanical Movements <i>in three dimensions</i></span>
         </a>
         <nav class="site-nav" aria-label="Primary navigation">
-          <a href="#/catalog?page=${catalogPage}" ${active === 'catalog' ? 'aria-current="page"' : ''}>Catalog</a>
-          <a href="#/about" ${active === 'about' ? 'aria-current="page"' : ''}>About</a>
+          <a href="about" ${active === 'about' ? 'aria-current="page"' : ''}>About</a>
         </nav>
       </div>
     </header>
@@ -78,12 +77,24 @@ function appShell(content, active = 'catalog', view = 'page', catalogPage = 1) {
   `;
 }
 
+// Links are relative to the site root (see the <base> set in index.html):
+// './' is plate 1, then plate/N, movement/NNN, about and search?q=…
+const plateHref = (page) => (page <= 1 ? './' : `plate/${page}`);
+const movementHref = (movement) => `movement/${movement.number}`;
+
 function catalogHref(page, query, category) {
   const parameters = new URLSearchParams();
-  parameters.set('page', String(page));
   if (query) parameters.set('q', query);
   if (category) parameters.set('category', category);
-  return `#/catalog?${parameters.toString()}`;
+  if (page > 1) parameters.set('page', String(page));
+  const search = parameters.toString();
+  return search ? `search?${search}` : './';
+}
+
+function navigate(href, { replace = false } = {}) {
+  const url = new URL(href, document.baseURI);
+  history[replace ? 'replaceState' : 'pushState'](null, '', url);
+  route();
 }
 
 function pagination(currentPage, totalPages, query, category) {
@@ -129,7 +140,7 @@ function catalogView(parameters) {
     const links = members.map((movement, index) => {
       const share = 100 / members.length;
       const place = members.length > 1 ? ` style="left:${(index * share).toFixed(3)}%;width:${share.toFixed(3)}%"` : '';
-      return `<a class="plate-link" href="#/movement/${movement.number}"${place} aria-label="No. ${movement.id}: ${escapeHtml(movement.title)}" title="${movement.id}. ${escapeHtml(movement.title)}"></a>`;
+      return `<a class="plate-link" href="${movementHref(movement)}"${place} aria-label="No. ${movement.id}: ${escapeHtml(movement.title)}" title="${movement.id}. ${escapeHtml(movement.title)}"></a>`;
     }).join('');
     // Brown rules only the 3x3 grid; figures sharing a cell have no line between them.
     const onGrid = (value) => value < 2.99 && Math.abs(value - Math.round(value)) < 0.01;
@@ -140,7 +151,7 @@ function catalogView(parameters) {
       </div>`;
   }).join('');
   const arrow = (target, label, glyph) => (target >= 1 && target <= plates.length
-    ? `<a class="plate-arrow" href="#/catalog?page=${target}" aria-label="${label} plate">${glyph}</a>`
+    ? `<a class="plate-arrow" href="${plateHref(target)}" aria-label="${label} plate">${glyph}</a>`
     : `<span class="plate-arrow is-disabled" aria-hidden="true">${glyph}</span>`);
   const content = `
     <section class="plate-view" aria-labelledby="plate-title">
@@ -170,11 +181,11 @@ function catalogView(parameters) {
     event.preventDefault();
     const value = String(new FormData(form).get('q') ?? '').trim();
     const number = Number.parseInt(value, 10);
-    if (String(number) === value && movementById.has(number)) location.hash = `/movement/${movementById.get(number).number}`;
-    else if (value) location.hash = catalogHref(1, value, '').slice(1);
+    if (String(number) === value && movementById.has(number)) navigate(movementHref(movementById.get(number)));
+    else if (value) navigate(catalogHref(1, value, ''));
   });
   const go = (target) => {
-    if (target >= 1 && target <= plates.length) location.hash = `/catalog?page=${target}`;
+    if (target >= 1 && target <= plates.length) navigate(plateHref(target));
   };
   const onKey = (event) => {
     if (event.target.closest?.('input, select, textarea') || event.altKey || event.ctrlKey || event.metaKey) return;
@@ -218,12 +229,12 @@ function searchView(parameters, query, category) {
 
   const cards = visible.map((movement) => `
     <article class="movement-card">
-      <a class="card-visual" href="#/movement/${movement.number}" aria-label="Open movement ${movement.id}: ${escapeHtml(movement.title)}">
+      <a class="card-visual" href="${movementHref(movement)}" aria-label="Open movement ${movement.id}: ${escapeHtml(movement.title)}">
         <img src="${sourceImagePath(movement)}" alt="" loading="lazy" decoding="async" />
       </a>
       <div class="card-body">
         <p class="card-category">${escapeHtml(movement.category)}</p>
-        <h2><a href="#/movement/${movement.number}">${escapeHtml(movement.title)}</a></h2>
+        <h2><a href="${movementHref(movement)}">${escapeHtml(movement.title)}</a></h2>
         <p>${escapeHtml(compact(cleanDescription(movement), 145))}</p>
       </div>
     </article>`).join('');
@@ -233,7 +244,7 @@ function searchView(parameters, query, category) {
       <div class="section-inner">
         <div class="catalog-heading">
           <h1 id="catalog-title" class="visually-hidden">Search results</h1>
-          <a class="back-to-plates" href="#/catalog?page=1">← The plates</a>
+          <a class="back-to-plates" href="./">← The plates</a>
           <p class="result-count" aria-live="polite">${start}–${end} of ${filtered.length}</p>
         </div>
         <form class="catalog-filters" id="catalog-filters" role="search">
@@ -257,7 +268,7 @@ function searchView(parameters, query, category) {
             <span>0</span>
             <h2>No movements found</h2>
             <p>Try a broader term or clear the mechanism family.</p>
-            <a href="#/catalog?page=1">Back to the plates</a>
+            <a href="./">Back to the plates</a>
           </div>`}
         ${pagination(page, totalPages, query, category)}
       </div>
@@ -269,11 +280,11 @@ function searchView(parameters, query, category) {
   form?.addEventListener('submit', (event) => {
     event.preventDefault();
     const data = new FormData(form);
-    location.hash = catalogHref(1, String(data.get('q') ?? '').trim(), String(data.get('category') ?? '')).slice(1);
+    navigate(catalogHref(1, String(data.get('q') ?? '').trim(), String(data.get('category') ?? '')));
   });
   form?.querySelector('select')?.addEventListener('change', () => form.requestSubmit());
   form?.querySelector('.clear-filters')?.addEventListener('click', () => {
-    location.hash = '/catalog?page=1';
+    navigate('./');
   });
 }
 
@@ -285,12 +296,12 @@ async function detailView(movement) {
       <div class="detail-inner">
         <div class="detail-heading">
           <div class="detail-title">
-            <p class="eyebrow">No. ${movement.id} <span aria-hidden="true">·</span> <a class="plate-backlink" href="#/catalog?page=${plateOfMovement.get(movement.id) ?? 1}" aria-label="Back to plate ${plateOfMovement.get(movement.id) ?? 1}">Plate ${plateOfMovement.get(movement.id) ?? 1}</a> <span aria-hidden="true">·</span> ${escapeHtml(movement.category)}</p>
+            <p class="eyebrow">No. ${movement.id} <span aria-hidden="true">·</span> <a class="plate-backlink" href="${plateHref(plateOfMovement.get(movement.id) ?? 1)}" aria-label="Back to plate ${plateOfMovement.get(movement.id) ?? 1}">Plate ${plateOfMovement.get(movement.id) ?? 1}</a> <span aria-hidden="true">·</span> ${escapeHtml(movement.category)}</p>
             <h1 title="${escapeHtml(movement.title)}">${escapeHtml(movement.title)}</h1>
           </div>
           <nav class="detail-sequence" aria-label="Movement navigation">
-            ${previous ? `<a class="sequence-link" href="#/movement/${previous.number}" rel="prev" aria-label="Previous movement, ${previous.id}: ${escapeHtml(previous.title)}"><span class="sequence-arrow" aria-hidden="true">←</span><span class="sequence-number">${previous.id}</span></a>` : '<span class="sequence-link is-disabled" aria-hidden="true"><span class="sequence-arrow">←</span></span>'}
-            ${next ? `<a class="sequence-link" href="#/movement/${next.number}" rel="next" aria-label="Next movement, ${next.id}: ${escapeHtml(next.title)}"><span class="sequence-number">${next.id}</span><span class="sequence-arrow" aria-hidden="true">→</span></a>` : '<span class="sequence-link is-disabled" aria-hidden="true"><span class="sequence-arrow">→</span></span>'}
+            ${previous ? `<a class="sequence-link" href="${movementHref(previous)}" rel="prev" aria-label="Previous movement, ${previous.id}: ${escapeHtml(previous.title)}"><span class="sequence-arrow" aria-hidden="true">←</span><span class="sequence-number">${previous.id}</span></a>` : '<span class="sequence-link is-disabled" aria-hidden="true"><span class="sequence-arrow">←</span></span>'}
+            ${next ? `<a class="sequence-link" href="${movementHref(next)}" rel="next" aria-label="Next movement, ${next.id}: ${escapeHtml(next.title)}"><span class="sequence-number">${next.id}</span><span class="sequence-arrow" aria-hidden="true">→</span></a>` : '<span class="sequence-link is-disabled" aria-hidden="true"><span class="sequence-arrow">→</span></span>'}
           </nav>
         </div>
         <div class="detail-workspace">
@@ -338,8 +349,8 @@ async function detailView(movement) {
   app.innerHTML = appShell(content, 'catalog', 'detail', plateOfMovement.get(movement.id) ?? 1);
   const onSequenceKey = (event) => {
     if (event.target.closest?.('input, select, textarea, canvas') || event.metaKey || event.ctrlKey || event.altKey) return;
-    if (event.key === 'ArrowLeft' && previous) location.hash = `/movement/${previous.number}`;
-    if (event.key === 'ArrowRight' && next) location.hash = `/movement/${next.number}`;
+    if (event.key === 'ArrowLeft' && previous) navigate(movementHref(previous));
+    if (event.key === 'ArrowRight' && next) navigate(movementHref(next));
   };
   document.addEventListener('keydown', onSequenceKey);
   const stage = document.querySelector('#simulation-stage');
@@ -477,34 +488,86 @@ function notFoundView() {
     <section class="not-found">
       <span>404</span><h1>Movement not found.</h1>
       <p>Choose a movement from 001 to 507.</p>
-      <a href="#/catalog?page=1">Return to the catalog</a>
+      <a href="./">Return to the catalog</a>
     </section>`;
   document.title = 'Not found — 507 Movements';
   app.innerHTML = appShell(content);
 }
 
+// Old #/… URLs (#/catalog?page=3, #/movement/046, #/about) map to the
+// clean paths, so links shared before the change keep working.
+function legacyHashHref() {
+  if (!location.hash.startsWith('#/')) return null;
+  const [path, queryString = ''] = location.hash.slice(2).split('?');
+  const parameters = new URLSearchParams(queryString);
+  const extra = new URLSearchParams();
+  if (parameters.get('ao')) extra.set('ao', parameters.get('ao'));
+  const withExtra = (href) => (extra.toString() ? `${href}${href.includes('?') ? '&' : '?'}${extra}` : href);
+  if (path === 'about') return withExtra('about');
+  const movementMatch = path.match(/^movement\/(\d{1,3})$/);
+  if (movementMatch) return withExtra(`movement/${movementMatch[1]}`);
+  const page = Number.parseInt(parameters.get('page') ?? '1', 10) || 1;
+  if (parameters.get('q') || parameters.get('category')) return catalogHref(page, parameters.get('q') ?? '', parameters.get('category') ?? '');
+  return plateHref(page);
+}
+
 function route() {
+  const legacy = legacyHashHref();
+  if (legacy) {
+    history.replaceState(null, '', new URL(legacy, document.baseURI));
+  }
   activeCleanup();
   activeCleanup = () => {};
-  const hash = location.hash.slice(1) || '/catalog?page=1';
-  const [path, queryString = ''] = hash.split('?');
-  if (path === '/catalog' || path === '/') {
-    catalogView(new URLSearchParams(queryString));
-  } else if (path === '/about') {
+  const rootPath = new URL(document.baseURI).pathname;
+  const path = location.pathname.startsWith(rootPath) ? location.pathname.slice(rootPath.length).replace(/\/$/, '') : '';
+  const parameters = new URLSearchParams(location.search);
+  const plateMatch = path.match(/^plate\/(\d+)$/);
+  const movementMatch = path.match(/^movement\/(\d{1,3})$/);
+  if (path === '' || path === 'index.html') {
+    catalogView(new URLSearchParams({ page: parameters.get('page') ?? '1' }));
+  } else if (plateMatch) {
+    catalogView(new URLSearchParams({ page: plateMatch[1] }));
+  } else if (path === 'search') {
+    catalogView(parameters);
+  } else if (path === 'about') {
     aboutView();
+  } else if (movementMatch) {
+    const movement = movementById.get(Number.parseInt(movementMatch[1], 10));
+    if (movement) detailView(movement);
+    else notFoundView();
   } else {
-    const movementMatch = path.match(/^\/movement\/(\d{1,3})$/);
-    if (movementMatch) {
-      const movement = movementById.get(Number.parseInt(movementMatch[1], 10));
-      if (movement) detailView(movement);
-      else notFoundView();
-    } else {
-      notFoundView();
-    }
+    notFoundView();
   }
   window.scrollTo({ top: 0, behavior: 'instant' });
 }
 
-window.addEventListener('hashchange', route);
+// In-app links change the path with the History API instead of reloading.
+document.addEventListener('click', (event) => {
+  if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+  const link = event.target.closest?.('a[href]');
+  if (!link || link.target || link.hasAttribute('download')) return;
+  const rawHref = link.getAttribute('href');
+  if (rawHref.startsWith('#')) {
+    // Fragment links (the skip link) would resolve against <base>; scroll instead.
+    event.preventDefault();
+    const target = document.getElementById(rawHref.slice(1));
+    target?.setAttribute('tabindex', '-1');
+    target?.focus();
+    return;
+  }
+  const url = new URL(link.href);
+  const rootUrl = new URL(document.baseURI);
+  if (url.origin !== rootUrl.origin || !url.pathname.startsWith(rootUrl.pathname)) return;
+  if (/\.(?:png|jpe?g|svg|pdf|html)$/i.test(url.pathname) && !url.pathname.endsWith('index.html')) return;
+  event.preventDefault();
+  if (url.href !== location.href) history.pushState(null, '', url);
+  route();
+});
+
+window.addEventListener('popstate', route);
+// A pasted old #/… link on an open page still redirects to its clean path.
+window.addEventListener('hashchange', () => {
+  if (location.hash.startsWith('#/')) route();
+});
 window.addEventListener('beforeunload', () => activeCleanup());
 route();

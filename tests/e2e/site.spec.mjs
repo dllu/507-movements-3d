@@ -4,37 +4,58 @@ import { readFile } from 'node:fs/promises';
 const catalog = JSON.parse(await readFile(new URL('../../src/data/movements.json', import.meta.url), 'utf8'));
 
 test('catalog shows the book plates and stays searchable and filterable', async ({ page }) => {
-  await page.goto('/#/catalog?page=1');
+  await page.goto('/');
   await expect(page.getByRole('heading', { name: /Nos\. 1–10/ })).toBeVisible();
   await expect(page.locator('.plate-link')).toHaveCount(10);
   await page.getByRole('link', { name: 'Next plate' }).click();
   await expect(page.getByRole('heading', { name: /Nos\. 11–22/ })).toBeVisible();
+  await expect(page).toHaveURL(/\/plate\/2$/);
   await expect(page.locator('.plate-link')).toHaveCount(12);
   // 12 and 13 share one ruled cell, as in the book.
   await expect(page.locator('.plate-cell:has(a[aria-label^="No. 12:"])')).not.toHaveClass(/rule-right/);
   await page.keyboard.press('ArrowRight');
   await expect(page.getByRole('heading', { name: /Nos\. 23–30/ })).toBeVisible();
 
-  await page.goto('/#/catalog?page=57');
+  await page.goto('/plate/57');
   await expect(page.getByRole('link', { name: /No\. 507: Another form of epicyclic train designed/ })).toBeVisible();
 
-  await page.goto('/#/catalog?page=1');
+  await page.goto('/');
   await page.getByRole('searchbox').fill('worm-wheel');
   await page.getByRole('searchbox').press('Enter');
   await expect(page.locator('.result-count')).not.toHaveText(/of 507$/);
   await expect(page.locator('.movement-card').first()).toBeVisible();
   await expect(page.locator('.movement-card').first()).toContainText(/worm/i);
+  await expect(page).toHaveURL(/\/search\?q=worm-wheel$/);
 
   await page.getByLabel('Filter by family').selectOption('Epicyclic trains');
   await expect(page.locator('.movement-card')).toHaveCount(0);
   await page.getByRole('button', { name: 'Clear' }).click();
   await expect(page.locator('.plate-link')).toHaveCount(10);
+  await expect(page).toHaveURL(/:\d+\/$/);
+  await expect(page.getByRole('navigation').getByRole('link', { name: 'Catalog' })).toHaveCount(0);
+});
+
+test('clean paths load directly, navigate in place and redirect old hash links', async ({ page }) => {
+  await page.goto('/movement/046');
+  await expect(page.locator('.simulation-canvas')).toBeVisible();
+  await page.locator('.plate-backlink').click();
+  await expect(page).toHaveURL(/\/plate\/5$/);
+  await page.goBack();
+  await expect(page).toHaveURL(/\/movement\/046$/);
+  await page.goto('/about');
+  await expect(page.locator('main')).toContainText(/Brown/);
+  await page.goto('/#/catalog?page=3');
+  await expect(page).toHaveURL(/\/plate\/3$/);
+  await page.goto('/portable/#/movement/046?ao=off');
+  await expect(page).toHaveURL(/\/portable\/movement\/046\?ao=off$/);
+  await page.goto('/#/catalog?q=worm&page=1');
+  await expect(page).toHaveURL(/\/search\?q=worm$/);
 });
 
 test('every plate fits the window without scrolling', async ({ page }) => {
   for (const [width, height] of [[1440, 1000], [390, 844], [844, 390], [320, 568]]) {
     await page.setViewportSize({ width, height });
-    await page.goto('/#/catalog?page=13');
+    await page.goto('/plate/13');
     const plate = await page.locator('.plate').boundingBox();
     expect(plate.y + plate.height).toBeLessThanOrEqual(height + 1);
     expect(plate.x + plate.width).toBeLessThanOrEqual(width + 1);
@@ -45,7 +66,7 @@ test('every plate fits the window without scrolling', async ({ page }) => {
 test('authored detail view renders and exposes working controls', async ({ page }) => {
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
-  await page.goto('/#/movement/001');
+  await page.goto('/movement/001');
   const canvas = page.locator('.simulation-canvas');
   await expect(page.getByRole('heading', { name: 'Belt and Pulleys' })).toBeVisible();
   await expect(canvas).toBeVisible();
@@ -103,7 +124,7 @@ test('every 3D family reaches a rendered canvas without runtime errors', async (
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
 
-  await page.goto('/#/movement/001');
+  await page.goto('/movement/001');
   for (const movement of representatives.values()) {
     await page.evaluate((number) => { location.hash = `/movement/${number}`; }, movement.number);
     const canvas = page.locator(`canvas[aria-label*="movement ${movement.id}:"]`);
@@ -118,13 +139,13 @@ test('every 3D family reaches a rendered canvas without runtime errors', async (
 
 test('mobile catalog and detail layouts remain usable', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/#/catalog?page=1');
+  await page.goto('/');
   await expect(page.locator('.plate-link')).toHaveCount(10);
   const plate = await page.locator('.plate').boundingBox();
   expect(plate.width).toBeLessThanOrEqual(390);
   expect(plate.y + plate.height).toBeLessThanOrEqual(844);
 
-  await page.goto('/#/movement/003');
+  await page.goto('/movement/003');
   await expect(page.locator('.simulation-canvas')).toBeVisible();
   const stage = await page.locator('.simulation-stage').boundingBox();
   expect(stage.width).toBeLessThanOrEqual(390);
@@ -146,7 +167,7 @@ test('production output works unchanged beneath a static-host subdirectory', asy
     if (response.status() >= 400) badResponses.push(`${response.status()} ${response.url()}`);
   });
 
-  await page.goto('/portable/#/movement/507');
+  await page.goto('/portable/movement/507');
   await expect(page.getByRole('heading', {
     name: /Another form of epicyclic train designed/i,
   })).toBeVisible();
@@ -162,7 +183,7 @@ test('production output works unchanged beneath a static-host subdirectory', asy
   expect(resources).toContain('/portable/engravings/mm_507.png');
   expect(resources.every((path) => path.startsWith('/portable/'))).toBe(true);
 
-  await page.goto('/portable/#/catalog?page=57');
+  await page.goto('/portable/plate/57');
   await expect(page.locator('.plate-link')).toHaveCount(6);
   await expect(page.locator('.plate-cell img').first()).toHaveJSProperty('complete', true);
   expect(failedRequests).toEqual([]);
@@ -171,7 +192,7 @@ test('production output works unchanged beneath a static-host subdirectory', asy
 
 
 test('square panels fit landscape and portrait windows, including rotation', async ({ page }) => {
-  await page.goto('/#/movement/010');
+  await page.goto('/movement/010');
   await expect(page.locator('.simulation-canvas')).toBeVisible();
   for (const [width, height] of [[1440, 1000], [390, 844], [844, 390], [820, 1180], [320, 568]]) {
     await page.setViewportSize({ width, height });
@@ -199,7 +220,7 @@ test('square panels fit landscape and portrait windows, including rotation', asy
 
 test('long source text and model notes remain accessible in the square panel', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/#/movement/015');
+  await page.goto('/movement/015');
   await expect(page.locator('.simulation-canvas')).toBeVisible();
   const notes = page.locator('.movement-notes');
   await expect(notes).toContainText('six supporting rope parts');
@@ -207,7 +228,7 @@ test('long source text and model notes remain accessible in the square panel', a
   await notes.focus();
   await page.keyboard.press('End');
   await expect.poll(() => notes.evaluate(element => element.scrollTop)).toBeGreaterThan(0);
-  await page.goto('/#/movement/129');
+  await page.goto('/movement/129');
   await expect(page.locator('.simulation-canvas')).toBeVisible();
   const reconstruction = page.locator('.reconstruction-notes');
   await expect(reconstruction).toBeVisible();
@@ -222,7 +243,7 @@ test('page geometry is identical across movements at a given window size', async
     await page.setViewportSize({ width, height });
     const layouts = [];
     for (const id of ['001', '011', '300', '371']) {
-      await page.goto(`/#/movement/${id}`);
+      await page.goto(`/movement/${id}`);
       await expect(page.locator('.detail-layout')).toBeVisible();
       layouts.push(await page.evaluate(() => ['.header-inner', '.detail-heading', '.detail-layout', '.simulation-toolbar', '.detail-sequence']
         .map(selector => { const r = document.querySelector(selector).getBoundingClientRect(); return [r.x, r.y, r.width, r.height].map(Math.round).join(','); })

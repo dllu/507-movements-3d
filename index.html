@@ -2,6 +2,16 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      // Clean paths (/plate/3, /movement/046, /about, /search) on any static
+      // host or subdirectory: resolve relative assets and links against the
+      // site root by stripping the route from this page's own path.
+      (function () {
+        var root = location.pathname.replace(/\/(?:plate\/\d+|movement\/\d+|about|search)\/?$/, '/');
+        var href = root.charAt(root.length - 1) === '/' ? root : root.replace(/[^/]*$/, '');
+        document.write('<base href="' + href + '">');
+      })();
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"

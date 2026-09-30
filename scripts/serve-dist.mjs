@@ -41,13 +41,18 @@ function distributionPath(requestUrl) {
 }
 
 const server = createServer(async (request, response) => {
-  const filePath = distributionPath(request.url ?? '/');
+  let filePath = distributionPath(request.url ?? '/');
   if (!filePath) {
     response.writeHead(403).end('Forbidden');
     return;
   }
   try {
-    const details = await stat(filePath);
+    let details = await stat(filePath);
+    // Directory routes (plate/3, movement/046) serve their index.html.
+    if (details.isDirectory()) {
+      filePath = resolve(filePath, 'index.html');
+      details = await stat(filePath);
+    }
     if (!details.isFile()) throw new Error('Not a file');
     response.writeHead(200, {
       'Cache-Control': 'no-store',
