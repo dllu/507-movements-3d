@@ -376,6 +376,9 @@ a true finite-pin obstruction; neither study changes production playback.
   linear interpolation without relieving the working profiles. Actual lock
   capture is at 54.78°. Reverse bias, impacts and dead-center loading remain
   explicit limits. See the [contact review](geneva-212-contact-review.md).
+  The 2026-10-01 follow-up replaces reverse bias with an opposite-face pushing
+  branch, retaining both profiles and continuous pocket capture. Loaded
+  capture, prescribed holding during clearance, and impacts remain qualified.
 - **213:** offline finite-pin reconstruction supplies separate retaining paths
   for both directions and retains the terminal rims. Shorter scalloped teeth
   and reversal hysteresis are reconstruction differences, not an exact tracing.
@@ -458,7 +461,7 @@ source-sized sided pallets/end caps and contact-selected release with inherited
 velocity. Simply reversing the flat C face needs a contact beyond its finite
 length. Read-only handoff: `/dev/shm/297-next-pass46-triage.md`.
 
-212's reverse bias/dead-center capture and 213's source tooth fit and passive
+212's loaded dead-center capture and 213's source tooth fit and passive
 friction/impact response remain follow-ups. The legacy gear bundle has now been
 split. 232's prescribed rocking-carrier branch,
 225/235/236's passive pawl bias and loaded transfer, 237/240/241's prescribed

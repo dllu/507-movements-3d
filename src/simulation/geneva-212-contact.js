@@ -93,8 +93,52 @@ export function makeGeneva212ContactLaw(g){
  return{law,local,contactAt,boundaries,entryEnd,tailStart,tailEnd,plateau,mouth,tip,normal,side,fillet,rho,relief,reliefRadius};
 }
 
+// Solve the opposite working faces by reflecting the *actual* profiles into
+// the forward solver's frame. Reflecting the old angle law alone would lose
+// the source's small asymmetries and would still put B on a withdrawing face.
+export function makeGeneva212ReverseContactLaw(g,forward=makeGeneva212ContactLaw(g)){
+ const fingerAxis=(g.driverLeadingFilletCenter.angle()+g.driverTrailingFilletCenter.angle())/2;
+ const slotAxis=(Math.PI+g.stopStepAngle)/2;
+ const reflect=(p,axis)=>rot(new T.Vector2(p.x,-p.y),2*axis);
+ const mirrorInput=Math.PI-2*fingerAxis;
+ const reflected=makeGeneva212ContactLaw({...g,
+  driverLeadingFilletCenter:reflect(g.driverTrailingFilletCenter,fingerAxis),
+  driverTrailingFilletCenter:reflect(g.driverLeadingFilletCenter,fingerAxis),
+  driverLeftReliefCenter:reflect(g.driverRightReliefCenterRaw.clone().multiplyScalar(g.constructionScale),fingerAxis),
+  driverLockingArcRaw:[...g.driverLockingArcRaw].reverse().map(p=>reflect(p,fingerAxis)),
+  slotPolylines:g.slotPolylines.map(points=>[...points].reverse().map(p=>reflect(p,slotAxis))),
+  stopWheelOutline:g.stopWheelOutline.map(p=>reflect(p,slotAxis)),
+ });
+ const outputOffset=-g.stopStepAngle;
+ const inputMinimum=mirrorInput-reflected.tailEnd;
+ const engagementStart=mirrorInput-reflected.boundaries[0].at;
+ const terminalAngle=forward.law(g.forwardInputLimit).angle;
+ function local(a){
+  if(a>=engagementStart)return{angle:outputOffset,speed:0,acceleration:0,stage:'concentric-pocket-lock'};
+  const q=reflected.local(mirrorInput-a);
+  return {...q,angle:outputOffset-q.angle,acceleration:-q.acceleration,
+   stage:q.stage==='pocket-release'?'concentric-pocket-lock':`reverse-${q.stage}`};
+ }
+ function law(input){
+  const clamped=T.MathUtils.clamp(input,inputMinimum,g.forwardInputLimit);
+  const turn=Math.min(3,Math.floor((clamped-inputMinimum+1e-12)/tau)),phase=clamped-turn*tau,q=local(phase);
+  const angle=q.angle-turn*g.stopStepAngle;
+  // At the convex stop, B keeps its attained position while the tooth takes
+  // up clearance on the opposite flank. Never snap to the reverse envelope.
+  if(angle<terminalAngle)return{angle:terminalAngle,speed:0,acceleration:0,stage:'reverse-terminal-takeup',turn,phase};
+  return{...q,angle,turn,phase};
+ }
+ function contactAt(a,angle,stage){
+  const p=reflected.contactAt(mirrorInput-a,outputOffset-angle,stage.replace(/^reverse-/,''));
+  return new T.Vector2(2*g.driverCenter.x-p.x,p.y);
+ }
+ return{law,local,contactAt,inputMinimum,engagementStart,
+  boundaries:reflected.boundaries.map(q=>({from:`reverse-${q.from}`,to:`reverse-${q.to}`,at:mirrorInput-q.at})),
+  tailEnd:inputMinimum};
+}
+
 export function finishGeneva212Contact(model){
- const d=model.root.userData,b=d.blocks,g=d.geometry,branch=makeGeneva212ContactLaw(g),source={stateAtInputAngle:d.stateAtInputAngle,stateAtTime:d.stateAtTime,stopWheelAngleAtInputAngle:d.stopWheelAngleAtInputAngle,canonicalStates:d.canonicalStates,canonicalTimes:d.canonicalTimes},oldUpdate=model.update;
+ const d=model.root.userData,b=d.blocks,g=d.geometry,branch=makeGeneva212ContactLaw(g),reverse=makeGeneva212ReverseContactLaw(g,branch),source={stateAtInputAngle:d.stateAtInputAngle,stateAtTime:d.stateAtTime,inputStateAtTime:d.inputStateAtTime,timeline:d.timeline,stopWheelAngleAtInputAngle:d.stopWheelAngleAtInputAngle,canonicalStates:d.canonicalStates,canonicalTimes:d.canonicalTimes},oldUpdate=model.update;
  d.sourceKinematics=source;
  // Terminal: A's rounded leading corner bears on the shoulder beside the
  // convex a-b sector; the contact point is taken from the actual final pose.
@@ -103,15 +147,30 @@ export function finishGeneva212Contact(model){
   g.terminalContactStage=local.stage;
   if(b.terminalContactMarker)b.terminalContactMarker.position.set(point.x,point.y,b.terminalContactMarker.position.z);
   const radius=point.clone().sub(g.driverCenter);g.blockedForwardClosingRate=Math.abs(new T.Vector2(-radius.y,radius.x).dot(g.terminalStopNormal));}
- d.contactBranch212={boundaries:branch.boundaries,entryEnd:branch.entryEnd,tailStart:branch.tailStart,tailEnd:branch.tailEnd,plateau:branch.plateau,profileTolerance:3e-6,forceSolved:false,selectedOutputTorqueSign:-1};
- d.stopWheelAngleAtInputAngle=input=>branch.law(input).angle;
- d.stateAtInputAngle=(input,v=0,a=0)=>{
-  const s=source.stateAtInputAngle(input,v,a),q=branch.law(s.driverAngle),active=q.stage!=='concentric-pocket-lock',lockActive=!active&&q.turn<3,pocketIndex=lockActive?q.turn+1:null,pocketCenter=lockActive?rot(g.lockPocketCenters[pocketIndex],q.angle).add(g.stopWheelCenter):null;
-  return{...s,stage:s.atTerminalStop?s.stage:q.stage,contactMode:s.atTerminalStop?s.stage:q.stage,stopWheelAngle:q.angle,stopWheelAngularSpeed:q.speed*s.driverAngularSpeed,stopWheelAngularAcceleration:q.speed*s.driverAngularAcceleration+q.acceleration*s.driverAngularSpeed**2,outputSteps:-q.angle/g.stopStepAngle,limit:{...s.limit,contactPoint:g.terminalContactPoint.clone(),stopNormal:g.terminalStopNormal.clone(),blockedForwardClosingRate:g.blockedForwardClosingRate,convexArcEndpoints:[g.convexStopArc[0],g.convexStopArc.at(-1)].map(p=>rot(p,q.angle).add(g.stopWheelCenter))},
+ d.contactBranch212={boundaries:branch.boundaries,entryEnd:branch.entryEnd,tailStart:branch.tailStart,tailEnd:branch.tailEnd,plateau:branch.plateau,reverse:{boundaries:reverse.boundaries,engagementStart:reverse.engagementStart,inputMinimum:reverse.inputMinimum,selectedOutputTorqueSign:1},profileTolerance:3e-6,forceSolved:false,selectedOutputTorqueSign:-1};
+ d.stopWheelAngleAtInputAngle=(input,v=0)=>(v<0?reverse:branch).law(input).angle;
+ d.stateAtInputAngle=(input,v=0,a=0,clockwise=v<0)=>{
+  const s=source.stateAtInputAngle(input,v,a),driverAngle=T.MathUtils.clamp(input,reverse.inputMinimum,g.forwardInputLimit);
+  s.driverAngle=driverAngle;
+  const q=!clockwise&&driverAngle<0?{angle:0,speed:0,acceleration:0,stage:'concentric-pocket-lock',turn:-1,phase:driverAngle}:(clockwise?reverse:branch).law(driverAngle),locked=/concentric-pocket-lock$/.test(q.stage),active=!locked&&q.stage!=='reverse-terminal-takeup',pocketIndex=locked?(q.stage==='reverse-concentric-pocket-lock'?q.turn:q.turn+1):null,lockActive=locked&&pocketIndex<g.lockPocketCenters.length,pocketCenter=lockActive?rot(g.lockPocketCenters[pocketIndex],q.angle).add(g.stopWheelCenter):null;
+  return{...s,stage:s.atTerminalStop?s.stage:q.stage,contactMode:s.atTerminalStop?s.stage:q.stage,stopWheelAngle:q.angle,stopWheelAngularSpeed:q.speed*s.driverAngularSpeed,stopWheelAngularAcceleration:q.speed*s.driverAngularAcceleration+q.acceleration*s.driverAngularSpeed**2,outputSteps:-q.angle/g.stopStepAngle,limit:{...s.limit,remainingInputAngle:g.forwardInputLimit-driverAngle,contactPoint:g.terminalContactPoint.clone(),stopNormal:g.terminalStopNormal.clone(),blockedForwardClosingRate:g.blockedForwardClosingRate,convexArcEndpoints:[g.convexStopArc[0],g.convexStopArc.at(-1)].map(p=>rot(p,q.angle).add(g.stopWheelCenter))},
    engagement:{...s.engagement,active:active&&!s.atTerminalStop,activeSlotIndex:active?q.turn+1:null,instantaneousRatio:q.speed,ratioDerivative:q.acceleration,officialPhaseError:Math.abs(q.angle-s.stopWheelAngle),workingContactStage:q.stage},
    lock:{...s.lock,active:lockActive,pocketIndex,pocketCenter,concentricityError:pocketCenter? pocketCenter.distanceTo(g.driverCenter):null,radialClearance:0}};
  };
- d.stateAtTime=time=>{const s=source.stateAtTime(time);return{...s,...d.stateAtInputAngle(s.driverAngle,s.driverAngularSpeed,s.driverAngularAcceleration)};};
+ // The opposite flank captures the first pocket 3.84 degrees before the old
+ // source start. Include that small overrun on both sides of the loop so the
+ // last reverse index closes without a jump or an artificial output reset.
+ d.timeline={...source.timeline,forwardSegments:source.timeline.forwardSegments.map((s,i)=>i===0?{...s,startAngle:reverse.inputMinimum}:s),inputMinimum:reverse.inputMinimum};
+ d.inputStateAtTime=time=>{
+  const s=source.inputStateAtTime(time),first=d.timeline.forwardSegments[0];
+  if(s.direction==='held-at-source-start')return{...s,angle:reverse.inputMinimum};
+  if(s.segment===source.timeline.forwardSegments[0]){
+   const f=s.linearFraction,travel=first.endAngle-first.startAngle,sign=s.direction==='unwinding-away-from-stop'?-1:1;
+   return{...s,segment:first,angle:first.startAngle+travel*f**3*(10+f*(-15+6*f)),angularSpeed:sign*travel*30*f**2*(f-1)**2/first.duration,angularAcceleration:travel*60*f*(2*f**2-3*f+1)/first.duration**2};
+  }
+  return s;
+ };
+ d.stateAtTime=time=>{const s=d.inputStateAtTime(time);return{...d.stateAtInputAngle(s.angle,s.angularSpeed,s.angularAcceleration,s.direction==='unwinding-away-from-stop'),demonstrationDirection:s.direction,phaseTime:s.phaseTime,timelineSegment:s.name,time};};
  d.canonicalTimes={...d.canonicalTimes};
  for(const [i,key]of ['firstIndexComplete','secondIndexComplete','thirdIndexComplete'].entries()){
   const target=i*tau+branch.tailEnd;let lo=0,hi=d.timeline.forwardMotionDuration;
@@ -129,14 +188,14 @@ export function finishGeneva212Contact(model){
   const angle=index.rotation.z;index.geometry.dispose();index.geometry=new T.BoxGeometry(.35,.052,.026);
   index.position.set(.32*Math.cos(angle),.32*Math.sin(angle),hub.position.z+.113);
  }
- d.reconstructionNote='A\u2019s finger stands out to radius 4.7 (source 4.5) with rounded corners; its relief, rounded leading corner and rim form a contacting index branch with B\u2019s slot mouth, flank and pocket, capturing the lock at 54.78° rather than the source animation’s linear 51° schedule. Handoff impacts and input motion are prescribed; reverse playback requires an assisting output bias. Friction, inertia and loaded force balance are not simulated.';
+ d.reconstructionNote='A\u2019s finger stands out to radius 4.7 (source 4.5) with rounded corners. Each direction follows its own pushing contact faces; clockwise motion waits for the right flank to engage. Forward lock captures at 54.78° rather than the source animation’s linear 51° schedule; the reverse return extends 3.84° past the source start to capture the first pocket continuously. Handoff impacts and input motion are prescribed. Friction, inertia and loaded force balance are not simulated.';
  d.sourceAnimation.runtimeReconstructsFiniteContact=true;
  // Brown draws B two indexes into its run: the convex stop face a-b stands
  // beside the top slot and A's finger is at the mouth of the third slot.
  // Display time starts there; states keep the demonstration clock
  // (display time t shows demonstration time t + displayTimeOffset).
  const offset=d.timeline.forwardSegments.find(s=>s.name==='slot-3-index').startTime;d.displayTimeOffset=offset;
- const inner=time=>{oldUpdate(time);const s=d.stateAtTime(time);for(const part of[b.stopWheel,b.stopWheelShaft]){part.userData.rotor.rotation.z=s.stopWheelAngle;part.userData.angularSpeed=s.stopWheelAngularSpeed;}d.kinematics=s;d.contacts={windingFingerSlot:s.engagement.active?s.engagement:null,lockingPocket:s.lock.active?s.lock:null,convexTerminalStop:s.atTerminalStop?s.limit:null};};
+ const inner=time=>{oldUpdate(time);const s=d.stateAtTime(time);for(const [parts,angle,speed]of[[[b.driver,b.driverShaft],s.driverAngle,s.driverAngularSpeed],[[b.stopWheel,b.stopWheelShaft],s.stopWheelAngle,s.stopWheelAngularSpeed]])for(const part of parts){part.userData.rotor.rotation.z=angle;part.userData.angularSpeed=speed;}d.kinematics=s;d.contacts={windingFingerSlot:s.engagement.active?s.engagement:null,lockingPocket:s.lock.active?s.lock:null,convexTerminalStop:s.atTerminalStop?s.limit:null};};
  model.update=time=>inner(time+offset);
  model.update(0);return model;
 }

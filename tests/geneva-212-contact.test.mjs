@@ -2,11 +2,12 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as T from 'three';
 import { createAuthoredIntermittentMovement as create } from '../src/simulation/authored-intermittent.js';
-import { makeGeneva212ContactLaw } from '../src/simulation/geneva-212-contact.js';
+import { makeGeneva212ContactLaw, makeGeneva212ReverseContactLaw } from '../src/simulation/geneva-212-contact.js';
 import { solidSurface, surfacePoints, surfaceTriangles } from './helpers/solid-surface.mjs';
 const m=create({id:212}),d=m.root.userData,g=d.geometry,b=d.blocks,branch=makeGeneva212ContactLaw(g);
+const reverse=makeGeneva212ReverseContactLaw(g,branch);
 const rot=(p,a)=>p.clone().rotateAround(new T.Vector2(),a),cross=(a,b)=>a.x*b.y-a.y*b.x;
-function pose(a){const s=d.stateAtInputAngle(a);b.driver.userData.rotor.rotation.z=s.driverAngle;b.stopWheel.userData.rotor.rotation.z=s.stopWheelAngle;m.root.updateMatrixWorld(true);return s;}
+function pose(a,v=0){const s=d.stateAtInputAngle(a,v);b.driver.userData.rotor.rotation.z=s.driverAngle;b.stopWheel.userData.rotor.rotation.z=s.stopWheelAngle;m.root.updateMatrixWorld(true);return s;}
 const bodies=[b.driverBody,b.stopWheelBody],fields=bodies.map(o=>solidSurface(o.geometry)),points=bodies.map(o=>{const p=surfacePoints(o.geometry),step=Math.ceil(p.length/3200);return p.filter((_,i)=>i%step===0);});
 function gap(){let min=Infinity;for(let j=0;j<2;j++){const matrix=bodies[1-j].matrixWorld.clone().invert().multiply(bodies[j].matrixWorld),field=fields[1-j];for(const p of points[j]){const q=p.clone().applyMatrix4(matrix);if(field.box.distanceToPoint(q)>.003)continue;min=Math.min(min,field.signedDistance(q,.05));}}return min;}
 function face(mesh,world){const p=world.clone().applyMatrix4(mesh.matrixWorld.clone().invert());let distance=Infinity,normal;for(const t of surfaceTriangles(mesh.geometry)){const n=t.getNormal(new T.Vector3());if(Math.abs(n.z)>.1)continue;const v=t.closestPointToPoint(p,new T.Vector3()).distanceTo(p);if(v<distance){distance=v;normal=n.transformDirection(mesh.matrixWorld);}}return{distance,normal};}
@@ -55,11 +56,73 @@ test('212 contact branch is position-continuous, monotone and has exact analytic
  for(let k=0;k<3;k++){const s=d.stateAtInputAngle(k*2*Math.PI+branch.tailEnd+.01);assert.equal(s.lock.active,true);assert.ok(s.lock.concentricityError<3e-7);}
 });
 
-test('212 terminal remains a real blocking surface and reverse playback declares its bias',()=>{
+test('212 terminal remains a real blocking surface and playback declares its dynamic limits',()=>{
  const s=pose(g.forwardInputLimit),p=new T.Vector3(s.limit.contactPoint.x,s.limit.contactPoint.y,0);
  assert.ok(face(b.driverBody,p).distance<3e-6);assert.ok(face(b.stopWheelBody,p).distance<3e-6);
  b.driver.userData.rotor.rotation.z+=.002;m.root.updateMatrixWorld(true);assert.ok(gap()<-.0001);
- assert.match(d.reconstructionNote,/assisting output bias/);assert.match(d.reconstructionNote,/impacts/);assert.match(d.reconstructionNote,/not simulated/);
+ assert.match(d.reconstructionNote,/own pushing contact faces/);assert.match(d.reconstructionNote,/impacts/);assert.match(d.reconstructionNote,/not simulated/);
+});
+
+test('212 clockwise motion holds B until the opposite tooth face engages',()=>{
+ for(let turn=0;turn<3;turn++){
+  for(const a of [Math.PI,branch.tailEnd,.93,.9,reverse.engagementStart+1e-5]){
+   const s=d.stateAtInputAngle(turn*2*Math.PI+a,-1);
+   assert.equal(s.stopWheelAngle,-(turn+1)*g.stopStepAngle);
+   assert.equal(Math.abs(s.stopWheelAngularSpeed),0);
+   assert.equal(s.engagement.active,false);
+  }
+  const a=turn*2*Math.PI+reverse.engagementStart-1e-4,s=pose(a,-1);
+  assert.ok(s.stopWheelAngle>-(turn+1)*g.stopStepAngle);
+  const p=reverse.contactAt(reverse.engagementStart-1e-4,s.stopWheelAngle+turn*g.stopStepAngle,s.stage);
+  const world=new T.Vector3(p.x,p.y,0);
+  // First-turn contact witness; subsequent slots repeat the same profiles.
+  if(turn===0)assert.ok(Math.max(face(b.driverBody,world).distance,face(b.stopWheelBody,world).distance)<3.1e-6);
+ }
+ assert.ok(d.stateAtInputAngle(.93,1).stopWheelAngularSpeed<0,'the established counterclockwise branch is retained');
+});
+
+test('212 opposite working faces contact, push B counterclockwise and clear the complete profiles',()=>{
+ let minimum=Infinity,maximumGap=0,minimumMoment=Infinity;
+ const edges=[reverse.engagementStart,...reverse.boundaries.slice(1).map(x=>x.at),reverse.inputMinimum];
+ for(let i=0;i+1<edges.length;i++)for(const f of [.2,.5,.8]){
+  const a=edges[i]+(edges[i+1]-edges[i])*f,s=pose(a,-1),p=reverse.contactAt(a,s.stopWheelAngle,s.stage),world=new T.Vector3(p.x,p.y,0);
+  const driver=face(b.driverBody,world),wheel=face(b.stopWheelBody,world),distance=Math.max(driver.distance,wheel.distance);
+  maximumGap=Math.max(maximumGap,distance);assert.ok(distance<3.1e-6,`${s.stage}: ${distance}`);
+  const normal=/mouth/.test(s.stage)?driver.normal:wheel.normal.clone().negate(),moment=cross(p.clone().sub(g.stopWheelCenter),normal);
+  minimumMoment=Math.min(minimumMoment,moment);assert.ok(moment>.06,`${s.stage}: pushing moment ${moment}`);
+ }
+ for(let turn=0;turn<=3;turn++)for(let i=0;i<=120;i++){
+  const a=turn*2*Math.PI+reverse.inputMinimum+(branch.tailEnd-reverse.inputMinimum)*i/120;
+  if(a>g.forwardInputLimit)continue;
+  pose(a,-1);const value=gap();minimum=Math.min(minimum,value);assert.ok(value>-3.1e-6,`reverse ${a}: ${value}`);
+ }
+ console.log({minimumReverseClearance:minimum,maximumReverseContactGap:maximumGap,minimumCounterclockwiseMoment:minimumMoment});
+});
+
+test('212 terminal takeup, reverse rates, index wraps and the full demonstration remain continuous',()=>{
+ const terminal=d.stateAtInputAngle(g.forwardInputLimit),takeup=d.stateAtInputAngle(g.forwardInputLimit-.04,-1);
+ assert.equal(takeup.stopWheelAngle,terminal.stopWheelAngle);assert.equal(Math.abs(takeup.stopWheelAngularSpeed),0);assert.equal(takeup.engagement.active,false);
+ const start=d.stateAtTime(0),end=d.stateAtTime(d.timeline.startHoldStart);
+ assert.equal(start.driverAngle,reverse.inputMinimum);assert.equal(end.driverAngle,start.driverAngle);assert.equal(end.stopWheelAngle,start.stopWheelAngle);
+ for(const a of [.1,.3,.5,.7,.84]){
+  const h=1e-5,s=d.stateAtInputAngle(a,-1),lo=d.stateAtInputAngle(a-h,-1),hi=d.stateAtInputAngle(a+h,-1);
+  assert.ok(Math.abs(-(hi.stopWheelAngle-lo.stopWheelAngle)/(2*h)-s.stopWheelAngularSpeed)<1e-7);
+  assert.ok(Math.abs((hi.stopWheelAngle-2*s.stopWheelAngle+lo.stopWheelAngle)/h**2-s.stopWheelAngularAcceleration)<3e-4);
+ }
+ for(let turn=1;turn<=3;turn++){
+  const a=turn*2*Math.PI+reverse.inputMinimum,lo=d.stateAtInputAngle(a-1e-8,-1),hi=d.stateAtInputAngle(a+1e-8,-1);
+  assert.ok(Math.abs(hi.stopWheelAngle-lo.stopWheelAngle)<1e-6,`reverse pocket ${turn}`);
+ }
+ let previous=d.stateAtTime(0);
+ for(let i=1;i<=8192;i++){
+  const s=d.stateAtTime(d.timeline.demonstrationPeriod*i/8192);
+  assert.ok(Math.abs(s.stopWheelAngle-previous.stopWheelAngle)<.04,'no reversal or cycle jump');
+  if(s.demonstrationDirection===previous.demonstrationDirection){
+   if(s.demonstrationDirection==='unwinding-away-from-stop')assert.ok(s.stopWheelAngle>=previous.stopWheelAngle-1e-12);
+   if(s.demonstrationDirection==='winding-toward-stop')assert.ok(s.stopWheelAngle<=previous.stopWheelAngle+1e-12);
+  }
+  previous=s;
+ }
 });
 
 test('212 rendered law and public fields agree while reverse cycles retain all buffers',()=>{

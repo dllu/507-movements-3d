@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedOn": "2026-09-30",
+  "updatedOn": "2026-10-01",
   "evidencePolicy": "Historical source inspections without attributable reviewer identity remain unverified. Scoped nonpenetration is not global clearance. MuJoCo follows installed production routes; rejected studies are separate.",
   "movements": [
     {
@@ -8514,16 +8514,15 @@
       "id": 212,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-101 lane, integrated by primary agent",
-        "reviewPass": 101,
-        "reviewedOn": "2026-09-28",
-        "evidence": "docs/p101-f2-review.md",
-        "note": "Pass 101: flaw fixed; checked in default, rotated and phase captures beside the plate."
+        "reviewer": "Codex (GPT-6) — clockwise-contact follow-up",
+        "reviewedOn": "2026-10-01",
+        "evidence": "docs/geneva-212-contact-review.md#clockwise-contact-follow-up--2026-10-01",
+        "note": "Inspected production browser default/source and oblique views plus clockwise pre-engagement, first contact, mid-index, terminal takeup and pocket capture. B now waits for the opposite tooth face; geometry and source opening pose are unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/geneva-212-contact-review.md",
-        "note": "Selected interfaces only; no global/continuous collision certificate. This is a finite geometric reconstruction with prescribed input motion. Position is continuous, but handoffs can change velocity abruptly and therefore require idealized impacts. The locking-rim torque tends to zero at dead-center capture; the selected normal checks do not establish a loaded dynamic capture arbitrarily close to that endpoint. Reverse playback follows the same…"
+        "evidence": "docs/geneva-212-contact-review.md#clockwise-contact-follow-up--2026-10-01",
+        "note": "Selected actual A/B triangle surfaces through ordinary reverse indexes and the terminal approach: minimum signed clearance -0.000002159079, maximum reverse working-contact gap 0.000001832064, within the existing 0.0000031 tessellation tolerance. Selected reaction normals push in each direction. No global/continuous collision certificate; loaded dead-center capture and impact response are not solved."
       },
       "references": [
         "docs/geneva-212-contact-review.md",
@@ -8541,12 +8540,12 @@
       ],
       "mujoco": {
         "mode": "none",
-        "evidence": "src/simulation/authored-intermittent-core.js",
-        "note": "Authored analytical/prescribed playback; no production MuJoCo import."
+        "evidence": "src/simulation/geneva-212-contact.js",
+        "note": "Production uses separate analytical pushing contact envelopes for counterclockwise and clockwise motion, with prescribed input and reversal-clearance holding; no MuJoCo import or physics bake."
       },
-      "updatedOn": "2026-09-28",
+      "updatedOn": "2026-10-01",
       "visibleFlaws": "",
-      "limits": "Finite branch corrected; capture torque tends to zero, velocity-changing handoffs and reverse assisting bias remain prescribed/unvalidated. No frame or bearings: plain shaft stubs. p90: the display opens two indexes in, so the convex stop face a–b sits beside the top slot as drawn. p98: the finger stands out to r 4.7 with 0.2 rounded corners, and the contact law was rebuilt for the new shape. The terminal partial advance is 40.5° (source 46°). p101: hub rings are a darker shade of each wheel's colour; the arbors end just proud of the hubs, so the claw shadow is gone.",
+      "limits": "Both directions use pushing contact faces; B holds during reversal clearance. Input motion, velocity-changing handoffs and holding during clearance are prescribed; friction, inertia and loaded dead-center capture remain unvalidated. Reverse input extends 3.84° before the source start to seat the first pocket continuously. No frame or bearings: plain shaft stubs. Display opens two indexes in, with convex stop face a–b beside the top slot as drawn. Finger r 4.7 with 0.2 rounded corners (source r 4.5); forward lock at 54.78° (source animation 51°); terminal partial advance 40.5° (source 46°). Hub rings and short arbors retain the p101 geometry.",
       "assessment": "reasonable"
     },
     {
