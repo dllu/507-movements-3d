@@ -1258,7 +1258,10 @@ function reversingBevelDrive() {
   const sideConeAngle = Math.atan2(18, 22);
   const sideOuterDistance = outputGearRadius;
   const outputOuterDistance = sideGearRadius;
+  // All three wheels have plain metal teeth. A white index tooth would be
+  // detached with the undrawn decorative marks by the source cleanup below.
   const gearA = makeMiterGear({
+    indexToothIndex: null,
     innerDistance: sideOuterDistance * 0.68,
     outerDistance: sideOuterDistance,
     pitchConeAngle: sideConeAngle,
@@ -1268,6 +1271,7 @@ function reversingBevelDrive() {
     axis: X_AXIS.clone().negate(),
   });
   const gearB = makeMiterGear({
+    indexToothIndex: null,
     innerDistance: sideOuterDistance * 0.68,
     outerDistance: sideOuterDistance,
     pitchConeAngle: sideConeAngle,
@@ -1278,6 +1282,7 @@ function reversingBevelDrive() {
     boreRadius: 0.085,
   });
   const outputGear = makeMiterGear({
+    indexToothIndex: null,
     innerDistance: outputOuterDistance * 0.68,
     outerDistance: outputOuterDistance,
     pitchConeAngle: Math.PI / 2 - sideConeAngle,

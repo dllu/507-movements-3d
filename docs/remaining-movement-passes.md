@@ -1166,3 +1166,12 @@ All seven are partial corrections, not completed escapement simulations. The
 work. All 77 focused checks, final build, seven-model screen and seven packaged
 desktop/playback/mobile checks pass. Structural clearance and point-law tests
 are not used to certify the remaining working contact.
+
+## Bevel tooth completeness follow-up — 2026-10-01
+
+007's three missing index teeth are restored as ordinary wheel-colored teeth.
+The production audit checks 81 bevel wheels across 26 movements, including
+merged and baked tooth geometry; no other unintended missing teeth were found.
+074's half-toothed driver is intentional. This does not change the other
+movements' visual/contact qualifications. See the
+[completeness review](bevel-tooth-completeness-review.md).

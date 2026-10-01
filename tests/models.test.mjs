@@ -436,6 +436,9 @@ test('movement 7 traverses one belt across loose and reversing coaxial drives', 
     assert.ok(radii.smallTipRadius < radii.largeTipRadius,
       'each bevel tooth terminates on a smaller conical end rather than a flat box');
     gear.userData.toothMeshes.forEach((tooth, index) => {
+      assert.equal(tooth.parent, gear.userData.rotor, 'every counted tooth is attached to the rendered wheel');
+      assert.equal(tooth.visible, true, 'source cleanup keeps every working tooth visible');
+      assert.equal(tooth.material, gear.userData.toothMeshes[1].material, 'all teeth use the ordinary wheel material');
       assertClosedIndexedGeometry(tooth.geometry, `movement 7 bevel tooth ${index + 1}`);
     });
   }

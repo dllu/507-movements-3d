@@ -239,16 +239,18 @@
       "id": 7,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-104 lane, integrated by primary agent",
-        "reviewPass": 104,
-        "reviewedOn": "2026-09-28",
-        "evidence": "docs/p104-g2-review.md",
-        "note": "Pass 104: flaw fixed; checked in default, rotated and phase captures beside the plate."
+        "reviewer": "Codex (GPT-6) — missing-bevel-teeth follow-up",
+        "reviewedOn": "2026-10-01",
+        "evidence": "docs/bevel-tooth-completeness-review.md",
+        "note": "Inspected the default elevation and oblique/close-up production views from both sides beside the engraving. All three bevels retain every ordinary wheel-colored tooth: 18,18,22; geometry, motion and camera are otherwise unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/w2b-belts-clutches-review.md",
-        "note": "Pass-51 screen: only the belt seated on the drum (0.0003)."
+        "evidence": [
+          "docs/bevel-tooth-completeness-review.md",
+          "docs/w2b-belts-clutches-review.md"
+        ],
+        "note": "Actual restored bevel tooth/body surfaces sampled across a full turn at 65 poses, A–C and B–C in both sampling directions: minimum signed clearance 0.002415216, no sampled penetration. Previous pass-51 belt-on-drum seating evidence retained. Scoped interfaces only; no global continuous or loaded-contact certificate."
       },
       "references": [
         "docs/review-progress.md",
@@ -261,16 +263,17 @@
         "docs/p58-normals-review.md",
         "docs/p64-audit-review.md",
         "docs/p92-r-review.md",
-        "docs/p104-g2-review.md"
+        "docs/p104-g2-review.md",
+        "docs/bevel-tooth-completeness-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-belts.js",
-        "note": "Authored analytical/prescribed playback; no production MuJoCo import."
+        "note": "Authored analytical/prescribed playback; no production MuJoCo import. Tooth completeness correction does not change motion or loading assumptions."
       },
-      "updatedOn": "2026-09-28",
+      "updatedOn": "2026-10-01",
       "visibleFlaws": "",
-      "limits": "C has no drawn or modelled support; slight perspective on the bevels; a ground shadow shows. Selector transition slip and torque use engagement weights; loaded shifting unqualified. Pass 92: rope/belt recoloured to the shared hemp brown so it contrasts with the pulleys. p104: bevel C is steel grey so the two bevels no longer merge.",
+      "limits": "C has no drawn or modelled support; slight perspective on the bevels; a ground shadow shows. Selector transition slip and torque use engagement weights; loaded shifting unqualified. Pass 92: rope/belt recoloured to the shared hemp brown so it contrasts with the pulleys. p104: bevel C is steel grey so the two bevels no longer merge. 2026-10-01: the three formerly detached white index teeth are now ordinary wheel-colored teeth (18/18,18/18,22/22). The 81-wheel production bevel audit finds no other unintended missing teeth; loaded contact remains unqualified.",
       "assessment": "reasonable"
     },
     {
